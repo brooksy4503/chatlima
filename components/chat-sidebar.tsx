@@ -59,7 +59,7 @@ export function ChatSidebar() {
     const [userId, setUserId] = useState<string>('');
     const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
-    const { state, setOpen } = useSidebar();
+    const { state, setOpen, openMobile, setOpenMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
     const [editUserIdOpen, setEditUserIdOpen] = useState(false);
     const [newUserId, setNewUserId] = useState('');
@@ -78,7 +78,7 @@ export function ChatSidebar() {
     // Start a new chat
     const handleNewChat = () => {
         router.push('/');
-        // setOpen(false); // Remove sidebar collapse
+        setOpenMobile(false); // Close MOBILE sidebar on navigation
     };
 
     // Delete a chat
@@ -201,6 +201,7 @@ export function ChatSidebar() {
                                                     <Link
                                                         href={`/chat/${chat.id}`}
                                                         className="flex items-center justify-between w-full gap-1"
+                                                        onClick={() => setOpenMobile(false)}
                                                     >
                                                         <div className="flex items-center min-w-0 overflow-hidden flex-1 pr-2">
                                                             <MessageSquare className={cn(
