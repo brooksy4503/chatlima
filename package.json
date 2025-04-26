@@ -21,6 +21,7 @@
     "@ai-sdk/react": "^1.2.9",
     "@ai-sdk/xai": "^1.2.14",
     "@neondatabase/serverless": "^1.0.0",
+    "@openrouter/ai-sdk-provider": "^0.4.5",
     "@radix-ui/react-accordion": "^1.2.7",
     "@radix-ui/react-avatar": "^1.1.6",
     "@radix-ui/react-dialog": "^1.1.10",

@@ -2,11 +2,12 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createGroq } from "@ai-sdk/groq";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createXai } from "@ai-sdk/xai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
-import { 
-  customProvider, 
-  wrapLanguageModel, 
-  extractReasoningMiddleware 
+import {
+  customProvider,
+  wrapLanguageModel,
+  extractReasoningMiddleware
 } from "ai";
 
 export interface ModelInfo {
@@ -27,12 +28,12 @@ const getApiKey = (key: string): string | undefined => {
   if (process.env[key]) {
     return process.env[key] || undefined;
   }
-  
+
   // Fall back to localStorage if available
   if (typeof window !== 'undefined') {
     return window.localStorage.getItem(key) || undefined;
   }
-  
+
   return undefined;
 };
 
@@ -53,6 +54,10 @@ const xaiClient = createXai({
   apiKey: getApiKey('XAI_API_KEY'),
 });
 
+const openrouterClient = createOpenRouter({
+  apiKey: getApiKey('OPENROUTER_API_KEY'),
+});
+
 const languageModels = {
   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "claude-3-7-sonnet": anthropicClient('claude-3-7-sonnet-20250219'),
@@ -63,6 +68,7 @@ const languageModels = {
     }
   ),
   "grok-3-mini": xaiClient("grok-3-mini-latest"),
+  "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -93,6 +99,13 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Latest version of XAI's Grok 3 Mini with strong reasoning and coding capabilities.",
     apiVersion: "grok-3-mini-latest",
     capabilities: ["Reasoning", "Efficient", "Agentic"]
+  },
+  "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
+    provider: "OpenRouter",
+    name: "Mistral Small 3.1 Instruct (OpenRouter)",
+    description: "Mistral Small 3.1 Instruct model accessed via OpenRouter.",
+    apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
+    capabilities: ["Instruct", "Efficient"]
   },
 };
 
