@@ -160,7 +160,7 @@ export function ChatSidebar() {
                     </SidebarGroupLabel>
                     <SidebarGroupContent className={cn(
                         "overflow-y-auto pt-1",
-                        isCollapsed ? "overflow-x-hidden" : ""
+                        isCollapsed ? "overflow-x-hidden overflow-y-hidden" : ""
                     )}>
                         <SidebarMenu>
                             {isLoading ? (
