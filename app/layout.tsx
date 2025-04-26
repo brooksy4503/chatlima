@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Bot } from "lucide-react";
+import { Bot, PlusCircle } from "lucide-react";
 import { Providers } from "./providers";
 import "./globals.css";
 import Script from "next/script";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,12 +46,22 @@ export default function RootLayout({
           <div className="flex h-dvh w-full">
             <ChatSidebar />
             <main className="flex-1 flex flex-col relative">
-              <div className="absolute top-4 left-4 z-50">
+              <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
                 <SidebarTrigger>
                   <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
                     <Bot className="h-4 w-4" />
                   </button>
                 </SidebarTrigger>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors"
+                  asChild
+                >
+                  <Link href="/" title="New Chat">
+                    <PlusCircle className="h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
               <div className="flex-1 flex justify-center">
                 {children}
