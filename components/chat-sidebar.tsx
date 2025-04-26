@@ -139,7 +139,7 @@ export function ChatSidebar() {
             <SidebarHeader className="p-4 border-b border-border/40">
                 <div className="flex items-center justify-start">
                     <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
-                        <div className={`relative rounded-full bg-primary/70 flex items-center justify-center ${isCollapsed ? "size-5 p-3" : "size-6"}`}>
+                        <div className={`relative rounded-full bg-primary/70 flex items-center justify-center ${isCollapsed ? "size-5 aspect-square" : "size-6"}`}>
                             <Bot className={`text-primary-foreground ${isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
                         </div>
                         {!isCollapsed && (
