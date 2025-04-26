@@ -59,7 +59,7 @@ export function ChatSidebar() {
     const [userId, setUserId] = useState<string>('');
     const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
-    const { state, setOpen, isMobile } = useSidebar();
+    const { state, setOpen } = useSidebar();
     const isCollapsed = state === "collapsed";
     const [editUserIdOpen, setEditUserIdOpen] = useState(false);
     const [newUserId, setNewUserId] = useState('');
@@ -78,9 +78,7 @@ export function ChatSidebar() {
     // Start a new chat
     const handleNewChat = () => {
         router.push('/');
-        if (isMobile) {
-            setOpen(false);
-        }
+        setOpen(false);
     };
 
     // Delete a chat
@@ -205,9 +203,7 @@ export function ChatSidebar() {
                                                             href={`/chat/${chat.id}`}
                                                             className="flex items-center justify-between w-full gap-1"
                                                             onClick={() => {
-                                                                if (isMobile) {
-                                                                    setOpen(false);
-                                                                }
+                                                                setOpen(false);
                                                             }}
                                                         >
                                                             <div className="flex items-center min-w-0 overflow-hidden flex-1 pr-2">
