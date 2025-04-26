@@ -32,8 +32,14 @@ export default function ChatPage() {
               }
             });
             
+            if (response.status === 404) {
+              // Chat doesn't exist yet, expected for new chats. Return null silently.
+              return null;
+            }
+
             if (!response.ok) {
-              throw new Error('Failed to load chat');
+              console.error(`Prefetch failed for chat ${chatId}: Status ${response.status}`);
+              return null;
             }
             
             return response.json();
