@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Menu } from "lucide-react";
+import { Bot } from "lucide-react";
 import { Providers } from "./providers";
 import "./globals.css";
 import Script from "next/script";
@@ -11,10 +11,10 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://mcp.scira.ai"),
-  title: "Scira MCP Chat",
-  description: "Scira MCP Chat is a minimalistic MCP client with a good feature set.",
+  title: "Chatbot",
+  description: "Chatbot is a minimalistic MCP client with a good feature set.",
   openGraph: {
-    siteName: "Scira MCP Chat",
+    siteName: "Chatbot",
     url: "https://mcp.scira.ai",
     images: [
       {
@@ -26,8 +26,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Scira MCP Chat",
-    description: "Scira MCP Chat is a minimalistic MCP client with a good feature set.",
+    title: "Chatbot",
+    description: "Chatbot is a minimalistic MCP client with a good feature set.",
     images: ["https://mcp.scira.ai/twitter-image.png"],
   },
 };
@@ -47,7 +47,7 @@ export default function RootLayout({
               <div className="absolute top-4 left-4 z-50">
                 <SidebarTrigger>
                   <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
-                    <Menu className="h-4 w-4" />
+                    <Bot className="h-4 w-4" />
                   </button>
                 </SidebarTrigger>
               </div>

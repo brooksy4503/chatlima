@@ -11,8 +11,8 @@ import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'a
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
 import { spawn } from "child_process";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 120;
+// Allow streaming responses up to 60 seconds on Hobby plan
+export const maxDuration = 60;
 
 interface KeyValuePair {
   key: string;
@@ -227,11 +227,11 @@ export async function POST(req: Request) {
         },
       },
       anthropic: {
-        thinking: { 
-          type: 'enabled', 
-          budgetTokens: 12000 
+        thinking: {
+          type: 'enabled',
+          budgetTokens: 12000
         },
-      } 
+      }
     },
     onError: (error) => {
       console.error(JSON.stringify(error, null, 2));

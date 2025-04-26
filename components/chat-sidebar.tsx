@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key, Bot } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -140,10 +140,10 @@ export function ChatSidebar() {
                 <div className="flex items-center justify-start">
                     <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
                         <div className={`relative rounded-full bg-primary/70 flex items-center justify-center ${isCollapsed ? "size-5 p-3" : "size-6"}`}>
-                            <Image src="/scira.png" alt="Scira Logo" width={24} height={24} className="absolute transform scale-75" unoptimized quality={100} />
+                            <Bot className={`text-primary-foreground ${isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
                         </div>
                         {!isCollapsed && (
-                            <div className="font-semibold text-lg text-foreground/90">MCP</div>
+                            <div className="font-semibold text-lg text-foreground/90">Chatbot</div>
                         )}
                     </div>
                 </div>
