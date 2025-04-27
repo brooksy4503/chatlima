@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CircleDashed, Flame, Sun } from "lucide-react"
+import { CircleDashed, Flame, Sun, TerminalSquare, CassetteTape, Leaf } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "./ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
@@ -42,6 +42,18 @@ export function ThemeToggle({ className, ...props }: React.ComponentProps<typeof
         <DropdownMenuItem onSelect={() => setTheme("sunset")}>
           <Sun className="mr-2 h-4 w-4" />
           <span>Sunset</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => setTheme("cyberpunk")}>
+          <TerminalSquare className="mr-2 h-4 w-4" />
+          <span>Cyberpunk</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => setTheme("retro")}>
+          <CassetteTape className="mr-2 h-4 w-4" />
+          <span>Retro</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => setTheme("nature")}>
+          <Leaf className="mr-2 h-4 w-4" />
+          <span>Nature</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

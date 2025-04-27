@@ -194,6 +194,257 @@
   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
 }
 
+/* Cyberpunk Theme */
+.cyberpunk {
+  --background: oklch(0.18 0.05 280);
+  /* Dark Purple */
+  --foreground: oklch(0.90 0.15 180);
+  /* Bright Cyan */
+  --card: oklch(0.22 0.06 275);
+  /* Darker Purple */
+  --card-foreground: oklch(0.90 0.15 180);
+  /* Bright Cyan */
+  --popover: oklch(0.22 0.06 275);
+  /* Darker Purple */
+  --popover-foreground: oklch(0.90 0.15 180);
+  /* Bright Cyan */
+  --primary: oklch(0.70 0.25 300);
+  /* Electric Pink */
+  --primary-foreground: oklch(0.10 0.02 280);
+  /* Very Dark Purple */
+  --secondary: oklch(0.30 0.08 270);
+  /* Medium Purple */
+  --secondary-foreground: oklch(0.90 0.15 180);
+  /* Bright Cyan */
+  --muted: oklch(0.25 0.07 272);
+  /* Muted Purple */
+  --muted-foreground: oklch(0.75 0.10 180);
+  /* Lighter Cyan */
+  --accent: oklch(0.85 0.20 140);
+  /* Neon Green */
+  --accent-foreground: oklch(0.10 0.02 280);
+  /* Very Dark Purple */
+  --destructive: oklch(0.60 0.25 15);
+  /* Bright Red */
+  --destructive-foreground: oklch(0.10 0.02 280);
+  /* Very Dark Purple */
+  --border: oklch(0.40 0.10 290);
+  /* Neon Border */
+  --input: oklch(0.30 0.08 270);
+  /* Medium Purple */
+  --ring: oklch(0.70 0.25 300);
+  /* Electric Pink */
+  --chart-1: oklch(0.70 0.25 300);
+  /* Electric Pink */
+  --chart-2: oklch(0.85 0.20 140);
+  /* Neon Green */
+  --chart-3: oklch(0.75 0.22 240);
+  /* Electric Blue */
+  --chart-4: oklch(0.80 0.18 90);
+  /* Neon Yellow */
+  --chart-5: oklch(0.65 0.20 0);
+  /* Bright Orange */
+  --sidebar: oklch(0.15 0.04 285);
+  /* Very Dark Purple */
+  --sidebar-foreground: oklch(0.90 0.15 180);
+  /* Bright Cyan */
+  --sidebar-primary: oklch(0.70 0.25 300);
+  /* Electric Pink */
+  --sidebar-primary-foreground: oklch(0.10 0.02 280);
+  /* Very Dark Purple */
+  --sidebar-accent: oklch(0.85 0.20 140);
+  /* Neon Green */
+  --sidebar-accent-foreground: oklch(0.10 0.02 280);
+  /* Very Dark Purple */
+  --sidebar-border: oklch(0.40 0.10 290);
+  /* Neon Border */
+  --sidebar-ring: oklch(0.70 0.25 300);
+  /* Electric Pink */
+  --font-sans: 'Orbitron', sans-serif;
+  /* Futuristic font */
+  --font-serif: 'Share Tech Mono', monospace;
+  /* Monospaced for code feel */
+  --font-mono: 'Share Tech Mono', monospace;
+  --radius: 0.25rem;
+  /* Sharper edges */
+  --shadow-2xs: 0px 2px 4px -1px oklch(0.70 0.25 300 / 0.2);
+  --shadow-xs: 0px 3px 6px -1px oklch(0.70 0.25 300 / 0.25);
+  --shadow-sm: 0px 4px 8px -2px oklch(0.70 0.25 300 / 0.3), 0px 2px 4px -2px oklch(0.70 0.25 300 / 0.2);
+  --shadow: 0px 6px 12px -3px oklch(0.70 0.25 300 / 0.35), 0px 4px 6px -4px oklch(0.70 0.25 300 / 0.25);
+  --shadow-md: 0px 8px 16px -4px oklch(0.70 0.25 300 / 0.4), 0px 4px 8px -4px oklch(0.70 0.25 300 / 0.3);
+  --shadow-lg: 0px 12px 24px -6px oklch(0.70 0.25 300 / 0.45), 0px 6px 12px -6px oklch(0.70 0.25 300 / 0.35);
+  --shadow-xl: 0px 16px 32px -8px oklch(0.70 0.25 300 / 0.5), 0px 8px 16px -8px oklch(0.70 0.25 300 / 0.4);
+  --shadow-2xl: 0px 24px 48px -12px oklch(0.70 0.25 300 / 0.6);
+}
+
+/* Retro Theme */
+.retro {
+  --background: oklch(0.95 0.02 90);
+  /* Cream */
+  --foreground: oklch(0.35 0.08 40);
+  /* Dark Brown */
+  --card: oklch(0.98 0.01 85);
+  /* Lighter Cream */
+  --card-foreground: oklch(0.35 0.08 40);
+  /* Dark Brown */
+  --popover: oklch(0.98 0.01 85);
+  /* Lighter Cream */
+  --popover-foreground: oklch(0.35 0.08 40);
+  /* Dark Brown */
+  --primary: oklch(0.60 0.15 140);
+  /* Avocado Green */
+  --primary-foreground: oklch(0.95 0.02 90);
+  /* Cream */
+  --secondary: oklch(0.85 0.10 80);
+  /* Mustard Yellow */
+  --secondary-foreground: oklch(0.35 0.08 40);
+  /* Dark Brown */
+  --muted: oklch(0.92 0.03 88);
+  /* Muted Cream */
+  --muted-foreground: oklch(0.50 0.06 50);
+  /* Medium Brown */
+  --accent: oklch(0.65 0.18 30);
+  /* Burnt Orange */
+  --accent-foreground: oklch(0.95 0.02 90);
+  /* Cream */
+  --destructive: oklch(0.55 0.20 25);
+  /* Muted Red */
+  --destructive-foreground: oklch(0.95 0.02 90);
+  /* Cream */
+  --border: oklch(0.88 0.04 70);
+  /* Light Brown Border */
+  --input: oklch(0.88 0.04 70);
+  /* Light Brown Border */
+  --ring: oklch(0.60 0.15 140);
+  /* Avocado Green */
+  --chart-1: oklch(0.60 0.15 140);
+  /* Avocado Green */
+  --chart-2: oklch(0.65 0.18 30);
+  /* Burnt Orange */
+  --chart-3: oklch(0.70 0.12 190);
+  /* Teal */
+  --chart-4: oklch(0.85 0.10 80);
+  /* Mustard Yellow */
+  --chart-5: oklch(0.50 0.10 45);
+  /* Darker Brown */
+  --sidebar: oklch(0.90 0.03 85);
+  /* Slightly Darker Cream */
+  --sidebar-foreground: oklch(0.35 0.08 40);
+  /* Dark Brown */
+  --sidebar-primary: oklch(0.60 0.15 140);
+  /* Avocado Green */
+  --sidebar-primary-foreground: oklch(0.95 0.02 90);
+  /* Cream */
+  --sidebar-accent: oklch(0.65 0.18 30);
+  /* Burnt Orange */
+  --sidebar-accent-foreground: oklch(0.95 0.02 90);
+  /* Cream */
+  --sidebar-border: oklch(0.88 0.04 70);
+  /* Light Brown Border */
+  --sidebar-ring: oklch(0.60 0.15 140);
+  /* Avocado Green */
+  --font-sans: 'Lobster', cursive;
+  /* Retro script */
+  --font-serif: 'Playfair Display', serif;
+  /* Classic serif */
+  --font-mono: 'Courier Prime', monospace;
+  /* Typewriter mono */
+  --radius: 0.8rem;
+  /* Rounded corners */
+  --shadow-2xs: 0px 1px 2px 0px oklch(0.35 0.08 40 / 0.05);
+  --shadow-xs: 0px 2px 4px -1px oklch(0.35 0.08 40 / 0.06), 0px 1px 2px -1px oklch(0.35 0.08 40 / 0.04);
+  --shadow-sm: 0px 3px 6px -1px oklch(0.35 0.08 40 / 0.08), 0px 2px 4px -2px oklch(0.35 0.08 40 / 0.05);
+  --shadow: 0px 4px 8px -2px oklch(0.35 0.08 40 / 0.1), 0px 2px 4px -2px oklch(0.35 0.08 40 / 0.06);
+  --shadow-md: 0px 6px 12px -3px oklch(0.35 0.08 40 / 0.12), 0px 4px 6px -4px oklch(0.35 0.08 40 / 0.07);
+  --shadow-lg: 0px 10px 20px -5px oklch(0.35 0.08 40 / 0.14), 0px 6px 10px -6px oklch(0.35 0.08 40 / 0.09);
+  --shadow-xl: 0px 15px 30px -8px oklch(0.35 0.08 40 / 0.16), 0px 8px 15px -8px oklch(0.35 0.08 40 / 0.11);
+  --shadow-2xl: 0px 25px 50px -12px oklch(0.35 0.08 40 / 0.25);
+}
+
+/* Nature Theme */
+.nature {
+  --background: oklch(0.96 0.03 140);
+  /* Light Leaf Green */
+  --foreground: oklch(0.25 0.06 110);
+  /* Dark Forest Green */
+  --card: oklch(1.00 0.01 130);
+  /* Almost White Green Tint */
+  --card-foreground: oklch(0.25 0.06 110);
+  /* Dark Forest Green */
+  --popover: oklch(1.00 0.01 130);
+  /* Almost White Green Tint */
+  --popover-foreground: oklch(0.25 0.06 110);
+  /* Dark Forest Green */
+  --primary: oklch(0.55 0.18 150);
+  /* Vibrant Leaf Green */
+  --primary-foreground: oklch(0.98 0.01 120);
+  /* Very Light Green */
+  --secondary: oklch(0.80 0.08 90);
+  /* Light Wood Brown */
+  --secondary-foreground: oklch(0.25 0.06 110);
+  /* Dark Forest Green */
+  --muted: oklch(0.92 0.04 135);
+  /* Muted Light Green */
+  --muted-foreground: oklch(0.45 0.07 115);
+  /* Medium Forest Green */
+  --accent: oklch(0.75 0.15 220);
+  /* Sky Blue */
+  --accent-foreground: oklch(0.20 0.05 230);
+  /* Dark Blue */
+  --destructive: oklch(0.60 0.20 40);
+  /* Earthy Red */
+  --destructive-foreground: oklch(0.98 0.01 120);
+  /* Very Light Green */
+  --border: oklch(0.85 0.05 120);
+  /* Light Green Border */
+  --input: oklch(0.85 0.05 120);
+  /* Light Green Border */
+  --ring: oklch(0.55 0.18 150);
+  /* Vibrant Leaf Green */
+  --chart-1: oklch(0.55 0.18 150);
+  /* Vibrant Leaf Green */
+  --chart-2: oklch(0.75 0.15 220);
+  /* Sky Blue */
+  --chart-3: oklch(0.65 0.12 80);
+  /* Wood Brown */
+  --chart-4: oklch(0.80 0.10 60);
+  /* Sunlight Yellow */
+  --chart-5: oklch(0.70 0.16 350);
+  /* Flower Pink */
+  --sidebar: oklch(0.90 0.04 130);
+  /* Slightly Darker Light Green */
+  --sidebar-foreground: oklch(0.25 0.06 110);
+  /* Dark Forest Green */
+  --sidebar-primary: oklch(0.55 0.18 150);
+  /* Vibrant Leaf Green */
+  --sidebar-primary-foreground: oklch(0.98 0.01 120);
+  /* Very Light Green */
+  --sidebar-accent: oklch(0.75 0.15 220);
+  /* Sky Blue */
+  --sidebar-accent-foreground: oklch(0.20 0.05 230);
+  /* Dark Blue */
+  --sidebar-border: oklch(0.85 0.05 120);
+  /* Light Green Border */
+  --sidebar-ring: oklch(0.55 0.18 150);
+  /* Vibrant Leaf Green */
+  --font-sans: 'Quicksand', sans-serif;
+  /* Soft, rounded font */
+  --font-serif: 'Gentium Book Basic', serif;
+  /* Readable serif */
+  --font-mono: 'Fira Code', monospace;
+  /* Clear mono */
+  --radius: 0.75rem;
+  /* Slightly rounded */
+  --shadow-2xs: 0px 1px 2px 0px oklch(0.25 0.06 110 / 0.04);
+  --shadow-xs: 0px 2px 4px -1px oklch(0.25 0.06 110 / 0.05), 0px 1px 2px -1px oklch(0.25 0.06 110 / 0.03);
+  --shadow-sm: 0px 3px 6px -1px oklch(0.25 0.06 110 / 0.07), 0px 2px 4px -2px oklch(0.25 0.06 110 / 0.04);
+  --shadow: 0px 4px 8px -2px oklch(0.25 0.06 110 / 0.09), 0px 2px 4px -2px oklch(0.25 0.06 110 / 0.05);
+  --shadow-md: 0px 6px 12px -3px oklch(0.25 0.06 110 / 0.11), 0px 4px 6px -4px oklch(0.25 0.06 110 / 0.06);
+  --shadow-lg: 0px 10px 20px -5px oklch(0.25 0.06 110 / 0.13), 0px 6px 10px -6px oklch(0.25 0.06 110 / 0.08);
+  --shadow-xl: 0px 15px 30px -8px oklch(0.25 0.06 110 / 0.15), 0px 8px 15px -8px oklch(0.25 0.06 110 / 0.10);
+  --shadow-2xl: 0px 25px 50px -12px oklch(0.25 0.06 110 / 0.20);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -251,6 +502,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
@@ -258,6 +510,7 @@
 }
 
 @layer utilities {
+
   /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -265,7 +518,8 @@
 
   /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
+    -ms-overflow-style: none;
+    /* IE and Edge */
     /* Use Firefox-specific scrollbar hiding when supported */
     scrollbar-width: none;
   }
