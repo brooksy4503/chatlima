@@ -386,20 +386,13 @@ export function ChatSidebar() {
                                     <Settings className="mr-2 h-4 w-4 hover:text-sidebar-accent" />
                                     MCP Settings
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => {
+                                {/* <DropdownMenuItem onSelect={(e) => {
                                     e.preventDefault();
                                     setApiKeySettingsOpen(true);
                                 }}>
                                     <Key className="mr-2 h-4 w-4 hover:text-sidebar-accent" />
                                     API Keys
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => {
-                                    e.preventDefault();
-                                    window.open("https://git.new/s-mcp", "_blank");
-                                }}>
-                                    <Github className="mr-2 h-4 w-4 hover:text-sidebar-accent" />
-                                    GitHub
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <div className="flex items-center justify-between w-full">
                                         <div className="flex items-center">
@@ -423,10 +416,10 @@ export function ChatSidebar() {
                     onOpenChange={setMcpSettingsOpen}
                 />
                 
-                <ApiKeyManager
+                {/* <ApiKeyManager
                     open={apiKeySettingsOpen}
                     onOpenChange={setApiKeySettingsOpen}
-                />
+                /> */}
             </SidebarFooter>
 
             <Dialog open={editUserIdOpen} onOpenChange={(open) => {

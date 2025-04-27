@@ -12,15 +12,15 @@ import Link from "next/link";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://mcp.scira.ai"),
+  metadataBase: new URL("https://chatbot777.vercel.app/"),
   title: "Chatbot",
   description: "Chatbot is a minimalistic MCP client with a good feature set.",
   openGraph: {
     siteName: "Chatbot",
-    url: "https://mcp.scira.ai",
+    url: "https://chatbot777.vercel.app/",
     images: [
       {
-        url: "https://mcp.scira.ai/opengraph-image.png",
+        url: "https://chatbot777.vercel.app/opengraph-image.png",
         width: 1200,
         height: 630,
       },
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Chatbot",
     description: "Chatbot is a minimalistic MCP client with a good feature set.",
-    images: ["https://mcp.scira.ai/twitter-image.png"],
+    images: ["https://chatbot777.vercel.app/twitter-image.png"],
   },
 };
 
