@@ -102,7 +102,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
     provider: "OpenRouter",
-    name: "Mistral Small 3.1 Instruct",
+    name: "Mistral Small 3.1 Instruct (OpenRouter)",
     description: "Mistral Small 3.1 Instruct model accessed via OpenRouter.",
     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
     capabilities: ["Instruct", "Efficient"]
