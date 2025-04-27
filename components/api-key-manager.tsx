@@ -43,6 +43,13 @@ const API_KEYS_CONFIG: ApiKeyConfig[] = [
     storageKey: "XAI_API_KEY",
     label: "XAI API Key",
     placeholder: "xai-..."
+  },
+  {
+    name: "Openrouter",
+    key: "openrouter",
+    storageKey: "OPENROUTER_API_KEY",
+    label: "Openrouter API Key",
+    placeholder: "sk-or-..."
   }
 ];
 
