@@ -60,6 +60,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
       case 'research':
         return <Lightbulb className="h-2.5 w-2.5" />;
       case 'vision':
+        // eslint-disable-next-line jsx-a11y/alt-text
         return <Image className="h-2.5 w-2.5" />;
       case 'fast':
       case 'rapid':
