@@ -510,7 +510,19 @@ export function ChatSidebar() {
                             <DropdownMenuContent side="top" align="start" className="w-[calc(var(--sidebar-width)-1.5rem)] ml-3 mb-1">
                                 <DropdownMenuLabel className="truncate">{session.user.name}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
+                                <DropdownMenuItem onClick={async () => {
+                                    try {
+                                        await signOut();
+                                        localStorage.removeItem(LOCAL_USER_ID_KEY);
+                                        toast.info("You have been logged out.");
+                                        router.push('/');
+                                        queryClient.invalidateQueries({ queryKey: ['chats'] });
+                                        queryClient.invalidateQueries({ queryKey: ['chat'] });
+                                    } catch (error) {
+                                        console.error("Sign out error:", error);
+                                        toast.error("Failed to sign out.");
+                                    }
+                                }} className="cursor-pointer">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>Log out</span>
                                 </DropdownMenuItem>
