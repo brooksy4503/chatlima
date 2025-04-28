@@ -1,0 +1,2 @@
+-- ALTER TABLE "account" DROP CONSTRAINT "account_providerId_accountId_pk"; --> statement-breakpoint -- Already dropped by previous push
+ALTER TABLE "account" ADD COLUMN "id" text PRIMARY KEY NOT NULL;

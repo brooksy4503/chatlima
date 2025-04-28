@@ -1,0 +1,1 @@
+ALTER TABLE "account" ALTER COLUMN "expires_at" SET DATA TYPE timestamp USING to_timestamp(expires_at);

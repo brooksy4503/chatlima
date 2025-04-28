@@ -1,0 +1,2 @@
+-- ALTER TABLE "account" RENAME COLUMN "expires_at" TO "access_token_expires_at"; -- Already applied by previous push
+ALTER TABLE "account" ALTER COLUMN "access_token_expires_at" SET DATA TYPE integer USING EXTRACT(epoch FROM "access_token_expires_at")::integer;
