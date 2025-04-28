@@ -445,11 +445,39 @@ export function ChatSidebar() {
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
+
+                    <div className="relative my-0">
+                        <div className="absolute inset-x-0">
+                            <Separator className="w-full h-px bg-border/40" />
+                        </div>
+                    </div>
+
+                    <SidebarGroup className="flex-shrink-0">
+                        <SidebarGroupLabel className={cn(
+                            "px-4 pt-2 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
+                            isCollapsed ? "sr-only" : ""
+                        )}>
+                            Settings
+                        </SidebarGroupLabel>
+                        <SidebarGroupContent>
+                           <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <div className={cn(
+                                        "flex items-center gap-2 px-3 py-2",
+                                        isCollapsed ? "justify-center" : ""
+                                    )}>
+                                        <ThemeToggle className="h-4 w-4 p-0" />
+                                        {!isCollapsed && <span className="text-sm text-foreground/80">Theme</span>}
+                                    </div>
+                                </SidebarMenuItem>
+                           </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
                 </SidebarContent>
                 
                 <SidebarFooter className="flex flex-col gap-2 p-3 border-t border-border/40">
                     <SidebarMenu>
-                        {/* Menu items previously here are removed */}
+                        {/* Item removed */}
                     </SidebarMenu>
                     
                     <div className="relative my-0 pt-2">
@@ -466,7 +494,13 @@ export function ChatSidebar() {
                     ) : session?.user ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="flex items-center justify-start gap-2 px-3 py-2 mt-2 w-full h-auto focus-visible:ring-0">
+                                <Button 
+                                    variant="ghost" 
+                                    className={cn(
+                                        "flex items-center justify-start gap-2 px-3 py-2 mt-2 w-full h-auto focus-visible:ring-0",
+                                        isCollapsed && "justify-center" 
+                                    )}
+                                >
                                     <Avatar className="h-8 w-8 rounded-full">
                                         <AvatarFallback>{session.user.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
                                     </Avatar>

@@ -8,7 +8,7 @@ import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
 import { toast } from "sonner";
 import { useRouter, useParams } from "next/navigation";
-import { getUserId } from "@/lib/user-id";
+import { getUserId, updateUserId } from "@/lib/user-id";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ import { convertToUIMessages } from "@/lib/chat-store";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useMCP } from "@/lib/context/mcp-context";
+import { useSession } from "@/lib/auth-client";
 
 // Type for chat data from DB
 interface ChatData {
@@ -30,6 +31,7 @@ export default function Chat() {
   const params = useParams();
   const chatId = params?.id as string | undefined;
   const queryClient = useQueryClient();
+  const { data: session, isPending: isSessionLoading } = useSession();
   
   const [selectedModel, setSelectedModel] = useLocalStorage<modelID>("selectedModel", defaultModel);
   const [userId, setUserId] = useState<string>('');
@@ -42,6 +44,30 @@ export default function Chat() {
   useEffect(() => {
     setUserId(getUserId());
   }, []);
+  
+  // Effect to update userId based on authentication status
+  useEffect(() => {
+    // Wait until session loading is complete
+    if (!isSessionLoading) {
+      if (session?.user?.id) {
+        // User is authenticated
+        const authenticatedUserId = session.user.id;
+        const currentLocalId = getUserId(); // Check ID in local storage
+
+        // Update local storage if it doesn't match authenticated ID
+        if (currentLocalId !== authenticatedUserId) {
+          updateUserId(authenticatedUserId);
+          console.log('Chat component updated local storage userId');
+        }
+        // Update component state
+        setUserId(authenticatedUserId);
+
+      } else {
+        // User is not authenticated, ensure component state uses local storage ID
+        setUserId(getUserId()); 
+      }
+    }
+  }, [session, isSessionLoading]); // Rerun when session or loading state changes
   
   // Generate a chat ID if needed
   useEffect(() => {
