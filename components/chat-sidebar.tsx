@@ -529,8 +529,11 @@ export function ChatSidebar() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     ) : (
-                        <div className="flex items-center gap-2 px-3 py-2 mt-2">
-                            <SignInButton />
+                        <div className={cn(
+                            "flex items-center mt-2", 
+                            isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2 gap-2" 
+                        )}>
+                            <SignInButton isCollapsed={isCollapsed} />
                         </div>
                     )}
                 </SidebarFooter>
