@@ -54,20 +54,86 @@ export default function Chat() {
         const authenticatedUserId = session.user.id;
         const currentLocalId = getUserId(); // Check ID in local storage
 
-        // Update local storage if it doesn't match authenticated ID
-        if (currentLocalId !== authenticatedUserId) {
-          updateUserId(authenticatedUserId);
-          console.log('Chat component updated local storage userId');
+        // If local ID exists and differs from authenticated ID, migrate chats
+        if (currentLocalId && currentLocalId !== authenticatedUserId) {
+          console.log(
+            `Local user ID (${currentLocalId}) differs from authenticated ID (${authenticatedUserId}). Attempting migration.`,
+          );
+          fetch('/api/chats/migrate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              // Session cookie should be sent automatically by the browser
+            },
+            body: JSON.stringify({ localUserId: currentLocalId }),
+          })
+            .then(async (res) => {
+              if (!res.ok) {
+                const errorData = await res.json().catch(() => ({})); // Try to parse error
+                throw new Error(
+                  `Migration API failed with status ${res.status}: ${errorData.error || 'Unknown error'}`,
+                );
+              }
+              return res.json();
+            })
+            .then((data) => {
+              console.log(`Successfully migrated ${data.migratedCount} chats.`);
+              toast.success(`Synced ${data.migratedCount} previous chats to your account.`);
+              // IMPORTANT: Update local storage to prevent re-migration
+              updateUserId(authenticatedUserId);
+              console.log('Chat component updated local storage userId after migration.');
+              setUserId(authenticatedUserId); // Update component state immediately
+              // Optional: Refresh chat list or current chat view if needed
+              queryClient.invalidateQueries({ queryKey: ['chats', authenticatedUserId] });
+              if (chatId) {
+                queryClient.invalidateQueries({ queryKey: ['chat', chatId, authenticatedUserId] });
+              }
+            })
+            .catch((error) => {
+              // Check if the error message indicates a 401 Unauthorized
+              if (error instanceof Error && error.message.includes('status 401')) {
+                 console.warn('Chat migration attempt failed likely due to logout or session expiry.');
+                 // Don't show a toast here, as the user initiated logout.
+              } else {
+                 // Handle other potential errors during migration
+                 console.error('Chat migration failed:', error);
+                 toast.error('Failed to sync previous chats to your account.');
+              }
+              // If migration fails, we still need to ensure the component's userId state 
+              // reflects the authenticated user for the current render, 
+              // otherwise subsequent operations might use the wrong ID until the next effect run.
+              // However, the outer logic should handle setting userId based on session status correctly.
+              // Let's ensure setUserId(authenticatedUserId) is called outside the fetch promise chain
+              // if the session is valid, regardless of migration outcome.
+            });
+          // Ensure component state reflects authenticated user ID immediately in this block
+          setUserId(authenticatedUserId); 
+        } else {
+           // Local ID matches authenticated ID, or no local ID existed.
+           // Ensure local storage and state are set to the authenticated ID.
+           if (currentLocalId !== authenticatedUserId) {
+             updateUserId(authenticatedUserId);
+             console.log('Chat component updated local storage userId (no migration needed).');
+           }
+           setUserId(authenticatedUserId);
         }
-        // Update component state
-        setUserId(authenticatedUserId);
 
       } else {
         // User is not authenticated, ensure component state uses local storage ID
-        setUserId(getUserId()); 
+        setUserId(getUserId());
       }
     }
-  }, [session, isSessionLoading]); // Rerun when session or loading state changes
+  }, [session, isSessionLoading, queryClient, chatId]); // Added queryClient and chatId dependencies
+  
+  // Effect to redirect user away from chat page on logout
+  useEffect(() => {
+    if (!isSessionLoading && !session && chatId) {
+      // If session loading is done, user is logged out, and we are on a specific chat page
+      console.log("User logged out while on chat page, redirecting to home.");
+      toast.info("You have been logged out."); // Optional user feedback
+      router.push('/'); 
+    }
+  }, [session, isSessionLoading, chatId, router]); // Dependencies: session status, loading status, chat ID, router
   
   // Generate a chat ID if needed
   useEffect(() => {
@@ -102,7 +168,8 @@ export default function Chat() {
         throw error;
       }
     },
-    enabled: !!chatId && !!userId,
+    // Only enable this query if we have a specific chatId AND a logged-in user session
+    enabled: !!chatId && !!session?.user?.id, 
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false

@@ -55,6 +55,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { SignInButton } from "@/components/auth/SignInButton";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
+import { Flame, Sun } from "lucide-react";
 
 const LOCAL_USER_ID_KEY = 'ai-chat-user-id';
 
@@ -462,13 +463,24 @@ export function ChatSidebar() {
                         <SidebarGroupContent>
                            <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <div className={cn(
-                                        "flex items-center gap-2 px-3 py-2",
-                                        isCollapsed ? "justify-center" : ""
-                                    )}>
-                                        <ThemeToggle className="h-4 w-4 p-0" />
-                                        {!isCollapsed && <span className="text-sm text-foreground/80">Theme</span>}
-                                    </div>
+                                    <ThemeToggle
+                                        className="h-4 w-4 p-0"
+                                        trigger={(
+                                            <SidebarMenuButton 
+                                                className={cn(
+                                                    "w-full flex items-center gap-2 transition-all",
+                                                    "hover:bg-secondary/50 active:bg-secondary/70",
+                                                    isCollapsed ? "justify-center" : ""
+                                                )}
+                                                tooltip={isCollapsed ? "Theme" : undefined}
+                                            >
+                                                <Flame className="h-4 w-4 rotate-0 scale-100 transition-all dark:scale-0 dark:-rotate-90 flex-shrink-0" />
+                                                <Sun className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 light:rotate-0 light:scale-100 flex-shrink-0" />
+                                                {!isCollapsed && <span className="text-sm text-foreground/80 flex-grow text-left">Theme</span>}
+                                                {!isCollapsed && <ChevronsUpDown className="h-3 w-3 text-muted-foreground ml-auto flex-shrink-0" />}
+                                            </SidebarMenuButton>
+                                        )}
+                                    />
                                 </SidebarMenuItem>
                            </SidebarMenu>
                         </SidebarGroupContent>
