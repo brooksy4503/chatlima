@@ -548,6 +548,21 @@ export function ChatSidebar() {
                             <SignInButton isCollapsed={isCollapsed} />
                         </div>
                     )}
+
+                    <Link 
+                        href="https://github.com/zaidmukaddam/scira-mcp-chat" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className={cn(
+                            "flex items-center text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors py-2 mt-2 w-full",
+                            isCollapsed ? "justify-center" : "justify-start px-3 gap-2"
+                        )}
+                    >
+                        <div className={cn("flex items-center justify-center", isCollapsed ? "w-8 h-8" : "w-6 h-6")}>
+                            <Github className="h-4 w-4" />
+                        </div>
+                        {!isCollapsed && <span>Powered by Scira Chat</span>}
+                    </Link>
                 </SidebarFooter>
             </Sidebar>
 
