@@ -143,8 +143,8 @@ const PurePreviewMessage = ({
       .join("\n\n");
   };
 
-  // Only show copy button if the message is from the assistant and not currently streaming
-  const shouldShowCopyButton = message.role === "assistant" && (!isLatestMessage || status !== "streaming");
+  // Only show copy button if the message is from the assistant or user, and not currently streaming
+  const shouldShowCopyButton = (message.role === "assistant" || message.role === "user") && (!isLatestMessage || status !== "streaming");
 
   return (
     <AnimatePresence key={message.id}>
@@ -177,11 +177,14 @@ const PurePreviewMessage = ({
                     >
                       <div
                         className={cn("flex flex-col gap-3 w-full", {
-                          "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl":
+                          "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl flex items-center gap-2":
                             message.role === "user",
                         })}
                       >
                         <Markdown>{part.text}</Markdown>
+                        {message.role === 'user' && shouldShowCopyButton && (
+                          <CopyButton text={getMessageText()} className="ml-auto" />
+                        )}
                       </div>
                     </motion.div>
                   );
@@ -218,7 +221,7 @@ const PurePreviewMessage = ({
                   return null;
               }
             })}
-            {shouldShowCopyButton && (
+            {message.role === 'assistant' && shouldShowCopyButton && (
               <div className="flex justify-start mt-2">
                 <CopyButton text={getMessageText()} />
               </div>

@@ -113,43 +113,71 @@ export async function POST(req: Request) {
           });
         }
 
-        // Check for uvx pattern and transform to python3 -m uv run
+        // Check for uvx pattern
         if (mcpServer.command === 'uvx') {
-          // install uv
-          const subprocess = spawn('pip3', ['install', 'uv']);
-          subprocess.on('close', (code: number) => {
-            if (code !== 0) {
-              console.error(`Failed to install uv: ${code}`);
-            }
+          // Ensure uv is installed, which provides uvx
+          console.log("Ensuring uv (for uvx) is installed...");
+          let uvInstalled = false;
+          const installUvSubprocess = spawn('pip3', ['install', 'uv']);
+          // Capture output for debugging
+          let uvInstallStdout = '';
+          let uvInstallStderr = '';
+          installUvSubprocess.stdout.on('data', (data) => { uvInstallStdout += data.toString(); });
+          installUvSubprocess.stderr.on('data', (data) => { uvInstallStderr += data.toString(); });
+
+          await new Promise<void>((resolve) => {
+            installUvSubprocess.on('close', (code: number) => {
+              if (code !== 0) {
+                console.error(`Failed to install uv using pip3: exit code ${code}`);
+                console.error('pip3 stdout:', uvInstallStdout);
+                console.error('pip3 stderr:', uvInstallStderr);
+              } else {
+                console.log("uv installed or already present.");
+                if (uvInstallStdout) console.log('pip3 stdout:', uvInstallStdout);
+                if (uvInstallStderr) console.log('pip3 stderr:', uvInstallStderr);
+                uvInstalled = true;
+              }
+              resolve();
+            });
+            installUvSubprocess.on('error', (err) => {
+              console.error("Error spawning pip3 to install uv:", err);
+              resolve(); // Resolve anyway
+            });
           });
-          // wait for the subprocess to finish
-          await new Promise((resolve) => {
-            subprocess.on('close', resolve);
-            console.log("installed uv");
-          });
-          console.log("Detected uvx pattern, transforming to python3 -m uv run");
-          mcpServer.command = 'python3';
-          // Get the tool name (first argument)
-          const toolName = mcpServer.args[0];
-          // Replace args with the new pattern
-          mcpServer.args = ['-m', 'uv', 'run', toolName, ...mcpServer.args.slice(1)];
+
+          if (!uvInstalled) {
+            console.warn("Skipping uvx command: Failed to ensure uv installation.");
+            continue;
+          }
+
+          // Do NOT modify the command or args. Let StdioMCPTransport run uvx directly.
+          console.log(`Proceeding to spawn uvx command directly.`);
         }
-        // if python is passed in the command, install the python package mentioned in args after -m with subprocess or use regex to find the package name
+        // If python is passed in the command, install the python package mentioned in args after -m
         else if (mcpServer.command.includes('python3')) {
           const packageName = mcpServer.args[mcpServer.args.indexOf('-m') + 1];
-          console.log("installing python package", packageName);
-          const subprocess = spawn('pip3', ['install', packageName]);
+          console.log("Attempting to install python package using uv:", packageName);
+          // Use uv to install the package
+          const subprocess = spawn('uv', ['pip', 'install', packageName]);
           subprocess.on('close', (code: number) => {
             if (code !== 0) {
-              console.error(`Failed to install python package: ${code}`);
+              console.error(`Failed to install python package ${packageName} using uv: ${code}`);
+            } else {
+              console.log(`Successfully installed python package ${packageName} using uv.`);
             }
           });
           // wait for the subprocess to finish
-          await new Promise((resolve) => {
-            subprocess.on('close', resolve);
-            console.log("installed python package", packageName);
+          await new Promise<void>((resolve) => {
+            subprocess.on('close', () => resolve());
+            subprocess.on('error', (err) => {
+              console.error(`Error spawning uv command for package ${packageName}:`, err);
+              resolve(); // Resolve anyway to avoid hanging
+            });
           });
         }
+
+        // Log the final command and args before spawning for stdio
+        console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
 
         transport = new StdioMCPTransport({
           command: mcpServer.command,
