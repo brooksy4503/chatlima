@@ -4,6 +4,7 @@ import { ArrowUp, Loader2, Globe } from "lucide-react";
 import { ModelPicker } from "./model-picker";
 import { WebSearchContextSizeSelector } from "./web-search-settings";
 import { useRef, useState } from "react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 interface InputProps {
   input: string;
@@ -58,21 +59,22 @@ export const Textarea = ({
             selectedModel={selectedModel}
           />
           <div className="relative flex items-center">
-            <button
-              type="button"
-              ref={iconButtonRef}
-              aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
-              onClick={() => {
-                onWebSearchToggle(!webSearchEnabled);
-                if (!webSearchEnabled) setShowContextPopover(true);
-                else setShowContextPopover(false);
-              }}
-              className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${webSearchEnabled ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-background border-border text-muted-foreground hover:bg-accent'} focus:outline-none focus:ring-2 focus:ring-primary/30`}
-            >
-              <Globe className="h-5 w-5" />
-            </button>
-            {webSearchEnabled && showContextPopover && (
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-12 z-20 min-w-[180px] bg-popover border border-border rounded-lg shadow-lg p-2">
+            <Popover open={showContextPopover} onOpenChange={setShowContextPopover}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  ref={iconButtonRef}
+                  aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+                  onClick={() => {
+                    onWebSearchToggle(!webSearchEnabled);
+                    if (!webSearchEnabled) setShowContextPopover(true);
+                  }}
+                  className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${webSearchEnabled ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-background border-border text-muted-foreground hover:bg-accent'} focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                >
+                  <Globe className="h-5 w-5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="center" sideOffset={8} className="min-w-[180px] p-2">
                 <WebSearchContextSizeSelector
                   contextSize={webSearchContextSize}
                   onContextSizeChange={(size) => {
@@ -80,8 +82,8 @@ export const Textarea = ({
                     setShowContextPopover(false);
                   }}
                 />
-              </div>
-            )}
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
