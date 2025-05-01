@@ -20,15 +20,19 @@ interface ModelPickerProps {
 export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProps) => {
   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
   
-  // Ensure we always have a valid model ID
-  const validModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel;
+  // Ensure we always have a valid model ID immediately for stable rendering
+  const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel;
   
-  // If the selected model is invalid, update it to the default
+  // If the initial selectedModel prop was invalid, call setSelectedModel
+  // in a useEffect to update the parent state *after* initial render.
   useEffect(() => {
-    if (selectedModel !== validModelId) {
-      setSelectedModel(validModelId as modelID);
+    if (selectedModel !== stableModelId) {
+      setSelectedModel(stableModelId);
     }
-  }, [selectedModel, validModelId, setSelectedModel]);
+    // Run this effect only when the initial selectedModel prop or stableModelId changes.
+    // Don't include setSelectedModel in the dependency array to avoid potential loops
+    // if the parent component re-renders frequently.
+  }, [selectedModel, stableModelId]);
   
   // Function to get the appropriate icon for each provider
   const getProviderIcon = (provider: string) => {
@@ -105,7 +109,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
   };
   
   // Get current model details to display
-  const displayModelId = hoveredModel || validModelId;
+  const displayModelId = hoveredModel || stableModelId;
   const currentModelDetails = modelDetails[displayModelId];
 
   // Handle model change
@@ -119,9 +123,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
   return (
     <div>
       <Select 
-        value={validModelId} 
+        value={stableModelId} 
         onValueChange={handleModelChange} 
-        defaultValue={validModelId}
+        defaultValue={stableModelId}
       >
         <SelectTrigger 
           className="max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full group border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
@@ -131,8 +135,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
             className="text-xs font-medium flex items-center gap-1 sm:gap-2 text-primary dark:text-primary-foreground"
           >
             <div className="flex items-center gap-1 sm:gap-2">
-              {getProviderIcon(modelDetails[validModelId].provider)}
-              <span className="font-medium truncate">{modelDetails[validModelId].name}</span>
+              {getProviderIcon(modelDetails[stableModelId].provider)}
+              <span className="font-medium truncate">{modelDetails[stableModelId].name}</span>
             </div>
           </SelectValue>
         </SelectTrigger>
@@ -157,7 +161,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
                         "hover:bg-primary/5 hover:text-primary-foreground",
                         "focus:bg-primary/10 focus:text-primary focus:outline-none",
                         "data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
-                        validModelId === id && "!bg-primary/15 !text-primary font-medium"
+                        stableModelId === id && "!bg-primary/15 !text-primary font-medium"
                       )}
                     >
                       <div className="flex flex-col gap-0.5">

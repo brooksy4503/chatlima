@@ -1,6 +1,6 @@
 "use client";
 
-import { defaultModel, type modelID } from "@/ai/providers";
+import { defaultModel, type modelID, MODELS } from "@/ai/providers";
 import { Message, useChat } from "@ai-sdk/react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Textarea } from "./textarea";
@@ -9,15 +9,13 @@ import { Messages } from "./messages";
 import { toast } from "sonner";
 import { useRouter, useParams } from "next/navigation";
 import { getUserId, updateUserId } from "@/lib/user-id";
-import { useLocalStorage } from "@/lib/hooks/use-local-storage";
-import { STORAGE_KEYS } from "@/lib/constants";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat-store";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useMCP } from "@/lib/context/mcp-context";
 import { useSession } from "@/lib/auth-client";
-import { WebSearchContextSizeSelector } from "./web-search-settings";
+import { useWebSearch } from "@/lib/context/web-search-context";
 
 // Type for chat data from DB
 interface ChatData {
@@ -34,35 +32,36 @@ export default function Chat() {
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionLoading } = useSession();
   
-  const [selectedModel, setSelectedModel] = useLocalStorage<modelID>("selectedModel", defaultModel);
-  const [userId, setUserId] = useState<string>('');
-  const [generatedChatId, setGeneratedChatId] = useState<string>('');
-  const [webSearch, setWebSearch] = useLocalStorage<{
-    enabled: boolean;
-    contextSize: 'low' | 'medium' | 'high';
-  }>("webSearch", {
-    enabled: false,
-    contextSize: 'medium'
-  });
+  const { 
+    webSearchEnabled, 
+    setWebSearchEnabled, 
+    webSearchContextSize, 
+    setWebSearchContextSize 
+  } = useWebSearch();
   
-  // Get MCP server data from context
   const { mcpServersForApi } = useMCP();
   
-  // Initialize userId
+  const [selectedModel, setSelectedModel] = useState<modelID>(defaultModel);
+  const [userId, setUserId] = useState<string>('');
+  const [generatedChatId, setGeneratedChatId] = useState<string>('');
+
+  useEffect(() => {
+    const storedModel = localStorage.getItem('selected_ai_model');
+    if (storedModel && MODELS.includes(storedModel)) {
+      setSelectedModel(storedModel as modelID);
+    }
+  }, []);
+  
   useEffect(() => {
     setUserId(getUserId());
   }, []);
   
-  // Effect to update userId based on authentication status
   useEffect(() => {
-    // Wait until session loading is complete
     if (!isSessionLoading) {
       if (session?.user?.id) {
-        // User is authenticated
         const authenticatedUserId = session.user.id;
-        const currentLocalId = getUserId(); // Check ID in local storage
+        const currentLocalId = getUserId();
 
-        // If local ID exists and differs from authenticated ID, migrate chats
         if (currentLocalId && currentLocalId !== authenticatedUserId) {
           console.log(
             `Local user ID (${currentLocalId}) differs from authenticated ID (${authenticatedUserId}). Attempting migration.`,
@@ -71,13 +70,12 @@ export default function Chat() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              // Session cookie should be sent automatically by the browser
             },
             body: JSON.stringify({ localUserId: currentLocalId }),
           })
             .then(async (res) => {
               if (!res.ok) {
-                const errorData = await res.json().catch(() => ({})); // Try to parse error
+                const errorData = await res.json().catch(() => ({}));
                 throw new Error(
                   `Migration API failed with status ${res.status}: ${errorData.error || 'Unknown error'}`,
                 );
@@ -87,38 +85,24 @@ export default function Chat() {
             .then((data) => {
               console.log(`Successfully migrated ${data.migratedCount} chats.`);
               toast.success(`Synced ${data.migratedCount} previous chats to your account.`);
-              // IMPORTANT: Update local storage to prevent re-migration
               updateUserId(authenticatedUserId);
               console.log('Chat component updated local storage userId after migration.');
-              setUserId(authenticatedUserId); // Update component state immediately
-              // Optional: Refresh chat list or current chat view if needed
+              setUserId(authenticatedUserId);
               queryClient.invalidateQueries({ queryKey: ['chats', authenticatedUserId] });
               if (chatId) {
                 queryClient.invalidateQueries({ queryKey: ['chat', chatId, authenticatedUserId] });
               }
             })
             .catch((error) => {
-              // Check if the error message indicates a 401 Unauthorized
               if (error instanceof Error && error.message.includes('status 401')) {
                  console.warn('Chat migration attempt failed likely due to logout or session expiry.');
-                 // Don't show a toast here, as the user initiated logout.
               } else {
-                 // Handle other potential errors during migration
                  console.error('Chat migration failed:', error);
                  toast.error('Failed to sync previous chats to your account.');
               }
-              // If migration fails, we still need to ensure the component's userId state 
-              // reflects the authenticated user for the current render, 
-              // otherwise subsequent operations might use the wrong ID until the next effect run.
-              // However, the outer logic should handle setting userId based on session status correctly.
-              // Let's ensure setUserId(authenticatedUserId) is called outside the fetch promise chain
-              // if the session is valid, regardless of migration outcome.
             });
-          // Ensure component state reflects authenticated user ID immediately in this block
-          setUserId(authenticatedUserId); 
+            setUserId(authenticatedUserId); 
         } else {
-           // Local ID matches authenticated ID, or no local ID existed.
-           // Ensure local storage and state are set to the authenticated ID.
            if (currentLocalId !== authenticatedUserId) {
              updateUserId(authenticatedUserId);
              console.log('Chat component updated local storage userId (no migration needed).');
@@ -127,30 +111,27 @@ export default function Chat() {
         }
 
       } else {
-        // User is not authenticated, ensure component state uses local storage ID
         setUserId(getUserId());
       }
     }
-  }, [session, isSessionLoading, queryClient, chatId]); // Added queryClient and chatId dependencies
+  }, [session, isSessionLoading, queryClient, chatId]);
   
-  // Effect to redirect user away from chat page on logout
   useEffect(() => {
     if (!isSessionLoading && !session && chatId) {
-      // If session loading is done, user is logged out, and we are on a specific chat page
-      console.log("User logged out while on chat page, redirecting to home.");
-      toast.info("You have been logged out."); // Optional user feedback
-      router.push('/'); 
+      if (params?.id) { 
+        console.log("User logged out while on chat page, redirecting to home.");
+        toast.info("You have been logged out.");
+        router.push('/'); 
+      }
     }
-  }, [session, isSessionLoading, chatId, router]); // Dependencies: session status, loading status, chat ID, router
+  }, [session, isSessionLoading, chatId, router, params]);
   
-  // Generate a chat ID if needed
   useEffect(() => {
     if (!chatId) {
       setGeneratedChatId(nanoid());
     }
   }, [chatId]);
   
-  // Use React Query to fetch chat history
   const { data: chatData, isLoading: isLoadingChat } = useQuery({
     queryKey: ['chat', chatId, userId] as const,
     queryFn: async ({ queryKey }) => {
@@ -176,24 +157,21 @@ export default function Chat() {
         throw error;
       }
     },
-    // Only enable this query if we have a specific chatId AND a logged-in user session
     enabled: !!chatId && !!session?.user?.id, 
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false
   });
   
-  // Prepare initial messages from query data
   const initialMessages = useMemo(() => {
     if (!chatData || !chatData.messages || chatData.messages.length === 0) {
       return [];
     }
     
-    // Convert DB messages to UI format, then ensure it matches the Message type from @ai-sdk/react
     const uiMessages = convertToUIMessages(chatData.messages);
     return uiMessages.map(msg => ({
       id: msg.id,
-      role: msg.role as Message['role'], // Ensure role is properly typed
+      role: msg.role as Message['role'],
       content: msg.content,
       parts: msg.parts,
     } as Message));
@@ -209,7 +187,10 @@ export default function Chat() {
         mcpServers: mcpServersForApi,
         chatId: chatId || generatedChatId,
         userId,
-        webSearch
+        webSearch: {
+          enabled: webSearchEnabled,
+          contextSize: webSearchContextSize,
+        }
       },
       experimental_throttle: 500,
       onFinish: () => {
@@ -227,26 +208,29 @@ export default function Chat() {
       },
     });
     
-  // Custom submit handler
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selected_ai_model', selectedModel);
+    }
+  }, [selectedModel]);
+
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!chatId && generatedChatId && input.trim()) {
-      // If this is a new conversation, redirect to the chat page with the generated ID
       const effectiveChatId = generatedChatId;
       
-      // Submit the form
       handleSubmit(e);
       
-      // Redirect to the chat page with the generated ID
       router.push(`/chat/${effectiveChatId}`);
     } else {
-      // Normal submission for existing chats
       handleSubmit(e);
     }
   }, [chatId, generatedChatId, input, handleSubmit, router]);
 
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
+
+  const isOpenRouterModel = selectedModel.startsWith("openrouter/");
 
   return (
     <div className="h-dvh flex flex-col justify-center w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
@@ -265,10 +249,6 @@ export default function Chat() {
               isLoading={isLoading}
               status={status}
               stop={stop}
-              webSearchEnabled={webSearch.enabled}
-              onWebSearchToggle={(enabled) => setWebSearch(prev => ({ ...prev, enabled }))}
-              webSearchContextSize={webSearch.contextSize}
-              onWebSearchContextSizeChange={(size) => setWebSearch(prev => ({ ...prev, contextSize: size }))}
             />
           </form>
         </div>
@@ -287,10 +267,6 @@ export default function Chat() {
                 isLoading={isLoading}
                 status={status}
                 stop={stop}
-                webSearchEnabled={webSearch.enabled}
-                onWebSearchToggle={(enabled) => setWebSearch(prev => ({ ...prev, enabled }))}
-                webSearchContextSize={webSearch.contextSize}
-                onWebSearchContextSizeChange={(size) => setWebSearch(prev => ({ ...prev, contextSize: size }))}
               />
             </form>
           </div>

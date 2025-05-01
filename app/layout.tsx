@@ -8,6 +8,8 @@ import "./globals.css";
 import Script from "next/script";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { WebSearchProvider } from "@/lib/context/web-search-context";
+import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,31 +45,33 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className}`}>
         <Providers>
-          <div className="flex h-dvh w-full">
-            <ChatSidebar />
-            <main className="flex-1 flex flex-col relative">
-              <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
-                <SidebarTrigger>
-                  <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
-                    <Bot className="h-4 w-4" />
-                  </button>
-                </SidebarTrigger>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors"
-                  asChild
-                >
-                  <Link href="/" title="New Chat">
-                    <PlusCircle className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-              <div className="flex-1 flex justify-center">
-                {children}
-              </div>
-            </main>
-          </div>
+          <WebSearchProvider>
+            <div className="flex h-dvh w-full">
+              <ChatSidebar />
+              <main className="flex-1 flex flex-col relative">
+                <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+                  <SidebarTrigger>
+                    <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
+                      <Bot className="h-4 w-4" />
+                    </button>
+                  </SidebarTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors"
+                    asChild
+                  >
+                    <Link href="/" title="New Chat">
+                      <PlusCircle className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+                <div className="flex-1 flex justify-center">
+                  {children}
+                </div>
+              </main>
+            </div>
+          </WebSearchProvider>
         </Providers>
         <Script defer src="https://cloud.umami.is/script.js" data-website-id="bd3f8736-1562-47e0-917c-c10fde7ef0d2" />
       </body>

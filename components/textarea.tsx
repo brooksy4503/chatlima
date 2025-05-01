@@ -2,9 +2,9 @@ import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
 import { ArrowUp, Loader2, Globe } from "lucide-react";
 import { ModelPicker } from "./model-picker";
-import { WebSearchContextSizeSelector } from "./web-search-settings";
-import { useRef, useState } from "react";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useRef } from "react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useWebSearch } from "@/lib/context/web-search-context";
 
 interface InputProps {
   input: string;
@@ -14,10 +14,6 @@ interface InputProps {
   stop: () => void;
   selectedModel: modelID;
   setSelectedModel: (model: modelID) => void;
-  webSearchEnabled: boolean;
-  onWebSearchToggle: (enabled: boolean) => void;
-  webSearchContextSize: 'low' | 'medium' | 'high';
-  onWebSearchContextSizeChange: (size: 'low' | 'medium' | 'high') => void;
 }
 
 export const Textarea = ({
@@ -28,14 +24,15 @@ export const Textarea = ({
   stop,
   selectedModel,
   setSelectedModel,
-  webSearchEnabled,
-  onWebSearchToggle,
-  webSearchContextSize,
-  onWebSearchContextSizeChange,
 }: InputProps) => {
   const isStreaming = status === "streaming" || status === "submitted";
-  const [showContextPopover, setShowContextPopover] = useState(false);
   const iconButtonRef = useRef<HTMLButtonElement>(null);
+
+  const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
+
+  const handleWebSearchToggle = () => {
+    setWebSearchEnabled(!webSearchEnabled);
+  };
 
   return (
     <div className="relative w-full">
@@ -58,33 +55,26 @@ export const Textarea = ({
             setSelectedModel={setSelectedModel}
             selectedModel={selectedModel}
           />
-          <div className="relative flex items-center">
-            <Popover open={showContextPopover} onOpenChange={setShowContextPopover}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  ref={iconButtonRef}
-                  aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
-                  onClick={() => {
-                    onWebSearchToggle(!webSearchEnabled);
-                    if (!webSearchEnabled) setShowContextPopover(true);
-                  }}
-                  className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${webSearchEnabled ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-background border-border text-muted-foreground hover:bg-accent'} focus:outline-none focus:ring-2 focus:ring-primary/30`}
-                >
-                  <Globe className="h-5 w-5" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="center" sideOffset={8} className="min-w-[180px] p-2">
-                <WebSearchContextSizeSelector
-                  contextSize={webSearchContextSize}
-                  onContextSizeChange={(size) => {
-                    onWebSearchContextSizeChange(size);
-                    setShowContextPopover(false);
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          {selectedModel.startsWith("openrouter/") && (
+            <div className="relative flex items-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    ref={iconButtonRef}
+                    aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+                    onClick={handleWebSearchToggle}
+                    className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${webSearchEnabled ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-background border-border text-muted-foreground hover:bg-accent'} focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                  >
+                    <Globe className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={8}>
+                  {webSearchEnabled ? 'Disable web search' : 'Enable web search'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
         </div>
       </div>
       <button

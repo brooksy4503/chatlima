@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key, Bot, LogOut } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key, Bot, LogOut, Globe } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -56,6 +56,14 @@ import { SignInButton } from "@/components/auth/SignInButton";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
+import { useWebSearch } from "@/lib/context/web-search-context";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const LOCAL_USER_ID_KEY = 'ai-chat-user-id';
 
@@ -77,6 +85,8 @@ export function ChatSidebar() {
     const queryClient = useQueryClient();
 
     const { mcpServers, setMcpServers, selectedMcpServers, setSelectedMcpServers } = useMCP();
+    const { webSearchContextSize, setWebSearchContextSize, webSearchEnabled } = useWebSearch();
+    const isAnyOpenRouterModelSelected = true;
 
     const renderChatSkeletons = () => {
         return Array(3).fill(0).map((_, index) => (
@@ -477,11 +487,74 @@ export function ChatSidebar() {
                                                 <Flame className="h-4 w-4 rotate-0 scale-100 transition-all dark:scale-0 dark:-rotate-90 flex-shrink-0" />
                                                 <Sun className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 light:rotate-0 light:scale-100 flex-shrink-0" />
                                                 {!isCollapsed && <span className="text-sm text-foreground/80 flex-grow text-left">Theme</span>}
-                                                {!isCollapsed && <ChevronsUpDown className="h-3 w-3 text-muted-foreground ml-auto flex-shrink-0" />}
                                             </SidebarMenuButton>
                                         )}
                                     />
                                 </SidebarMenuItem>
+                                {webSearchEnabled && (
+                                    <SidebarMenuItem>
+                                        <DropdownMenu>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <TooltipTrigger asChild>
+                                                            <SidebarMenuButton
+                                                                className={cn(
+                                                                    "w-full flex items-center gap-2 transition-all",
+                                                                    "hover:bg-secondary/50 active:bg-secondary/70",
+                                                                    isCollapsed ? "justify-center" : ""
+                                                                )}
+                                                                // No tooltip prop here, handled by TooltipTrigger
+                                                            >
+                                                                <Globe className={cn(
+                                                                    "h-4 w-4 flex-shrink-0",
+                                                                    webSearchEnabled ? "text-primary" : "text-muted-foreground"
+                                                                )} />
+                                                                {!isCollapsed && (
+                                                                    <span className="text-sm text-foreground/80 flex-grow text-left">
+                                                                        Search Context ({webSearchContextSize.charAt(0).toUpperCase() + webSearchContextSize.slice(1)}) 
+                                                                    </span>
+                                                                )}
+                                                            </SidebarMenuButton>
+                                                        </TooltipTrigger>
+                                                    </DropdownMenuTrigger>
+                                                    {isCollapsed && (
+                                                        <TooltipContent side="right" sideOffset={5}>
+                                                            Web Search Context: {webSearchContextSize.charAt(0).toUpperCase() + webSearchContextSize.slice(1)}
+                                                        </TooltipContent>
+                                                    )}
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                            <DropdownMenuContent 
+                                                align="end" 
+                                                side={isCollapsed ? "right" : "bottom"} 
+                                                sideOffset={8} 
+                                                className="min-w-[120px]"
+                                            >
+                                                <DropdownMenuLabel>Search Context Size</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem 
+                                                    onClick={() => setWebSearchContextSize('low')}
+                                                    className={cn(webSearchContextSize === 'low' && "bg-secondary")}
+                                                >
+                                                    Low
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem 
+                                                    onClick={() => setWebSearchContextSize('medium')}
+                                                    className={cn(webSearchContextSize === 'medium' && "bg-secondary")}
+                                                >
+                                                    Medium
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem 
+                                                    onClick={() => setWebSearchContextSize('high')}
+                                                    className={cn(webSearchContextSize === 'high' && "bg-secondary")}
+                                                >
+                                                    High
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </SidebarMenuItem>
+                                )}
                            </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
