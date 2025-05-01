@@ -73,6 +73,7 @@ const languageModels = {
   ),
   "grok-3-mini": xaiClient("grok-3-mini-latest"),
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+  "openrouter/deepseek/deepseek-chat-v3-0324": openrouterClient("deepseek/deepseek-chat-v3-0324"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -111,6 +112,13 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
     capabilities: ["Instruct", "Efficient"]
   },
+  "openrouter/deepseek/deepseek-chat-v3-0324": {
+    provider: "OpenRouter",
+    name: "DeepSeek Chat V3 0324",
+    description: "DeepSeek Chat model V3 accessed via OpenRouter.",
+    apiVersion: "deepseek/deepseek-chat-v3-0324",
+    capabilities: ["Chat", "Efficient"]
+  },
 };
 
 // Update API keys when localStorage changes (for runtime updates)
@@ -126,6 +134,12 @@ if (typeof window !== 'undefined') {
 export const model = customProvider({
   languageModels,
 });
+
+// Define a specific model ID for title generation
+export const titleGenerationModelId: modelID = "openrouter/deepseek/deepseek-chat-v3-0324";
+
+// Get the actual model instance for title generation
+export const titleGenerationModel = languageModels[titleGenerationModelId];
 
 export type modelID = keyof typeof languageModels;
 

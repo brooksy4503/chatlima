@@ -10,7 +10,7 @@ import {
 } from "./ui/select";
 import { cn } from "@/lib/utils";
 import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface ModelPickerProps {
   selectedModel: modelID;
@@ -22,17 +22,6 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
   
   // Ensure we always have a valid model ID immediately for stable rendering
   const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel;
-  
-  // If the initial selectedModel prop was invalid, call setSelectedModel
-  // in a useEffect to update the parent state *after* initial render.
-  useEffect(() => {
-    if (selectedModel !== stableModelId) {
-      setSelectedModel(stableModelId);
-    }
-    // Run this effect only when the initial selectedModel prop or stableModelId changes.
-    // Don't include setSelectedModel in the dependency array to avoid potential loops
-    // if the parent component re-renders frequently.
-  }, [selectedModel, stableModelId]);
   
   // Function to get the appropriate icon for each provider
   const getProviderIcon = (provider: string) => {

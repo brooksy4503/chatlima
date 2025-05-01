@@ -3,6 +3,8 @@
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
+import { getApiKey, model, titleGenerationModel } from "@/ai/providers";
+import { type MessagePart } from "@/lib/db/schema";
 
 // Helper to extract text content from a message regardless of format
 function getMessageText(message: any): string {
@@ -13,25 +15,25 @@ function getMessageText(message: any): string {
       return textParts.map((p: any) => p.text).join('\n');
     }
   }
-  
+
   // Fallback to content (old format)
   if (typeof message.content === 'string') {
     return message.content;
   }
-  
+
   // If content is an array (potentially of parts), try to extract text
   if (Array.isArray(message.content)) {
-    const textItems = message.content.filter((item: any) => 
+    const textItems = message.content.filter((item: any) =>
       typeof item === 'string' || (item.type === 'text' && item.text)
     );
-    
+
     if (textItems.length > 0) {
-      return textItems.map((item: any) => 
+      return textItems.map((item: any) =>
         typeof item === 'string' ? item : item.text
       ).join('\n');
     }
   }
-  
+
   return '';
 }
 
@@ -41,9 +43,9 @@ export async function generateTitle(messages: any[]) {
     role: msg.role,
     content: getMessageText(msg)
   }));
-  
+
   const { object } = await generateObject({
-    model: openai("gpt-4.1"),
+    model: titleGenerationModel,
     schema: z.object({
       title: z.string().min(1).max(100),
     }),

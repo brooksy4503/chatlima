@@ -44,20 +44,29 @@ export default function Chat() {
   const [selectedModel, setSelectedModel] = useState<modelID>(defaultModel);
   const [userId, setUserId] = useState<string>('');
   const [generatedChatId, setGeneratedChatId] = useState<string>('');
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const storedModel = localStorage.getItem('selected_ai_model');
-    if (storedModel && MODELS.includes(storedModel)) {
-      setSelectedModel(storedModel as modelID);
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      const storedModel = localStorage.getItem('selected_ai_model');
+      if (storedModel && MODELS.includes(storedModel)) {
+        setSelectedModel(storedModel as modelID);
+      }
     }
-  }, []);
+  }, [isMounted]);
+
+  useEffect(() => {
+    if (isMounted) {
+      setUserId(getUserId());
+    }
+  }, [isMounted]);
   
   useEffect(() => {
-    setUserId(getUserId());
-  }, []);
-  
-  useEffect(() => {
-    if (!isSessionLoading) {
+    if (isMounted && !isSessionLoading) {
       if (session?.user?.id) {
         const authenticatedUserId = session.user.id;
         const currentLocalId = getUserId();
@@ -117,7 +126,7 @@ export default function Chat() {
   }, [session, isSessionLoading, queryClient, chatId]);
   
   useEffect(() => {
-    if (!isSessionLoading && !session && chatId) {
+    if (isMounted && !isSessionLoading && !session && chatId) {
       if (params?.id) { 
         console.log("User logged out while on chat page, redirecting to home.");
         toast.info("You have been logged out.");
@@ -209,10 +218,10 @@ export default function Chat() {
     });
     
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (isMounted) {
       localStorage.setItem('selected_ai_model', selectedModel);
     }
-  }, [selectedModel]);
+  }, [selectedModel, isMounted]);
 
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -233,45 +242,38 @@ export default function Chat() {
   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
 
   return (
-    <div className="h-dvh flex flex-col justify-center w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
-      {messages.length === 0 && !isLoadingChat ? (
-        <div className="max-w-xl mx-auto w-full">
-          <ProjectOverview />
-          <form
-            onSubmit={handleFormSubmit}
-            className="mt-4 w-full mx-auto"
-          >
-            <Textarea
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-              handleInputChange={handleInputChange}
-              input={input}
-              isLoading={isLoading}
-              status={status}
-              stop={stop}
-            />
-          </form>
-        </div>
-      ) : (
-        <>
-          <div className="flex-1 overflow-y-auto min-h-0 pb-2">
-            <Messages messages={messages} isLoading={isLoading} status={status} />
+    <div className="h-dvh flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
+      {/* Main content area: Either ProjectOverview or Messages */}
+      <div className="flex-1 overflow-y-auto min-h-0 pb-2">
+        {messages.length === 0 && !isLoadingChat ? (
+          <div className="max-w-xl mx-auto w-full pt-4 sm:pt-8">
+            <ProjectOverview />
           </div>
-          <div className="mt-2 w-full mx-auto mb-4 sm:mb-auto">
-            <form onSubmit={handleFormSubmit} className="mt-2">
-              <Textarea
-                selectedModel={selectedModel}
-                setSelectedModel={setSelectedModel}
-                handleInputChange={handleInputChange}
-                input={input}
-                isLoading={isLoading}
-                status={status}
-                stop={stop}
-              />
-            </form>
+        ) : (
+          <Messages messages={messages} isLoading={isLoading} status={status} />
+        )}
+      </div>
+
+      {/* Input area: Always rendered at the bottom */}
+      <div className="mt-2 w-full mx-auto mb-4 sm:mb-auto shrink-0">
+        {/* Conditionally render ProjectOverview above input only when no messages and not loading */}
+        {messages.length === 0 && !isLoadingChat && (
+          <div className="max-w-xl mx-auto w-full mb-4 sm:hidden"> {/* Hidden on sm+, shown on mobile */}
+            {/* Maybe a condensed overview or nothing here if ProjectOverview is too large */}
           </div>
-        </>
-      )}
+        )}
+        <form onSubmit={handleFormSubmit} className="mt-2">
+          <Textarea
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+            handleInputChange={handleInputChange}
+            input={input}
+            isLoading={isLoading}
+            status={status}
+            stop={stop}
+          />
+        </form>
+      </div>
     </div>
   );
 }
