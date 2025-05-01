@@ -1,5 +1,7 @@
 import { model, type modelID } from "@/ai/providers";
-import { streamText, type UIMessage } from "ai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { getApiKey } from "@/ai/providers";
+import { streamText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
 import { appendResponseMessages } from 'ai';
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
 import { nanoid } from 'nanoid';
@@ -28,6 +30,30 @@ interface MCPServerConfig {
   headers?: KeyValuePair[];
 }
 
+interface WebSearchOptions {
+  enabled: boolean;
+  contextSize: 'low' | 'medium' | 'high';
+}
+
+interface UrlCitation {
+  url: string;
+  title: string;
+  content?: string;
+  start_index: number;
+  end_index: number;
+}
+
+interface Annotation {
+  type: string;
+  url_citation: UrlCitation;
+}
+
+interface OpenRouterResponse extends LanguageModelResponseMetadata {
+  readonly messages: Message[];
+  annotations?: Annotation[];
+  body?: unknown;
+}
+
 export async function POST(req: Request) {
   const {
     messages,
@@ -35,12 +61,14 @@ export async function POST(req: Request) {
     selectedModel,
     userId,
     mcpServers = [],
+    webSearch = { enabled: false, contextSize: 'medium' }
   }: {
     messages: UIMessage[];
     chatId?: string;
     selectedModel: modelID;
     userId: string;
     mcpServers?: MCPServerConfig[];
+    webSearch?: WebSearchOptions;
   } = await req.json();
 
   if (!userId) {
@@ -220,12 +248,51 @@ export async function POST(req: Request) {
   console.log("messages", messages);
   console.log("parts", messages.map(m => m.parts.map(p => p)));
 
-  // If there was an error setting up MCP clients but we at least have composio tools, continue
-  const result = streamText({
-    model: model.languageModel(selectedModel),
+  // Log web search status
+  if (webSearch.enabled) {
+    console.log(`[Web Search] ENABLED with context size: ${webSearch.contextSize}`);
+  } else {
+    console.log(`[Web Search] DISABLED`);
+  }
+
+  let modelInstance;
+  if (webSearch.enabled && selectedModel.startsWith("openrouter/")) {
+    // Remove 'openrouter/' prefix for the OpenRouter client
+    const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
+    const openrouterClient = createOpenRouter({
+      apiKey: getApiKey('OPENROUTER_API_KEY'),
+      headers: {
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://chatbot777.vercel.app/',
+        'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'Chatbot777',
+      }
+    });
+    modelInstance = openrouterClient(openrouterModelId);
+  } else {
+    modelInstance = model.languageModel(selectedModel);
+  }
+
+  const modelOptions = {
+    ...(webSearch.enabled && {
+      web_search_options: {
+        search_context_size: webSearch.contextSize
+      }
+    })
+  };
+
+  // Construct the payload for OpenRouter
+  const openRouterPayload = {
+    model: modelInstance,
     system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
 
     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
+
+    ${webSearch.enabled ? `
+    You have web search capabilities enabled. When you use web search:
+    1. Cite your sources using markdown links
+    2. Use the format [domain.com](full-url) for citations
+    3. Only cite reliable and relevant sources
+    4. Integrate the information naturally into your responses
+    ` : ''}
 
     ## How to Respond:
     1.  **Analyze the Request:** Understand what the user is asking.
@@ -252,31 +319,64 @@ export async function POST(req: Request) {
           type: 'enabled',
           budgetTokens: 12000
         },
-      }
+      },
+      openrouter: modelOptions
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error(JSON.stringify(error, null, 2));
     },
-    async onFinish({ response }) {
+    async onFinish(event: any) {
+      // Minimal fix: cast event.response to OpenRouterResponse
+      const response = event.response as OpenRouterResponse;
       const allMessages = appendResponseMessages({
         messages,
-        responseMessages: response.messages,
+        responseMessages: response.messages as any, // Cast to any to bypass type error
+      });
+
+      // Extract citations from response messages
+      const processedMessages = allMessages.map(msg => {
+        if (msg.role === 'assistant' && (response.annotations?.length)) {
+          const citations = response.annotations
+            .filter((a: Annotation) => a.type === 'url_citation')
+            .map((c: Annotation) => ({
+              url: c.url_citation.url,
+              title: c.url_citation.title,
+              content: c.url_citation.content,
+              startIndex: c.url_citation.start_index,
+              endIndex: c.url_citation.end_index
+            }));
+
+          // Add citations to message parts if they exist
+          if (citations.length > 0 && msg.parts) {
+            msg.parts = (msg.parts as any[]).map(part => ({
+              ...part,
+              citations
+            }));
+          }
+        }
+        return msg;
       });
 
       await saveChat({
         id,
         userId,
-        messages: allMessages,
+        messages: processedMessages as any, // Cast to any to bypass type error
       });
 
-      const dbMessages = convertToDBMessages(allMessages, id);
+      const dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
+        ...msg,
+        hasWebSearch: webSearch.enabled,
+        webSearchContextSize: webSearch.contextSize
+      }));
+
       await saveMessages({ messages: dbMessages });
-      // close all mcp clients
-      // for (const client of mcpClients) {
-      //   await client.close();
-      // }
     }
-  });
+  };
+
+  console.log("OpenRouter API Payload:", JSON.stringify(openRouterPayload, null, 2));
+
+  // Now call streamText as before
+  const result = streamText(openRouterPayload);
 
   result.consumeStream()
   return result.toDataStreamResponse({

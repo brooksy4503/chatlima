@@ -10,6 +10,9 @@ import { ChevronDownIcon, ChevronUpIcon, LightbulbIcon, BrainIcon } from "lucide
 import { SpinnerIcon } from "./icons";
 import { ToolInvocation } from "./tool-invocation";
 import { CopyButton } from "./copy-button";
+import { Citations } from "./citation";
+import type { TextUIPart, ToolInvocationUIPart } from "@/lib/types";
+import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -18,7 +21,7 @@ interface ReasoningPart {
 }
 
 interface ReasoningMessagePartProps {
-  part: ReasoningPart;
+  part: ReasoningUIPart;
   isReasoning: boolean;
 }
 
@@ -124,16 +127,21 @@ export function ReasoningMessagePart({
   );
 }
 
+interface MessageProps {
+  message: TMessage & {
+    parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+  };
+  isLoading: boolean;
+  status: "error" | "submitted" | "streaming" | "ready";
+  isLatestMessage: boolean;
+}
+
 const PurePreviewMessage = ({
   message,
   isLatestMessage,
   status,
-}: {
-  message: TMessage;
-  isLoading: boolean;
-  status: "error" | "submitted" | "streaming" | "ready";
-  isLatestMessage: boolean;
-}) => {
+  isLoading,
+}: MessageProps) => {
   // Create a string with all text parts for copy functionality
   const getMessageText = () => {
     if (!message.parts) return "";
@@ -168,6 +176,7 @@ const PurePreviewMessage = ({
             {message.parts?.map((part, i) => {
               switch (part.type) {
                 case "text":
+                  const textPart = part as TextUIPart;
                   return (
                     <motion.div
                       initial={{ y: 5, opacity: 0 }}
@@ -181,7 +190,8 @@ const PurePreviewMessage = ({
                             message.role === "user",
                         })}
                       >
-                        <Markdown>{part.text}</Markdown>
+                        <Markdown>{textPart.text}</Markdown>
+                        {textPart.citations && <Citations citations={textPart.citations} />}
                         {message.role === 'user' && shouldShowCopyButton && (
                           <CopyButton text={getMessageText()} className="ml-auto" />
                         )}
@@ -189,8 +199,9 @@ const PurePreviewMessage = ({
                     </motion.div>
                   );
                 case "tool-invocation":
-                  const { toolName, state, args } = part.toolInvocation;
-                  const result = 'result' in part.toolInvocation ? part.toolInvocation.result : null;
+                  const toolPart = part as ToolInvocationUIPart;
+                  const { toolName, state, args } = toolPart.toolInvocation;
+                  const result = 'result' in toolPart.toolInvocation ? toolPart.toolInvocation.result : null;
                   
                   return (
                     <ToolInvocation
@@ -204,11 +215,11 @@ const PurePreviewMessage = ({
                     />
                   );
                 case "reasoning":
+                  const reasoningPart = part as ReasoningUIPart;
                   return (
                     <ReasoningMessagePart
                       key={`message-${message.id}-${i}`}
-                      // @ts-expect-error part
-                      part={part}
+                      part={reasoningPart}
                       isReasoning={
                         (message.parts &&
                           status === "streaming" &&

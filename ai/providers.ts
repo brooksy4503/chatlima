@@ -23,7 +23,7 @@ const middleware = extractReasoningMiddleware({
 });
 
 // Helper to get API keys from environment variables first, then localStorage
-const getApiKey = (key: string): string | undefined => {
+export const getApiKey = (key: string): string | undefined => {
   // Check for environment variables first
   if (process.env[key]) {
     return process.env[key] || undefined;
@@ -59,7 +59,7 @@ const openrouterClient = createOpenRouter({
   headers: {
     'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://chatbot777.vercel.app/',
     'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'Chatbot777',
-  },
+  }
 });
 
 const languageModels = {

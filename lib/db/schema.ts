@@ -21,6 +21,8 @@ export const messages = pgTable('messages', {
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
   role: text('role').notNull(), // user, assistant, or tool
   parts: json('parts').notNull(), // Store parts as JSON in the database
+  hasWebSearch: boolean('has_web_search').default(false),
+  webSearchContextSize: text('web_search_context_size').default('medium'), // 'low', 'medium', 'high'
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -32,6 +34,7 @@ export type MessagePart = {
   toolName?: string;
   args?: any;
   result?: any;
+  citations?: WebSearchCitation[];
   [key: string]: any;
 };
 
@@ -122,4 +125,12 @@ export type AuthUser = typeof users.$inferSelect;
 export type AuthAccount = typeof accounts.$inferSelect;
 export type AuthSession = typeof sessions.$inferSelect;
 // export type AuthVerificationToken = typeof verificationTokens.$inferSelect; // Removed old type export
-export type AuthVerification = typeof verification.$inferSelect; // Added new type export 
+export type AuthVerification = typeof verification.$inferSelect; // Added new type export
+
+export type WebSearchCitation = {
+  url: string;
+  title: string;
+  content?: string;
+  startIndex: number;
+  endIndex: number;
+}; 

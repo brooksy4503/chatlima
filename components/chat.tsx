@@ -17,6 +17,7 @@ import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useMCP } from "@/lib/context/mcp-context";
 import { useSession } from "@/lib/auth-client";
+import { WebSearchContextSizeSelector } from "./web-search-settings";
 
 // Type for chat data from DB
 interface ChatData {
@@ -36,6 +37,13 @@ export default function Chat() {
   const [selectedModel, setSelectedModel] = useLocalStorage<modelID>("selectedModel", defaultModel);
   const [userId, setUserId] = useState<string>('');
   const [generatedChatId, setGeneratedChatId] = useState<string>('');
+  const [webSearch, setWebSearch] = useLocalStorage<{
+    enabled: boolean;
+    contextSize: 'low' | 'medium' | 'high';
+  }>("webSearch", {
+    enabled: false,
+    contextSize: 'medium'
+  });
   
   // Get MCP server data from context
   const { mcpServersForApi } = useMCP();
@@ -193,18 +201,18 @@ export default function Chat() {
   
   const { messages, input, handleInputChange, handleSubmit, status, stop } =
     useChat({
-      id: chatId || generatedChatId, // Use generated ID if no chatId in URL
+      id: chatId || generatedChatId,
       initialMessages,
       maxSteps: 20,
       body: {
         selectedModel,
         mcpServers: mcpServersForApi,
-        chatId: chatId || generatedChatId, // Use generated ID if no chatId in URL
+        chatId: chatId || generatedChatId,
         userId,
+        webSearch
       },
       experimental_throttle: 500,
       onFinish: () => {
-        // Invalidate the chats query to refresh the sidebar
         if (userId) {
           queryClient.invalidateQueries({ queryKey: ['chats', userId] });
         }
@@ -257,6 +265,10 @@ export default function Chat() {
               isLoading={isLoading}
               status={status}
               stop={stop}
+              webSearchEnabled={webSearch.enabled}
+              onWebSearchToggle={(enabled) => setWebSearch(prev => ({ ...prev, enabled }))}
+              webSearchContextSize={webSearch.contextSize}
+              onWebSearchContextSizeChange={(size) => setWebSearch(prev => ({ ...prev, contextSize: size }))}
             />
           </form>
         </div>
@@ -265,20 +277,23 @@ export default function Chat() {
           <div className="flex-1 overflow-y-auto min-h-0 pb-2">
             <Messages messages={messages} isLoading={isLoading} status={status} />
           </div>
-          <form
-            onSubmit={handleFormSubmit}
-            className="mt-2 w-full mx-auto mb-4 sm:mb-auto"
-          >
-            <Textarea
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-              handleInputChange={handleInputChange}
-              input={input}
-              isLoading={isLoading}
-              status={status}
-              stop={stop}
-            />
-          </form>
+          <div className="mt-2 w-full mx-auto mb-4 sm:mb-auto">
+            <form onSubmit={handleFormSubmit} className="mt-2">
+              <Textarea
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+                handleInputChange={handleInputChange}
+                input={input}
+                isLoading={isLoading}
+                status={status}
+                stop={stop}
+                webSearchEnabled={webSearch.enabled}
+                onWebSearchToggle={(enabled) => setWebSearch(prev => ({ ...prev, enabled }))}
+                webSearchContextSize={webSearch.contextSize}
+                onWebSearchContextSizeChange={(size) => setWebSearch(prev => ({ ...prev, contextSize: size }))}
+              />
+            </form>
+          </div>
         </>
       )}
     </div>

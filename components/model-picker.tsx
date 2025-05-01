@@ -117,7 +117,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
   };
 
   return (
-    <div className="absolute bottom-2 left-2 z-10">
+    <div>
       <Select 
         value={validModelId} 
         onValueChange={handleModelChange} 

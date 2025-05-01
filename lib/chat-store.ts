@@ -3,20 +3,26 @@ import { chats, messages, type Chat, type Message, MessageRole, type MessagePart
 import { eq, desc, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateTitle } from "@/app/actions";
+import type { TextUIPart, ToolInvocationUIPart, WebSearchCitation } from "./types";
+import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 
 type AIMessage = {
   role: string;
   content: string | any[];
   id?: string;
-  parts?: MessagePart[];
+  parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+  hasWebSearch?: boolean;
+  webSearchContextSize?: 'low' | 'medium' | 'high';
 };
 
 type UIMessage = {
   id: string;
   role: string;
   content: string;
-  parts: MessagePart[];
+  parts: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
   createdAt?: Date;
+  hasWebSearch?: boolean;
+  webSearchContextSize?: 'low' | 'medium' | 'high';
 };
 
 type SaveChatParams = {
@@ -38,12 +44,12 @@ export async function saveMessages({
   try {
     if (dbMessages.length > 0) {
       const chatId = dbMessages[0].chatId;
-      
+
       // First delete any existing messages for this chat
       await db
         .delete(messages)
         .where(eq(messages.chatId, chatId));
-      
+
       // Then insert the new messages
       return await db.insert(messages).values(dbMessages);
     }
@@ -59,7 +65,7 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
   return aiMessages.map(msg => {
     // Use existing id or generate a new one
     const messageId = msg.id || nanoid();
-    
+
     // If msg has parts, use them directly
     if (msg.parts) {
       return {
@@ -67,33 +73,37 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
         chatId,
         role: msg.role,
         parts: msg.parts,
+        hasWebSearch: msg.hasWebSearch || false,
+        webSearchContextSize: msg.webSearchContextSize || 'medium',
         createdAt: new Date()
       };
     }
-    
+
     // Otherwise, convert content to parts
-    let parts: MessagePart[];
-    
+    let parts: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+
     if (typeof msg.content === 'string') {
-      parts = [{ type: 'text', text: msg.content }];
+      parts = [{ type: 'text', text: msg.content } as TextUIPart];
     } else if (Array.isArray(msg.content)) {
       if (msg.content.every(item => typeof item === 'object' && item !== null)) {
         // Content is already in parts-like format
-        parts = msg.content as MessagePart[];
+        parts = msg.content as Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
       } else {
         // Content is an array but not in parts format
-        parts = [{ type: 'text', text: JSON.stringify(msg.content) }];
+        parts = [{ type: 'text', text: JSON.stringify(msg.content) } as TextUIPart];
       }
     } else {
       // Default case
-      parts = [{ type: 'text', text: String(msg.content) }];
+      parts = [{ type: 'text', text: String(msg.content) } as TextUIPart];
     }
-    
+
     return {
       id: messageId,
       chatId,
       role: msg.role,
       parts,
+      hasWebSearch: msg.hasWebSearch || false,
+      webSearchContextSize: msg.webSearchContextSize || 'medium',
       createdAt: new Date()
     };
   });
@@ -103,26 +113,28 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
 export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage> {
   return dbMessages.map((message) => ({
     id: message.id,
-    parts: message.parts as MessagePart[],
+    parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
     role: message.role as string,
     content: getTextContent(message), // For backward compatibility
     createdAt: message.createdAt,
+    hasWebSearch: message.hasWebSearch || false,
+    webSearchContextSize: (message.webSearchContextSize || 'medium') as 'low' | 'medium' | 'high'
   }));
 }
 
 export async function saveChat({ id, userId, messages: aiMessages, title }: SaveChatParams) {
   // Generate a new ID if one wasn't provided
   const chatId = id || nanoid();
-  
+
   // Check if title is provided, if not generate one
   let chatTitle = title;
-  
+
   // Generate title if messages are provided and no title is specified
   if (aiMessages && aiMessages.length > 0) {
-    const hasEnoughMessages = aiMessages.length >= 2 && 
-      aiMessages.some(m => m.role === 'user') && 
+    const hasEnoughMessages = aiMessages.length >= 2 &&
+      aiMessages.some(m => m.role === 'user') &&
       aiMessages.some(m => m.role === 'assistant');
-    
+
     if (!chatTitle || chatTitle === 'New Chat' || chatTitle === undefined) {
       if (hasEnoughMessages) {
         try {
@@ -144,7 +156,7 @@ export async function saveChat({ id, userId, messages: aiMessages, title }: Save
               } else {
                 chatTitle = 'New Chat';
               }
-            } 
+            }
             // Fallback to content (old format)
             else if (typeof firstUserMessage.content === 'string') {
               chatTitle = firstUserMessage.content.slice(0, 50);
@@ -204,9 +216,9 @@ export async function saveChat({ id, userId, messages: aiMessages, title }: Save
     // Update existing chat
     await db
       .update(chats)
-      .set({ 
+      .set({
         title: chatTitle,
-        updatedAt: new Date() 
+        updatedAt: new Date()
       })
       .where(and(
         eq(chats.id, chatId),

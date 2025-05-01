@@ -68,17 +68,27 @@ const components: Partial<Components> = {
       {children}
     </blockquote>
   ),
-  a: ({ node, children, ...props }) => (
-    // @ts-expect-error error
-    <Link
-      className="text-blue-500 hover:underline hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 black:text-blue-400 black:hover:text-blue-300 transition-colors"
-      target="_blank"
-      rel="noreferrer"
-      {...props}
-    >
-      {children}
-    </Link>
-  ),
+  a: ({ node, href, children, ...props }) => {
+    const isInternal = href && (href.startsWith("/") || href.startsWith("#"));
+    if (isInternal) {
+      return (
+        <Link href={href} {...props}>
+          {children}
+        </Link>
+      );
+    }
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        {...props}
+        className="text-blue-500 hover:underline hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 black:text-blue-400 black:hover:text-blue-300 transition-colors"
+      >
+        {children}
+      </a>
+    );
+  },
   h1: ({ node, children, ...props }) => (
     <h1 className="text-2xl font-semibold mt-3 mb-1.5 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
       {children}

@@ -1,7 +1,9 @@
 import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { ArrowUp, Loader2, Globe } from "lucide-react";
 import { ModelPicker } from "./model-picker";
+import { WebSearchContextSizeSelector } from "./web-search-settings";
+import { useRef, useState } from "react";
 
 interface InputProps {
   input: string;
@@ -11,6 +13,10 @@ interface InputProps {
   stop: () => void;
   selectedModel: modelID;
   setSelectedModel: (model: modelID) => void;
+  webSearchEnabled: boolean;
+  onWebSearchToggle: (enabled: boolean) => void;
+  webSearchContextSize: 'low' | 'medium' | 'high';
+  onWebSearchContextSizeChange: (size: 'low' | 'medium' | 'high') => void;
 }
 
 export const Textarea = ({
@@ -21,9 +27,15 @@ export const Textarea = ({
   stop,
   selectedModel,
   setSelectedModel,
+  webSearchEnabled,
+  onWebSearchToggle,
+  webSearchContextSize,
+  onWebSearchContextSizeChange,
 }: InputProps) => {
   const isStreaming = status === "streaming" || status === "submitted";
-  
+  const [showContextPopover, setShowContextPopover] = useState(false);
+  const iconButtonRef = useRef<HTMLButtonElement>(null);
+
   return (
     <div className="relative w-full">
       <ShadcnTextarea
@@ -39,11 +51,40 @@ export const Textarea = ({
           }
         }}
       />
-      <ModelPicker
-        setSelectedModel={setSelectedModel}
-        selectedModel={selectedModel}
-      />
-
+      <div className="absolute left-2 bottom-2 z-10">
+        <div className="flex items-center gap-2">
+          <ModelPicker
+            setSelectedModel={setSelectedModel}
+            selectedModel={selectedModel}
+          />
+          <div className="relative flex items-center">
+            <button
+              type="button"
+              ref={iconButtonRef}
+              aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+              onClick={() => {
+                onWebSearchToggle(!webSearchEnabled);
+                if (!webSearchEnabled) setShowContextPopover(true);
+                else setShowContextPopover(false);
+              }}
+              className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${webSearchEnabled ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-background border-border text-muted-foreground hover:bg-accent'} focus:outline-none focus:ring-2 focus:ring-primary/30`}
+            >
+              <Globe className="h-5 w-5" />
+            </button>
+            {webSearchEnabled && showContextPopover && (
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-12 z-20 min-w-[180px] bg-popover border border-border rounded-lg shadow-lg p-2">
+                <WebSearchContextSizeSelector
+                  contextSize={webSearchContextSize}
+                  onContextSizeChange={(size) => {
+                    onWebSearchContextSizeChange(size);
+                    setShowContextPopover(false);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
       <button
         type={isStreaming ? "button" : "submit"}
         onClick={isStreaming ? stop : undefined}
