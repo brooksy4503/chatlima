@@ -74,6 +74,8 @@ const languageModels = {
   "grok-3-mini": xaiClient("grok-3-mini-latest"),
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
   "openrouter/deepseek/deepseek-chat-v3-0324": openrouterClient("deepseek/deepseek-chat-v3-0324"),
+  "openrouter/anthropic/claude-3.7-sonnet": openrouterClient("anthropic/claude-3.7-sonnet"),
+  "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -118,6 +120,20 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "DeepSeek Chat model V3 accessed via OpenRouter.",
     apiVersion: "deepseek/deepseek-chat-v3-0324",
     capabilities: ["Chat", "Efficient"]
+  },
+  "openrouter/anthropic/claude-3.7-sonnet": {
+    provider: "OpenRouter",
+    name: "Claude 3.7 Sonnet",
+    description: "Latest version of Anthropic's Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
+    apiVersion: "anthropic/claude-3.7-sonnet",
+    capabilities: ["Reasoning", "Coding", "Agentic"]
+  },
+  "openrouter/google/gemini-2.5-pro-preview-03-25": {
+    provider: "OpenRouter",
+    name: "Gemini 2.5 Pro Preview",
+    description: "Google's state-of-the-art AI model for advanced reasoning, coding, math, and science, accessed via OpenRouter.",
+    apiVersion: "google/gemini-2.5-pro-preview-03-25",
+    capabilities: ["Reasoning", "Coding", "Math", "Science"]
   },
 };
 
