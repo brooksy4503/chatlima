@@ -53,7 +53,7 @@ export default function Chat() {
   useEffect(() => {
     if (isMounted) {
       const storedModel = localStorage.getItem('selected_ai_model');
-      if (storedModel && MODELS.includes(storedModel)) {
+      if (storedModel && (MODELS as ReadonlyArray<string>).includes(storedModel)) {
         setSelectedModel(storedModel as modelID);
       }
     }

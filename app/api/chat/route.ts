@@ -105,6 +105,7 @@ export async function POST(req: Request) {
   // Initialize tools
   let tools = {};
   const mcpClients: any[] = [];
+  let isAciMcpActive = false; // Flag to track if the specific ACI MCP server is active
 
   // Process each MCP server configuration
   for (const mcpServer of mcpServers) {
@@ -180,6 +181,12 @@ export async function POST(req: Request) {
 
           // Do NOT modify the command or args. Let StdioMCPTransport run uvx directly.
           console.log(`Proceeding to spawn uvx command directly.`);
+
+          // Check if this is the specific ACI MCP server
+          if (mcpServer.args?.includes('aci-mcp') && mcpServer.args?.includes('unified-server')) {
+            console.log("Detected ACI MCP server (uvx aci-mcp unified-server).");
+            isAciMcpActive = true;
+          }
         }
         // If python is passed in the command, install the python package mentioned in args after -m
         else if (mcpServer.command.includes('python3')) {
@@ -286,7 +293,14 @@ export async function POST(req: Request) {
 
     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
 
+    ${isAciMcpActive ? `
+    ## ACI Functions Available:
+    You have access to a powerful set of tools via two meta functions:
+    - ACI_SEARCH_FUNCTIONS: Use this to find relevant, executable functions.
+    - ACI_EXECUTE_FUNCTION: Use this to execute a specific function with its required arguments.
+    ` : ''}
     ${webSearch.enabled ? `
+    ## Web Search Enabled:
     You have web search capabilities enabled. When you use web search:
     1. Cite your sources using markdown links
     2. Use the format [domain.com](full-url) for citations
@@ -297,6 +311,7 @@ export async function POST(req: Request) {
     ## How to Respond:
     1.  **Analyze the Request:** Understand what the user is asking.
     2.  **Use Tools When Necessary:** If an external tool provides the best way to answer (e.g., fetching specific data, performing calculations, interacting with services), select the most relevant tool(s) and use them. You can use multiple tools in sequence. Clearly indicate when you are using a tool and what it's doing.
+        ${isAciMcpActive ? `- Remember to use ACI_SEARCH_FUNCTIONS to discover available ACI tools before attempting execution with ACI_EXECUTE_FUNCTION.` : ''}
     3.  **Use Your Own Abilities:** For requests involving brainstorming, explanation, writing, summarization, analysis, or general knowledge, rely on your own reasoning and knowledge base. You don't need to force the use of an external tool if it's not suitable or required for these tasks.
     4.  **Respond Clearly:** Provide your answer directly when using your own abilities. If using tools, explain the steps taken and present the results clearly.
     5.  **Handle Limitations:** If you cannot answer fully (due to lack of information, missing tools, or capability limits), explain the limitation clearly. Don't just say "I don't know" if you can provide partial information or explain *why* you can't answer. If relevant tools seem to be missing, you can mention that the user could potentially add them via the server configuration.

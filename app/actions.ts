@@ -38,31 +38,52 @@ function getMessageText(message: any): string {
 }
 
 export async function generateTitle(messages: any[]) {
-  // Convert messages to a format that OpenAI can understand
-  const normalizedMessages = messages.map(msg => ({
-    role: msg.role,
-    content: getMessageText(msg)
-  }));
+  // Find the first user message
+  const firstUserMessage = messages.find(msg => msg.role === 'user');
 
-  const { object } = await generateObject({
-    model: titleGenerationModel,
-    schema: z.object({
-      title: z.string().min(1).max(100),
-    }),
-    system: `
-    You are a helpful assistant that generates titles for chat conversations.
-    The title should be a short description of the conversation.
-    The title should be no more than 30 characters.
-    The title should be unique and not generic.
-    `,
-    messages: [
-      ...normalizedMessages,
-      {
-        role: "user",
-        content: "Generate a title for the conversation.",
-      },
-    ],
-  });
+  // If no user message, fallback to a default title (or handle as error)
+  if (!firstUserMessage) {
+    console.warn("No user message found for title generation.");
+    return 'New Chat';
+  }
 
-  return object.title;
+  const userContent = getMessageText(firstUserMessage);
+
+  // Prepare messages for the API - just the user content
+  const titleGenMessages = [
+    {
+      role: 'user' as const,
+      content: userContent
+    }
+  ];
+
+  console.log('Generating title with simplified messages:', JSON.stringify(titleGenMessages, null, 2)); // Log the messages
+
+  try {
+    const { object } = await generateObject({
+      model: titleGenerationModel,
+      schema: z.object({
+        title: z.string().min(1).max(100),
+      }),
+      system: `
+      You are a helpful assistant that generates short, concise titles for chat conversations based *only* on the user's first message.
+      The title should summarize the main topic or request of the user's message.
+      The title should be no more than 30 characters.
+      The title should be unique and not generic like "Chat Title".
+      Focus on keywords from the user's message.
+      `,
+      messages: [
+        ...titleGenMessages,
+        {
+          role: "user",
+          content: "Generate a concise title based on my first message.",
+        },
+      ],
+    });
+    return object.title;
+  } catch (error) {
+    console.error('Error generating title with generateObject:', error);
+    // Fallback to a simple title derived from the first few words if AI fails
+    return userContent.split(' ').slice(0, 5).join(' ') + (userContent.split(' ').length > 5 ? '...' : '');
+  }
 }

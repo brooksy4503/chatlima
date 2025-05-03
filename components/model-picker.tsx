@@ -103,7 +103,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
 
   // Handle model change
   const handleModelChange = (modelId: string) => {
-    if (MODELS.includes(modelId)) {
+    if ((MODELS as string[]).includes(modelId)) {
       const typedModelId = modelId as modelID;
       setSelectedModel(typedModelId);
     }

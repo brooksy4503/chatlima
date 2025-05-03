@@ -16,6 +16,7 @@ export interface ModelInfo {
   description: string;
   apiVersion: string;
   capabilities: string[];
+  enabled?: boolean;
 }
 
 const middleware = extractReasoningMiddleware({
@@ -76,6 +77,10 @@ const languageModels = {
   "openrouter/deepseek/deepseek-chat-v3-0324": openrouterClient("deepseek/deepseek-chat-v3-0324"),
   "openrouter/anthropic/claude-3.7-sonnet": openrouterClient("anthropic/claude-3.7-sonnet"),
   "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
+  "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
+  "openrouter/x-ai/grok-3-beta": openrouterClient("x-ai/grok-3-beta"),
+  "openrouter/x-ai/grok-3-mini-beta": openrouterClient("x-ai/grok-3-mini-beta"),
+  "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -84,56 +89,96 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     name: "GPT-4.1 Mini",
     description: "Compact version of OpenAI's GPT-4.1 with good balance of capabilities, including vision.",
     apiVersion: "gpt-4.1-mini",
-    capabilities: ["Balance", "Creative", "Vision"]
+    capabilities: ["Balance", "Creative", "Vision"],
+    enabled: false
   },
   "claude-3-7-sonnet": {
     provider: "Anthropic",
     name: "Claude 3.7 Sonnet",
     description: "Latest version of Anthropic's Claude 3.7 Sonnet with strong reasoning and coding capabilities.",
     apiVersion: "claude-3-7-sonnet-20250219",
-    capabilities: ["Reasoning", "Efficient", "Agentic"]
+    capabilities: ["Reasoning", "Efficient", "Agentic"],
+    enabled: false
   },
   "qwen-qwq": {
     provider: "Groq",
     name: "Qwen QWQ",
     description: "Latest version of Alibaba's Qwen QWQ with strong reasoning and coding capabilities.",
     apiVersion: "qwen-qwq",
-    capabilities: ["Reasoning", "Efficient", "Agentic"]
+    capabilities: ["Reasoning", "Efficient", "Agentic"],
+    enabled: false
   },
   "grok-3-mini": {
     provider: "XAI",
     name: "Grok 3 Mini",
     description: "Latest version of XAI's Grok 3 Mini with strong reasoning and coding capabilities.",
     apiVersion: "grok-3-mini-latest",
-    capabilities: ["Reasoning", "Efficient", "Agentic"]
+    capabilities: ["Reasoning", "Efficient", "Agentic"],
+    enabled: false
   },
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
     provider: "OpenRouter",
     name: "Mistral Small 3.1 Instruct",
     description: "Mistral Small 3.1 Instruct model accessed via OpenRouter.",
     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
-    capabilities: ["Instruct", "Efficient"]
+    capabilities: ["Instruct", "Efficient"],
+    enabled: true
   },
   "openrouter/deepseek/deepseek-chat-v3-0324": {
     provider: "OpenRouter",
     name: "DeepSeek Chat V3 0324",
     description: "DeepSeek Chat model V3 accessed via OpenRouter.",
     apiVersion: "deepseek/deepseek-chat-v3-0324",
-    capabilities: ["Chat", "Efficient"]
+    capabilities: ["Chat", "Efficient"],
+    enabled: true
   },
   "openrouter/anthropic/claude-3.7-sonnet": {
     provider: "OpenRouter",
     name: "Claude 3.7 Sonnet",
     description: "Latest version of Anthropic's Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
     apiVersion: "anthropic/claude-3.7-sonnet",
-    capabilities: ["Reasoning", "Coding", "Agentic"]
+    capabilities: ["Reasoning", "Coding", "Agentic"],
+    enabled: true
   },
   "openrouter/google/gemini-2.5-pro-preview-03-25": {
     provider: "OpenRouter",
     name: "Gemini 2.5 Pro Preview",
     description: "Google's state-of-the-art AI model for advanced reasoning, coding, math, and science, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-pro-preview-03-25",
-    capabilities: ["Reasoning", "Coding", "Math", "Science"]
+    capabilities: ["Reasoning", "Coding", "Math", "Science"],
+    enabled: true
+  },
+  "openrouter/openai/gpt-4.1-mini": {
+    provider: "OpenRouter",
+    name: "GPT-4.1 Mini",
+    description: "Mid-sized model competitive with GPT-4o, lower latency/cost. Strong coding & vision. Accessed via OpenRouter.",
+    apiVersion: "openai/gpt-4.1-mini",
+    capabilities: ["Coding", "Vision", "Efficient"],
+    enabled: true
+  },
+  "openrouter/x-ai/grok-3-beta": {
+    provider: "OpenRouter",
+    name: "Grok 3 Beta",
+    description: "xAI's flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Accessed via OpenRouter.",
+    apiVersion: "x-ai/grok-3-beta",
+    capabilities: ["Reasoning", "Coding", "Knowledge"],
+    enabled: true
+  },
+  "openrouter/x-ai/grok-3-mini-beta": {
+    provider: "OpenRouter",
+    name: "Grok 3 Mini Beta",
+    description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Accessed via OpenRouter.",
+    apiVersion: "x-ai/grok-3-mini-beta",
+    capabilities: ["Reasoning", "Math", "Puzzles"],
+    enabled: true
+  },
+  "openrouter/qwen/qwq-32b": {
+    provider: "OpenRouter",
+    name: "Qwen QwQ 32B",
+    description: "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. Accessed via OpenRouter.",
+    apiVersion: "qwen/qwq-32b",
+    capabilities: ["Reasoning", "Hard Problems"],
+    enabled: true
   },
 };
 
@@ -152,13 +197,16 @@ export const model = customProvider({
 });
 
 // Define a specific model ID for title generation
-export const titleGenerationModelId: modelID = "openrouter/deepseek/deepseek-chat-v3-0324";
+export const titleGenerationModelId: modelID = "openrouter/openai/gpt-4.1-mini";
 
 // Get the actual model instance for title generation
 export const titleGenerationModel = languageModels[titleGenerationModelId];
 
 export type modelID = keyof typeof languageModels;
 
-export const MODELS = Object.keys(languageModels);
+// Filter models based on the enabled flag
+export const MODELS = (Object.keys(languageModels) as modelID[]).filter(
+  (modelId) => modelDetails[modelId].enabled !== false
+);
 
-export const defaultModel: modelID = "qwen-qwq";
+export const defaultModel: modelID = "openrouter/qwen/qwq-32b";
