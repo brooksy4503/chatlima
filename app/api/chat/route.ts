@@ -279,42 +279,32 @@ export async function POST(req: Request) {
     })
   };
 
-  // Define the merged system prompt
-  const systemPrompt = `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
-
-You have access to a unlimited number of tools via two meta functions:
-- ACI_SEARCH_FUNCTIONS
-- ACI_EXECUTE_FUNCTION
-
-You can use ACI_SEARCH_FUNCTIONS to find relevant, executable functions that can help you with your task.
-Once you have identified the function you need to use, you can use ACI_EXECUTE_FUNCTION to execute the function provided you have the correct input arguments.
-
-You also have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
-
-${webSearch.enabled ? `
-You have web search capabilities enabled. When you use web search:
-1. Cite your sources using markdown links
-2. Use the format [domain.com](full-url) for citations
-3. Only cite reliable and relevant sources
-4. Integrate the information naturally into your responses
-` : ''}
-
-## How to Respond:
-1.  **Analyze the Request:** Understand what the user is asking.
-2.  **Use Tools When Necessary:** If an external tool provides the best way to answer (e.g., fetching specific data, performing calculations, interacting with services), select the most relevant tool(s) and use them. You can use multiple tools in sequence. Clearly indicate when you are using a tool and what it's doing.
-3.  **Use Your Own Abilities:** For requests involving brainstorming, explanation, writing, summarization, analysis, or general knowledge, rely on your own reasoning and knowledge base. You don't need to force the use of an external tool if it's not suitable or required for these tasks.
-4.  **Respond Clearly:** Provide your answer directly when using your own abilities. If using tools, explain the steps taken and present the results clearly.
-5.  **Handle Limitations:** If you cannot answer fully (due to lack of information, missing tools, or capability limits), explain the limitation clearly. Don't just say "I don't know" if you can provide partial information or explain *why* you can't answer. If relevant tools seem to be missing, you can mention that the user could potentially add them via the server configuration.
-
-## Response Format:
-- Use Markdown for formatting.
-- Base your response on the results from any tools used, or on your own reasoning and knowledge.
-`;
-
   // Construct the payload for OpenRouter
   const openRouterPayload = {
     model: modelInstance,
-    system: systemPrompt,
+    system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
+
+    You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
+
+    ${webSearch.enabled ? `
+    You have web search capabilities enabled. When you use web search:
+    1. Cite your sources using markdown links
+    2. Use the format [domain.com](full-url) for citations
+    3. Only cite reliable and relevant sources
+    4. Integrate the information naturally into your responses
+    ` : ''}
+
+    ## How to Respond:
+    1.  **Analyze the Request:** Understand what the user is asking.
+    2.  **Use Tools When Necessary:** If an external tool provides the best way to answer (e.g., fetching specific data, performing calculations, interacting with services), select the most relevant tool(s) and use them. You can use multiple tools in sequence. Clearly indicate when you are using a tool and what it's doing.
+    3.  **Use Your Own Abilities:** For requests involving brainstorming, explanation, writing, summarization, analysis, or general knowledge, rely on your own reasoning and knowledge base. You don't need to force the use of an external tool if it's not suitable or required for these tasks.
+    4.  **Respond Clearly:** Provide your answer directly when using your own abilities. If using tools, explain the steps taken and present the results clearly.
+    5.  **Handle Limitations:** If you cannot answer fully (due to lack of information, missing tools, or capability limits), explain the limitation clearly. Don't just say "I don't know" if you can provide partial information or explain *why* you can't answer. If relevant tools seem to be missing, you can mention that the user could potentially add them via the server configuration.
+
+    ## Response Format:
+    - Use Markdown for formatting.
+    - Base your response on the results from any tools used, or on your own reasoning and knowledge.
+    `,
     messages,
     tools,
     maxSteps: 20,
