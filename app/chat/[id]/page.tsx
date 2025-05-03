@@ -13,47 +13,47 @@ export default function ChatPage() {
   const userId = getUserId();
 
   // Prefetch chat data
-  useEffect(() => {
-    async function prefetchChat() {
-      if (!chatId || !userId) return;
-      
-      // Check if data already exists in cache
-      const existingData = queryClient.getQueryData(['chat', chatId, userId]);
-      if (existingData) return;
-
-      // Prefetch the data
-      await queryClient.prefetchQuery({
-        queryKey: ['chat', chatId, userId] as const,
-        queryFn: async () => {
-          try {
-            const response = await fetch(`/api/chats/${chatId}`, {
-              headers: {
-                'x-user-id': userId
-              }
-            });
-            
-            if (response.status === 404) {
-              // Chat doesn't exist yet, expected for new chats. Return null silently.
-              return null;
-            }
-
-            if (!response.ok) {
-              console.error(`Prefetch failed for chat ${chatId}: Status ${response.status}`);
-              return null;
-            }
-            
-            return response.json();
-          } catch (error) {
-            console.error('Error prefetching chat:', error);
-            return null;
-          }
-        },
-        staleTime: 1000 * 60 * 5, // 5 minutes
-      });
-    }
-
-    prefetchChat();
-  }, [chatId, userId, queryClient]);
+  // useEffect(() => {
+  //   async function prefetchChat() {
+  //     if (!chatId || !userId) return;
+  //     
+  //     // Check if data already exists in cache
+  //     const existingData = queryClient.getQueryData(['chat', chatId, userId]);
+  //     if (existingData) return;
+  //
+  //     // Prefetch the data
+  //     await queryClient.prefetchQuery({
+  //       queryKey: ['chat', chatId, userId] as const,
+  //       queryFn: async () => {
+  //         try {
+  //           const response = await fetch(`/api/chats/${chatId}`, {
+  //             headers: {
+  //               'x-user-id': userId
+  //             }
+  //           });
+  //           
+  //           if (response.status === 404) {
+  //             // Chat doesn't exist yet, expected for new chats. Return null silently.
+  //             return null;
+  //           }
+  //
+  //           if (!response.ok) {
+  //             console.error(`Prefetch failed for chat ${chatId}: Status ${response.status}`);
+  //             return null;
+  //           }
+  //           
+  //           return response.json();
+  //         } catch (error) {
+  //           console.error('Error prefetching chat:', error);
+  //           return null;
+  //         }
+  //       },
+  //       staleTime: 1000 * 60 * 5, // 5 minutes
+  //     });
+  //   }
+  //
+  //   prefetchChat();
+  // }, [chatId, userId, queryClient]);
 
   return <Chat />;
 } 

@@ -126,12 +126,10 @@ export default function Chat() {
   }, [session, isSessionLoading, queryClient, chatId]);
   
   useEffect(() => {
-    if (isMounted && !isSessionLoading && !session && chatId) {
-      if (params?.id) { 
-        console.log("User logged out while on chat page, redirecting to home.");
-        toast.info("You have been logged out.");
-        router.push('/'); 
-      }
+    if (isMounted && !isSessionLoading && !session && chatId && params?.id) {
+      console.log("User logged out while on chat page, redirecting to home.");
+      toast.info("You have been logged out.");
+      router.push('/'); 
     }
   }, [session, isSessionLoading, chatId, router, params]);
   
@@ -166,7 +164,10 @@ export default function Chat() {
         throw error;
       }
     },
-    enabled: !!chatId && !!session?.user?.id, 
+    enabled: 
+      !!chatId && 
+      !!userId && 
+      !(isMounted && !isSessionLoading && !session && chatId && params?.id),
     retry: 1,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false

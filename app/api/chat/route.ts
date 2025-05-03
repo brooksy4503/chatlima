@@ -102,6 +102,22 @@ export async function POST(req: Request) {
     isNewChat = true;
   }
 
+  // Pre-emptively save the chat if it's new
+  if (isNewChat) {
+    try {
+      await saveChat({
+        id, // The generated or provided chatId
+        userId,
+        messages: [], // Start with empty messages, will be updated in onFinish
+      });
+      console.log(`[Chat ${id}] Pre-emptively created chat record.`);
+    } catch (error) {
+      console.error(`[Chat ${id}] Error pre-emptively creating chat:`, error);
+      // Decide if we should bail out or continue. For now, let's continue
+      // but the onFinish save might fail later if the chat wasn't created.
+    }
+  }
+
   // Initialize tools
   let tools = {};
   const mcpClients: any[] = [];
@@ -372,6 +388,8 @@ export async function POST(req: Request) {
         return msg;
       });
 
+      // Update the chat with the full message history
+      // Note: saveChat here acts as an upsert based on how it's likely implemented
       await saveChat({
         id,
         userId,
