@@ -222,7 +222,7 @@ export function ChatSidebar() {
                                 <Bot className={`text-primary-foreground ${isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
                             </div>
                             {!isCollapsed && (
-                                <div className="font-semibold text-lg text-foreground/90">Chatbot</div>
+                                <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
                             )}
                         </div>
                     </div>
@@ -315,7 +315,7 @@ export function ChatSidebar() {
                                 <Bot className={`text-primary-foreground ${isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
                             </div>
                             {!isCollapsed && (
-                                <div className="font-semibold text-lg text-foreground/90">Chatbot</div>
+                                <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
                             )}
                         </div>
                     </div>
