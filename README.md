@@ -1,3 +1,5 @@
+
+
 <a href="https://www.chatlima.com">
   <h1 align="center">ChatLima</h1>
 </a>
@@ -12,6 +14,25 @@
   <a href="#license"><strong>License</strong></a>
 </p>
 <br/>
+
+# chatlima
+
+A minimalistic MCP client with a good feature set.
+
+This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira-mcp-chat) by Zaid Mukaddam, with additional features and modifications by Garth Scaysbrook.
+
+## Features
+- All features from the original scira-mcp-chat (see below).
+- Additional Models
+- Google Auth
+- Web Enabled Search (Openrouter)
+- Additional Themes
+
+## License
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+- Original project by Zaid Mukaddam (https://github.com/zaidmukaddam/scira-mcp-chat)
 
 ## Features
 
