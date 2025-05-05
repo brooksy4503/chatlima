@@ -15,15 +15,15 @@ import BuildInfo from "@/components/ui/BuildInfo";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://chatbot777.vercel.app/"),
-  title: "Chatbot",
-  description: "Chatbot is a minimalistic MCP client with a good feature set.",
+  metadataBase: new URL("https://www.chatlima.com/"),
+  title: "ChatLima",
+  description: "ChatLima is a minimalistic MCP client with a good feature set.",
   openGraph: {
-    siteName: "Chatbot",
-    url: "https://chatbot777.vercel.app/",
+    siteName: "ChatLima",
+    url: "https://www.chatlima.com/",
     images: [
       {
-        url: "https://chatbot777.vercel.app/opengraph-image.png",
+        url: "https://www.chatlima.com/opengraph-image.png",
         width: 1200,
         height: 630,
       },
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Chatbot",
-    description: "Chatbot is a minimalistic MCP client with a good feature set.",
-    images: ["https://chatbot777.vercel.app/twitter-image.png"],
+    title: "ChatLima",
+    description: "ChatLima is a minimalistic MCP client with a good feature set.",
+    images: ["https://www.chatlima.com/twitter-image.png"],
   },
 };
 

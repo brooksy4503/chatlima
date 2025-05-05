@@ -58,8 +58,8 @@ const xaiClient = createXai({
 const openrouterClient = createOpenRouter({
   apiKey: getApiKey('OPENROUTER_API_KEY'),
   headers: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://chatbot777.vercel.app/',
-    'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'Chatbot777',
+    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+    'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
   }
 });
 
