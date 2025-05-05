@@ -74,7 +74,6 @@ export default function RootLayout({
             </div>
           </WebSearchProvider>
         </Providers>
-        <BuildInfo />
         <Script defer src="https://cloud.umami.is/script.js" data-website-id="bd3f8736-1562-47e0-917c-c10fde7ef0d2" />
       </body>
     </html>
