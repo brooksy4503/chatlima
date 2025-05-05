@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { WebSearchProvider } from "@/lib/context/web-search-context";
 import { cn } from "@/lib/utils";
+import BuildInfo from "@/components/ui/BuildInfo";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -73,6 +74,7 @@ export default function RootLayout({
             </div>
           </WebSearchProvider>
         </Providers>
+        <BuildInfo />
         <Script defer src="https://cloud.umami.is/script.js" data-website-id="bd3f8736-1562-47e0-917c-c10fde7ef0d2" />
       </body>
     </html>
