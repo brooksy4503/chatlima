@@ -15,7 +15,7 @@
 </p>
 <br/>
 
-# chatlima
+# ChatLima
 
 A minimalistic MCP client with a good feature set.
 

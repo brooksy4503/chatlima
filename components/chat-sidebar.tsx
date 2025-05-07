@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, ChangeEvent, KeyboardEvent, FocusEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key, Bot, LogOut, Globe } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key, Bot, LogOut, Globe, CheckIcon, XIcon, Loader2 } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -77,6 +77,11 @@ export function ChatSidebar() {
     const isCollapsed = state === "collapsed";
     const [editUserIdOpen, setEditUserIdOpen] = useState(false);
     const [newUserId, setNewUserId] = useState('');
+
+    const [editingChatId, setEditingChatId] = useState<string | null>(null);
+    const [editingChatTitle, setEditingChatTitle] = useState<string>("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
 
     const { data: session, isPending: isSessionLoading } = useSession();
     const authenticatedUserId = session?.user?.id;
@@ -171,8 +176,85 @@ export function ChatSidebar() {
         previousSessionRef.current = currentSession;
     }, [session, queryClient, router]);
     
-    const { chats, isLoading: isChatsLoading, deleteChat, refreshChats } = useChats(userId ?? '');
+    const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle } = useChats(userId ?? '');
     const isLoading = isSessionLoading || (userId === null) || isChatsLoading;
+ 
+    const handleStartEdit = (chatId: string, currentTitle: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setEditingChatId(chatId);
+        setEditingChatTitle(currentTitle);
+        // Focus the input field after it's rendered
+        setTimeout(() => {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        }, 0);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingChatId(null);
+        setEditingChatTitle("");
+    };
+
+    const handleSaveEdit = () => {
+        if (!editingChatId || editingChatTitle.trim() === "") {
+            toast.error("Chat title cannot be empty.");
+            inputRef.current?.focus();
+            return;
+        }
+
+        updateChatTitle(
+            { chatId: editingChatId, title: editingChatTitle.trim() },
+            {
+                onSuccess: () => {
+                    setEditingChatId(null);
+                    setEditingChatTitle("");
+                    // Success toast is handled by the useChats hook
+                },
+                onError: () => {
+                    // Error toast and UI rollback are handled by the useChats hook.
+                    // Keep the input field focused for the user to retry or correct.
+                    inputRef.current?.focus();
+                    inputRef.current?.select();
+                }
+            }
+        );
+    };
+ 
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setEditingChatTitle(e.target.value);
+    };
+
+    const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSaveEdit();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            handleCancelEdit();
+        }
+    };
+
+    const handleInputBlur = (e: FocusEvent<HTMLInputElement>) => {
+        // Check if the blur was caused by clicking on save/cancel buttons
+        // If relatedTarget is null, it might be a programmatic blur or window switch,
+        // or if it's one of the action buttons, don't cancel immediately.
+        if (e.relatedTarget && (e.relatedTarget.id === `save-chat-${editingChatId}` || e.relatedTarget.id === `cancel-chat-${editingChatId}`)) {
+            return;
+        }
+        // Small delay to allow click on save/cancel to register
+        setTimeout(() => {
+            // Check if still in edit mode (might have been saved/cancelled by button click)
+            if (editingChatId && document.activeElement !== inputRef.current) {
+                 // Only cancel if focus moved to something other than save/cancel buttons
+                const activeElementId = document.activeElement?.id;
+                if (activeElementId !== `save-chat-${editingChatId}` && activeElementId !== `cancel-chat-${editingChatId}`) {
+                    handleCancelEdit();
+                }
+            }
+        }, 100);
+    };
+
 
     const handleNewChat = () => {
         router.push('/');
@@ -351,57 +433,152 @@ export function ChatSidebar() {
                                     </div>
                                 ) : (
                                     <AnimatePresence initial={false}>
-                                        {chats.map((chat) => (
-                                            <motion.div
-                                                key={chat.id}
-                                                initial={{ opacity: 0, height: 0, y: -10 }}
-                                                animate={{ opacity: 1, height: "auto", y: 0 }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                transition={{ duration: 0.2 }}
-                                            >
-                                                <SidebarMenuItem>
-                                                    <SidebarMenuButton 
-                                                        asChild
-                                                        tooltip={isCollapsed ? chat.title : undefined}
-                                                        data-active={pathname === `/chat/${chat.id}`}
-                                                        className={cn(
-                                                            "transition-all hover:bg-primary/10 active:bg-primary/15",
-                                                            pathname === `/chat/${chat.id}` ? "bg-secondary/60 hover:bg-secondary/60" : ""
-                                                        )}
-                                                    >
-                                                        <Link
-                                                            href={`/chat/${chat.id}`}
-                                                            className="flex items-center justify-between w-full gap-1"
-                                                            onClick={() => setOpenMobile(false)}
-                                                        >
-                                                            <div className="flex items-center min-w-0 overflow-hidden flex-1 pr-2">
-                                                                <MessageSquare className={cn(
-                                                                    "h-4 w-4 flex-shrink-0",
-                                                                    pathname === `/chat/${chat.id}` ? "text-foreground" : "text-muted-foreground"
-                                                                )} />
-                                                                <span className={cn(
-                                                                    "ml-2 truncate text-sm",
-                                                                    pathname === `/chat/${chat.id}` ? "text-foreground font-medium" : "text-foreground/80"
-                                                                )} title={chat.title}>
-                                                                    {chat.title.length > 18 ? `${chat.title.slice(0, 18)}...` : chat.title}
-                                                                </span>
-                                                            </div>
-                                                            {!isCollapsed && (
+                                        {chats.map((chat) => {
+                                            const isEditingThisChat = editingChatId === chat.id;
+                                            return (
+                                                <motion.div
+                                                    key={chat.id}
+                                                    layout // Animate layout changes
+                                                    initial={{ opacity: 0, height: 0, y: -10 }}
+                                                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                >
+                                                    <SidebarMenuItem className={cn(isEditingThisChat ? "bg-muted/50" : "")}>
+                                                        {isEditingThisChat && !isCollapsed ? (
+                                                            <div className="flex items-center w-full gap-1.5 px-2.5 py-[5px]">
+                                                                <MessageSquare className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                                                <Input
+                                                                    ref={inputRef}
+                                                                    type="text"
+                                                                    value={editingChatTitle}
+                                                                    onChange={handleInputChange}
+                                                                    onKeyDown={handleInputKeyDown}
+                                                                    onBlur={handleInputBlur}
+                                                                    className="h-7 text-sm flex-grow px-1.5 py-0.5"
+                                                                    aria-label={`Edit title for chat ${chat.title}`}
+                                                                    disabled={isUpdatingChatTitle}
+                                                                />
                                                                 <Button
+                                                                    id={`save-chat-${chat.id}`}
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    className="h-6 w-6 text-muted-foreground hover:text-foreground flex-shrink-0"
-                                                                    onClick={(e) => handleDeleteChat(chat.id, e)}
-                                                                    title="Delete chat"
+                                                                    className="h-6 w-6 text-green-500 hover:text-green-600 flex-shrink-0"
+                                                                    onClick={handleSaveEdit}
+                                                                    title="Save title"
+                                                                    aria-label="Save chat title"
+                                                                    disabled={isUpdatingChatTitle}
                                                                 >
-                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                    {isUpdatingChatTitle ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckIcon className="h-4 w-4" />}
                                                                 </Button>
-                                                            )}
-                                                        </Link>
-                                                    </SidebarMenuButton>
-                                                </SidebarMenuItem>
-                                            </motion.div>
-                                        ))}
+                                                                <Button
+                                                                    id={`cancel-chat-${chat.id}`}
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-6 w-6 text-red-500 hover:text-red-600 flex-shrink-0"
+                                                                    onClick={handleCancelEdit}
+                                                                    title="Cancel edit"
+                                                                    aria-label="Cancel editing chat title"
+                                                                    disabled={isUpdatingChatTitle}
+                                                                >
+                                                                    <XIcon className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <SidebarMenuButton
+                                                                asChild={!isCollapsed} // Link behavior only when not collapsed and not editing
+                                                                tooltip={isCollapsed ? chat.title : undefined}
+                                                                data-active={pathname === `/chat/${chat.id}`}
+                                                                className={cn(
+                                                                    "transition-all group", // Added group for hover effects on children
+                                                                    pathname === `/chat/${chat.id}` ? "bg-secondary/60 hover:bg-secondary/60" : "hover:bg-primary/10 active:bg-primary/15"
+                                                                )}
+                                                                // Prevent navigation if clicking edit icon when not collapsed
+                                                                onClick={isCollapsed ? undefined : (e) => {
+                                                                    // If clicking the edit button itself, let handleStartEdit manage event.
+                                                                    // Otherwise, if clicking the general area, navigate.
+                                                                    const target = e.target as HTMLElement;
+                                                                    if (target.closest(`#edit-chat-btn-${chat.id}`)) {
+                                                                        // Already handled by the button's onClick
+                                                                        return;
+                                                                    }
+                                                                    // If not clicking edit, and not collapsed, proceed with navigation
+                                                                    if (pathname !== `/chat/${chat.id}`) {
+                                                                        router.push(`/chat/${chat.id}`);
+                                                                    }
+                                                                    setOpenMobile(false);
+                                                                }}
+                                                            >
+                                                                {isCollapsed ? (
+                                                                    // Collapsed view: Icon only, clicking navigates
+                                                                    <Link
+                                                                        href={`/chat/${chat.id}`}
+                                                                        className="flex items-center justify-center w-full h-full"
+                                                                        onClick={() => setOpenMobile(false)}
+                                                                        aria-label={`Open chat ${chat.title}`}
+                                                                    >
+                                                                        <MessageSquare className={cn(
+                                                                            "h-4 w-4 flex-shrink-0",
+                                                                            pathname === `/chat/${chat.id}` ? "text-foreground" : "text-muted-foreground"
+                                                                        )} />
+                                                                    </Link>
+                                                                ) : (
+                                                                    // Expanded view: Title, edit, delete
+                                                                    <div className="flex items-center justify-between w-full gap-1">
+                                                                        <Link
+                                                                            href={`/chat/${chat.id}`}
+                                                                            className="flex items-center min-w-0 overflow-hidden flex-1 pr-1"
+                                                                            onClick={() => {
+                                                                                // Navigation is handled by Link's href.
+                                                                                // Edit/delete buttons have their own onClick handlers that call e.stopPropagation(),
+                                                                                // so this handler won't be reached if those buttons are the source of the click.
+                                                                                setOpenMobile(false);
+                                                                            }}
+                                                                            aria-label={`Open chat ${chat.title}`}
+                                                                        >
+                                                                            <MessageSquare className={cn(
+                                                                                "h-4 w-4 flex-shrink-0",
+                                                                                pathname === `/chat/${chat.id}` ? "text-foreground" : "text-muted-foreground"
+                                                                            )} />
+                                                                            <span className={cn(
+                                                                                "ml-2 truncate text-sm",
+                                                                                pathname === `/chat/${chat.id}` ? "text-foreground font-medium" : "text-foreground/80"
+                                                                            )} title={chat.title}>
+                                                                                {chat.title.length > (isCollapsed ? 5 : 18) ? `${chat.title.slice(0, (isCollapsed ? 5 : 18))}...` : chat.title}
+                                                                            </span>
+                                                                        </Link>
+                                                                        <div className="flex items-center flex-shrink-0">
+                                                                            <Button
+                                                                                id={`edit-chat-btn-${chat.id}`}
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                                                                onClick={(e) => handleStartEdit(chat.id, chat.title, e)}
+                                                                                title="Edit title"
+                                                                                aria-label={`Edit title for chat ${chat.title}`}
+                                                                            >
+                                                                                <Pencil className="h-3.5 w-3.5" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                id={`delete-chat-btn-${chat.id}`}
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 text-muted-foreground hover:text-destructive flex-shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                                                                onClick={(e) => handleDeleteChat(chat.id, e)}
+                                                                                title="Delete chat"
+                                                                                aria-label={`Delete chat ${chat.title}`}
+                                                                            >
+                                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </SidebarMenuButton>
+                                                        )}
+                                                    </SidebarMenuItem>
+                                                </motion.div>
+                                            )
+                                        })}
                                     </AnimatePresence>
                                 )}
                             </SidebarMenu>
