@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Bot, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { Providers } from "./providers";
 import "./globals.css";
 import Script from "next/script";
@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.chatlima.com/"),
   title: "ChatLima",
   description: "ChatLima is a minimalistic MCP client with a good feature set.",
+  icons: {
+    icon: "/logo.png",
+  },
   openGraph: {
     siteName: "ChatLima",
     url: "https://www.chatlima.com/",
@@ -53,7 +56,7 @@ export default function RootLayout({
                 <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
                   <SidebarTrigger>
                     <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
-                      <Bot className="h-4 w-4" />
+                      <img src="/logo.png" alt="ChatLima logo" className="h-4 w-4" />
                     </button>
                   </SidebarTrigger>
                   <Button

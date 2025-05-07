@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, ChangeEvent, KeyboardEvent, FocusEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key, Bot, LogOut, Globe, CheckIcon, XIcon, Loader2 } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key, LogOut, Globe, CheckIcon, XIcon, Loader2 } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -300,8 +300,8 @@ export function ChatSidebar() {
                 <SidebarHeader className="p-4 border-b border-border/40">
                     <div className="flex items-center justify-start">
                         <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
-                            <div className={`relative rounded-full bg-primary/70 flex items-center justify-center ${isCollapsed ? "size-5 aspect-square" : "size-6"}`}>
-                                <Bot className={`text-primary-foreground ${isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                            <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
+                                <img src="/logo.png" alt="ChatLima logo" className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
                             </div>
                             {!isCollapsed && (
                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
@@ -393,8 +393,8 @@ export function ChatSidebar() {
                 <SidebarHeader className="p-4 border-b border-border/40">
                     <div className="flex items-center justify-start">
                         <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
-                            <div className={`relative rounded-full bg-primary/70 flex items-center justify-center ${isCollapsed ? "size-5 aspect-square" : "size-6"}`}>
-                                <Bot className={`text-primary-foreground ${isCollapsed ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                            <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
+                                <img src="/logo.png" alt="ChatLima logo" className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
                             </div>
                             {!isCollapsed && (
                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
