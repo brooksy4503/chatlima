@@ -81,6 +81,7 @@ const languageModels = {
   "openrouter/x-ai/grok-3-beta": openrouterClient("x-ai/grok-3-beta"),
   "openrouter/x-ai/grok-3-mini-beta": openrouterClient("x-ai/grok-3-mini-beta"),
   "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
+  "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -178,6 +179,14 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. Accessed via OpenRouter.",
     apiVersion: "qwen/qwq-32b",
     capabilities: ["Reasoning", "Hard Problems"],
+    enabled: true
+  },
+  "openrouter/mistralai/mistral-medium-3": {
+    provider: "OpenRouter",
+    name: "Mistral Medium 3",
+    description: "High-performance enterprise-grade language model with frontier-level capabilities. Balances state-of-the-art reasoning and multimodal performance. Accessed via OpenRouter.",
+    apiVersion: "mistralai/mistral-medium-3",
+    capabilities: ["Reasoning", "Coding", "STEM", "Enterprise"],
     enabled: true
   },
 };
