@@ -82,6 +82,7 @@ const languageModels = {
   "openrouter/x-ai/grok-3-mini-beta": openrouterClient("x-ai/grok-3-mini-beta"),
   "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
+  "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -187,6 +188,14 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "High-performance enterprise-grade language model with frontier-level capabilities. Balances state-of-the-art reasoning and multimodal performance. Accessed via OpenRouter.",
     apiVersion: "mistralai/mistral-medium-3",
     capabilities: ["Reasoning", "Coding", "STEM", "Enterprise"],
+    enabled: true
+  },
+  "openrouter/qwen/qwen3-235b-a22b": {
+    provider: "OpenRouter",
+    name: "Qwen3 235B A22B",
+    description: "Qwen3-235B-A22B is a 235B parameter mixture-of-experts (MoE) model developed by Qwen, activating 22B parameters per forward pass. It supports seamless switching between a 'thinking' mode for complex reasoning, math, and code tasks, and a 'non-thinking' mode for general conversational efficiency. The model demonstrates strong reasoning ability, multilingual support (100+ languages and dialects), advanced instruction-following, and agent tool-calling capabilities. It natively handles a 32K token context window and extends up to 131K tokens using YaRN-based scaling. Accessed via OpenRouter.",
+    apiVersion: "qwen/qwen3-235b-a22b",
+    capabilities: ["Reasoning", "Coding", "Multilingual", "Agentic"],
     enabled: true
   },
 };
