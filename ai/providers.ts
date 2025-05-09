@@ -64,36 +64,37 @@ const openrouterClient = createOpenRouter({
 });
 
 const languageModels = {
-  "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "claude-3-7-sonnet": anthropicClient('claude-3-7-sonnet-20250219'),
+  "openrouter/anthropic/claude-3.5-sonnet": openrouterClient("anthropic/claude-3.5-sonnet"),
+  "openrouter/anthropic/claude-3.7-sonnet": openrouterClient("anthropic/claude-3.7-sonnet"),
+  "openrouter/anthropic/claude-3.7-sonnet:thinking": openrouterClient("anthropic/claude-3.7-sonnet:thinking"),
+  "openrouter/deepseek/deepseek-chat-v3-0324": openrouterClient("deepseek/deepseek-chat-v3-0324"),
+  "openrouter/deepseek/deepseek-r1": openrouterClient("deepseek/deepseek-r1"),
+  "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
+  "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
+  "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
+  "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
+  "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
+  "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
+  "openrouter/x-ai/grok-3-beta": openrouterClient("x-ai/grok-3-beta"),
+  "grok-3-mini": xaiClient("grok-3-mini-latest"),
+  "openrouter/x-ai/grok-3-mini-beta": openrouterClient("x-ai/grok-3-mini-beta"),
+  "openrouter/x-ai/grok-3-mini-beta-reasoning-high": openrouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" } }),
+  "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
+  "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+  "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
+  "openrouter/openai/o4-mini-high": openrouterClient("openai/o4-mini-high"),
   "qwen-qwq": wrapLanguageModel(
     {
       model: groqClient("qwen-qwq-32b"),
       middleware
     }
   ),
-  "grok-3-mini": xaiClient("grok-3-mini-latest"),
-  "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
-  "openrouter/deepseek/deepseek-chat-v3-0324": openrouterClient("deepseek/deepseek-chat-v3-0324"),
-  "openrouter/anthropic/claude-3.7-sonnet": openrouterClient("anthropic/claude-3.7-sonnet"),
-  "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
-  "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
-  "openrouter/x-ai/grok-3-beta": openrouterClient("x-ai/grok-3-beta"),
-  "openrouter/x-ai/grok-3-mini-beta": openrouterClient("x-ai/grok-3-mini-beta"),
   "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
-  "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
-  "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b"),
+  "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b")
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
-  "gpt-4.1-mini": {
-    provider: "OpenAI",
-    name: "GPT-4.1 Mini",
-    description: "Compact version of OpenAI's GPT-4.1 with good balance of capabilities, including vision.",
-    apiVersion: "gpt-4.1-mini",
-    capabilities: ["Balance", "Creative", "Vision"],
-    enabled: false
-  },
   "claude-3-7-sonnet": {
     provider: "Anthropic",
     name: "Claude 3.7 Sonnet",
@@ -102,36 +103,12 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Efficient", "Agentic"],
     enabled: false
   },
-  "qwen-qwq": {
-    provider: "Groq",
-    name: "Qwen QWQ",
-    description: "Latest version of Alibaba's Qwen QWQ with strong reasoning and coding capabilities.",
-    apiVersion: "qwen-qwq",
-    capabilities: ["Reasoning", "Efficient", "Agentic"],
-    enabled: false
-  },
-  "grok-3-mini": {
-    provider: "XAI",
-    name: "Grok 3 Mini",
-    description: "Latest version of XAI's Grok 3 Mini with strong reasoning and coding capabilities.",
-    apiVersion: "grok-3-mini-latest",
-    capabilities: ["Reasoning", "Efficient", "Agentic"],
-    enabled: false
-  },
-  "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
+  "openrouter/anthropic/claude-3.5-sonnet": {
     provider: "OpenRouter",
-    name: "Mistral Small 3.1 Instruct",
-    description: "Mistral Small 3.1 Instruct model accessed via OpenRouter.",
-    apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
-    capabilities: ["Instruct", "Efficient"],
-    enabled: true
-  },
-  "openrouter/deepseek/deepseek-chat-v3-0324": {
-    provider: "OpenRouter",
-    name: "DeepSeek Chat V3 0324",
-    description: "DeepSeek Chat model V3 accessed via OpenRouter.",
-    apiVersion: "deepseek/deepseek-chat-v3-0324",
-    capabilities: ["Chat", "Efficient"],
+    name: "Claude 3.5 Sonnet",
+    description: "New Claude 3.5 Sonnet delivers better-than-Opus capabilities, faster-than-Sonnet speeds, at the same Sonnet prices. Sonnet is particularly good at: Coding, Data science, Visual processing, Agentic tasks",
+    apiVersion: "anthropic/claude-3.5-sonnet",
+    capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
     enabled: true
   },
   "openrouter/anthropic/claude-3.7-sonnet": {
@@ -142,12 +119,68 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Coding", "Agentic"],
     enabled: true
   },
+  "openrouter/anthropic/claude-3.7-sonnet:thinking": {
+    provider: "OpenRouter",
+    name: "Claude 3.7 Sonnet (thinking)",
+    description: "Advanced LLM with improved reasoning, coding, and problem-solving. Features a hybrid reasoning approach for flexible processing.",
+    apiVersion: "anthropic/claude-3.7-sonnet:thinking",
+    capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
+    enabled: true
+  },
+  "openrouter/deepseek/deepseek-chat-v3-0324": {
+    provider: "OpenRouter",
+    name: "DeepSeek Chat V3 0324",
+    description: "DeepSeek Chat model V3 accessed via OpenRouter.",
+    apiVersion: "deepseek/deepseek-chat-v3-0324",
+    capabilities: ["Chat", "Efficient"],
+    enabled: true
+  },
+  "openrouter/deepseek/deepseek-r1": {
+    provider: "OpenRouter",
+    name: "DeepSeek R1",
+    description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed.",
+    apiVersion: "deepseek/deepseek-r1",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true
+  },
+  "openrouter/google/gemini-2.5-flash-preview": {
+    provider: "OpenRouter",
+    name: "Gemini 2.5 Flash Preview",
+    description: "Google's state-of-the-art workhorse model for advanced reasoning, coding, mathematics, and scientific tasks, with built-in \"thinking\" capabilities. Accessed via OpenRouter.",
+    apiVersion: "google/gemini-2.5-flash-preview",
+    capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific"],
+    enabled: true
+  },
+  "openrouter/google/gemini-2.5-flash-preview:thinking": {
+    provider: "OpenRouter",
+    name: "Gemini 2.5 Flash Preview (thinking)",
+    description: "Gemini 2.5 Flash is Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
+    apiVersion: "google/gemini-2.5-flash-preview:thinking",
+    capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
+    enabled: true
+  },
   "openrouter/google/gemini-2.5-pro-preview-03-25": {
     provider: "OpenRouter",
     name: "Gemini 2.5 Pro Preview",
     description: "Google's state-of-the-art AI model for advanced reasoning, coding, math, and science, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-pro-preview-03-25",
     capabilities: ["Reasoning", "Coding", "Math", "Science"],
+    enabled: true
+  },
+  "gpt-4.1-mini": {
+    provider: "OpenAI",
+    name: "GPT-4.1 Mini",
+    description: "Compact version of OpenAI's GPT-4.1 with good balance of capabilities, including vision.",
+    apiVersion: "gpt-4.1-mini",
+    capabilities: ["Balance", "Creative", "Vision"],
+    enabled: false
+  },
+  "openrouter/openai/gpt-4.1": {
+    provider: "OpenRouter",
+    name: "GPT-4.1",
+    description: "GPT-4.1 is a flagship large language model excelling in instruction following, software engineering, and long-context reasoning, supporting a 1 million token context. It's tuned for precise code diffs, agent reliability, and high recall, ideal for agents, IDE tooling, and enterprise knowledge retrieval.",
+    apiVersion: "openai/gpt-4.1",
+    capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
     enabled: true
   },
   "openrouter/openai/gpt-4.1-mini": {
@@ -166,6 +199,14 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Coding", "Knowledge"],
     enabled: true
   },
+  "grok-3-mini": {
+    provider: "XAI",
+    name: "Grok 3 Mini",
+    description: "Latest version of XAI's Grok 3 Mini with strong reasoning and coding capabilities.",
+    apiVersion: "grok-3-mini-latest",
+    capabilities: ["Reasoning", "Efficient", "Agentic"],
+    enabled: false
+  },
   "openrouter/x-ai/grok-3-mini-beta": {
     provider: "OpenRouter",
     name: "Grok 3 Mini Beta",
@@ -174,12 +215,12 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Math", "Puzzles"],
     enabled: true
   },
-  "openrouter/qwen/qwq-32b": {
+  "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
     provider: "OpenRouter",
-    name: "Qwen QwQ 32B",
-    description: "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. Accessed via OpenRouter.",
-    apiVersion: "qwen/qwq-32b",
-    capabilities: ["Reasoning", "Hard Problems"],
+    name: "Grok 3 Mini Beta (High Reasoning)",
+    description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Accessed via OpenRouter.",
+    apiVersion: "x-ai/grok-3-mini-beta",
+    capabilities: ["Reasoning", "Math", "Puzzles", "High Effort"],
     enabled: true
   },
   "openrouter/mistralai/mistral-medium-3": {
@@ -190,14 +231,54 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Coding", "STEM", "Enterprise"],
     enabled: true
   },
+  "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
+    provider: "OpenRouter",
+    name: "Mistral Small 3.1 Instruct",
+    description: "Mistral Small 3.1 Instruct model accessed via OpenRouter.",
+    apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
+    capabilities: ["Instruct", "Efficient"],
+    enabled: true
+  },
+  "openrouter/meta-llama/llama-4-maverick": {
+    provider: "OpenRouter",
+    name: "Llama 4 Maverick",
+    description: "Meta's Llama 4 Maverick: a high-capacity, multimodal MoE language model. Supports multilingual text/image input and produces text/code output.",
+    apiVersion: "meta-llama/llama-4-maverick",
+    capabilities: ["Multimodal", "Multilingual", "Image Input", "Code Output", "Reasoning"],
+    enabled: true
+  },
+  "openrouter/openai/o4-mini-high": {
+    provider: "OpenRouter",
+    name: "o4 Mini High",
+    description: "OpenAI o4-mini-high, a compact reasoning model optimized for speed and cost, with strong multimodal and agentic capabilities. Accessed via OpenRouter.",
+    apiVersion: "openai/o4-mini-high",
+    capabilities: ["Reasoning", "Coding", "Efficient", "Agentic", "Multimodal"],
+    enabled: true
+  },
+  "qwen-qwq": {
+    provider: "Groq",
+    name: "Qwen QWQ",
+    description: "Latest version of Alibaba's Qwen QWQ with strong reasoning and coding capabilities.",
+    apiVersion: "qwen-qwq",
+    capabilities: ["Reasoning", "Efficient", "Agentic"],
+    enabled: false
+  },
+  "openrouter/qwen/qwq-32b": {
+    provider: "OpenRouter",
+    name: "Qwen QwQ 32B",
+    description: "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. Accessed via OpenRouter.",
+    apiVersion: "qwen/qwq-32b",
+    capabilities: ["Reasoning", "Hard Problems"],
+    enabled: true
+  },
   "openrouter/qwen/qwen3-235b-a22b": {
     provider: "OpenRouter",
     name: "Qwen3 235B A22B",
-    description: "Qwen3-235B-A22B is a 235B parameter mixture-of-experts (MoE) model developed by Qwen, activating 22B parameters per forward pass. It supports seamless switching between a 'thinking' mode for complex reasoning, math, and code tasks, and a 'non-thinking' mode for general conversational efficiency. The model demonstrates strong reasoning ability, multilingual support (100+ languages and dialects), advanced instruction-following, and agent tool-calling capabilities. It natively handles a 32K token context window and extends up to 131K tokens using YaRN-based scaling. Accessed via OpenRouter.",
+    description: "Qwen3-235B-A22B is a 235B parameter mixture-of-experts (MoE) model by Qwen, activating 22B parameters per forward pass. It supports 'thinking' and 'non-thinking' modes, excels in reasoning, multilingual tasks, instruction-following, and agent tool-calling, with a context window up to 131K tokens via OpenRouter.",
     apiVersion: "qwen/qwen3-235b-a22b",
     capabilities: ["Reasoning", "Coding", "Multilingual", "Agentic"],
     enabled: true
-  },
+  }
 };
 
 // Update API keys when localStorage changes (for runtime updates)

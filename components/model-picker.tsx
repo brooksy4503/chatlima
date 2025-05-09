@@ -169,7 +169,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
             </div>
             
             {/* Model details column - hidden on smallest screens, visible on sm+ */}
-            <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col">
+            <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col sticky top-0">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   {getProviderIcon(currentModelDetails.provider)}
