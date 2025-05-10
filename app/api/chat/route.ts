@@ -110,7 +110,7 @@ export async function POST(req: Request) {
   }
 
   // Prepare messages for the model
-  let modelMessages: UIMessage[] = [...messages];
+  const modelMessages: UIMessage[] = [...messages];
 
   if (selectedModel === "openrouter/deepseek/deepseek-r1") {
     const systemContent = "Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags.";
@@ -296,7 +296,7 @@ export async function POST(req: Request) {
     const openrouterClient = createOpenRouter({ apiKey: getApiKey('OPENROUTER_API_KEY') });
     tools = {
       ...tools,
-      // @ts-ignore
+      // @ts-expect-error Property 'web_search' does not exist on 'tools' initially.
       web_search: openrouterClient.toolFactory.searchWeb({
         contextSize: webSearch.contextSize,
       }),

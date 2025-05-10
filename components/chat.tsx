@@ -16,6 +16,7 @@ import { nanoid } from "nanoid";
 import { useMCP } from "@/lib/context/mcp-context";
 import { useSession } from "@/lib/auth-client";
 import { useWebSearch } from "@/lib/context/web-search-context";
+import { useModel } from "@/lib/context/model-context";
 
 // Type for chat data from DB
 interface ChatData {
@@ -41,9 +42,9 @@ export default function Chat() {
   
   const { mcpServersForApi } = useMCP();
   
-  const [selectedModel, setSelectedModel] = useState<modelID>(defaultModel);
-  const [userId, setUserId] = useState<string>('');
-  const [generatedChatId, setGeneratedChatId] = useState<string>('');
+  const { selectedModel, setSelectedModel } = useModel();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function Chat() {
         setSelectedModel(storedModel as modelID);
       }
     }
-  }, [isMounted]);
+  }, [isMounted, setSelectedModel]);
 
   useEffect(() => {
     if (isMounted) {
@@ -131,7 +132,7 @@ export default function Chat() {
       toast.info("You have been logged out.");
       router.push('/'); 
     }
-  }, [session, isSessionLoading, chatId, router, params]);
+  }, [isMounted, session, isSessionLoading, chatId, router, params]);
   
   useEffect(() => {
     if (!chatId) {

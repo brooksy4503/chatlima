@@ -11,6 +11,7 @@ import Link from "next/link";
 import { WebSearchProvider } from "@/lib/context/web-search-context";
 import { cn } from "@/lib/utils";
 import BuildInfo from "@/components/ui/BuildInfo";
+import Image from "next/image";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -56,7 +57,7 @@ export default function RootLayout({
                 <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
                   <SidebarTrigger>
                     <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
-                      <img src="/logo.png" alt="ChatLima logo" className="h-4 w-4" />
+                      <Image src="/logo.png" alt="ChatLima logo" width={16} height={16} />
                     </button>
                   </SidebarTrigger>
                   <Button

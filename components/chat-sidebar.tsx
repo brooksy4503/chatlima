@@ -225,7 +225,7 @@ export function ChatSidebar() {
                     <div className="flex items-center justify-start">
                         <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
                             <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
-                                <img src="/logo.png" alt="ChatLima logo" className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
+                                <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
                             </div>
                             {!isCollapsed && (
                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
@@ -323,7 +323,7 @@ export function ChatSidebar() {
                     <div className="flex items-center justify-start">
                         <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
                             <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
-                                <img src="/logo.png" alt="ChatLima logo" className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
+                                <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
                             </div>
                             {!isCollapsed && (
                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
