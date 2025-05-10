@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     chatId,
     selectedModel,
     userId,
-    mcpServers = [],
+    mcpServers: initialMcpServers = [],
     webSearch = { enabled: false, contextSize: 'medium' }
   }: {
     messages: UIMessage[];
@@ -70,6 +70,13 @@ export async function POST(req: Request) {
     mcpServers?: MCPServerConfig[];
     webSearch?: WebSearchOptions;
   } = await req.json();
+
+  let mcpServers = initialMcpServers;
+
+  // Disable MCP servers for DeepSeek R1
+  if (selectedModel === "openrouter/deepseek/deepseek-r1") {
+    mcpServers = [];
+  }
 
   if (!userId) {
     return new Response(
@@ -100,6 +107,19 @@ export async function POST(req: Request) {
   } else {
     // No ID provided, definitely new
     isNewChat = true;
+  }
+
+  // Prepare messages for the model
+  let modelMessages: UIMessage[] = [...messages];
+
+  if (selectedModel === "openrouter/deepseek/deepseek-r1") {
+    const systemContent = "Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags.";
+    modelMessages.unshift({
+      role: "system",
+      id: nanoid(), // Ensure a unique ID for the system message
+      content: systemContent, // Add top-level content
+      parts: [{ type: "text", text: systemContent }]
+    });
   }
 
   // Pre-emptively save the chat if it's new
@@ -271,6 +291,18 @@ export async function POST(req: Request) {
     console.log(`[Web Search] DISABLED`);
   }
 
+  // Add web search tool if enabled
+  if (webSearch.enabled) {
+    const openrouterClient = createOpenRouter({ apiKey: getApiKey('OPENROUTER_API_KEY') });
+    tools = {
+      ...tools,
+      // @ts-ignore
+      web_search: openrouterClient.toolFactory.searchWeb({
+        contextSize: webSearch.contextSize,
+      }),
+    };
+  }
+
   let modelInstance;
   if (webSearch.enabled && selectedModel.startsWith("openrouter/")) {
     // Remove 'openrouter/' prefix for the OpenRouter client
@@ -282,7 +314,12 @@ export async function POST(req: Request) {
         'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
       }
     });
-    modelInstance = openrouterClient(openrouterModelId);
+    // For DeepSeek R1, explicitly disable logprobs if it's the selected model
+    if (selectedModel === "openrouter/deepseek/deepseek-r1") {
+      modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
+    } else {
+      modelInstance = openrouterClient(openrouterModelId);
+    }
   } else {
     modelInstance = model.languageModel(selectedModel);
   }
@@ -322,7 +359,7 @@ export async function POST(req: Request) {
     - Use Markdown for formatting.
     - Base your response on the results from any tools used, or on your own reasoning and knowledge.
     `,
-    messages,
+    messages: modelMessages,
     tools,
     maxSteps: 20,
     providerOptions: {
@@ -346,7 +383,7 @@ export async function POST(req: Request) {
       // Minimal fix: cast event.response to OpenRouterResponse
       const response = event.response as OpenRouterResponse;
       const allMessages = appendResponseMessages({
-        messages,
+        messages: modelMessages,
         responseMessages: response.messages as any, // Cast to any to bypass type error
       });
 

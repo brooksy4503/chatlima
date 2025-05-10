@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, ChangeEvent, KeyboardEvent, FocusEvent } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Pencil, Github, Key, LogOut, Globe, CheckIcon, XIcon, Loader2 } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -51,7 +51,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMCP } from "@/lib/context/mcp-context";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AnimatePresence, motion } from "motion/react";
 import { SignInButton } from "@/components/auth/SignInButton";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -64,6 +63,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ChatList } from "./chat-list";
 
 const LOCAL_USER_ID_KEY = 'ai-chat-user-id';
 
@@ -77,12 +77,6 @@ export function ChatSidebar() {
     const isCollapsed = state === "collapsed";
     const [editUserIdOpen, setEditUserIdOpen] = useState(false);
     const [newUserId, setNewUserId] = useState('');
-    const [searchTerm, setSearchTerm] = useState("");
-
-    const [editingChatId, setEditingChatId] = useState<string | null>(null);
-    const [editingChatTitle, setEditingChatTitle] = useState<string>("");
-    const inputRef = useRef<HTMLInputElement>(null);
-
 
     const { data: session, isPending: isSessionLoading } = useSession();
     const authenticatedUserId = session?.user?.id;
@@ -96,13 +90,19 @@ export function ChatSidebar() {
 
     const renderChatSkeletons = () => {
         return Array(3).fill(0).map((_, index) => (
-            <SidebarMenuItem key={`skeleton-${index}`}>
-                <div className={`flex items-center gap-2 px-3 py-2 ${isCollapsed ? "justify-center" : ""}`}>
-                    <Skeleton className="h-4 w-4 rounded-full" />
+            <SidebarMenuItem key={`skeleton-${index}`} className="px-0">
+                <div className={cn(
+                    "flex items-center gap-2 px-3 py-2 w-full",
+                    isCollapsed ? "justify-center" : "pr-10"
+                )}>
+                    <Skeleton className="h-4 w-4 rounded-md flex-shrink-0" />
                     {!isCollapsed && (
                         <>
-                            <Skeleton className="h-4 w-full max-w-[180px]" />
-                            <Skeleton className="h-5 w-5 ml-auto rounded-md flex-shrink-0" />
+                            <Skeleton className="h-4 flex-grow max-w-[160px]" />
+                            <div className="ml-auto flex items-center gap-1">
+                                <Skeleton className="h-4 w-4 rounded-md" />
+                                <Skeleton className="h-4 w-4 rounded-md" />
+                            </div>
                         </>
                     )}
                 </div>
@@ -180,87 +180,6 @@ export function ChatSidebar() {
     const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle } = useChats(userId ?? '');
     const isLoading = isSessionLoading || (userId === null) || isChatsLoading;
 
-    const filteredChats = chats?.filter(chat =>
-        chat.title.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
- 
-    const handleStartEdit = (chatId: string, currentTitle: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-        setEditingChatId(chatId);
-        setEditingChatTitle(currentTitle);
-        // Focus the input field after it's rendered
-        setTimeout(() => {
-            inputRef.current?.focus();
-            inputRef.current?.select();
-        }, 0);
-    };
-
-    const handleCancelEdit = () => {
-        setEditingChatId(null);
-        setEditingChatTitle("");
-    };
-
-    const handleSaveEdit = () => {
-        if (!editingChatId || editingChatTitle.trim() === "") {
-            toast.error("Chat title cannot be empty.");
-            inputRef.current?.focus();
-            return;
-        }
-
-        updateChatTitle(
-            { chatId: editingChatId, title: editingChatTitle.trim() },
-            {
-                onSuccess: () => {
-                    setEditingChatId(null);
-                    setEditingChatTitle("");
-                    // Success toast is handled by the useChats hook
-                },
-                onError: () => {
-                    // Error toast and UI rollback are handled by the useChats hook.
-                    // Keep the input field focused for the user to retry or correct.
-                    inputRef.current?.focus();
-                    inputRef.current?.select();
-                }
-            }
-        );
-    };
- 
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setEditingChatTitle(e.target.value);
-    };
-
-    const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleSaveEdit();
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            handleCancelEdit();
-        }
-    };
-
-    const handleInputBlur = (e: FocusEvent<HTMLInputElement>) => {
-        // Check if the blur was caused by clicking on save/cancel buttons
-        // If relatedTarget is null, it might be a programmatic blur or window switch,
-        // or if it's one of the action buttons, don't cancel immediately.
-        if (e.relatedTarget && (e.relatedTarget.id === `save-chat-${editingChatId}` || e.relatedTarget.id === `cancel-chat-${editingChatId}`)) {
-            return;
-        }
-        // Small delay to allow click on save/cancel to register
-        setTimeout(() => {
-            // Check if still in edit mode (might have been saved/cancelled by button click)
-            if (editingChatId && document.activeElement !== inputRef.current) {
-                 // Only cancel if focus moved to something other than save/cancel buttons
-                const activeElementId = document.activeElement?.id;
-                if (activeElementId !== `save-chat-${editingChatId}` && activeElementId !== `cancel-chat-${editingChatId}`) {
-                    handleCancelEdit();
-                }
-            }
-        }, 100);
-    };
-
-
     const handleNewChat = () => {
         router.push('/');
         setOpenMobile(false);
@@ -323,6 +242,12 @@ export function ChatSidebar() {
                         )}>
                             Chats
                         </SidebarGroupLabel>
+                        {!isCollapsed && (
+                            <div className="px-3 pt-1 pb-2 border-b border-border/40">
+                                <Skeleton className="h-9 w-full mb-2" />
+                                <Skeleton className="h-9 w-full" />
+                            </div>
+                        )}
                         <SidebarGroupContent className={cn(
                             "overflow-y-auto pt-1",
                             isCollapsed ? "overflow-x-hidden overflow-y-hidden" : ""
@@ -415,163 +340,15 @@ export function ChatSidebar() {
                         )}>
                             Chats
                         </SidebarGroupLabel>
-                        {!isCollapsed && (
-                            <div className="px-3 pt-1 pb-2 border-b border-border/40">
-                                <Button
-                                    variant="outline"
-                                    className="w-full mb-2"
-                                    onClick={handleNewChat}
-                                >
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    New Chat
-                                </Button>
-                                <Input
-                                    type="search"
-                                    placeholder="Search chats..."
-                                    aria-label="Search chats by title"
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    className="w-full"
-                                />
-                            </div>
-                        )}
-                        <SidebarGroupContent className={cn(
-                            "overflow-y-auto",
-                            isCollapsed ? "overflow-x-hidden overflow-y-hidden" : ""
-                        )}>
-                            <SidebarMenu>
-                                {isLoading ? (
-                                    renderChatSkeletons()
-                                ) : filteredChats && filteredChats.length > 0 ? (
-                                    <AnimatePresence initial={false}>
-                                        {filteredChats.map((chat) => {
-                                            const isActive = pathname === `/chat/${chat.id}`;
-                                            const isEditingThisChat = editingChatId === chat.id;
-                                            return (
-                                                <motion.div
-                                                    key={chat.id}
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: "auto" }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                    className="overflow-hidden"
-                                                >
-                                                    <SidebarMenuItem>
-                                                        {isEditingThisChat ? (
-                                                            <div className="flex items-center gap-2 px-3 py-2 w-full">
-                                                                <Input
-                                                                    ref={inputRef}
-                                                                    value={editingChatTitle}
-                                                                    onChange={handleInputChange}
-                                                                    onKeyDown={handleInputKeyDown}
-                                                                    onBlur={handleInputBlur}
-                                                                    className="h-7 flex-grow px-1 text-sm"
-                                                                    maxLength={100}
-                                                                />
-                                                                <Button
-                                                                    id={`save-chat-${chat.id}`}
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-6 w-6 text-green-500 hover:text-green-600"
-                                                                    onClick={handleSaveEdit}
-                                                                    disabled={isUpdatingChatTitle}
-                                                                >
-                                                                    {isUpdatingChatTitle && editingChatId === chat.id ? (
-                                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                                    ) : (
-                                                                        <CheckIcon className="h-4 w-4" />
-                                                                    )}
-                                                                </Button>
-                                                                <Button
-                                                                    id={`cancel-chat-${chat.id}`}
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-6 w-6 text-red-500 hover:text-red-600"
-                                                                    onClick={handleCancelEdit}
-                                                                    disabled={isUpdatingChatTitle}
-                                                                >
-                                                                    <XIcon className="h-4 w-4" />
-                                                                </Button>
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                {isCollapsed ? (
-                                                                    <TooltipProvider delayDuration={0}>
-                                                                        <Tooltip>
-                                                                            <TooltipTrigger asChild>
-                                                                                <SidebarMenuButton
-                                                                                    onClick={() => router.push(`/chat/${chat.id}`)}
-                                                                                    isActive={isActive}
-                                                                                    className={cn(
-                                                                                        "w-full flex justify-center",
-                                                                                        isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
-                                                                                    )}
-                                                                                >
-                                                                                    <MessageSquare className="h-4 w-4" />
-                                                                                </SidebarMenuButton>
-                                                                            </TooltipTrigger>
-                                                                            <TooltipContent side="right" sideOffset={5}>
-                                                                                <p>{chat.title}</p>
-                                                                            </TooltipContent>
-                                                                        </Tooltip>
-                                                                    </TooltipProvider>
-                                                                ) : (
-                                                                    <SidebarMenuButton
-                                                                        asChild
-                                                                        isActive={isActive}
-                                                                        tooltip={{ content: chat.title, side: "right" }}
-                                                                        className={cn(
-                                                                            "w-full flex justify-start pr-10",
-                                                                            isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
-                                                                        )}
-                                                                    >
-                                                                        <Link href={`/chat/${chat.id}`} className="flex items-center flex-grow overflow-hidden">
-                                                                            <span className="truncate max-w-[160px]">
-                                                                                {chat.title || `Chat ${chat.id.substring(0, 8)}...`}
-                                                                            </span>
-                                                                        </Link>
-                                                                    </SidebarMenuButton>
-                                                                )}
-                                                                {!isCollapsed && (
-                                                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 hover:text-blue-500"
-                                                                            onClick={(e) => handleStartEdit(chat.id, chat.title, e)}
-                                                                            title="Edit title"
-                                                                        >
-                                                                            <Pencil className="h-3 w-3" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 hover:text-red-500"
-                                                                            onClick={(e) => handleDeleteChat(chat.id, e)}
-                                                                            title="Delete chat"
-                                                                        >
-                                                                            <Trash2 className="h-3 w-3" />
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </SidebarMenuItem>
-                                                </motion.div>
-                                            );
-                                        })}
-                                    </AnimatePresence>
-                                ) : searchTerm ? (
-                                    <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2">
-                                        {!isCollapsed && "No results found."}
-                                    </SidebarMenuItem>
-                                ) : (
-                                    <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2">
-                                        {!isCollapsed && "No chats yet. Start a new one!"}
-                                    </SidebarMenuItem>
-                                )}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
+                        <ChatList
+                            chats={chats ?? []}
+                            isLoading={isChatsLoading} 
+                            isCollapsed={isCollapsed}
+                            isUpdatingChatTitle={isUpdatingChatTitle}
+                            onNewChat={handleNewChat}
+                            onDeleteChat={handleDeleteChat}
+                            onUpdateChatTitle={updateChatTitle}
+                        />
                     </SidebarGroup>
                     
                     <div className="relative my-0">

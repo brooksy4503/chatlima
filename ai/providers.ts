@@ -23,6 +23,10 @@ const middleware = extractReasoningMiddleware({
   tagName: 'think',
 });
 
+const deepseekR1Middleware = extractReasoningMiddleware({
+  tagName: 'think',
+});
+
 // Helper to get API keys from environment variables first, then localStorage
 export const getApiKey = (key: string): string | undefined => {
   // Check for environment variables first
@@ -69,7 +73,10 @@ const languageModels = {
   "openrouter/anthropic/claude-3.7-sonnet": openrouterClient("anthropic/claude-3.7-sonnet"),
   "openrouter/anthropic/claude-3.7-sonnet:thinking": openrouterClient("anthropic/claude-3.7-sonnet:thinking"),
   "openrouter/deepseek/deepseek-chat-v3-0324": openrouterClient("deepseek/deepseek-chat-v3-0324"),
-  "openrouter/deepseek/deepseek-r1": openrouterClient("deepseek/deepseek-r1"),
+  "openrouter/deepseek/deepseek-r1": wrapLanguageModel({
+    model: openrouterClient("deepseek/deepseek-r1", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
   "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
   "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
   "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
@@ -138,7 +145,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   "openrouter/deepseek/deepseek-r1": {
     provider: "OpenRouter",
     name: "DeepSeek R1",
-    description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed.",
+    description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
     apiVersion: "deepseek/deepseek-r1",
     capabilities: ["Reasoning", "Open Source"],
     enabled: true
@@ -197,7 +204,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "xAI's flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-beta",
     capabilities: ["Reasoning", "Coding", "Knowledge"],
-    enabled: true
+    enabled: false
   },
   "grok-3-mini": {
     provider: "XAI",
@@ -213,7 +220,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
     capabilities: ["Reasoning", "Math", "Puzzles"],
-    enabled: true
+    enabled: false
   },
   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
     provider: "OpenRouter",
@@ -221,7 +228,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
     capabilities: ["Reasoning", "Math", "Puzzles", "High Effort"],
-    enabled: true
+    enabled: false
   },
   "openrouter/mistralai/mistral-medium-3": {
     provider: "OpenRouter",
