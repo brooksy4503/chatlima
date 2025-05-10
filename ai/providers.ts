@@ -83,10 +83,19 @@ const languageModels = {
   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
-  "openrouter/x-ai/grok-3-beta": openrouterClient("x-ai/grok-3-beta"),
+  "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
+    model: openrouterClient("x-ai/grok-3-beta", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
   "grok-3-mini": xaiClient("grok-3-mini-latest"),
-  "openrouter/x-ai/grok-3-mini-beta": openrouterClient("x-ai/grok-3-mini-beta"),
-  "openrouter/x-ai/grok-3-mini-beta-reasoning-high": openrouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" } }),
+  "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
+    model: openrouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
+    model: openrouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
   "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
@@ -201,10 +210,10 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   "openrouter/x-ai/grok-3-beta": {
     provider: "OpenRouter",
     name: "Grok 3 Beta",
-    description: "xAI's flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Accessed via OpenRouter.",
+    description: "xAI's flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-beta",
     capabilities: ["Reasoning", "Coding", "Knowledge"],
-    enabled: false
+    enabled: true
   },
   "grok-3-mini": {
     provider: "XAI",
@@ -217,18 +226,18 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   "openrouter/x-ai/grok-3-mini-beta": {
     provider: "OpenRouter",
     name: "Grok 3 Mini Beta",
-    description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Accessed via OpenRouter.",
+    description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Tool calling is disabled. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
     capabilities: ["Reasoning", "Math", "Puzzles"],
-    enabled: false
+    enabled: true
   },
   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
     provider: "OpenRouter",
     name: "Grok 3 Mini Beta (High Reasoning)",
-    description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Accessed via OpenRouter.",
+    description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Tool calling is disabled. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
     capabilities: ["Reasoning", "Math", "Puzzles", "High Effort"],
-    enabled: false
+    enabled: true
   },
   "openrouter/mistralai/mistral-medium-3": {
     provider: "OpenRouter",

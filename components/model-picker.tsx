@@ -21,7 +21,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
   
   // Ensure we always have a valid model ID immediately for stable rendering
-  const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel;
+  // const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel; // Replaced by direct use of selectedModel
   
   // Function to get the appropriate icon for each provider
   const getProviderIcon = (provider: string) => {
@@ -98,7 +98,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
   };
   
   // Get current model details to display
-  const displayModelId = hoveredModel || stableModelId;
+  const displayModelId = hoveredModel || selectedModel; // Use selectedModel
   const currentModelDetails = modelDetails[displayModelId];
 
   // Handle model change
@@ -112,9 +112,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
   return (
     <div>
       <Select 
-        value={stableModelId} 
+        value={selectedModel} // Use selectedModel directly
         onValueChange={handleModelChange} 
-        defaultValue={stableModelId}
       >
         <SelectTrigger 
           className="max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full group border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
@@ -124,8 +123,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
             className="text-xs font-medium flex items-center gap-1 sm:gap-2 text-primary dark:text-primary-foreground"
           >
             <div className="flex items-center gap-1 sm:gap-2">
-              {getProviderIcon(modelDetails[stableModelId].provider)}
-              <span className="font-medium truncate">{modelDetails[stableModelId].name}</span>
+              {getProviderIcon(modelDetails[selectedModel].provider)} {/* Use selectedModel */}
+              <span className="font-medium truncate">{modelDetails[selectedModel].name}</span> {/* Use selectedModel */}
             </div>
           </SelectValue>
         </SelectTrigger>
@@ -150,7 +149,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
                         "hover:bg-primary/5 hover:text-primary-foreground",
                         "focus:bg-primary/10 focus:text-primary focus:outline-none",
                         "data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
-                        stableModelId === id && "!bg-primary/15 !text-primary font-medium"
+                        selectedModel === id && "!bg-primary/15 !text-primary font-medium" // Use selectedModel
                       )}
                     >
                       <div className="flex flex-col gap-0.5">

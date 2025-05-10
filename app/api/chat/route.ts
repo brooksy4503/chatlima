@@ -73,8 +73,13 @@ export async function POST(req: Request) {
 
   let mcpServers = initialMcpServers;
 
-  // Disable MCP servers for DeepSeek R1
-  if (selectedModel === "openrouter/deepseek/deepseek-r1") {
+  // Disable MCP servers for DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, and Grok 3 Mini Beta (High Reasoning)
+  if (
+    selectedModel === "openrouter/deepseek/deepseek-r1" ||
+    selectedModel === "openrouter/x-ai/grok-3-beta" ||
+    selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+    selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
+  ) {
     mcpServers = [];
   }
 
@@ -112,7 +117,12 @@ export async function POST(req: Request) {
   // Prepare messages for the model
   const modelMessages: UIMessage[] = [...messages];
 
-  if (selectedModel === "openrouter/deepseek/deepseek-r1") {
+  if (
+    selectedModel === "openrouter/deepseek/deepseek-r1" ||
+    selectedModel === "openrouter/x-ai/grok-3-beta" ||
+    selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+    selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
+  ) {
     const systemContent = "Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags.";
     modelMessages.unshift({
       role: "system",
@@ -314,8 +324,13 @@ export async function POST(req: Request) {
         'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
       }
     });
-    // For DeepSeek R1, explicitly disable logprobs if it's the selected model
-    if (selectedModel === "openrouter/deepseek/deepseek-r1") {
+    // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, and Grok 3 Mini Beta (High Reasoning), explicitly disable logprobs if it's the selected model
+    if (
+      selectedModel === "openrouter/deepseek/deepseek-r1" ||
+      selectedModel === "openrouter/x-ai/grok-3-beta" ||
+      selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+      selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
+    ) {
       modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
     } else {
       modelInstance = openrouterClient(openrouterModelId);

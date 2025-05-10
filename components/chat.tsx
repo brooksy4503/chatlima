@@ -53,15 +53,6 @@ export default function Chat() {
 
   useEffect(() => {
     if (isMounted) {
-      const storedModel = localStorage.getItem('selected_ai_model');
-      if (storedModel && (MODELS as ReadonlyArray<string>).includes(storedModel)) {
-        setSelectedModel(storedModel as modelID);
-      }
-    }
-  }, [isMounted, setSelectedModel]);
-
-  useEffect(() => {
-    if (isMounted) {
       setUserId(getUserId());
     }
   }, [isMounted]);
@@ -219,12 +210,6 @@ export default function Chat() {
       },
     });
     
-  useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem('selected_ai_model', selectedModel);
-    }
-  }, [selectedModel, isMounted]);
-
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     

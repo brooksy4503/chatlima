@@ -11,37 +11,40 @@ interface ModelContextType {
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
 
 export function ModelProvider({ children }: { children: ReactNode }) {
-  const [selectedModel, setSelectedModelState] = useState<modelID>(defaultModel);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      try {
-        const storedModel = localStorage.getItem('selected_ai_model');
-        if (storedModel && (MODELS as ReadonlyArray<string>).includes(storedModel)) {
-          setSelectedModelState(storedModel as modelID);
-        } else if (!MODELS.includes(defaultModel)) {
-          // Fallback if defaultModel itself is not in MODELS (should not happen with good config)
-          if (MODELS.length > 0) {
-            setSelectedModelState(MODELS[0]); // Fallback to the first available model
-          }
-        } else {
-          // Set to default if stored is invalid or not present
-           setSelectedModelState(defaultModel);
-        }
-      } catch (error) {
-        console.error("Error reading selected model from localStorage", error);
-        setSelectedModelState(MODELS.length > 0 ? MODELS[0] : defaultModel); // Robust fallback
-      }
+  const [selectedModel, setSelectedModelState] = useState<modelID>(() => {
+    if (typeof window === 'undefined') {
+      return defaultModel; // Fallback for SSR or environments without window
     }
-  }, [isMounted]);
+    try {
+      const storedModel = localStorage.getItem('selected_ai_model');
+      if (storedModel && (MODELS as ReadonlyArray<string>).includes(storedModel)) {
+        return storedModel as modelID;
+      }
+      // If stored model is invalid or not present, check if defaultModel is valid
+      if (MODELS.includes(defaultModel)) {
+        return defaultModel;
+      }
+      // If defaultModel is also not in MODELS (e.g. filtered out), use the first available model
+      if (MODELS.length > 0) {
+        return MODELS[0];
+      }
+      // As a last resort, return defaultModel even if not in MODELS (should ideally not happen)
+      return defaultModel; 
+    } catch (error) {
+      console.error("Error reading selected model from localStorage during init", error);
+      // Fallback logic in case of error
+      if (MODELS.includes(defaultModel)) {
+        return defaultModel;
+      }
+      if (MODELS.length > 0) {
+        return MODELS[0];
+      }
+      return defaultModel;
+    }
+  });
 
   useEffect(() => {
-    if (isMounted) {
+    if (typeof window !== 'undefined') {
       try {
         if (MODELS.includes(selectedModel)) {
           localStorage.setItem('selected_ai_model', selectedModel);
@@ -50,12 +53,12 @@ export function ModelProvider({ children }: { children: ReactNode }) {
         console.error("Error saving selected model to localStorage", error);
       }
     }
-  }, [selectedModel, isMounted]);
+  }, [selectedModel]);
 
   const setSelectedModel = (model: modelID) => {
-    if (MODELS.includes(model)) {
+    if (MODELS.includes(model) && model !== selectedModel) {
       setSelectedModelState(model);
-    } else {
+    } else if (!MODELS.includes(model)) {
       console.warn(`Attempted to set invalid model: ${model}`);
       // Optionally, set to default or do nothing
       // setSelectedModelState(defaultModel); 
