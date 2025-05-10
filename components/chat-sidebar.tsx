@@ -416,20 +416,12 @@ export function ChatSidebar() {
                            <SidebarMenu>
                                 <SidebarMenuItem>
                                     <ThemeToggle
-                                        className="h-4 w-4 p-0"
-                                        trigger={(
-                                            <SidebarMenuButton 
-                                                className={cn(
-                                                    "w-full flex items-center gap-2 transition-all",
-                                                    isCollapsed ? "justify-center" : ""
-                                                )}
-                                                tooltip={isCollapsed ? "Theme" : undefined}
-                                            >
-                                                <Flame className="h-4 w-4 rotate-0 scale-100 transition-all dark:scale-0 dark:-rotate-90 flex-shrink-0" />
-                                                <Sun className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 light:rotate-0 light:scale-100 flex-shrink-0" />
-                                                {!isCollapsed && <span className="text-sm text-foreground/80 flex-grow text-left">Theme</span>}
-                                            </SidebarMenuButton>
+                                        className={cn(
+                                            "w-full flex items-center gap-2 transition-all text-sm text-foreground/80",
+                                            isCollapsed ? "justify-center" : "justify-start"
                                         )}
+                                        showLabel={!isCollapsed}
+                                        labelText={<span className="flex-grow text-left">Theme</span>}
                                     />
                                 </SidebarMenuItem>
                                 {webSearchEnabled && (

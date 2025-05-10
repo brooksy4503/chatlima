@@ -10,10 +10,47 @@ import { cn } from "@/lib/utils"
 // Add a 'trigger' prop to the interface
 interface ThemeToggleProps extends Omit<React.ComponentProps<typeof Button>, 'asChild'> {
   trigger?: React.ReactNode;
+  showLabel?: boolean;
+  labelText?: React.ReactNode;
 }
 
-export function ThemeToggle({ className, trigger, ...props }: ThemeToggleProps) {
-  const { setTheme } = useTheme()
+export function ThemeToggle({ className, trigger, showLabel, labelText, ...props }: ThemeToggleProps) {
+  const { setTheme, theme, resolvedTheme } = useTheme()
+
+  // Determine the icon to display
+  let IconComponent;
+  const iconClassName = "h-4 w-4 hover:text-sidebar-accent";
+
+  // Use `theme` if it's one of the explicit themes we set
+  // Otherwise, rely on `resolvedTheme` which handles 'system' or initial undefined `theme`
+  const activeTheme = (theme && theme !== 'system') ? theme : resolvedTheme;
+
+  switch (activeTheme) {
+    case "light":
+      IconComponent = <Sun className={iconClassName} />;
+      break;
+    case "dark":
+      IconComponent = <Flame className={iconClassName} />;
+      break;
+    case "black":
+      IconComponent = <CircleDashed className={iconClassName} />;
+      break;
+    case "sunset":
+      IconComponent = <Sun className={iconClassName} />; // Using Sun for sunset
+      break;
+    case "cyberpunk":
+      IconComponent = <TerminalSquare className={iconClassName} />;
+      break;
+    case "retro":
+      IconComponent = <CassetteTape className={iconClassName} />;
+      break;
+    case "nature":
+      IconComponent = <Leaf className={iconClassName} />;
+      break;
+    default:
+      // Fallback if activeTheme is somehow still not recognized
+      IconComponent = <Flame className={iconClassName} />; // Default to Flame
+  }
 
   // Conditionally render the trigger or the default button
   const TriggerComponent = trigger ? (
@@ -22,13 +59,17 @@ export function ThemeToggle({ className, trigger, ...props }: ThemeToggleProps) 
     <DropdownMenuTrigger asChild={true}>
       <Button
         variant="ghost"
-        size="icon"
-        className={cn(`rounded-md`, className)}
+        size={showLabel && labelText ? "default" : "icon"}
+        className={cn(
+          `rounded-md`,
+          showLabel && labelText ? "px-2 py-1 h-auto" : "", // Adjust padding/height if label is shown
+          className
+        )}
         {...props}
       >
-        <Flame className="h-4 w-4 rotate-0 scale-100 transition-all dark:scale-0 dark:-rotate-90 hover:text-sidebar-accent" />
-        <Sun className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-0 light:rotate-0 light:scale-100 hover:text-sidebar-accent" />
-        <span className="sr-only">Toggle theme</span>
+        {IconComponent}
+        {showLabel && labelText && <span>{labelText}</span>}
+        {(!showLabel || !labelText) && <span className="sr-only">Toggle theme</span>}
       </Button>
     </DropdownMenuTrigger>
   );

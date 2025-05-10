@@ -11,37 +11,41 @@ interface ModelContextType {
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
 
 export function ModelProvider({ children }: { children: ReactNode }) {
-  const [selectedModel, setSelectedModelState] = useState<modelID>(() => {
-    if (typeof window === 'undefined') {
-      return defaultModel; // Fallback for SSR or environments without window
+  const [selectedModel, setSelectedModelState] = useState<modelID>(defaultModel); // Always initialize with defaultModel
+
+  useEffect(() => {
+    // This effect runs only on the client, after hydration
+    if (typeof window !== 'undefined') {
+      try {
+        const storedModel = localStorage.getItem('selected_ai_model');
+        if (storedModel && (MODELS as ReadonlyArray<string>).includes(storedModel)) {
+          setSelectedModelState(storedModel as modelID);
+        } else {
+          // If no valid model in localStorage, ensure defaultModel is set (or the first from MODELS)
+          // This also handles the case where defaultModel might have been updated
+          let initialClientModel = defaultModel;
+          if (!MODELS.includes(defaultModel) && MODELS.length > 0) {
+            initialClientModel = MODELS[0];
+          }
+          // No need to set if it's already defaultModel, but this ensures consistency
+          // and sets localStorage if it was missing or invalid
+          if (MODELS.includes(initialClientModel)) {
+             setSelectedModelState(initialClientModel); // This will trigger the second useEffect below
+          }
+        }
+      } catch (error) {
+        console.error("Error reading selected model from localStorage during effect", error);
+        // Fallback logic in case of error during localStorage read
+        let fallbackClientModel = defaultModel;
+        if (!MODELS.includes(defaultModel) && MODELS.length > 0) {
+          fallbackClientModel = MODELS[0];
+        }
+         if (MODELS.includes(fallbackClientModel)) {
+           setSelectedModelState(fallbackClientModel);
+         }
+      }
     }
-    try {
-      const storedModel = localStorage.getItem('selected_ai_model');
-      if (storedModel && (MODELS as ReadonlyArray<string>).includes(storedModel)) {
-        return storedModel as modelID;
-      }
-      // If stored model is invalid or not present, check if defaultModel is valid
-      if (MODELS.includes(defaultModel)) {
-        return defaultModel;
-      }
-      // If defaultModel is also not in MODELS (e.g. filtered out), use the first available model
-      if (MODELS.length > 0) {
-        return MODELS[0];
-      }
-      // As a last resort, return defaultModel even if not in MODELS (should ideally not happen)
-      return defaultModel; 
-    } catch (error) {
-      console.error("Error reading selected model from localStorage during init", error);
-      // Fallback logic in case of error
-      if (MODELS.includes(defaultModel)) {
-        return defaultModel;
-      }
-      if (MODELS.length > 0) {
-        return MODELS[0];
-      }
-      return defaultModel;
-    }
-  });
+  }, []); // Empty dependency array ensures this runs once on mount
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
