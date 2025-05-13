@@ -353,14 +353,23 @@ export async function POST(req: Request) {
 
   // Add web search tool if enabled
   if (webSearch.enabled) {
-    const openrouterClient = createOpenRouter({ apiKey: getApiKey('OPENROUTER_API_KEY') });
-    tools = {
-      ...tools,
-      // @ts-expect-error Property 'web_search' does not exist on 'tools' initially.
-      web_search: openrouterClient.toolFactory.searchWeb({
-        contextSize: webSearch.contextSize,
-      }),
-    };
+    const apiKey = getApiKey('OPENROUTER_API_KEY');
+    if (!apiKey) {
+      console.error("[Web Search] OPENROUTER_API_KEY is missing. Web search will be disabled.");
+    } else {
+      const openrouterClient: any = createOpenRouter({ apiKey }); // Treat as any for the check
+      if (openrouterClient && typeof openrouterClient.toolFactory === 'object' && openrouterClient.toolFactory !== null && typeof openrouterClient.toolFactory.searchWeb === 'function') {
+        tools = {
+          ...tools,
+          web_search: openrouterClient.toolFactory.searchWeb({
+            contextSize: webSearch.contextSize,
+          }),
+        };
+        console.log("[Web Search] Tool configured successfully.");
+      } else {
+        console.error("[Web Search] Failed to initialize openrouterClient or toolFactory.searchWeb is not a function. Web search will be disabled. Check API key and provider library.");
+      }
+    }
   }
 
   let modelInstance;
