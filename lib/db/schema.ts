@@ -61,6 +61,8 @@ export const users = pgTable("user", {
   email: text("email").unique().notNull(),
   emailVerified: boolean("emailVerified"),
   image: text("image"),
+  isAnonymous: boolean("isAnonymous").default(false),
+  metadata: json("metadata"),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
 });
@@ -133,4 +135,17 @@ export type WebSearchCitation = {
   content?: string;
   startIndex: number;
   endIndex: number;
-}; 
+};
+
+// --- Polar Usage Events Schema ---
+
+export const polarUsageEvents = pgTable('polar_usage_events', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()), // Unique ID for the log entry
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }), // Links to your existing users table
+  polarCustomerId: text('polar_customer_id'), // The customer ID from Polar
+  eventName: text('event_name').notNull(), // The name of the event (e.g., "ai-usage")
+  eventPayload: json('event_payload').notNull(), // The full payload sent to Polar's ingest API (e.g., { "completionTokens": 100 })
+  createdAt: timestamp('created_at').defaultNow().notNull(), // When this log entry was created
+});
+
+export type PolarUsageEvent = typeof polarUsageEvents.$inferSelect; 

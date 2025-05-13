@@ -1,9 +1,8 @@
 "use client";
 
-import { signIn, signOut, useSession } from "@/lib/auth-client";
+import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { LogIn, LogOut } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SignInButtonProps {
@@ -11,8 +10,6 @@ interface SignInButtonProps {
 }
 
 export function SignInButton({ isCollapsed }: SignInButtonProps) {
-  const { data: session, isPending } = useSession();
-
   const handleSignIn = async () => {
     try {
       await signIn.social({
@@ -22,39 +19,6 @@ export function SignInButton({ isCollapsed }: SignInButtonProps) {
       console.error("Sign-in error:", error);
     }
   };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut({});
-    } catch (error) {
-      console.error("Sign-out error:", error);
-    }
-  };
-
-  if (isPending) {
-    return <Skeleton className={cn("h-10", isCollapsed ? "w-10 rounded-full" : "w-32")} />;
-  }
-
-  if (session?.user) {
-    return (
-      <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-2")}>
-        {!isCollapsed && (
-          <span className="text-sm text-muted-foreground hidden sm:inline truncate max-w-[150px]" title={session.user.email ?? ''}>
-            {session.user.email}
-          </span>
-        )}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={handleSignOut} 
-          aria-label="Sign Out"
-          className={cn(isCollapsed ? "h-8 w-8" : "h-9 w-9")}
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <Button 

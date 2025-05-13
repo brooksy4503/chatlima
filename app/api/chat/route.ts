@@ -8,6 +8,8 @@ import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
 import { chats } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { trackTokenUsage, hasEnoughCredits } from '@/lib/tokenCounter';
+import { auth, checkMessageLimit } from '@/lib/auth';
 
 import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
@@ -59,14 +61,12 @@ export async function POST(req: Request) {
     messages,
     chatId,
     selectedModel,
-    userId,
     mcpServers: initialMcpServers = [],
     webSearch = { enabled: false, contextSize: 'medium' }
   }: {
     messages: UIMessage[];
     chatId?: string;
     selectedModel: modelID;
-    userId: string;
     mcpServers?: MCPServerConfig[];
     webSearch?: WebSearchOptions;
   } = await req.json();
@@ -83,11 +83,61 @@ export async function POST(req: Request) {
     mcpServers = [];
   }
 
-  if (!userId) {
+  // Get the authenticated session (including anonymous users)
+  const session = await auth.api.getSession({ headers: req.headers });
+
+  // If no session exists, return error
+  if (!session || !session.user || !session.user.id) {
     return new Response(
-      JSON.stringify({ error: "User ID is required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Authentication required" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
     );
+  }
+
+  const userId = session.user.id;
+  const isAnonymous = (session.user as any).isAnonymous === true;
+
+  // Check message limit based on authentication status
+  const limitStatus = await checkMessageLimit(userId, isAnonymous);
+
+  if (limitStatus.hasReachedLimit) {
+    return new Response(
+      JSON.stringify({
+        error: "Message limit reached",
+        message: `You've reached your daily limit of ${limitStatus.limit} messages. ${isAnonymous ? "Sign in with Google to get more messages." : "Purchase credits to continue."
+          }`,
+        limit: limitStatus.limit,
+        remaining: limitStatus.remaining
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Check if user has sufficient credits (if they have a Polar account)
+  try {
+    // Try to get the Polar customer ID from session
+    const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
+      (session.user as any)?.metadata?.polarCustomerId;
+
+    // Estimate ~30 tokens per message as a basic check
+    const estimatedTokens = 30;
+
+    // Check credits using both the external ID (userId) and legacy polarCustomerId
+    // Pass isAnonymous flag to skip Polar checks for anonymous users
+    const hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous);
+
+    if (!hasCredits) {
+      return new Response(
+        JSON.stringify({
+          error: "Insufficient credits",
+          message: "You've used all your AI credits. Please purchase more to continue."
+        }),
+        { status: 402, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  } catch (error) {
+    // Log but continue - don't block users if credit check fails
+    console.error('Error checking credits:', error);
   }
 
   const id = chatId || nanoid();
@@ -441,6 +491,66 @@ export async function POST(req: Request) {
       }));
 
       await saveMessages({ messages: dbMessages });
+
+      // Extract token usage from response - OpenRouter may provide it in different formats
+      let completionTokens = 0;
+
+      // Access response with type assertion to avoid TypeScript errors
+      // The actual structure may vary by provider
+      const typedResponse = response as any;
+
+      // Try to extract tokens from different possible response structures
+      if (typedResponse.usage?.completion_tokens) {
+        completionTokens = typedResponse.usage.completion_tokens;
+      } else if (typedResponse.usage?.output_tokens) {
+        completionTokens = typedResponse.usage.output_tokens;
+      } else {
+        // Estimate based on last message content length if available
+        const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+        if (lastMessage?.content) {
+          // Rough estimate: 1 token ≈ 4 characters
+          completionTokens = Math.ceil(lastMessage.content.length / 4);
+        } else if (typeof typedResponse.content === 'string') {
+          completionTokens = Math.ceil(typedResponse.content.length / 4);
+        } else {
+          // Default minimum to track something
+          completionTokens = 10;
+        }
+      }
+
+      // Existing code for tracking tokens
+      let polarCustomerId: string | undefined;
+
+      // Get from session
+      try {
+        const session = await auth.api.getSession({ headers: req.headers });
+
+        // Try to get from session first
+        polarCustomerId = (session?.user as any)?.polarCustomerId ||
+          (session?.user as any)?.metadata?.polarCustomerId;
+      } catch (error) {
+        console.warn('Failed to get session for Polar customer ID:', error);
+      }
+
+      // Track token usage
+      if (completionTokens > 0) {
+        try {
+          // Get isAnonymous status from session if available
+          let isAnonymous = false;
+          try {
+            isAnonymous = (session?.user as any)?.isAnonymous === true;
+          } catch (error) {
+            console.warn('Could not determine if user is anonymous, assuming not anonymous');
+          }
+
+          // Pass isAnonymous flag to skip Polar reporting for anonymous users
+          await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous);
+          console.log(`${isAnonymous ? 'Tracked' : 'Reported'} ${completionTokens} tokens for user ${userId}${isAnonymous ? ' (anonymous)' : ' to Polar'}`);
+        } catch (error) {
+          console.error('Failed to track token usage:', error);
+          // Don't break the response flow if tracking fails
+        }
+      }
     }
   };
 

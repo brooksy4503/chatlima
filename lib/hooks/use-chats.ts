@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type Chat } from '@/lib/db/schema';
 import { toast } from 'sonner';
 
-export function useChats(userId: string) {
+export function useChats() {
   const queryClient = useQueryClient();
 
   // Main query to fetch chats
@@ -12,15 +12,9 @@ export function useChats(userId: string) {
     error,
     refetch
   } = useQuery<Chat[]>({
-    queryKey: ['chats', userId],
+    queryKey: ['chats'],
     queryFn: async () => {
-      if (!userId) return [];
-
-      const response = await fetch('/api/chats', {
-        headers: {
-          'x-user-id': userId
-        }
-      });
+      const response = await fetch('/api/chats');
 
       if (!response.ok) {
         throw new Error('Failed to fetch chats');
@@ -28,7 +22,6 @@ export function useChats(userId: string) {
 
       return response.json();
     },
-    enabled: !!userId, // Only run query if userId exists
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
     refetchOnWindowFocus: true, // Refetch when window regains focus
   });
@@ -37,10 +30,7 @@ export function useChats(userId: string) {
   const deleteChat = useMutation({
     mutationFn: async (chatId: string) => {
       const response = await fetch(`/api/chats/${chatId}`, {
-        method: 'DELETE',
-        headers: {
-          'x-user-id': userId
-        }
+        method: 'DELETE'
       });
 
       if (!response.ok) {
@@ -51,7 +41,7 @@ export function useChats(userId: string) {
     },
     onSuccess: (deletedChatId) => {
       // Update cache by removing the deleted chat
-      queryClient.setQueryData<Chat[]>(['chats', userId], (oldChats = []) =>
+      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
         oldChats.filter(chat => chat.id !== deletedChatId)
       );
 
@@ -69,8 +59,7 @@ export function useChats(userId: string) {
       const response = await fetch(`/api/chats/${chatId}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ title })
       });
@@ -84,13 +73,13 @@ export function useChats(userId: string) {
     },
     onMutate: async ({ chatId, title }: { chatId: string; title: string }) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: ['chats', userId] });
+      await queryClient.cancelQueries({ queryKey: ['chats'] });
 
       // Snapshot the previous value
-      const previousChats = queryClient.getQueryData<Chat[]>(['chats', userId]);
+      const previousChats = queryClient.getQueryData<Chat[]>(['chats']);
 
       // Optimistically update to the new value
-      queryClient.setQueryData<Chat[]>(['chats', userId], (oldChats = []) =>
+      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
         oldChats.map(chat =>
           chat.id === chatId ? { ...chat, title, updatedAt: new Date() } : chat
         )
@@ -103,36 +92,23 @@ export function useChats(userId: string) {
       console.error('Error updating chat title:', err);
       // Rollback to the previous value if optimistic update occurred
       if (context?.previousChats) {
-        queryClient.setQueryData<Chat[]>(['chats', userId], context.previousChats);
+        queryClient.setQueryData<Chat[]>(['chats'], context.previousChats);
       }
       toast.error(err.message || 'Failed to update chat title. Please try again.');
     },
     onSuccess: (data: Chat, variables) => {
       // Update the specific chat in the cache with the server's response
-      queryClient.setQueryData<Chat[]>(['chats', userId], (oldChats = []) =>
+      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
         oldChats.map(chat => (chat.id === variables.chatId ? data : chat))
       );
       toast.success('Chat title updated successfully!');
-    },
-    // Always refetch after error or success:
-    // onSettled: () => {
-    //   queryClient.invalidateQueries({ queryKey: ['chats', userId] });
-    // }
+    }
   });
 
   // Function to invalidate chats cache for refresh
   const refreshChats = () => {
-    queryClient.invalidateQueries({ queryKey: ['chats', userId] });
+    queryClient.invalidateQueries({ queryKey: ['chats'] });
   };
-
-  // Function for optimistic UI update of chat title (now part of updateChatTitle mutation's onMutate)
-  // const updateChatTitleOptimistic = (chatId: string, newTitle: string) => {
-  //   queryClient.setQueryData<Chat[]>(['chats', userId], (oldChats = []) =>
-  //     oldChats.map(chat =>
-  //       chat.id === chatId ? { ...chat, title: newTitle, updatedAt: new Date() } : chat
-  //     )
-  //   );
-  // };
 
   return {
     chats,
@@ -144,6 +120,5 @@ export function useChats(userId: string) {
     isUpdatingChatTitle: updateChatTitle.isPending,
     refreshChats,
     refetch
-    // updateChatTitleOptimistic // No longer directly exposed, handled by the mutation
   };
 }
