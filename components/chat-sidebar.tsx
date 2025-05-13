@@ -25,7 +25,6 @@ import Image from "next/image";
 import { MCPServerManager } from "./mcp-server-manager";
 import { ApiKeyManager } from "./api-key-manager";
 import { ThemeToggle } from "./theme-toggle";
-import { getUserId, updateUserId } from "@/lib/user-id";
 import { useChats } from "@/lib/hooks/use-chats";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -52,6 +51,7 @@ import { Label } from "@/components/ui/label";
 import { useMCP } from "@/lib/context/mcp-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignInButton } from "@/components/auth/SignInButton";
+import { UserAccountMenu } from "@/components/auth/UserAccountMenu";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
@@ -65,8 +65,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ChatList } from "./chat-list";
 
-const LOCAL_USER_ID_KEY = 'ai-chat-user-id';
-
 export function ChatSidebar() {
     const router = useRouter();
     const pathname = usePathname();
@@ -75,8 +73,6 @@ export function ChatSidebar() {
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
     const { state, setOpen, openMobile, setOpenMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
-    const [editUserIdOpen, setEditUserIdOpen] = useState(false);
-    const [newUserId, setNewUserId] = useState('');
 
     const { data: session, isPending: isSessionLoading } = useSession();
     const authenticatedUserId = session?.user?.id;
@@ -115,7 +111,7 @@ export function ChatSidebar() {
             if (authenticatedUserId) {
                 setUserId(authenticatedUserId);
             } else {
-                setUserId(getUserId());
+                setUserId(null);
             }
         }
     }, [authenticatedUserId, isSessionLoading]);
@@ -126,49 +122,16 @@ export function ChatSidebar() {
 
         if (!previousSession?.user && currentSession?.user?.id) {
             const authenticatedUserId = currentSession.user.id;
-            console.log('User logged in:', authenticatedUserId);
+            console.log('User logged in (ID):', authenticatedUserId);
+            // Log the entire user object for inspection
+            console.log('Session User Object:', currentSession.user);
             
-            const localUserId = localStorage.getItem(LOCAL_USER_ID_KEY);
-
-            if (localUserId && localUserId !== authenticatedUserId) {
-                console.log(`Found local user ID ${localUserId}, attempting migration...`);
-                
-                fetch('/api/chats/migrate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ localUserId }),
-                })
-                .then(async (res) => {
-                    if (res.ok) {
-                        const data = await res.json();
-                        console.log(`Migration successful: Migrated ${data.migratedCount} chats.`);
-                        localStorage.removeItem(LOCAL_USER_ID_KEY);
-                    } else {
-                        console.error('Chat migration failed:', res.status, await res.text());
-                        toast.error("Failed to migrate local chats.");
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error calling migration API:', error);
-                    toast.error("Error migrating local chats.");
-                })
-                .finally(() => {
-                    setUserId(authenticatedUserId);
-                    queryClient.invalidateQueries({ queryKey: ['chats'] });
-                    queryClient.invalidateQueries({ queryKey: ['chat'] }); 
-                    console.log('Chat queries invalidated for new user ID.');
-                });
-            } else {
-                setUserId(authenticatedUserId);
-                queryClient.invalidateQueries({ queryKey: ['chats'] });
-                queryClient.invalidateQueries({ queryKey: ['chat'] });
-            }
+            setUserId(authenticatedUserId);
+            queryClient.invalidateQueries({ queryKey: ['chats'] });
+            queryClient.invalidateQueries({ queryKey: ['chat'] });
         } else if (previousSession?.user && !currentSession?.user) {
             console.log('User logged out.');
-            const localId = getUserId();
-            setUserId(localId);
+            setUserId(null);
             router.push('/');
             queryClient.invalidateQueries({ queryKey: ['chats'] });
             queryClient.invalidateQueries({ queryKey: ['chat'] });
@@ -177,7 +140,15 @@ export function ChatSidebar() {
         previousSessionRef.current = currentSession;
     }, [session, queryClient, router]);
     
-    const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle } = useChats(userId ?? '');
+    useEffect(() => {
+        // Log anonymous user ID and email for debugging purposes if the user is flagged as anonymous.
+        if (!isSessionLoading && session?.user?.isAnonymous === true) {
+            // This log will only appear in the developer console.
+            console.log('Anonymous User (for debugging): ID=', session.user.id, ', Email=', session.user.email);
+        }
+    }, [session, isSessionLoading]);
+
+    const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle } = useChats();
     const isLoading = isSessionLoading || (userId === null) || isChatsLoading;
 
     const handleNewChat = () => {
@@ -197,26 +168,6 @@ export function ChatSidebar() {
     };
 
     const activeServersCount = selectedMcpServers.length;
-
-    const handleUpdateUserId = () => {
-        if (!newUserId.trim()) {
-            toast.error("User ID cannot be empty");
-            return;
-        }
-        if (authenticatedUserId) {
-            toast.error("Cannot manually edit User ID while logged in.");
-            setEditUserIdOpen(false);
-            return;
-        }
-
-        updateUserId(newUserId.trim());
-        setUserId(newUserId.trim());
-        setEditUserIdOpen(false);
-        toast.success("User ID updated successfully");
-        
-        queryClient.invalidateQueries({ queryKey: ['chats'] });
-        queryClient.invalidateQueries({ queryKey: ['chat'] });
-    };
 
     if (isLoading) {
         return (
@@ -508,49 +459,19 @@ export function ChatSidebar() {
                             <Skeleton className="h-8 w-8 rounded-full" />
                             {!isCollapsed && <Skeleton className="h-4 w-24" />}
                         </div>
-                    ) : session?.user ? (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button 
-                                    variant="ghost" 
-                                    className={cn(
-                                        "flex items-center justify-start gap-2 px-3 py-2 mt-2 w-full h-auto focus-visible:ring-0",
-                                        isCollapsed && "justify-center" 
-                                    )}
-                                >
-                                    <Avatar className="h-8 w-8 rounded-full">
-                                        <AvatarFallback>{session.user.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
-                                    {!isCollapsed && <span className="truncate">{session.user.name}</span>}
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent side="top" align="start" className="w-[calc(var(--sidebar-width)-1.5rem)] ml-3 mb-1">
-                                <DropdownMenuLabel className="truncate">{session.user.name}</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={async () => {
-                                    try {
-                                        await signOut();
-                                        localStorage.removeItem(LOCAL_USER_ID_KEY);
-                                        toast.info("You have been logged out.");
-                                        router.push('/');
-                                        queryClient.invalidateQueries({ queryKey: ['chats'] });
-                                        queryClient.invalidateQueries({ queryKey: ['chat'] });
-                                    } catch (error) {
-                                        console.error("Sign out error:", error);
-                                        toast.error("Failed to sign out.");
-                                    }
-                                }} className="cursor-pointer">
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Log out</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    ) : (
+                    ) : session?.user?.isAnonymous === true ? (
                         <div className={cn(
                             "flex items-center mt-2", 
                             isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2 gap-2" 
                         )}>
                             <SignInButton isCollapsed={isCollapsed} />
+                        </div>
+                    ) : (
+                        <div className={cn(
+                            "flex items-center mt-2", 
+                            isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2" 
+                        )}>
+                            <UserAccountMenu />
                         </div>
                     )}
 
@@ -579,44 +500,6 @@ export function ChatSidebar() {
                 open={mcpSettingsOpen}
                 onOpenChange={setMcpSettingsOpen}
             />
-
-            <Dialog open={editUserIdOpen && !isUserAuthenticated} onOpenChange={(open) => {
-                setEditUserIdOpen(open);
-                if (open) {
-                    setNewUserId(userId ?? '');
-                }
-            }}>
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle>Edit User ID</DialogTitle>
-                        <DialogDescription>
-                            Update your user ID for chat synchronization. This will affect which chats are visible to you.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="userId">User ID</Label>
-                            <Input
-                                id="userId"
-                                value={newUserId}
-                                onChange={(e) => setNewUserId(e.target.value)}
-                                placeholder="Enter your user ID"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setEditUserIdOpen(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleUpdateUserId}>
-                            Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }

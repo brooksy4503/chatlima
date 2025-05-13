@@ -8,7 +8,6 @@ import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
 import { toast } from "sonner";
 import { useRouter, useParams } from "next/navigation";
-import { getUserId, updateUserId } from "@/lib/user-id";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat-store";
 import { type Message as DBMessage } from "@/lib/db/schema";
@@ -52,70 +51,14 @@ export default function Chat() {
   }, []);
 
   useEffect(() => {
-    if (isMounted) {
-      setUserId(getUserId());
-    }
-  }, [isMounted]);
-  
-  useEffect(() => {
     if (isMounted && !isSessionLoading) {
       if (session?.user?.id) {
-        const authenticatedUserId = session.user.id;
-        const currentLocalId = getUserId();
-
-        if (currentLocalId && currentLocalId !== authenticatedUserId) {
-          console.log(
-            `Local user ID (${currentLocalId}) differs from authenticated ID (${authenticatedUserId}). Attempting migration.`,
-          );
-          fetch('/api/chats/migrate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ localUserId: currentLocalId }),
-          })
-            .then(async (res) => {
-              if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(
-                  `Migration API failed with status ${res.status}: ${errorData.error || 'Unknown error'}`,
-                );
-              }
-              return res.json();
-            })
-            .then((data) => {
-              console.log(`Successfully migrated ${data.migratedCount} chats.`);
-              toast.success(`Synced ${data.migratedCount} previous chats to your account.`);
-              updateUserId(authenticatedUserId);
-              console.log('Chat component updated local storage userId after migration.');
-              setUserId(authenticatedUserId);
-              queryClient.invalidateQueries({ queryKey: ['chats', authenticatedUserId] });
-              if (chatId) {
-                queryClient.invalidateQueries({ queryKey: ['chat', chatId, authenticatedUserId] });
-              }
-            })
-            .catch((error) => {
-              if (error instanceof Error && error.message.includes('status 401')) {
-                 console.warn('Chat migration attempt failed likely due to logout or session expiry.');
-              } else {
-                 console.error('Chat migration failed:', error);
-                 toast.error('Failed to sync previous chats to your account.');
-              }
-            });
-            setUserId(authenticatedUserId); 
-        } else {
-           if (currentLocalId !== authenticatedUserId) {
-             updateUserId(authenticatedUserId);
-             console.log('Chat component updated local storage userId (no migration needed).');
-           }
-           setUserId(authenticatedUserId);
-        }
-
+        setUserId(session.user.id);
       } else {
-        setUserId(getUserId());
+        setUserId(null);
       }
     }
-  }, [session, isSessionLoading, queryClient, chatId]);
+  }, [isMounted, isSessionLoading, session]);
   
   useEffect(() => {
     if (isMounted && !isSessionLoading && !session && chatId && params?.id) {
@@ -132,17 +75,13 @@ export default function Chat() {
   }, [chatId]);
   
   const { data: chatData, isLoading: isLoadingChat } = useQuery({
-    queryKey: ['chat', chatId, userId] as const,
+    queryKey: ['chat', chatId],
     queryFn: async ({ queryKey }) => {
-      const [_, chatId, userId] = queryKey;
-      if (!chatId || !userId) return null;
+      const [_, chatId] = queryKey;
+      if (!chatId) return null;
       
       try {
-        const response = await fetch(`/api/chats/${chatId}`, {
-          headers: {
-            'x-user-id': userId
-          }
-        });
+        const response = await fetch(`/api/chats/${chatId}`);
         
         if (!response.ok) {
           throw new Error('Failed to load chat');
@@ -158,7 +97,6 @@ export default function Chat() {
     },
     enabled: 
       !!chatId && 
-      !!userId && 
       !(isMounted && !isSessionLoading && !session && chatId && params?.id),
     retry: 1,
     staleTime: 1000 * 60 * 5,
@@ -188,23 +126,41 @@ export default function Chat() {
         selectedModel,
         mcpServers: mcpServersForApi,
         chatId: chatId || generatedChatId,
-        userId,
         webSearch: {
           enabled: webSearchEnabled,
           contextSize: webSearchContextSize,
         }
       },
       experimental_throttle: 500,
-      onFinish: () => {
-        if (userId) {
-          queryClient.invalidateQueries({ queryKey: ['chats', userId] });
+      onFinish: (message) => {
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+        queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+        if (!chatId && generatedChatId) {
+          if (window.location.pathname !== `/chat/${generatedChatId}`) {
+             router.push(`/chat/${generatedChatId}`, { scroll: false }); 
+          }
         }
       },
       onError: (error) => {
+        let errorMessage = "An error occurred, please try again later."; // Default message
+        try {
+          // Attempt to parse the error message as JSON, assuming the API error response body might be stringified here
+          const parsedError = JSON.parse(error.message);
+          // If parsing is successful and a specific message exists in the parsed object, use it
+          if (parsedError && typeof parsedError.message === 'string' && parsedError.message.length > 0) {
+            errorMessage = parsedError.message;
+          } else if (error.message.length > 0) {
+            // Fallback to the original error message if parsing fails or doesn't yield a message field
+            errorMessage = error.message;
+          }
+        } catch (e) {
+          // If parsing fails, check if the original error message is non-empty
+          if (error.message && error.message.length > 0) {
+            errorMessage = error.message;
+          }
+        }
         toast.error(
-          error.message.length > 0
-            ? error.message
-            : "An error occured, please try again later.",
+          errorMessage,
           { position: "top-center", richColors: true },
         );
       },
@@ -213,16 +169,8 @@ export default function Chat() {
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!chatId && generatedChatId && input.trim()) {
-      const effectiveChatId = generatedChatId;
-      
-      handleSubmit(e);
-      
-      router.push(`/chat/${effectiveChatId}`);
-    } else {
-      handleSubmit(e);
-    }
-  }, [chatId, generatedChatId, input, handleSubmit, router]);
+    handleSubmit(e);
+  }, [handleSubmit]);
 
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
 

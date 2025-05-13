@@ -11,15 +11,11 @@ interface Params {
   };
 }
 
-// Helper to get user ID (prioritizing authenticated session)
-async function getRequestUserId(request: NextRequest): Promise<string | null> {
-  // Check for authenticated session first
+// Helper to get user ID from authenticated session only
+async function getRequestUserId(request: NextRequest | Request): Promise<string | null> {
+  // Only use authenticated session for user ID
   const session = await auth.api.getSession({ headers: request.headers });
-  if (session?.user?.id) {
-    return session.user.id;
-  }
-  // Fallback to header for anonymous users
-  return request.headers.get('x-user-id');
+  return session?.user?.id || null;
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
@@ -27,8 +23,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     const userId = await getRequestUserId(request);
 
     if (!userId) {
-      // This should only happen if no session AND no header
-      return NextResponse.json({ error: "User ID not found in session or header" }, { status: 401 });
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -57,7 +52,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const userId = await getRequestUserId(request);
 
     if (!userId) {
-      return NextResponse.json({ error: "User ID not found in session or header" }, { status: 401 });
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
     const { id } = await params;
@@ -77,8 +72,8 @@ export async function PATCH(
   { params }: Params
 ) {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user?.id) {
+    const userId = await getRequestUserId(request);
+    if (!userId) {
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -105,7 +100,7 @@ export async function PATCH(
     const existingChatArray = await db
       .select()
       .from(chats)
-      .where(and(eq(chats.id, chatId), eq(chats.userId, session.user.id)))
+      .where(and(eq(chats.id, chatId), eq(chats.userId, userId)))
       .limit(1);
 
     if (existingChatArray.length === 0) {
@@ -123,13 +118,13 @@ export async function PATCH(
     const updatedChatArray = await db
       .update(chats)
       .set({ title: title.trim(), updatedAt: new Date() })
-      .where(and(eq(chats.id, chatId), eq(chats.userId, session.user.id)))
+      .where(and(eq(chats.id, chatId), eq(chats.userId, userId)))
       .returning();
 
     if (updatedChatArray.length === 0) {
       // This case should ideally not be reached if the prior check passed,
       // but as a safeguard:
-      console.error(`Failed to update chat title for chat ID: ${chatId} and user ID: ${session.user.id}. Chat might have been deleted or ownership changed concurrently.`);
+      console.error(`Failed to update chat title for chat ID: ${chatId} and user ID: ${userId}. Chat might have been deleted or ownership changed concurrently.`);
       return NextResponse.json({ error: "Failed to update chat title. Chat not found or access denied." }, { status: 404 });
     }
 
