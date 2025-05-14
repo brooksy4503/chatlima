@@ -97,47 +97,41 @@ export async function POST(req: Request) {
   const userId = session.user.id;
   const isAnonymous = (session.user as any).isAnonymous === true;
 
-  // Check message limit based on authentication status
-  const limitStatus = await checkMessageLimit(userId, isAnonymous);
+  // Try to get the Polar customer ID from session
+  const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
+    (session.user as any)?.metadata?.polarCustomerId;
 
-  if (limitStatus.hasReachedLimit) {
-    return new Response(
-      JSON.stringify({
-        error: "Message limit reached",
-        message: `You've reached your daily limit of ${limitStatus.limit} messages. ${isAnonymous ? "Sign in with Google to get more messages." : "Purchase credits to continue."
-          }`,
-        limit: limitStatus.limit,
-        remaining: limitStatus.remaining
-      }),
-      { status: 429, headers: { "Content-Type": "application/json" } }
-    );
-  }
+  // Estimate ~30 tokens per message as a basic check
+  const estimatedTokens = 30;
 
-  // Check if user has sufficient credits (if they have a Polar account)
+  // 1. Check if user has sufficient credits (if they have a Polar account)
+  let hasCredits = false;
   try {
-    // Try to get the Polar customer ID from session
-    const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
-      (session.user as any)?.metadata?.polarCustomerId;
-
-    // Estimate ~30 tokens per message as a basic check
-    const estimatedTokens = 30;
-
     // Check credits using both the external ID (userId) and legacy polarCustomerId
     // Pass isAnonymous flag to skip Polar checks for anonymous users
-    const hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous);
-
-    if (!hasCredits) {
-      return new Response(
-        JSON.stringify({
-          error: "Insufficient credits",
-          message: "You've used all your AI credits. Please purchase more to continue."
-        }),
-        { status: 402, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous);
   } catch (error) {
     // Log but continue - don't block users if credit check fails
     console.error('Error checking credits:', error);
+  }
+
+  // 2. If user has credits, allow request (skip daily message limit)
+  if (!isAnonymous && hasCredits) {
+    // proceed
+  } else {
+    // 3. Otherwise, check message limit based on authentication status
+    const limitStatus = await checkMessageLimit(userId, isAnonymous);
+    if (limitStatus.hasReachedLimit) {
+      return new Response(
+        JSON.stringify({
+          error: "Message limit reached",
+          message: `You've reached your daily limit of ${limitStatus.limit} messages. ${isAnonymous ? "Sign in with Google to get more messages." : "Purchase credits to continue."}`,
+          limit: limitStatus.limit,
+          remaining: limitStatus.remaining
+        }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
   }
 
   const id = chatId || nanoid();
