@@ -171,7 +171,8 @@ export async function POST(req: Request) {
     selectedModel === "openrouter/deepseek/deepseek-r1" ||
     selectedModel === "openrouter/x-ai/grok-3-beta" ||
     selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-    selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
+    selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+    selectedModel === "openrouter/qwen/qwq-32b"
   ) {
     const systemContent = "Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags.";
     modelMessages.unshift({
