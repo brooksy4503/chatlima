@@ -383,12 +383,13 @@ export async function POST(req: Request) {
         'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
       }
     });
-    // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, and Grok 3 Mini Beta (High Reasoning), explicitly disable logprobs if it's the selected model
+    // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
     if (
       selectedModel === "openrouter/deepseek/deepseek-r1" ||
       selectedModel === "openrouter/x-ai/grok-3-beta" ||
       selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-      selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
+      selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+      selectedModel === "openrouter/qwen/qwq-32b"
     ) {
       modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
     } else {
