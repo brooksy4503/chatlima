@@ -6,6 +6,7 @@ import * as schema from './db/schema'; // Assuming your full Drizzle schema is e
 import { Polar } from '@polar-sh/sdk';
 import { polar as polarPlugin } from '@polar-sh/better-auth';
 import { count, eq, and, gte } from 'drizzle-orm';
+import { getRemainingCreditsByExternalId } from './polar';
 
 
 if (!process.env.GOOGLE_CLIENT_ID) {
@@ -193,22 +194,38 @@ export const auth = betterAuth({
     // session: { ... } // Potentially configure session strategy if needed
 });
 
-// Helper to check if user has reached their daily message limit
+// Helper to check if user has reached their daily message or credit limit
 export async function checkMessageLimit(userId: string, isAnonymous: boolean): Promise<{
     hasReachedLimit: boolean;
     limit: number;
     remaining: number;
+    credits?: number | null;
+    usedCredits?: boolean;
 }> {
     try {
+        // 1. Check Polar credits (for authenticated users only)
+        if (!isAnonymous) {
+            const credits = await getRemainingCreditsByExternalId(userId);
+            if (typeof credits === 'number' && credits > 0) {
+                // User has credits, so allow usage and show credits left
+                return {
+                    hasReachedLimit: false,
+                    limit: 250, // Soft cap for display, actual limit is credits
+                    remaining: credits,
+                    credits,
+                    usedCredits: true
+                };
+            }
+        }
+
+        // 2. If no credits (or anonymous), use daily message limit
         // Get user info
         const user = await db.query.users.findFirst({
             where: eq(schema.users.id, userId)
         });
 
-        // Default limit for anonymous users
-        let messageLimit = 2; // Changed from 10
-
-        // If user is not anonymous, they get higher limits
+        // Set daily limits
+        let messageLimit = isAnonymous ? 10 : 20;
         if (!isAnonymous && user) {
             messageLimit = (user as any).metadata?.messageLimit || 20;
         }
@@ -233,7 +250,9 @@ export async function checkMessageLimit(userId: string, isAnonymous: boolean): P
         return {
             hasReachedLimit: messageCount >= messageLimit,
             limit: messageLimit,
-            remaining: Math.max(0, messageLimit - messageCount)
+            remaining: Math.max(0, messageLimit - messageCount),
+            credits: 0,
+            usedCredits: false
         };
     } catch (error) {
         console.error('Error checking message limit:', error);
