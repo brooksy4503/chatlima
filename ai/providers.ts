@@ -106,7 +106,10 @@ const languageModels = {
       middleware
     }
   ),
-  "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
+  "openrouter/qwen/qwq-32b": wrapLanguageModel({
+    model: openrouterClient("qwen/qwq-32b"),
+    middleware: deepseekR1Middleware,
+  }),
   "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b")
 };
 
