@@ -57,7 +57,7 @@ export const auth = betterAuth({
             // If your expires column was different, you'd map expiresAt here too
         }
     },
-    trustedOrigins: ['https://hog-cute-turkey.ngrok-free.app', 'http://localhost:3000'],
+    trustedOrigins: ['https://hog-cute-turkey.ngrok-free.app', 'http://localhost:3000', 'https://www.chatlima.com'],
     socialProviders: {
         google: {
             clientId: process.env.GOOGLE_CLIENT_ID,
