@@ -90,32 +90,50 @@ const components: Partial<Components> = {
     );
   },
   h1: ({ node, children, ...props }) => (
-    <h1 className="text-2xl font-semibold mt-3 mb-1.5 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
+    <h1
+      className="text-2xl font-semibold mt-3 mb-1.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+      {...props}
+    >
       {children}
     </h1>
   ),
   h2: ({ node, children, ...props }) => (
-    <h2 className="text-xl font-semibold mt-2.5 mb-1.5 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
+    <h2
+      className="text-xl font-semibold mt-2.5 mb-1.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+      {...props}
+    >
       {children}
     </h2>
   ),
   h3: ({ node, children, ...props }) => (
-    <h3 className="text-lg font-semibold mt-2 mb-1 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
+    <h3
+      className="text-lg font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+      {...props}
+    >
       {children}
     </h3>
   ),
   h4: ({ node, children, ...props }) => (
-    <h4 className="text-base font-semibold mt-2 mb-1 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
+    <h4
+      className="text-base font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+      {...props}
+    >
       {children}
     </h4>
   ),
   h5: ({ node, children, ...props }) => (
-    <h5 className="text-sm font-semibold mt-2 mb-1 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
+    <h5
+      className="text-sm font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+      {...props}
+    >
       {children}
     </h5>
   ),
   h6: ({ node, children, ...props }) => (
-    <h6 className="text-xs font-semibold mt-2 mb-0.5 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
+    <h6
+      className="text-xs font-semibold mt-2 mb-0.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+      {...props}
+    >
       {children}
     </h6>
   ),
