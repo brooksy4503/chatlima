@@ -21,6 +21,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { SidebarMenu } from "@/components/ui/sidebar";
 
 interface Chat {
     id: string;
@@ -298,14 +299,18 @@ export function ChatList({
                             );
                         })}
                     </AnimatePresence>
-                ) : searchTerm ? (
-                    <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2">
-                        {!isCollapsed && "No results found."}
-                    </SidebarMenuItem>
                 ) : (
-                    <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2">
-                        {!isCollapsed && "No chats yet. Start a new one!"}
-                    </SidebarMenuItem>
+                    <SidebarMenu>
+                        {searchTerm ? (
+                            <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2 list-none">
+                                {!isCollapsed && "No results found."}
+                            </SidebarMenuItem>
+                        ) : (
+                            <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2 list-none">
+                                {!isCollapsed && "No chats yet. Start a new one!"}
+                            </SidebarMenuItem>
+                        )}
+                    </SidebarMenu>
                 )}
             </SidebarGroupContent>
         </>
