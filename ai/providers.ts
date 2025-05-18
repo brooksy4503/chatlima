@@ -17,6 +17,7 @@ export interface ModelInfo {
   apiVersion: string;
   capabilities: string[];
   enabled?: boolean;
+  supportsWebSearch?: boolean;
 }
 
 const middleware = extractReasoningMiddleware({
@@ -114,29 +115,31 @@ const languageModels = {
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
-  "claude-3-7-sonnet": {
-    provider: "Anthropic",
-    name: "Claude 3.7 Sonnet",
-    description: "Latest version of Anthropic's Claude 3.7 Sonnet with strong reasoning and coding capabilities.",
-    apiVersion: "claude-3-7-sonnet-20250219",
-    capabilities: ["Reasoning", "Efficient", "Agentic"],
-    enabled: false
-  },
   "openrouter/anthropic/claude-3.5-sonnet": {
     provider: "OpenRouter",
     name: "Claude 3.5 Sonnet",
     description: "New Claude 3.5 Sonnet delivers better-than-Opus capabilities, faster-than-Sonnet speeds, at the same Sonnet prices. Sonnet is particularly good at: Coding, Data science, Visual processing, Agentic tasks",
     apiVersion: "anthropic/claude-3.5-sonnet",
     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
+  },
+  "claude-3-7-sonnet": {
+    provider: "Anthropic",
+    name: "Claude 3.7 Sonnet",
+    description: "Latest version of Anthropic\'s Claude 3.7 Sonnet with strong reasoning and coding capabilities.",
+    apiVersion: "claude-3-7-sonnet-20250219",
+    capabilities: ["Reasoning", "Efficient", "Agentic"],
+    enabled: false
   },
   "openrouter/anthropic/claude-3.7-sonnet": {
     provider: "OpenRouter",
     name: "Claude 3.7 Sonnet",
-    description: "Latest version of Anthropic's Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
+    description: "Latest version of Anthropic\'s Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
     apiVersion: "anthropic/claude-3.7-sonnet",
     capabilities: ["Reasoning", "Coding", "Agentic"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
     provider: "OpenRouter",
@@ -144,7 +147,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Advanced LLM with improved reasoning, coding, and problem-solving. Features a hybrid reasoning approach for flexible processing.",
     apiVersion: "anthropic/claude-3.7-sonnet:thinking",
     capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/deepseek/deepseek-chat-v3-0324": {
     provider: "OpenRouter",
@@ -152,7 +156,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "DeepSeek Chat model V3 accessed via OpenRouter.",
     apiVersion: "deepseek/deepseek-chat-v3-0324",
     capabilities: ["Chat", "Efficient"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/deepseek/deepseek-r1": {
     provider: "OpenRouter",
@@ -160,68 +165,49 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
     apiVersion: "deepseek/deepseek-r1",
     capabilities: ["Reasoning", "Open Source"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/google/gemini-2.5-flash-preview": {
     provider: "OpenRouter",
     name: "Gemini 2.5 Flash Preview",
-    description: "Google's state-of-the-art workhorse model for advanced reasoning, coding, mathematics, and scientific tasks, with built-in \"thinking\" capabilities. Accessed via OpenRouter.",
+    description: "Google\'s state-of-the-art workhorse model for advanced reasoning, coding, mathematics, and scientific tasks, with built-in \"thinking\" capabilities. Accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-flash-preview",
     capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/google/gemini-2.5-flash-preview:thinking": {
     provider: "OpenRouter",
     name: "Gemini 2.5 Flash Preview (thinking)",
-    description: "Gemini 2.5 Flash is Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
+    description: "Gemini 2.5 Flash is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-flash-preview:thinking",
     capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/google/gemini-2.5-pro-preview-03-25": {
     provider: "OpenRouter",
     name: "Gemini 2.5 Pro Preview",
-    description: "Google's state-of-the-art AI model for advanced reasoning, coding, math, and science, accessed via OpenRouter.",
+    description: "Google\'s state-of-the-art AI model for advanced reasoning, coding, math, and science, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-pro-preview-03-25",
     capabilities: ["Reasoning", "Coding", "Math", "Science"],
-    enabled: true
-  },
-  "gpt-4.1-mini": {
-    provider: "OpenAI",
-    name: "GPT-4.1 Mini",
-    description: "Compact version of OpenAI's GPT-4.1 with good balance of capabilities, including vision.",
-    apiVersion: "gpt-4.1-mini",
-    capabilities: ["Balance", "Creative", "Vision"],
-    enabled: false
-  },
-  "openrouter/openai/gpt-4.1": {
-    provider: "OpenRouter",
-    name: "GPT-4.1",
-    description: "GPT-4.1 is a flagship large language model excelling in instruction following, software engineering, and long-context reasoning, supporting a 1 million token context. It's tuned for precise code diffs, agent reliability, and high recall, ideal for agents, IDE tooling, and enterprise knowledge retrieval.",
-    apiVersion: "openai/gpt-4.1",
-    capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
-    enabled: true
-  },
-  "openrouter/openai/gpt-4.1-mini": {
-    provider: "OpenRouter",
-    name: "GPT-4.1 Mini",
-    description: "Mid-sized model competitive with GPT-4o, lower latency/cost. Strong coding & vision. Accessed via OpenRouter.",
-    apiVersion: "openai/gpt-4.1-mini",
-    capabilities: ["Coding", "Vision", "Efficient"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/x-ai/grok-3-beta": {
     provider: "OpenRouter",
     name: "Grok 3 Beta",
-    description: "xAI's flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Accessed via OpenRouter.",
+    description: "xAI\'s flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-beta",
     capabilities: ["Reasoning", "Coding", "Knowledge"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "grok-3-mini": {
     provider: "XAI",
     name: "Grok 3 Mini",
-    description: "Latest version of XAI's Grok 3 Mini with strong reasoning and coding capabilities.",
+    description: "Latest version of XAI\'s Grok 3 Mini with strong reasoning and coding capabilities.",
     apiVersion: "grok-3-mini-latest",
     capabilities: ["Reasoning", "Efficient", "Agentic"],
     enabled: false
@@ -232,7 +218,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Tool calling is disabled. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
     capabilities: ["Reasoning", "Math", "Puzzles"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
     provider: "OpenRouter",
@@ -240,7 +227,17 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Tool calling is disabled. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
     capabilities: ["Reasoning", "Math", "Puzzles", "High Effort"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
+  },
+  "openrouter/meta-llama/llama-4-maverick": {
+    provider: "OpenRouter",
+    name: "Llama 4 Maverick",
+    description: "Meta\'s Llama 4 Maverick: a high-capacity, multimodal MoE language model. Supports multilingual text/image input and produces text/code output.",
+    apiVersion: "meta-llama/llama-4-maverick",
+    capabilities: ["Multimodal", "Multilingual", "Image Input", "Code Output", "Reasoning"],
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/mistralai/mistral-medium-3": {
     provider: "OpenRouter",
@@ -248,7 +245,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "High-performance enterprise-grade language model with frontier-level capabilities. Balances state-of-the-art reasoning and multimodal performance. Accessed via OpenRouter.",
     apiVersion: "mistralai/mistral-medium-3",
     capabilities: ["Reasoning", "Coding", "STEM", "Enterprise"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
     provider: "OpenRouter",
@@ -256,28 +254,48 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Mistral Small 3.1 Instruct model accessed via OpenRouter.",
     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
     capabilities: ["Instruct", "Efficient"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
-  "openrouter/meta-llama/llama-4-maverick": {
+  "openrouter/openai/gpt-4.1": {
     provider: "OpenRouter",
-    name: "Llama 4 Maverick",
-    description: "Meta's Llama 4 Maverick: a high-capacity, multimodal MoE language model. Supports multilingual text/image input and produces text/code output.",
-    apiVersion: "meta-llama/llama-4-maverick",
-    capabilities: ["Multimodal", "Multilingual", "Image Input", "Code Output", "Reasoning"],
-    enabled: true
+    name: "OpenAI GPT-4.1",
+    description: "GPT-4.1 is a flagship large language model excelling in instruction following, software engineering, and long-context reasoning, supporting a 1 million token context. It\'s tuned for precise code diffs, agent reliability, and high recall, ideal for agents, IDE tooling, and enterprise knowledge retrieval. Note: Web search is not supported for this model.",
+    apiVersion: "openai/gpt-4.1",
+    capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
+    enabled: true,
+    supportsWebSearch: false
+  },
+  "gpt-4.1-mini": {
+    provider: "OpenAI",
+    name: "OpenAI GPT-4.1 Mini",
+    description: "Compact version of OpenAI\'s GPT-4.1 with good balance of capabilities, including vision.",
+    apiVersion: "gpt-4.1-mini",
+    capabilities: ["Balance", "Creative", "Vision"],
+    enabled: false
+  },
+  "openrouter/openai/gpt-4.1-mini": {
+    provider: "OpenRouter",
+    name: "OpenAI GPT-4.1 Mini",
+    description: "Mid-sized model competitive with GPT-4o, lower latency/cost. Strong coding & vision. Accessed via OpenRouter. Note: Web search is not supported for this model.",
+    apiVersion: "openai/gpt-4.1-mini",
+    capabilities: ["Coding", "Vision", "Efficient"],
+    enabled: true,
+    supportsWebSearch: false
   },
   "openrouter/openai/o4-mini-high": {
     provider: "OpenRouter",
-    name: "o4 Mini High",
+    name: "OpenAI o4 Mini High",
     description: "OpenAI o4-mini-high, a compact reasoning model optimized for speed and cost, with strong multimodal and agentic capabilities. Accessed via OpenRouter.",
     apiVersion: "openai/o4-mini-high",
     capabilities: ["Reasoning", "Coding", "Efficient", "Agentic", "Multimodal"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "qwen-qwq": {
     provider: "Groq",
     name: "Qwen QWQ",
-    description: "Latest version of Alibaba's Qwen QWQ with strong reasoning and coding capabilities.",
+    description: "Latest version of Alibaba\'s Qwen QWQ with strong reasoning and coding capabilities.",
     apiVersion: "qwen-qwq",
     capabilities: ["Reasoning", "Efficient", "Agentic"],
     enabled: false
@@ -288,7 +306,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. Accessed via OpenRouter.",
     apiVersion: "qwen/qwq-32b",
     capabilities: ["Reasoning", "Hard Problems"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   },
   "openrouter/qwen/qwen3-235b-a22b": {
     provider: "OpenRouter",
@@ -296,7 +315,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Qwen3-235B-A22B is a 235B parameter mixture-of-experts (MoE) model by Qwen, activating 22B parameters per forward pass. It supports 'thinking' and 'non-thinking' modes, excels in reasoning, multilingual tasks, instruction-following, and agent tool-calling, with a context window up to 131K tokens via OpenRouter.",
     apiVersion: "qwen/qwen3-235b-a22b",
     capabilities: ["Reasoning", "Coding", "Multilingual", "Agentic"],
-    enabled: true
+    enabled: true,
+    supportsWebSearch: true
   }
 };
 

@@ -1,4 +1,4 @@
-import { model, type modelID } from "@/ai/providers";
+import { model, type modelID, modelDetails } from "@/ai/providers";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { streamText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
@@ -56,6 +56,19 @@ interface OpenRouterResponse extends LanguageModelResponseMetadata {
   body?: unknown;
 }
 
+// Helper to create standardized error responses
+const createErrorResponse = (
+  code: string,
+  message: string,
+  status: number,
+  details?: string
+) => {
+  return new Response(
+    JSON.stringify({ error: { code, message, details } }),
+    { status, headers: { "Content-Type": "application/json" } }
+  );
+};
+
 export async function POST(req: Request) {
   const {
     messages,
@@ -88,9 +101,10 @@ export async function POST(req: Request) {
 
   // If no session exists, return error
   if (!session || !session.user || !session.user.id) {
-    return new Response(
-      JSON.stringify({ error: "Authentication required" }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
+    return createErrorResponse(
+      "AUTHENTICATION_REQUIRED",
+      "Authentication required. Please log in.",
+      401
     );
   }
 
@@ -110,9 +124,11 @@ export async function POST(req: Request) {
     // Check credits using both the external ID (userId) and legacy polarCustomerId
     // Pass isAnonymous flag to skip Polar checks for anonymous users
     hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous);
-  } catch (error) {
+  } catch (error: any) {
     // Log but continue - don't block users if credit check fails
-    console.error('Error checking credits:', error);
+    console.error('[CreditCheckError] Error checking credits:', error);
+    // Potentially return a specific error if this failure is critical
+    // For now, matches existing behavior of allowing request if check fails.
   }
 
   // 2. If user has credits, allow request (skip daily message limit)
@@ -190,6 +206,8 @@ export async function POST(req: Request) {
       console.error(`[Chat ${id}] Error pre-emptively creating chat:`, error);
       // Decide if we should bail out or continue. For now, let's continue
       // but the onFinish save might fail later if the chat wasn't created.
+      // If this is critical, we could return an error:
+      // return createErrorResponse("DATABASE_ERROR", "Failed to initialize chat session.", 500, error.message);
     }
   }
 
@@ -320,6 +338,8 @@ export async function POST(req: Request) {
     } catch (error) {
       console.error("Failed to initialize MCP client:", error);
       // Continue with other servers instead of failing the entire request
+      // If any MCP client is essential, we might return an error here:
+      // return createErrorResponse("MCP_CLIENT_ERROR", "Failed to initialize a required external tool.", 500, error.message);
     }
   }
 
@@ -351,6 +371,10 @@ export async function POST(req: Request) {
     const apiKey = getApiKey('OPENROUTER_API_KEY');
     if (!apiKey) {
       console.error("[Web Search] OPENROUTER_API_KEY is missing. Web search will be disabled.");
+      // If web search is critical and enabled, return an error:
+      // if (webSearch.enabled) {
+      //   return createErrorResponse("CONFIG_ERROR", "Web search configuration error: API key missing.", 500);
+      // }
     } else {
       const openrouterClient: any = createOpenRouter({ apiKey }); // Treat as any for the check
       if (openrouterClient && typeof openrouterClient.toolFactory === 'object' && openrouterClient.toolFactory !== null && typeof openrouterClient.toolFactory.searchWeb === 'function') {
@@ -363,39 +387,59 @@ export async function POST(req: Request) {
         console.log("[Web Search] Tool configured successfully.");
       } else {
         console.error("[Web Search] Failed to initialize openrouterClient or toolFactory.searchWeb is not a function. Web search will be disabled. Check API key and provider library.");
+        // if (webSearch.enabled) {
+        //   return createErrorResponse("WEB_SEARCH_INIT_FAILED", "Failed to initialize web search tool.", 500);
+        // }
       }
     }
   }
 
   let modelInstance;
+  let effectiveWebSearchEnabled = webSearch.enabled; // Initialize with requested value
+
+  // Check if the selected model supports web search
+  const currentModelDetails = modelDetails[selectedModel];
   if (webSearch.enabled && selectedModel.startsWith("openrouter/")) {
-    // Remove 'openrouter/' prefix for the OpenRouter client
-    const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
-    const openrouterClient = createOpenRouter({
-      apiKey: getApiKey('OPENROUTER_API_KEY'),
-      headers: {
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
-        'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+    if (currentModelDetails?.supportsWebSearch === true) {
+      // Model supports web search, use :online variant
+      const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
+      const openrouterClient = createOpenRouter({
+        apiKey: getApiKey('OPENROUTER_API_KEY'),
+        headers: {
+          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+          'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+        }
+      });
+      // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
+      if (
+        selectedModel === "openrouter/deepseek/deepseek-r1" ||
+        selectedModel === "openrouter/x-ai/grok-3-beta" ||
+        selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+        selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+        selectedModel === "openrouter/qwen/qwq-32b"
+      ) {
+        modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
+      } else {
+        modelInstance = openrouterClient(openrouterModelId);
       }
-    });
-    // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
-    if (
-      selectedModel === "openrouter/deepseek/deepseek-r1" ||
-      selectedModel === "openrouter/x-ai/grok-3-beta" ||
-      selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-      selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-      selectedModel === "openrouter/qwen/qwq-32b"
-    ) {
-      modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
+      console.log(`[Web Search] Enabled for ${selectedModel} using ${openrouterModelId}`);
     } else {
-      modelInstance = openrouterClient(openrouterModelId);
+      // Model does not support web search, or flag is not explicitly true
+      effectiveWebSearchEnabled = false;
+      modelInstance = model.languageModel(selectedModel);
+      console.log(`[Web Search] Requested for ${selectedModel}, but not supported or not enabled for this model. Using standard model.`);
     }
   } else {
+    // Web search not enabled in request or model is not an OpenRouter model
+    if (webSearch.enabled) {
+      console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
+    }
+    effectiveWebSearchEnabled = false;
     modelInstance = model.languageModel(selectedModel);
   }
 
   const modelOptions = {
-    ...(webSearch.enabled && {
+    ...(effectiveWebSearchEnabled && { // Use effectiveWebSearchEnabled here
       web_search_options: {
         search_context_size: webSearch.contextSize
       }
@@ -409,7 +453,7 @@ export async function POST(req: Request) {
 
     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
 
-    ${webSearch.enabled ? `
+    ${effectiveWebSearchEnabled ? `
     ## Web Search Enabled:
     You have web search capabilities enabled. When you use web search:
     1. Cite your sources using markdown links
@@ -447,7 +491,7 @@ export async function POST(req: Request) {
       openrouter: modelOptions
     },
     onError: (error: any) => {
-      console.error(JSON.stringify(error, null, 2));
+      console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));
     },
     async onFinish(event: any) {
       // Minimal fix: cast event.response to OpenRouterResponse
@@ -483,19 +527,40 @@ export async function POST(req: Request) {
 
       // Update the chat with the full message history
       // Note: saveChat here acts as an upsert based on how it's likely implemented
-      await saveChat({
-        id,
-        userId,
-        messages: processedMessages as any, // Cast to any to bypass type error
-      });
+      try {
+        await saveChat({
+          id,
+          userId,
+          messages: processedMessages as any, // Cast to any to bypass type error
+        });
+        console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
+      } catch (dbError: any) {
+        console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving chat:`, dbError);
+        // This error occurs after the stream has finished.
+        // We can't change the HTTP response to the client here.
+        // Robust logging is key.
+      }
 
-      const dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
-        ...msg,
-        hasWebSearch: webSearch.enabled,
-        webSearchContextSize: webSearch.contextSize
-      }));
+      let dbMessages;
+      try {
+        dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
+          ...msg,
+          hasWebSearch: effectiveWebSearchEnabled, // Use effectiveWebSearchEnabled
+          webSearchContextSize: webSearch.enabled ? webSearch.contextSize : undefined // Store original request if needed, or effective
+        }));
+      } catch (conversionError: any) {
+        console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
+        // If conversion fails, we cannot save messages.
+        // Log and potentially skip saving messages or save raw if possible.
+        return; // Exit onFinish early if messages can't be processed for DB.
+      }
 
-      await saveMessages({ messages: dbMessages });
+      try {
+        await saveMessages({ messages: dbMessages });
+        console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
+      } catch (dbMessagesError: any) {
+        console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
+      }
 
       // Extract token usage from response - OpenRouter may provide it in different formats
       let completionTokens = 0;
@@ -550,9 +615,9 @@ export async function POST(req: Request) {
 
           // Pass isAnonymous flag to skip Polar reporting for anonymous users
           await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous);
-          console.log(`${isAnonymous ? 'Tracked' : 'Reported'} ${completionTokens} tokens for user ${userId}${isAnonymous ? ' (anonymous)' : ' to Polar'}`);
-        } catch (error) {
-          console.error('Failed to track token usage:', error);
+          console.log(`${isAnonymous ? 'Tracked' : 'Reported'} ${completionTokens} tokens for user ${userId}${isAnonymous ? ' (anonymous)' : ' to Polar'} [Chat ${id}]`);
+        } catch (error: any) {
+          console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
           // Don't break the response flow if tracking fails
         }
       }
@@ -568,13 +633,46 @@ export async function POST(req: Request) {
   return result.toDataStreamResponse({
     sendReasoning: true,
     getErrorMessage: (error) => {
+      console.error(`[API Error][Chat ${id}] Error in stream processing or before stream response:`, error);
+      let errorCode = "STREAM_ERROR";
+      let errorMessage = "An error occurred while processing your request.";
+      let errorDetails;
+
       if (error instanceof Error) {
-        if (error.message.includes("Rate limit")) {
-          return "Rate limit exceeded. Please try again later.";
+        // Attempt to parse if the error message itself is a stringified JSON from our earlier error handling
+        try {
+          const parsedJson = JSON.parse(error.message);
+          if (parsedJson.error && parsedJson.error.code && parsedJson.error.message) {
+            errorCode = parsedJson.error.code;
+            errorMessage = parsedJson.error.message;
+            errorDetails = parsedJson.error.details;
+            // If it's one of our structured errors, we can return it directly
+            // However, toDataStreamResponse expects a string. We'll return the message string.
+            // The client will receive this string and parse it if it's JSON.
+            return JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } });
+          }
+        } catch (parseError) {
+          // Not a JSON string from our API, proceed with generic handling
         }
+
+        if (error.message.includes("Rate limit") || error.message.includes("429")) {
+          errorCode = "RATE_LIMIT_EXCEEDED";
+          errorMessage = "Rate limit exceeded with the AI provider. Please try again later.";
+        } else if (error.message.includes("authentication") || error.message.includes("401")) {
+          errorCode = "AUTHENTICATION_ERROR";
+          errorMessage = "Authentication failed with the AI provider.";
+        } else if (error.message.includes("insufficient_quota") || error.message.includes("credit")) {
+          errorCode = "INSUFFICIENT_QUOTA";
+          errorMessage = "Insufficient quota or credits with the AI provider.";
+        } else {
+          errorMessage = error.message || "An unknown error occurred.";
+        }
+        errorDetails = error.stack; // Include stack for more details if available
+      } else if (typeof error === 'string') {
+        errorMessage = error;
       }
-      console.error(error);
-      return "An error occurred.";
+      // Return the error as a JSON string so the client can parse it
+      return JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } });
     },
   });
 }

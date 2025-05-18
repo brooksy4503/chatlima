@@ -143,25 +143,83 @@ export default function Chat() {
       },
       onError: (error) => {
         let errorMessage = "An error occurred, please try again later."; // Default message
+        let errorCode = "UNKNOWN_ERROR";
+        let errorDetails = "No additional details available.";
+
         try {
-          // Attempt to parse the error message as JSON, assuming the API error response body might be stringified here
-          const parsedError = JSON.parse(error.message);
-          // If parsing is successful and a specific message exists in the parsed object, use it
-          if (parsedError && typeof parsedError.message === 'string' && parsedError.message.length > 0) {
-            errorMessage = parsedError.message;
-          } else if (error.message.length > 0) {
-            // Fallback to the original error message if parsing fails or doesn't yield a message field
-            errorMessage = error.message;
+          // The error.message from the Vercel AI SDK is now expected to be a JSON string
+          // from our backend's getErrorMessage function.
+          const parsedErrorContainer = JSON.parse(error.message);
+          if (parsedErrorContainer.error) {
+            const apiError = parsedErrorContainer.error;
+            errorMessage = apiError.message || errorMessage;
+            errorCode = apiError.code || errorCode;
+            errorDetails = apiError.details || errorDetails;
+          } else {
+            // Fallback if the error.message was not the expected JSON structure
+            // This might happen if the error originates from the AI SDK itself before hitting our backend logic
+            // or if our backend fails to return a JSON string for some reason.
+            if (error.message && error.message.length > 0) {
+              errorMessage = error.message;
+            }
+            console.warn("Received error message that was not in the expected JSON structure:", error.message);
           }
         } catch (e) {
-          // If parsing fails, check if the original error message is non-empty
+          // If parsing fails, it means error.message was not a JSON string.
+          // Use the raw error.message if available.
           if (error.message && error.message.length > 0) {
             errorMessage = error.message;
           }
+          console.warn("Failed to parse error message as JSON:", e, "Raw error message:", error.message);
         }
+
+        // Log the detailed error for debugging
+        console.error(`Chat Error [Code: ${errorCode}]: ${errorMessage}`, { details: errorDetails, originalError: error });
+
+        // Display user-friendly toast messages based on error code
+        let toastMessage = errorMessage;
+        switch (errorCode) {
+          case "AUTHENTICATION_REQUIRED":
+            toastMessage = "Authentication required. Please log in to continue.";
+            // Optionally, redirect to login or prompt user
+            // router.push('/login'); 
+            break;
+          case "MESSAGE_LIMIT_REACHED":
+            // The message from the backend for this case is already quite descriptive.
+            // toastMessage = errorMessage; 
+            break;
+          case "INSUFFICIENT_CREDITS":
+            toastMessage = "You have insufficient credits. Please top up your account.";
+            break;
+          case "RATE_LIMIT_EXCEEDED":
+            toastMessage = "Too many requests. Please wait a moment and try again.";
+            break;
+          case "LLM_PROVIDER_ERROR":
+            toastMessage = "The AI model provider is experiencing issues. Please try a different model or try again later.";
+            break;
+          case "MODEL_INIT_FAILED":
+            toastMessage = "Failed to initialize the selected AI model. Please try another model.";
+            break;
+          case "STREAM_ERROR": // Generic stream error from backend
+            toastMessage = "A problem occurred while getting the response. Please try again.";
+            break;
+          // Add more cases as new error codes are defined in the backend
+          default:
+            // For UNKNOWN_ERROR or other unhandled codes, use the errorMessage as is (or a generic one)
+            if (!errorMessage || errorMessage === "An error occurred, please try again later.") {
+                toastMessage = "An unexpected issue occurred. Please try again.";
+            }
+            break;
+        }
+
         toast.error(
-          errorMessage,
-          { position: "top-center", richColors: true },
+          toastMessage,
+          { 
+            position: "top-center", 
+            richColors: true,
+            description: errorCode !== "UNKNOWN_ERROR" && errorMessage !== toastMessage ? errorMessage : undefined,
+            duration: 8000 // Longer duration for errors
+          }
         );
       },
     });

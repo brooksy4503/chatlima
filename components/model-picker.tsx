@@ -101,6 +101,13 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
   const displayModelId = hoveredModel || selectedModel; // Use selectedModel
   const currentModelDetails = modelDetails[displayModelId];
 
+  // Sort models alphabetically by name
+  const sortedModels = [...MODELS].sort((idA, idB) => {
+    const nameA = modelDetails[idA].name;
+    const nameB = modelDetails[idB].name;
+    return nameA.localeCompare(nameB);
+  });
+
   // Handle model change
   const handleModelChange = (modelId: string) => {
     if ((MODELS as string[]).includes(modelId)) {
@@ -136,7 +143,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
             {/* Model selector column */}
             <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1">
               <SelectGroup className="space-y-1">
-                {MODELS.map((id) => {
+                {sortedModels.map((id) => {
                   const modelId = id as modelID;
                   return (
                     <SelectItem 
