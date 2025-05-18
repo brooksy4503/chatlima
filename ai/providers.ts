@@ -347,4 +347,4 @@ export const MODELS = (Object.keys(languageModels) as modelID[]).filter(
   (modelId) => modelDetails[modelId].enabled !== false
 );
 
-export const defaultModel: modelID = "openrouter/qwen/qwq-32b";
+export const defaultModel: modelID = "openrouter/google/gemini-2.5-flash-preview";
