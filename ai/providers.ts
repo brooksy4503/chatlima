@@ -100,7 +100,10 @@ const languageModels = {
   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
   "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
-  "openrouter/openai/o4-mini-high": openrouterClient("openai/o4-mini-high"),
+  "openrouter/openai/o4-mini-high": wrapLanguageModel({
+    model: openrouterClient("openai/o4-mini-high"),
+    middleware: deepseekR1Middleware,
+  }),
   "qwen-qwq": wrapLanguageModel(
     {
       model: groqClient("qwen-qwq-32b"),
