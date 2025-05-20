@@ -2,6 +2,9 @@ import Link from "next/link";
 import React, { memo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
 
 const components: Partial<Components> = {
@@ -177,12 +180,27 @@ const components: Partial<Components> = {
   ),
 };
 
-const remarkPlugins = [remarkGfm];
+const remarkPlugins = [remarkGfm, remarkMath];
+const rehypePlugins = [rehypeKatex];
+
+// Preprocesses markdown to convert \(...\) to $...$ and \[...\] to $$...$$
+function preprocessMathDelimiters(markdown: string): string {
+  // Convert block math: \[...\] => $$...$$
+  markdown = markdown.replace(/\\\[([\s\S]+?)\\\]/g, (match, p1) => `$$${p1}$$`);
+  // Convert inline math: \(...\) => $...$
+  markdown = markdown.replace(/\\\(([\s\S]+?)\\\)/g, (match, p1) => `$${p1}$`);
+  return markdown;
+}
 
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
+  const processed = preprocessMathDelimiters(children);
   return (
-    <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
-      {children}
+    <ReactMarkdown 
+      remarkPlugins={remarkPlugins} 
+      rehypePlugins={rehypePlugins}
+      components={components}
+    >
+      {processed}
     </ReactMarkdown>
   );
 };
