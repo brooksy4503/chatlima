@@ -147,22 +147,44 @@ export default function Chat() {
         let errorDetails = "No additional details available.";
 
         try {
-          // The error.message from the Vercel AI SDK is now expected to be a JSON string
-          // from our backend's getErrorMessage function.
-          const parsedErrorContainer = JSON.parse(error.message);
-          if (parsedErrorContainer.error) {
-            const apiError = parsedErrorContainer.error;
-            errorMessage = apiError.message || errorMessage;
-            errorCode = apiError.code || errorCode;
-            errorDetails = apiError.details || errorDetails;
-          } else {
-            // Fallback if the error.message was not the expected JSON structure
-            // This might happen if the error originates from the AI SDK itself before hitting our backend logic
-            // or if our backend fails to return a JSON string for some reason.
-            if (error.message && error.message.length > 0) {
-              errorMessage = error.message;
+          // The error.message from the Vercel AI SDK is now expected to be a JSON string.
+          const parsedBody = JSON.parse(error.message);
+
+          // Check for the structure from getErrorMessage (nested error object)
+          if (parsedBody.error && typeof parsedBody.error === 'object' && parsedBody.error.code) {
+            const apiErrorObject = parsedBody.error;
+            errorMessage = apiErrorObject.message || errorMessage;
+            errorCode = apiErrorObject.code || errorCode;
+            errorDetails = apiErrorObject.details || errorDetails;
+          } 
+          // Check for the flatter structure (e.g., from direct 429 response)
+          else if (typeof parsedBody.error === 'string' && parsedBody.message) {
+            errorMessage = parsedBody.message; // Use the detailed message from the API
+            if (parsedBody.error === "Message limit reached") {
+              errorCode = "MESSAGE_LIMIT_REACHED";
+              // Optionally, capture other details like limit and remaining
+              const details: any = {};
+              if (typeof parsedBody.limit !== 'undefined') details.limit = parsedBody.limit;
+              if (typeof parsedBody.remaining !== 'undefined') details.remaining = parsedBody.remaining;
+              if (Object.keys(details).length > 0) errorDetails = JSON.stringify(details);
+
+            } else {
+              // For other flat errors, we might not have a specific code yet
+              // but we have the detailed message.
+              // errorCode remains UNKNOWN_ERROR or could be set to a generic API_ERROR
             }
-            console.warn("Received error message that was not in the expected JSON structure:", error.message);
+          }
+          // Fallback for other JSON structures or if parsing was incomplete
+          else if (parsedBody.message) {
+            errorMessage = parsedBody.message;
+          }
+           else {
+            // If parsing was successful but structure is unrecognized
+            // and errorMessage hasn't been updated from a recognized structure.
+             if (error.message && error.message.length > 0 && errorMessage === "An error occurred, please try again later.") {
+                 errorMessage = error.message; // use raw JSON string if no better message found
+            }
+            console.warn("Received JSON error message with unrecognized structure:", error.message);
           }
         } catch (e) {
           // If parsing fails, it means error.message was not a JSON string.
@@ -185,8 +207,8 @@ export default function Chat() {
             // router.push('/login'); 
             break;
           case "MESSAGE_LIMIT_REACHED":
-            // The message from the backend for this case is already quite descriptive.
-            // toastMessage = errorMessage; 
+            // The message from the backend (now correctly assigned to errorMessage) is descriptive.
+            // toastMessage will use this errorMessage.
             break;
           case "INSUFFICIENT_CREDITS":
             toastMessage = "You have insufficient credits. Please top up your account.";

@@ -556,7 +556,7 @@ export async function POST(req: Request) {
           completionTokens = Math.ceil(typedResponse.content.length / 4);
         } else {
           // Default minimum to track something
-          completionTokens = 10;
+          completionTokens = 1;
         }
       }
 

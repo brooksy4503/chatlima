@@ -137,9 +137,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
         </SelectTrigger>
         <SelectContent
           align="start"
-          className="bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 rounded-lg overflow-hidden p-0 w-[280px] sm:w-[350px] md:w-[515px]"
+          className="bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 rounded-lg overflow-hidden p-0 w-[320px] sm:w-[480px] md:w-[680px]"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] md:grid-cols-[260px_1fr] items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start">
             {/* Model selector column */}
             <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1">
               <SelectGroup className="space-y-1">
