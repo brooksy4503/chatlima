@@ -80,6 +80,11 @@ const languageModels = {
   }),
   "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
   "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
+  "openrouter/google/gemini-2.5-flash-preview-05-20": openrouterClient("google/gemini-2.5-flash-preview-05-20"),
+  "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": wrapLanguageModel({
+    model: openrouterClient("google/gemini-2.5-flash-preview-05-20:thinking", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
   "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
@@ -185,6 +190,24 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     name: "Gemini 2.5 Flash Preview (thinking)",
     description: "Gemini 2.5 Flash is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-flash-preview:thinking",
+    capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
+    enabled: true,
+    supportsWebSearch: true
+  },
+  "openrouter/google/gemini-2.5-flash-preview-05-20": {
+    provider: "OpenRouter",
+    name: "Gemini 2.5 Flash Preview 05-20",
+    description: "Gemini 2.5 Flash May 20th Checkpoint is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
+    apiVersion: "google/gemini-2.5-flash-preview-05-20",
+    capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
+    enabled: true,
+    supportsWebSearch: true
+  },
+  "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": {
+    provider: "OpenRouter",
+    name: "Gemini 2.5 Flash Preview 05-20 (thinking)",
+    description: "Gemini 2.5 Flash May 20th Checkpoint is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
+    apiVersion: "google/gemini-2.5-flash-preview-05-20:thinking",
     capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
     enabled: true,
     supportsWebSearch: true
