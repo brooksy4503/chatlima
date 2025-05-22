@@ -81,10 +81,7 @@ const languageModels = {
   "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
   "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
   "openrouter/google/gemini-2.5-flash-preview-05-20": openrouterClient("google/gemini-2.5-flash-preview-05-20"),
-  "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": wrapLanguageModel({
-    model: openrouterClient("google/gemini-2.5-flash-preview-05-20:thinking", { logprobs: false }),
-    middleware: deepseekR1Middleware,
-  }),
+  "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": openrouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
   "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
@@ -105,10 +102,7 @@ const languageModels = {
   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
   "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
-  "openrouter/openai/o4-mini-high": wrapLanguageModel({
-    model: openrouterClient("openai/o4-mini-high"),
-    middleware: deepseekR1Middleware,
-  }),
+  "openrouter/openai/o4-mini-high": openrouterClient("openai/o4-mini-high"),
   "qwen-qwq": wrapLanguageModel(
     {
       model: groqClient("qwen-qwq-32b"),
@@ -119,6 +113,7 @@ const languageModels = {
     model: openrouterClient("qwen/qwq-32b"),
     middleware: deepseekR1Middleware,
   }),
+  // "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
   "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b")
 };
 
