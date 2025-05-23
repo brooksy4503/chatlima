@@ -13,6 +13,7 @@ import { auth, checkMessageLimit } from '@/lib/auth';
 
 import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn } from "child_process";
 
 // Allow streaming responses up to 60 seconds on Hobby plan
@@ -25,7 +26,7 @@ interface KeyValuePair {
 
 interface MCPServerConfig {
   url: string;
-  type: 'sse' | 'stdio';
+  type: 'sse' | 'stdio' | 'streamable-http';
   command?: string;
   args?: string[];
   env?: KeyValuePair[];
@@ -219,37 +220,46 @@ export async function POST(req: Request) {
   for (const mcpServer of mcpServers) {
     try {
       // Create appropriate transport based on type
-      let transport: MCPTransport | { type: 'sse', url: string, headers?: Record<string, string> };
+      let finalTransportForClient: MCPTransport | { type: 'sse', url: string, headers?: Record<string, string> };
 
       if (mcpServer.type === 'sse') {
-        // Convert headers array to object for SSE transport
         const headers: Record<string, string> = {};
         if (mcpServer.headers && mcpServer.headers.length > 0) {
           mcpServer.headers.forEach(header => {
             if (header.key) headers[header.key] = header.value || '';
           });
         }
-
-        transport = {
+        finalTransportForClient = {
           type: 'sse' as const,
           url: mcpServer.url,
           headers: Object.keys(headers).length > 0 ? headers : undefined
         };
+      } else if (mcpServer.type === 'streamable-http') {
+        const headers: Record<string, string> = {};
+        if (mcpServer.headers && mcpServer.headers.length > 0) {
+          mcpServer.headers.forEach(header => {
+            if (header.key) headers[header.key] = header.value || '';
+          });
+        }
+        // Use StreamableHTTPClientTransport from @modelcontextprotocol/sdk
+        const transportUrl = new URL(mcpServer.url);
+        finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
+          // sessionId: nanoid(), // Optionally, provide a session ID if your server uses it
+          requestInit: {
+            headers: Object.keys(headers).length > 0 ? headers : undefined
+          }
+        });
       } else if (mcpServer.type === 'stdio') {
-        // For stdio transport, we need command and args
         if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
           console.warn("Skipping stdio MCP server due to missing command or args");
           continue;
         }
-
-        // Convert env array to object for stdio transport
         const env: Record<string, string> = {};
         if (mcpServer.env && mcpServer.env.length > 0) {
           mcpServer.env.forEach(envVar => {
             if (envVar.key) env[envVar.key] = envVar.value || '';
           });
         }
-
         // Check for uvx pattern
         if (mcpServer.command === 'uvx') {
           // Ensure uv is installed, which provides uvx
@@ -316,17 +326,17 @@ export async function POST(req: Request) {
         // Log the final command and args before spawning for stdio
         console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
 
-        transport = new StdioMCPTransport({
-          command: mcpServer.command,
-          args: mcpServer.args,
+        finalTransportForClient = new StdioMCPTransport({
+          command: mcpServer.command!,
+          args: mcpServer.args!,
           env: Object.keys(env).length > 0 ? env : undefined
         });
       } else {
-        console.warn(`Skipping MCP server with unsupported transport type: ${mcpServer.type}`);
+        console.warn(`Skipping MCP server with unsupported transport type: ${(mcpServer as any).type}`);
         continue;
       }
 
-      const mcpClient = await createMCPClient({ transport });
+      const mcpClient = await createMCPClient({ transport: finalTransportForClient });
       mcpClients.push(mcpClient);
 
       const mcptools = await mcpClient.tools();
