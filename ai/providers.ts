@@ -114,7 +114,9 @@ const languageModels = {
     middleware: deepseekR1Middleware,
   }),
   // "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
-  "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b")
+  "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b"),
+  "openrouter/anthropic/claude-sonnet-4": openrouterClient("anthropic/claude-sonnet-4"),
+  "openrouter/anthropic/claude-opus-4": openrouterClient("anthropic/claude-opus-4"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -338,7 +340,25 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Coding", "Multilingual", "Agentic"],
     enabled: true,
     supportsWebSearch: true
-  }
+  },
+  "openrouter/anthropic/claude-sonnet-4": {
+    provider: "OpenRouter",
+    name: "Claude Sonnet 4",
+    description: "Enhanced version of Sonnet 3.7, excelling in coding and reasoning with improved precision, controllability, and efficiency.",
+    apiVersion: "anthropic/claude-sonnet-4",
+    capabilities: ["Reasoning", "Coding", "Agentic", "Efficient", "Controllability"],
+    enabled: true,
+    supportsWebSearch: true
+  },
+  "openrouter/anthropic/claude-opus-4": {
+    provider: "OpenRouter",
+    name: "Claude Opus 4",
+    description: "Anthropic's most advanced model, excelling at coding, advanced reasoning, agentic tasks, and long-context operations.",
+    apiVersion: "anthropic/claude-opus-4",
+    capabilities: ["Coding", "Advanced Reasoning", "Agentic Tasks", "Long Context", "Sustained Performance"],
+    enabled: true,
+    supportsWebSearch: true
+  },
 };
 
 // Update API keys when localStorage changes (for runtime updates)
