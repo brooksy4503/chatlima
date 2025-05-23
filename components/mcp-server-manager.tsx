@@ -119,6 +119,11 @@ export const MCPServerManager = ({
             return;
         }
 
+        if (newServer.type === 'streamable-http' && !newServer.url) {
+            toast.error("Server URL is required for Streamable HTTP transport");
+            return;
+        }
+
         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
             toast.error("Command and at least one argument are required for stdio transport");
             return;
@@ -340,6 +345,10 @@ export const MCPServerManager = ({
             toast.error("Server URL is required for SSE transport");
             return;
         }
+        if (newServer.type === 'streamable-http' && !newServer.url) {
+            toast.error("Server URL is required for Streamable HTTP transport");
+            return;
+        }
         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
             toast.error("Command and at least one argument are required for stdio transport");
             return;
@@ -444,7 +453,7 @@ export const MCPServerManager = ({
 
                                                     {/* Server Details */}
                                                     <p className="text-xs text-muted-foreground mb-2.5 truncate">
-                                                        {server.type === 'sse'
+                                                        {server.type === 'sse' || server.type === 'streamable-http'
                                                             ? server.url
                                                             : `${server.command} ${server.args?.join(' ')}`
                                                         }
@@ -547,10 +556,25 @@ export const MCPServerManager = ({
                                             </div>
                                         </button>
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewServer({ ...newServer, type: 'streamable-http' })}
+                                        className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all col-span-2 ${
+                                            newServer.type === 'streamable-http' 
+                                                ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+                                                : 'border-border hover:border-border/80 hover:bg-muted/50'
+                                        }`}
+                                    >
+                                        <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'streamable-http' ? 'text-primary' : ''}`} />
+                                        <div>
+                                            <p className="font-medium">Streamable HTTP</p>
+                                            <p className="text-xs text-muted-foreground">Streamable HTTP Server</p>
+                                        </div>
+                                    </button>
                                 </div>
                             </div>
 
-                            {newServer.type === 'sse' ? (
+                            {newServer.type === 'sse' || newServer.type === 'streamable-http' ? (
                                 <div className="grid gap-1.5">
                                     <Label htmlFor="url">
                                         Server URL
@@ -559,11 +583,11 @@ export const MCPServerManager = ({
                                         id="url"
                                         value={newServer.url}
                                         onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
-                                        placeholder="https://mcp.example.com/token/sse"
+                                        placeholder={newServer.type === 'streamable-http' ? "https://mcp.example.com/token/mcp" : "https://mcp.example.com/token/sse"}
                                         className="relative z-0"
                                     />
                                     <p className="text-xs text-muted-foreground">
-                                        Full URL to the SSE endpoint of the MCP server
+                                        Full URL to the {newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint of the MCP server
                                     </p>
                                 </div>
                             ) : (
@@ -728,7 +752,7 @@ export const MCPServerManager = ({
 
                                 <AccordionItem value="headers">
                                     <AccordionTrigger className="text-sm py-2">
-                                        {newServer.type === 'sse' ? 'HTTP Headers' : 'Additional Configuration'}
+                                        {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'HTTP Headers' : 'Additional Configuration'}
                                     </AccordionTrigger>
                                     <AccordionContent>
                                         <div className="space-y-3">
@@ -838,12 +862,12 @@ export const MCPServerManager = ({
                                                 </div>
                                             ) : (
                                                 <p className="text-xs text-muted-foreground text-center py-2">
-                                                    No {newServer.type === 'sse' ? 'headers' : 'additional configuration'} added
+                                                    No {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'headers' : 'additional configuration'} added
                                                 </p>
                                             )}
                                             <p className="text-xs text-muted-foreground">
-                                                {newServer.type === 'sse'
-                                                    ? 'HTTP headers will be sent with requests to the SSE endpoint.'
+                                                {newServer.type === 'sse' || newServer.type === 'streamable-http'
+                                                    ? `HTTP headers will be sent with requests to the ${newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint.`
                                                     : 'Additional configuration parameters for the stdio transport.'}
                                             </p>
                                         </div>
@@ -887,6 +911,7 @@ export const MCPServerManager = ({
                                 disabled={
                                     !newServer.name ||
                                     (newServer.type === 'sse' && !newServer.url) ||
+                                    (newServer.type === 'streamable-http' && !newServer.url) ||
                                     (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length))
                                 }
                             >

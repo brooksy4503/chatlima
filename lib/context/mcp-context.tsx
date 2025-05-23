@@ -14,7 +14,7 @@ export interface MCPServer {
   id: string;
   name: string;
   url: string;
-  type: 'sse' | 'stdio';
+  type: 'sse' | 'stdio' | 'streamable-http';
   command?: string;
   args?: string[];
   env?: KeyValuePair[];
@@ -24,7 +24,7 @@ export interface MCPServer {
 
 // Type for processed MCP server config for API
 export interface MCPServerApi {
-  type: 'sse' | 'stdio';
+  type: 'sse' | 'stdio' | 'streamable-http';
   url: string;
   command?: string;
   args?: string[];
