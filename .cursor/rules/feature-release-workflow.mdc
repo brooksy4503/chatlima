@@ -1,0 +1,156 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Feature Release Workflow
+
+This rule provides a complete workflow for releasing new features in the ChatLima project, from merging feature branches to creating GitHub release notes.
+
+## 🔄 Complete Release Process
+
+### 1. Pre-Release Checks
+Before starting the release process:
+- Ensure all tests pass
+- Verify the feature branch is up to date with main
+- Check that [package.json](mdc:package.json) reflects the current version
+- Review recent commits with `git log --oneline -10`
+
+### 2. Merge Feature Branch
+```bash
+# Switch to main branch
+git checkout main
+
+# Pull latest changes
+git pull origin main
+
+# Merge feature branch (replace 'feature/branch-name' with actual branch)
+git merge feature/branch-name
+
+# Delete the feature branch locally
+git branch -d feature/branch-name
+
+# Delete the feature branch remotely
+git push origin --delete feature/branch-name
+```
+
+### 3. Version Increment
+Use npm version to automatically update [package.json](mdc:package.json) and create a git tag:
+
+```bash
+# For patch releases (0.3.0 -> 0.3.1)
+npm version patch
+
+# For minor releases (0.3.0 -> 0.4.0)
+npm version minor
+
+# For major releases (0.3.0 -> 1.0.0)
+npm version major
+```
+
+This command:
+- Updates the version in [package.json](mdc:package.json)
+- Creates a git commit with the version change
+- Creates a git tag (e.g., v0.3.1)
+
+### 4. Push Changes
+```bash
+# Push commits and tags to remote
+git push origin main --tags
+```
+
+### 5. Create Release Notes
+Generate comprehensive release notes following this structure:
+
+#### Template Structure:
+```markdown
+# 🚀 ChatLima v[VERSION] - [FEATURE_NAME]
+
+## 🎯 What's New
+- List major features added
+- Highlight user-facing improvements
+- Note any new capabilities
+
+## 🔧 Technical Implementation
+- Detail technical changes
+- Mention new routes, APIs, or components
+- Include performance improvements
+
+## 🛡️ Security & Privacy
+- Highlight security enhancements
+- Note privacy protections
+- Mention any security-related changes
+
+## 📈 Benefits
+- Explain user benefits
+- Note SEO, performance, or UX improvements
+- Highlight business value
+
+## 🔄 Migration Notes
+- List any breaking changes (if any)
+- Note required configuration changes
+- Mention database migrations needed
+
+## 🚀 Deployment
+- Deployment instructions
+- Environment considerations
+- Any special setup requirements
+
+---
+
+**Full Changelog**: [v[PREV_VERSION]...v[NEW_VERSION]](https://github.com/username/chatlima/compare/v[PREV_VERSION]...v[NEW_VERSION])
+```
+
+#### Save Release Notes
+Create a file named `RELEASE_NOTES_v[VERSION].md` in the project root for reference.
+
+### 6. GitHub Release Creation
+1. Go to GitHub repository → Releases → "Create a new release"
+2. Select the version tag created by `npm version`
+3. Copy content from the release notes file
+4. Set release title: "v[VERSION] - [FEATURE_NAME]"
+5. Mark as "Latest release" if it's the newest version
+6. Publish the release
+
+## 📋 Quick Reference Commands
+
+```bash
+# Complete release workflow
+git checkout main
+git pull origin main
+git merge feature/[branch-name]
+npm version [patch|minor|major]
+git push origin main --tags
+git branch -d feature/[branch-name]
+git push origin --delete feature/[branch-name]
+```
+
+## 🎯 Best Practices
+
+### Version Selection Guidelines:
+- **Patch** (0.3.0 → 0.3.1): Bug fixes, small improvements, security patches
+- **Minor** (0.3.0 → 0.4.0): New features, significant improvements, new capabilities
+- **Major** (0.3.0 → 1.0.0): Breaking changes, major rewrites, API changes
+
+### Release Notes Guidelines:
+- Use emojis for visual appeal and categorization
+- Focus on user benefits, not just technical details
+- Include migration instructions for any breaking changes
+- Highlight security and privacy improvements
+- Keep technical details accessible to non-developers
+- Reference relevant files using [filename](mdc:filename) format
+
+### File References:
+- Version information: [package.json](mdc:package.json)
+- Previous release notes: Look for existing `RELEASE_NOTES_v*.md` files
+- Implementation details: Check [app/](mdc:app) directory for new routes
+- Configuration: [next.config.ts](mdc:next.config.ts), [tsconfig.json](mdc:tsconfig.json)
+
+## 🚨 Important Notes
+
+- Always test the feature thoroughly before merging
+- Ensure the production environment can handle new features
+- Keep release notes user-focused while including technical details
+- Tag releases consistently for easy tracking
+- Delete feature branches after successful merge to keep repository clean
+- Use descriptive commit messages for the version bump commits

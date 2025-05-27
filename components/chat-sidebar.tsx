@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -444,15 +444,7 @@ export function ChatSidebar() {
                 </SidebarContent>
                 
                 <SidebarFooter className="flex flex-col gap-2 p-3 border-t border-border/40">
-                    <SidebarMenu>
-                        {/* Item removed */}
-                    </SidebarMenu>
                     
-                    <div className="relative my-0 pt-2">
-                        <div className="absolute inset-x-0">
-                            <Separator className="w-full h-px bg-border/40" />
-                        </div>
-                    </div>
 
                     {isSessionLoading ? (
                         <div className="flex items-center gap-2 px-3 py-2 mt-2">
@@ -475,12 +467,27 @@ export function ChatSidebar() {
                         </div>
                     )}
 
+                    <Link
+                        href="https://chatlima-docs.netlify.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={cn(
+                            "flex items-center text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors w-full",
+                            isCollapsed ? "justify-center" : "justify-start px-3 gap-2"
+                        )}
+                    >
+                        <div className={cn("flex items-center justify-center", isCollapsed ? "w-8 h-8" : "w-6 h-6")}>
+                            <BookOpen className="h-4 w-4" />
+                        </div>
+                        {!isCollapsed && <span>Documentation</span>}
+                    </Link>
+
                     <Link 
                         href="https://github.com/zaidmukaddam/scira-mcp-chat" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className={cn(
-                            "flex items-center text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors py-2 mt-2 w-full",
+                            "flex items-center text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors py-2 w-full",
                             isCollapsed ? "justify-center" : "justify-start px-3 gap-2"
                         )}
                     >
