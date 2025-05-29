@@ -234,7 +234,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   "openrouter/x-ai/grok-3-beta": {
     provider: "OpenRouter",
     name: "Grok 3 Beta",
-    description: "xAI\'s flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Accessed via OpenRouter.",
+    description: "xAI\'s flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-beta",
     capabilities: ["Reasoning", "Coding", "Knowledge"],
     enabled: true,
@@ -251,7 +251,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   "openrouter/x-ai/grok-3-mini-beta": {
     provider: "OpenRouter",
     name: "Grok 3 Mini Beta",
-    description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Tool calling is disabled. Accessed via OpenRouter.",
+    description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
     capabilities: ["Reasoning", "Math", "Puzzles"],
     enabled: true,
@@ -260,7 +260,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
     provider: "OpenRouter",
     name: "Grok 3 Mini Beta (High Reasoning)",
-    description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Tool calling is disabled. Accessed via OpenRouter.",
+    description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
     capabilities: ["Reasoning", "Math", "Puzzles", "High Effort"],
     enabled: true,
