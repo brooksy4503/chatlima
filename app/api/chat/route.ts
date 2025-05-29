@@ -90,6 +90,7 @@ export async function POST(req: Request) {
   // Disable MCP servers for DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, and Grok 3 Mini Beta (High Reasoning)
   if (
     selectedModel === "openrouter/deepseek/deepseek-r1" ||
+    selectedModel === "openrouter/deepseek/deepseek-r1-0528" || // Add new model
     selectedModel === "openrouter/x-ai/grok-3-beta" ||
     selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
     selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
