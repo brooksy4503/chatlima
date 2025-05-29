@@ -78,6 +78,10 @@ const languageModels = {
     model: openrouterClient("deepseek/deepseek-r1", { logprobs: false }),
     middleware: deepseekR1Middleware,
   }),
+  "openrouter/deepseek/deepseek-r1-0528": wrapLanguageModel({
+    model: openrouterClient("deepseek/deepseek-r1-0528", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
   "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
   "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
   "openrouter/google/gemini-2.5-flash-preview-05-20": openrouterClient("google/gemini-2.5-flash-preview-05-20"),
@@ -169,6 +173,15 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     name: "DeepSeek R1",
     description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
     apiVersion: "deepseek/deepseek-r1",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true,
+    supportsWebSearch: true
+  },
+  "openrouter/deepseek/deepseek-r1-0528": {
+    provider: "OpenRouter",
+    name: "DeepSeek R1 0528",
+    description: "DeepSeek R1 0528: May 28th update to DeepSeek R1. Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
+    apiVersion: "deepseek/deepseek-r1-0528",
     capabilities: ["Reasoning", "Open Source"],
     enabled: true,
     supportsWebSearch: true
