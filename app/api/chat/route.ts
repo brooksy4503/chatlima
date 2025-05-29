@@ -87,13 +87,13 @@ export async function POST(req: Request) {
 
   let mcpServers = initialMcpServers;
 
-  // Disable MCP servers for DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, and Grok 3 Mini Beta (High Reasoning)
+  // Disable MCP servers for DeepSeek R1 and DeepSeek R1 0528
   if (
     selectedModel === "openrouter/deepseek/deepseek-r1" ||
-    selectedModel === "openrouter/deepseek/deepseek-r1-0528" || // Add new model
-    selectedModel === "openrouter/x-ai/grok-3-beta" ||
-    selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-    selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
+    selectedModel === "openrouter/deepseek/deepseek-r1-0528"
+    //selectedModel === "openrouter/x-ai/grok-3-beta" ||
+    //selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+    //selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
   ) {
     mcpServers = [];
   }
@@ -610,52 +610,158 @@ export async function POST(req: Request) {
   console.log("OpenRouter API Payload:", JSON.stringify(openRouterPayload, null, 2));
 
   // Now call streamText as before
-  const result = streamText(openRouterPayload);
+  // const result = streamText(openRouterPayload); // Will be moved into try-catch
 
-  result.consumeStream()
-  return result.toDataStreamResponse({
-    sendReasoning: true,
-    getErrorMessage: (error) => {
-      console.error(`[API Error][Chat ${id}] Error in stream processing or before stream response:`, error);
-      let errorCode = "STREAM_ERROR";
-      let errorMessage = "An error occurred while processing your request.";
-      let errorDetails;
+  // result.consumeStream() // This is likely redundant and will be removed.
+  // return result.toDataStreamResponse({ // Will be moved into try-catch
 
-      if (error instanceof Error) {
-        // Attempt to parse if the error message itself is a stringified JSON from our earlier error handling
-        try {
-          const parsedJson = JSON.parse(error.message);
-          if (parsedJson.error && parsedJson.error.code && parsedJson.error.message) {
-            errorCode = parsedJson.error.code;
-            errorMessage = parsedJson.error.message;
-            errorDetails = parsedJson.error.details;
-            // If it's one of our structured errors, we can return it directly
-            // However, toDataStreamResponse expects a string. We'll return the message string.
-            // The client will receive this string and parse it if it's JSON.
-            return JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } });
+  try {
+    const result = streamText(openRouterPayload);
+
+    return result.toDataStreamResponse({
+      sendReasoning: true,
+      getErrorMessage: (error: any) => {
+        // Log the full error object for server-side debugging
+        console.error(`[API Error][Chat ${id}] Error in stream processing or before stream response:`, JSON.stringify(error, null, 2));
+
+        let errorCode = "STREAM_ERROR";
+        let errorMessage = "An error occurred while processing your request.";
+        let errorDetails; // For stack traces or additional metadata
+
+        // 1. Check for errors with responseBody (e.g., AI_APICallError from OpenRouter)
+        if (error && typeof error.responseBody === 'string') {
+          try {
+            const parsedBody = JSON.parse(error.responseBody);
+            if (parsedBody.error && typeof parsedBody.error.message === 'string') {
+              errorMessage = parsedBody.error.message;
+              if (parsedBody.error.code) {
+                errorCode = String(parsedBody.error.code);
+              }
+              if (parsedBody.error.metadata) {
+                errorDetails = JSON.stringify(parsedBody.error.metadata);
+              }
+            } else if (typeof parsedBody.message === 'string') { // Some errors might have message at top level
+              errorMessage = parsedBody.message;
+              if (parsedBody.code) {
+                errorCode = String(parsedBody.code);
+              }
+            }
+          } catch (e) {
+            console.warn(`[API Error][Chat ${id}] Failed to parse error.responseBody, content: ${error.responseBody}`, e);
+            // Fall through if responseBody is not JSON or doesn't match expected structure
           }
-        } catch (parseError) {
-          // Not a JSON string from our API, proceed with generic handling
         }
 
-        if (error.message.includes("Rate limit") || error.message.includes("429")) {
-          errorCode = "RATE_LIMIT_EXCEEDED";
-          errorMessage = "Rate limit exceeded with the AI provider. Please try again later.";
-        } else if (error.message.includes("authentication") || error.message.includes("401")) {
-          errorCode = "AUTHENTICATION_ERROR";
-          errorMessage = "Authentication failed with the AI provider.";
-        } else if (error.message.includes("insufficient_quota") || error.message.includes("credit")) {
-          errorCode = "INSUFFICIENT_QUOTA";
-          errorMessage = "Insufficient quota or credits with the AI provider.";
-        } else {
-          errorMessage = error.message || "An unknown error occurred.";
+        // 2. If errorMessage is still generic, try parsing error.message or use it directly
+        if (errorMessage === "An error occurred while processing your request." && error instanceof Error && error.message) {
+          try {
+            // Check if error.message is a stringified JSON from our own createErrorResponse
+            const parsedJsonMessage = JSON.parse(error.message);
+            if (parsedJsonMessage.error && parsedJsonMessage.error.code && parsedJsonMessage.error.message) {
+              errorCode = parsedJsonMessage.error.code;
+              errorMessage = parsedJsonMessage.error.message;
+              errorDetails = parsedJsonMessage.error.details || errorDetails; // Keep details from responseBody if any
+            } else {
+              // error.message was not our specific JSON format, use it directly
+              errorMessage = error.message;
+            }
+          } catch (parseError) {
+            // error.message is not JSON, use it directly
+            errorMessage = error.message;
+          }
+        } else if (errorMessage === "An error occurred while processing your request." && typeof error === 'string') {
+          errorMessage = error;
         }
-        errorDetails = error.stack; // Include stack for more details if available
-      } else if (typeof error === 'string') {
-        errorMessage = error;
+
+        // 3. Apply specific keyword-based overrides if a more specific message wasn't found or to refine it
+        const checkMessage = errorMessage || (error instanceof Error ? error.message : '');
+        if (checkMessage) {
+          if (checkMessage.includes("Rate limit") || checkMessage.includes("429") || errorCode === "429") {
+            errorCode = "RATE_LIMIT_EXCEEDED";
+            errorMessage = "Rate limit exceeded with the AI provider. Please try again later.";
+          } else if (checkMessage.includes("authentication") || checkMessage.includes("401") || errorCode === "401") {
+            errorCode = "AUTHENTICATION_ERROR";
+            errorMessage = "Authentication failed with the AI provider.";
+          } else if (checkMessage.includes("insufficient_quota") || checkMessage.includes("credit")) {
+            errorCode = "INSUFFICIENT_QUOTA";
+            errorMessage = "Insufficient quota or credits with the AI provider.";
+          }
+        }
+
+        // 4. Set errorDetails from stack if not already set by more specific metadata
+        if (!errorDetails && error instanceof Error && error.stack) {
+          errorDetails = error.stack;
+        }
+
+        // Ensure errorDetails is a string if it exists
+        if (errorDetails && typeof errorDetails !== 'string') {
+          errorDetails = JSON.stringify(errorDetails);
+        }
+
+        return JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } });
+      },
+    });
+  } catch (e: any) {
+    console.error(`[API Route Top-Level Error][Chat ${id}] Error during streamText or toDataStreamResponse:`, JSON.stringify(e, null, 2));
+
+    // Save user messages and update chat state on error
+    try {
+      // modelMessages are UIMessage[]. convertToDBMessages expects Message[].
+      // Cast/map UIMessage to Message structure for compatibility.
+      const compatibleMessagesForDB: Message[] = modelMessages.map(uiMsg => ({
+        id: uiMsg.id,
+        role: uiMsg.role,
+        content: uiMsg.content,
+        // name: uiMsg.name, // Add if 'name' is part of UIMessage and relevant for Message
+        // tool_calls: undefined, // Explicitly undefined if not applicable
+        // tool_call_id: undefined, // Explicitly undefined if not applicable
+      }));
+
+      const dbMessagesOnError = convertToDBMessages(compatibleMessagesForDB, id);
+
+      if (dbMessagesOnError.length > 0) {
+        await saveMessages({ messages: dbMessagesOnError });
+        console.log(`[Chat ${id}][Error Handler] Successfully saved applicable messages to 'messages' table after an error.`);
       }
-      // Return the error as a JSON string so the client can parse it
-      return JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } });
-    },
-  });
+
+      await saveChat({
+        id,
+        userId,
+        messages: modelMessages as any, // UIMessage[] is compatible enough for JSONB storage here
+      });
+      console.log(`[Chat ${id}][Error Handler] Successfully updated 'chats.messages' with current messages after an error.`);
+
+    } catch (dbError: any) {
+      console.error(`[Chat ${id}][Error Handler] DATABASE_ERROR saving messages/chat after primary error:`, dbError.message, dbError.stack);
+    }
+
+    // Construct and return a standardized error response
+    let errorCode = "PIPELINE_ERROR"; // More specific than UNKNOWN_ERROR for this catch block
+    let errorMessage = "An error occurred while processing your request pipeline.";
+    let errorDetails;
+
+    if (e && typeof e.responseBody === 'string') {
+      try {
+        const parsedBody = JSON.parse(e.responseBody);
+        if (parsedBody.error && typeof parsedBody.error.message === 'string') {
+          errorMessage = parsedBody.error.message;
+          if (parsedBody.error.code) errorCode = String(parsedBody.error.code);
+          if (parsedBody.error.metadata) errorDetails = JSON.stringify(parsedBody.error.metadata);
+        }
+      } catch (parseErr) { /* ignore */ }
+    } else if (e instanceof Error) {
+      errorMessage = e.message;
+      if (!errorDetails) errorDetails = e.stack;
+    } else if (typeof e === 'string') {
+      errorMessage = e;
+    }
+
+    const statusCode = e.statusCode || (e.name === 'AI_APICallError' ? e.status : undefined) || 500;
+
+
+    return new Response(
+      JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } }),
+      { status: statusCode, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }
