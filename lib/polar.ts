@@ -119,14 +119,34 @@ export async function getRemainingCreditsByExternalId(userId: string): Promise<n
         const activeMeters = (customerState as any).activeMeters || [];
         console.log(`[DEBUG] Found ${activeMeters.length} active meters for user ${userId}`);
 
-        // If we have any active meters, use the first one's balance
-        // In most cases, there should be only one meter for credits
-        if (activeMeters.length > 0) {
-            const meter = activeMeters[0];
+        // Search for the correct "Message Credits Used" meter among active meters
+        for (const meter of activeMeters) {
             console.log(`[DEBUG] Active meter:`, JSON.stringify(meter, null, 2));
-            const balance = meter.balance || 0;
-            console.log(`[DEBUG] Found active meter with balance: ${balance}`);
-            return balance;
+
+            // Try to get the full meter details to check the name
+            if (meter.meterId) {
+                try {
+                    const meterDetails = await polarClient.meters.get({
+                        id: meter.meterId
+                    });
+                    console.log(`[DEBUG] Meter details for ${meter.meterId}:`, JSON.stringify(meterDetails, null, 2));
+
+                    if (meterDetails?.name === 'Message Credits Used') {
+                        const balance = meter.balance || 0;
+                        console.log(`[DEBUG] Found 'Message Credits Used' active meter with balance: ${balance}`);
+                        return balance;
+                    }
+                } catch (meterError) {
+                    console.warn(`[DEBUG] Failed to get meter details for ${meter.meterId}:`, meterError);
+                }
+            }
+
+            // Fallback: check if the meter object has the nested structure
+            if (meter?.meter?.name === 'Message Credits Used') {
+                const balance = meter.balance || 0;
+                console.log(`[DEBUG] Found 'Message Credits Used' active meter with balance: ${balance}`);
+                return balance;
+            }
         }
 
         // Fallback: also check the legacy meters array (just in case)

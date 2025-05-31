@@ -61,6 +61,7 @@ export const auth = betterAuth({
             // If your expires column was different, you'd map expiresAt here too
         }
     },
+    trustedOrigins: ['http://localhost:3000', 'https://www.chatlima.com'],
     socialProviders: {
         google: {
             clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
@@ -209,15 +210,28 @@ export async function checkMessageLimit(userId: string, isAnonymous: boolean): P
         // 1. Check Polar credits (for authenticated users only)
         if (!isAnonymous) {
             const credits = await getRemainingCreditsByExternalId(userId);
-            if (typeof credits === 'number' && credits > 0) {
-                // User has credits, so allow usage and show credits left
-                return {
-                    hasReachedLimit: false,
-                    limit: 250, // Soft cap for display, actual limit is credits
-                    remaining: credits,
-                    credits,
-                    usedCredits: true
-                };
+            if (typeof credits === 'number') {
+                // If user has negative credits, block them
+                if (credits < 0) {
+                    return {
+                        hasReachedLimit: true,
+                        limit: 0,
+                        remaining: 0,
+                        credits,
+                        usedCredits: true
+                    };
+                }
+                // If user has positive credits, allow usage and show credits left
+                if (credits > 0) {
+                    return {
+                        hasReachedLimit: false,
+                        limit: 250, // Soft cap for display, actual limit is credits
+                        remaining: credits,
+                        credits,
+                        usedCredits: true
+                    };
+                }
+                // If credits === 0, fall through to daily message limit
             }
         }
 
