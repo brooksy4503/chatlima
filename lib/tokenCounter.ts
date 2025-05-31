@@ -3,6 +3,7 @@ import { db } from './db';
 import { users, polarUsageEvents } from './db/schema';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { modelDetails, modelID } from '@/ai/providers';
 
 /**
  * Tracks token usage for a user's chat session and reports it to Polar for billing.
@@ -71,19 +72,24 @@ export async function trackTokenUsage(
  * @param userId The user ID in our application (used as external ID in Polar)
  * @param requiredTokens Estimated number of tokens needed
  * @param isAnonymous Whether the user is anonymous
+ * @param selectedModelId Optional selected model ID
  * @returns True if the user has enough credits, false otherwise
  */
 export async function hasEnoughCredits(
     polarCustomerId: string | undefined,
     userId: string | undefined,
     requiredTokens: number = 1,
-    isAnonymous: boolean = false
+    isAnonymous: boolean = false,
+    selectedModelId?: modelID
 ): Promise<boolean> {
     // For anonymous users, skip Polar credit checks completely
     // They're already limited by the daily message count
     if (isAnonymous) {
-        return true;
+        return false; // Anonymous users cannot access any model requiring credit check, including premium.
     }
+
+    // Check if the selected model is premium
+    const isPremiumModel = selectedModelId ? modelDetails[selectedModelId]?.premium === true : false;
 
     // First, try to get credits via external ID if userId is provided
     if (userId) {
@@ -92,9 +98,14 @@ export async function hasEnoughCredits(
 
             // If we got a valid result, use it
             if (remainingCreditsByExternal !== null) {
+                // If it's a premium model, user must have more than 0 credits.
+                // For non-premium, the standard check of remainingCredits >= requiredTokens applies.
+                if (isPremiumModel) {
+                    return remainingCreditsByExternal > 0;
+                }
                 return remainingCreditsByExternal >= requiredTokens;
             }
-            // Otherwise fall through to the legacy method
+            // Otherwise fall through to the legacy method if no valid result from external ID
         } catch (error) {
             console.warn('Error checking credits by external ID:', error);
             // Fall through to the legacy method
@@ -106,20 +117,25 @@ export async function hasEnoughCredits(
         try {
             const remainingCredits = await getRemainingCredits(polarCustomerId);
 
-            // If we couldn't determine the credits (null), allow the request
-            // This prevents blocking users if our meter check fails
+            // If we couldn't determine the credits (null), allow the request for non-premium, deny for premium.
             if (remainingCredits === null) {
-                return true;
+                return !isPremiumModel; // Allow non-premium if credits unknown, deny premium
             }
 
+            // If it's a premium model, user must have more than 0 credits.
+            // For non-premium, the standard check of remainingCredits >= requiredTokens applies.
+            if (isPremiumModel) {
+                return remainingCredits > 0;
+            }
             return remainingCredits >= requiredTokens;
         } catch (error) {
-            // Log the error but don't block the request
+            // Log the error but don't block the request for non-premium, deny for premium
             console.error('Error checking credits by customer ID:', error);
+            return !isPremiumModel; // Allow non-premium if error, deny premium
         }
     }
 
-    // If we reach here, we either had no IDs or all methods failed
-    // Default to allowing the request to prevent blocking users
-    return true;
+    // If we reach here, we either had no IDs or all methods failed.
+    // Default to allowing non-premium requests to prevent blocking users, deny premium.
+    return !isPremiumModel;
 } 

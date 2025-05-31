@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/auth';
+import { signIn, signOut, useSession } from '@/lib/auth-client';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unauthenticated';
 
@@ -15,71 +15,74 @@ interface AuthUser {
 }
 
 export function useAuth() {
+    const { data: session, isPending } = useSession();
     const [status, setStatus] = useState<AuthStatus>('loading');
     const [user, setUser] = useState<AuthUser | null>(null);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        const fetchSession = async () => {
-            try {
-                // Get session (handles both signed in and anonymous users)
-                const session = await auth.api.getSession({ headers: new Headers() });
+        if (isPending) {
+            setStatus('loading');
+            return;
+        }
 
-                if (session && session.user) {
-                    // If we have a user with ID, we're authenticated in some form
-                    if (session.user.id) {
-                        const isAnonymous = (session.user as any).isAnonymous === true;
+        try {
+            if (session && session.user) {
+                // If we have a user with ID, we're authenticated in some form
+                if (session.user.id) {
+                    const isAnonymous = (session.user as any).isAnonymous === true;
 
-                        setUser({
-                            id: session.user.id,
-                            name: session.user.name || null,
-                            email: session.user.email || null,
-                            image: session.user.image || null,
-                            isAnonymous: isAnonymous,
-                            // These values would be fetched separately from an API endpoint
-                            messageLimit: isAnonymous ? 10 : 20,
-                            messageRemaining: 0, // Would be updated via API
-                            hasSubscription: !!(session.user as any)?.metadata?.hasSubscription,
-                        });
+                    setUser({
+                        id: session.user.id,
+                        name: session.user.name || null,
+                        email: session.user.email || null,
+                        image: session.user.image || null,
+                        isAnonymous: isAnonymous,
+                        // These values would be fetched separately from an API endpoint
+                        messageLimit: isAnonymous ? 10 : 20,
+                        messageRemaining: 0, // Would be updated via API
+                        hasSubscription: !!(session.user as any)?.metadata?.hasSubscription,
+                    });
 
-                        setStatus(isAnonymous ? 'anonymous' : 'authenticated');
-                    } else {
-                        setStatus('unauthenticated');
-                        setUser(null);
-                    }
+                    setStatus(isAnonymous ? 'anonymous' : 'authenticated');
                 } else {
-                    // No session means not authenticated
                     setStatus('unauthenticated');
                     setUser(null);
                 }
-            } catch (err) {
-                setError(err instanceof Error ? err : new Error(String(err)));
+            } else {
+                // No session means not authenticated
                 setStatus('unauthenticated');
                 setUser(null);
             }
-        };
-
-        fetchSession();
-    }, []);
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error(String(err)));
+            setStatus('unauthenticated');
+            setUser(null);
+        }
+    }, [session, isPending]);
 
     // Sign in with Google
-    const signIn = async () => {
+    const handleSignIn = async () => {
         try {
-            // Redirect to Google sign-in page
-            window.location.href = '/api/auth/signin/google';
+            // Use Better Auth client to sign in with Google
+            await signIn.social({
+                provider: 'google',
+                callbackURL: window.location.origin
+            });
         } catch (err) {
             setError(err instanceof Error ? err : new Error(String(err)));
         }
     };
 
     // Sign out
-    const signOut = async () => {
+    const handleSignOut = async () => {
         try {
-            // Redirect to sign-out page
-            window.location.href = '/api/auth/signout';
+            // Use Better Auth client to sign out
+            await signOut();
 
-            // The server will create a new anonymous session automatically
-            // We'll need to wait for the redirect to complete and then reload
+            // Refresh the page to get new anonymous session
+            window.location.reload();
         } catch (err) {
             setError(err instanceof Error ? err : new Error(String(err)));
         }
@@ -108,8 +111,8 @@ export function useAuth() {
         status,
         user,
         error,
-        signIn,
-        signOut,
+        signIn: handleSignIn,
+        signOut: handleSignOut,
         refreshMessageUsage,
         isLoading: status === 'loading',
         isAuthenticated: status === 'authenticated',

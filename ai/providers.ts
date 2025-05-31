@@ -18,6 +18,7 @@ export interface ModelInfo {
   capabilities: string[];
   enabled?: boolean;
   supportsWebSearch?: boolean;
+  premium?: boolean;
 }
 
 const middleware = extractReasoningMiddleware({
@@ -82,6 +83,10 @@ const languageModels = {
     model: openrouterClient("deepseek/deepseek-r1-0528", { logprobs: false }),
     middleware: deepseekR1Middleware,
   }),
+  "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": wrapLanguageModel({
+    model: openrouterClient("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
   "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
   "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
   "openrouter/google/gemini-2.5-flash-preview-05-20": openrouterClient("google/gemini-2.5-flash-preview-05-20"),
@@ -131,7 +136,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "anthropic/claude-3.5-sonnet",
     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: true
   },
   "claude-3-7-sonnet": {
     provider: "Anthropic",
@@ -139,7 +145,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Latest version of Anthropic\'s Claude 3.7 Sonnet with strong reasoning and coding capabilities.",
     apiVersion: "claude-3-7-sonnet-20250219",
     capabilities: ["Reasoning", "Efficient", "Agentic"],
-    enabled: false
+    enabled: false,
+    premium: true
   },
   "openrouter/anthropic/claude-3.7-sonnet": {
     provider: "OpenRouter",
@@ -148,7 +155,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "anthropic/claude-3.7-sonnet",
     capabilities: ["Reasoning", "Coding", "Agentic"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: true
   },
   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
     provider: "OpenRouter",
@@ -157,7 +165,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "anthropic/claude-3.7-sonnet:thinking",
     capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: true
   },
   "openrouter/deepseek/deepseek-chat-v3-0324": {
     provider: "OpenRouter",
@@ -166,7 +175,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "deepseek/deepseek-chat-v3-0324",
     capabilities: ["Chat", "Efficient"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/deepseek/deepseek-r1": {
     provider: "OpenRouter",
@@ -175,7 +185,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "deepseek/deepseek-r1",
     capabilities: ["Reasoning", "Open Source"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/deepseek/deepseek-r1-0528": {
     provider: "OpenRouter",
@@ -184,114 +195,138 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "deepseek/deepseek-r1-0528",
     capabilities: ["Reasoning", "Open Source"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
+  },
+  "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": {
+    provider: "OpenRouter",
+    name: "DeepSeek R1 0528 Qwen3 8B",
+    description: "DeepSeek-R1-0528-Qwen3-8B, an 8B parameter model distilled from DeepSeek R1 0528, excels in reasoning, math, programming, and logic. Accessed via OpenRouter.",
+    apiVersion: "deepseek/deepseek-r1-0528-qwen3-8b",
+    capabilities: ["Reasoning", "Math", "Programming", "Logic"],
+    enabled: false,
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/google/gemini-2.5-flash-preview": {
     provider: "OpenRouter",
-    name: "Gemini 2.5 Flash Preview",
-    description: "Google\'s state-of-the-art workhorse model for advanced reasoning, coding, mathematics, and scientific tasks, with built-in \"thinking\" capabilities. Accessed via OpenRouter.",
+    name: "Google Gemini 2.5 Flash Preview",
+    description: "Google\'s latest Gemini 2.5 Flash model, optimized for speed and efficiency, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-flash-preview",
-    capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific"],
+    capabilities: ["Fast", "Efficient", "Multimodal"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/google/gemini-2.5-flash-preview:thinking": {
     provider: "OpenRouter",
-    name: "Gemini 2.5 Flash Preview (thinking)",
-    description: "Gemini 2.5 Flash is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
+    name: "Google Gemini 2.5 Flash Preview (thinking)",
+    description: "Google\'s latest Gemini 2.5 Flash model with thinking capabilities, optimized for speed and efficiency, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-flash-preview:thinking",
-    capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
+    capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/google/gemini-2.5-flash-preview-05-20": {
     provider: "OpenRouter",
-    name: "Gemini 2.5 Flash Preview 05-20",
-    description: "Gemini 2.5 Flash May 20th Checkpoint is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
+    name: "Google Gemini 2.5 Flash Preview (05-20)",
+    description: "Google\'s Gemini 2.5 Flash model (May 20th version), optimized for speed and efficiency, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-flash-preview-05-20",
-    capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
+    capabilities: ["Fast", "Efficient", "Multimodal"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": {
     provider: "OpenRouter",
-    name: "Gemini 2.5 Flash Preview 05-20 (thinking)",
-    description: "Gemini 2.5 Flash May 20th Checkpoint is Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
+    name: "Google Gemini 2.5 Flash Preview (05-20, thinking)",
+    description: "Google\'s Gemini 2.5 Flash model (May 20th version) with thinking capabilities, optimized for speed and efficiency, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-flash-preview-05-20:thinking",
-    capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
+    capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/google/gemini-2.5-pro-preview-03-25": {
     provider: "OpenRouter",
-    name: "Gemini 2.5 Pro Preview",
-    description: "Google\'s state-of-the-art AI model for advanced reasoning, coding, math, and science, accessed via OpenRouter.",
+    name: "Google Gemini 2.5 Pro Preview (03-25)",
+    description: "Google\'s Gemini 2.5 Pro model (March 25th version), a powerful and versatile model, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-pro-preview-03-25",
-    capabilities: ["Reasoning", "Coding", "Math", "Science"],
+    capabilities: ["Powerful", "Versatile", "Multimodal"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: true
   },
   "openrouter/x-ai/grok-3-beta": {
     provider: "OpenRouter",
-    name: "Grok 3 Beta",
-    description: "xAI\'s flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Accessed via OpenRouter.",
+    name: "X AI Grok 3 Beta",
+    description: "Grok 3 Beta from X AI, a cutting-edge model with strong reasoning and problem-solving capabilities, accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-beta",
-    capabilities: ["Reasoning", "Coding", "Knowledge"],
-    enabled: true,
-    supportsWebSearch: true
+    capabilities: ["Reasoning", "Problem-solving", "Cutting-edge"],
+    enabled: false,
+    supportsWebSearch: true,
+    premium: true
   },
   "grok-3-mini": {
-    provider: "XAI",
-    name: "Grok 3 Mini",
-    description: "Latest version of XAI\'s Grok 3 Mini with strong reasoning and coding capabilities.",
+    provider: "X AI",
+    name: "X AI Grok 3 Mini",
+    description: "Grok 3 Mini from X AI, a compact and efficient model for various tasks.",
     apiVersion: "grok-3-mini-latest",
-    capabilities: ["Reasoning", "Efficient", "Agentic"],
-    enabled: false
+    capabilities: ["Compact", "Efficient", "Versatile"],
+    enabled: false,
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/x-ai/grok-3-mini-beta": {
     provider: "OpenRouter",
-    name: "Grok 3 Mini Beta",
-    description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Accessed via OpenRouter.",
+    name: "X AI Grok 3 Mini Beta",
+    description: "Grok 3 Mini Beta from X AI, a compact and efficient model, accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
-    capabilities: ["Reasoning", "Math", "Puzzles"],
+    capabilities: ["Compact", "Efficient", "Versatile"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
     provider: "OpenRouter",
-    name: "Grok 3 Mini Beta (High Reasoning)",
-    description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Accessed via OpenRouter.",
+    name: "X AI Grok 3 Mini Beta (High Reasoning)",
+    description: "Grok 3 Mini Beta from X AI with high reasoning effort, accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-mini-beta",
-    capabilities: ["Reasoning", "Math", "Puzzles", "High Effort"],
+    capabilities: ["Compact", "Efficient", "Versatile", "High Reasoning"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/meta-llama/llama-4-maverick": {
     provider: "OpenRouter",
-    name: "Llama 4 Maverick",
-    description: "Meta\'s Llama 4 Maverick: a high-capacity, multimodal MoE language model. Supports multilingual text/image input and produces text/code output.",
+    name: "Meta Llama 4 Maverick",
+    description: "Meta Llama 4 Maverick, a cutting-edge model from Meta, accessed via OpenRouter.",
     apiVersion: "meta-llama/llama-4-maverick",
-    capabilities: ["Multimodal", "Multilingual", "Image Input", "Code Output", "Reasoning"],
+    capabilities: ["Cutting-edge", "Versatile"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/mistralai/mistral-medium-3": {
     provider: "OpenRouter",
     name: "Mistral Medium 3",
-    description: "High-performance enterprise-grade language model with frontier-level capabilities. Balances state-of-the-art reasoning and multimodal performance. Accessed via OpenRouter.",
+    description: "Mistral Medium 3, a powerful model from Mistral AI, accessed via OpenRouter.",
     apiVersion: "mistralai/mistral-medium-3",
-    capabilities: ["Reasoning", "Coding", "STEM", "Enterprise"],
+    capabilities: ["Powerful", "Versatile"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
     provider: "OpenRouter",
-    name: "Mistral Small 3.1 Instruct",
-    description: "Mistral Small 3.1 Instruct model accessed via OpenRouter.",
+    name: "Mistral Small 3.1 24B Instruct",
+    description: "Mistral Small 3.1 24B Instruct, an efficient and capable model from Mistral AI, accessed via OpenRouter.",
     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
-    capabilities: ["Instruct", "Efficient"],
+    capabilities: ["Efficient", "Capable", "Instruct"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/openai/gpt-4.1": {
     provider: "OpenRouter",
@@ -300,77 +335,88 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "openai/gpt-4.1",
     capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
     enabled: true,
-    supportsWebSearch: false
+    supportsWebSearch: false,
+    premium: true
   },
   "gpt-4.1-mini": {
     provider: "OpenAI",
     name: "OpenAI GPT-4.1 Mini",
-    description: "Compact version of OpenAI\'s GPT-4.1 with good balance of capabilities, including vision.",
+    description: "GPT-4.1 Mini is a compact and efficient version of GPT-4.1, offering a balance of performance and speed for various tasks.",
     apiVersion: "gpt-4.1-mini",
-    capabilities: ["Balance", "Creative", "Vision"],
-    enabled: false
+    capabilities: ["Coding", "Instruction Following", "Compact"],
+    enabled: false,
+    supportsWebSearch: false,
+    premium: false
   },
   "openrouter/openai/gpt-4.1-mini": {
     provider: "OpenRouter",
     name: "OpenAI GPT-4.1 Mini",
-    description: "Mid-sized model competitive with GPT-4o, lower latency/cost. Strong coding & vision. Accessed via OpenRouter. Note: Web search is not supported for this model.",
+    description: "GPT-4.1 Mini is a compact and efficient version of GPT-4.1, offering a balance of performance and speed for various tasks, accessed via OpenRouter.",
     apiVersion: "openai/gpt-4.1-mini",
-    capabilities: ["Coding", "Vision", "Efficient"],
+    capabilities: ["Coding", "Instruction Following", "Compact"],
     enabled: true,
-    supportsWebSearch: false
+    supportsWebSearch: false,
+    premium: false
   },
   "openrouter/openai/o4-mini-high": {
     provider: "OpenRouter",
-    name: "OpenAI o4 Mini High",
-    description: "OpenAI o4-mini-high, a compact reasoning model optimized for speed and cost, with strong multimodal and agentic capabilities. Accessed via OpenRouter.",
+    name: "OpenAI O4 Mini High",
+    description: "OpenAI O4 Mini High, an efficient and high-performing model, accessed via OpenRouter.",
     apiVersion: "openai/o4-mini-high",
-    capabilities: ["Reasoning", "Coding", "Efficient", "Agentic", "Multimodal"],
+    capabilities: ["Efficient", "High-performing"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: false,
+    premium: false
   },
   "qwen-qwq": {
     provider: "Groq",
     name: "Qwen QWQ",
-    description: "Latest version of Alibaba\'s Qwen QWQ with strong reasoning and coding capabilities.",
-    apiVersion: "qwen-qwq",
-    capabilities: ["Reasoning", "Efficient", "Agentic"],
-    enabled: false
+    description: "Qwen QWQ model accessed via Groq, known for its speed and efficiency.",
+    apiVersion: "qwen-qwq-32b",
+    capabilities: ["Fast", "Efficient"],
+    enabled: false,
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/qwen/qwq-32b": {
     provider: "OpenRouter",
-    name: "Qwen QwQ 32B",
-    description: "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. Accessed via OpenRouter.",
+    name: "Qwen QWQ 32B",
+    description: "Qwen QWQ 32B model accessed via OpenRouter, known for its speed and efficiency.",
     apiVersion: "qwen/qwq-32b",
-    capabilities: ["Reasoning", "Hard Problems"],
+    capabilities: ["Fast", "Efficient"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/qwen/qwen3-235b-a22b": {
     provider: "OpenRouter",
     name: "Qwen3 235B A22B",
-    description: "Qwen3-235B-A22B is a 235B parameter mixture-of-experts (MoE) model by Qwen, activating 22B parameters per forward pass. It supports 'thinking' and 'non-thinking' modes, excels in reasoning, multilingual tasks, instruction-following, and agent tool-calling, with a context window up to 131K tokens via OpenRouter.",
+    description: "Qwen3 235B A22B, a large and powerful model from Qwen, accessed via OpenRouter.",
     apiVersion: "qwen/qwen3-235b-a22b",
-    capabilities: ["Reasoning", "Coding", "Multilingual", "Agentic"],
+    capabilities: ["Large", "Powerful"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/anthropic/claude-sonnet-4": {
     provider: "OpenRouter",
-    name: "Claude Sonnet 4",
-    description: "Enhanced version of Sonnet 3.7, excelling in coding and reasoning with improved precision, controllability, and efficiency.",
+    name: "Claude 4 Sonnet",
+    description: "Anthropic\'s Claude Sonnet 4 model, offering a balance of performance and speed, accessed via OpenRouter.",
     apiVersion: "anthropic/claude-sonnet-4",
-    capabilities: ["Reasoning", "Coding", "Agentic", "Efficient", "Controllability"],
+    capabilities: ["Balanced", "Fast", "Efficient"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: true
   },
   "openrouter/anthropic/claude-opus-4": {
     provider: "OpenRouter",
-    name: "Claude Opus 4",
-    description: "Anthropic's most advanced model, excelling at coding, advanced reasoning, agentic tasks, and long-context operations.",
+    name: "Claude 4 Opus",
+    description: "Anthropic\'s most advanced model, excelling at coding, advanced reasoning, agentic tasks, and long-context operations.",
     apiVersion: "anthropic/claude-opus-4",
     capabilities: ["Coding", "Advanced Reasoning", "Agentic Tasks", "Long Context", "Sustained Performance"],
     enabled: true,
-    supportsWebSearch: true
+    supportsWebSearch: true,
+    premium: true
   },
 };
 

@@ -3,12 +3,9 @@ import { polarUsageEvents } from './db/schema';
 import { Polar } from '@polar-sh/sdk';
 import { nanoid } from 'nanoid';
 
-// Determine Polar server environment
-// Use POLAR_SERVER_ENV if set, otherwise fallback to NODE_ENV logic
-const polarServerEnv = process.env.POLAR_SERVER_ENV === "sandbox" ? "sandbox"
-    : process.env.POLAR_SERVER_ENV === "production" ? "production"
-        : process.env.NODE_ENV === "production" ? "production"
-            : "sandbox";
+// Force Polar to always use sandbox environment (even in production)
+// Only use production if explicitly set via POLAR_SERVER_ENV=production
+const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
 
 // Initialize Polar SDK client
 const polarClient = new Polar({

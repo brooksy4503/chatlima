@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getRemainingCredits, getRemainingCreditsByExternalId } from '../lib/polar';
 
 /**
  * Hook to get and manage a user's credits
  * 
- * @param polarCustomerId The customer's ID in Polar system (legacy)
+ * @param polarCustomerId The customer's ID in Polar system (legacy) - deprecated, kept for compatibility
  * @param userId The user's ID in our application (used as external ID in Polar)
  * @returns Object containing the user's credits status and related functions
  */
@@ -13,10 +12,10 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
 
-    // Function to fetch credits
+    // Function to fetch credits via API endpoint
     const fetchCredits = async () => {
-        // If neither ID is provided, we can't fetch credits
-        if (!polarCustomerId && !userId) {
+        // If no userId is provided, we can't fetch credits
+        if (!userId) {
             setCredits(null);
             return;
         }
@@ -25,32 +24,23 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
         setError(null);
 
         try {
-            // Try the external ID approach first if a userId is provided
-            if (userId) {
-                try {
-                    const remainingCreditsByExternal = await getRemainingCreditsByExternalId(userId);
-                    if (remainingCreditsByExternal !== null) {
-                        setCredits(remainingCreditsByExternal);
-                        setLoading(false);
-                        return;
-                    }
-                    // If external ID lookup fails, fall through to legacy method
-                } catch (externalError) {
-                    console.warn('Failed to get credits via external ID, falling back to legacy method:', externalError);
-                    // Continue to legacy method
-                }
+            const response = await fetch('/api/credits');
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch credits: ${response.status}`);
             }
 
-            // Legacy method using polarCustomerId
-            if (polarCustomerId) {
-                const remainingCredits = await getRemainingCredits(polarCustomerId);
-                setCredits(remainingCredits);
-            } else {
-                setCredits(null);
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
             }
+
+            setCredits(data.credits);
         } catch (err) {
             console.error('Error fetching credits:', err);
             setError(err instanceof Error ? err : new Error('Failed to fetch credits'));
+            setCredits(null);
         } finally {
             setLoading(false);
         }
@@ -72,6 +62,12 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
         return credits >= requiredAmount;
     };
 
+    // Function to check if user can access premium models
+    const canAccessPremiumModels = (): boolean => {
+        if (credits === null) return false; // Cannot access if credits unknown
+        return credits > 0;
+    };
+
     return {
         credits,
         formattedCredits,
@@ -79,5 +75,6 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
         error,
         fetchCredits,
         hasSufficientCredits,
+        canAccessPremiumModels,
     };
 } 

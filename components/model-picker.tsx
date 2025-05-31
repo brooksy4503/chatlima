@@ -11,6 +11,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot } from "lucide-react";
 import { useState } from "react";
+import { useCredits } from "@/hooks/useCredits";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ModelPickerProps {
   selectedModel: modelID;
@@ -19,6 +22,8 @@ interface ModelPickerProps {
 
 export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProps) => {
   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
+  const { user } = useAuth();
+  const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
   
   // Ensure we always have a valid model ID immediately for stable rendering
   // const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel; // Replaced by direct use of selectedModel
@@ -145,7 +150,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
               <SelectGroup className="space-y-1">
                 {sortedModels.map((id) => {
                   const modelId = id as modelID;
-                  return (
+                  const item = (
                     <SelectItem 
                       key={id} 
                       value={id}
@@ -156,13 +161,18 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
                         "hover:bg-primary/5 hover:text-primary-foreground",
                         "focus:bg-primary/10 focus:text-primary focus:outline-none",
                         "data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
-                        selectedModel === id && "!bg-primary/15 !text-primary font-medium" // Use selectedModel
+                        selectedModel === id && "!bg-primary/15 !text-primary font-medium",
+                        modelDetails[modelId].premium && !canAccessPremiumModels() && "opacity-50 cursor-not-allowed"
                       )}
+                      disabled={creditsLoading || (modelDetails[modelId].premium && !canAccessPremiumModels())}
                     >
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1.5">
                           {getProviderIcon(modelDetails[modelId].provider)}
                           <span className="font-medium truncate">{modelDetails[modelId].name}</span>
+                          {modelDetails[modelId].premium && (
+                            <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
+                          )}
                         </div>
                         <span className="text-[10px] sm:text-xs text-muted-foreground">
                           {modelDetails[modelId].provider}
@@ -170,6 +180,20 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
                       </div>
                     </SelectItem>
                   );
+
+                  if (modelDetails[modelId].premium && !canAccessPremiumModels() && !creditsLoading) {
+                    return (
+                      <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>{item}</TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-xs">This is a premium model. Credits are required to use it.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  }
+                  return item;
                 })}
               </SelectGroup>
             </div>
@@ -180,6 +204,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
                 <div className="flex items-center gap-2 mb-1">
                   {getProviderIcon(currentModelDetails.provider)}
                   <h3 className="text-sm font-semibold">{currentModelDetails.name}</h3>
+                  {currentModelDetails.premium && (
+                    <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground mb-1">
                   Provider: <span className="font-medium">{currentModelDetails.provider}</span>
