@@ -9,6 +9,7 @@ import { db } from '@/lib/db';
 import { chats } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage, hasEnoughCredits } from '@/lib/tokenCounter';
+import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
 import { auth, checkMessageLimit } from '@/lib/auth';
 
 import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
@@ -123,6 +124,7 @@ export async function POST(req: Request) {
 
   // 1. Check if user has sufficient credits (if they have a Polar account)
   let hasCredits = false;
+  let actualCredits: number | null = null;
   console.log(`[Debug] User ${userId} - isAnonymous: ${isAnonymous}, polarCustomerId: ${polarCustomerId}`);
 
   try {
@@ -131,6 +133,27 @@ export async function POST(req: Request) {
     // Pass selectedModel to check for premium model access
     hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, selectedModel);
     console.log(`[Debug] hasEnoughCredits result: ${hasCredits}`);
+
+    // Also get the actual credit balance to check for negative balances
+    if (!isAnonymous) {
+      if (userId) {
+        try {
+          actualCredits = await getRemainingCreditsByExternalId(userId);
+          console.log(`[Debug] Actual credits for user ${userId}: ${actualCredits}`);
+        } catch (error) {
+          console.warn('Error getting actual credits by external ID:', error);
+          // Fall back to legacy method
+          if (polarCustomerId) {
+            try {
+              actualCredits = await getRemainingCredits(polarCustomerId);
+              console.log(`[Debug] Actual credits via legacy method: ${actualCredits}`);
+            } catch (legacyError) {
+              console.warn('Error getting actual credits by legacy method:', legacyError);
+            }
+          }
+        }
+      }
+    }
   } catch (error: any) {
     // Log but continue - don't block users if credit check fails
     console.error('[CreditCheckError] Error checking credits:', error);
@@ -138,15 +161,26 @@ export async function POST(req: Request) {
     // For now, matches existing behavior of allowing request if check fails.
   }
 
-  // 2. If user has credits, allow request (skip daily message limit)
-  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, will skip limit check: ${!isAnonymous && hasCredits}`);
+  // 2. Check for negative credit balance - block if user has negative credits
+  if (!isAnonymous && actualCredits !== null && actualCredits < 0) {
+    console.log(`[Debug] User ${userId} has negative credits (${actualCredits}), blocking request`);
+    return createErrorResponse(
+      "INSUFFICIENT_CREDITS",
+      `Your account has a negative credit balance (${actualCredits}). Please purchase more credits to continue.`,
+      402,
+      `User has ${actualCredits} credits`
+    );
+  }
+
+  // 3. If user has credits, allow request (skip daily message limit)
+  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, will skip limit check: ${!isAnonymous && hasCredits}`);
 
   if (!isAnonymous && hasCredits) {
     console.log(`[Debug] User ${userId} has credits, skipping message limit check`);
     // proceed
   } else {
     console.log(`[Debug] User ${userId} entering message limit check - isAnonymous: ${isAnonymous}`);
-    // 3. Otherwise, check message limit based on authentication status
+    // 4. Otherwise, check message limit based on authentication status
     const limitStatus = await checkMessageLimit(userId, isAnonymous);
     console.log(`[Debug] limitStatus:`, limitStatus);
 
@@ -629,9 +663,16 @@ export async function POST(req: Request) {
             console.warn('Could not determine if user is anonymous, assuming not anonymous');
           }
 
-          // Pass isAnonymous flag to skip Polar reporting for anonymous users
-          await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous);
-          console.log(`${isAnonymous ? 'Tracked' : 'Reported'} ${completionTokens} tokens for user ${userId}${isAnonymous ? ' (anonymous)' : ' to Polar'} [Chat ${id}]`);
+          // Determine if user should have credits deducted or just use daily message tracking
+          // Only deduct credits if user actually has purchased credits (positive balance)
+          let shouldDeductCredits = false;
+          if (!isAnonymous && actualCredits !== null && actualCredits > 0) {
+            shouldDeductCredits = true;
+          }
+
+          // Pass flags to control credit deduction vs daily message tracking
+          await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits);
+          console.log(`${isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : 'Tracked (daily limit)'} ${completionTokens} tokens for user ${userId} [Chat ${id}]`);
         } catch (error: any) {
           console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
           // Don't break the response flow if tracking fails

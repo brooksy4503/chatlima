@@ -11,12 +11,14 @@ import { modelDetails, modelID } from '@/ai/providers';
  * @param polarCustomerId Optional Polar customer ID
  * @param completionTokens Number of tokens to report
  * @param isAnonymous Whether the user is anonymous
+ * @param shouldDeductCredits Whether to actually deduct credits (only for users with purchased credits)
  */
 export async function trackTokenUsage(
     userId: string,
     polarCustomerId: string | undefined,
     completionTokens: number,
-    isAnonymous: boolean = false
+    isAnonymous: boolean = false,
+    shouldDeductCredits: boolean = true
 ): Promise<void> {
     try {
         // Check if the user exists in the database first
@@ -35,14 +37,15 @@ export async function trackTokenUsage(
             source: 'chat-completion'
         };
 
-        // Skip Polar reporting for anonymous users
-        if (!isAnonymous) {
+        // Only report to Polar if user has purchased credits and should be charged
+        if (!isAnonymous && shouldDeductCredits) {
             // Report the usage to Polar and log it in our database
             // Pass 1 as the second argument for credits_consumed, original completionTokens for logging
             await reportAIUsage(userId, 1, polarCustomerId, additionalProperties);
         } else {
-            // For anonymous users, just log locally without reporting to Polar
-            console.log(`Skipping Polar reporting for anonymous user ${userId} (1 credit consumed, ${completionTokens} tokens calculated)`)
+            // For anonymous users or users using free daily messages, just log locally without reporting to Polar
+            const reason = isAnonymous ? 'anonymous user' : 'user using free daily messages';
+            console.log(`Skipping Polar reporting for ${reason} ${userId} (1 credit would be consumed, ${completionTokens} tokens calculated)`)
 
             // Still log in our local database for analytics
             await db.insert(polarUsageEvents).values({
@@ -51,10 +54,11 @@ export async function trackTokenUsage(
                 polarCustomerId, // Will be null/undefined for anonymous users
                 eventName: 'message.processed', // New event name
                 eventPayload: {
-                    credits_consumed: 1, // New payload structure
+                    credits_consumed: shouldDeductCredits ? 1 : 0, // Track whether credits were actually consumed
                     originalCompletionTokens: completionTokens, // Keep original tokens for local logs if desired
                     ...additionalProperties,
-                    skippedPolarReporting: true
+                    skippedPolarReporting: true,
+                    reason: reason
                 },
                 createdAt: new Date()
             });
