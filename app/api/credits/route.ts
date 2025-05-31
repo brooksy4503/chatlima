@@ -12,6 +12,7 @@ export async function GET(req: Request) {
 
         // If no session exists, return error
         if (!session || !session.user || !session.user.id) {
+            console.log('[DEBUG] Credits API: No valid session found');
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
@@ -23,8 +24,11 @@ export async function GET(req: Request) {
         const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
             (session.user as any)?.metadata?.polarCustomerId;
 
+        console.log(`[DEBUG] Credits API: userId=${userId}, isAnonymous=${isAnonymous}, polarCustomerId=${polarCustomerId}`);
+
         // For anonymous users, return null credits
         if (isAnonymous) {
+            console.log('[DEBUG] Credits API: User is anonymous, returning null credits');
             return NextResponse.json({
                 credits: null,
                 isAnonymous: true
@@ -37,7 +41,9 @@ export async function GET(req: Request) {
             // Try the external ID approach first if a userId is provided
             if (userId) {
                 try {
+                    console.log(`[DEBUG] Credits API: Attempting to get credits via external ID for user ${userId}`);
                     const remainingCreditsByExternal = await getRemainingCreditsByExternalId(userId);
+                    console.log(`[DEBUG] Credits API: External ID result: ${remainingCreditsByExternal}`);
                     if (remainingCreditsByExternal !== null) {
                         credits = remainingCreditsByExternal;
                     }
@@ -49,10 +55,13 @@ export async function GET(req: Request) {
 
             // Legacy method using polarCustomerId if external ID didn't work
             if (credits === null && polarCustomerId) {
+                console.log(`[DEBUG] Credits API: Attempting to get credits via legacy polarCustomerId ${polarCustomerId}`);
                 const remainingCredits = await getRemainingCredits(polarCustomerId);
+                console.log(`[DEBUG] Credits API: Legacy method result: ${remainingCredits}`);
                 credits = remainingCredits;
             }
 
+            console.log(`[DEBUG] Credits API: Final credits result: ${credits}`);
             return NextResponse.json({
                 credits,
                 isAnonymous: false

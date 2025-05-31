@@ -16,10 +16,12 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
     const fetchCredits = async () => {
         // If no userId is provided, we can't fetch credits
         if (!userId) {
+            console.log('[DEBUG] useCredits: No userId provided, setting credits to null');
             setCredits(null);
             return;
         }
 
+        console.log(`[DEBUG] useCredits: Fetching credits for userId: ${userId}`);
         setLoading(true);
         setError(null);
 
@@ -31,11 +33,13 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
             }
 
             const data = await response.json();
+            console.log(`[DEBUG] useCredits: API response:`, data);
 
             if (data.error) {
                 throw new Error(data.error);
             }
 
+            console.log(`[DEBUG] useCredits: Setting credits to: ${data.credits}`);
             setCredits(data.credits);
         } catch (err) {
             console.error('Error fetching credits:', err);
@@ -64,8 +68,9 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
 
     // Function to check if user can access premium models
     const canAccessPremiumModels = (): boolean => {
-        if (credits === null) return false; // Cannot access if credits unknown
-        return credits > 0;
+        const canAccess = credits !== null && credits > 0;
+        console.log(`[DEBUG] canAccessPremiumModels: credits=${credits}, canAccess=${canAccess}`);
+        return canAccess;
     };
 
     return {
