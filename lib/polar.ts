@@ -100,24 +100,49 @@ export async function reportAIUsage(
  */
 export async function getRemainingCreditsByExternalId(userId: string): Promise<number | null> {
     try {
+        console.log(`[DEBUG] Attempting to get credits for external ID: ${userId}`);
+
         // First try to get the customer state by external ID
         const customerState = await polarClient.customers.getStateExternal({
             externalId: userId
         });
 
+        console.log(`[DEBUG] Customer state response:`, JSON.stringify(customerState, null, 2));
+
         if (!customerState) {
+            console.log(`[DEBUG] No customer state found for external ID: ${userId}`);
             return null;
         }
 
         // Look for AI usage meter in the customer state
-        // The meters property might be under a different name depending on the SDK version
+        // The meter data is in activeMeters, not meters
+        const activeMeters = (customerState as any).activeMeters || [];
+        console.log(`[DEBUG] Found ${activeMeters.length} active meters for user ${userId}`);
+
+        // If we have any active meters, use the first one's balance
+        // In most cases, there should be only one meter for credits
+        if (activeMeters.length > 0) {
+            const meter = activeMeters[0];
+            console.log(`[DEBUG] Active meter:`, JSON.stringify(meter, null, 2));
+            const balance = meter.balance || 0;
+            console.log(`[DEBUG] Found active meter with balance: ${balance}`);
+            return balance;
+        }
+
+        // Fallback: also check the legacy meters array (just in case)
         const meters = (customerState as any).meters || [];
+        console.log(`[DEBUG] Found ${meters.length} legacy meters for user ${userId}`);
+
         for (const meter of meters) {
-            if (meter?.meter?.name === 'Message Credits Used') { // New check
-                return meter.balance || 0;
+            console.log(`[DEBUG] Legacy Meter:`, JSON.stringify(meter, null, 2));
+            if (meter?.meter?.name === 'Message Credits Used') {
+                const balance = meter.balance || 0;
+                console.log(`[DEBUG] Found 'Message Credits Used' meter with balance: ${balance}`);
+                return balance;
             }
         }
 
+        console.log(`[DEBUG] No active meters or legacy 'Message Credits Used' meter found`);
         return null;
     } catch (error) {
         console.error(`Error getting credits for external ID ${userId}:`, error);
