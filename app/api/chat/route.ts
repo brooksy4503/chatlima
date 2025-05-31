@@ -90,7 +90,8 @@ export async function POST(req: Request) {
   // Disable MCP servers for DeepSeek R1 and DeepSeek R1 0528
   if (
     selectedModel === "openrouter/deepseek/deepseek-r1" ||
-    selectedModel === "openrouter/deepseek/deepseek-r1-0528"
+    selectedModel === "openrouter/deepseek/deepseek-r1-0528" ||
+    selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b"
     //selectedModel === "openrouter/x-ai/grok-3-beta" ||
     //selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
     //selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
@@ -122,10 +123,14 @@ export async function POST(req: Request) {
 
   // 1. Check if user has sufficient credits (if they have a Polar account)
   let hasCredits = false;
+  console.log(`[Debug] User ${userId} - isAnonymous: ${isAnonymous}, polarCustomerId: ${polarCustomerId}`);
+
   try {
     // Check credits using both the external ID (userId) and legacy polarCustomerId
     // Pass isAnonymous flag to skip Polar checks for anonymous users
-    hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous);
+    // Pass selectedModel to check for premium model access
+    hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, selectedModel);
+    console.log(`[Debug] hasEnoughCredits result: ${hasCredits}`);
   } catch (error: any) {
     // Log but continue - don't block users if credit check fails
     console.error('[CreditCheckError] Error checking credits:', error);
@@ -134,11 +139,23 @@ export async function POST(req: Request) {
   }
 
   // 2. If user has credits, allow request (skip daily message limit)
+  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, will skip limit check: ${!isAnonymous && hasCredits}`);
+
   if (!isAnonymous && hasCredits) {
+    console.log(`[Debug] User ${userId} has credits, skipping message limit check`);
     // proceed
   } else {
+    console.log(`[Debug] User ${userId} entering message limit check - isAnonymous: ${isAnonymous}`);
     // 3. Otherwise, check message limit based on authentication status
     const limitStatus = await checkMessageLimit(userId, isAnonymous);
+    console.log(`[Debug] limitStatus:`, limitStatus);
+
+    // Log message usage for anonymous users
+    if (isAnonymous) {
+      const used = limitStatus.limit - limitStatus.remaining;
+      console.log(`[Anonymous User ${userId}] Messages used: ${used}/${limitStatus.limit}, Remaining: ${limitStatus.remaining}`);
+    }
+
     if (limitStatus.hasReachedLimit) {
       return new Response(
         JSON.stringify({
@@ -396,6 +413,7 @@ export async function POST(req: Request) {
       // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
       if (
         selectedModel === "openrouter/deepseek/deepseek-r1" ||
+        selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
         selectedModel === "openrouter/x-ai/grok-3-beta" ||
         selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
         selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
@@ -421,13 +439,28 @@ export async function POST(req: Request) {
     modelInstance = model.languageModel(selectedModel);
   }
 
-  const modelOptions = {
-    ...(effectiveWebSearchEnabled && { // Use effectiveWebSearchEnabled here
-      web_search_options: {
-        search_context_size: webSearch.contextSize
-      }
-    })
-  };
+  const modelOptions: { // Add type for clarity and to allow logprobs
+    web_search_options?: { search_context_size: 'low' | 'medium' | 'high' };
+    logprobs?: boolean;
+  } = {};
+
+  if (effectiveWebSearchEnabled) {
+    modelOptions.web_search_options = {
+      search_context_size: webSearch.contextSize
+    };
+  }
+
+  // Always set logprobs: false for these models at the providerOptions level for streamText
+  if (
+    selectedModel === "openrouter/deepseek/deepseek-r1" ||
+    selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
+    selectedModel === "openrouter/x-ai/grok-3-beta" ||
+    selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+    selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+    selectedModel === "openrouter/qwen/qwq-32b"
+  ) {
+    modelOptions.logprobs = false;
+  }
 
   // Construct the payload for OpenRouter
   const openRouterPayload = {

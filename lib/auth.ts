@@ -9,8 +9,8 @@ import { count, eq, and, gte } from 'drizzle-orm';
 import { getRemainingCreditsByExternalId } from './polar';
 
 
-if (!process.env.GOOGLE_CLIENT_ID) {
-    throw new Error('Missing GOOGLE_CLIENT_ID environment variable');
+if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+    throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID environment variable');
 }
 if (!process.env.GOOGLE_CLIENT_SECRET) {
     throw new Error('Missing GOOGLE_CLIENT_SECRET environment variable');
@@ -28,9 +28,13 @@ if (!process.env.SUCCESS_URL) {
     throw new Error('Missing SUCCESS_URL environment variable');
 }
 
+// Force Polar to always use sandbox environment (even in production)
+// Only use production if explicitly set via POLAR_SERVER_ENV=production
+const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
+
 const polarClient = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN,
-    server: 'sandbox', // As per your instruction
+    server: polarServerEnv, // Use the determined server environment
 });
 
 export const auth = betterAuth({
@@ -60,7 +64,7 @@ export const auth = betterAuth({
     trustedOrigins: ['https://hog-cute-turkey.ngrok-free.app', 'http://localhost:3000', 'https://www.chatlima.com'],
     socialProviders: {
         google: {
-            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             // Set higher message limit for authenticated users
             onAccountCreated: async ({ user }: { user: any }) => {
