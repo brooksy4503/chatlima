@@ -44,10 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Cursor IDE
-.cursor/
-!.cursor/rules/
-
 .env.backup
 .aider*docs/
 .aider.chat.history.md

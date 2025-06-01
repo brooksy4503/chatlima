@@ -1,0 +1,97 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Quick Branch Commands Reference
+
+Quick reference for common feature branch operations in ChatLima.
+
+## 🚀 Create New Feature Branch
+```bash
+# One-liner to create and setup a new feature branch
+git checkout main && git pull origin main && git checkout -b feature/your-feature-name && git push -u origin feature/your-feature-name
+```
+
+## 📋 Common Branch Types
+
+### Feature Branch
+```bash
+git checkout -b feature/new-auth-system
+git checkout -b feature/polar-integration
+git checkout -b feature/chat-export
+```
+
+### Bug Fix Branch
+```bash
+git checkout -b fix/credit-deduction-bug
+git checkout -b fix/auth-session-timeout
+```
+
+### Enhancement Branch
+```bash
+git checkout -b enhance/mobile-ui
+git checkout -b enhance/performance-optimization
+```
+
+## 🔄 Daily Workflow Commands
+
+### Start Working
+```bash
+git checkout feature/your-branch
+git pull origin main  # sync with main
+```
+
+### Save Progress
+```bash
+git add .
+git commit -m "feat: implement core functionality"
+git push
+```
+
+### End of Day
+```bash
+git add .
+git commit -m "wip: work in progress on feature"
+git push
+```
+
+## 🛠️ Branch Management
+
+### Check Status
+```bash
+git status                    # current status
+git branch -a                 # all branches
+git log main..HEAD --oneline  # commits unique to branch
+```
+
+### Sync with Main
+```bash
+git pull origin main          # merge main into current branch
+# OR
+git rebase main              # rebase current branch onto main
+```
+
+### Clean Up
+```bash
+git branch -d feature/old-branch      # delete local branch
+git push origin --delete feature/old-branch  # delete remote branch
+```
+
+## 📝 Commit Message Templates
+
+```bash
+# Feature commits
+git commit -m "feat: add user authentication"
+git commit -m "feat(api): implement payment endpoint"
+
+# Bug fixes
+git commit -m "fix: resolve credit deduction issue"
+git commit -m "fix(ui): correct mobile navigation"
+
+# Enhancements
+git commit -m "enhance: improve query performance"
+git commit -m "enhance(ux): add loading states"
+```
+
+For complete workflow details, see [feature-branch-creation-workflow.mdc](mdc:feature-branch-creation-workflow.mdc)
