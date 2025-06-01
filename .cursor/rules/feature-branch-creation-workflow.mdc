@@ -1,0 +1,271 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Feature Branch Creation Workflow
+
+This rule provides a standardized workflow for creating new feature branches in the ChatLima project, ensuring consistent naming conventions, proper setup, and clear documentation.
+
+## 🌟 Branch Creation Process
+
+### 1. Pre-Creation Planning
+Before creating a new feature branch:
+- Define the feature scope and requirements
+- Choose an appropriate branch naming convention
+- Ensure you're starting from the latest main branch
+- Check for any conflicting features in development
+
+### 2. Branch Naming Convention
+Use descriptive, kebab-case names that clearly identify the feature:
+
+```bash
+# Feature branches (new functionality)
+feature/auth-integration
+feature/polar-payment-system
+feature/chat-history-export
+feature/user-dashboard-redesign
+
+# Bug fix branches
+fix/credit-deduction-bug
+fix/negative-balance-blocking
+fix/auth-session-timeout
+
+# Enhancement branches
+enhance/ui-accessibility
+enhance/performance-optimization
+enhance/mobile-responsiveness
+
+# Documentation branches
+docs/api-documentation
+docs/deployment-guide
+docs/user-manual-update
+```
+
+### 3. Create and Setup Feature Branch
+
+#### Quick Setup Commands:
+```bash
+# Ensure you're on main and up to date
+git checkout main
+git pull origin main
+
+# Create and switch to new feature branch
+git checkout -b feature/your-feature-name
+
+# Push the new branch to remote and set upstream
+git push -u origin feature/your-feature-name
+```
+
+#### Alternative Step-by-Step:
+```bash
+# 1. Switch to main branch
+git checkout main
+
+# 2. Pull latest changes
+git pull origin main
+
+# 3. Create new branch from main
+git branch feature/your-feature-name
+
+# 4. Switch to the new branch
+git checkout feature/your-feature-name
+
+# 5. Push to remote and set upstream tracking
+git push -u origin feature/your-feature-name
+```
+
+### 4. Initial Branch Setup
+
+#### Create Feature Documentation
+Create a brief feature plan (optional but recommended):
+
+```bash
+# Create a feature plan file (optional)
+touch docs/features/your-feature-name.md
+```
+
+#### Feature Plan Template:
+```markdown
+# Feature: [Feature Name]
+
+## 🎯 Overview
+Brief description of what this feature does and why it's needed.
+
+## 📋 Requirements
+- [ ] Requirement 1
+- [ ] Requirement 2
+- [ ] Requirement 3
+
+## 🏗️ Implementation Plan
+1. Step 1: Component/API design
+2. Step 2: Core functionality
+3. Step 3: UI/UX implementation
+4. Step 4: Testing and validation
+5. Step 5: Documentation
+
+## 📁 Files to Modify/Create
+- `app/api/new-endpoint/route.ts`
+- `components/NewComponent.tsx`
+- `lib/new-utility.ts`
+
+## 🧪 Testing Strategy
+- Unit tests for core functions
+- Integration tests for API endpoints
+- E2E tests for user workflows
+
+## 📝 Notes
+Any additional notes, considerations, or dependencies.
+```
+
+### 5. Development Workflow
+
+#### Regular Commits
+Follow conventional commit messages:
+```bash
+# Feature commits
+git commit -m "feat: add user authentication middleware"
+git commit -m "feat(api): implement payment processing endpoint"
+
+# Fix commits
+git commit -m "fix: resolve credit deduction for Google users"
+git commit -m "fix(ui): correct mobile navigation alignment"
+
+# Enhancement commits
+git commit -m "enhance: improve database query performance"
+git commit -m "enhance(ux): add loading states to buttons"
+
+# Documentation commits
+git commit -m "docs: add API endpoint documentation"
+git commit -m "docs: update deployment instructions"
+```
+
+#### Regular Pushes
+Push your work regularly to keep the remote branch updated:
+```bash
+# Push current branch changes
+git push
+
+# Or explicitly push to origin
+git push origin feature/your-feature-name
+```
+
+### 6. Keep Branch Updated
+
+#### Sync with Main Regularly
+```bash
+# Method 1: Merge main into feature branch
+git checkout feature/your-feature-name
+git pull origin main
+
+# Method 2: Rebase feature branch onto main (cleaner history)
+git checkout feature/your-feature-name
+git rebase main
+
+# If conflicts occur during rebase:
+# 1. Resolve conflicts in affected files
+# 2. Stage resolved files: git add .
+# 3. Continue rebase: git rebase --continue
+```
+
+## 📋 Branch Management Commands
+
+### Useful Git Commands
+```bash
+# Check current branch and status
+git status
+
+# List all branches (local and remote)
+git branch -a
+
+# Check branch tracking information
+git branch -vv
+
+# See commits unique to your branch
+git log main..HEAD --oneline
+
+# See what files have changed
+git diff --name-only main
+
+# Stash current work temporarily
+git stash
+git stash pop  # restore stashed work
+
+# Delete local branch (if no longer needed)
+git branch -d feature/branch-name
+
+# Delete remote branch
+git push origin --delete feature/branch-name
+```
+
+### Branch Information
+```bash
+# See commit history for current branch
+git log --oneline -10
+
+# See detailed diff with main
+git diff main
+
+# Check if branch is ahead/behind main
+git status -uno
+```
+
+## 🎯 Best Practices
+
+### Naming Guidelines:
+- Use descriptive names that explain the feature
+- Keep names concise but clear
+- Use kebab-case (hyphens between words)
+- Include the type prefix (feature/, fix/, enhance/, docs/)
+- Avoid abbreviations that might be unclear
+
+### Development Guidelines:
+- Make small, focused commits with clear messages
+- Test your changes regularly
+- Keep the branch updated with main to avoid large conflicts
+- Document complex changes as you go
+- Consider creating draft PRs early for feedback
+
+### Project-Specific Considerations:
+For ChatLima specifically, consider these areas when creating branches:
+- **Authentication**: Features related to [auth-schema.ts](mdc:auth-schema.ts)
+- **API Routes**: New endpoints in [app/api/](mdc:app/api)
+- **Database**: Changes requiring [drizzle/](mdc:drizzle) migrations
+- **UI Components**: New components in [components/](mdc:components)
+- **AI Integration**: Features in [ai/](mdc:ai) directory
+- **Payment System**: Polar integration features
+- **Credit System**: User credit and usage tracking
+
+### File Organization:
+- Keep related changes in logical commits
+- Update relevant configuration files ([next.config.ts](mdc:next.config.ts), [tsconfig.json](mdc:tsconfig.json))
+- Add new dependencies to [package.json](mdc:package.json) as needed
+- Update [README.md](mdc:README.md) if the feature affects setup or usage
+
+## 🚨 Important Reminders
+
+- Always start from an updated main branch
+- Use descriptive branch names that clearly indicate the feature
+- Push branches to remote early to enable collaboration
+- Keep feature branches focused on a single feature or fix
+- Regularly sync with main to avoid integration conflicts
+- Document complex features as you develop them
+- Consider the impact on existing functionality
+- Test thoroughly before requesting reviews
+
+## 🔄 Integration with Release Workflow
+
+This workflow is designed to work seamlessly with the [feature-release-workflow.mdc](mdc:feature-release-workflow.mdc):
+
+1. **Create branch** using this workflow
+2. **Develop feature** following the guidelines here
+3. **Merge and release** using the feature release workflow
+
+### Ready for Release Checklist:
+- [ ] Feature is complete and tested
+- [ ] Branch is up to date with main
+- [ ] All commits have clear messages
+- [ ] Documentation is updated
+- [ ] No merge conflicts with main
+- [ ] Feature has been tested in development environment
+- [ ] Ready to follow the [feature-release-workflow.mdc](mdc:feature-release-workflow.mdc)
