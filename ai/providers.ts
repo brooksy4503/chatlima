@@ -264,7 +264,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Grok 3 Beta from X AI, a cutting-edge model with strong reasoning and problem-solving capabilities, accessed via OpenRouter.",
     apiVersion: "x-ai/grok-3-beta",
     capabilities: ["Reasoning", "Problem-solving", "Cutting-edge"],
-    enabled: false,
+    enabled: true,
     supportsWebSearch: true,
     premium: true
   },
