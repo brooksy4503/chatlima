@@ -136,9 +136,9 @@ async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
 }
 
 function calculatePricing(models: OpenRouterModel[]): PricingAnalysis[] {
-    // Estimated tokens per message (conservative estimates)
-    const ESTIMATED_INPUT_TOKENS = 500;  // User prompt + context
-    const ESTIMATED_OUTPUT_TOKENS = 300; // AI response
+    // Estimated tokens per message (realistic estimates)
+    const ESTIMATED_INPUT_TOKENS = 5000;  // User prompt + context
+    const ESTIMATED_OUTPUT_TOKENS = 3000; // AI response
 
     const analyses: PricingAnalysis[] = [];
 
