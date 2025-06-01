@@ -75,9 +75,9 @@ Claude 3.7 Sonnet (thinking)       $3.000000   $15.000000  $0.006000   $0.060000
 ```
 
 ### Token Estimates
-The script uses realistic token estimates:
-- **Input tokens**: 5000 per message (user prompt + context)
-- **Output tokens**: 3000 per message (AI response)
+The script uses data-driven estimates based on actual ChatLima usage:
+- **Input tokens**: 2701 per message (based on real data: avg 2251 + 20% buffer)
+- **Output tokens**: 441 per message (based on real data: avg 368 + 20% buffer)
 
 These estimates can be adjusted in the script if needed for more accurate calculations.
 
@@ -87,8 +87,24 @@ These estimates can be adjusted in the script if needed for more accurate calcul
 - **Budget forecasting**: Estimate monthly costs based on usage patterns
 - **Pricing monitoring**: Track price changes over time
 
+### Data Analysis
+
+The token estimates are based on analysis of real ChatLima usage data from OpenRouter. You can re-analyze usage data using:
+
+```bash
+python scripts/analyze-openrouter-data.py /path/to/openrouter_activity.csv
+```
+
+This analysis script provides:
+- Token usage statistics (averages, medians, ranges)
+- App-specific usage patterns
+- Model-specific performance data
+- Updated recommendations for token estimates
+- Cost analysis based on actual usage
+
 ### Notes
 - Pricing data is fetched in real-time from OpenRouter
-- Calculations are estimates based on average usage patterns
-- Actual costs may vary based on actual token usage
+- Token estimates are based on actual ChatLima usage patterns with a 20% buffer
+- Calculations reflect real-world usage scenarios
+- Actual costs may vary based on specific conversations and model choices
 - The script only analyzes models currently configured in ChatLima 

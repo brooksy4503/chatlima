@@ -136,9 +136,9 @@ async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
 }
 
 function calculatePricing(models: OpenRouterModel[]): PricingAnalysis[] {
-    // Estimated tokens per message (realistic estimates)
-    const ESTIMATED_INPUT_TOKENS = 5000;  // User prompt + context
-    const ESTIMATED_OUTPUT_TOKENS = 3000; // AI response
+    // Estimated tokens per message (based on actual ChatLima usage data)
+    const ESTIMATED_INPUT_TOKENS = 2701;  // User prompt + context (avg: 2251 + 20% buffer)
+    const ESTIMATED_OUTPUT_TOKENS = 441;  // AI response (avg: 368 + 20% buffer)
 
     const analyses: PricingAnalysis[] = [];
 
