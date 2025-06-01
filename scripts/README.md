@@ -75,9 +75,9 @@ Claude 3.7 Sonnet (thinking)       $3.000000   $15.000000  $0.006000   $0.060000
 ```
 
 ### Token Estimates
-The script uses conservative token estimates:
-- **Input tokens**: 500 per message (user prompt + context)
-- **Output tokens**: 300 per message (AI response)
+The script uses realistic token estimates:
+- **Input tokens**: 5000 per message (user prompt + context)
+- **Output tokens**: 3000 per message (AI response)
 
 These estimates can be adjusted in the script if needed for more accurate calculations.
 
