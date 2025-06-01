@@ -10,7 +10,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "pricing:analysis": "npx tsx scripts/openrouter-pricing-analysis.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.10",
@@ -84,6 +85,7 @@
     "eslint-config-next": "15.3.0",
     "pg-pool": "^3.8.0",
     "tailwindcss": "^4.1.4",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }
 }
