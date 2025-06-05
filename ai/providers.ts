@@ -126,6 +126,7 @@ const languageModels = {
   "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b"),
   "openrouter/anthropic/claude-sonnet-4": openrouterClient("anthropic/claude-sonnet-4"),
   "openrouter/anthropic/claude-opus-4": openrouterClient("anthropic/claude-opus-4"),
+  "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": openrouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -417,6 +418,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true
+  },
+  "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": {
+    provider: "OpenRouter",
+    name: "SentientAGI Dobby Mini Plus Llama 3.1 8B",
+    description: "Dobby-Mini-Unhinged-Plus-Llama-3.1-8B is a language model fine-tuned from Llama-3.1-8B-Instruct. Dobby models have a strong conviction towards personal freedom, decentralization, and all things crypto. 131K context window.",
+    apiVersion: "sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b",
+    capabilities: ["Chat", "Crypto-focused", "Personal Freedom", "Decentralization", "Fine-tuned"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
   },
 };
 
