@@ -19,7 +19,7 @@ export function ThemeToggle({ className, trigger, showLabel, labelText, ...props
 
   // Determine the icon to display
   let IconComponent;
-  const iconClassName = "h-4 w-4 hover:text-sidebar-accent";
+  const iconClassName = "h-4 w-4 flex-shrink-0 text-muted-foreground";
 
   // Use `theme` if it's one of the explicit themes we set
   // Otherwise, rely on `resolvedTheme` which handles 'system' or initial undefined `theme`
@@ -56,21 +56,23 @@ export function ThemeToggle({ className, trigger, showLabel, labelText, ...props
   const TriggerComponent = trigger ? (
     <DropdownMenuTrigger asChild={true}>{trigger}</DropdownMenuTrigger>
   ) : (
-    <DropdownMenuTrigger asChild={true}>
-      <Button
-        variant="ghost"
-        size={showLabel && labelText ? "default" : "icon"}
-        className={cn(
-          `rounded-md`,
-          showLabel && labelText ? "px-2 py-1 h-auto" : "", // Adjust padding/height if label is shown
-          className
-        )}
-        {...props}
-      >
-        {IconComponent}
-        {showLabel && labelText && <span>{labelText}</span>}
-        {(!showLabel || !labelText) && <span className="sr-only">Toggle theme</span>}
-      </Button>
+    <DropdownMenuTrigger asChild={!showLabel || !labelText}>
+      {showLabel && labelText ? (
+        <div className={cn("flex items-center gap-2", className)}>
+          {IconComponent}
+          {labelText}
+        </div>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("rounded-md", className)}
+          {...props}
+        >
+          {IconComponent}
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      )}
     </DropdownMenuTrigger>
   );
 

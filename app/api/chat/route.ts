@@ -1,4 +1,4 @@
-import { model, type modelID, modelDetails } from "@/ai/providers";
+import { model, type modelID, modelDetails, getLanguageModelWithKeys, createOpenRouterClientWithKey } from "@/ai/providers";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { streamText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
@@ -77,13 +77,15 @@ export async function POST(req: Request) {
     chatId,
     selectedModel,
     mcpServers: initialMcpServers = [],
-    webSearch = { enabled: false, contextSize: 'medium' }
+    webSearch = { enabled: false, contextSize: 'medium' },
+    apiKeys = {}
   }: {
     messages: UIMessage[];
     chatId?: string;
     selectedModel: modelID;
     mcpServers?: MCPServerConfig[];
     webSearch?: WebSearchOptions;
+    apiKeys?: Record<string, string>;
   } = await req.json();
 
   let mcpServers = initialMcpServers;
@@ -437,13 +439,7 @@ export async function POST(req: Request) {
     if (currentModelDetails?.supportsWebSearch === true) {
       // Model supports web search, use :online variant
       const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
-      const openrouterClient = createOpenRouter({
-        apiKey: getApiKey('OPENROUTER_API_KEY'),
-        headers: {
-          'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
-          'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
-        }
-      });
+      const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
       // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
       if (
         selectedModel === "openrouter/deepseek/deepseek-r1" ||
@@ -461,7 +457,7 @@ export async function POST(req: Request) {
     } else {
       // Model does not support web search, or flag is not explicitly true
       effectiveWebSearchEnabled = false;
-      modelInstance = model.languageModel(selectedModel);
+      modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
       console.log(`[Web Search] Requested for ${selectedModel}, but not supported or not enabled for this model. Using standard model.`);
     }
   } else {
@@ -470,7 +466,7 @@ export async function POST(req: Request) {
       console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
     }
     effectiveWebSearchEnabled = false;
-    modelInstance = model.languageModel(selectedModel);
+    modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
   }
 
   const modelOptions: { // Add type for clarity and to allow logprobs

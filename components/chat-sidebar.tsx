@@ -307,16 +307,16 @@ export function ChatSidebar() {
                             <Separator className="w-full h-px bg-border/40" />
                         </div>
                     </div>
-                    
+
                     <SidebarGroup className="flex-shrink-0">
                         <SidebarGroupLabel className={cn(
-                            "px-4 pt-0 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
+                            "px-4 pt-2 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
                             isCollapsed ? "sr-only" : ""
                         )}>
-                            MCP Servers
+                            Settings
                         </SidebarGroupLabel>
                         <SidebarGroupContent>
-                            <SidebarMenu>
+                           <SidebarMenu>
                                 <SidebarMenuItem>
                                     <SidebarMenuButton 
                                         onClick={() => setMcpSettingsOpen(true)}
@@ -346,34 +346,31 @@ export function ChatSidebar() {
                                         ) : null}
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-
-                    <div className="relative my-0">
-                        <div className="absolute inset-x-0">
-                            <Separator className="w-full h-px bg-border/40" />
-                        </div>
-                    </div>
-
-                    <SidebarGroup className="flex-shrink-0">
-                        <SidebarGroupLabel className={cn(
-                            "px-4 pt-2 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-                            isCollapsed ? "sr-only" : ""
-                        )}>
-                            Settings
-                        </SidebarGroupLabel>
-                        <SidebarGroupContent>
-                           <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <ThemeToggle
+                                    <SidebarMenuButton 
+                                        onClick={() => setApiKeySettingsOpen(true)}
                                         className={cn(
-                                            "w-full flex items-center gap-2 transition-all text-sm text-foreground/80",
-                                            isCollapsed ? "justify-center" : "justify-start"
+                                            "w-full flex items-center gap-2 transition-all"
                                         )}
-                                        showLabel={!isCollapsed}
-                                        labelText={<span className="flex-grow text-left">Theme</span>}
-                                    />
+                                        tooltip={isCollapsed ? "API Keys" : undefined}
+                                    >
+                                        <Key className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                        {!isCollapsed && (
+                                            <span className="flex-grow text-sm text-foreground/80 text-left">API Keys</span>
+                                        )}
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild>
+                                        <ThemeToggle
+                                            className={cn(
+                                                "w-full flex items-center gap-2 transition-all text-sm text-foreground/80",
+                                                isCollapsed ? "justify-center" : "justify-start"
+                                            )}
+                                            showLabel={!isCollapsed}
+                                            labelText={<span className="flex-grow text-left">Theme</span>}
+                                        />
+                                    </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 {webSearchEnabled && (
                                     <SidebarMenuItem>
@@ -467,35 +464,46 @@ export function ChatSidebar() {
                         </div>
                     )}
 
-                    <Link
-                        href="https://chatlima-docs.netlify.app/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                            "flex items-center text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors w-full",
-                            isCollapsed ? "justify-center" : "justify-start px-3 gap-2"
-                        )}
-                    >
-                        <div className={cn("flex items-center justify-center", isCollapsed ? "w-8 h-8" : "w-6 h-6")}>
-                            <BookOpen className="h-4 w-4" />
-                        </div>
-                        {!isCollapsed && <span>Documentation</span>}
-                    </Link>
+                    <div className={cn(
+                        "flex items-center justify-center py-2",
+                        isCollapsed ? "flex-col gap-2" : "gap-3"
+                    )}>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Link
+                                        href="https://chatlima-docs.netlify.app/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+                                    >
+                                        <BookOpen className="h-4 w-4" />
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" sideOffset={5}>
+                                    Documentation
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
 
-                    <Link 
-                        href="https://github.com/zaidmukaddam/scira-mcp-chat" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className={cn(
-                            "flex items-center text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors py-2 w-full",
-                            isCollapsed ? "justify-center" : "justify-start px-3 gap-2"
-                        )}
-                    >
-                        <div className={cn("flex items-center justify-center", isCollapsed ? "w-8 h-8" : "w-6 h-6")}>
-                            <Github className="h-4 w-4" />
-                        </div>
-                        {!isCollapsed && <span>Powered by Scira Chat</span>}
-                    </Link>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Link 
+                                        href="https://github.com/brooksy4503/chatlima" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+                                    >
+                                        <Github className="h-4 w-4" />
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" sideOffset={5}>
+                                    ChatLima on GitHub
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                 </SidebarFooter>
             </Sidebar>
 
@@ -506,6 +514,11 @@ export function ChatSidebar() {
                 onSelectedServersChange={setSelectedMcpServers}
                 open={mcpSettingsOpen}
                 onOpenChange={setMcpSettingsOpen}
+            />
+
+            <ApiKeyManager
+                open={apiKeySettingsOpen}
+                onOpenChange={setApiKeySettingsOpen}
             />
         </>
     );

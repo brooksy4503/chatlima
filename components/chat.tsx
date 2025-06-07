@@ -117,6 +117,30 @@ export default function Chat() {
     } as Message));
   }, [chatData]);
   
+  // Function to get API keys from localStorage
+  const getClientApiKeys = () => {
+    if (typeof window === 'undefined') return {};
+    
+    const apiKeys: Record<string, string> = {};
+    const keyNames = [
+      'OPENAI_API_KEY',
+      'ANTHROPIC_API_KEY', 
+      'GROQ_API_KEY',
+      'XAI_API_KEY',
+      'OPENROUTER_API_KEY',
+      'REQUESTY_API_KEY'
+    ];
+    
+    keyNames.forEach(keyName => {
+      const value = localStorage.getItem(keyName);
+      if (value) {
+        apiKeys[keyName] = value;
+      }
+    });
+    
+    return apiKeys;
+  };
+
   const { messages, input, handleInputChange, handleSubmit, status, stop } =
     useChat({
       id: chatId || generatedChatId,
@@ -129,7 +153,8 @@ export default function Chat() {
         webSearch: {
           enabled: webSearchEnabled,
           contextSize: webSearchContextSize,
-        }
+        },
+        apiKeys: getClientApiKeys()
       },
       experimental_throttle: 500,
       onFinish: (message) => {
