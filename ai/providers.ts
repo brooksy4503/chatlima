@@ -3,6 +3,7 @@ import { createGroq } from "@ai-sdk/groq";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createXai } from "@ai-sdk/xai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createRequesty } from "@requesty/ai-sdk";
 
 import {
   customProvider,
@@ -69,6 +70,14 @@ const openrouterClient = createOpenRouter({
   }
 });
 
+const requestyClient = createRequesty({
+  apiKey: getApiKey('REQUESTY_API_KEY'),
+  headers: {
+    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+    'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+  }
+});
+
 const languageModels = {
   "claude-3-7-sonnet": anthropicClient('claude-3-7-sonnet-20250219'),
   "openrouter/anthropic/claude-3.5-sonnet": openrouterClient("anthropic/claude-3.5-sonnet"),
@@ -92,6 +101,7 @@ const languageModels = {
   "openrouter/google/gemini-2.5-flash-preview-05-20": openrouterClient("google/gemini-2.5-flash-preview-05-20"),
   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": openrouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
   "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
+  "openrouter/google/gemini-2.5-pro-preview": openrouterClient("google/gemini-2.5-pro-preview"),
   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
@@ -127,6 +137,14 @@ const languageModels = {
   "openrouter/anthropic/claude-sonnet-4": openrouterClient("anthropic/claude-sonnet-4"),
   "openrouter/anthropic/claude-opus-4": openrouterClient("anthropic/claude-opus-4"),
   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": openrouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
+  // Requesty models
+  "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
+  "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
+  "requesty/anthropic/claude-3.5-sonnet": requestyClient("anthropic/claude-3-5-sonnet-20241022"),
+  "requesty/anthropic/claude-3.7-sonnet": requestyClient("anthropic/claude-3-7-sonnet-20250219"),
+  "requesty/google/gemini-2.5-flash-preview": requestyClient("google/gemini-2.5-flash-preview-05-20"),
+  "requesty/meta-llama/llama-3.1-70b-instruct": requestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
+  "requesty/anthropic/claude-sonnet-4-20250514": requestyClient("anthropic/claude-sonnet-4-20250514"),
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -255,6 +273,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Google\'s Gemini 2.5 Pro model (March 25th version), a powerful and versatile model, accessed via OpenRouter.",
     apiVersion: "google/gemini-2.5-pro-preview-03-25",
     capabilities: ["Powerful", "Versatile", "Multimodal"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
+  },
+  "openrouter/google/gemini-2.5-pro-preview": {
+    provider: "OpenRouter",
+    name: "Google Gemini 2.5 Pro Preview (06-05)",
+    description: "Google\'s state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. Achieves top-tier performance on multiple benchmarks with superior human-preference alignment.",
+    apiVersion: "google/gemini-2.5-pro-preview",
+    capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
     premium: true
@@ -428,6 +456,77 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false
+  },
+  // Requesty model details
+  "requesty/openai/gpt-4o": {
+    provider: "Requesty",
+    name: "GPT-4O",
+    description: "OpenAI's GPT-4O model accessed via Requesty, offering advanced reasoning and multimodal capabilities.",
+    apiVersion: "openai/gpt-4o",
+    capabilities: ["Reasoning", "Multimodal", "Coding", "Analysis"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
+  },
+  "requesty/openai/gpt-4o-mini": {
+    provider: "Requesty",
+    name: "GPT-4O Mini",
+    description: "OpenAI's GPT-4O Mini model accessed via Requesty, offering efficient performance for various tasks.",
+    apiVersion: "openai/gpt-4o-mini",
+    capabilities: ["Efficient", "Coding", "Analysis", "Chat"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "requesty/anthropic/claude-3.5-sonnet": {
+    provider: "Requesty",
+    name: "Claude 3.5 Sonnet",
+    description: "Anthropic's Claude 3.5 Sonnet accessed via Requesty, excelling at coding, data science, and visual processing.",
+    apiVersion: "anthropic/claude-3.5-sonnet",
+    capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
+  },
+  "requesty/anthropic/claude-3.7-sonnet": {
+    provider: "Requesty",
+    name: "Claude 3.7 Sonnet",
+    description: "Anthropic's Claude 3.7 Sonnet accessed via Requesty, featuring advanced reasoning and coding capabilities.",
+    apiVersion: "anthropic/claude-3-7-sonnet-20250219",
+    capabilities: ["Reasoning", "Coding", "Agentic"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
+  },
+  "requesty/google/gemini-2.5-flash-preview": {
+    provider: "Requesty",
+    name: "Gemini 2.5 Flash Preview",
+    description: "Google's Gemini 2.5 Flash Preview accessed via Requesty, offering fast and efficient performance.",
+    apiVersion: "google/gemini-2.5-flash-preview-05-20",
+    capabilities: ["Fast", "Efficient", "Multimodal"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "requesty/meta-llama/llama-3.1-70b-instruct": {
+    provider: "Requesty",
+    name: "Llama 3.1 70B Instruct",
+    description: "Meta's Llama 3.1 70B Instruct model accessed via Requesty, fine-tuned for instruction following.",
+    apiVersion: "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct",
+    capabilities: ["Instruction Following", "Large", "Open Source"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "requesty/anthropic/claude-sonnet-4-20250514": {
+    provider: "Requesty",
+    name: "Claude 4 Sonnet (20250514)",
+    description: "Anthropic's Claude Sonnet 4 model (May 14th, 2025 version) accessed via Requesty, offering a balance of performance and speed.",
+    apiVersion: "anthropic/claude-sonnet-4-20250514",
+    capabilities: ["Balanced", "Fast", "Efficient", "Reasoning"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
   },
 };
 

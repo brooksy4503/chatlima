@@ -86,6 +86,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.3
         version: 1.2.3(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@requesty/ai-sdk':
+        specifier: ^0.0.7
+        version: 0.0.7(zod@3.24.2)
       '@tanstack/react-query':
         specifier: ^5.74.4
         version: 5.74.4(react@19.1.0)
@@ -1790,6 +1793,24 @@ packages:
 
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
+
+  '@requesty/ai-sdk@0.0.3':
+    resolution: {integrity: sha512-S3TcHJI6Dm5Z8XvayY+poEI128NJ5ya1vuBcQlu0OOMCtUqYImBk5GzZMm6rMAD9+c9rAGcZIRI16HFXvU6Tog==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+
+  '@requesty/ai-sdk@0.0.6':
+    resolution: {integrity: sha512-llFglKWW4qAytn9cUN/76AkKtXyF4M/wARJ1tEIGOQKZHMK0Ytx8USvHwt9PmPMCJChfGQQNQMpitEx4HvCmRQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+
+  '@requesty/ai-sdk@0.0.7':
+    resolution: {integrity: sha512-uOrTaiG9thwTUFArzxzgHz6I3YpIRrXl3WTiU5Yhjyxgm2JPQS4idUN1nnlLTTowBBUjBWKmeNE6c9QZAAZ9BA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
 
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
@@ -6281,6 +6302,26 @@ snapshots:
       '@types/react-dom': 19.1.2(@types/react@19.1.2)
 
   '@radix-ui/rect@1.1.1': {}
+
+  '@requesty/ai-sdk@0.0.3(zod@3.24.2)':
+    dependencies:
+      '@ai-sdk/provider': 1.0.9
+      '@ai-sdk/provider-utils': 2.1.10(zod@3.24.2)
+      zod: 3.24.2
+
+  '@requesty/ai-sdk@0.0.6(zod@3.24.2)':
+    dependencies:
+      '@ai-sdk/provider': 1.0.9
+      '@ai-sdk/provider-utils': 2.1.10(zod@3.24.2)
+      '@requesty/ai-sdk': 0.0.3(zod@3.24.2)
+      zod: 3.24.2
+
+  '@requesty/ai-sdk@0.0.7(zod@3.24.2)':
+    dependencies:
+      '@ai-sdk/provider': 1.0.9
+      '@ai-sdk/provider-utils': 2.1.10(zod@3.24.2)
+      '@requesty/ai-sdk': 0.0.6(zod@3.24.2)
+      zod: 3.24.2
 
   '@rtsao/scc@1.1.0': {}
 
