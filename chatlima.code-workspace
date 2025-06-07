@@ -1,0 +1,26 @@
+{
+    "folders": [
+        {
+            "name": "chatlima",
+            "path": "."
+        },
+        {
+            "name": "chatlima-docs",
+            "path": "../chatlima-docs"
+        }
+    ],
+    "settings": {
+        "typescript.preferences.includePackageJsonAutoImports": "auto",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": "explicit"
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "bradlc.vscode-tailwindcss",
+            "esbenp.prettier-vscode",
+            "dbaeumer.vscode-eslint"
+        ]
+    }
+}

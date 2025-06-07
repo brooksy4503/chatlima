@@ -102,7 +102,7 @@ Generate comprehensive release notes following this structure:
 ```
 
 #### Save Release Notes
-Create a file named `RELEASE_NOTES_v[VERSION].md` in the project root for reference.
+Create a file named `RELEASE_NOTES_v[VERSION].md` in the `releases/` folder for reference.
 
 ### 6. GitHub Release Creation
 1. Go to GitHub repository → Releases → "Create a new release"
@@ -142,7 +142,7 @@ git push origin --delete feature/[branch-name]
 
 ### File References:
 - Version information: [package.json](mdc:package.json)
-- Previous release notes: Look for existing `RELEASE_NOTES_v*.md` files
+- Previous release notes: Look for existing `RELEASE_NOTES_v*.md` files in the `releases/` folder
 - Implementation details: Check [app/](mdc:app) directory for new routes
 - Configuration: [next.config.ts](mdc:next.config.ts), [tsconfig.json](mdc:tsconfig.json)
 
