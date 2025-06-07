@@ -20,6 +20,32 @@ import { spawn } from "child_process";
 // Allow streaming responses up to 60 seconds on Hobby plan
 export const maxDuration = 60;
 
+// Helper function to check if user is using their own API keys for the selected model
+function checkIfUsingOwnApiKeys(selectedModel: modelID, apiKeys: Record<string, string> = {}): boolean {
+  // Map model providers to their API key names
+  const providerKeyMap: Record<string, string> = {
+    'openai': 'OPENAI_API_KEY',
+    'anthropic': 'ANTHROPIC_API_KEY',
+    'groq': 'GROQ_API_KEY',
+    'xai': 'XAI_API_KEY',
+    'openrouter': 'OPENROUTER_API_KEY',
+    'requesty': 'REQUESTY_API_KEY'
+  };
+
+  // Extract provider from model ID
+  const provider = selectedModel.split('/')[0];
+  const requiredApiKey = providerKeyMap[provider];
+
+  if (!requiredApiKey) {
+    return false; // Unknown provider
+  }
+
+  // Check if user has provided their own API key for this provider
+  const hasApiKey = Boolean(apiKeys[requiredApiKey] && apiKeys[requiredApiKey].trim().length > 0);
+
+  return hasApiKey;
+}
+
 interface KeyValuePair {
   key: string;
   value: string;
@@ -124,47 +150,57 @@ export async function POST(req: Request) {
   // Estimate ~30 tokens per message as a basic check
   const estimatedTokens = 30;
 
-  // 1. Check if user has sufficient credits (if they have a Polar account)
+  // Check if user is using their own API keys
+  const isUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+  console.log(`[Debug] User ${userId} - isUsingOwnApiKeys: ${isUsingOwnApiKeys}`);
+
+  // 1. Check if user has sufficient credits (if they have a Polar account and not using own keys)
   let hasCredits = false;
   let actualCredits: number | null = null;
   console.log(`[Debug] User ${userId} - isAnonymous: ${isAnonymous}, polarCustomerId: ${polarCustomerId}`);
 
-  try {
-    // Check credits using both the external ID (userId) and legacy polarCustomerId
-    // Pass isAnonymous flag to skip Polar checks for anonymous users
-    // Pass selectedModel to check for premium model access
-    hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, selectedModel);
-    console.log(`[Debug] hasEnoughCredits result: ${hasCredits}`);
+  // Skip credit checks entirely if user is using their own API keys
+  if (isUsingOwnApiKeys) {
+    console.log(`[Debug] User ${userId} is using own API keys, skipping credit checks`);
+    hasCredits = true; // Allow request to proceed
+  } else {
+    try {
+      // Check credits using both the external ID (userId) and legacy polarCustomerId
+      // Pass isAnonymous flag to skip Polar checks for anonymous users
+      // Pass selectedModel to check for premium model access
+      hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, selectedModel);
+      console.log(`[Debug] hasEnoughCredits result: ${hasCredits}`);
 
-    // Also get the actual credit balance to check for negative balances
-    if (!isAnonymous) {
-      if (userId) {
-        try {
-          actualCredits = await getRemainingCreditsByExternalId(userId);
-          console.log(`[Debug] Actual credits for user ${userId}: ${actualCredits}`);
-        } catch (error) {
-          console.warn('Error getting actual credits by external ID:', error);
-          // Fall back to legacy method
-          if (polarCustomerId) {
-            try {
-              actualCredits = await getRemainingCredits(polarCustomerId);
-              console.log(`[Debug] Actual credits via legacy method: ${actualCredits}`);
-            } catch (legacyError) {
-              console.warn('Error getting actual credits by legacy method:', legacyError);
+      // Also get the actual credit balance to check for negative balances
+      if (!isAnonymous) {
+        if (userId) {
+          try {
+            actualCredits = await getRemainingCreditsByExternalId(userId);
+            console.log(`[Debug] Actual credits for user ${userId}: ${actualCredits}`);
+          } catch (error) {
+            console.warn('Error getting actual credits by external ID:', error);
+            // Fall back to legacy method
+            if (polarCustomerId) {
+              try {
+                actualCredits = await getRemainingCredits(polarCustomerId);
+                console.log(`[Debug] Actual credits via legacy method: ${actualCredits}`);
+              } catch (legacyError) {
+                console.warn('Error getting actual credits by legacy method:', legacyError);
+              }
             }
           }
         }
       }
+    } catch (error: any) {
+      // Log but continue - don't block users if credit check fails
+      console.error('[CreditCheckError] Error checking credits:', error);
+      // Potentially return a specific error if this failure is critical
+      // For now, matches existing behavior of allowing request if check fails.
     }
-  } catch (error: any) {
-    // Log but continue - don't block users if credit check fails
-    console.error('[CreditCheckError] Error checking credits:', error);
-    // Potentially return a specific error if this failure is critical
-    // For now, matches existing behavior of allowing request if check fails.
   }
 
-  // 2. Check for negative credit balance - block if user has negative credits
-  if (!isAnonymous && actualCredits !== null && actualCredits < 0) {
+  // 2. Check for negative credit balance - block if user has negative credits (skip if using own API keys)
+  if (!isUsingOwnApiKeys && !isAnonymous && actualCredits !== null && actualCredits < 0) {
     console.log(`[Debug] User ${userId} has negative credits (${actualCredits}), blocking request`);
     return createErrorResponse(
       "INSUFFICIENT_CREDITS",
@@ -174,11 +210,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3. If user has credits, allow request (skip daily message limit)
-  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, will skip limit check: ${!isAnonymous && hasCredits}`);
+  // 3. If user has credits or is using own API keys, allow request (skip daily message limit)
+  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys}`);
 
-  if (!isAnonymous && hasCredits) {
-    console.log(`[Debug] User ${userId} has credits, skipping message limit check`);
+  if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys) {
+    console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : 'has credits'}, skipping message limit check`);
     // proceed
   } else {
     console.log(`[Debug] User ${userId} entering message limit check - isAnonymous: ${isAnonymous}`);
@@ -660,9 +696,9 @@ export async function POST(req: Request) {
           }
 
           // Determine if user should have credits deducted or just use daily message tracking
-          // Only deduct credits if user actually has purchased credits (positive balance)
+          // Only deduct credits if user actually has purchased credits (positive balance) AND not using own API keys
           let shouldDeductCredits = false;
-          if (!isAnonymous && actualCredits !== null && actualCredits > 0) {
+          if (!isAnonymous && !isUsingOwnApiKeys && actualCredits !== null && actualCredits > 0) {
             shouldDeductCredits = true;
           }
 
