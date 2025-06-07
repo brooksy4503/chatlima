@@ -50,6 +50,13 @@ const API_KEYS_CONFIG: ApiKeyConfig[] = [
     storageKey: "OPENROUTER_API_KEY",
     label: "Openrouter API Key",
     placeholder: "sk-or-..."
+  },
+  {
+    name: "Requesty",
+    key: "requesty", 
+    storageKey: "REQUESTY_API_KEY",
+    label: "Requesty API Key",
+    placeholder: "req-..."
   }
 ];
 

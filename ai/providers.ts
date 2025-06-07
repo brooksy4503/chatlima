@@ -45,6 +45,17 @@ export const getApiKey = (key: string): string | undefined => {
   return undefined;
 };
 
+// Helper to get API keys with runtime override option
+export const getApiKeyWithOverride = (key: string, override?: string): string | undefined => {
+  // Use override if provided
+  if (override) {
+    return override;
+  }
+
+  // Fall back to the standard method
+  return getApiKey(key);
+};
+
 // Create provider instances with API keys from localStorage
 const openaiClient = createOpenAI({
   apiKey: getApiKey('OPENAI_API_KEY'),
@@ -77,6 +88,75 @@ const requestyClient = createRequesty({
     'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
   }
 });
+
+// Helper functions to create provider clients with dynamic API keys
+export const createOpenAIClientWithKey = (apiKey?: string) => {
+  const finalApiKey = getApiKeyWithOverride('OPENAI_API_KEY', apiKey);
+  if (!finalApiKey) {
+    throw new Error('OpenAI API key is missing. Pass it using the \'apiKey\' parameter or the OPENAI_API_KEY environment variable.');
+  }
+  return createOpenAI({
+    apiKey: finalApiKey,
+  });
+};
+
+export const createAnthropicClientWithKey = (apiKey?: string) => {
+  const finalApiKey = getApiKeyWithOverride('ANTHROPIC_API_KEY', apiKey);
+  if (!finalApiKey) {
+    throw new Error('Anthropic API key is missing. Pass it using the \'apiKey\' parameter or the ANTHROPIC_API_KEY environment variable.');
+  }
+  return createAnthropic({
+    apiKey: finalApiKey,
+  });
+};
+
+export const createGroqClientWithKey = (apiKey?: string) => {
+  const finalApiKey = getApiKeyWithOverride('GROQ_API_KEY', apiKey);
+  if (!finalApiKey) {
+    throw new Error('Groq API key is missing. Pass it using the \'apiKey\' parameter or the GROQ_API_KEY environment variable.');
+  }
+  return createGroq({
+    apiKey: finalApiKey,
+  });
+};
+
+export const createXaiClientWithKey = (apiKey?: string) => {
+  const finalApiKey = getApiKeyWithOverride('XAI_API_KEY', apiKey);
+  if (!finalApiKey) {
+    throw new Error('XAI API key is missing. Pass it using the \'apiKey\' parameter or the XAI_API_KEY environment variable.');
+  }
+  return createXai({
+    apiKey: finalApiKey,
+  });
+};
+
+export const createOpenRouterClientWithKey = (apiKey?: string) => {
+  const finalApiKey = getApiKeyWithOverride('OPENROUTER_API_KEY', apiKey);
+  if (!finalApiKey) {
+    throw new Error('OpenRouter API key is missing. Pass it using the \'apiKey\' parameter or the OPENROUTER_API_KEY environment variable.');
+  }
+  return createOpenRouter({
+    apiKey: finalApiKey,
+    headers: {
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+      'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+    }
+  });
+};
+
+export const createRequestyClientWithKey = (apiKey?: string) => {
+  const finalApiKey = getApiKeyWithOverride('REQUESTY_API_KEY', apiKey);
+  if (!finalApiKey) {
+    throw new Error('Requesty API key is missing. Pass it using the \'apiKey\' parameter or the REQUESTY_API_KEY environment variable.');
+  }
+  return createRequesty({
+    apiKey: finalApiKey,
+    headers: {
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+      'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+    }
+  });
+};
 
 const languageModels = {
   "claude-3-7-sonnet": anthropicClient('claude-3-7-sonnet-20250219'),
@@ -145,6 +225,103 @@ const languageModels = {
   "requesty/google/gemini-2.5-flash-preview": requestyClient("google/gemini-2.5-flash-preview-05-20"),
   "requesty/meta-llama/llama-3.1-70b-instruct": requestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
   "requesty/anthropic/claude-sonnet-4-20250514": requestyClient("anthropic/claude-sonnet-4-20250514"),
+};
+
+// Helper to get language model with dynamic API keys
+export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>) => {
+  // Create dynamic clients with provided API keys
+  const dynamicOpenAIClient = createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
+  const dynamicAnthropicClient = createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
+  const dynamicGroqClient = createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']);
+  const dynamicXaiClient = createXaiClientWithKey(apiKeys?.['XAI_API_KEY']);
+  const dynamicOpenRouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+  const dynamicRequestyClient = createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']);
+
+  // Map all models with dynamic clients
+  const dynamicLanguageModels: Record<string, any> = {
+    // Anthropic models
+    "claude-3-7-sonnet": dynamicAnthropicClient('claude-3-7-sonnet-20250219'),
+
+    // OpenAI models
+    "gpt-4.1-mini": dynamicOpenAIClient("gpt-4.1-mini"),
+
+    // Groq models
+    "qwen-qwq": wrapLanguageModel({
+      model: dynamicGroqClient("qwen-qwq-32b"),
+      middleware
+    }),
+
+    // XAI models
+    "grok-3-mini": dynamicXaiClient("grok-3-mini-latest"),
+
+    // OpenRouter models
+    "openrouter/anthropic/claude-3.5-sonnet": dynamicOpenRouterClient("anthropic/claude-3.5-sonnet"),
+    "openrouter/anthropic/claude-3.7-sonnet": dynamicOpenRouterClient("anthropic/claude-3.7-sonnet"),
+    "openrouter/anthropic/claude-3.7-sonnet:thinking": dynamicOpenRouterClient("anthropic/claude-3.7-sonnet:thinking"),
+    "openrouter/deepseek/deepseek-chat-v3-0324": dynamicOpenRouterClient("deepseek/deepseek-chat-v3-0324"),
+    "openrouter/deepseek/deepseek-r1": wrapLanguageModel({
+      model: dynamicOpenRouterClient("deepseek/deepseek-r1", { logprobs: false }),
+      middleware: deepseekR1Middleware,
+    }),
+    "openrouter/deepseek/deepseek-r1-0528": wrapLanguageModel({
+      model: dynamicOpenRouterClient("deepseek/deepseek-r1-0528", { logprobs: false }),
+      middleware: deepseekR1Middleware,
+    }),
+    "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": wrapLanguageModel({
+      model: dynamicOpenRouterClient("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
+      middleware: deepseekR1Middleware,
+    }),
+    "openrouter/google/gemini-2.5-flash-preview": dynamicOpenRouterClient("google/gemini-2.5-flash-preview"),
+    "openrouter/google/gemini-2.5-flash-preview:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview:thinking"),
+    "openrouter/google/gemini-2.5-flash-preview-05-20": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20"),
+    "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
+    "openrouter/google/gemini-2.5-pro-preview-03-25": dynamicOpenRouterClient("google/gemini-2.5-pro-preview-03-25"),
+    "openrouter/google/gemini-2.5-pro-preview": dynamicOpenRouterClient("google/gemini-2.5-pro-preview"),
+    "openrouter/openai/gpt-4.1": dynamicOpenRouterClient("openai/gpt-4.1"),
+    "openrouter/openai/gpt-4.1-mini": dynamicOpenRouterClient("openai/gpt-4.1-mini"),
+    "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
+      model: dynamicOpenRouterClient("x-ai/grok-3-beta", { logprobs: false }),
+      middleware: deepseekR1Middleware,
+    }),
+    "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
+      model: dynamicOpenRouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
+      middleware: deepseekR1Middleware,
+    }),
+    "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
+      model: dynamicOpenRouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
+      middleware: deepseekR1Middleware,
+    }),
+    "openrouter/mistralai/mistral-medium-3": dynamicOpenRouterClient("mistralai/mistral-medium-3"),
+    "openrouter/mistralai/mistral-small-3.1-24b-instruct": dynamicOpenRouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+    "openrouter/meta-llama/llama-4-maverick": dynamicOpenRouterClient("meta-llama/llama-4-maverick"),
+    "openrouter/openai/o4-mini-high": dynamicOpenRouterClient("openai/o4-mini-high"),
+    "openrouter/qwen/qwq-32b": wrapLanguageModel({
+      model: dynamicOpenRouterClient("qwen/qwq-32b"),
+      middleware: deepseekR1Middleware,
+    }),
+    "openrouter/qwen/qwen3-235b-a22b": dynamicOpenRouterClient("qwen/qwen3-235b-a22b"),
+    "openrouter/anthropic/claude-sonnet-4": dynamicOpenRouterClient("anthropic/claude-sonnet-4"),
+    "openrouter/anthropic/claude-opus-4": dynamicOpenRouterClient("anthropic/claude-opus-4"),
+    "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": dynamicOpenRouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
+
+    // Requesty models
+    "requesty/openai/gpt-4o": dynamicRequestyClient("openai/gpt-4o"),
+    "requesty/openai/gpt-4o-mini": dynamicRequestyClient("openai/gpt-4o-mini"),
+    "requesty/anthropic/claude-3.5-sonnet": dynamicRequestyClient("anthropic/claude-3-5-sonnet-20241022"),
+    "requesty/anthropic/claude-3.7-sonnet": dynamicRequestyClient("anthropic/claude-3-7-sonnet-20250219"),
+    "requesty/google/gemini-2.5-flash-preview": dynamicRequestyClient("google/gemini-2.5-flash-preview-05-20"),
+    "requesty/meta-llama/llama-3.1-70b-instruct": dynamicRequestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
+    "requesty/anthropic/claude-sonnet-4-20250514": dynamicRequestyClient("anthropic/claude-sonnet-4-20250514"),
+  };
+
+  // Check if the specific model exists in our dynamic models
+  if (dynamicLanguageModels[modelId]) {
+    return dynamicLanguageModels[modelId];
+  }
+
+  // Fallback to static models if not found (shouldn't happen in normal cases)
+  console.warn(`Model ${modelId} not found in dynamic models, falling back to static model`);
+  return languageModels[modelId as keyof typeof languageModels];
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
