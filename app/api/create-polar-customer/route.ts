@@ -60,12 +60,28 @@ export async function POST(req: Request) {
         let customerByEmail: any;
         try {
             customerByEmail = await getCustomerByEmail(userEmail);
-            console.log(`[CREATE POLAR CUSTOMER] Customer lookup by email result:`, customerByEmail);
+            console.log(`[CREATE POLAR CUSTOMER] Customer lookup by email result:`, JSON.stringify(customerByEmail, null, 2));
+            console.log(`[CREATE POLAR CUSTOMER] Customer ID:`, customerByEmail?.id);
+            console.log(`[CREATE POLAR CUSTOMER] Customer type:`, typeof customerByEmail);
         } catch (error) {
             console.error(`[CREATE POLAR CUSTOMER] Error looking up customer by email:`, error);
         }
 
         if (customerByEmail) {
+            // Validate that we have a customer with an ID
+            if (!customerByEmail.id) {
+                console.error(`[CREATE POLAR CUSTOMER] Customer found but missing ID field:`, customerByEmail);
+                return NextResponse.json(
+                    {
+                        error: 'Customer found but missing ID field',
+                        customerData: customerByEmail,
+                        userId,
+                        userEmail
+                    },
+                    { status: 500 }
+                );
+            }
+
             // Customer exists by email but doesn't have the external ID set
             console.log(`[CREATE POLAR CUSTOMER] Found existing customer by email: ${customerByEmail.id}. Setting external ID to ${userId}`);
 
