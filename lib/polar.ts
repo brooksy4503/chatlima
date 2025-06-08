@@ -275,9 +275,22 @@ export async function getCustomerByEmail(email: string) {
 
         // Handle the paginated response - try direct iteration first
         try {
-            for await (const customer of response) {
-                console.log(`[getCustomerByEmail] Found customer via iteration:`, JSON.stringify(customer, null, 2));
-                return customer; // Return the first customer found
+            for await (const customerResponse of response) {
+                console.log(`[getCustomerByEmail] Raw iteration response:`, JSON.stringify(customerResponse, null, 2));
+
+                // The response might be wrapped in a result object
+                const responseAny = customerResponse as any;
+                if (responseAny.result && responseAny.result.items && Array.isArray(responseAny.result.items) && responseAny.result.items.length > 0) {
+                    const customer = responseAny.result.items[0];
+                    console.log(`[getCustomerByEmail] Found customer via result.items:`, JSON.stringify(customer, null, 2));
+                    return customer;
+                }
+
+                // If it's already a customer object
+                if (responseAny.id && responseAny.email) {
+                    console.log(`[getCustomerByEmail] Found customer directly:`, JSON.stringify(responseAny, null, 2));
+                    return responseAny;
+                }
             }
         } catch (iterError) {
             console.log(`[getCustomerByEmail] Iteration failed:`, iterError);
@@ -286,6 +299,13 @@ export async function getCustomerByEmail(email: string) {
             try {
                 const responseAny = response as any;
                 console.log(`[getCustomerByEmail] Response (as any):`, JSON.stringify(responseAny, null, 2));
+
+                // Check if response has result.items structure
+                if (responseAny.result && responseAny.result.items && Array.isArray(responseAny.result.items) && responseAny.result.items.length > 0) {
+                    const customer = responseAny.result.items[0];
+                    console.log(`[getCustomerByEmail] Found customer via result.items fallback:`, JSON.stringify(customer, null, 2));
+                    return customer;
+                }
 
                 // Check if response has items directly
                 if (responseAny.items && Array.isArray(responseAny.items) && responseAny.items.length > 0) {
