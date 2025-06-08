@@ -25,7 +25,7 @@ export default function CheckoutSuccessPage() {
           </p>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <Link href="/chat">
+          <Link href="/">
             <Button size="lg">
               Return to Chat
             </Button>
