@@ -257,6 +257,53 @@ export async function getCustomerByExternalId(externalId: string) {
 }
 
 /**
+ * Gets a customer by their email address
+ * 
+ * @param email The customer's email address
+ * @returns The customer object or null if not found
+ */
+export async function getCustomerByEmail(email: string) {
+    try {
+        const response = await polarClient.customers.list({
+            email: email,
+            limit: 1
+        });
+
+        // Handle the paginated response
+        for await (const customer of response) {
+            return customer; // Return the first customer found
+        }
+
+        return null;
+    } catch (error) {
+        console.error('Error getting customer by email:', error);
+        return null;
+    }
+}
+
+/**
+ * Updates an existing customer's external ID
+ * 
+ * @param customerId The customer's ID in Polar
+ * @param externalId The external ID to set
+ * @returns The updated customer or null if failed
+ */
+export async function updateCustomerExternalId(customerId: string, externalId: string) {
+    try {
+        const updatedCustomer = await polarClient.customers.update({
+            id: customerId,
+            customerUpdate: {
+                externalId: externalId
+            }
+        });
+        return updatedCustomer;
+    } catch (error) {
+        console.error('Error updating customer external ID:', error);
+        throw error;
+    }
+}
+
+/**
  * Creates or updates a customer in Polar using external ID
  * 
  * @param userId The ID of the user in your local database (will be used as external_id)

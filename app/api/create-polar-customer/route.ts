@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { createOrUpdateCustomerWithExternalId, getCustomerByExternalId } from '@/lib/polar';
+import { createOrUpdateCustomerWithExternalId, getCustomerByExternalId, getCustomerByEmail, updateCustomerExternalId } from '@/lib/polar';
 
 /**
  * Endpoint to manually create or update a Polar customer for testing
@@ -37,9 +37,9 @@ export async function POST(req: Request) {
             );
         }
 
-        console.log(`[CREATE POLAR CUSTOMER] Creating customer for user ${userId} (${userEmail})`);
+        console.log(`[CREATE POLAR CUSTOMER] Processing customer for user ${userId} (${userEmail})`);
 
-        // Check if customer already exists
+        // Step 1: Check if customer already exists by external ID
         let existingCustomer;
         try {
             existingCustomer = await getCustomerByExternalId(userId);
@@ -50,13 +50,51 @@ export async function POST(req: Request) {
         if (existingCustomer) {
             return NextResponse.json({
                 success: true,
-                message: 'Customer already exists',
+                message: 'Customer already exists with external ID',
                 customer: existingCustomer,
-                action: 'found_existing'
+                action: 'found_existing_by_external_id'
             });
         }
 
-        // Create new customer
+        // Step 2: Check if customer exists by email (but without external ID)
+        let customerByEmail: any;
+        try {
+            customerByEmail = await getCustomerByEmail(userEmail);
+            console.log(`[CREATE POLAR CUSTOMER] Customer lookup by email result:`, customerByEmail);
+        } catch (error) {
+            console.error(`[CREATE POLAR CUSTOMER] Error looking up customer by email:`, error);
+        }
+
+        if (customerByEmail) {
+            // Customer exists by email but doesn't have the external ID set
+            console.log(`[CREATE POLAR CUSTOMER] Found existing customer by email: ${customerByEmail.id}. Setting external ID to ${userId}`);
+
+            try {
+                const updatedCustomer = await updateCustomerExternalId(customerByEmail.id, userId);
+                console.log(`[CREATE POLAR CUSTOMER] Successfully updated customer external ID:`, updatedCustomer);
+
+                return NextResponse.json({
+                    success: true,
+                    message: 'Customer found by email and external ID updated successfully',
+                    customer: updatedCustomer,
+                    action: 'updated_external_id'
+                });
+            } catch (updateError) {
+                console.error(`[CREATE POLAR CUSTOMER] Error updating customer external ID:`, updateError);
+                return NextResponse.json(
+                    {
+                        error: 'Failed to update customer external ID',
+                        details: updateError,
+                        customerId: customerByEmail.id,
+                        userId,
+                        userEmail
+                    },
+                    { status: 500 }
+                );
+            }
+        }
+
+        // Step 3: Create new customer (no existing customer found)
         try {
             const newCustomer = await createOrUpdateCustomerWithExternalId(
                 userId,
