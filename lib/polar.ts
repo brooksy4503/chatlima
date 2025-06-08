@@ -3,14 +3,13 @@ import { polarUsageEvents } from './db/schema';
 import { Polar } from '@polar-sh/sdk';
 import { nanoid } from 'nanoid';
 
-// Force Polar to always use sandbox environment (even in production)
-// Only use production if explicitly set via POLAR_SERVER_ENV=production
+// Polar server environment configuration
+// Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
 const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
 
 // Initialize Polar SDK client
 const polarClient = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN as string,
-    // Use the determined server environment
     server: polarServerEnv,
 });
 

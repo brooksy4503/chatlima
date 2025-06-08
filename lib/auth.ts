@@ -28,13 +28,13 @@ if (!process.env.SUCCESS_URL) {
     throw new Error('Missing SUCCESS_URL environment variable');
 }
 
-// Force Polar to always use sandbox environment (even in production)
-// Only use production if explicitly set via POLAR_SERVER_ENV=production
+// Polar server environment configuration
+// Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
 const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
 
 const polarClient = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN,
-    server: polarServerEnv, // Use the determined server environment
+    server: polarServerEnv,
 });
 
 export const auth = betterAuth({
