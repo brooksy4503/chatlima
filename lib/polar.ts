@@ -264,16 +264,48 @@ export async function getCustomerByExternalId(externalId: string) {
  */
 export async function getCustomerByEmail(email: string) {
     try {
+        console.log(`[getCustomerByEmail] Searching for customer with email: ${email}`);
+
         const response = await polarClient.customers.list({
             email: email,
             limit: 1
         });
 
-        // Handle the paginated response
-        for await (const customer of response) {
-            return customer; // Return the first customer found
+        console.log(`[getCustomerByEmail] Response type:`, typeof response);
+
+        // Handle the paginated response - try direct iteration first
+        try {
+            for await (const customer of response) {
+                console.log(`[getCustomerByEmail] Found customer via iteration:`, JSON.stringify(customer, null, 2));
+                return customer; // Return the first customer found
+            }
+        } catch (iterError) {
+            console.log(`[getCustomerByEmail] Iteration failed:`, iterError);
+
+            // Fallback: Try to access response as any to bypass type checking
+            try {
+                const responseAny = response as any;
+                console.log(`[getCustomerByEmail] Response (as any):`, JSON.stringify(responseAny, null, 2));
+
+                // Check if response has items directly
+                if (responseAny.items && Array.isArray(responseAny.items) && responseAny.items.length > 0) {
+                    const customer = responseAny.items[0];
+                    console.log(`[getCustomerByEmail] Found customer via items array:`, JSON.stringify(customer, null, 2));
+                    return customer;
+                }
+
+                // Check if response has data
+                if (responseAny.data && Array.isArray(responseAny.data) && responseAny.data.length > 0) {
+                    const customer = responseAny.data[0];
+                    console.log(`[getCustomerByEmail] Found customer via data array:`, JSON.stringify(customer, null, 2));
+                    return customer;
+                }
+            } catch (fallbackError) {
+                console.log(`[getCustomerByEmail] Fallback failed:`, fallbackError);
+            }
         }
 
+        console.log(`[getCustomerByEmail] No customer found with email: ${email}`);
         return null;
     } catch (error) {
         console.error('Error getting customer by email:', error);
