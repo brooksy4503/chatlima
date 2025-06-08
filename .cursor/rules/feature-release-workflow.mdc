@@ -13,7 +13,7 @@ This rule provides a complete workflow for releasing new features in the ChatLim
 Before starting the release process:
 - Ensure all tests pass
 - Verify the feature branch is up to date with main
-- Check that [package.json](mdc:package.json) reflects the current version
+- Check that [package.json](mdc:chatlima/package.json) reflects the current version
 - Review recent commits with `git log --oneline -10`
 
 ### 2. Merge Feature Branch
@@ -35,7 +35,7 @@ git push origin --delete feature/branch-name
 ```
 
 ### 3. Version Increment
-Use npm version to automatically update [package.json](mdc:package.json) and create a git tag:
+Use npm version to automatically update [package.json](mdc:chatlima/package.json) and create a git tag:
 
 ```bash
 # For patch releases (0.3.0 -> 0.3.1)
@@ -49,7 +49,7 @@ npm version major
 ```
 
 This command:
-- Updates the version in [package.json](mdc:package.json)
+- Updates the version in [package.json](mdc:chatlima/package.json)
 - Creates a git commit with the version change
 - Creates a git tag (e.g., v0.3.1)
 
@@ -104,7 +104,46 @@ Generate comprehensive release notes following this structure:
 #### Save Release Notes
 Create a file named `RELEASE_NOTES_v[VERSION].md` in the `releases/` folder for reference.
 
-### 6. GitHub Release Creation
+### 6. Safe Production Deployment
+
+#### ⚠️ CRITICAL: Vercel Production Deployment Safety
+Before deploying to production, ensure you're following safe deployment practices:
+
+```bash
+# ✅ SAFE - Production deployment workflow
+# 1. Ensure you're on main branch with merged changes
+git checkout main
+git pull origin main
+
+# 2. Verify everything is ready for production
+npm run build  # Test build locally
+npm run test   # Run all tests
+
+# 3. Deploy to production explicitly
+vercel deploy --prod  # Explicit production deployment
+
+# 4. Verify production deployment
+# Check the production URL and test critical functionality
+```
+
+#### Production Deployment Checklist:
+- [ ] All tests passing
+- [ ] Feature thoroughly tested on preview deployments
+- [ ] Environment variables configured for production
+- [ ] Database migrations completed (if applicable)
+- [ ] Monitoring and error tracking enabled
+- [ ] Rollback plan ready
+
+#### Emergency Rollback:
+If issues are discovered after production deployment:
+```bash
+# Quick rollback to previous version
+git checkout main
+git reset --hard HEAD~1  # Go back one commit
+vercel deploy --prod     # Deploy previous version
+```
+
+### 7. GitHub Release Creation
 1. Go to GitHub repository → Releases → "Create a new release"
 2. Select the version tag created by `npm version`
 3. Copy content from the release notes file
@@ -138,13 +177,13 @@ git push origin --delete feature/[branch-name]
 - Include migration instructions for any breaking changes
 - Highlight security and privacy improvements
 - Keep technical details accessible to non-developers
-- Reference relevant files using [filename](mdc:filename) format
+- Reference relevant files using [filename](mdc:chatlima/filename) format
 
 ### File References:
-- Version information: [package.json](mdc:package.json)
+- Version information: [package.json](mdc:chatlima/package.json)
 - Previous release notes: Look for existing `RELEASE_NOTES_v*.md` files in the `releases/` folder
-- Implementation details: Check [app/](mdc:app) directory for new routes
-- Configuration: [next.config.ts](mdc:next.config.ts), [tsconfig.json](mdc:tsconfig.json)
+- Implementation details: Check [app/](mdc:chatlima/app) directory for new routes
+- Configuration: [next.config.ts](mdc:chatlima/next.config.ts), [tsconfig.json](mdc:chatlima/tsconfig.json)
 
 ## 🚨 Important Notes
 
