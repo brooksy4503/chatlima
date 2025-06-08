@@ -37,6 +37,37 @@ const polarClient = new Polar({
     server: polarServerEnv,
 });
 
+// Dynamic trusted origins based on environment
+const getTrustedOrigins = () => {
+    const origins = [
+        'http://localhost:3000',
+        'https://www.chatlima.com'
+    ];
+
+    // Add Vercel preview URLs
+    if (process.env.VERCEL_URL) {
+        origins.push(`https://${process.env.VERCEL_URL}`);
+    }
+
+    // Add any Vercel deployment URLs (for preview deployments)
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+        origins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+    }
+
+    // Allow all *.vercel.app domains for previews
+    origins.push('https://*.vercel.app');
+
+    // Add any custom preview domain if specified
+    if (process.env.PREVIEW_DOMAIN) {
+        origins.push(`https://${process.env.PREVIEW_DOMAIN}`);
+        origins.push(`https://*.${process.env.PREVIEW_DOMAIN}`);
+    }
+
+    console.log('🔐 Auth trusted origins configured:', origins);
+
+    return origins;
+};
+
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
         provider: "pg",
@@ -61,7 +92,7 @@ export const auth = betterAuth({
             // If your expires column was different, you'd map expiresAt here too
         }
     },
-    trustedOrigins: ['http://localhost:3000', 'https://www.chatlima.com'],
+    trustedOrigins: getTrustedOrigins(),
     socialProviders: {
         google: {
             clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
