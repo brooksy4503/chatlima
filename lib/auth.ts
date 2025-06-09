@@ -21,10 +21,12 @@ const getGoogleOAuthConfig = () => {
         if (!process.env.GOOGLE_CLIENT_SECRET_PROD) {
             throw new Error('Missing GOOGLE_CLIENT_SECRET_PROD environment variable');
         }
-        return {
+        const config = {
             clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET_PROD,
         };
+        console.log('🔐 Using PRODUCTION Google OAuth client:', config.clientId);
+        return config;
     } else {
         // Development/Preview OAuth app
         if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV) {
@@ -33,10 +35,12 @@ const getGoogleOAuthConfig = () => {
         if (!process.env.GOOGLE_CLIENT_SECRET_DEV) {
             throw new Error('Missing GOOGLE_CLIENT_SECRET_DEV environment variable');
         }
-        return {
+        const config = {
             clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET_DEV,
         };
+        console.log('🔐 Using DEVELOPMENT Google OAuth client:', config.clientId);
+        return config;
     }
 };
 
@@ -123,7 +127,8 @@ export const auth = betterAuth({
             ...getGoogleOAuthConfig(),
             // Set higher message limit for authenticated users
             onAccountCreated: async ({ user }: { user: any }) => {
-                console.log('[Google Provider] onAccountCreated: Triggered for user', user.id);
+                const oauthConfig = getGoogleOAuthConfig();
+                console.log('[Google Provider] onAccountCreated: Triggered for user', user.id, 'using client:', oauthConfig.clientId);
                 // Update user metadata to add higher message limit
                 await db.update(schema.users)
                     .set({
