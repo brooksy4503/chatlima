@@ -60,7 +60,7 @@ export function UserAccountMenu() {
         <DropdownMenuItem asChild>
           <a href="/api/portal" target="_blank" rel="noopener noreferrer">
             <LayoutDashboard className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
+            <span>Customer Portal</span>
           </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
