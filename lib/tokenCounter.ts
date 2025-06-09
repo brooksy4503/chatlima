@@ -100,7 +100,7 @@ export async function hasEnoughCredits(
         try {
             const remainingCreditsByExternal = await getRemainingCreditsByExternalId(userId);
 
-            // If we got a valid result, use it
+            // If we got a valid result (including 0), use it
             if (remainingCreditsByExternal !== null) {
                 // If it's a premium model, user must have more than 0 credits.
                 // For non-premium, the standard check of remainingCredits >= requiredTokens applies.
@@ -109,7 +109,10 @@ export async function hasEnoughCredits(
                 }
                 return remainingCreditsByExternal >= requiredTokens;
             }
-            // Otherwise fall through to the legacy method if no valid result from external ID
+            // If we got null, this means no Polar customer exists (e.g., Google user with no purchase)
+            // For these users, we should return false so they fall back to daily message limits
+            console.log(`No Polar customer found for user ${userId}, falling back to daily message limits`);
+            return false;
         } catch (error) {
             console.warn('Error checking credits by external ID:', error);
             // Fall through to the legacy method
@@ -121,9 +124,11 @@ export async function hasEnoughCredits(
         try {
             const remainingCredits = await getRemainingCredits(polarCustomerId);
 
-            // If we couldn't determine the credits (null), allow the request for non-premium, deny for premium.
+            // If we couldn't determine the credits (null), this means no Polar customer/meter
+            // For these users, we should return false so they fall back to daily message limits
             if (remainingCredits === null) {
-                return !isPremiumModel; // Allow non-premium if credits unknown, deny premium
+                console.log(`No Polar meter found for customer ${polarCustomerId}, falling back to daily message limits`);
+                return false;
             }
 
             // If it's a premium model, user must have more than 0 credits.
@@ -133,13 +138,15 @@ export async function hasEnoughCredits(
             }
             return remainingCredits >= requiredTokens;
         } catch (error) {
-            // Log the error but don't block the request for non-premium, deny for premium
+            // Log the error and fall back to daily message limits
             console.error('Error checking credits by customer ID:', error);
-            return !isPremiumModel; // Allow non-premium if error, deny premium
+            return false;
         }
     }
 
     // If we reach here, we either had no IDs or all methods failed.
-    // Default to allowing non-premium requests to prevent blocking users, deny premium.
-    return !isPremiumModel;
+    // For users without credits (e.g., Google users who haven't purchased), we should return false
+    // so they fall back to daily message limits instead of bypassing them.
+    console.log('No credit information available, falling back to daily message limits');
+    return false;
 } 
