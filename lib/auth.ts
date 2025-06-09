@@ -8,13 +8,38 @@ import { polar as polarPlugin } from '@polar-sh/better-auth';
 import { count, eq, and, gte } from 'drizzle-orm';
 import { getRemainingCreditsByExternalId } from './polar';
 
+// Dynamic Google OAuth configuration based on environment
+const getGoogleOAuthConfig = () => {
+    const isProduction = process.env.NODE_ENV === 'production' &&
+        process.env.VERCEL_ENV === 'production';
 
-if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
-    throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID environment variable');
-}
-if (!process.env.GOOGLE_CLIENT_SECRET) {
-    throw new Error('Missing GOOGLE_CLIENT_SECRET environment variable');
-}
+    if (isProduction) {
+        // Production OAuth app
+        if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD) {
+            throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD environment variable');
+        }
+        if (!process.env.GOOGLE_CLIENT_SECRET_PROD) {
+            throw new Error('Missing GOOGLE_CLIENT_SECRET_PROD environment variable');
+        }
+        return {
+            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET_PROD,
+        };
+    } else {
+        // Development/Preview OAuth app
+        if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV) {
+            throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV environment variable');
+        }
+        if (!process.env.GOOGLE_CLIENT_SECRET_DEV) {
+            throw new Error('Missing GOOGLE_CLIENT_SECRET_DEV environment variable');
+        }
+        return {
+            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET_DEV,
+        };
+    }
+};
+
 if (!process.env.AUTH_SECRET) {
     throw new Error('Missing AUTH_SECRET environment variable');
 }
@@ -95,8 +120,7 @@ export const auth = betterAuth({
     trustedOrigins: getTrustedOrigins(),
     socialProviders: {
         google: {
-            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            ...getGoogleOAuthConfig(),
             // Set higher message limit for authenticated users
             onAccountCreated: async ({ user }: { user: any }) => {
                 console.log('[Google Provider] onAccountCreated: Triggered for user', user.id);
