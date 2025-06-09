@@ -4,7 +4,7 @@ import { Polar } from "@polar-sh/sdk";
 
 const polar = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN!,
-    server: "sandbox", // Always use sandbox as per memory
+    server: "production", // Always use sandbox as per memory
 });
 
 export async function GET(request: NextRequest) {
