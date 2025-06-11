@@ -200,6 +200,9 @@ const languageModels = {
   }),
   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+  "openrouter/mistralai/magistral-small-2506": openrouterClient("mistralai/magistral-small-2506"),
+  "openrouter/mistralai/magistral-medium-2506": openrouterClient("mistralai/magistral-medium-2506"),
+  "openrouter/mistralai/magistral-medium-2506:thinking": openrouterClient("mistralai/magistral-medium-2506:thinking"),
   "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
   "openrouter/openai/o4-mini-high": openrouterClient("openai/o4-mini-high"),
   "qwen-qwq": wrapLanguageModel(
@@ -293,6 +296,9 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     }),
     "openrouter/mistralai/mistral-medium-3": dynamicOpenRouterClient("mistralai/mistral-medium-3"),
     "openrouter/mistralai/mistral-small-3.1-24b-instruct": dynamicOpenRouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+    "openrouter/mistralai/magistral-small-2506": dynamicOpenRouterClient("mistralai/magistral-small-2506"),
+    "openrouter/mistralai/magistral-medium-2506": dynamicOpenRouterClient("mistralai/magistral-medium-2506"),
+    "openrouter/mistralai/magistral-medium-2506:thinking": dynamicOpenRouterClient("mistralai/magistral-medium-2506:thinking"),
     "openrouter/meta-llama/llama-4-maverick": dynamicOpenRouterClient("meta-llama/llama-4-maverick"),
     "openrouter/openai/o4-mini-high": dynamicOpenRouterClient("openai/o4-mini-high"),
     "openrouter/qwen/qwq-32b": wrapLanguageModel({
@@ -533,6 +539,36 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false
+  },
+  "openrouter/mistralai/magistral-small-2506": {
+    provider: "OpenRouter",
+    name: "Mistral Magistral Small 2506",
+    description: "Magistral Small is a 24B parameter instruction-tuned model based on Mistral-Small-3.1, enhanced through supervised fine-tuning and reinforcement learning. Optimized for reasoning and supports multilingual capabilities across 20+ languages.",
+    apiVersion: "mistralai/magistral-small-2506",
+    capabilities: ["Reasoning", "Multilingual", "Instruction Following", "Enhanced"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "openrouter/mistralai/magistral-medium-2506": {
+    provider: "OpenRouter",
+    name: "Mistral Magistral Medium 2506",
+    description: "Magistral is Mistral's first reasoning model. Ideal for general purpose use requiring longer thought processing and better accuracy than with non-reasoning LLMs. From legal research and financial forecasting to software development and creative storytelling — this model solves multi-step challenges where transparency and precision are critical.",
+    apiVersion: "mistralai/magistral-medium-2506",
+    capabilities: ["Reasoning", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
+  },
+  "openrouter/mistralai/magistral-medium-2506:thinking": {
+    provider: "OpenRouter",
+    name: "Mistral Magistral Medium 2506 (thinking)",
+    description: "Magistral Medium 2506 with enhanced thinking capabilities. Mistral's first reasoning model optimized for longer thought processing and better accuracy. Excels at legal research, financial forecasting, software development, and creative storytelling with transparent reasoning.",
+    apiVersion: "mistralai/magistral-medium-2506:thinking",
+    capabilities: ["Advanced Reasoning", "Thinking", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving", "Transparent Reasoning"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
   },
   "openrouter/openai/gpt-4.1": {
     provider: "OpenRouter",
