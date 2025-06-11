@@ -116,7 +116,7 @@ export async function POST(req: Request) {
 
   let mcpServers = initialMcpServers;
 
-  // Disable MCP servers for DeepSeek R1 and DeepSeek R1 0528
+  // Disable MCP servers for DeepSeek R1 models
   if (
     selectedModel === "openrouter/deepseek/deepseek-r1" ||
     selectedModel === "openrouter/deepseek/deepseek-r1-0528" ||
@@ -527,6 +527,8 @@ export async function POST(req: Request) {
   ) {
     modelOptions.logprobs = false;
   }
+
+
 
   // Construct the payload for OpenRouter
   const openRouterPayload = {

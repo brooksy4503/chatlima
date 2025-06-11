@@ -567,4 +567,42 @@
     /* Use Firefox-specific scrollbar hiding when supported */
     scrollbar-width: none;
   }
+
+  /* KaTeX box styling improvements - targeting actual generated elements */
+  .katex .frac-line,
+  .katex .overline .overline-line,
+  .katex .underline .underline-line,
+  .katex .sqrt>.root>.sqrt-line,
+  .katex .boxed {
+    border-color: currentColor;
+  }
+
+  /* Specific styling for \boxed{} command output */
+  .katex .mord.boxed,
+  .katex .minner.boxed,
+  .katex .boxed {
+    border: 0.04em solid currentColor !important;
+    padding: 0.2em 0.4em !important;
+    border-radius: 0.2em !important;
+    box-sizing: border-box !important;
+  }
+
+  /* KaTeX font weight inheritance */
+  .katex {
+    font-weight: inherit;
+  }
+
+  /* Ensure proper contrast for KaTeX in all themes */
+  .katex * {
+    color: inherit;
+  }
+
+  /* Theme-specific KaTeX styling */
+  .dark .katex,
+  .black .katex,
+  .cyberpunk .katex,
+  .sunset .katex,
+  .nature .katex {
+    color: inherit;
+  }
 }
