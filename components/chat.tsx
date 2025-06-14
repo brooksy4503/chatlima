@@ -114,7 +114,8 @@ export default function Chat() {
       role: msg.role as Message['role'],
       content: msg.content,
       parts: msg.parts,
-    } as Message));
+      hasWebSearch: msg.hasWebSearch,
+    } as Message & { hasWebSearch?: boolean }));
   }, [chatData]);
   
   // Function to get API keys from localStorage
@@ -281,6 +282,27 @@ export default function Chat() {
 
   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
 
+  // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
+  const enhancedMessages = useMemo(() => {
+    return messages.map((message, index) => {
+      // Check if this is an assistant message and if web search was enabled for the preceding user message
+      if (message.role === 'assistant' && index > 0) {
+        const previousMessage = messages[index - 1];
+        // If the previous message was from user and web search was enabled, mark this assistant message
+        if (previousMessage.role === 'user' && webSearchEnabled && isOpenRouterModel) {
+          return {
+            ...message,
+            hasWebSearch: true
+          } as Message & { hasWebSearch?: boolean };
+        }
+      }
+      return {
+        ...message,
+        hasWebSearch: (message as any).hasWebSearch || false
+      } as Message & { hasWebSearch?: boolean };
+    });
+  }, [messages, webSearchEnabled, isOpenRouterModel]);
+
   return (
     <div className="h-dvh flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
       {/* Main content area: Either ProjectOverview or Messages */}
@@ -290,7 +312,7 @@ export default function Chat() {
             <ProjectOverview />
           </div>
         ) : (
-          <Messages messages={messages} isLoading={isLoading} status={status} />
+          <Messages messages={enhancedMessages} isLoading={isLoading} status={status} />
         )}
       </div>
 

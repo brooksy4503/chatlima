@@ -85,12 +85,12 @@ export function useAuth() {
         }
     }, []);
 
-    // Auto-fetch credit information when user is authenticated (only once per user ID)
+    // Auto-fetch credit information when user is available (for both authenticated and anonymous users)
     useEffect(() => {
-        if (user && !user.isAnonymous && status === 'authenticated' && user.credits === undefined) {
+        if (user && user.credits === undefined && (status === 'authenticated' || status === 'anonymous')) {
             refreshMessageUsage();
         }
-    }, [user?.id, status, refreshMessageUsage]);
+    }, [user?.id, status]); // Removed refreshMessageUsage from dependency array to prevent re-runs during hot reload
 
     // Sign in with Google
     const handleSignIn = async () => {

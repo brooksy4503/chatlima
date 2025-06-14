@@ -13,6 +13,7 @@ import { CopyButton } from "./copy-button";
 import { Citations } from "./citation";
 import type { TextUIPart, ToolInvocationUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
+import { WebSearchSuggestion } from "./web-search-suggestion";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -130,6 +131,7 @@ export function ReasoningMessagePart({
 interface MessageProps {
   message: TMessage & {
     parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+    hasWebSearch?: boolean;
   };
   isLoading: boolean;
   status: "error" | "submitted" | "streaming" | "ready";
@@ -150,6 +152,14 @@ const PurePreviewMessage = ({
       .map(part => (part.type === "text" ? part.text : ""))
       .join("\n\n");
   };
+
+  // Check if message has web search results - use hasWebSearch flag if available, otherwise detect from parts
+  const hasWebSearchResults = message.hasWebSearch || message.parts?.some(part => 
+    (part.type === "text" && (part as TextUIPart).citations && (part as TextUIPart).citations!.length > 0) ||
+    (part.type === "tool-invocation" && (part as ToolInvocationUIPart).toolInvocation.toolName === "web_search")
+  );
+  
+
 
   // Only show copy button if the message is from the assistant or user, and not currently streaming
   const shouldShowCopyButton = (message.role === "assistant" || message.role === "user") && (!isLatestMessage || status !== "streaming");
@@ -232,6 +242,15 @@ const PurePreviewMessage = ({
                   return null;
               }
             })}
+            
+            {/* Web Search Suggestion - only for assistant messages with web search results and when not streaming */}
+            {message.role === 'assistant' && hasWebSearchResults && status !== "streaming" && (
+              <WebSearchSuggestion 
+                messageId={message.id} 
+                hasWebSearchResults={hasWebSearchResults}
+              />
+            )}
+            
             {message.role === 'assistant' && shouldShowCopyButton && (
               <div className="flex justify-start mt-2">
                 <CopyButton text={getMessageText()} />
