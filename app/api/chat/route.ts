@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
 import { chats } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { trackTokenUsage, hasEnoughCredits } from '@/lib/tokenCounter';
+import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
 import { auth, checkMessageLimit } from '@/lib/auth';
 
@@ -207,6 +207,17 @@ export async function POST(req: Request) {
       `Your account has a negative credit balance (${actualCredits}). Please purchase more credits to continue.`,
       402,
       `User has ${actualCredits} credits`
+    );
+  }
+
+  // 2.5. Check Web Search credit requirement - ensure user has enough credits for web search (skip if using own API keys)
+  if (webSearch.enabled && !isUsingOwnApiKeys && !isAnonymous && actualCredits !== null && actualCredits < WEB_SEARCH_COST) {
+    console.log(`[Debug] User ${userId} wants to use Web Search but has insufficient credits (${actualCredits} < ${WEB_SEARCH_COST})`);
+    return createErrorResponse(
+      "INSUFFICIENT_CREDITS",
+      `You need at least ${WEB_SEARCH_COST} credits to use Web Search. Your balance is ${actualCredits}.`,
+      402,
+      `User has ${actualCredits} credits but needs ${WEB_SEARCH_COST} for Web Search`
     );
   }
 
@@ -702,8 +713,14 @@ export async function POST(req: Request) {
             shouldDeductCredits = true;
           }
 
-          // Pass flags to control credit deduction vs daily message tracking
-          await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits);
+          // Calculate additional cost for web search
+          let additionalCost = 0;
+          if (webSearch.enabled && !isUsingOwnApiKeys && shouldDeductCredits) {
+            additionalCost = WEB_SEARCH_COST;
+          }
+
+          // Pass flags to control credit deduction vs daily message tracking, including web search surcharge
+          await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
           console.log(`${isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : 'Tracked (daily limit)'} ${completionTokens} tokens for user ${userId} [Chat ${id}]`);
         } catch (error: any) {
           console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
