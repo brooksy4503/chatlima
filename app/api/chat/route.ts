@@ -314,6 +314,8 @@ export async function POST(req: Request) {
         id, // The generated or provided chatId
         userId,
         messages: [], // Start with empty messages, will be updated in onFinish
+        selectedModel,
+        apiKeys,
       });
       console.log(`[Chat ${id}] Pre-emptively created chat record.`);
     } catch (error) {
@@ -637,6 +639,8 @@ export async function POST(req: Request) {
           id,
           userId,
           messages: processedMessages as any, // Cast to any to bypass type error
+          selectedModel,
+          apiKeys,
         });
         console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
       } catch (dbError: any) {
@@ -877,6 +881,8 @@ export async function POST(req: Request) {
         id,
         userId,
         messages: modelMessages as any, // UIMessage[] is compatible enough for JSONB storage here
+        selectedModel,
+        apiKeys,
       });
       console.log(`[Chat ${id}][Error Handler] Successfully updated 'chats.messages' with current messages after an error.`);
 
