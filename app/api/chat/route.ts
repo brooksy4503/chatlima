@@ -654,7 +654,7 @@ export async function POST(req: Request) {
       try {
         dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
           ...msg,
-          hasWebSearch: effectiveWebSearchEnabled, // Use effectiveWebSearchEnabled
+          hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
           webSearchContextSize: webSearch.enabled ? webSearch.contextSize : undefined // Store original request if needed, or effective
         }));
       } catch (conversionError: any) {

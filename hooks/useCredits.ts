@@ -69,7 +69,7 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
     // Function to check if user can access premium models
     const canAccessPremiumModels = (): boolean => {
         const canAccess = credits !== null && credits > 0;
-        console.log(`[DEBUG] canAccessPremiumModels: credits=${credits}, canAccess=${canAccess}`);
+        // console.log(`[DEBUG] canAccessPremiumModels: credits=${credits}, canAccess=${canAccess}`);
         return canAccess;
     };
 
