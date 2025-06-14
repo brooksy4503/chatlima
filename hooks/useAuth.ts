@@ -12,6 +12,9 @@ interface AuthUser {
     messageLimit?: number;
     messageRemaining?: number;
     hasSubscription?: boolean;
+    credits?: number;
+    hasCredits?: boolean;
+    usedCredits?: boolean;
 }
 
 export function useAuth() {
@@ -99,7 +102,10 @@ export function useAuth() {
                 setUser(prev => prev ? {
                     ...prev,
                     messageLimit: data.limit,
-                    messageRemaining: data.remaining
+                    messageRemaining: data.remaining,
+                    credits: data.credits,
+                    hasCredits: data.hasCredits,
+                    usedCredits: data.usedCredits
                 } : null);
             }
         } catch (err) {
