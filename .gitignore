@@ -50,3 +50,10 @@ next-env.d.ts
 .aider.input.history
 .aider.tags.cache.v4/cache.db
 docs/
+
+# Playwright authentication state
+playwright/.auth/
+
+# Playwright test results and reports
+/test-results/
+/playwright-report/
