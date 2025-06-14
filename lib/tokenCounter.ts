@@ -6,6 +6,11 @@ import { nanoid } from 'nanoid';
 import { modelDetails, modelID } from '@/ai/providers';
 
 /**
+ * Cost in credits for enabling Web Search feature
+ */
+export const WEB_SEARCH_COST = 5;
+
+/**
  * Tracks token usage for a user's chat session and reports it to Polar for billing.
  * @param userId The ID of the user
  * @param polarCustomerId Optional Polar customer ID
