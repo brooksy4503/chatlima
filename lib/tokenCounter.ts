@@ -17,13 +17,15 @@ export const WEB_SEARCH_COST = 5;
  * @param completionTokens Number of tokens to report
  * @param isAnonymous Whether the user is anonymous
  * @param shouldDeductCredits Whether to actually deduct credits (only for users with purchased credits)
+ * @param additionalCost Additional credits to deduct (e.g., for premium features like web search)
  */
 export async function trackTokenUsage(
     userId: string,
     polarCustomerId: string | undefined,
     completionTokens: number,
     isAnonymous: boolean = false,
-    shouldDeductCredits: boolean = true
+    shouldDeductCredits: boolean = true,
+    additionalCost: number = 0
 ): Promise<void> {
     try {
         // Check if the user exists in the database first
@@ -36,21 +38,25 @@ export async function trackTokenUsage(
             return;
         }
 
+        // Calculate total credits to consume (base 1 credit + additional cost)
+        const totalCreditsToConsume = shouldDeductCredits ? 1 + additionalCost : 0;
+
         // Additional properties we might want to track about this usage event
         const additionalProperties = {
             timestamp: new Date().toISOString(),
-            source: 'chat-completion'
+            source: 'chat-completion',
+            additionalCost: additionalCost
         };
 
         // Only report to Polar if user has purchased credits and should be charged
         if (!isAnonymous && shouldDeductCredits) {
             // Report the usage to Polar and log it in our database
-            // Pass 1 as the second argument for credits_consumed, original completionTokens for logging
-            await reportAIUsage(userId, 1, polarCustomerId, additionalProperties);
+            // Pass totalCreditsToConsume for actual billing, original completionTokens for logging
+            await reportAIUsage(userId, totalCreditsToConsume, polarCustomerId, additionalProperties);
         } else {
             // For anonymous users or users using free daily messages, just log locally without reporting to Polar
             const reason = isAnonymous ? 'anonymous user' : 'user using free daily messages';
-            console.log(`Skipping Polar reporting for ${reason} ${userId} (1 credit would be consumed, ${completionTokens} tokens calculated)`)
+            console.log(`Skipping Polar reporting for ${reason} ${userId} (${totalCreditsToConsume} credits would be consumed, ${completionTokens} tokens calculated)`)
 
             // Still log in our local database for analytics
             await db.insert(polarUsageEvents).values({
@@ -59,7 +65,7 @@ export async function trackTokenUsage(
                 polarCustomerId, // Will be null/undefined for anonymous users
                 eventName: 'message.processed', // New event name
                 eventPayload: {
-                    credits_consumed: shouldDeductCredits ? 1 : 0, // Track whether credits were actually consumed
+                    credits_consumed: totalCreditsToConsume, // Track total credits that would be consumed
                     originalCompletionTokens: completionTokens, // Keep original tokens for local logs if desired
                     ...additionalProperties,
                     skippedPolarReporting: true,
