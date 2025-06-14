@@ -5,6 +5,7 @@ import { ModelPicker } from "./model-picker";
 import { useRef } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useWebSearch } from "@/lib/context/web-search-context";
+import { useAuth } from "@/hooks/useAuth";
 
 interface InputProps {
   input: string;
@@ -29,9 +30,22 @@ export const Textarea = ({
   const iconButtonRef = useRef<HTMLButtonElement>(null);
 
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
+  const { user } = useAuth();
 
   const handleWebSearchToggle = () => {
     setWebSearchEnabled(!webSearchEnabled);
+  };
+
+  // Check if user has enough credits for web search (5 credits minimum)
+  const hasEnoughCreditsForWebSearch = user?.hasCredits && (user?.credits || 0) >= 5;
+  const canUseWebSearch = hasEnoughCreditsForWebSearch || !user?.usedCredits; // Allow if not using credit system
+
+  // Determine tooltip message based on credit status
+  const getWebSearchTooltipMessage = () => {
+    if (!canUseWebSearch && user?.usedCredits) {
+      return "Purchase credits to enable Web Search";
+    }
+    return webSearchEnabled ? 'Disable web search' : 'Enable web search';
   };
 
   return (
@@ -64,13 +78,20 @@ export const Textarea = ({
                     ref={iconButtonRef}
                     aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
                     onClick={handleWebSearchToggle}
-                    className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${webSearchEnabled ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-background border-border text-muted-foreground hover:bg-accent'} focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                    disabled={!canUseWebSearch}
+                    className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                      !canUseWebSearch 
+                        ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50' 
+                        : webSearchEnabled 
+                          ? 'bg-primary text-primary-foreground border-primary shadow' 
+                          : 'bg-background border-border text-muted-foreground hover:bg-accent'
+                    } focus:outline-none focus:ring-2 focus:ring-primary/30`}
                   >
                     <Globe className="h-5 w-5" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent sideOffset={8}>
-                  {webSearchEnabled ? 'Disable web search' : 'Enable web search'}
+                  {getWebSearchTooltipMessage()}
                 </TooltipContent>
               </Tooltip>
             </div>
