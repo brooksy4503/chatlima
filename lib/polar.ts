@@ -24,13 +24,13 @@ const polarClient = new Polar({
  */
 export async function reportAIUsage(
     userId: string,
-    _placeholder_param_for_now: number, // Keeping signature for now, but will be 1
+    creditsToConsume: number, // Use the actual credits to consume, not hardcoded 1
     polarCustomerId?: string,
     additionalProperties: Record<string, any> = {}
 ) {
     const eventName = 'message.processed'; // Changed from 'ai-usage'
     const eventPayload = {
-        credits_consumed: 1, // Changed from completionTokens: tokenCount
+        credits_consumed: creditsToConsume, // Use the actual credits passed in
         ...additionalProperties
     };
 

@@ -38,11 +38,24 @@ export const Textarea = ({
 
   // Check if user has enough credits for web search (5 credits minimum)
   const hasEnoughCreditsForWebSearch = user?.hasCredits && (user?.credits || 0) >= 5;
-  const canUseWebSearch = hasEnoughCreditsForWebSearch || !user?.usedCredits; // Allow if not using credit system
+  const isAnonymousUser = !user || user?.isAnonymous;
+  // Only allow web search if user has sufficient credits and is not anonymous
+  const canUseWebSearch = !isAnonymousUser && hasEnoughCreditsForWebSearch;
+
+  // Debug logging to help troubleshoot
+  console.log('[Web Search Debug]', {
+    user: user ? { id: user.id, isAnonymous: user.isAnonymous, hasCredits: user.hasCredits, credits: user.credits } : null,
+    isAnonymousUser,
+    hasEnoughCreditsForWebSearch,
+    canUseWebSearch
+  });
 
   // Determine tooltip message based on credit status
   const getWebSearchTooltipMessage = () => {
-    if (!canUseWebSearch && user?.usedCredits) {
+    if (isAnonymousUser) {
+      return "Sign in and purchase credits to enable Web Search";
+    }
+    if (!hasEnoughCreditsForWebSearch) {
       return "Purchase credits to enable Web Search";
     }
     return webSearchEnabled ? 'Disable web search' : 'Enable web search';
