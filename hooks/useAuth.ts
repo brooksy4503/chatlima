@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { signIn, signOut, useSession } from '@/lib/auth-client';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unauthenticated';
@@ -65,6 +65,33 @@ export function useAuth() {
         }
     }, [session, isPending]);
 
+    // Get message usage data
+    const refreshMessageUsage = useCallback(async () => {
+        try {
+            const response = await fetch('/api/usage/messages');
+            if (response.ok) {
+                const data = await response.json();
+                setUser(prev => prev ? {
+                    ...prev,
+                    messageLimit: data.limit,
+                    messageRemaining: data.remaining,
+                    credits: data.credits,
+                    hasCredits: data.hasCredits,
+                    usedCredits: data.usedCredits
+                } : null);
+            }
+        } catch (err) {
+            console.error('Failed to fetch message usage:', err);
+        }
+    }, []);
+
+    // Auto-fetch credit information when user is authenticated (only once per user ID)
+    useEffect(() => {
+        if (user && !user.isAnonymous && status === 'authenticated' && user.credits === undefined) {
+            refreshMessageUsage();
+        }
+    }, [user?.id, status, refreshMessageUsage]);
+
     // Sign in with Google
     const handleSignIn = async () => {
         try {
@@ -91,27 +118,7 @@ export function useAuth() {
         }
     };
 
-    // Get message usage data
-    const refreshMessageUsage = async () => {
-        if (!user) return;
 
-        try {
-            const response = await fetch('/api/usage/messages');
-            if (response.ok) {
-                const data = await response.json();
-                setUser(prev => prev ? {
-                    ...prev,
-                    messageLimit: data.limit,
-                    messageRemaining: data.remaining,
-                    credits: data.credits,
-                    hasCredits: data.hasCredits,
-                    usedCredits: data.usedCredits
-                } : null);
-            }
-        } catch (err) {
-            console.error('Failed to fetch message usage:', err);
-        }
-    };
 
     return {
         status,

@@ -211,14 +211,26 @@ export async function POST(req: Request) {
   }
 
   // 2.5. Check Web Search credit requirement - ensure user has enough credits for web search (skip if using own API keys)
-  if (webSearch.enabled && !isUsingOwnApiKeys && !isAnonymous && actualCredits !== null && actualCredits < WEB_SEARCH_COST) {
-    console.log(`[Debug] User ${userId} wants to use Web Search but has insufficient credits (${actualCredits} < ${WEB_SEARCH_COST})`);
-    return createErrorResponse(
-      "INSUFFICIENT_CREDITS",
-      `You need at least ${WEB_SEARCH_COST} credits to use Web Search. Your balance is ${actualCredits}.`,
-      402,
-      `User has ${actualCredits} credits but needs ${WEB_SEARCH_COST} for Web Search`
-    );
+  if (webSearch.enabled && !isUsingOwnApiKeys) {
+    if (isAnonymous) {
+      console.log(`[Debug] Anonymous user ${userId} tried to use Web Search, blocking request`);
+      return createErrorResponse(
+        "FEATURE_RESTRICTED",
+        "Web Search is only available to signed-in users with credits. Please sign in and purchase credits to use this feature.",
+        403,
+        "Anonymous users cannot use Web Search"
+      );
+    }
+
+    if (actualCredits !== null && actualCredits < WEB_SEARCH_COST) {
+      console.log(`[Debug] User ${userId} wants to use Web Search but has insufficient credits (${actualCredits} < ${WEB_SEARCH_COST})`);
+      return createErrorResponse(
+        "INSUFFICIENT_CREDITS",
+        `You need at least ${WEB_SEARCH_COST} credits to use Web Search. Your balance is ${actualCredits}.`,
+        402,
+        `User has ${actualCredits} credits but needs ${WEB_SEARCH_COST} for Web Search`
+      );
+    }
   }
 
   // 3. If user has credits or is using own API keys, allow request (skip daily message limit)
@@ -706,22 +718,36 @@ export async function POST(req: Request) {
             console.warn('Could not determine if user is anonymous, assuming not anonymous');
           }
 
+          // Recalculate isUsingOwnApiKeys in callback scope since it's not accessible here
+          const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+
+          // Get actual credits in callback scope
+          let callbackActualCredits: number | null = null;
+          if (!isAnonymous && userId) {
+            try {
+              callbackActualCredits = await getRemainingCreditsByExternalId(userId);
+            } catch (error) {
+              console.warn('Error getting actual credits in onFinish callback:', error);
+            }
+          }
+
           // Determine if user should have credits deducted or just use daily message tracking
           // Only deduct credits if user actually has purchased credits (positive balance) AND not using own API keys
           let shouldDeductCredits = false;
-          if (!isAnonymous && !isUsingOwnApiKeys && actualCredits !== null && actualCredits > 0) {
+          if (!isAnonymous && !callbackIsUsingOwnApiKeys && callbackActualCredits !== null && callbackActualCredits > 0) {
             shouldDeductCredits = true;
           }
 
-          // Calculate additional cost for web search
+          // Calculate additional cost for web search - use webSearch from outer scope (it should be accessible)
           let additionalCost = 0;
-          if (webSearch.enabled && !isUsingOwnApiKeys && shouldDeductCredits) {
+          if (webSearch.enabled && !callbackIsUsingOwnApiKeys && shouldDeductCredits) {
             additionalCost = WEB_SEARCH_COST;
           }
 
           // Pass flags to control credit deduction vs daily message tracking, including web search surcharge
           await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
-          console.log(`${isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : 'Tracked (daily limit)'} ${completionTokens} tokens for user ${userId} [Chat ${id}]`);
+          const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
+          console.log(`${isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : 'Tracked (daily limit)'} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
         } catch (error: any) {
           console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
           // Don't break the response flow if tracking fails
