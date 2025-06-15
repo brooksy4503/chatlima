@@ -1,4 +1,4 @@
-# �� ChatLima v0.10.0 - Polar Integration & Enhanced Features
+# 🚀 ChatLima v0.11.0 - Polar Integration & Enhanced Features
 
 ## 🎯 What's New
 - **Polar Integration**: Complete integration with Polar billing platform for customer management and payments
@@ -63,4 +63,4 @@
 
 ---
 
-**Full Changelog**: [v0.9.1...v0.10.0](https://github.com/brooksy4503/chatlima/compare/v0.9.1...v0.10.0) 
+**Full Changelog**: [v0.10.0...v0.11.0](https://github.com/brooksy4503/chatlima/compare/v0.10.0...v0.11.0) 
