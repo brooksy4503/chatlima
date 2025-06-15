@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { Polar } from "@polar-sh/sdk";
 
+// Polar server environment configuration
+// Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
+const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
+
 const polar = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN!,
-    server: "production", // Always use sandbox as per memory
+    server: polarServerEnv,
 });
 
 export async function GET(request: NextRequest) {
