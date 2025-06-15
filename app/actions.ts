@@ -3,7 +3,7 @@
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { getApiKey, model, titleGenerationModel } from "@/ai/providers";
+import { getApiKey, model, titleGenerationModel, getTitleGenerationModel, type modelID } from "@/ai/providers";
 import { type MessagePart } from "@/lib/db/schema";
 
 // Helper to extract text content from a message regardless of format
@@ -37,7 +37,7 @@ function getMessageText(message: any): string {
   return '';
 }
 
-export async function generateTitle(messages: any[]) {
+export async function generateTitle(messages: any[], selectedModel?: string, apiKeys?: Record<string, string>) {
   // Find the first user message
   const firstUserMessage = messages.find(msg => msg.role === 'user');
 
@@ -59,9 +59,22 @@ export async function generateTitle(messages: any[]) {
 
   console.log('Generating title with simplified messages:', JSON.stringify(titleGenMessages, null, 2)); // Log the messages
 
+  // Determine the title generation model to use
+  let titleModel;
+  if (selectedModel && apiKeys) {
+    // Use dynamic model selection with API keys
+    titleModel = getTitleGenerationModel(selectedModel as modelID, apiKeys);
+  } else if (selectedModel) {
+    // Use dynamic model selection without API keys
+    titleModel = getTitleGenerationModel(selectedModel as modelID);
+  } else {
+    // Fallback to static model
+    titleModel = titleGenerationModel;
+  }
+
   try {
     const { object } = await generateObject({
-      model: titleGenerationModel,
+      model: titleModel,
       schema: z.object({
         title: z.string().min(1).max(100),
       }),

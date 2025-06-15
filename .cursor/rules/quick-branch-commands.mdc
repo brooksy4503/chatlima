@@ -78,6 +78,46 @@ git branch -d feature/old-branch      # delete local branch
 git push origin --delete feature/old-branch  # delete remote branch
 ```
 
+## 🚀 Vercel Deployment Commands
+
+### ⚠️ CRITICAL SAFETY WARNING
+**NEVER run Vercel setup while on feature branches!**
+
+### Safe Testing Workflow
+```bash
+# ✅ Setup project (one-time, on main branch)
+git checkout main
+vercel link  # Setup only, no deployment
+
+# ✅ Test feature branch safely
+git checkout feature/your-branch
+vercel deploy  # Always creates preview deployment
+
+# ✅ Production deployment (only when ready)
+git checkout main
+vercel deploy --prod  # Explicit production deployment
+```
+
+### Emergency Commands
+```bash
+# 🚨 If you accidentally deployed feature branch to production
+git checkout main
+git stash  # if needed
+vercel deploy --prod  # Restore safe production
+
+# Then create proper preview
+git checkout feature/your-branch  
+git stash pop  # if needed
+vercel deploy  # Preview only
+```
+
+### Deployment Status
+```bash
+vercel ls                    # List all deployments
+vercel logs --follow        # Monitor deployment logs
+vercel inspect [URL]        # Get deployment details
+```
+
 ## 📝 Commit Message Templates
 
 ```bash
@@ -94,4 +134,4 @@ git commit -m "enhance: improve query performance"
 git commit -m "enhance(ux): add loading states"
 ```
 
-For complete workflow details, see [feature-branch-creation-workflow.mdc](mdc:feature-branch-creation-workflow.mdc)
+For complete workflow details, see [feature-branch-creation-workflow.mdc](mdc:chatlima/feature-branch-creation-workflow.mdc)

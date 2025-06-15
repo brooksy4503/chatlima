@@ -763,6 +763,50 @@ export const titleGenerationModelId: modelID = "openrouter/openai/gpt-4.1-mini";
 // Get the actual model instance for title generation
 export const titleGenerationModel = languageModels[titleGenerationModelId];
 
+// Function to get the appropriate title generation model based on the provider of the selected model
+export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => {
+  // Define preferred title generation models for each provider
+  const titleGenerationModels: Record<string, modelID> = {
+    'openrouter': 'openrouter/openai/gpt-4.1-mini',
+    'requesty': 'requesty/openai/gpt-4o-mini',
+    'openai': 'gpt-4.1-mini',
+    'anthropic': 'claude-3-7-sonnet',
+    'groq': 'qwen-qwq',
+    'xai': 'grok-3-mini',
+  };
+
+  // Determine the provider from the selected model ID
+  if (selectedModelId.startsWith('openrouter/')) {
+    return titleGenerationModels['openrouter'];
+  } else if (selectedModelId.startsWith('requesty/')) {
+    return titleGenerationModels['requesty'];
+  } else if (selectedModelId.startsWith('gpt-') || selectedModelId === 'gpt-4.1-mini') {
+    return titleGenerationModels['openai'];
+  } else if (selectedModelId.startsWith('claude-') || selectedModelId === 'claude-3-7-sonnet') {
+    return titleGenerationModels['anthropic'];
+  } else if (selectedModelId.startsWith('qwen-') || selectedModelId === 'qwen-qwq') {
+    return titleGenerationModels['groq'];
+  } else if (selectedModelId.startsWith('grok-') || selectedModelId === 'grok-3-mini') {
+    return titleGenerationModels['xai'];
+  }
+
+  // Default fallback to OpenRouter if provider can't be determined
+  return titleGenerationModels['openrouter'];
+};
+
+// Get the title generation model instance based on the selected model
+export const getTitleGenerationModel = (selectedModelId: modelID, apiKeys?: Record<string, string>) => {
+  const titleModelId = getTitleGenerationModelId(selectedModelId);
+
+  // If API keys are provided, use the dynamic model with keys
+  if (apiKeys) {
+    return getLanguageModelWithKeys(titleModelId, apiKeys);
+  }
+
+  // Otherwise use the static model
+  return languageModels[titleModelId];
+};
+
 export type modelID = keyof typeof languageModels;
 
 // Filter models based on the enabled flag

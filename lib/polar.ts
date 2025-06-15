@@ -3,14 +3,13 @@ import { polarUsageEvents } from './db/schema';
 import { Polar } from '@polar-sh/sdk';
 import { nanoid } from 'nanoid';
 
-// Force Polar to always use sandbox environment (even in production)
-// Only use production if explicitly set via POLAR_SERVER_ENV=production
+// Polar server environment configuration
+// Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
 const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
 
 // Initialize Polar SDK client
 const polarClient = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN as string,
-    // Use the determined server environment
     server: polarServerEnv,
 });
 
@@ -25,13 +24,13 @@ const polarClient = new Polar({
  */
 export async function reportAIUsage(
     userId: string,
-    _placeholder_param_for_now: number, // Keeping signature for now, but will be 1
+    creditsToConsume: number, // Use the actual credits to consume, not hardcoded 1
     polarCustomerId?: string,
     additionalProperties: Record<string, any> = {}
 ) {
     const eventName = 'message.processed'; // Changed from 'ai-usage'
     const eventPayload = {
-        credits_consumed: 1, // Changed from completionTokens: tokenCount
+        credits_consumed: creditsToConsume, // Use the actual credits passed in
         ...additionalProperties
     };
 
@@ -253,6 +252,105 @@ export async function getCustomerByExternalId(externalId: string) {
             return null;
         }
         // Otherwise re-throw the error
+        throw error;
+    }
+}
+
+/**
+ * Gets a customer by their email address
+ * 
+ * @param email The customer's email address
+ * @returns The customer object or null if not found
+ */
+export async function getCustomerByEmail(email: string) {
+    try {
+        console.log(`[getCustomerByEmail] Searching for customer with email: ${email}`);
+
+        const response = await polarClient.customers.list({
+            email: email,
+            limit: 1
+        });
+
+        console.log(`[getCustomerByEmail] Response type:`, typeof response);
+
+        // Handle the paginated response - try direct iteration first
+        try {
+            for await (const customerResponse of response) {
+                console.log(`[getCustomerByEmail] Raw iteration response:`, JSON.stringify(customerResponse, null, 2));
+
+                // The response might be wrapped in a result object
+                const responseAny = customerResponse as any;
+                if (responseAny.result && responseAny.result.items && Array.isArray(responseAny.result.items) && responseAny.result.items.length > 0) {
+                    const customer = responseAny.result.items[0];
+                    console.log(`[getCustomerByEmail] Found customer via result.items:`, JSON.stringify(customer, null, 2));
+                    return customer;
+                }
+
+                // If it's already a customer object
+                if (responseAny.id && responseAny.email) {
+                    console.log(`[getCustomerByEmail] Found customer directly:`, JSON.stringify(responseAny, null, 2));
+                    return responseAny;
+                }
+            }
+        } catch (iterError) {
+            console.log(`[getCustomerByEmail] Iteration failed:`, iterError);
+
+            // Fallback: Try to access response as any to bypass type checking
+            try {
+                const responseAny = response as any;
+                console.log(`[getCustomerByEmail] Response (as any):`, JSON.stringify(responseAny, null, 2));
+
+                // Check if response has result.items structure
+                if (responseAny.result && responseAny.result.items && Array.isArray(responseAny.result.items) && responseAny.result.items.length > 0) {
+                    const customer = responseAny.result.items[0];
+                    console.log(`[getCustomerByEmail] Found customer via result.items fallback:`, JSON.stringify(customer, null, 2));
+                    return customer;
+                }
+
+                // Check if response has items directly
+                if (responseAny.items && Array.isArray(responseAny.items) && responseAny.items.length > 0) {
+                    const customer = responseAny.items[0];
+                    console.log(`[getCustomerByEmail] Found customer via items array:`, JSON.stringify(customer, null, 2));
+                    return customer;
+                }
+
+                // Check if response has data
+                if (responseAny.data && Array.isArray(responseAny.data) && responseAny.data.length > 0) {
+                    const customer = responseAny.data[0];
+                    console.log(`[getCustomerByEmail] Found customer via data array:`, JSON.stringify(customer, null, 2));
+                    return customer;
+                }
+            } catch (fallbackError) {
+                console.log(`[getCustomerByEmail] Fallback failed:`, fallbackError);
+            }
+        }
+
+        console.log(`[getCustomerByEmail] No customer found with email: ${email}`);
+        return null;
+    } catch (error) {
+        console.error('Error getting customer by email:', error);
+        return null;
+    }
+}
+
+/**
+ * Updates an existing customer's external ID
+ * 
+ * @param customerId The customer's ID in Polar
+ * @param externalId The external ID to set
+ * @returns The updated customer or null if failed
+ */
+export async function updateCustomerExternalId(customerId: string, externalId: string) {
+    try {
+        const updatedCustomer = await polarClient.customers.update({
+            id: customerId,
+            customerUpdate: {
+                externalId: externalId
+            }
+        });
+        return updatedCustomer;
+    } catch (error) {
+        console.error('Error updating customer external ID:', error);
         throw error;
     }
 }

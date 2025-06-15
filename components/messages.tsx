@@ -7,7 +7,7 @@ export const Messages = ({
   isLoading,
   status,
 }: {
-  messages: TMessage[];
+  messages: (TMessage & { hasWebSearch?: boolean })[];
   isLoading: boolean;
   status: "error" | "submitted" | "streaming" | "ready";
 }) => {
@@ -24,7 +24,10 @@ export const Messages = ({
             key={i}
             isLatestMessage={i === messages.length - 1}
             isLoading={isLoading}
-            message={m}
+            message={{
+              ...m,
+              hasWebSearch: m.hasWebSearch
+            }}
             status={status}
           />
         ))}
