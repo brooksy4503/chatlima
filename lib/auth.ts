@@ -70,7 +70,8 @@ const polarClient = new Polar({
 const getTrustedOrigins = () => {
     const origins = [
         'http://localhost:3000',
-        'https://www.chatlima.com'
+        'https://www.chatlima.com',
+        'https://preview.chatlima.com'
     ];
 
     // Add Vercel preview URLs
