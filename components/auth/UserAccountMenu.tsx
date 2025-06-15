@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User, Settings, LayoutDashboard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CheckoutButton } from "@/components/checkout-button";
 
 export function UserAccountMenu() {
   const { data: session } = useSession();
@@ -56,6 +57,12 @@ export function UserAccountMenu() {
             </p>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        
+        <div className="p-2">
+          <CheckoutButton />
+        </div>
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <a href="/api/portal" target="_blank" rel="noopener noreferrer">
