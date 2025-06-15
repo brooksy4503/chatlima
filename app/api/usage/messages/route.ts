@@ -29,7 +29,11 @@ export async function GET(req: Request) {
             remaining: limitStatus.remaining,
             isAnonymous,
             // Check if user has a Polar subscription
-            hasSubscription: (session.user as any)?.metadata?.hasSubscription || false
+            hasSubscription: (session.user as any)?.metadata?.hasSubscription || false,
+            // Include credit information
+            credits: limitStatus.credits || 0,
+            hasCredits: (limitStatus.credits || 0) > 0,
+            usedCredits: limitStatus.usedCredits || false
         });
     } catch (error) {
         console.error('Error getting message usage:', error);

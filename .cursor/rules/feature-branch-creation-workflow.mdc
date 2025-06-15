@@ -168,6 +168,59 @@ git rebase main
 # 3. Continue rebase: git rebase --continue
 ```
 
+### 7. Safe Vercel Deployment Testing
+
+#### ⚠️ CRITICAL: Vercel CLI Safety Rules
+**NEVER run Vercel setup commands while on feature branches!**
+
+The Vercel CLI has dangerous behavior during initial setup:
+- `--prod=false` flag gets **ignored** during first-time setup
+- "Set up and deploy" process defaults to **production deployment**
+- This can accidentally deploy untested feature branches to production
+
+#### Safe Deployment Workflow:
+```bash
+# ❌ DANGEROUS - Don't do this on feature branches
+vercel --prod=false  # This can still deploy to production!
+
+# ✅ SAFE - Proper testing workflow
+# 1. Setup project on main branch first (one-time only)
+git checkout main
+vercel link  # Setup only, no deployment
+
+# 2. Switch to feature branch for testing  
+git checkout feature/your-feature-name
+
+# 3. Deploy as preview only
+vercel deploy  # Always creates preview deployment
+
+# 4. Test thoroughly on preview URL
+# 5. Never use --prod unless ready for production release
+```
+
+#### Emergency Production Revert:
+If you accidentally deploy a feature branch to production:
+```bash
+# 1. Switch to safe main branch immediately
+git checkout main
+git stash  # if you have uncommitted changes
+
+# 2. Deploy main to restore production
+vercel deploy --prod
+
+# 3. Create proper preview for testing
+git checkout feature/your-feature-name
+git stash pop  # restore changes if stashed
+vercel deploy  # Preview only
+```
+
+#### Vercel Best Practices:
+- **Always use `vercel deploy`** for feature branch testing
+- **Only use `vercel deploy --prod`** for production releases
+- **Setup projects on main branch** before working on features
+- **Test on preview URLs first** before any production deployment
+- **Use Git integration** - let Vercel auto-create previews from pushed branches
+
 ## 📋 Branch Management Commands
 
 ### Useful Git Commands
@@ -228,19 +281,19 @@ git status -uno
 
 ### Project-Specific Considerations:
 For ChatLima specifically, consider these areas when creating branches:
-- **Authentication**: Features related to [auth-schema.ts](mdc:auth-schema.ts)
-- **API Routes**: New endpoints in [app/api/](mdc:app/api)
-- **Database**: Changes requiring [drizzle/](mdc:drizzle) migrations
-- **UI Components**: New components in [components/](mdc:components)
-- **AI Integration**: Features in [ai/](mdc:ai) directory
+- **Authentication**: Features related to [auth-schema.ts](mdc:chatlima/auth-schema.ts)
+- **API Routes**: New endpoints in [app/api/](mdc:chatlima/app/api)
+- **Database**: Changes requiring [drizzle/](mdc:chatlima/drizzle) migrations
+- **UI Components**: New components in [components/](mdc:chatlima/components)
+- **AI Integration**: Features in [ai/](mdc:chatlima/ai) directory
 - **Payment System**: Polar integration features
 - **Credit System**: User credit and usage tracking
 
 ### File Organization:
 - Keep related changes in logical commits
-- Update relevant configuration files ([next.config.ts](mdc:next.config.ts), [tsconfig.json](mdc:tsconfig.json))
-- Add new dependencies to [package.json](mdc:package.json) as needed
-- Update [README.md](mdc:README.md) if the feature affects setup or usage
+- Update relevant configuration files ([next.config.ts](mdc:chatlima/next.config.ts), [tsconfig.json](mdc:chatlima/tsconfig.json))
+- Add new dependencies to [package.json](mdc:chatlima/package.json) as needed
+- Update [README.md](mdc:chatlima/README.md) if the feature affects setup or usage
 
 ## 🚨 Important Reminders
 
@@ -255,7 +308,7 @@ For ChatLima specifically, consider these areas when creating branches:
 
 ## 🔄 Integration with Release Workflow
 
-This workflow is designed to work seamlessly with the [feature-release-workflow.mdc](mdc:feature-release-workflow.mdc):
+This workflow is designed to work seamlessly with the [feature-release-workflow.mdc](mdc:chatlima/feature-release-workflow.mdc):
 
 1. **Create branch** using this workflow
 2. **Develop feature** following the guidelines here
@@ -268,4 +321,4 @@ This workflow is designed to work seamlessly with the [feature-release-workflow.
 - [ ] Documentation is updated
 - [ ] No merge conflicts with main
 - [ ] Feature has been tested in development environment
-- [ ] Ready to follow the [feature-release-workflow.mdc](mdc:feature-release-workflow.mdc)
+- [ ] Ready to follow the [feature-release-workflow.mdc](mdc:chatlima/feature-release-workflow.mdc)

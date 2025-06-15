@@ -8,13 +8,42 @@ import { polar as polarPlugin } from '@polar-sh/better-auth';
 import { count, eq, and, gte } from 'drizzle-orm';
 import { getRemainingCreditsByExternalId } from './polar';
 
+// Dynamic Google OAuth configuration based on environment
+const getGoogleOAuthConfig = () => {
+    const isProduction = process.env.NODE_ENV === 'production' &&
+        process.env.VERCEL_ENV === 'production';
 
-if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
-    throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID environment variable');
-}
-if (!process.env.GOOGLE_CLIENT_SECRET) {
-    throw new Error('Missing GOOGLE_CLIENT_SECRET environment variable');
-}
+    if (isProduction) {
+        // Production OAuth app
+        if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD) {
+            throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD environment variable');
+        }
+        if (!process.env.GOOGLE_CLIENT_SECRET_PROD) {
+            throw new Error('Missing GOOGLE_CLIENT_SECRET_PROD environment variable');
+        }
+        const config = {
+            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET_PROD,
+        };
+        console.log('🔐 Using PRODUCTION Google OAuth client:', config.clientId);
+        return config;
+    } else {
+        // Development/Preview OAuth app
+        if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV) {
+            throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV environment variable');
+        }
+        if (!process.env.GOOGLE_CLIENT_SECRET_DEV) {
+            throw new Error('Missing GOOGLE_CLIENT_SECRET_DEV environment variable');
+        }
+        const config = {
+            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET_DEV,
+        };
+        console.log('🔐 Using DEVELOPMENT Google OAuth client:', config.clientId);
+        return config;
+    }
+};
+
 if (!process.env.AUTH_SECRET) {
     throw new Error('Missing AUTH_SECRET environment variable');
 }
@@ -28,14 +57,45 @@ if (!process.env.SUCCESS_URL) {
     throw new Error('Missing SUCCESS_URL environment variable');
 }
 
-// Force Polar to always use sandbox environment (even in production)
-// Only use production if explicitly set via POLAR_SERVER_ENV=production
+// Polar server environment configuration
+// Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
 const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
 
 const polarClient = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN,
-    server: polarServerEnv, // Use the determined server environment
+    server: polarServerEnv,
 });
+
+// Dynamic trusted origins based on environment
+const getTrustedOrigins = () => {
+    const origins = [
+        'http://localhost:3000',
+        'https://www.chatlima.com'
+    ];
+
+    // Add Vercel preview URLs
+    if (process.env.VERCEL_URL) {
+        origins.push(`https://${process.env.VERCEL_URL}`);
+    }
+
+    // Add any Vercel deployment URLs (for preview deployments)
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+        origins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+    }
+
+    // Allow all *.vercel.app domains for previews
+    origins.push('https://*.vercel.app');
+
+    // Add any custom preview domain if specified
+    if (process.env.PREVIEW_DOMAIN) {
+        origins.push(`https://${process.env.PREVIEW_DOMAIN}`);
+        origins.push(`https://*.${process.env.PREVIEW_DOMAIN}`);
+    }
+
+    console.log('🔐 Auth trusted origins configured:', origins);
+
+    return origins;
+};
 
 export const auth = betterAuth({
     database: drizzleAdapter(db, {
@@ -61,14 +121,14 @@ export const auth = betterAuth({
             // If your expires column was different, you'd map expiresAt here too
         }
     },
-    trustedOrigins: ['http://localhost:3000', 'https://www.chatlima.com'],
+    trustedOrigins: getTrustedOrigins(),
     socialProviders: {
         google: {
-            clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            ...getGoogleOAuthConfig(),
             // Set higher message limit for authenticated users
             onAccountCreated: async ({ user }: { user: any }) => {
-                console.log('[Google Provider] onAccountCreated: Triggered for user', user.id);
+                const oauthConfig = getGoogleOAuthConfig();
+                console.log('[Google Provider] onAccountCreated: Triggered for user', user.id, 'using client:', oauthConfig.clientId);
                 // Update user metadata to add higher message limit
                 await db.update(schema.users)
                     .set({

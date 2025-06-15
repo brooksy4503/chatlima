@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { signIn, signOut, useSession } from '@/lib/auth-client';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unauthenticated';
@@ -12,6 +12,9 @@ interface AuthUser {
     messageLimit?: number;
     messageRemaining?: number;
     hasSubscription?: boolean;
+    credits?: number;
+    hasCredits?: boolean;
+    usedCredits?: boolean;
 }
 
 export function useAuth() {
@@ -62,6 +65,33 @@ export function useAuth() {
         }
     }, [session, isPending]);
 
+    // Get message usage data
+    const refreshMessageUsage = useCallback(async () => {
+        try {
+            const response = await fetch('/api/usage/messages');
+            if (response.ok) {
+                const data = await response.json();
+                setUser(prev => prev ? {
+                    ...prev,
+                    messageLimit: data.limit,
+                    messageRemaining: data.remaining,
+                    credits: data.credits,
+                    hasCredits: data.hasCredits,
+                    usedCredits: data.usedCredits
+                } : null);
+            }
+        } catch (err) {
+            console.error('Failed to fetch message usage:', err);
+        }
+    }, []);
+
+    // Auto-fetch credit information when user is available (for both authenticated and anonymous users)
+    useEffect(() => {
+        if (user && user.credits === undefined && (status === 'authenticated' || status === 'anonymous')) {
+            refreshMessageUsage();
+        }
+    }, [user?.id, status]); // Removed refreshMessageUsage from dependency array to prevent re-runs during hot reload
+
     // Sign in with Google
     const handleSignIn = async () => {
         try {
@@ -88,24 +118,7 @@ export function useAuth() {
         }
     };
 
-    // Get message usage data
-    const refreshMessageUsage = async () => {
-        if (!user) return;
 
-        try {
-            const response = await fetch('/api/usage/messages');
-            if (response.ok) {
-                const data = await response.json();
-                setUser(prev => prev ? {
-                    ...prev,
-                    messageLimit: data.limit,
-                    messageRemaining: data.remaining
-                } : null);
-            }
-        } catch (err) {
-            console.error('Failed to fetch message usage:', err);
-        }
-    };
 
     return {
         status,
