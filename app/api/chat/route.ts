@@ -211,9 +211,23 @@ export async function POST(req: Request) {
   }
 
   // 2.5. Check Web Search credit requirement - ensure user has enough credits for web search (skip if using own API keys)
-  if (webSearch.enabled && !isUsingOwnApiKeys) {
+
+  // SECURITY FIX: Don't trust client's webSearch.enabled, determine server-side
+  let serverSideWebSearchEnabled = false;
+
+  // Only enable web search if user actually has credits AND not anonymous AND not using own keys
+  if (!isUsingOwnApiKeys && !isAnonymous && actualCredits !== null && actualCredits >= WEB_SEARCH_COST) {
+    // User has sufficient credits, allow them to use web search if requested
+    serverSideWebSearchEnabled = webSearch.enabled;
+  } else if (isUsingOwnApiKeys && webSearch.enabled) {
+    // Users with own API keys can use web search if they requested it
+    serverSideWebSearchEnabled = true;
+  }
+
+  // Block unpaid attempts
+  if (webSearch.enabled && !serverSideWebSearchEnabled) {
     if (isAnonymous) {
-      console.log(`[Debug] Anonymous user ${userId} tried to use Web Search, blocking request`);
+      console.log(`[Security] Anonymous user ${userId} tried to use Web Search, blocking request`);
       return createErrorResponse(
         "FEATURE_RESTRICTED",
         "Web Search is only available to signed-in users with credits. Please sign in and purchase credits to use this feature.",
@@ -223,15 +237,21 @@ export async function POST(req: Request) {
     }
 
     if (actualCredits !== null && actualCredits < WEB_SEARCH_COST) {
-      console.log(`[Debug] User ${userId} wants to use Web Search but has insufficient credits (${actualCredits} < ${WEB_SEARCH_COST})`);
+      console.log(`[Security] User ${userId} tried to bypass Web Search payment (${actualCredits} < ${WEB_SEARCH_COST})`);
       return createErrorResponse(
         "INSUFFICIENT_CREDITS",
         `You need at least ${WEB_SEARCH_COST} credits to use Web Search. Your balance is ${actualCredits}.`,
         402,
-        `User has ${actualCredits} credits but needs ${WEB_SEARCH_COST} for Web Search`
+        `User attempted to bypass Web Search payment with ${actualCredits} credits`
       );
     }
   }
+
+  // Use server-determined web search status instead of client's request
+  const secureWebSearch = {
+    enabled: serverSideWebSearchEnabled,
+    contextSize: webSearch.contextSize
+  };
 
   // 3. If user has credits or is using own API keys, allow request (skip daily message limit)
   console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys}`);
@@ -485,18 +505,18 @@ export async function POST(req: Request) {
   console.log("parts", messages.map(m => m.parts.map(p => p)));
 
   // Log web search status
-  if (webSearch.enabled) {
-    console.log(`[Web Search] ENABLED with context size: ${webSearch.contextSize}`);
+  if (secureWebSearch.enabled) {
+    console.log(`[Web Search] ENABLED with context size: ${secureWebSearch.contextSize}`);
   } else {
     console.log(`[Web Search] DISABLED`);
   }
 
   let modelInstance;
-  let effectiveWebSearchEnabled = webSearch.enabled; // Initialize with requested value
+  let effectiveWebSearchEnabled = secureWebSearch.enabled; // Initialize with requested value
 
   // Check if the selected model supports web search
   const currentModelDetails = modelDetails[selectedModel];
-  if (webSearch.enabled && selectedModel.startsWith("openrouter/")) {
+  if (secureWebSearch.enabled && selectedModel.startsWith("openrouter/")) {
     if (currentModelDetails?.supportsWebSearch === true) {
       // Model supports web search, use :online variant
       const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
@@ -523,7 +543,7 @@ export async function POST(req: Request) {
     }
   } else {
     // Web search not enabled in request or model is not an OpenRouter model
-    if (webSearch.enabled) {
+    if (secureWebSearch.enabled) {
       console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
     }
     effectiveWebSearchEnabled = false;
@@ -537,7 +557,7 @@ export async function POST(req: Request) {
 
   if (effectiveWebSearchEnabled) {
     modelOptions.web_search_options = {
-      search_context_size: webSearch.contextSize
+      search_context_size: secureWebSearch.contextSize
     };
   }
 
@@ -553,7 +573,21 @@ export async function POST(req: Request) {
     modelOptions.logprobs = false;
   }
 
-
+  // Enhanced security logging
+  if (webSearch.enabled && !serverSideWebSearchEnabled) {
+    console.error(`[SECURITY ALERT] User ${userId} attempted to bypass Web Search payment:`, {
+      userId,
+      isAnonymous,
+      actualCredits,
+      isUsingOwnApiKeys,
+      userAgent: req.headers.get('user-agent'),
+      requestTime: new Date().toISOString(),
+      sessionInfo: {
+        email: session.user.email,
+        name: session.user.name
+      }
+    });
+  }
 
   // Construct the payload for OpenRouter
   const openRouterPayload = {
@@ -657,7 +691,7 @@ export async function POST(req: Request) {
         dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
           ...msg,
           hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
-          webSearchContextSize: webSearch.enabled ? webSearch.contextSize : undefined // Store original request if needed, or effective
+          webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
         }));
       } catch (conversionError: any) {
         console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
@@ -746,7 +780,7 @@ export async function POST(req: Request) {
 
           // Calculate additional cost for web search - use webSearch from outer scope (it should be accessible)
           let additionalCost = 0;
-          if (webSearch.enabled && !callbackIsUsingOwnApiKeys && shouldDeductCredits) {
+          if (secureWebSearch.enabled && !callbackIsUsingOwnApiKeys && shouldDeductCredits) {
             additionalCost = WEB_SEARCH_COST;
           }
 
