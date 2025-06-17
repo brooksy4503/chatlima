@@ -141,7 +141,7 @@ export const Textarea = ({
         type={isStreaming ? "button" : "submit"}
         onClick={isStreaming ? stop : undefined}
         disabled={(!isStreaming && !input.trim()) || (isStreaming && status === "submitted")}
-        className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed transition-all duration-200"
+        className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
       >
         {isStreaming ? (
           <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
