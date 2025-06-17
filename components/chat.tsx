@@ -308,7 +308,7 @@ export default function Chat() {
       {/* Main content area: Either ProjectOverview or Messages */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-2">
         {messages.length === 0 && !isLoadingChat ? (
-          <div className="max-w-xl mx-auto w-full pt-4 sm:pt-8">
+          <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
             <ProjectOverview />
           </div>
         ) : (
@@ -317,10 +317,10 @@ export default function Chat() {
       </div>
 
       {/* Input area: Always rendered at the bottom */}
-      <div className="mt-2 w-full mx-auto mb-4 sm:mb-auto shrink-0">
+      <div className="mt-2 w-full max-w-3xl mx-auto mb-4 sm:mb-auto shrink-0">
         {/* Conditionally render ProjectOverview above input only when no messages and not loading */}
         {messages.length === 0 && !isLoadingChat && (
-          <div className="max-w-xl mx-auto w-full mb-4 sm:hidden"> {/* Hidden on sm+, shown on mobile */}
+          <div className="max-w-3xl mx-auto w-full mb-4 sm:hidden"> {/* Hidden on sm+, shown on mobile */}
             {/* Maybe a condensed overview or nothing here if ProjectOverview is too large */}
           </div>
         )}
