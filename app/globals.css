@@ -605,4 +605,88 @@
   .nature .katex {
     color: inherit;
   }
+
+  /* iOS Homescreen Shortcut Enhancements */
+
+  /* Safe area handling for iOS devices */
+  @supports (padding: env(safe-area-inset-left)) {
+    .safe-area-inset {
+      padding-top: env(safe-area-inset-top);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+    }
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  @media screen and (max-width: 768px) {
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Smooth scrolling behavior */
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Optimize touch targets for mobile */
+  @media (pointer: coarse) {
+
+    button,
+    [role="button"],
+    input[type="submit"],
+    input[type="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* PWA/Standalone mode detection */
+  @media (display-mode: standalone) {
+
+    /* Hide elements when running as PWA */
+    .hide-in-pwa {
+      display: none !important;
+    }
+
+    /* Adjust spacing for standalone mode */
+    body {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+
+  /* iOS-specific webkit optimizations */
+  @supports (-webkit-touch-callout: none) {
+
+    /* Disable callout menu on long press */
+    * {
+      -webkit-touch-callout: none;
+    }
+
+    /* Allow callout for specific elements where needed */
+    input,
+    textarea,
+    [contenteditable] {
+      -webkit-touch-callout: default;
+    }
+
+    /* Prevent highlighting */
+    .no-select {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Smooth momentum scrolling */
+    .scroll-smooth {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
 }
