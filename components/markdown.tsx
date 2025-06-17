@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const components: Partial<Components> = {
   pre: ({ children, ...props }) => (
-    <pre className="overflow-x-auto rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 p-2.5 my-1.5 text-sm" {...props}>
+    <pre className="overflow-x-auto max-w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 p-2.5 my-1.5 text-sm whitespace-pre-wrap break-words" {...props}>
       {children}
     </pre>
   ),
@@ -28,7 +28,7 @@ const components: Partial<Components> = {
       );
     }
     return (
-      <code className={cn("block font-mono text-sm", className)} {...props}>
+      <code className={cn("block font-mono text-sm whitespace-pre-wrap break-words max-w-full", className)} {...props}>
         {children}
       </code>
     );
