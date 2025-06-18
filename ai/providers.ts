@@ -182,6 +182,8 @@ const languageModels = {
   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": openrouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
   "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
   "openrouter/google/gemini-2.5-pro-preview": openrouterClient("google/gemini-2.5-pro-preview"),
+  "openrouter/google/gemini-2.5-pro": openrouterClient("google/gemini-2.5-pro"),
+  "openrouter/google/gemini-2.5-flash": openrouterClient("google/gemini-2.5-flash"),
   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
@@ -220,6 +222,8 @@ const languageModels = {
   "openrouter/anthropic/claude-sonnet-4": openrouterClient("anthropic/claude-sonnet-4"),
   "openrouter/anthropic/claude-opus-4": openrouterClient("anthropic/claude-opus-4"),
   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": openrouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
+  "openrouter/minimax/minimax-m1": openrouterClient("minimax/minimax-m1"),
+  "openrouter/minimax/minimax-m1:extended": openrouterClient("minimax/minimax-m1:extended"),
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
@@ -280,6 +284,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
     "openrouter/google/gemini-2.5-pro-preview-03-25": dynamicOpenRouterClient("google/gemini-2.5-pro-preview-03-25"),
     "openrouter/google/gemini-2.5-pro-preview": dynamicOpenRouterClient("google/gemini-2.5-pro-preview"),
+    "openrouter/google/gemini-2.5-pro": dynamicOpenRouterClient("google/gemini-2.5-pro"),
+    "openrouter/google/gemini-2.5-flash": dynamicOpenRouterClient("google/gemini-2.5-flash"),
     "openrouter/openai/gpt-4.1": dynamicOpenRouterClient("openai/gpt-4.1"),
     "openrouter/openai/gpt-4.1-mini": dynamicOpenRouterClient("openai/gpt-4.1-mini"),
     "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
@@ -309,6 +315,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     "openrouter/anthropic/claude-sonnet-4": dynamicOpenRouterClient("anthropic/claude-sonnet-4"),
     "openrouter/anthropic/claude-opus-4": dynamicOpenRouterClient("anthropic/claude-opus-4"),
     "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": dynamicOpenRouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
+    "openrouter/minimax/minimax-m1": dynamicOpenRouterClient("minimax/minimax-m1"),
+    "openrouter/minimax/minimax-m1:extended": dynamicOpenRouterClient("minimax/minimax-m1:extended"),
 
     // Requesty models
     "requesty/openai/gpt-4o": dynamicRequestyClient("openai/gpt-4o"),
@@ -469,6 +477,26 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true
+  },
+  "openrouter/google/gemini-2.5-pro": {
+    provider: "OpenRouter",
+    name: "Google Gemini 2.5 Pro",
+    description: "Google's state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. Achieves top-tier performance on multiple benchmarks with superior human-preference alignment.",
+    apiVersion: "google/gemini-2.5-pro",
+    capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
+  },
+  "openrouter/google/gemini-2.5-flash": {
+    provider: "OpenRouter",
+    name: "Google Gemini 2.5 Flash",
+    description: "Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in thinking capabilities, enabling it to provide responses with greater accuracy and nuanced context handling.",
+    apiVersion: "google/gemini-2.5-flash",
+    capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Thinking", "Multimodal"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/x-ai/grok-3-beta": {
     provider: "OpenRouter",
@@ -669,6 +697,26 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false
+  },
+  "openrouter/minimax/minimax-m1": {
+    provider: "OpenRouter",
+    name: "MiniMax M1",
+    description: "MiniMax-M1 is a large-scale, open-weight reasoning model designed for extended context and high-efficiency inference. With 456 billion total parameters and 45.9B active per token, it leverages a hybrid Mixture-of-Experts (MoE) architecture and custom 'lightning attention' mechanism, processing up to 1 million tokens while maintaining competitive FLOP efficiency.",
+    apiVersion: "minimax/minimax-m1",
+    capabilities: ["Long Context", "Reasoning", "Software Engineering", "Mathematical Reasoning", "Agentic Tool Use", "High Efficiency"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
+  },
+  "openrouter/minimax/minimax-m1:extended": {
+    provider: "OpenRouter",
+    name: "MiniMax M1 Extended",
+    description: "MiniMax-M1 Extended is a large-scale, open-weight reasoning model designed for extended context and high-efficiency inference. With 456 billion total parameters and 45.9B active per token, it leverages a hybrid Mixture-of-Experts (MoE) architecture and custom 'lightning attention' mechanism, processing up to 128,000 tokens while maintaining competitive FLOP efficiency.",
+    apiVersion: "minimax/minimax-m1:extended",
+    capabilities: ["Long Context", "Reasoning", "Software Engineering", "Mathematical Reasoning", "Agentic Tool Use", "High Efficiency"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
   },
   // Requesty model details
   "requesty/openai/gpt-4o": {
