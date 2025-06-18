@@ -4,7 +4,7 @@ Your task is to review the current codebase and fix the current issues.
 
 Current Issue:
 <issue>
-If there is an error while sending or receiving response to llm usually the user cannot continue the chat and requires a refresh before a new chat can be created
+The sidebar button an new chat button when viewd in mobile overlap text when scrolling thru message. It's hard to see because they float. What options do we have to fix this?
 </issue>
 
 Rules:
@@ -32,6 +32,7 @@ Begin fixing the codebase provide your solutions.
 My current codebase:
 <current_codebase>
 Project Structure:
+├── HOMESCREEN_SHORTCUT_PLAN.md
 ├── LICENSE
 ├── README.md
 ├── ai
@@ -53,6 +54,14 @@ Project Structure:
 │   │   │   ├── migrate
 │   │   │   │   └── route.ts
 │   │   │   └── route.ts
+│   │   ├── create-polar-customer
+│   │   │   └── route.ts
+│   │   ├── credits
+│   │   │   └── route.ts
+│   │   ├── debug-credits
+│   │   │   └── route.ts
+│   │   ├── portal
+│   │   │   └── route.ts
 │   │   ├── usage
 │   │   │   └── messages
 │   │   │       └── route.ts
@@ -62,6 +71,8 @@ Project Structure:
 │   │   └── [id]
 │   │       └── page.tsx
 │   ├── checkout
+│   │   ├── error
+│   │   │   └── page.tsx
 │   │   └── success
 │   │       └── page.tsx
 │   ├── globals.css
@@ -69,9 +80,15 @@ Project Structure:
 │   ├── opengraph-image.png
 │   ├── page.tsx
 │   ├── providers.tsx
+│   ├── robots.txt
+│   │   └── route.ts
+│   ├── sitemap.xml
+│   │   └── route.ts
 │   └── twitter-image.png
 ├── auth-schema.ts
+├── chatlima.code-workspace
 ├── codefetch
+│   ├── codebase.md
 │   └── prompts
 │       └── default.md
 ├── codefetch.config.mjs
@@ -84,15 +101,18 @@ Project Structure:
 │   ├── chat-list.tsx
 │   ├── chat-sidebar.tsx
 │   ├── chat.tsx
+│   ├── checkout-button.tsx
 │   ├── citation.tsx
 │   ├── copy-button.tsx
 │   ├── deploy-button.tsx
 │   ├── icons.tsx
 │   ├── input.tsx
+│   ├── ios-install-prompt.tsx
 │   ├── markdown.tsx
 │   ├── mcp-server-manager.tsx
 │   ├── message.tsx
 │   ├── messages.tsx
+│   ├── mobile
 │   ├── model-picker.tsx
 │   ├── project-overview.tsx
 │   ├── suggested-prompts.tsx
@@ -100,41 +120,32 @@ Project Structure:
 │   ├── theme-provider.tsx
 │   ├── theme-toggle.tsx
 │   ├── tool-invocation.tsx
-│   └── ui
-│       ├── BuildInfo.tsx
-│       ├── accordion.tsx
-│       ├── avatar.tsx
-│       ├── badge.tsx
-│       ├── button.tsx
-│       ├── card.tsx
-│       ├── dialog.tsx
-│       ├── dropdown-menu.tsx
-│       ├── input.tsx
-│       ├── label.tsx
-│       ├── popover.tsx
-│       ├── scroll-area.tsx
-│       ├── select.tsx
-│       ├── separator.tsx
-│       ├── sheet.tsx
-│       ├── sidebar.tsx
-│       ├── skeleton.tsx
-│       ├── sonner.tsx
-│       ├── switch.tsx
-│       ├── text-morph.tsx
-│       ├── textarea.tsx
-│       └── tooltip.tsx
+│   ├── ui
+│   │   ├── BuildInfo.tsx
+│   │   ├── accordion.tsx
+│   │   ├── avatar.tsx
+│   │   ├── badge.tsx
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── dialog.tsx
+│   │   ├── dropdown-menu.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── popover.tsx
+│   │   ├── scroll-area.tsx
+│   │   ├── select.tsx
+│   │   ├── separator.tsx
+│   │   ├── sheet.tsx
+│   │   ├── sidebar.tsx
+│   │   ├── skeleton.tsx
+│   │   ├── sonner.tsx
+│   │   ├── switch.tsx
+│   │   ├── text-morph.tsx
+│   │   ├── textarea.tsx
+│   │   └── tooltip.tsx
+│   └── web-search-suggestion.tsx
 ├── components.json
 ├── docs
-│   ├── client-side-chat-search-plan.md
-│   ├── deepseek_r1_openrouter_integration.md
-│   ├── feature_plan_rename_chat_title_sidebar.md
-│   ├── mcp_fetch_server_sse_deployment_plan.md
-│   ├── mem0ai_integration_plan.md
-│   ├── model-picker-infinite-loop-debugging.md
-│   ├── openrouter_web_search_integration_plan.md
-│   ├── polar-integration-plan.md
-│   ├── polar_external_id_integration_resolution.md
-│   └── uvx-mcp-server-issue.md
 ├── drizzle
 │   ├── 0000_supreme_rocket_raccoon.sql
 │   ├── 0001_curious_paper_doll.sql
@@ -211,20 +222,243 @@ Project Structure:
 ├── next-env.d.ts
 ├── next.config.ts
 ├── package.json
+├── playwright
+├── playwright-report
+│   ├── data
+│   │   ├── 46fa7c505fd617ddf34563badbcaa93e9b325a24.md
+│   │   ├── 68543ca30fcbaf77133168c4979b10ffe9f2174a.webm
+│   │   ├── bdf017e1bcc86645e8664bdd7f33085fcbce1f3f.png
+│   │   └── bfe39c3bf09ab2664064951fb21e5d877c273eb6.webm
+│   └── index.html
+├── playwright.config.ts
+├── playwright.local.config.ts
 ├── pnpm-lock.yaml
 ├── postcss.config.mjs
 ├── public
+│   ├── apple-touch-icon-120x120.png
+│   ├── apple-touch-icon-152x152.png
+│   ├── apple-touch-icon-167x167.png
+│   ├── apple-touch-icon-180x180.png
+│   ├── apple-touch-icon.png
 │   ├── file.svg
 │   ├── globe.svg
 │   ├── logo.png
+│   ├── manifest.json
 │   ├── next.svg
 │   ├── scira.png
 │   ├── vercel.svg
 │   └── window.svg
 ├── railpack.json
+├── releases
+│   ├── RELEASE_NOTES_v0.10.0.md
+│   ├── RELEASE_NOTES_v0.11.0.md
+│   ├── RELEASE_NOTES_v0.12.0.md
+│   ├── RELEASE_NOTES_v0.12.1.md
+│   ├── RELEASE_NOTES_v0.13.0.md
+│   ├── RELEASE_NOTES_v0.3.0.md
+│   ├── RELEASE_NOTES_v0.3.1.md
+│   ├── RELEASE_NOTES_v0.4.0.md
+│   ├── RELEASE_NOTES_v0.4.1.md
+│   ├── RELEASE_NOTES_v0.5.0.md
+│   ├── RELEASE_NOTES_v0.5.1.md
+│   ├── RELEASE_NOTES_v0.5.2.md
+│   ├── RELEASE_NOTES_v0.6.0.md
+│   ├── RELEASE_NOTES_v0.8.0.md
+│   ├── RELEASE_NOTES_v0.9.0.md
+│   └── RELEASE_NOTES_v0.9.1.md
 ├── reset_db.sql
-└── tsconfig.json
+├── scripts
+│   ├── README.md
+│   ├── analyze-openrouter-data.py
+│   └── openrouter-pricing-analysis.ts
+├── test-results
+│   ├── auth.local.setup.ts-authenticate-locally-local-setup
+│   │   ├── error-context.md
+│   │   ├── test-failed-1.png
+│   │   └── video.webm
+│   └── chatlima-anonymous-test-Ch-1876e-th-anonymous-authentication-local-anonymous-chromium
+│       ├── test-failed-1.png
+│       └── video.webm
+├── tests
+│   ├── README-TESTING.md
+│   ├── auth.local.setup.ts
+│   ├── auth.setup.ts
+│   ├── chatlima-anonymous-test.spec.ts
+│   └── chatlima-deepseek-test.spec.ts
+├── tsconfig.json
+└── tsconfig.tsbuildinfo
 
+
+HOMESCREEN_SHORTCUT_PLAN.md
+```
+1 | # Homescreen Shortcut Implementation Plan
+2 | 
+3 | ## Overview
+4 | Add iOS homescreen shortcut functionality to ChatLima without implementing full PWA features. This will allow users to add ChatLima as an icon on their iOS home screen for quick access with a native app-like experience.
+5 | 
+6 | ## Implementation Steps
+7 | 
+8 | ### 1. Apple Touch Icons
+9 | **Location**: `public/`
+10 | **Files to create**:
+11 | - `apple-touch-icon.png` (180x180px) - Default iOS icon
+12 | - `apple-touch-icon-120x120.png` (120x120px) - iPhone retina
+13 | - `apple-touch-icon-152x152.png` (152x152px) - iPad retina
+14 | - `apple-touch-icon-167x167.png` (167x167px) - iPad Pro
+15 | - `apple-touch-icon-180x180.png` (180x180px) - iPhone 6 Plus
+16 | 
+17 | **Design Requirements**:
+18 | - High-quality PNG format
+19 | - No transparency (iOS adds rounded corners automatically)
+20 | - Should match ChatLima branding
+21 | - Optimized for iOS icon guidelines
+22 | 
+23 | ### 2. Web App Manifest
+24 | **File**: `public/manifest.json`
+25 | **Content**:
+26 | ```json
+27 | {
+28 |   "name": "ChatLima",
+29 |   "short_name": "ChatLima",
+30 |   "description": "AI-powered chat interface",
+31 |   "start_url": "/",
+32 |   "display": "standalone",
+33 |   "background_color": "#ffffff",
+34 |   "theme_color": "#000000",
+35 |   "icons": [
+36 |     {
+37 |       "src": "/apple-touch-icon.png",
+38 |       "sizes": "180x180",
+39 |       "type": "image/png"
+40 |     }
+41 |   ]
+42 | }
+43 | ```
+44 | 
+45 | ### 3. Meta Tags Implementation
+46 | **File**: `app/layout.tsx`
+47 | **Add to head section**:
+48 | ```html
+49 | <!-- iOS Homescreen Shortcut Meta Tags -->
+50 | <meta name="apple-mobile-web-app-capable" content="yes" />
+51 | <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+52 | <meta name="apple-mobile-web-app-title" content="ChatLima" />
+53 | <meta name="format-detection" content="telephone=no" />
+54 | <meta name="mobile-web-app-capable" content="yes" />
+55 | 
+56 | <!-- Apple Touch Icons -->
+57 | <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+58 | <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png" />
+59 | <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+60 | <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
+61 | <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
+62 | 
+63 | <!-- Manifest -->
+64 | <link rel="manifest" href="/manifest.json" />
+65 | ```
+66 | 
+67 | ### 4. iOS Detection and "Add to Home Screen" Prompt
+68 | **File**: `components/ios-install-prompt.tsx`
+69 | **Features**:
+70 | - Detect iOS Safari browser
+71 | - Check if already added to home screen
+72 | - Show subtle prompt to add to home screen
+73 | - Dismiss functionality with localStorage persistence
+74 | - Non-intrusive design that matches ChatLima UI
+75 | 
+76 | **Implementation approach**:
+77 | - Use `navigator.userAgent` for iOS detection
+78 | - Use `window.matchMedia('(display-mode: standalone)')` to detect if already installed
+79 | - Show prompt after user interaction (not immediately on load)
+80 | - Include clear instructions for adding to home screen
+81 | 
+82 | ### 5. Enhanced Mobile Experience
+83 | **Files to modify**:
+84 | - `app/globals.css` - Add iOS-specific styles
+85 | - `app/layout.tsx` - Ensure proper viewport settings
+86 | 
+87 | **iOS-specific enhancements**:
+88 | - Proper safe area handling for notched devices
+89 | - Optimized touch targets
+90 | - Prevent zoom on input focus
+91 | - Smooth scrolling behavior
+92 | 
+93 | ### 6. Testing Checklist
+94 | **iOS Safari Testing**:
+95 | - [ ] Icons appear correctly in "Add to Home Screen" dialog
+96 | - [ ] App launches from home screen with correct title
+97 | - [ ] Status bar appears correctly
+98 | - [ ] No address bar when launched from home screen
+99 | - [ ] Touch interactions work smoothly
+100 | - [ ] Safe areas are respected on newer iPhones
+101 | - [ ] Prompt appears and dismisses correctly
+102 | 
+103 | **Devices to test**:
+104 | - iPhone (various sizes)
+105 | - iPad
+106 | - Different iOS versions (iOS 14+)
+107 | 
+108 | ### 7. Implementation Order
+109 | 1. **Create icon assets** - Design and export all required icon sizes
+110 | 2. **Add manifest.json** - Basic manifest file with icon references
+111 | 3. **Update layout.tsx** - Add all necessary meta tags
+112 | 4. **Create iOS install prompt component** - User-friendly installation prompt
+113 | 5. **Add CSS enhancements** - iOS-specific styling improvements
+114 | 6. **Testing phase** - Comprehensive testing on iOS devices
+115 | 7. **Documentation** - Update README with homescreen shortcut info
+116 | 
+117 | ### 8. Technical Considerations
+118 | **Performance**:
+119 | - Icons should be optimized for file size
+120 | - Lazy load the install prompt component
+121 | - Minimal impact on initial page load
+122 | 
+123 | **User Experience**:
+124 | - Prompt should be contextual and non-annoying
+125 | - Clear value proposition for adding to home screen
+126 | - Easy dismissal with memory of user preference
+127 | 
+128 | **Maintenance**:
+129 | - Icons should be easily updatable
+130 | - Consider automating icon generation from source
+131 | - Document icon requirements for future updates
+132 | 
+133 | ### 9. Future Enhancements (Optional)
+134 | - Analytics for homescreen usage
+135 | - Custom splash screen (if desired later)
+136 | - Push notification setup (requires service worker)
+137 | - Offline functionality (would move toward PWA territory)
+138 | 
+139 | ## Files to Create/Modify
+140 | 
+141 | ### New Files:
+142 | - `public/apple-touch-icon.png` (and variants)
+143 | - `public/manifest.json`
+144 | - `components/ios-install-prompt.tsx`
+145 | - `HOMESCREEN_SHORTCUT_PLAN.md` (this file)
+146 | 
+147 | ### Files to Modify:
+148 | - `app/layout.tsx` - Add meta tags and manifest link
+149 | - `app/globals.css` - iOS-specific styles
+150 | - `components/ui/` - Potentially add install prompt to main layout
+151 | 
+152 | ## Success Metrics
+153 | - Users can successfully add ChatLima to iOS home screen
+154 | - Homescreen shortcut launches correctly with proper branding
+155 | - No negative impact on existing functionality
+156 | - Positive user feedback on mobile experience
+157 | - Increased mobile engagement (measurable via analytics)
+158 | 
+159 | ## Timeline Estimate
+160 | - **Icon creation**: 1-2 hours
+161 | - **Manifest and meta tags**: 1 hour
+162 | - **Install prompt component**: 2-3 hours
+163 | - **iOS-specific styling**: 1-2 hours
+164 | - **Testing and refinement**: 2-3 hours
+165 | - **Total**: 7-11 hours
+166 | 
+167 | This plan provides iOS homescreen shortcut functionality without the complexity of a full PWA implementation, focusing specifically on the native app-like access the user requested. 
+```
 
 auth-schema.ts
 ```
@@ -276,6 +510,36 @@ auth-schema.ts
 46 |  createdAt: timestamp('created_at'),
 47 |  updatedAt: timestamp('updated_at')
 48 | 				});
+```
+
+chatlima.code-workspace
+```
+1 | {
+2 |     "folders": [
+3 |         {
+4 |             "name": "chatlima",
+5 |             "path": "."
+6 |         },
+7 |         {
+8 |             "name": "chatlima-docs",
+9 |             "path": "../chatlima-docs"
+10 |         }
+11 |     ],
+12 |     "settings": {
+13 |         "typescript.preferences.includePackageJsonAutoImports": "auto",
+14 |         "editor.formatOnSave": true,
+15 |         "editor.codeActionsOnSave": {
+16 |             "source.fixAll.eslint": "explicit"
+17 |         }
+18 |     },
+19 |     "extensions": {
+20 |         "recommendations": [
+21 |             "bradlc.vscode-tailwindcss",
+22 |             "esbenp.prettier-vscode",
+23 |             "dbaeumer.vscode-eslint"
+24 |         ]
+25 |     }
+26 | }
 ```
 
 codefetch.config.mjs
@@ -380,89 +644,242 @@ package.json
 ```
 1 | {
 2 |   "name": "chatlima",
-3 |   "version": "0.1.0",
+3 |   "version": "0.13.0",
 4 |   "private": true,
 5 |   "scripts": {
 6 |     "dev": "next dev --turbopack",
 7 |     "build": "next build --turbopack",
 8 |     "start": "next start",
 9 |     "lint": "next lint",
-10 |     "db:generate": "drizzle-kit generate",
-11 |     "db:migrate": "drizzle-kit migrate",
-12 |     "db:push": "drizzle-kit push",
-13 |     "db:studio": "drizzle-kit studio"
-14 |   },
-15 |   "dependencies": {
-16 |     "@ai-sdk/anthropic": "^1.2.10",
-17 |     "@ai-sdk/cohere": "^1.2.9",
-18 |     "@ai-sdk/google": "^1.2.12",
-19 |     "@ai-sdk/groq": "^1.2.8",
-20 |     "@ai-sdk/openai": "^1.3.16",
-21 |     "@ai-sdk/react": "^1.2.9",
-22 |     "@ai-sdk/ui-utils": "^1.2.10",
-23 |     "@ai-sdk/xai": "^1.2.14",
-24 |     "@neondatabase/serverless": "^1.0.0",
-25 |     "@openrouter/ai-sdk-provider": "^0.4.5",
-26 |     "@polar-sh/better-auth": "^0.1.1",
-27 |     "@polar-sh/nextjs": "^0.4.0",
-28 |     "@polar-sh/sdk": "^0.32.13",
-29 |     "@radix-ui/react-accordion": "^1.2.7",
-30 |     "@radix-ui/react-avatar": "^1.1.6",
-31 |     "@radix-ui/react-dialog": "^1.1.10",
-32 |     "@radix-ui/react-dropdown-menu": "^2.1.11",
-33 |     "@radix-ui/react-label": "^2.1.3",
-34 |     "@radix-ui/react-popover": "^1.1.10",
-35 |     "@radix-ui/react-scroll-area": "^1.2.5",
-36 |     "@radix-ui/react-select": "^2.1.7",
-37 |     "@radix-ui/react-separator": "^1.1.4",
-38 |     "@radix-ui/react-slot": "^1.2.0",
-39 |     "@radix-ui/react-switch": "^1.2.2",
-40 |     "@radix-ui/react-tooltip": "^1.2.3",
-41 |     "@tanstack/react-query": "^5.74.4",
-42 |     "@vercel/otel": "^1.11.0",
-43 |     "ai": "^4.3.9",
-44 |     "better-auth": "^1.2.7",
-45 |     "class-variance-authority": "^0.7.1",
-46 |     "clsx": "^2.1.1",
-47 |     "drizzle-orm": "^0.42.0",
-48 |     "fast-deep-equal": "^3.1.3",
-49 |     "framer-motion": "^12.7.4",
-50 |     "groq-sdk": "^0.19.0",
-51 |     "lucide-react": "^0.488.0",
-52 |     "motion": "^12.7.3",
-53 |     "nanoid": "^5.1.5",
-54 |     "next": "^15.3.1",
-55 |     "next-themes": "^0.4.6",
-56 |     "or": "^0.2.0",
-57 |     "pg": "^8.14.1",
-58 |     "react": "^19.1.0",
-59 |     "react-dom": "^19.1.0",
-60 |     "react-markdown": "^10.1.0",
-61 |     "remark-gfm": "^4.0.1",
-62 |     "sonner": "^2.0.3",
-63 |     "tailwind-merge": "^3.2.0",
-64 |     "tailwindcss-animate": "^1.0.7",
-65 |     "zod": "^3.24.2"
-66 |   },
-67 |   "devDependencies": {
-68 |     "@better-auth/cli": "^1.2.7",
-69 |     "@eslint/eslintrc": "^3.3.1",
-70 |     "@tailwindcss/postcss": "^4.1.4",
-71 |     "@types/node": "^22.14.1",
-72 |     "@types/pg": "^8.11.13",
-73 |     "@types/react": "^19.1.2",
-74 |     "@types/react-dom": "^19.1.2",
-75 |     "dotenv": "^16.5.0",
-76 |     "dotenv-cli": "^8.0.0",
-77 |     "drizzle-kit": "^0.31.0",
-78 |     "esbuild": ">=0.25.0",
-79 |     "eslint": "^9.24.0",
-80 |     "eslint-config-next": "15.3.0",
-81 |     "pg-pool": "^3.8.0",
-82 |     "tailwindcss": "^4.1.4",
-83 |     "typescript": "^5.8.3"
-84 |   }
-85 | }
+10 |     "test": "playwright test --config=playwright.local.config.ts",
+11 |     "test:ui": "playwright test --ui",
+12 |     "test:debug": "playwright test --debug",
+13 |     "test:headed": "playwright test --headed",
+14 |     "test:local": "playwright test --config=playwright.local.config.ts",
+15 |     "test:local:ui": "playwright test --config=playwright.local.config.ts --ui",
+16 |     "test:local:debug": "playwright test --config=playwright.local.config.ts --debug",
+17 |     "test:local:headed": "playwright test --config=playwright.local.config.ts --headed",
+18 |     "test:anonymous": "playwright test --project=local-anonymous-chromium --config=playwright.local.config.ts",
+19 |     "db:generate": "drizzle-kit generate",
+20 |     "db:migrate": "drizzle-kit migrate",
+21 |     "db:push": "drizzle-kit push",
+22 |     "db:studio": "drizzle-kit studio",
+23 |     "pricing:analysis": "npx tsx scripts/openrouter-pricing-analysis.ts"
+24 |   },
+25 |   "dependencies": {
+26 |     "@ai-sdk/anthropic": "^1.2.10",
+27 |     "@ai-sdk/cohere": "^1.2.9",
+28 |     "@ai-sdk/google": "^1.2.12",
+29 |     "@ai-sdk/groq": "^1.2.8",
+30 |     "@ai-sdk/openai": "^1.3.16",
+31 |     "@ai-sdk/react": "^1.2.9",
+32 |     "@ai-sdk/ui-utils": "^1.2.10",
+33 |     "@ai-sdk/xai": "^1.2.14",
+34 |     "@modelcontextprotocol/sdk": "^1.12.0",
+35 |     "@neondatabase/serverless": "^1.0.0",
+36 |     "@openrouter/ai-sdk-provider": "^0.4.5",
+37 |     "@polar-sh/better-auth": "^0.1.1",
+38 |     "@polar-sh/nextjs": "^0.4.0",
+39 |     "@polar-sh/sdk": "^0.32.13",
+40 |     "@radix-ui/react-accordion": "^1.2.7",
+41 |     "@radix-ui/react-avatar": "^1.1.6",
+42 |     "@radix-ui/react-dialog": "^1.1.10",
+43 |     "@radix-ui/react-dropdown-menu": "^2.1.11",
+44 |     "@radix-ui/react-label": "^2.1.3",
+45 |     "@radix-ui/react-popover": "^1.1.10",
+46 |     "@radix-ui/react-scroll-area": "^1.2.5",
+47 |     "@radix-ui/react-select": "^2.1.7",
+48 |     "@radix-ui/react-separator": "^1.1.4",
+49 |     "@radix-ui/react-slot": "^1.2.0",
+50 |     "@radix-ui/react-switch": "^1.2.2",
+51 |     "@radix-ui/react-tooltip": "^1.2.3",
+52 |     "@requesty/ai-sdk": "^0.0.7",
+53 |     "@tanstack/react-query": "^5.74.4",
+54 |     "@vercel/otel": "^1.11.0",
+55 |     "ai": "^4.3.9",
+56 |     "better-auth": "^1.2.7",
+57 |     "class-variance-authority": "^0.7.1",
+58 |     "clsx": "^2.1.1",
+59 |     "drizzle-orm": "^0.42.0",
+60 |     "fast-deep-equal": "^3.1.3",
+61 |     "framer-motion": "^12.7.4",
+62 |     "groq-sdk": "^0.19.0",
+63 |     "katex": "^0.16.22",
+64 |     "lucide-react": "^0.488.0",
+65 |     "motion": "^12.7.3",
+66 |     "nanoid": "^5.1.5",
+67 |     "next": "^15.3.1",
+68 |     "next-themes": "^0.4.6",
+69 |     "or": "^0.2.0",
+70 |     "pg": "^8.14.1",
+71 |     "react": "^19.1.0",
+72 |     "react-dom": "^19.1.0",
+73 |     "react-markdown": "^10.1.0",
+74 |     "rehype-katex": "^7.0.1",
+75 |     "remark-gfm": "^4.0.1",
+76 |     "remark-math": "^6.0.0",
+77 |     "sonner": "^2.0.3",
+78 |     "tailwind-merge": "^3.2.0",
+79 |     "tailwindcss-animate": "^1.0.7",
+80 |     "zod": "^3.24.2"
+81 |   },
+82 |   "devDependencies": {
+83 |     "@better-auth/cli": "^1.2.7",
+84 |     "@eslint/eslintrc": "^3.3.1",
+85 |     "@playwright/test": "^1.48.0",
+86 |     "@tailwindcss/postcss": "^4.1.4",
+87 |     "@types/node": "^22.14.1",
+88 |     "@types/pg": "^8.11.13",
+89 |     "@types/react": "^19.1.2",
+90 |     "@types/react-dom": "^19.1.2",
+91 |     "dotenv": "^16.5.0",
+92 |     "dotenv-cli": "^8.0.0",
+93 |     "drizzle-kit": "^0.31.0",
+94 |     "esbuild": ">=0.25.0",
+95 |     "eslint": "^9.24.0",
+96 |     "eslint-config-next": "15.3.0",
+97 |     "pg-pool": "^3.8.0",
+98 |     "tailwindcss": "^4.1.4",
+99 |     "tsx": "^4.19.4",
+100 |     "typescript": "^5.8.3"
+101 |   }
+102 | }
+```
+
+playwright.config.ts
+```
+1 | import { defineConfig, devices } from '@playwright/test';
+2 | 
+3 | export default defineConfig({
+4 |     testDir: './tests',
+5 |     fullyParallel: true,
+6 |     forbidOnly: !!process.env.CI,
+7 |     retries: process.env.CI ? 2 : 0,
+8 |     workers: process.env.CI ? 1 : undefined,
+9 |     reporter: 'html',
+10 | 
+11 |     use: {
+12 |         baseURL: 'https://preview.chatlima.com',
+13 |         trace: 'on-first-retry',
+14 |         screenshot: 'only-on-failure',
+15 |         video: 'retain-on-failure',
+16 |     },
+17 | 
+18 |     projects: [
+19 |         // Setup project to authenticate once (only for authenticated tests)
+20 |         {
+21 |             name: 'setup',
+22 |             testMatch: /.*\.setup\.ts/,
+23 |         },
+24 | 
+25 |         // Anonymous user tests (no auth required)
+26 |         {
+27 |             name: 'anonymous-chromium',
+28 |             use: {
+29 |                 ...devices['Desktop Chrome'],
+30 |             },
+31 |             testMatch: /.*anonymous.*\.spec\.ts/,
+32 |         },
+33 | 
+34 |         // Authenticated user tests (require auth setup)
+35 |         {
+36 |             name: 'authenticated-chromium',
+37 |             use: {
+38 |                 ...devices['Desktop Chrome'],
+39 |                 // Use the authenticated state
+40 |                 storageState: 'playwright/.auth/user.json',
+41 |             },
+42 |             dependencies: ['setup'],
+43 |             testMatch: /.*deepseek.*\.spec\.ts/,
+44 |         },
+45 |         {
+46 |             name: 'authenticated-firefox',
+47 |             use: {
+48 |                 ...devices['Desktop Firefox'],
+49 |                 // Use the authenticated state
+50 |                 storageState: 'playwright/.auth/user.json',
+51 |             },
+52 |             dependencies: ['setup'],
+53 |             testMatch: /.*deepseek.*\.spec\.ts/,
+54 |         },
+55 |         {
+56 |             name: 'authenticated-webkit',
+57 |             use: {
+58 |                 ...devices['Desktop Safari'],
+59 |                 // Use the authenticated state
+60 |                 storageState: 'playwright/.auth/user.json',
+61 |             },
+62 |             dependencies: ['setup'],
+63 |             testMatch: /.*deepseek.*\.spec\.ts/,
+64 |         },
+65 |     ],
+66 | 
+67 |     webServer: {
+68 |         command: 'echo "Using external ChatLima server"',
+69 |         url: 'https://preview.chatlima.com',
+70 |         reuseExistingServer: true,
+71 |         timeout: 120 * 1000,
+72 |     },
+73 | }); 
+```
+
+playwright.local.config.ts
+```
+1 | import { defineConfig, devices } from '@playwright/test';
+2 | 
+3 | export default defineConfig({
+4 |     testDir: './tests',
+5 |     fullyParallel: true,
+6 |     forbidOnly: !!process.env.CI,
+7 |     retries: process.env.CI ? 2 : 0,
+8 |     workers: process.env.CI ? 1 : undefined,
+9 |     reporter: 'html',
+10 | 
+11 |     use: {
+12 |         baseURL: 'http://localhost:3000',
+13 |         trace: 'on-first-retry',
+14 |         screenshot: 'only-on-failure',
+15 |         video: 'retain-on-failure',
+16 |     },
+17 | 
+18 |     projects: [
+19 |         // Setup project to authenticate once (only for authenticated tests)
+20 |         {
+21 |             name: 'local-setup',
+22 |             testMatch: /.*local\.setup\.ts/,
+23 |         },
+24 | 
+25 |         // Anonymous user tests (no auth required)
+26 |         {
+27 |             name: 'local-anonymous-chromium',
+28 |             use: {
+29 |                 ...devices['Desktop Chrome'],
+30 |             },
+31 |             testMatch: /.*anonymous.*\.spec\.ts/,
+32 |         },
+33 | 
+34 |         // Authenticated user tests (require auth setup)
+35 |         {
+36 |             name: 'local-authenticated-chromium',
+37 |             use: {
+38 |                 ...devices['Desktop Chrome'],
+39 |                 // Use the authenticated state
+40 |                 storageState: 'playwright/.auth/local-user.json',
+41 |             },
+42 |             dependencies: ['local-setup'],
+43 |             testMatch: /.*deepseek.*\.spec\.ts/,
+44 |         },
+45 |     ],
+46 | 
+47 |     webServer: {
+48 |         command: 'pnpm dev',
+49 |         url: 'http://localhost:3000',
+50 |         reuseExistingServer: !process.env.CI,
+51 |         stdout: 'ignore',
+52 |         stderr: 'pipe',
+53 |         timeout: 120 * 1000,
+54 |     },
+55 | }); 
 ```
 
 postcss.config.mjs
@@ -542,6 +959,15 @@ tsconfig.json
 27 | }
 ```
 
+.cursor/environment.json
+```
+1 | {
+2 |   "install": "pnpm install",
+3 |   "start": "pnpm run dev",
+4 |   "terminals": []
+5 | }
+```
+
 ai/providers.ts
 ```
 1 | import { createOpenAI } from "@ai-sdk/openai";
@@ -549,331 +975,744 @@ ai/providers.ts
 3 | import { createAnthropic } from "@ai-sdk/anthropic";
 4 | import { createXai } from "@ai-sdk/xai";
 5 | import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-6 | 
-7 | import {
-8 |   customProvider,
-9 |   wrapLanguageModel,
-10 |   extractReasoningMiddleware
-11 | } from "ai";
-12 | 
-13 | export interface ModelInfo {
-14 |   provider: string;
-15 |   name: string;
-16 |   description: string;
-17 |   apiVersion: string;
-18 |   capabilities: string[];
-19 |   enabled?: boolean;
-20 | }
-21 | 
-22 | const middleware = extractReasoningMiddleware({
-23 |   tagName: 'think',
-24 | });
-25 | 
-26 | const deepseekR1Middleware = extractReasoningMiddleware({
-27 |   tagName: 'think',
-28 | });
-29 | 
-30 | // Helper to get API keys from environment variables first, then localStorage
-31 | export const getApiKey = (key: string): string | undefined => {
-32 |   // Check for environment variables first
-33 |   if (process.env[key]) {
-34 |     return process.env[key] || undefined;
-35 |   }
-36 | 
-37 |   // Fall back to localStorage if available
-38 |   if (typeof window !== 'undefined') {
-39 |     return window.localStorage.getItem(key) || undefined;
-40 |   }
-41 | 
-42 |   return undefined;
-43 | };
+6 | import { createRequesty } from "@requesty/ai-sdk";
+7 | 
+8 | import {
+9 |   customProvider,
+10 |   wrapLanguageModel,
+11 |   extractReasoningMiddleware
+12 | } from "ai";
+13 | 
+14 | export interface ModelInfo {
+15 |   provider: string;
+16 |   name: string;
+17 |   description: string;
+18 |   apiVersion: string;
+19 |   capabilities: string[];
+20 |   enabled?: boolean;
+21 |   supportsWebSearch?: boolean;
+22 |   premium?: boolean;
+23 | }
+24 | 
+25 | const middleware = extractReasoningMiddleware({
+26 |   tagName: 'think',
+27 | });
+28 | 
+29 | const deepseekR1Middleware = extractReasoningMiddleware({
+30 |   tagName: 'think',
+31 | });
+32 | 
+33 | // Helper to get API keys from environment variables first, then localStorage
+34 | export const getApiKey = (key: string): string | undefined => {
+35 |   // Check for environment variables first
+36 |   if (process.env[key]) {
+37 |     return process.env[key] || undefined;
+38 |   }
+39 | 
+40 |   // Fall back to localStorage if available
+41 |   if (typeof window !== 'undefined') {
+42 |     return window.localStorage.getItem(key) || undefined;
+43 |   }
 44 | 
-45 | // Create provider instances with API keys from localStorage
-46 | const openaiClient = createOpenAI({
-47 |   apiKey: getApiKey('OPENAI_API_KEY'),
-48 | });
-49 | 
-50 | const anthropicClient = createAnthropic({
-51 |   apiKey: getApiKey('ANTHROPIC_API_KEY'),
-52 | });
-53 | 
-54 | const groqClient = createGroq({
-55 |   apiKey: getApiKey('GROQ_API_KEY'),
-56 | });
-57 | 
-58 | const xaiClient = createXai({
-59 |   apiKey: getApiKey('XAI_API_KEY'),
-60 | });
-61 | 
-62 | const openrouterClient = createOpenRouter({
-63 |   apiKey: getApiKey('OPENROUTER_API_KEY'),
-64 |   headers: {
-65 |     'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
-66 |     'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
-67 |   }
-68 | });
-69 | 
-70 | const languageModels = {
-71 |   "claude-3-7-sonnet": anthropicClient('claude-3-7-sonnet-20250219'),
-72 |   "openrouter/anthropic/claude-3.5-sonnet": openrouterClient("anthropic/claude-3.5-sonnet"),
-73 |   "openrouter/anthropic/claude-3.7-sonnet": openrouterClient("anthropic/claude-3.7-sonnet"),
-74 |   "openrouter/anthropic/claude-3.7-sonnet:thinking": openrouterClient("anthropic/claude-3.7-sonnet:thinking"),
-75 |   "openrouter/deepseek/deepseek-chat-v3-0324": openrouterClient("deepseek/deepseek-chat-v3-0324"),
-76 |   "openrouter/deepseek/deepseek-r1": wrapLanguageModel({
-77 |     model: openrouterClient("deepseek/deepseek-r1", { logprobs: false }),
-78 |     middleware: deepseekR1Middleware,
-79 |   }),
-80 |   "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
-81 |   "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
-82 |   "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
-83 |   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
-84 |   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
-85 |   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
-86 |   "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
-87 |     model: openrouterClient("x-ai/grok-3-beta", { logprobs: false }),
-88 |     middleware: deepseekR1Middleware,
-89 |   }),
-90 |   "grok-3-mini": xaiClient("grok-3-mini-latest"),
-91 |   "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
-92 |     model: openrouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
-93 |     middleware: deepseekR1Middleware,
-94 |   }),
-95 |   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
-96 |     model: openrouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
-97 |     middleware: deepseekR1Middleware,
-98 |   }),
-99 |   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
-100 |   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
-101 |   "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
-102 |   "openrouter/openai/o4-mini-high": openrouterClient("openai/o4-mini-high"),
-103 |   "qwen-qwq": wrapLanguageModel(
-104 |     {
-105 |       model: groqClient("qwen-qwq-32b"),
-106 |       middleware
-107 |     }
-108 |   ),
-109 |   "openrouter/qwen/qwq-32b": wrapLanguageModel({
-110 |     model: openrouterClient("qwen/qwq-32b"),
-111 |     middleware: deepseekR1Middleware,
-112 |   }),
-113 |   "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b")
-114 | };
-115 | 
-116 | export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
-117 |   "claude-3-7-sonnet": {
-118 |     provider: "Anthropic",
-119 |     name: "Claude 3.7 Sonnet",
-120 |     description: "Latest version of Anthropic's Claude 3.7 Sonnet with strong reasoning and coding capabilities.",
-121 |     apiVersion: "claude-3-7-sonnet-20250219",
-122 |     capabilities: ["Reasoning", "Efficient", "Agentic"],
-123 |     enabled: false
-124 |   },
-125 |   "openrouter/anthropic/claude-3.5-sonnet": {
-126 |     provider: "OpenRouter",
-127 |     name: "Claude 3.5 Sonnet",
-128 |     description: "New Claude 3.5 Sonnet delivers better-than-Opus capabilities, faster-than-Sonnet speeds, at the same Sonnet prices. Sonnet is particularly good at: Coding, Data science, Visual processing, Agentic tasks",
-129 |     apiVersion: "anthropic/claude-3.5-sonnet",
-130 |     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
-131 |     enabled: true
-132 |   },
-133 |   "openrouter/anthropic/claude-3.7-sonnet": {
-134 |     provider: "OpenRouter",
-135 |     name: "Claude 3.7 Sonnet",
-136 |     description: "Latest version of Anthropic's Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
-137 |     apiVersion: "anthropic/claude-3.7-sonnet",
-138 |     capabilities: ["Reasoning", "Coding", "Agentic"],
-139 |     enabled: true
-140 |   },
-141 |   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
-142 |     provider: "OpenRouter",
-143 |     name: "Claude 3.7 Sonnet (thinking)",
-144 |     description: "Advanced LLM with improved reasoning, coding, and problem-solving. Features a hybrid reasoning approach for flexible processing.",
-145 |     apiVersion: "anthropic/claude-3.7-sonnet:thinking",
-146 |     capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
-147 |     enabled: true
-148 |   },
-149 |   "openrouter/deepseek/deepseek-chat-v3-0324": {
-150 |     provider: "OpenRouter",
-151 |     name: "DeepSeek Chat V3 0324",
-152 |     description: "DeepSeek Chat model V3 accessed via OpenRouter.",
-153 |     apiVersion: "deepseek/deepseek-chat-v3-0324",
-154 |     capabilities: ["Chat", "Efficient"],
-155 |     enabled: true
-156 |   },
-157 |   "openrouter/deepseek/deepseek-r1": {
-158 |     provider: "OpenRouter",
-159 |     name: "DeepSeek R1",
-160 |     description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
-161 |     apiVersion: "deepseek/deepseek-r1",
-162 |     capabilities: ["Reasoning", "Open Source"],
-163 |     enabled: true
-164 |   },
-165 |   "openrouter/google/gemini-2.5-flash-preview": {
-166 |     provider: "OpenRouter",
-167 |     name: "Gemini 2.5 Flash Preview",
-168 |     description: "Google's state-of-the-art workhorse model for advanced reasoning, coding, mathematics, and scientific tasks, with built-in \"thinking\" capabilities. Accessed via OpenRouter.",
-169 |     apiVersion: "google/gemini-2.5-flash-preview",
-170 |     capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific"],
-171 |     enabled: true
-172 |   },
-173 |   "openrouter/google/gemini-2.5-flash-preview:thinking": {
-174 |     provider: "OpenRouter",
-175 |     name: "Gemini 2.5 Flash Preview (thinking)",
-176 |     description: "Gemini 2.5 Flash is Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in \"thinking\" capabilities, enabling it to provide responses with greater accuracy and nuanced context handling. Accessed via OpenRouter.",
-177 |     apiVersion: "google/gemini-2.5-flash-preview:thinking",
-178 |     capabilities: ["Reasoning", "Coding", "Mathematics", "Scientific", "Thinking"],
-179 |     enabled: true
-180 |   },
-181 |   "openrouter/google/gemini-2.5-pro-preview-03-25": {
-182 |     provider: "OpenRouter",
-183 |     name: "Gemini 2.5 Pro Preview",
-184 |     description: "Google's state-of-the-art AI model for advanced reasoning, coding, math, and science, accessed via OpenRouter.",
-185 |     apiVersion: "google/gemini-2.5-pro-preview-03-25",
-186 |     capabilities: ["Reasoning", "Coding", "Math", "Science"],
-187 |     enabled: true
-188 |   },
-189 |   "gpt-4.1-mini": {
-190 |     provider: "OpenAI",
-191 |     name: "GPT-4.1 Mini",
-192 |     description: "Compact version of OpenAI's GPT-4.1 with good balance of capabilities, including vision.",
-193 |     apiVersion: "gpt-4.1-mini",
-194 |     capabilities: ["Balance", "Creative", "Vision"],
-195 |     enabled: false
-196 |   },
-197 |   "openrouter/openai/gpt-4.1": {
-198 |     provider: "OpenRouter",
-199 |     name: "GPT-4.1",
-200 |     description: "GPT-4.1 is a flagship large language model excelling in instruction following, software engineering, and long-context reasoning, supporting a 1 million token context. It's tuned for precise code diffs, agent reliability, and high recall, ideal for agents, IDE tooling, and enterprise knowledge retrieval.",
-201 |     apiVersion: "openai/gpt-4.1",
-202 |     capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
-203 |     enabled: true
-204 |   },
-205 |   "openrouter/openai/gpt-4.1-mini": {
-206 |     provider: "OpenRouter",
-207 |     name: "GPT-4.1 Mini",
-208 |     description: "Mid-sized model competitive with GPT-4o, lower latency/cost. Strong coding & vision. Accessed via OpenRouter.",
-209 |     apiVersion: "openai/gpt-4.1-mini",
-210 |     capabilities: ["Coding", "Vision", "Efficient"],
-211 |     enabled: true
-212 |   },
-213 |   "openrouter/x-ai/grok-3-beta": {
-214 |     provider: "OpenRouter",
-215 |     name: "Grok 3 Beta",
-216 |     description: "xAI's flagship model excelling at enterprise tasks, coding, summarization, and deep domain knowledge. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Accessed via OpenRouter.",
-217 |     apiVersion: "x-ai/grok-3-beta",
-218 |     capabilities: ["Reasoning", "Coding", "Knowledge"],
-219 |     enabled: true
-220 |   },
-221 |   "grok-3-mini": {
-222 |     provider: "XAI",
-223 |     name: "Grok 3 Mini",
-224 |     description: "Latest version of XAI's Grok 3 Mini with strong reasoning and coding capabilities.",
-225 |     apiVersion: "grok-3-mini-latest",
-226 |     capabilities: ["Reasoning", "Efficient", "Agentic"],
-227 |     enabled: false
-228 |   },
-229 |   "openrouter/x-ai/grok-3-mini-beta": {
-230 |     provider: "OpenRouter",
-231 |     name: "Grok 3 Mini Beta",
-232 |     description: "Lightweight model ideal for reasoning-heavy tasks, math, and puzzles. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Tool calling is disabled. Accessed via OpenRouter.",
-233 |     apiVersion: "x-ai/grok-3-mini-beta",
-234 |     capabilities: ["Reasoning", "Math", "Puzzles"],
-235 |     enabled: true
-236 |   },
-237 |   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
-238 |     provider: "OpenRouter",
-239 |     name: "Grok 3 Mini Beta (High Reasoning)",
-240 |     description: "xAI Grok 3 Mini Beta configured for high reasoning effort. Ideal for complex reasoning, math, and puzzles. Note: This model cannot be used for Tool Calling (e.g., MCP Servers). Tool calling is disabled. Accessed via OpenRouter.",
-241 |     apiVersion: "x-ai/grok-3-mini-beta",
-242 |     capabilities: ["Reasoning", "Math", "Puzzles", "High Effort"],
-243 |     enabled: true
-244 |   },
-245 |   "openrouter/mistralai/mistral-medium-3": {
-246 |     provider: "OpenRouter",
-247 |     name: "Mistral Medium 3",
-248 |     description: "High-performance enterprise-grade language model with frontier-level capabilities. Balances state-of-the-art reasoning and multimodal performance. Accessed via OpenRouter.",
-249 |     apiVersion: "mistralai/mistral-medium-3",
-250 |     capabilities: ["Reasoning", "Coding", "STEM", "Enterprise"],
-251 |     enabled: true
-252 |   },
-253 |   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
-254 |     provider: "OpenRouter",
-255 |     name: "Mistral Small 3.1 Instruct",
-256 |     description: "Mistral Small 3.1 Instruct model accessed via OpenRouter.",
-257 |     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
-258 |     capabilities: ["Instruct", "Efficient"],
-259 |     enabled: true
-260 |   },
-261 |   "openrouter/meta-llama/llama-4-maverick": {
-262 |     provider: "OpenRouter",
-263 |     name: "Llama 4 Maverick",
-264 |     description: "Meta's Llama 4 Maverick: a high-capacity, multimodal MoE language model. Supports multilingual text/image input and produces text/code output.",
-265 |     apiVersion: "meta-llama/llama-4-maverick",
-266 |     capabilities: ["Multimodal", "Multilingual", "Image Input", "Code Output", "Reasoning"],
-267 |     enabled: true
-268 |   },
-269 |   "openrouter/openai/o4-mini-high": {
-270 |     provider: "OpenRouter",
-271 |     name: "o4 Mini High",
-272 |     description: "OpenAI o4-mini-high, a compact reasoning model optimized for speed and cost, with strong multimodal and agentic capabilities. Accessed via OpenRouter.",
-273 |     apiVersion: "openai/o4-mini-high",
-274 |     capabilities: ["Reasoning", "Coding", "Efficient", "Agentic", "Multimodal"],
-275 |     enabled: true
-276 |   },
-277 |   "qwen-qwq": {
-278 |     provider: "Groq",
-279 |     name: "Qwen QWQ",
-280 |     description: "Latest version of Alibaba's Qwen QWQ with strong reasoning and coding capabilities.",
-281 |     apiVersion: "qwen-qwq",
-282 |     capabilities: ["Reasoning", "Efficient", "Agentic"],
-283 |     enabled: false
-284 |   },
-285 |   "openrouter/qwen/qwq-32b": {
-286 |     provider: "OpenRouter",
-287 |     name: "Qwen QwQ 32B",
-288 |     description: "QwQ is the reasoning model of the Qwen series. Compared with conventional instruction-tuned models, QwQ, which is capable of thinking and reasoning, can achieve significantly enhanced performance in downstream tasks, especially hard problems. Accessed via OpenRouter.",
-289 |     apiVersion: "qwen/qwq-32b",
-290 |     capabilities: ["Reasoning", "Hard Problems"],
-291 |     enabled: true
-292 |   },
-293 |   "openrouter/qwen/qwen3-235b-a22b": {
-294 |     provider: "OpenRouter",
-295 |     name: "Qwen3 235B A22B",
-296 |     description: "Qwen3-235B-A22B is a 235B parameter mixture-of-experts (MoE) model by Qwen, activating 22B parameters per forward pass. It supports 'thinking' and 'non-thinking' modes, excels in reasoning, multilingual tasks, instruction-following, and agent tool-calling, with a context window up to 131K tokens via OpenRouter.",
-297 |     apiVersion: "qwen/qwen3-235b-a22b",
-298 |     capabilities: ["Reasoning", "Coding", "Multilingual", "Agentic"],
-299 |     enabled: true
-300 |   }
-301 | };
-302 | 
-303 | // Update API keys when localStorage changes (for runtime updates)
-304 | if (typeof window !== 'undefined') {
-305 |   window.addEventListener('storage', (event) => {
-306 |     // Reload the page if any API key changed to refresh the providers
-307 |     if (event.key?.includes('API_KEY')) {
-308 |       window.location.reload();
-309 |     }
-310 |   });
-311 | }
-312 | 
-313 | export const model = customProvider({
-314 |   languageModels,
-315 | });
-316 | 
-317 | // Define a specific model ID for title generation
-318 | export const titleGenerationModelId: modelID = "openrouter/openai/gpt-4.1-mini";
-319 | 
-320 | // Get the actual model instance for title generation
-321 | export const titleGenerationModel = languageModels[titleGenerationModelId];
-322 | 
-323 | export type modelID = keyof typeof languageModels;
-324 | 
-325 | // Filter models based on the enabled flag
-326 | export const MODELS = (Object.keys(languageModels) as modelID[]).filter(
-327 |   (modelId) => modelDetails[modelId].enabled !== false
-328 | );
-329 | 
-330 | export const defaultModel: modelID = "openrouter/qwen/qwq-32b";
+45 |   return undefined;
+46 | };
+47 | 
+48 | // Helper to get API keys with runtime override option
+49 | export const getApiKeyWithOverride = (key: string, override?: string): string | undefined => {
+50 |   // Use override if provided
+51 |   if (override) {
+52 |     return override;
+53 |   }
+54 | 
+55 |   // Fall back to the standard method
+56 |   return getApiKey(key);
+57 | };
+58 | 
+59 | // Create provider instances with API keys from localStorage
+60 | const openaiClient = createOpenAI({
+61 |   apiKey: getApiKey('OPENAI_API_KEY'),
+62 | });
+63 | 
+64 | const anthropicClient = createAnthropic({
+65 |   apiKey: getApiKey('ANTHROPIC_API_KEY'),
+66 | });
+67 | 
+68 | const groqClient = createGroq({
+69 |   apiKey: getApiKey('GROQ_API_KEY'),
+70 | });
+71 | 
+72 | const xaiClient = createXai({
+73 |   apiKey: getApiKey('XAI_API_KEY'),
+74 | });
+75 | 
+76 | const openrouterClient = createOpenRouter({
+77 |   apiKey: getApiKey('OPENROUTER_API_KEY'),
+78 |   headers: {
+79 |     'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+80 |     'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+81 |   }
+82 | });
+83 | 
+84 | const requestyClient = createRequesty({
+85 |   apiKey: getApiKey('REQUESTY_API_KEY'),
+86 |   headers: {
+87 |     'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+88 |     'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+89 |   }
+90 | });
+91 | 
+92 | // Helper functions to create provider clients with dynamic API keys
+93 | export const createOpenAIClientWithKey = (apiKey?: string) => {
+94 |   const finalApiKey = getApiKeyWithOverride('OPENAI_API_KEY', apiKey);
+95 |   if (!finalApiKey) {
+96 |     throw new Error('OpenAI API key is missing. Pass it using the \'apiKey\' parameter or the OPENAI_API_KEY environment variable.');
+97 |   }
+98 |   return createOpenAI({
+99 |     apiKey: finalApiKey,
+100 |   });
+101 | };
+102 | 
+103 | export const createAnthropicClientWithKey = (apiKey?: string) => {
+104 |   const finalApiKey = getApiKeyWithOverride('ANTHROPIC_API_KEY', apiKey);
+105 |   if (!finalApiKey) {
+106 |     throw new Error('Anthropic API key is missing. Pass it using the \'apiKey\' parameter or the ANTHROPIC_API_KEY environment variable.');
+107 |   }
+108 |   return createAnthropic({
+109 |     apiKey: finalApiKey,
+110 |   });
+111 | };
+112 | 
+113 | export const createGroqClientWithKey = (apiKey?: string) => {
+114 |   const finalApiKey = getApiKeyWithOverride('GROQ_API_KEY', apiKey);
+115 |   if (!finalApiKey) {
+116 |     throw new Error('Groq API key is missing. Pass it using the \'apiKey\' parameter or the GROQ_API_KEY environment variable.');
+117 |   }
+118 |   return createGroq({
+119 |     apiKey: finalApiKey,
+120 |   });
+121 | };
+122 | 
+123 | export const createXaiClientWithKey = (apiKey?: string) => {
+124 |   const finalApiKey = getApiKeyWithOverride('XAI_API_KEY', apiKey);
+125 |   if (!finalApiKey) {
+126 |     throw new Error('XAI API key is missing. Pass it using the \'apiKey\' parameter or the XAI_API_KEY environment variable.');
+127 |   }
+128 |   return createXai({
+129 |     apiKey: finalApiKey,
+130 |   });
+131 | };
+132 | 
+133 | export const createOpenRouterClientWithKey = (apiKey?: string) => {
+134 |   const finalApiKey = getApiKeyWithOverride('OPENROUTER_API_KEY', apiKey);
+135 |   if (!finalApiKey) {
+136 |     throw new Error('OpenRouter API key is missing. Pass it using the \'apiKey\' parameter or the OPENROUTER_API_KEY environment variable.');
+137 |   }
+138 |   return createOpenRouter({
+139 |     apiKey: finalApiKey,
+140 |     headers: {
+141 |       'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+142 |       'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+143 |     }
+144 |   });
+145 | };
+146 | 
+147 | export const createRequestyClientWithKey = (apiKey?: string) => {
+148 |   const finalApiKey = getApiKeyWithOverride('REQUESTY_API_KEY', apiKey);
+149 |   if (!finalApiKey) {
+150 |     throw new Error('Requesty API key is missing. Pass it using the \'apiKey\' parameter or the REQUESTY_API_KEY environment variable.');
+151 |   }
+152 |   return createRequesty({
+153 |     apiKey: finalApiKey,
+154 |     headers: {
+155 |       'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+156 |       'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+157 |     }
+158 |   });
+159 | };
+160 | 
+161 | const languageModels = {
+162 |   "claude-3-7-sonnet": anthropicClient('claude-3-7-sonnet-20250219'),
+163 |   "openrouter/anthropic/claude-3.5-sonnet": openrouterClient("anthropic/claude-3.5-sonnet"),
+164 |   "openrouter/anthropic/claude-3.7-sonnet": openrouterClient("anthropic/claude-3.7-sonnet"),
+165 |   "openrouter/anthropic/claude-3.7-sonnet:thinking": openrouterClient("anthropic/claude-3.7-sonnet:thinking"),
+166 |   "openrouter/deepseek/deepseek-chat-v3-0324": openrouterClient("deepseek/deepseek-chat-v3-0324"),
+167 |   "openrouter/deepseek/deepseek-r1": wrapLanguageModel({
+168 |     model: openrouterClient("deepseek/deepseek-r1", { logprobs: false }),
+169 |     middleware: deepseekR1Middleware,
+170 |   }),
+171 |   "openrouter/deepseek/deepseek-r1-0528": wrapLanguageModel({
+172 |     model: openrouterClient("deepseek/deepseek-r1-0528", { logprobs: false }),
+173 |     middleware: deepseekR1Middleware,
+174 |   }),
+175 |   "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": wrapLanguageModel({
+176 |     model: openrouterClient("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
+177 |     middleware: deepseekR1Middleware,
+178 |   }),
+179 |   "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
+180 |   "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
+181 |   "openrouter/google/gemini-2.5-flash-preview-05-20": openrouterClient("google/gemini-2.5-flash-preview-05-20"),
+182 |   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": openrouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
+183 |   "openrouter/google/gemini-2.5-pro-preview-03-25": openrouterClient("google/gemini-2.5-pro-preview-03-25"),
+184 |   "openrouter/google/gemini-2.5-pro-preview": openrouterClient("google/gemini-2.5-pro-preview"),
+185 |   "openrouter/google/gemini-2.5-pro": openrouterClient("google/gemini-2.5-pro"),
+186 |   "openrouter/google/gemini-2.5-flash": openrouterClient("google/gemini-2.5-flash"),
+187 |   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
+188 |   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
+189 |   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
+190 |   "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
+191 |     model: openrouterClient("x-ai/grok-3-beta", { logprobs: false }),
+192 |     middleware: deepseekR1Middleware,
+193 |   }),
+194 |   "grok-3-mini": xaiClient("grok-3-mini-latest"),
+195 |   "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
+196 |     model: openrouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
+197 |     middleware: deepseekR1Middleware,
+198 |   }),
+199 |   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
+200 |     model: openrouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
+201 |     middleware: deepseekR1Middleware,
+202 |   }),
+203 |   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
+204 |   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+205 |   "openrouter/mistralai/magistral-small-2506": openrouterClient("mistralai/magistral-small-2506"),
+206 |   "openrouter/mistralai/magistral-medium-2506": openrouterClient("mistralai/magistral-medium-2506"),
+207 |   "openrouter/mistralai/magistral-medium-2506:thinking": openrouterClient("mistralai/magistral-medium-2506:thinking"),
+208 |   "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
+209 |   "openrouter/openai/o4-mini-high": openrouterClient("openai/o4-mini-high"),
+210 |   "qwen-qwq": wrapLanguageModel(
+211 |     {
+212 |       model: groqClient("qwen-qwq-32b"),
+213 |       middleware
+214 |     }
+215 |   ),
+216 |   "openrouter/qwen/qwq-32b": wrapLanguageModel({
+217 |     model: openrouterClient("qwen/qwq-32b"),
+218 |     middleware: deepseekR1Middleware,
+219 |   }),
+220 |   // "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
+221 |   "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b"),
+222 |   "openrouter/anthropic/claude-sonnet-4": openrouterClient("anthropic/claude-sonnet-4"),
+223 |   "openrouter/anthropic/claude-opus-4": openrouterClient("anthropic/claude-opus-4"),
+224 |   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": openrouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
+225 |   "openrouter/minimax/minimax-m1": openrouterClient("minimax/minimax-m1"),
+226 |   // Requesty models
+227 |   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
+228 |   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
+229 |   "requesty/anthropic/claude-3.5-sonnet": requestyClient("anthropic/claude-3-5-sonnet-20241022"),
+230 |   "requesty/anthropic/claude-3.7-sonnet": requestyClient("anthropic/claude-3-7-sonnet-20250219"),
+231 |   "requesty/google/gemini-2.5-flash-preview": requestyClient("google/gemini-2.5-flash-preview-05-20"),
+232 |   "requesty/meta-llama/llama-3.1-70b-instruct": requestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
+233 |   "requesty/anthropic/claude-sonnet-4-20250514": requestyClient("anthropic/claude-sonnet-4-20250514"),
+234 | };
+235 | 
+236 | // Helper to get language model with dynamic API keys
+237 | export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>) => {
+238 |   // Create dynamic clients with provided API keys
+239 |   const dynamicOpenAIClient = createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
+240 |   const dynamicAnthropicClient = createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
+241 |   const dynamicGroqClient = createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']);
+242 |   const dynamicXaiClient = createXaiClientWithKey(apiKeys?.['XAI_API_KEY']);
+243 |   const dynamicOpenRouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+244 |   const dynamicRequestyClient = createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']);
+245 | 
+246 |   // Map all models with dynamic clients
+247 |   const dynamicLanguageModels: Record<string, any> = {
+248 |     // Anthropic models
+249 |     "claude-3-7-sonnet": dynamicAnthropicClient('claude-3-7-sonnet-20250219'),
+250 | 
+251 |     // OpenAI models
+252 |     "gpt-4.1-mini": dynamicOpenAIClient("gpt-4.1-mini"),
+253 | 
+254 |     // Groq models
+255 |     "qwen-qwq": wrapLanguageModel({
+256 |       model: dynamicGroqClient("qwen-qwq-32b"),
+257 |       middleware
+258 |     }),
+259 | 
+260 |     // XAI models
+261 |     "grok-3-mini": dynamicXaiClient("grok-3-mini-latest"),
+262 | 
+263 |     // OpenRouter models
+264 |     "openrouter/anthropic/claude-3.5-sonnet": dynamicOpenRouterClient("anthropic/claude-3.5-sonnet"),
+265 |     "openrouter/anthropic/claude-3.7-sonnet": dynamicOpenRouterClient("anthropic/claude-3.7-sonnet"),
+266 |     "openrouter/anthropic/claude-3.7-sonnet:thinking": dynamicOpenRouterClient("anthropic/claude-3.7-sonnet:thinking"),
+267 |     "openrouter/deepseek/deepseek-chat-v3-0324": dynamicOpenRouterClient("deepseek/deepseek-chat-v3-0324"),
+268 |     "openrouter/deepseek/deepseek-r1": wrapLanguageModel({
+269 |       model: dynamicOpenRouterClient("deepseek/deepseek-r1", { logprobs: false }),
+270 |       middleware: deepseekR1Middleware,
+271 |     }),
+272 |     "openrouter/deepseek/deepseek-r1-0528": wrapLanguageModel({
+273 |       model: dynamicOpenRouterClient("deepseek/deepseek-r1-0528", { logprobs: false }),
+274 |       middleware: deepseekR1Middleware,
+275 |     }),
+276 |     "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": wrapLanguageModel({
+277 |       model: dynamicOpenRouterClient("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
+278 |       middleware: deepseekR1Middleware,
+279 |     }),
+280 |     "openrouter/google/gemini-2.5-flash-preview": dynamicOpenRouterClient("google/gemini-2.5-flash-preview"),
+281 |     "openrouter/google/gemini-2.5-flash-preview:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview:thinking"),
+282 |     "openrouter/google/gemini-2.5-flash-preview-05-20": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20"),
+283 |     "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
+284 |     "openrouter/google/gemini-2.5-pro-preview-03-25": dynamicOpenRouterClient("google/gemini-2.5-pro-preview-03-25"),
+285 |     "openrouter/google/gemini-2.5-pro-preview": dynamicOpenRouterClient("google/gemini-2.5-pro-preview"),
+286 |     "openrouter/google/gemini-2.5-pro": dynamicOpenRouterClient("google/gemini-2.5-pro"),
+287 |     "openrouter/google/gemini-2.5-flash": dynamicOpenRouterClient("google/gemini-2.5-flash"),
+288 |     "openrouter/openai/gpt-4.1": dynamicOpenRouterClient("openai/gpt-4.1"),
+289 |     "openrouter/openai/gpt-4.1-mini": dynamicOpenRouterClient("openai/gpt-4.1-mini"),
+290 |     "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
+291 |       model: dynamicOpenRouterClient("x-ai/grok-3-beta", { logprobs: false }),
+292 |       middleware: deepseekR1Middleware,
+293 |     }),
+294 |     "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
+295 |       model: dynamicOpenRouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
+296 |       middleware: deepseekR1Middleware,
+297 |     }),
+298 |     "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
+299 |       model: dynamicOpenRouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
+300 |       middleware: deepseekR1Middleware,
+301 |     }),
+302 |     "openrouter/mistralai/mistral-medium-3": dynamicOpenRouterClient("mistralai/mistral-medium-3"),
+303 |     "openrouter/mistralai/mistral-small-3.1-24b-instruct": dynamicOpenRouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+304 |     "openrouter/mistralai/magistral-small-2506": dynamicOpenRouterClient("mistralai/magistral-small-2506"),
+305 |     "openrouter/mistralai/magistral-medium-2506": dynamicOpenRouterClient("mistralai/magistral-medium-2506"),
+306 |     "openrouter/mistralai/magistral-medium-2506:thinking": dynamicOpenRouterClient("mistralai/magistral-medium-2506:thinking"),
+307 |     "openrouter/meta-llama/llama-4-maverick": dynamicOpenRouterClient("meta-llama/llama-4-maverick"),
+308 |     "openrouter/openai/o4-mini-high": dynamicOpenRouterClient("openai/o4-mini-high"),
+309 |     "openrouter/qwen/qwq-32b": wrapLanguageModel({
+310 |       model: dynamicOpenRouterClient("qwen/qwq-32b"),
+311 |       middleware: deepseekR1Middleware,
+312 |     }),
+313 |     "openrouter/qwen/qwen3-235b-a22b": dynamicOpenRouterClient("qwen/qwen3-235b-a22b"),
+314 |     "openrouter/anthropic/claude-sonnet-4": dynamicOpenRouterClient("anthropic/claude-sonnet-4"),
+315 |     "openrouter/anthropic/claude-opus-4": dynamicOpenRouterClient("anthropic/claude-opus-4"),
+316 |     "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": dynamicOpenRouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
+317 |     "openrouter/minimax/minimax-m1": dynamicOpenRouterClient("minimax/minimax-m1"),
+318 | 
+319 |     // Requesty models
+320 |     "requesty/openai/gpt-4o": dynamicRequestyClient("openai/gpt-4o"),
+321 |     "requesty/openai/gpt-4o-mini": dynamicRequestyClient("openai/gpt-4o-mini"),
+322 |     "requesty/anthropic/claude-3.5-sonnet": dynamicRequestyClient("anthropic/claude-3-5-sonnet-20241022"),
+323 |     "requesty/anthropic/claude-3.7-sonnet": dynamicRequestyClient("anthropic/claude-3-7-sonnet-20250219"),
+324 |     "requesty/google/gemini-2.5-flash-preview": dynamicRequestyClient("google/gemini-2.5-flash-preview-05-20"),
+325 |     "requesty/meta-llama/llama-3.1-70b-instruct": dynamicRequestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
+326 |     "requesty/anthropic/claude-sonnet-4-20250514": dynamicRequestyClient("anthropic/claude-sonnet-4-20250514"),
+327 |   };
+328 | 
+329 |   // Check if the specific model exists in our dynamic models
+330 |   if (dynamicLanguageModels[modelId]) {
+331 |     return dynamicLanguageModels[modelId];
+332 |   }
+333 | 
+334 |   // Fallback to static models if not found (shouldn't happen in normal cases)
+335 |   console.warn(`Model ${modelId} not found in dynamic models, falling back to static model`);
+336 |   return languageModels[modelId as keyof typeof languageModels];
+337 | };
+338 | 
+339 | export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
+340 |   "openrouter/anthropic/claude-3.5-sonnet": {
+341 |     provider: "OpenRouter",
+342 |     name: "Claude 3.5 Sonnet",
+343 |     description: "New Claude 3.5 Sonnet delivers better-than-Opus capabilities, faster-than-Sonnet speeds, at the same Sonnet prices. Sonnet is particularly good at: Coding, Data science, Visual processing, Agentic tasks",
+344 |     apiVersion: "anthropic/claude-3.5-sonnet",
+345 |     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
+346 |     enabled: true,
+347 |     supportsWebSearch: true,
+348 |     premium: true
+349 |   },
+350 |   "claude-3-7-sonnet": {
+351 |     provider: "Anthropic",
+352 |     name: "Claude 3.7 Sonnet",
+353 |     description: "Latest version of Anthropic\'s Claude 3.7 Sonnet with strong reasoning and coding capabilities.",
+354 |     apiVersion: "claude-3-7-sonnet-20250219",
+355 |     capabilities: ["Reasoning", "Efficient", "Agentic"],
+356 |     enabled: false,
+357 |     premium: true
+358 |   },
+359 |   "openrouter/anthropic/claude-3.7-sonnet": {
+360 |     provider: "OpenRouter",
+361 |     name: "Claude 3.7 Sonnet",
+362 |     description: "Latest version of Anthropic\'s Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
+363 |     apiVersion: "anthropic/claude-3.7-sonnet",
+364 |     capabilities: ["Reasoning", "Coding", "Agentic"],
+365 |     enabled: true,
+366 |     supportsWebSearch: true,
+367 |     premium: true
+368 |   },
+369 |   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
+370 |     provider: "OpenRouter",
+371 |     name: "Claude 3.7 Sonnet (thinking)",
+372 |     description: "Advanced LLM with improved reasoning, coding, and problem-solving. Features a hybrid reasoning approach for flexible processing.",
+373 |     apiVersion: "anthropic/claude-3.7-sonnet:thinking",
+374 |     capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
+375 |     enabled: true,
+376 |     supportsWebSearch: true,
+377 |     premium: true
+378 |   },
+379 |   "openrouter/deepseek/deepseek-chat-v3-0324": {
+380 |     provider: "OpenRouter",
+381 |     name: "DeepSeek Chat V3 0324",
+382 |     description: "DeepSeek Chat model V3 accessed via OpenRouter.",
+383 |     apiVersion: "deepseek/deepseek-chat-v3-0324",
+384 |     capabilities: ["Chat", "Efficient"],
+385 |     enabled: true,
+386 |     supportsWebSearch: true,
+387 |     premium: false
+388 |   },
+389 |   "openrouter/deepseek/deepseek-r1": {
+390 |     provider: "OpenRouter",
+391 |     name: "DeepSeek R1",
+392 |     description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
+393 |     apiVersion: "deepseek/deepseek-r1",
+394 |     capabilities: ["Reasoning", "Open Source"],
+395 |     enabled: true,
+396 |     supportsWebSearch: true,
+397 |     premium: false
+398 |   },
+399 |   "openrouter/deepseek/deepseek-r1-0528": {
+400 |     provider: "OpenRouter",
+401 |     name: "DeepSeek R1 0528",
+402 |     description: "DeepSeek R1 0528: May 28th update to DeepSeek R1. Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
+403 |     apiVersion: "deepseek/deepseek-r1-0528",
+404 |     capabilities: ["Reasoning", "Open Source"],
+405 |     enabled: true,
+406 |     supportsWebSearch: true,
+407 |     premium: false
+408 |   },
+409 |   "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": {
+410 |     provider: "OpenRouter",
+411 |     name: "DeepSeek R1 0528 Qwen3 8B",
+412 |     description: "DeepSeek-R1-0528-Qwen3-8B, an 8B parameter model distilled from DeepSeek R1 0528, excels in reasoning, math, programming, and logic. Accessed via OpenRouter.",
+413 |     apiVersion: "deepseek/deepseek-r1-0528-qwen3-8b",
+414 |     capabilities: ["Reasoning", "Math", "Programming", "Logic"],
+415 |     enabled: false,
+416 |     supportsWebSearch: true,
+417 |     premium: false
+418 |   },
+419 |   "openrouter/google/gemini-2.5-flash-preview": {
+420 |     provider: "OpenRouter",
+421 |     name: "Google Gemini 2.5 Flash Preview",
+422 |     description: "Google\'s latest Gemini 2.5 Flash model, optimized for speed and efficiency, accessed via OpenRouter.",
+423 |     apiVersion: "google/gemini-2.5-flash-preview",
+424 |     capabilities: ["Fast", "Efficient", "Multimodal"],
+425 |     enabled: true,
+426 |     supportsWebSearch: true,
+427 |     premium: false
+428 |   },
+429 |   "openrouter/google/gemini-2.5-flash-preview:thinking": {
+430 |     provider: "OpenRouter",
+431 |     name: "Google Gemini 2.5 Flash Preview (thinking)",
+432 |     description: "Google\'s latest Gemini 2.5 Flash model with thinking capabilities, optimized for speed and efficiency, accessed via OpenRouter.",
+433 |     apiVersion: "google/gemini-2.5-flash-preview:thinking",
+434 |     capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
+435 |     enabled: true,
+436 |     supportsWebSearch: true,
+437 |     premium: false
+438 |   },
+439 |   "openrouter/google/gemini-2.5-flash-preview-05-20": {
+440 |     provider: "OpenRouter",
+441 |     name: "Google Gemini 2.5 Flash Preview (05-20)",
+442 |     description: "Google\'s Gemini 2.5 Flash model (May 20th version), optimized for speed and efficiency, accessed via OpenRouter.",
+443 |     apiVersion: "google/gemini-2.5-flash-preview-05-20",
+444 |     capabilities: ["Fast", "Efficient", "Multimodal"],
+445 |     enabled: true,
+446 |     supportsWebSearch: true,
+447 |     premium: false
+448 |   },
+449 |   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": {
+450 |     provider: "OpenRouter",
+451 |     name: "Google Gemini 2.5 Flash Preview (05-20, thinking)",
+452 |     description: "Google\'s Gemini 2.5 Flash model (May 20th version) with thinking capabilities, optimized for speed and efficiency, accessed via OpenRouter.",
+453 |     apiVersion: "google/gemini-2.5-flash-preview-05-20:thinking",
+454 |     capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
+455 |     enabled: true,
+456 |     supportsWebSearch: true,
+457 |     premium: false
+458 |   },
+459 |   "openrouter/google/gemini-2.5-pro-preview-03-25": {
+460 |     provider: "OpenRouter",
+461 |     name: "Google Gemini 2.5 Pro Preview (03-25)",
+462 |     description: "Google\'s Gemini 2.5 Pro model (March 25th version), a powerful and versatile model, accessed via OpenRouter.",
+463 |     apiVersion: "google/gemini-2.5-pro-preview-03-25",
+464 |     capabilities: ["Powerful", "Versatile", "Multimodal"],
+465 |     enabled: true,
+466 |     supportsWebSearch: true,
+467 |     premium: true
+468 |   },
+469 |   "openrouter/google/gemini-2.5-pro-preview": {
+470 |     provider: "OpenRouter",
+471 |     name: "Google Gemini 2.5 Pro Preview (06-05)",
+472 |     description: "Google\'s state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. Achieves top-tier performance on multiple benchmarks with superior human-preference alignment.",
+473 |     apiVersion: "google/gemini-2.5-pro-preview",
+474 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
+475 |     enabled: true,
+476 |     supportsWebSearch: true,
+477 |     premium: true
+478 |   },
+479 |   "openrouter/google/gemini-2.5-pro": {
+480 |     provider: "OpenRouter",
+481 |     name: "Google Gemini 2.5 Pro",
+482 |     description: "Google's state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. Achieves top-tier performance on multiple benchmarks with superior human-preference alignment.",
+483 |     apiVersion: "google/gemini-2.5-pro",
+484 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
+485 |     enabled: true,
+486 |     supportsWebSearch: true,
+487 |     premium: true
+488 |   },
+489 |   "openrouter/google/gemini-2.5-flash": {
+490 |     provider: "OpenRouter",
+491 |     name: "Google Gemini 2.5 Flash",
+492 |     description: "Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in thinking capabilities, enabling it to provide responses with greater accuracy and nuanced context handling.",
+493 |     apiVersion: "google/gemini-2.5-flash",
+494 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Thinking", "Multimodal"],
+495 |     enabled: true,
+496 |     supportsWebSearch: true,
+497 |     premium: false
+498 |   },
+499 |   "openrouter/x-ai/grok-3-beta": {
+500 |     provider: "OpenRouter",
+501 |     name: "X AI Grok 3 Beta",
+502 |     description: "Grok 3 Beta from X AI, a cutting-edge model with strong reasoning and problem-solving capabilities, accessed via OpenRouter.",
+503 |     apiVersion: "x-ai/grok-3-beta",
+504 |     capabilities: ["Reasoning", "Problem-solving", "Cutting-edge"],
+505 |     enabled: true,
+506 |     supportsWebSearch: true,
+507 |     premium: true
+508 |   },
+509 |   "grok-3-mini": {
+510 |     provider: "X AI",
+511 |     name: "X AI Grok 3 Mini",
+512 |     description: "Grok 3 Mini from X AI, a compact and efficient model for various tasks.",
+513 |     apiVersion: "grok-3-mini-latest",
+514 |     capabilities: ["Compact", "Efficient", "Versatile"],
+515 |     enabled: false,
+516 |     supportsWebSearch: true,
+517 |     premium: false
+518 |   },
+519 |   "openrouter/x-ai/grok-3-mini-beta": {
+520 |     provider: "OpenRouter",
+521 |     name: "X AI Grok 3 Mini Beta",
+522 |     description: "Grok 3 Mini Beta from X AI, a compact and efficient model, accessed via OpenRouter.",
+523 |     apiVersion: "x-ai/grok-3-mini-beta",
+524 |     capabilities: ["Compact", "Efficient", "Versatile"],
+525 |     enabled: true,
+526 |     supportsWebSearch: true,
+527 |     premium: false
+528 |   },
+529 |   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
+530 |     provider: "OpenRouter",
+531 |     name: "X AI Grok 3 Mini Beta (High Reasoning)",
+532 |     description: "Grok 3 Mini Beta from X AI with high reasoning effort, accessed via OpenRouter.",
+533 |     apiVersion: "x-ai/grok-3-mini-beta",
+534 |     capabilities: ["Compact", "Efficient", "Versatile", "High Reasoning"],
+535 |     enabled: true,
+536 |     supportsWebSearch: true,
+537 |     premium: false
+538 |   },
+539 |   "openrouter/meta-llama/llama-4-maverick": {
+540 |     provider: "OpenRouter",
+541 |     name: "Meta Llama 4 Maverick",
+542 |     description: "Meta Llama 4 Maverick, a cutting-edge model from Meta, accessed via OpenRouter.",
+543 |     apiVersion: "meta-llama/llama-4-maverick",
+544 |     capabilities: ["Cutting-edge", "Versatile"],
+545 |     enabled: true,
+546 |     supportsWebSearch: true,
+547 |     premium: false
+548 |   },
+549 |   "openrouter/mistralai/mistral-medium-3": {
+550 |     provider: "OpenRouter",
+551 |     name: "Mistral Medium 3",
+552 |     description: "Mistral Medium 3, a powerful model from Mistral AI, accessed via OpenRouter.",
+553 |     apiVersion: "mistralai/mistral-medium-3",
+554 |     capabilities: ["Powerful", "Versatile"],
+555 |     enabled: true,
+556 |     supportsWebSearch: true,
+557 |     premium: false
+558 |   },
+559 |   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
+560 |     provider: "OpenRouter",
+561 |     name: "Mistral Small 3.1 24B Instruct",
+562 |     description: "Mistral Small 3.1 24B Instruct, an efficient and capable model from Mistral AI, accessed via OpenRouter.",
+563 |     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
+564 |     capabilities: ["Efficient", "Capable", "Instruct"],
+565 |     enabled: true,
+566 |     supportsWebSearch: true,
+567 |     premium: false
+568 |   },
+569 |   "openrouter/mistralai/magistral-small-2506": {
+570 |     provider: "OpenRouter",
+571 |     name: "Mistral Magistral Small 2506",
+572 |     description: "Magistral Small is a 24B parameter instruction-tuned model based on Mistral-Small-3.1, enhanced through supervised fine-tuning and reinforcement learning. Optimized for reasoning and supports multilingual capabilities across 20+ languages.",
+573 |     apiVersion: "mistralai/magistral-small-2506",
+574 |     capabilities: ["Reasoning", "Multilingual", "Instruction Following", "Enhanced"],
+575 |     enabled: true,
+576 |     supportsWebSearch: true,
+577 |     premium: false
+578 |   },
+579 |   "openrouter/mistralai/magistral-medium-2506": {
+580 |     provider: "OpenRouter",
+581 |     name: "Mistral Magistral Medium 2506",
+582 |     description: "Magistral is Mistral's first reasoning model. Ideal for general purpose use requiring longer thought processing and better accuracy than with non-reasoning LLMs. From legal research and financial forecasting to software development and creative storytelling — this model solves multi-step challenges where transparency and precision are critical.",
+583 |     apiVersion: "mistralai/magistral-medium-2506",
+584 |     capabilities: ["Reasoning", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving"],
+585 |     enabled: true,
+586 |     supportsWebSearch: true,
+587 |     premium: true
+588 |   },
+589 |   "openrouter/mistralai/magistral-medium-2506:thinking": {
+590 |     provider: "OpenRouter",
+591 |     name: "Mistral Magistral Medium 2506 (thinking)",
+592 |     description: "Magistral Medium 2506 with enhanced thinking capabilities. Mistral's first reasoning model optimized for longer thought processing and better accuracy. Excels at legal research, financial forecasting, software development, and creative storytelling with transparent reasoning.",
+593 |     apiVersion: "mistralai/magistral-medium-2506:thinking",
+594 |     capabilities: ["Advanced Reasoning", "Thinking", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving", "Transparent Reasoning"],
+595 |     enabled: true,
+596 |     supportsWebSearch: true,
+597 |     premium: true
+598 |   },
+599 |   "openrouter/openai/gpt-4.1": {
+600 |     provider: "OpenRouter",
+601 |     name: "OpenAI GPT-4.1",
+602 |     description: "GPT-4.1 is a flagship large language model excelling in instruction following, software engineering, and long-context reasoning, supporting a 1 million token context. It\'s tuned for precise code diffs, agent reliability, and high recall, ideal for agents, IDE tooling, and enterprise knowledge retrieval. Note: Web search is not supported for this model.",
+603 |     apiVersion: "openai/gpt-4.1",
+604 |     capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
+605 |     enabled: true,
+606 |     supportsWebSearch: false,
+607 |     premium: true
+608 |   },
+609 |   "gpt-4.1-mini": {
+610 |     provider: "OpenAI",
+611 |     name: "OpenAI GPT-4.1 Mini",
+612 |     description: "GPT-4.1 Mini is a compact and efficient version of GPT-4.1, offering a balance of performance and speed for various tasks.",
+613 |     apiVersion: "gpt-4.1-mini",
+614 |     capabilities: ["Coding", "Instruction Following", "Compact"],
+615 |     enabled: false,
+616 |     supportsWebSearch: false,
+617 |     premium: false
+618 |   },
+619 |   "openrouter/openai/gpt-4.1-mini": {
+620 |     provider: "OpenRouter",
+621 |     name: "OpenAI GPT-4.1 Mini",
+622 |     description: "GPT-4.1 Mini is a compact and efficient version of GPT-4.1, offering a balance of performance and speed for various tasks, accessed via OpenRouter.",
+623 |     apiVersion: "openai/gpt-4.1-mini",
+624 |     capabilities: ["Coding", "Instruction Following", "Compact"],
+625 |     enabled: true,
+626 |     supportsWebSearch: false,
+627 |     premium: false
+628 |   },
+629 |   "openrouter/openai/o4-mini-high": {
+630 |     provider: "OpenRouter",
+631 |     name: "OpenAI O4 Mini High",
+632 |     description: "OpenAI O4 Mini High, an efficient and high-performing model, accessed via OpenRouter.",
+633 |     apiVersion: "openai/o4-mini-high",
+634 |     capabilities: ["Efficient", "High-performing"],
+635 |     enabled: true,
+636 |     supportsWebSearch: false,
+637 |     premium: false
+638 |   },
+639 |   "qwen-qwq": {
+640 |     provider: "Groq",
+641 |     name: "Qwen QWQ",
+642 |     description: "Qwen QWQ model accessed via Groq, known for its speed and efficiency.",
+643 |     apiVersion: "qwen-qwq-32b",
+644 |     capabilities: ["Fast", "Efficient"],
+645 |     enabled: false,
+646 |     supportsWebSearch: true,
+647 |     premium: false
+648 |   },
+649 |   "openrouter/qwen/qwq-32b": {
+650 |     provider: "OpenRouter",
+651 |     name: "Qwen QWQ 32B",
+652 |     description: "Qwen QWQ 32B model accessed via OpenRouter, known for its speed and efficiency.",
+653 |     apiVersion: "qwen/qwq-32b",
+654 |     capabilities: ["Fast", "Efficient"],
+655 |     enabled: true,
+656 |     supportsWebSearch: true,
+657 |     premium: false
+658 |   },
+659 |   "openrouter/qwen/qwen3-235b-a22b": {
+660 |     provider: "OpenRouter",
+661 |     name: "Qwen3 235B A22B",
+662 |     description: "Qwen3 235B A22B, a large and powerful model from Qwen, accessed via OpenRouter.",
+663 |     apiVersion: "qwen/qwen3-235b-a22b",
+664 |     capabilities: ["Large", "Powerful"],
+665 |     enabled: true,
+666 |     supportsWebSearch: true,
+667 |     premium: false
+668 |   },
+669 |   "openrouter/anthropic/claude-sonnet-4": {
+670 |     provider: "OpenRouter",
+671 |     name: "Claude 4 Sonnet",
+672 |     description: "Anthropic\'s Claude Sonnet 4 model, offering a balance of performance and speed, accessed via OpenRouter.",
+673 |     apiVersion: "anthropic/claude-sonnet-4",
+674 |     capabilities: ["Balanced", "Fast", "Efficient"],
+675 |     enabled: true,
+676 |     supportsWebSearch: true,
+677 |     premium: true
+678 |   },
+679 |   "openrouter/anthropic/claude-opus-4": {
+680 |     provider: "OpenRouter",
+681 |     name: "Claude 4 Opus",
+682 |     description: "Anthropic\'s most advanced model, excelling at coding, advanced reasoning, agentic tasks, and long-context operations.",
+683 |     apiVersion: "anthropic/claude-opus-4",
+684 |     capabilities: ["Coding", "Advanced Reasoning", "Agentic Tasks", "Long Context", "Sustained Performance"],
+685 |     enabled: true,
+686 |     supportsWebSearch: true,
+687 |     premium: true
+688 |   },
+689 |   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": {
+690 |     provider: "OpenRouter",
+691 |     name: "SentientAGI Dobby Mini Plus Llama 3.1 8B",
+692 |     description: "Dobby-Mini-Unhinged-Plus-Llama-3.1-8B is a language model fine-tuned from Llama-3.1-8B-Instruct. Dobby models have a strong conviction towards personal freedom, decentralization, and all things crypto. 131K context window.",
+693 |     apiVersion: "sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b",
+694 |     capabilities: ["Chat", "Crypto-focused", "Personal Freedom", "Decentralization", "Fine-tuned"],
+695 |     enabled: true,
+696 |     supportsWebSearch: true,
+697 |     premium: false
+698 |   },
+699 |   "openrouter/minimax/minimax-m1": {
+700 |     provider: "OpenRouter",
+701 |     name: "MiniMax M1",
+702 |     description: "MiniMax-M1 is a large-scale, open-weight reasoning model designed for extended context and high-efficiency inference. With 456 billion total parameters and 45.9B active per token, it leverages a hybrid Mixture-of-Experts (MoE) architecture and custom 'lightning attention' mechanism, processing up to 1 million tokens while maintaining competitive FLOP efficiency.",
+703 |     apiVersion: "minimax/minimax-m1",
+704 |     capabilities: ["Long Context", "Reasoning", "Software Engineering", "Mathematical Reasoning", "Agentic Tool Use", "High Efficiency"],
+705 |     enabled: true,
+706 |     supportsWebSearch: true,
+707 |     premium: true
+708 |   },
+709 |   // Requesty model details
+710 |   "requesty/openai/gpt-4o": {
+711 |     provider: "Requesty",
+712 |     name: "GPT-4O",
+713 |     description: "OpenAI's GPT-4O model accessed via Requesty, offering advanced reasoning and multimodal capabilities.",
+714 |     apiVersion: "openai/gpt-4o",
+715 |     capabilities: ["Reasoning", "Multimodal", "Coding", "Analysis"],
+716 |     enabled: true,
+717 |     supportsWebSearch: true,
+718 |     premium: true
+719 |   },
+720 |   "requesty/openai/gpt-4o-mini": {
+721 |     provider: "Requesty",
+722 |     name: "GPT-4O Mini",
+723 |     description: "OpenAI's GPT-4O Mini model accessed via Requesty, offering efficient performance for various tasks.",
+724 |     apiVersion: "openai/gpt-4o-mini",
+725 |     capabilities: ["Efficient", "Coding", "Analysis", "Chat"],
+726 |     enabled: true,
+727 |     supportsWebSearch: true,
+728 |     premium: false
+729 |   },
+730 |   "requesty/anthropic/claude-3.5-sonnet": {
+731 |     provider: "Requesty",
+732 |     name: "Claude 3.5 Sonnet",
+733 |     description: "Anthropic's Claude 3.5 Sonnet accessed via Requesty, excelling at coding, data science, and visual processing.",
+734 |     apiVersion: "anthropic/claude-3.5-sonnet",
+735 |     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
+736 |     enabled: true,
+737 |     supportsWebSearch: true,
+738 |     premium: true
+739 |   },
+740 |   "requesty/anthropic/claude-3.7-sonnet": {
+741 |     provider: "Requesty",
+742 |     name: "Claude 3.7 Sonnet",
+[TRUNCATED]
 ```
 
 app/actions.ts
@@ -883,7 +1722,7 @@ app/actions.ts
 3 | import { openai } from "@ai-sdk/openai";
 4 | import { generateObject } from "ai";
 5 | import { z } from "zod";
-6 | import { getApiKey, model, titleGenerationModel } from "@/ai/providers";
+6 | import { getApiKey, model, titleGenerationModel, getTitleGenerationModel, type modelID } from "@/ai/providers";
 7 | import { type MessagePart } from "@/lib/db/schema";
 8 | 
 9 | // Helper to extract text content from a message regardless of format
@@ -917,7 +1756,7 @@ app/actions.ts
 37 |   return '';
 38 | }
 39 | 
-40 | export async function generateTitle(messages: any[]) {
+40 | export async function generateTitle(messages: any[], selectedModel?: string, apiKeys?: Record<string, string>) {
 41 |   // Find the first user message
 42 |   const firstUserMessage = messages.find(msg => msg.role === 'user');
 43 | 
@@ -939,34 +1778,47 @@ app/actions.ts
 59 | 
 60 |   console.log('Generating title with simplified messages:', JSON.stringify(titleGenMessages, null, 2)); // Log the messages
 61 | 
-62 |   try {
-63 |     const { object } = await generateObject({
-64 |       model: titleGenerationModel,
-65 |       schema: z.object({
-66 |         title: z.string().min(1).max(100),
-67 |       }),
-68 |       system: `
-69 |       You are a helpful assistant that generates short, concise titles for chat conversations based *only* on the user's first message.
-70 |       The title should summarize the main topic or request of the user's message.
-71 |       The title should be no more than 30 characters.
-72 |       The title should be unique and not generic like "Chat Title".
-73 |       Focus on keywords from the user's message.
-74 |       `,
-75 |       messages: [
-76 |         ...titleGenMessages,
-77 |         {
-78 |           role: "user",
-79 |           content: "Generate a concise title based on my first message.",
-80 |         },
-81 |       ],
-82 |     });
-83 |     return object.title;
-84 |   } catch (error) {
-85 |     console.error('Error generating title with generateObject:', error);
-86 |     // Fallback to a simple title derived from the first few words if AI fails
-87 |     return userContent.split(' ').slice(0, 5).join(' ') + (userContent.split(' ').length > 5 ? '...' : '');
-88 |   }
-89 | }
+62 |   // Determine the title generation model to use
+63 |   let titleModel;
+64 |   if (selectedModel && apiKeys) {
+65 |     // Use dynamic model selection with API keys
+66 |     titleModel = getTitleGenerationModel(selectedModel as modelID, apiKeys);
+67 |   } else if (selectedModel) {
+68 |     // Use dynamic model selection without API keys
+69 |     titleModel = getTitleGenerationModel(selectedModel as modelID);
+70 |   } else {
+71 |     // Fallback to static model
+72 |     titleModel = titleGenerationModel;
+73 |   }
+74 | 
+75 |   try {
+76 |     const { object } = await generateObject({
+77 |       model: titleModel,
+78 |       schema: z.object({
+79 |         title: z.string().min(1).max(100),
+80 |       }),
+81 |       system: `
+82 |       You are a helpful assistant that generates short, concise titles for chat conversations based *only* on the user's first message.
+83 |       The title should summarize the main topic or request of the user's message.
+84 |       The title should be no more than 30 characters.
+85 |       The title should be unique and not generic like "Chat Title".
+86 |       Focus on keywords from the user's message.
+87 |       `,
+88 |       messages: [
+89 |         ...titleGenMessages,
+90 |         {
+91 |           role: "user",
+92 |           content: "Generate a concise title based on my first message.",
+93 |         },
+94 |       ],
+95 |     });
+96 |     return object.title;
+97 |   } catch (error) {
+98 |     console.error('Error generating title with generateObject:', error);
+99 |     // Fallback to a simple title derived from the first few words if AI fails
+100 |     return userContent.split(' ').slice(0, 5).join(' ') + (userContent.split(' ').length > 5 ? '...' : '');
+101 |   }
+102 | }
 ```
 
 app/globals.css
@@ -978,525 +1830,691 @@ app/globals.css
 5 | @custom-variant dark (&:is(.dark *));
 6 | @custom-variant sunset (&:is(.sunset *));
 7 | @custom-variant black (&:is(.black *));
-8 | 
-9 | :root {
-10 |   --background: oklch(0.99 0.01 56.32);
-11 |   --foreground: oklch(0.34 0.01 2.77);
-12 |   --card: oklch(1.00 0 0);
-13 |   --card-foreground: oklch(0.34 0.01 2.77);
-14 |   --popover: oklch(1.00 0 0);
-15 |   --popover-foreground: oklch(0.34 0.01 2.77);
-16 |   --primary: oklch(0.74 0.16 34.71);
-17 |   --primary-foreground: oklch(1.00 0 0);
-18 |   --secondary: oklch(0.96 0.02 28.90);
-19 |   --secondary-foreground: oklch(0.56 0.13 32.74);
-20 |   --muted: oklch(0.97 0.02 39.40);
-21 |   --muted-foreground: oklch(0.49 0.05 26.45);
-22 |   --accent: oklch(0.83 0.11 58.00);
-23 |   --accent-foreground: oklch(0.34 0.01 2.77);
-24 |   --destructive: oklch(0.61 0.21 22.24);
-25 |   --destructive-foreground: oklch(1.00 0 0);
-26 |   --border: oklch(0.93 0.04 38.69);
-27 |   --input: oklch(0.93 0.04 38.69);
-28 |   --ring: oklch(0.74 0.16 34.71);
-29 |   --chart-1: oklch(0.74 0.16 34.71);
-30 |   --chart-2: oklch(0.83 0.11 58.00);
-31 |   --chart-3: oklch(0.88 0.08 54.93);
-32 |   --chart-4: oklch(0.82 0.11 40.89);
-33 |   --chart-5: oklch(0.64 0.13 32.07);
-34 |   --sidebar: oklch(0.97 0.02 39.40);
-35 |   --sidebar-foreground: oklch(0.34 0.01 2.77);
-36 |   --sidebar-primary: oklch(0.74 0.16 34.71);
-37 |   --sidebar-primary-foreground: oklch(1.00 0 0);
-38 |   --sidebar-accent: oklch(0.83 0.11 58.00);
-39 |   --sidebar-accent-foreground: oklch(0.34 0.01 2.77);
-40 |   --sidebar-border: oklch(0.93 0.04 38.69);
-41 |   --sidebar-ring: oklch(0.74 0.16 34.71);
-42 |   --font-sans: Montserrat, sans-serif;
-43 |   --font-serif: Merriweather, serif;
-44 |   --font-mono: Ubuntu Mono, monospace;
-45 |   --radius: 0.625rem;
-46 |   --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
-47 |   --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
-48 |   --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
-49 |   --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
-50 |   --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09);
-51 |   --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09);
-52 |   --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09);
-53 |   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
-54 | }
-55 | 
-56 | .dark {
-57 |   --background: oklch(0.26 0.02 352.40);
-58 |   --foreground: oklch(0.94 0.01 51.32);
-59 |   --card: oklch(0.32 0.02 341.45);
-60 |   --card-foreground: oklch(0.94 0.01 51.32);
-61 |   --popover: oklch(0.32 0.02 341.45);
-62 |   --popover-foreground: oklch(0.94 0.01 51.32);
-63 |   --primary: oklch(0.57 0.15 35.26);
-64 |   --primary-foreground: oklch(1.00 0 0);
-65 |   --secondary: oklch(0.36 0.02 342.27);
-66 |   --secondary-foreground: oklch(0.94 0.01 51.32);
-67 |   --muted: oklch(0.32 0.02 341.45);
-68 |   --muted-foreground: oklch(0.84 0.02 52.63);
-69 |   --accent: oklch(0.36 0.02 342.27);
-70 |   --accent-foreground: oklch(0.94 0.01 51.32);
-71 |   --destructive: oklch(0.51 0.16 20.19);
-72 |   --destructive-foreground: oklch(1.00 0 0);
-73 |   --border: oklch(0.36 0.02 342.27);
-74 |   --input: oklch(0.36 0.02 342.27);
-75 |   --ring: oklch(0.74 0.16 34.71);
-76 |   --chart-1: oklch(0.74 0.16 34.71);
-77 |   --chart-2: oklch(0.83 0.11 58.00);
-78 |   --chart-3: oklch(0.88 0.08 54.93);
-79 |   --chart-4: oklch(0.82 0.11 40.89);
-80 |   --chart-5: oklch(0.64 0.13 32.07);
-81 |   --sidebar: oklch(0.26 0.02 352.40);
-82 |   --sidebar-foreground: oklch(0.94 0.01 51.32);
-83 |   --sidebar-primary: oklch(0.47 0.08 34.31);
-84 |   --sidebar-primary-foreground: oklch(1.00 0 0);
-85 |   --sidebar-accent: oklch(0.67 0.09 56.00);
-86 |   --sidebar-accent-foreground: oklch(0.26 0.01 353.48);
-87 |   --sidebar-border: oklch(0.36 0.02 342.27);
-88 |   --sidebar-ring: oklch(0.74 0.16 34.71);
-89 |   --font-sans: Montserrat, sans-serif;
-90 |   --font-serif: Merriweather, serif;
-91 |   --font-mono: Ubuntu Mono, monospace;
-92 |   --radius: 0.625rem;
-93 |   --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
-94 |   --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
-95 |   --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
-96 |   --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
-97 |   --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09);
-98 |   --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09);
-99 |   --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09);
-100 |   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
-101 | }
-102 | 
-103 | .sunset {
-104 |   --background: oklch(0.98 0.03 80.00);
-105 |   --foreground: oklch(0.34 0.01 2.77);
-106 |   --card: oklch(1.00 0 0);
-107 |   --card-foreground: oklch(0.34 0.01 2.77);
-108 |   --popover: oklch(1.00 0 0);
-109 |   --popover-foreground: oklch(0.34 0.01 2.77);
-110 |   --primary: oklch(0.65 0.26 34.00);
-111 |   --primary-foreground: oklch(1.00 0 0);
-112 |   --secondary: oklch(0.96 0.05 60.00);
-113 |   --secondary-foreground: oklch(0.56 0.13 32.74);
-114 |   --muted: oklch(0.97 0.02 39.40);
-115 |   --muted-foreground: oklch(0.49 0.05 26.45);
-116 |   --accent: oklch(0.83 0.22 50.00);
-117 |   --accent-foreground: oklch(0.34 0.01 2.77);
-118 |   --destructive: oklch(0.61 0.21 22.24);
-119 |   --destructive-foreground: oklch(1.00 0 0);
-120 |   --border: oklch(0.93 0.06 60.00);
-121 |   --input: oklch(0.93 0.06 60.00);
-122 |   --ring: oklch(0.65 0.26 34.00);
-123 |   --chart-1: oklch(0.65 0.26 34.00);
-124 |   --chart-2: oklch(0.83 0.22 50.00);
-125 |   --chart-3: oklch(0.88 0.15 54.93);
-126 |   --chart-4: oklch(0.82 0.20 40.89);
-127 |   --chart-5: oklch(0.64 0.18 32.07);
-128 |   --sidebar: oklch(0.97 0.04 70.00);
-129 |   --sidebar-foreground: oklch(0.34 0.01 2.77);
-130 |   --sidebar-primary: oklch(0.65 0.26 34.00);
-131 |   --sidebar-primary-foreground: oklch(1.00 0 0);
-132 |   --sidebar-accent: oklch(0.83 0.22 50.00);
-133 |   --sidebar-accent-foreground: oklch(0.34 0.01 2.77);
-134 |   --sidebar-border: oklch(0.93 0.06 60.00);
-135 |   --sidebar-ring: oklch(0.65 0.26 34.00);
-136 |   --font-sans: Montserrat, sans-serif;
-137 |   --font-serif: Merriweather, serif;
-138 |   --font-mono: Ubuntu Mono, monospace;
-139 |   --radius: 0.625rem;
-140 |   --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
-141 |   --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
-142 |   --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
-143 |   --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
-144 |   --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09);
-145 |   --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09);
-146 |   --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09);
-147 |   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
-148 | }
-149 | 
-150 | .black {
-151 |   --background: oklch(0.15 0.01 350.00);
-152 |   --foreground: oklch(0.95 0.01 60.00);
-153 |   --card: oklch(0.20 0.01 340.00);
-154 |   --card-foreground: oklch(0.95 0.01 60.00);
-155 |   --popover: oklch(0.20 0.01 340.00);
-156 |   --popover-foreground: oklch(0.95 0.01 60.00);
-157 |   --primary: oklch(0.45 0.10 35.00);
-158 |   --primary-foreground: oklch(1.00 0 0);
-159 |   --secondary: oklch(0.25 0.01 340.00);
-160 |   --secondary-foreground: oklch(0.95 0.01 60.00);
-161 |   --muted: oklch(0.22 0.01 340.00);
-162 |   --muted-foreground: oklch(0.86 0.01 60.00);
-163 |   --accent: oklch(0.70 0.09 58.00);
-164 |   --accent-foreground: oklch(0.15 0.01 350.00);
-165 |   --destructive: oklch(0.45 0.16 20.00);
-166 |   --destructive-foreground: oklch(1.00 0 0);
-167 |   --border: oklch(0.25 0.01 340.00);
-168 |   --input: oklch(0.25 0.01 340.00);
-169 |   --ring: oklch(0.45 0.10 35.00);
-170 |   --chart-1: oklch(0.45 0.10 35.00);
-171 |   --chart-2: oklch(0.70 0.09 58.00);
-172 |   --chart-3: oklch(0.80 0.06 54.00);
-173 |   --chart-4: oklch(0.75 0.08 40.00);
-174 |   --chart-5: oklch(0.55 0.10 32.00);
-175 |   --sidebar: oklch(0.15 0.01 350.00);
-176 |   --sidebar-foreground: oklch(0.95 0.01 60.00);
-177 |   --sidebar-primary: oklch(0.40 0.06 34.00);
-178 |   --sidebar-primary-foreground: oklch(1.00 0 0);
-179 |   --sidebar-accent: oklch(0.60 0.07 56.00);
-180 |   --sidebar-accent-foreground: oklch(0.15 0.01 350.00);
-181 |   --sidebar-border: oklch(0.25 0.01 340.00);
-182 |   --sidebar-ring: oklch(0.45 0.10 35.00);
-183 |   --font-sans: Montserrat, sans-serif;
-184 |   --font-serif: Merriweather, serif;
-185 |   --font-mono: Ubuntu Mono, monospace;
-186 |   --radius: 0.625rem;
-187 |   --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
-188 |   --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
-189 |   --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
-190 |   --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
-191 |   --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09);
-192 |   --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09);
-193 |   --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09);
-194 |   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
-195 | }
-196 | 
-197 | /* Cyberpunk Theme */
-198 | .cyberpunk {
-199 |   --background: oklch(0.18 0.05 280);
-200 |   /* Dark Purple */
-201 |   --foreground: oklch(0.90 0.15 180);
-202 |   /* Bright Cyan */
-203 |   --card: oklch(0.22 0.06 275);
-204 |   /* Darker Purple */
-205 |   --card-foreground: oklch(0.90 0.15 180);
-206 |   /* Bright Cyan */
-207 |   --popover: oklch(0.22 0.06 275);
-208 |   /* Darker Purple */
-209 |   --popover-foreground: oklch(0.90 0.15 180);
-210 |   /* Bright Cyan */
-211 |   --primary: oklch(0.70 0.25 300);
-212 |   /* Electric Pink */
-213 |   --primary-foreground: oklch(0.10 0.02 280);
-214 |   /* Very Dark Purple */
-215 |   --secondary: oklch(0.30 0.08 270);
-216 |   /* Medium Purple */
-217 |   --secondary-foreground: oklch(0.90 0.15 180);
-218 |   /* Bright Cyan */
-219 |   --muted: oklch(0.25 0.07 272);
-220 |   /* Muted Purple */
-221 |   --muted-foreground: oklch(0.75 0.10 180);
-222 |   /* Lighter Cyan */
-223 |   --accent: oklch(0.85 0.20 140);
-224 |   /* Neon Green */
-225 |   --accent-foreground: oklch(0.10 0.02 280);
-226 |   /* Very Dark Purple */
-227 |   --destructive: oklch(0.60 0.25 15);
-228 |   /* Bright Red */
-229 |   --destructive-foreground: oklch(0.10 0.02 280);
-230 |   /* Very Dark Purple */
-231 |   --border: oklch(0.40 0.10 290);
-232 |   /* Neon Border */
-233 |   --input: oklch(0.30 0.08 270);
-234 |   /* Medium Purple */
-235 |   --ring: oklch(0.70 0.25 300);
-236 |   /* Electric Pink */
-237 |   --chart-1: oklch(0.70 0.25 300);
-238 |   /* Electric Pink */
-239 |   --chart-2: oklch(0.85 0.20 140);
-240 |   /* Neon Green */
-241 |   --chart-3: oklch(0.75 0.22 240);
-242 |   /* Electric Blue */
-243 |   --chart-4: oklch(0.80 0.18 90);
-244 |   /* Neon Yellow */
-245 |   --chart-5: oklch(0.65 0.20 0);
-246 |   /* Bright Orange */
-247 |   --sidebar: oklch(0.15 0.04 285);
-248 |   /* Very Dark Purple */
-249 |   --sidebar-foreground: oklch(0.90 0.15 180);
-250 |   /* Bright Cyan */
-251 |   --sidebar-primary: oklch(0.70 0.25 300);
-252 |   /* Electric Pink */
-253 |   --sidebar-primary-foreground: oklch(0.10 0.02 280);
-254 |   /* Very Dark Purple */
-255 |   --sidebar-accent: oklch(0.85 0.20 140);
-256 |   /* Neon Green */
-257 |   --sidebar-accent-foreground: oklch(0.10 0.02 280);
-258 |   /* Very Dark Purple */
-259 |   --sidebar-border: oklch(0.40 0.10 290);
-260 |   /* Neon Border */
-261 |   --sidebar-ring: oklch(0.70 0.25 300);
-262 |   /* Electric Pink */
-263 |   --font-sans: 'Orbitron', sans-serif;
-264 |   /* Futuristic font */
-265 |   --font-serif: 'Share Tech Mono', monospace;
-266 |   /* Monospaced for code feel */
-267 |   --font-mono: 'Share Tech Mono', monospace;
-268 |   --radius: 0.25rem;
-269 |   /* Sharper edges */
-270 |   --shadow-2xs: 0px 2px 4px -1px oklch(0.70 0.25 300 / 0.2);
-271 |   --shadow-xs: 0px 3px 6px -1px oklch(0.70 0.25 300 / 0.25);
-272 |   --shadow-sm: 0px 4px 8px -2px oklch(0.70 0.25 300 / 0.3), 0px 2px 4px -2px oklch(0.70 0.25 300 / 0.2);
-273 |   --shadow: 0px 6px 12px -3px oklch(0.70 0.25 300 / 0.35), 0px 4px 6px -4px oklch(0.70 0.25 300 / 0.25);
-274 |   --shadow-md: 0px 8px 16px -4px oklch(0.70 0.25 300 / 0.4), 0px 4px 8px -4px oklch(0.70 0.25 300 / 0.3);
-275 |   --shadow-lg: 0px 12px 24px -6px oklch(0.70 0.25 300 / 0.45), 0px 6px 12px -6px oklch(0.70 0.25 300 / 0.35);
-276 |   --shadow-xl: 0px 16px 32px -8px oklch(0.70 0.25 300 / 0.5), 0px 8px 16px -8px oklch(0.70 0.25 300 / 0.4);
-277 |   --shadow-2xl: 0px 24px 48px -12px oklch(0.70 0.25 300 / 0.6);
-278 | }
-279 | 
-280 | /* Retro Theme */
-281 | .retro {
-282 |   --background: oklch(0.95 0.02 90);
-283 |   /* Cream */
-284 |   --foreground: oklch(0.35 0.08 40);
-285 |   /* Dark Brown */
-286 |   --card: oklch(0.98 0.01 85);
-287 |   /* Lighter Cream */
-288 |   --card-foreground: oklch(0.35 0.08 40);
-289 |   /* Dark Brown */
-290 |   --popover: oklch(0.98 0.01 85);
-291 |   /* Lighter Cream */
-292 |   --popover-foreground: oklch(0.35 0.08 40);
-293 |   /* Dark Brown */
-294 |   --primary: oklch(0.60 0.15 140);
-295 |   /* Avocado Green */
-296 |   --primary-foreground: oklch(0.95 0.02 90);
-297 |   /* Cream */
-298 |   --secondary: oklch(0.85 0.10 80);
-299 |   /* Mustard Yellow */
-300 |   --secondary-foreground: oklch(0.35 0.08 40);
-301 |   /* Dark Brown */
-302 |   --muted: oklch(0.92 0.03 88);
-303 |   /* Muted Cream */
-304 |   --muted-foreground: oklch(0.50 0.06 50);
-305 |   /* Medium Brown */
-306 |   --accent: oklch(0.65 0.18 30);
-307 |   /* Burnt Orange */
-308 |   --accent-foreground: oklch(0.95 0.02 90);
-309 |   /* Cream */
-310 |   --destructive: oklch(0.55 0.20 25);
-311 |   /* Muted Red */
-312 |   --destructive-foreground: oklch(0.95 0.02 90);
-313 |   /* Cream */
-314 |   --border: oklch(0.88 0.04 70);
-315 |   /* Light Brown Border */
-316 |   --input: oklch(0.88 0.04 70);
-317 |   /* Light Brown Border */
-318 |   --ring: oklch(0.60 0.15 140);
-319 |   /* Avocado Green */
-320 |   --chart-1: oklch(0.60 0.15 140);
-321 |   /* Avocado Green */
-322 |   --chart-2: oklch(0.65 0.18 30);
-323 |   /* Burnt Orange */
-324 |   --chart-3: oklch(0.70 0.12 190);
-325 |   /* Teal */
-326 |   --chart-4: oklch(0.85 0.10 80);
-327 |   /* Mustard Yellow */
-328 |   --chart-5: oklch(0.50 0.10 45);
-329 |   /* Darker Brown */
-330 |   --sidebar: oklch(0.90 0.03 85);
-331 |   /* Slightly Darker Cream */
-332 |   --sidebar-foreground: oklch(0.35 0.08 40);
-333 |   /* Dark Brown */
-334 |   --sidebar-primary: oklch(0.60 0.15 140);
-335 |   /* Avocado Green */
-336 |   --sidebar-primary-foreground: oklch(0.95 0.02 90);
-337 |   /* Cream */
-338 |   --sidebar-accent: oklch(0.65 0.18 30);
-339 |   /* Burnt Orange */
-340 |   --sidebar-accent-foreground: oklch(0.95 0.02 90);
-341 |   /* Cream */
-342 |   --sidebar-border: oklch(0.88 0.04 70);
-343 |   /* Light Brown Border */
-344 |   --sidebar-ring: oklch(0.60 0.15 140);
-345 |   /* Avocado Green */
-346 |   --font-sans: 'Lobster', cursive;
-347 |   /* Retro script */
-348 |   --font-serif: 'Playfair Display', serif;
-349 |   /* Classic serif */
-350 |   --font-mono: 'Courier Prime', monospace;
-351 |   /* Typewriter mono */
-352 |   --radius: 0.8rem;
-353 |   /* Rounded corners */
-354 |   --shadow-2xs: 0px 1px 2px 0px oklch(0.35 0.08 40 / 0.05);
-355 |   --shadow-xs: 0px 2px 4px -1px oklch(0.35 0.08 40 / 0.06), 0px 1px 2px -1px oklch(0.35 0.08 40 / 0.04);
-356 |   --shadow-sm: 0px 3px 6px -1px oklch(0.35 0.08 40 / 0.08), 0px 2px 4px -2px oklch(0.35 0.08 40 / 0.05);
-357 |   --shadow: 0px 4px 8px -2px oklch(0.35 0.08 40 / 0.1), 0px 2px 4px -2px oklch(0.35 0.08 40 / 0.06);
-358 |   --shadow-md: 0px 6px 12px -3px oklch(0.35 0.08 40 / 0.12), 0px 4px 6px -4px oklch(0.35 0.08 40 / 0.07);
-359 |   --shadow-lg: 0px 10px 20px -5px oklch(0.35 0.08 40 / 0.14), 0px 6px 10px -6px oklch(0.35 0.08 40 / 0.09);
-360 |   --shadow-xl: 0px 15px 30px -8px oklch(0.35 0.08 40 / 0.16), 0px 8px 15px -8px oklch(0.35 0.08 40 / 0.11);
-361 |   --shadow-2xl: 0px 25px 50px -12px oklch(0.35 0.08 40 / 0.25);
-362 | }
-363 | 
-364 | /* Nature Theme */
-365 | .nature {
-366 |   --background: oklch(0.96 0.03 140);
-367 |   /* Light Leaf Green */
-368 |   --foreground: oklch(0.25 0.06 110);
-369 |   /* Dark Forest Green */
-370 |   --card: oklch(1.00 0.01 130);
-371 |   /* Almost White Green Tint */
-372 |   --card-foreground: oklch(0.25 0.06 110);
-373 |   /* Dark Forest Green */
-374 |   --popover: oklch(1.00 0.01 130);
-375 |   /* Almost White Green Tint */
-376 |   --popover-foreground: oklch(0.25 0.06 110);
-377 |   /* Dark Forest Green */
-378 |   --primary: oklch(0.55 0.18 150);
-379 |   /* Vibrant Leaf Green */
-380 |   --primary-foreground: oklch(0.98 0.01 120);
-381 |   /* Very Light Green */
-382 |   --secondary: oklch(0.80 0.08 90);
-383 |   /* Light Wood Brown */
-384 |   --secondary-foreground: oklch(0.25 0.06 110);
-385 |   /* Dark Forest Green */
-386 |   --muted: oklch(0.92 0.04 135);
-387 |   /* Muted Light Green */
-388 |   --muted-foreground: oklch(0.45 0.07 115);
-389 |   /* Medium Forest Green */
-390 |   --accent: oklch(0.75 0.15 220);
-391 |   /* Sky Blue */
-392 |   --accent-foreground: oklch(0.20 0.05 230);
-393 |   /* Dark Blue */
-394 |   --destructive: oklch(0.60 0.20 40);
-395 |   /* Earthy Red */
-396 |   --destructive-foreground: oklch(0.98 0.01 120);
-397 |   /* Very Light Green */
-398 |   --border: oklch(0.85 0.05 120);
-399 |   /* Light Green Border */
-400 |   --input: oklch(0.85 0.05 120);
-401 |   /* Light Green Border */
-402 |   --ring: oklch(0.55 0.18 150);
-403 |   /* Vibrant Leaf Green */
-404 |   --chart-1: oklch(0.55 0.18 150);
-405 |   /* Vibrant Leaf Green */
-406 |   --chart-2: oklch(0.75 0.15 220);
-407 |   /* Sky Blue */
-408 |   --chart-3: oklch(0.65 0.12 80);
-409 |   /* Wood Brown */
-410 |   --chart-4: oklch(0.80 0.10 60);
-411 |   /* Sunlight Yellow */
-412 |   --chart-5: oklch(0.70 0.16 350);
-413 |   /* Flower Pink */
-414 |   --sidebar: oklch(0.90 0.04 130);
-415 |   /* Slightly Darker Light Green */
-416 |   --sidebar-foreground: oklch(0.25 0.06 110);
-417 |   /* Dark Forest Green */
-418 |   --sidebar-primary: oklch(0.55 0.18 150);
-419 |   /* Vibrant Leaf Green */
-420 |   --sidebar-primary-foreground: oklch(0.98 0.01 120);
-421 |   /* Very Light Green */
-422 |   --sidebar-accent: oklch(0.75 0.15 220);
-423 |   /* Sky Blue */
-424 |   --sidebar-accent-foreground: oklch(0.20 0.05 230);
-425 |   /* Dark Blue */
-426 |   --sidebar-border: oklch(0.85 0.05 120);
-427 |   /* Light Green Border */
-428 |   --sidebar-ring: oklch(0.55 0.18 150);
-429 |   /* Vibrant Leaf Green */
-430 |   --font-sans: 'Quicksand', sans-serif;
-431 |   /* Soft, rounded font */
-432 |   --font-serif: 'Gentium Book Basic', serif;
-433 |   /* Readable serif */
-434 |   --font-mono: 'Fira Code', monospace;
-435 |   /* Clear mono */
-436 |   --radius: 0.75rem;
-437 |   /* Slightly rounded */
-438 |   --shadow-2xs: 0px 1px 2px 0px oklch(0.25 0.06 110 / 0.04);
-439 |   --shadow-xs: 0px 2px 4px -1px oklch(0.25 0.06 110 / 0.05), 0px 1px 2px -1px oklch(0.25 0.06 110 / 0.03);
-440 |   --shadow-sm: 0px 3px 6px -1px oklch(0.25 0.06 110 / 0.07), 0px 2px 4px -2px oklch(0.25 0.06 110 / 0.04);
-441 |   --shadow: 0px 4px 8px -2px oklch(0.25 0.06 110 / 0.09), 0px 2px 4px -2px oklch(0.25 0.06 110 / 0.05);
-442 |   --shadow-md: 0px 6px 12px -3px oklch(0.25 0.06 110 / 0.11), 0px 4px 6px -4px oklch(0.25 0.06 110 / 0.06);
-443 |   --shadow-lg: 0px 10px 20px -5px oklch(0.25 0.06 110 / 0.13), 0px 6px 10px -6px oklch(0.25 0.06 110 / 0.08);
-444 |   --shadow-xl: 0px 15px 30px -8px oklch(0.25 0.06 110 / 0.15), 0px 8px 15px -8px oklch(0.25 0.06 110 / 0.10);
-445 |   --shadow-2xl: 0px 25px 50px -12px oklch(0.25 0.06 110 / 0.20);
-446 | }
-447 | 
-448 | @theme inline {
-449 |   --color-background: var(--background);
-450 |   --color-foreground: var(--foreground);
-451 |   --color-card: var(--card);
-452 |   --color-card-foreground: var(--card-foreground);
-453 |   --color-popover: var(--popover);
-454 |   --color-popover-foreground: var(--popover-foreground);
-455 |   --color-primary: var(--primary);
-456 |   --color-primary-foreground: var(--primary-foreground);
-457 |   --color-secondary: var(--secondary);
-458 |   --color-secondary-foreground: var(--secondary-foreground);
-459 |   --color-muted: var(--muted);
-460 |   --color-muted-foreground: var(--muted-foreground);
-461 |   --color-accent: var(--accent);
-462 |   --color-accent-foreground: var(--accent-foreground);
-463 |   --color-destructive: var(--destructive);
-464 |   --color-destructive-foreground: var(--destructive-foreground);
-465 |   --color-border: var(--border);
-466 |   --color-input: var(--input);
-467 |   --color-ring: var(--ring);
-468 |   --color-chart-1: var(--chart-1);
-469 |   --color-chart-2: var(--chart-2);
-470 |   --color-chart-3: var(--chart-3);
-471 |   --color-chart-4: var(--chart-4);
-472 |   --color-chart-5: var(--chart-5);
-473 |   --color-sidebar: var(--sidebar);
-474 |   --color-sidebar-foreground: var(--sidebar-foreground);
-475 |   --color-sidebar-primary: var(--sidebar-primary);
-476 |   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-477 |   --color-sidebar-accent: var(--sidebar-accent);
-478 |   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-479 |   --color-sidebar-border: var(--sidebar-border);
-480 |   --color-sidebar-ring: var(--sidebar-ring);
-481 | 
-482 |   --font-sans: var(--font-sans);
-483 |   --font-mono: var(--font-mono);
-484 |   --font-serif: var(--font-serif);
-485 | 
-486 |   --radius-sm: calc(var(--radius) - 4px);
-487 |   --radius-md: calc(var(--radius) - 2px);
-488 |   --radius-lg: var(--radius);
-489 |   --radius-xl: calc(var(--radius) + 4px);
-490 | 
-491 |   --shadow-2xs: var(--shadow-2xs);
-492 |   --shadow-xs: var(--shadow-xs);
-493 |   --shadow-sm: var(--shadow-sm);
-494 |   --shadow: var(--shadow);
-495 |   --shadow-md: var(--shadow-md);
-496 |   --shadow-lg: var(--shadow-lg);
-497 |   --shadow-xl: var(--shadow-xl);
-498 |   --shadow-2xl: var(--shadow-2xl);
-499 | }
-500 | 
-501 | @layer base {
-502 |   * {
-503 |     @apply border-border outline-ring/50;
-504 |   }
-505 | 
-506 |   body {
-507 |     @apply bg-background text-foreground;
-508 |     letter-spacing: var(--tracking-normal);
-509 |   }
-510 | }
+8 | @custom-variant cyberpunk (&:is(.cyberpunk *));
+9 | 
+10 | :root {
+11 |   --background: oklch(0.99 0.01 56.32);
+12 |   --foreground: oklch(0.34 0.01 2.77);
+13 |   --card: oklch(1.00 0 0);
+14 |   --card-foreground: oklch(0.34 0.01 2.77);
+15 |   --popover: oklch(1.00 0 0);
+16 |   --popover-foreground: oklch(0.34 0.01 2.77);
+17 |   --primary: oklch(0.74 0.16 34.71);
+18 |   --primary-foreground: oklch(1.00 0 0);
+19 |   --secondary: oklch(0.96 0.02 28.90);
+20 |   --secondary-foreground: oklch(0.56 0.13 32.74);
+21 |   --muted: oklch(0.97 0.02 39.40);
+22 |   --muted-foreground: oklch(0.49 0.05 26.45);
+23 |   --accent: oklch(0.83 0.11 58.00);
+24 |   --accent-foreground: oklch(0.34 0.01 2.77);
+25 |   --destructive: oklch(0.61 0.21 22.24);
+26 |   --destructive-foreground: oklch(1.00 0 0);
+27 |   --border: oklch(0.93 0.04 38.69);
+28 |   --input: oklch(0.93 0.04 38.69);
+29 |   --ring: oklch(0.74 0.16 34.71);
+30 |   --chart-1: oklch(0.74 0.16 34.71);
+31 |   --chart-2: oklch(0.83 0.11 58.00);
+32 |   --chart-3: oklch(0.88 0.08 54.93);
+33 |   --chart-4: oklch(0.82 0.11 40.89);
+34 |   --chart-5: oklch(0.64 0.13 32.07);
+35 |   --sidebar: oklch(0.97 0.02 39.40);
+36 |   --sidebar-foreground: oklch(0.34 0.01 2.77);
+37 |   --sidebar-primary: oklch(0.74 0.16 34.71);
+38 |   --sidebar-primary-foreground: oklch(1.00 0 0);
+39 |   --sidebar-accent: oklch(0.83 0.11 58.00);
+40 |   --sidebar-accent-foreground: oklch(0.34 0.01 2.77);
+41 |   --sidebar-border: oklch(0.93 0.04 38.69);
+42 |   --sidebar-ring: oklch(0.74 0.16 34.71);
+43 |   --font-sans: Montserrat, sans-serif;
+44 |   --font-serif: Merriweather, serif;
+45 |   --font-mono: Ubuntu Mono, monospace;
+46 |   --radius: 0.625rem;
+47 |   --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+48 |   --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+49 |   --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+50 |   --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+51 |   --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09);
+52 |   --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09);
+53 |   --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09);
+54 |   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
+55 | }
+56 | 
+57 | .dark {
+58 |   --background: oklch(0.26 0.02 352.40);
+59 |   --foreground: oklch(0.94 0.01 51.32);
+60 |   --card: oklch(0.32 0.02 341.45);
+61 |   --card-foreground: oklch(0.94 0.01 51.32);
+62 |   --popover: oklch(0.32 0.02 341.45);
+63 |   --popover-foreground: oklch(0.94 0.01 51.32);
+64 |   --primary: oklch(0.57 0.15 35.26);
+65 |   --primary-foreground: oklch(1.00 0 0);
+66 |   --secondary: oklch(0.36 0.02 342.27);
+67 |   --secondary-foreground: oklch(0.94 0.01 51.32);
+68 |   --muted: oklch(0.32 0.02 341.45);
+69 |   --muted-foreground: oklch(0.84 0.02 52.63);
+70 |   --accent: oklch(0.36 0.02 342.27);
+71 |   --accent-foreground: oklch(0.94 0.01 51.32);
+72 |   --destructive: oklch(0.51 0.16 20.19);
+73 |   --destructive-foreground: oklch(1.00 0 0);
+74 |   --border: oklch(0.36 0.02 342.27);
+75 |   --input: oklch(0.36 0.02 342.27);
+76 |   --ring: oklch(0.74 0.16 34.71);
+77 |   --chart-1: oklch(0.74 0.16 34.71);
+78 |   --chart-2: oklch(0.83 0.11 58.00);
+79 |   --chart-3: oklch(0.88 0.08 54.93);
+80 |   --chart-4: oklch(0.82 0.11 40.89);
+81 |   --chart-5: oklch(0.64 0.13 32.07);
+82 |   --sidebar: oklch(0.26 0.02 352.40);
+83 |   --sidebar-foreground: oklch(0.94 0.01 51.32);
+84 |   --sidebar-primary: oklch(0.47 0.08 34.31);
+85 |   --sidebar-primary-foreground: oklch(1.00 0 0);
+86 |   --sidebar-accent: oklch(0.67 0.09 56.00);
+87 |   --sidebar-accent-foreground: oklch(0.94 0.01 51.32);
+88 |   --sidebar-border: oklch(0.36 0.02 342.27);
+89 |   --sidebar-ring: oklch(0.74 0.16 34.71);
+90 |   --font-sans: Montserrat, sans-serif;
+91 |   --font-serif: Merriweather, serif;
+92 |   --font-mono: Ubuntu Mono, monospace;
+93 |   --radius: 0.625rem;
+94 |   --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+95 |   --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+96 |   --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+97 |   --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+98 |   --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09);
+99 |   --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09);
+100 |   --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09);
+101 |   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
+102 | }
+103 | 
+104 | .sunset {
+105 |   --background: oklch(0.98 0.03 80.00);
+106 |   --foreground: oklch(0.34 0.01 2.77);
+107 |   --card: oklch(1.00 0 0);
+108 |   --card-foreground: oklch(0.34 0.01 2.77);
+109 |   --popover: oklch(1.00 0 0);
+110 |   --popover-foreground: oklch(0.34 0.01 2.77);
+111 |   --primary: oklch(0.65 0.26 34.00);
+112 |   --primary-foreground: oklch(1.00 0 0);
+113 |   --secondary: oklch(0.96 0.05 60.00);
+114 |   --secondary-foreground: oklch(0.56 0.13 32.74);
+115 |   --muted: oklch(0.97 0.02 39.40);
+116 |   --muted-foreground: oklch(0.49 0.05 26.45);
+117 |   --accent: oklch(0.83 0.22 50.00);
+118 |   --accent-foreground: oklch(0.34 0.01 2.77);
+119 |   --destructive: oklch(0.61 0.21 22.24);
+120 |   --destructive-foreground: oklch(1.00 0 0);
+121 |   --border: oklch(0.93 0.06 60.00);
+122 |   --input: oklch(0.93 0.06 60.00);
+123 |   --ring: oklch(0.65 0.26 34.00);
+124 |   --chart-1: oklch(0.65 0.26 34.00);
+125 |   --chart-2: oklch(0.83 0.22 50.00);
+126 |   --chart-3: oklch(0.88 0.15 54.93);
+127 |   --chart-4: oklch(0.82 0.20 40.89);
+128 |   --chart-5: oklch(0.64 0.18 32.07);
+129 |   --sidebar: oklch(0.97 0.04 70.00);
+130 |   --sidebar-foreground: oklch(0.34 0.01 2.77);
+131 |   --sidebar-primary: oklch(0.65 0.26 34.00);
+132 |   --sidebar-primary-foreground: oklch(1.00 0 0);
+133 |   --sidebar-accent: oklch(0.83 0.22 50.00);
+134 |   --sidebar-accent-foreground: oklch(0.34 0.01 2.77);
+135 |   --sidebar-border: oklch(0.93 0.06 60.00);
+136 |   --sidebar-ring: oklch(0.65 0.26 34.00);
+137 |   --font-sans: Montserrat, sans-serif;
+138 |   --font-serif: Merriweather, serif;
+139 |   --font-mono: Ubuntu Mono, monospace;
+140 |   --radius: 0.625rem;
+141 |   --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+142 |   --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+143 |   --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+144 |   --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+145 |   --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09);
+146 |   --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09);
+147 |   --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09);
+148 |   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
+149 | }
+150 | 
+151 | .black {
+152 |   --background: oklch(0.15 0.01 350.00);
+153 |   --foreground: oklch(0.95 0.01 60.00);
+154 |   --card: oklch(0.20 0.01 340.00);
+155 |   --card-foreground: oklch(0.95 0.01 60.00);
+156 |   --popover: oklch(0.20 0.01 340.00);
+157 |   --popover-foreground: oklch(0.95 0.01 60.00);
+158 |   --primary: oklch(0.45 0.10 35.00);
+159 |   --primary-foreground: oklch(1.00 0 0);
+160 |   --secondary: oklch(0.25 0.01 340.00);
+161 |   --secondary-foreground: oklch(0.95 0.01 60.00);
+162 |   --muted: oklch(0.22 0.01 340.00);
+163 |   --muted-foreground: oklch(0.86 0.01 60.00);
+164 |   --accent: oklch(0.70 0.09 58.00);
+165 |   --accent-foreground: oklch(0.15 0.01 350.00);
+166 |   --destructive: oklch(0.45 0.16 20.00);
+167 |   --destructive-foreground: oklch(1.00 0 0);
+168 |   --border: oklch(0.25 0.01 340.00);
+169 |   --input: oklch(0.25 0.01 340.00);
+170 |   --ring: oklch(0.45 0.10 35.00);
+171 |   --chart-1: oklch(0.45 0.10 35.00);
+172 |   --chart-2: oklch(0.70 0.09 58.00);
+173 |   --chart-3: oklch(0.80 0.06 54.00);
+174 |   --chart-4: oklch(0.75 0.08 40.00);
+175 |   --chart-5: oklch(0.55 0.10 32.00);
+176 |   --sidebar: oklch(0.15 0.01 350.00);
+177 |   --sidebar-foreground: oklch(0.95 0.01 60.00);
+178 |   --sidebar-primary: oklch(0.40 0.06 34.00);
+179 |   --sidebar-primary-foreground: oklch(1.00 0 0);
+180 |   --sidebar-accent: oklch(0.60 0.07 56.00);
+181 |   --sidebar-accent-foreground: oklch(0.15 0.01 350.00);
+182 |   --sidebar-border: oklch(0.25 0.01 340.00);
+183 |   --sidebar-ring: oklch(0.45 0.10 35.00);
+184 |   --font-sans: Montserrat, sans-serif;
+185 |   --font-serif: Merriweather, serif;
+186 |   --font-mono: Ubuntu Mono, monospace;
+187 |   --radius: 0.625rem;
+188 |   --shadow-2xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+189 |   --shadow-xs: 0px 6px 12px -3px hsl(0 0% 0% / 0.04);
+190 |   --shadow-sm: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+191 |   --shadow: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 1px 2px -4px hsl(0 0% 0% / 0.09);
+192 |   --shadow-md: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 2px 4px -4px hsl(0 0% 0% / 0.09);
+193 |   --shadow-lg: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 4px 6px -4px hsl(0 0% 0% / 0.09);
+194 |   --shadow-xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.09), 0px 8px 10px -4px hsl(0 0% 0% / 0.09);
+195 |   --shadow-2xl: 0px 6px 12px -3px hsl(0 0% 0% / 0.22);
+196 | }
+197 | 
+198 | /* Cyberpunk Theme */
+199 | .cyberpunk {
+200 |   --background: oklch(0.18 0.05 280);
+201 |   /* Dark Purple */
+202 |   --foreground: oklch(0.95 0.15 180);
+203 |   /* Brighter Cyan */
+204 |   --card: oklch(0.22 0.06 275);
+205 |   /* Darker Purple */
+206 |   --card-foreground: oklch(0.95 0.15 180);
+207 |   /* Brighter Cyan */
+208 |   --popover: oklch(0.22 0.06 275);
+209 |   /* Darker Purple */
+210 |   --popover-foreground: oklch(0.95 0.15 180);
+211 |   /* Brighter Cyan */
+212 |   --primary: oklch(0.70 0.25 300);
+213 |   /* Electric Pink */
+214 |   --primary-foreground: oklch(0.10 0.02 280);
+215 |   /* Very Dark Purple */
+216 |   --secondary: oklch(0.30 0.08 270);
+217 |   /* Medium Purple */
+218 |   --secondary-foreground: oklch(0.95 0.15 180);
+219 |   /* Brighter Cyan */
+220 |   --muted: oklch(0.25 0.07 272);
+221 |   /* Muted Purple */
+222 |   --muted-foreground: oklch(0.80 0.10 180);
+223 |   /* Brighter Lighter Cyan */
+224 |   --accent: oklch(0.85 0.20 140);
+225 |   /* Neon Green */
+226 |   --accent-foreground: oklch(0.10 0.02 280);
+227 |   /* Very Dark Purple */
+228 |   --destructive: oklch(0.60 0.25 15);
+229 |   /* Bright Red */
+230 |   --destructive-foreground: oklch(0.10 0.02 280);
+231 |   /* Very Dark Purple */
+232 |   --border: oklch(0.40 0.10 290);
+233 |   /* Neon Border */
+234 |   --input: oklch(0.30 0.08 270);
+235 |   /* Medium Purple */
+236 |   --ring: oklch(0.70 0.25 300);
+237 |   /* Electric Pink */
+238 |   --chart-1: oklch(0.70 0.25 300);
+239 |   /* Electric Pink */
+240 |   --chart-2: oklch(0.85 0.20 140);
+241 |   /* Neon Green */
+242 |   --chart-3: oklch(0.75 0.22 240);
+243 |   /* Electric Blue */
+244 |   --chart-4: oklch(0.80 0.18 90);
+245 |   /* Neon Yellow */
+246 |   --chart-5: oklch(0.65 0.20 0);
+247 |   /* Bright Orange */
+248 |   --sidebar: oklch(0.15 0.04 285);
+249 |   /* Very Dark Purple */
+250 |   --sidebar-foreground: oklch(0.95 0.15 180);
+251 |   /* Brighter Cyan */
+252 |   --sidebar-primary: oklch(0.70 0.25 300);
+253 |   /* Electric Pink */
+254 |   --sidebar-primary-foreground: oklch(0.10 0.02 280);
+255 |   /* Very Dark Purple */
+256 |   --sidebar-accent: oklch(0.85 0.20 140);
+257 |   /* Neon Green */
+258 |   --sidebar-accent-foreground: oklch(0.10 0.02 280);
+259 |   /* Very Dark Purple */
+260 |   --sidebar-border: oklch(0.40 0.10 290);
+261 |   /* Neon Border */
+262 |   --sidebar-ring: oklch(0.70 0.25 300);
+263 |   /* Electric Pink */
+264 |   --font-sans: 'Orbitron', sans-serif;
+265 |   /* Futuristic font */
+266 |   --font-serif: 'Share Tech Mono', monospace;
+267 |   /* Monospaced for code feel */
+268 |   --font-mono: 'Share Tech Mono', monospace;
+269 |   --radius: 0.25rem;
+270 |   /* Sharper edges */
+271 |   --shadow-2xs: 0px 2px 4px -1px oklch(0.70 0.25 300 / 0.2);
+272 |   --shadow-xs: 0px 3px 6px -1px oklch(0.70 0.25 300 / 0.25);
+273 |   --shadow-sm: 0px 4px 8px -2px oklch(0.70 0.25 300 / 0.3), 0px 2px 4px -2px oklch(0.70 0.25 300 / 0.2);
+274 |   --shadow: 0px 6px 12px -3px oklch(0.70 0.25 300 / 0.35), 0px 4px 6px -4px oklch(0.70 0.25 300 / 0.25);
+275 |   --shadow-md: 0px 8px 16px -4px oklch(0.70 0.25 300 / 0.4), 0px 4px 8px -4px oklch(0.70 0.25 300 / 0.3);
+276 |   --shadow-lg: 0px 12px 24px -6px oklch(0.70 0.25 300 / 0.45), 0px 6px 12px -6px oklch(0.70 0.25 300 / 0.35);
+277 |   --shadow-xl: 0px 16px 32px -8px oklch(0.70 0.25 300 / 0.5), 0px 8px 16px -8px oklch(0.70 0.25 300 / 0.4);
+278 |   --shadow-2xl: 0px 24px 48px -12px oklch(0.70 0.25 300 / 0.6);
+279 | }
+280 | 
+281 | /* Retro Theme */
+282 | .retro {
+283 |   --background: oklch(0.95 0.02 90);
+284 |   /* Cream */
+285 |   --foreground: oklch(0.35 0.08 40);
+286 |   /* Dark Brown */
+287 |   --card: oklch(0.98 0.01 85);
+288 |   /* Lighter Cream */
+289 |   --card-foreground: oklch(0.35 0.08 40);
+290 |   /* Dark Brown */
+291 |   --popover: oklch(0.98 0.01 85);
+292 |   /* Lighter Cream */
+293 |   --popover-foreground: oklch(0.35 0.08 40);
+294 |   /* Dark Brown */
+295 |   --primary: oklch(0.60 0.15 140);
+296 |   /* Avocado Green */
+297 |   --primary-foreground: oklch(0.95 0.02 90);
+298 |   /* Cream */
+299 |   --secondary: oklch(0.85 0.10 80);
+300 |   /* Mustard Yellow */
+301 |   --secondary-foreground: oklch(0.35 0.08 40);
+302 |   /* Dark Brown */
+303 |   --muted: oklch(0.92 0.03 88);
+304 |   /* Muted Cream */
+305 |   --muted-foreground: oklch(0.50 0.06 50);
+306 |   /* Medium Brown */
+307 |   --accent: oklch(0.65 0.18 30);
+308 |   /* Burnt Orange */
+309 |   --accent-foreground: oklch(0.95 0.02 90);
+310 |   /* Cream */
+311 |   --destructive: oklch(0.55 0.20 25);
+312 |   /* Muted Red */
+313 |   --destructive-foreground: oklch(0.95 0.02 90);
+314 |   /* Cream */
+315 |   --border: oklch(0.88 0.04 70);
+316 |   /* Light Brown Border */
+317 |   --input: oklch(0.88 0.04 70);
+318 |   /* Light Brown Border */
+319 |   --ring: oklch(0.60 0.15 140);
+320 |   /* Avocado Green */
+321 |   --chart-1: oklch(0.60 0.15 140);
+322 |   /* Avocado Green */
+323 |   --chart-2: oklch(0.65 0.18 30);
+324 |   /* Burnt Orange */
+325 |   --chart-3: oklch(0.70 0.12 190);
+326 |   /* Teal */
+327 |   --chart-4: oklch(0.85 0.10 80);
+328 |   /* Mustard Yellow */
+329 |   --chart-5: oklch(0.50 0.10 45);
+330 |   /* Darker Brown */
+331 |   --sidebar: oklch(0.90 0.03 85);
+332 |   /* Slightly Darker Cream */
+333 |   --sidebar-foreground: oklch(0.35 0.08 40);
+334 |   /* Dark Brown */
+335 |   --sidebar-primary: oklch(0.60 0.15 140);
+336 |   /* Avocado Green */
+337 |   --sidebar-primary-foreground: oklch(0.95 0.02 90);
+338 |   /* Cream */
+339 |   --sidebar-accent: oklch(0.65 0.18 30);
+340 |   /* Burnt Orange */
+341 |   --sidebar-accent-foreground: oklch(0.95 0.02 90);
+342 |   /* Cream */
+343 |   --sidebar-border: oklch(0.88 0.04 70);
+344 |   /* Light Brown Border */
+345 |   --sidebar-ring: oklch(0.60 0.15 140);
+346 |   /* Avocado Green */
+347 |   --font-sans: 'Lobster', cursive;
+348 |   /* Retro script */
+349 |   --font-serif: 'Playfair Display', serif;
+350 |   /* Classic serif */
+351 |   --font-mono: 'Courier Prime', monospace;
+352 |   /* Typewriter mono */
+353 |   --radius: 0.8rem;
+354 |   /* Rounded corners */
+355 |   --shadow-2xs: 0px 1px 2px 0px oklch(0.35 0.08 40 / 0.05);
+356 |   --shadow-xs: 0px 2px 4px -1px oklch(0.35 0.08 40 / 0.06), 0px 1px 2px -1px oklch(0.35 0.08 40 / 0.04);
+357 |   --shadow-sm: 0px 3px 6px -1px oklch(0.35 0.08 40 / 0.08), 0px 2px 4px -2px oklch(0.35 0.08 40 / 0.05);
+358 |   --shadow: 0px 4px 8px -2px oklch(0.35 0.08 40 / 0.1), 0px 2px 4px -2px oklch(0.35 0.08 40 / 0.06);
+359 |   --shadow-md: 0px 6px 12px -3px oklch(0.35 0.08 40 / 0.12), 0px 4px 6px -4px oklch(0.35 0.08 40 / 0.07);
+360 |   --shadow-lg: 0px 10px 20px -5px oklch(0.35 0.08 40 / 0.14), 0px 6px 10px -6px oklch(0.35 0.08 40 / 0.09);
+361 |   --shadow-xl: 0px 15px 30px -8px oklch(0.35 0.08 40 / 0.16), 0px 8px 15px -8px oklch(0.35 0.08 40 / 0.11);
+362 |   --shadow-2xl: 0px 25px 50px -12px oklch(0.35 0.08 40 / 0.25);
+363 | }
+364 | 
+365 | /* Nature Theme */
+366 | .nature {
+367 |   --background: oklch(0.96 0.03 140);
+368 |   /* Light Leaf Green */
+369 |   --foreground: oklch(0.25 0.06 110);
+370 |   /* Dark Forest Green */
+371 |   --card: oklch(1.00 0.01 130);
+372 |   /* Almost White Green Tint */
+373 |   --card-foreground: oklch(0.25 0.06 110);
+374 |   /* Dark Forest Green */
+375 |   --popover: oklch(1.00 0.01 130);
+376 |   /* Almost White Green Tint */
+377 |   --popover-foreground: oklch(0.25 0.06 110);
+378 |   /* Dark Forest Green */
+379 |   --primary: oklch(0.55 0.18 150);
+380 |   /* Vibrant Leaf Green */
+381 |   --primary-foreground: oklch(0.98 0.01 120);
+382 |   /* Very Light Green */
+383 |   --secondary: oklch(0.80 0.08 90);
+384 |   /* Light Wood Brown */
+385 |   --secondary-foreground: oklch(0.25 0.06 110);
+386 |   /* Dark Forest Green */
+387 |   --muted: oklch(0.92 0.04 135);
+388 |   /* Muted Light Green */
+389 |   --muted-foreground: oklch(0.45 0.07 115);
+390 |   /* Medium Forest Green */
+391 |   --accent: oklch(0.75 0.15 220);
+392 |   /* Sky Blue */
+393 |   --accent-foreground: oklch(0.20 0.05 230);
+394 |   /* Dark Blue */
+395 |   --destructive: oklch(0.60 0.20 40);
+396 |   /* Earthy Red */
+397 |   --destructive-foreground: oklch(0.98 0.01 120);
+398 |   /* Very Light Green */
+399 |   --border: oklch(0.85 0.05 120);
+400 |   /* Light Green Border */
+401 |   --input: oklch(0.85 0.05 120);
+402 |   /* Light Green Border */
+403 |   --ring: oklch(0.55 0.18 150);
+404 |   /* Vibrant Leaf Green */
+405 |   --chart-1: oklch(0.55 0.18 150);
+406 |   /* Vibrant Leaf Green */
+407 |   --chart-2: oklch(0.75 0.15 220);
+408 |   /* Sky Blue */
+409 |   --chart-3: oklch(0.65 0.12 80);
+410 |   /* Wood Brown */
+411 |   --chart-4: oklch(0.80 0.10 60);
+412 |   /* Sunlight Yellow */
+413 |   --chart-5: oklch(0.70 0.16 350);
+414 |   /* Flower Pink */
+415 |   --sidebar: oklch(0.90 0.04 130);
+416 |   /* Slightly Darker Light Green */
+417 |   --sidebar-foreground: oklch(0.25 0.06 110);
+418 |   /* Dark Forest Green */
+419 |   --sidebar-primary: oklch(0.55 0.18 150);
+420 |   /* Vibrant Leaf Green */
+421 |   --sidebar-primary-foreground: oklch(0.98 0.01 120);
+422 |   /* Very Light Green */
+423 |   --sidebar-accent: oklch(0.75 0.15 220);
+424 |   /* Sky Blue */
+425 |   --sidebar-accent-foreground: oklch(0.20 0.05 230);
+426 |   /* Dark Blue */
+427 |   --sidebar-border: oklch(0.85 0.05 120);
+428 |   /* Light Green Border */
+429 |   --sidebar-ring: oklch(0.55 0.18 150);
+430 |   /* Vibrant Leaf Green */
+431 |   --font-sans: 'Quicksand', sans-serif;
+432 |   /* Soft, rounded font */
+433 |   --font-serif: 'Gentium Book Basic', serif;
+434 |   /* Readable serif */
+435 |   --font-mono: 'Fira Code', monospace;
+436 |   /* Clear mono */
+437 |   --radius: 0.75rem;
+438 |   /* Slightly rounded */
+439 |   --shadow-2xs: 0px 1px 2px 0px oklch(0.25 0.06 110 / 0.04);
+440 |   --shadow-xs: 0px 2px 4px -1px oklch(0.25 0.06 110 / 0.05), 0px 1px 2px -1px oklch(0.25 0.06 110 / 0.03);
+441 |   --shadow-sm: 0px 3px 6px -1px oklch(0.25 0.06 110 / 0.07), 0px 2px 4px -2px oklch(0.25 0.06 110 / 0.04);
+442 |   --shadow: 0px 4px 8px -2px oklch(0.25 0.06 110 / 0.09), 0px 2px 4px -2px oklch(0.25 0.06 110 / 0.05);
+443 |   --shadow-md: 0px 6px 12px -3px oklch(0.25 0.06 110 / 0.11), 0px 4px 6px -4px oklch(0.25 0.06 110 / 0.06);
+444 |   --shadow-lg: 0px 10px 20px -5px oklch(0.25 0.06 110 / 0.13), 0px 6px 10px -6px oklch(0.25 0.06 110 / 0.08);
+445 |   --shadow-xl: 0px 15px 30px -8px oklch(0.25 0.06 110 / 0.15), 0px 8px 15px -8px oklch(0.25 0.06 110 / 0.10);
+446 |   --shadow-2xl: 0px 25px 50px -12px oklch(0.25 0.06 110 / 0.20);
+447 | }
+448 | 
+449 | @theme inline {
+450 |   --color-background: var(--background);
+451 |   --color-foreground: var(--foreground);
+452 |   --color-card: var(--card);
+453 |   --color-card-foreground: var(--card-foreground);
+454 |   --color-popover: var(--popover);
+455 |   --color-popover-foreground: var(--popover-foreground);
+456 |   --color-primary: var(--primary);
+457 |   --color-primary-foreground: var(--primary-foreground);
+458 |   --color-secondary: var(--secondary);
+459 |   --color-secondary-foreground: var(--secondary-foreground);
+460 |   --color-muted: var(--muted);
+461 |   --color-muted-foreground: var(--muted-foreground);
+462 |   --color-accent: var(--accent);
+463 |   --color-accent-foreground: var(--accent-foreground);
+464 |   --color-destructive: var(--destructive);
+465 |   --color-destructive-foreground: var(--destructive-foreground);
+466 |   --color-border: var(--border);
+467 |   --color-input: var(--input);
+468 |   --color-ring: var(--ring);
+469 |   --color-chart-1: var(--chart-1);
+470 |   --color-chart-2: var(--chart-2);
+471 |   --color-chart-3: var(--chart-3);
+472 |   --color-chart-4: var(--chart-4);
+473 |   --color-chart-5: var(--chart-5);
+474 |   --color-sidebar: var(--sidebar);
+475 |   --color-sidebar-foreground: var(--sidebar-foreground);
+476 |   --color-sidebar-primary: var(--sidebar-primary);
+477 |   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+478 |   --color-sidebar-accent: var(--sidebar-accent);
+479 |   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+480 |   --color-sidebar-border: var(--sidebar-border);
+481 |   --color-sidebar-ring: var(--sidebar-ring);
+482 | 
+483 |   --font-sans: var(--font-sans);
+484 |   --font-mono: var(--font-mono);
+485 |   --font-serif: var(--font-serif);
+486 | 
+487 |   --radius-sm: calc(var(--radius) - 4px);
+488 |   --radius-md: calc(var(--radius) - 2px);
+489 |   --radius-lg: var(--radius);
+490 |   --radius-xl: calc(var(--radius) + 4px);
+491 | 
+492 |   --shadow-2xs: var(--shadow-2xs);
+493 |   --shadow-xs: var(--shadow-xs);
+494 |   --shadow-sm: var(--shadow-sm);
+495 |   --shadow: var(--shadow);
+496 |   --shadow-md: var(--shadow-md);
+497 |   --shadow-lg: var(--shadow-lg);
+498 |   --shadow-xl: var(--shadow-xl);
+499 |   --shadow-2xl: var(--shadow-2xl);
+500 | }
+501 | 
+502 | @layer base {
+503 |   * {
+504 |     @apply border-border outline-ring/50;
+505 |   }
+506 | 
+507 |   body {
+508 |     @apply bg-background text-foreground;
+509 |     letter-spacing: var(--tracking-normal);
+510 |   }
 511 | 
-512 | @layer utilities {
-513 | 
-514 |   /* Hide scrollbar for Chrome, Safari and Opera */
-515 |   .no-scrollbar::-webkit-scrollbar {
-516 |     display: none;
-517 |   }
-518 | 
-519 |   /* Hide scrollbar for IE, Edge and Firefox */
-520 |   .no-scrollbar {
-521 |     -ms-overflow-style: none;
-522 |     /* IE and Edge */
-523 |     /* Use Firefox-specific scrollbar hiding when supported */
-524 |     scrollbar-width: none;
+512 |   /* Cyberpunk heading styles - each heading directly targeted */
+513 |   .cyberpunk h1 {
+514 |     /* Even brighter Cyan for maximum contrast */
+515 |     color: oklch(0.98 0.20 180) !important;
+516 |     /* Bolder font for better visibility */
+517 |     font-weight: 700 !important;
+518 |   }
+519 | 
+520 |   .cyberpunk h2 {
+521 |     /* Even brighter Cyan for maximum contrast */
+522 |     color: oklch(0.98 0.20 180) !important;
+523 |     /* Bolder font for better visibility */
+524 |     font-weight: 700 !important;
 525 |   }
-526 | }
+526 | 
+527 |   .cyberpunk h3 {
+528 |     /* Even brighter Cyan for maximum contrast */
+529 |     color: oklch(0.98 0.20 180) !important;
+530 |     /* Bolder font for better visibility */
+531 |     font-weight: 700 !important;
+532 |   }
+533 | 
+534 |   .cyberpunk h4 {
+535 |     /* Even brighter Cyan for maximum contrast */
+536 |     color: oklch(0.98 0.20 180) !important;
+537 |     /* Bolder font for better visibility */
+538 |     font-weight: 700 !important;
+539 |   }
+540 | 
+541 |   .cyberpunk h5 {
+542 |     /* Even brighter Cyan for maximum contrast */
+543 |     color: oklch(0.98 0.20 180) !important;
+544 |     /* Bolder font for better visibility */
+545 |     font-weight: 700 !important;
+546 |   }
+547 | 
+548 |   .cyberpunk h6 {
+549 |     /* Even brighter Cyan for maximum contrast */
+550 |     color: oklch(0.98 0.20 180) !important;
+551 |     /* Bolder font for better visibility */
+552 |     font-weight: 700 !important;
+553 |   }
+554 | }
+555 | 
+556 | @layer utilities {
+557 | 
+558 |   /* Hide scrollbar for Chrome, Safari and Opera */
+559 |   .no-scrollbar::-webkit-scrollbar {
+560 |     display: none;
+561 |   }
+562 | 
+563 |   /* Hide scrollbar for IE, Edge and Firefox */
+564 |   .no-scrollbar {
+565 |     -ms-overflow-style: none;
+566 |     /* IE and Edge */
+567 |     /* Use Firefox-specific scrollbar hiding when supported */
+568 |     scrollbar-width: none;
+569 |   }
+570 | 
+571 |   /* KaTeX box styling improvements - targeting actual generated elements */
+572 |   .katex .frac-line,
+573 |   .katex .overline .overline-line,
+574 |   .katex .underline .underline-line,
+575 |   .katex .sqrt>.root>.sqrt-line,
+576 |   .katex .boxed {
+577 |     border-color: currentColor;
+578 |   }
+579 | 
+580 |   /* Specific styling for \boxed{} command output */
+581 |   .katex .mord.boxed,
+582 |   .katex .minner.boxed,
+583 |   .katex .boxed {
+584 |     border: 0.04em solid currentColor !important;
+585 |     padding: 0.2em 0.4em !important;
+586 |     border-radius: 0.2em !important;
+587 |     box-sizing: border-box !important;
+588 |   }
+589 | 
+590 |   /* KaTeX font weight inheritance */
+591 |   .katex {
+592 |     font-weight: inherit;
+593 |   }
+594 | 
+595 |   /* Ensure proper contrast for KaTeX in all themes */
+596 |   .katex * {
+597 |     color: inherit;
+598 |   }
+599 | 
+600 |   /* Theme-specific KaTeX styling */
+601 |   .dark .katex,
+602 |   .black .katex,
+603 |   .cyberpunk .katex,
+604 |   .sunset .katex,
+605 |   .nature .katex {
+606 |     color: inherit;
+607 |   }
+608 | 
+609 |   /* iOS Homescreen Shortcut Enhancements */
+610 | 
+611 |   /* Safe area handling for iOS devices */
+612 |   @supports (padding: env(safe-area-inset-left)) {
+613 |     .safe-area-inset {
+614 |       padding-top: env(safe-area-inset-top);
+615 |       padding-right: env(safe-area-inset-right);
+616 |       padding-bottom: env(safe-area-inset-bottom);
+617 |       padding-left: env(safe-area-inset-left);
+618 |     }
+619 |   }
+620 | 
+621 |   /* Prevent zoom on input focus (iOS) */
+622 |   @media screen and (max-width: 768px) {
+623 | 
+624 |     input[type="text"],
+625 |     input[type="email"],
+626 |     input[type="password"],
+627 |     input[type="search"],
+628 |     textarea,
+629 |     select {
+630 |       font-size: 16px !important;
+631 |     }
+632 |   }
+633 | 
+634 |   /* Smooth scrolling behavior */
+635 |   html {
+636 |     scroll-behavior: smooth;
+637 |     -webkit-text-size-adjust: 100%;
+638 |   }
+639 | 
+640 |   /* Optimize touch targets for mobile */
+641 |   @media (pointer: coarse) {
+642 | 
+643 |     button,
+644 |     [role="button"],
+645 |     input[type="submit"],
+646 |     input[type="button"] {
+647 |       min-height: 44px;
+648 |       min-width: 44px;
+649 |     }
+650 |   }
+651 | 
+652 |   /* PWA/Standalone mode detection */
+653 |   @media (display-mode: standalone) {
+654 | 
+655 |     /* Hide elements when running as PWA */
+656 |     .hide-in-pwa {
+657 |       display: none !important;
+658 |     }
+659 | 
+660 |     /* Adjust spacing for standalone mode */
+661 |     body {
+662 |       padding-top: env(safe-area-inset-top);
+663 |     }
+664 |   }
+665 | 
+666 |   /* iOS-specific webkit optimizations */
+667 |   @supports (-webkit-touch-callout: none) {
+668 | 
+669 |     /* Disable callout menu on long press */
+670 |     * {
+671 |       -webkit-touch-callout: none;
+672 |     }
+673 | 
+674 |     /* Allow callout for specific elements where needed */
+675 |     input,
+676 |     textarea,
+677 |     [contenteditable] {
+678 |       -webkit-touch-callout: default;
+679 |     }
+680 | 
+681 |     /* Prevent highlighting */
+682 |     .no-select {
+683 |       -webkit-user-select: none;
+684 |       user-select: none;
+685 |     }
+686 | 
+687 |     /* Smooth momentum scrolling */
+688 |     .scroll-smooth {
+689 |       -webkit-overflow-scrolling: touch;
+690 |     }
+691 |   }
+692 | }
 ```
 
 app/layout.tsx
@@ -1515,77 +2533,107 @@ app/layout.tsx
 12 | import { cn } from "@/lib/utils";
 13 | import BuildInfo from "@/components/ui/BuildInfo";
 14 | import Image from "next/image";
-15 | 
-16 | const inter = Inter({ subsets: ["latin"] });
-17 | 
-18 | export const metadata: Metadata = {
-19 |   metadataBase: new URL("https://www.chatlima.com/"),
-20 |   title: "ChatLima",
-21 |   description: "ChatLima is a minimalistic MCP client with a good feature set.",
-22 |   icons: {
-23 |     icon: "/logo.png",
-24 |   },
-25 |   openGraph: {
-26 |     siteName: "ChatLima",
-27 |     url: "https://www.chatlima.com/",
-28 |     images: [
-29 |       {
-30 |         url: "https://www.chatlima.com/opengraph-image.png",
-31 |         width: 1200,
-32 |         height: 630,
-33 |       },
-34 |     ],
-35 |   },
-36 |   twitter: {
-37 |     card: "summary_large_image",
-38 |     title: "ChatLima",
-39 |     description: "ChatLima is a minimalistic MCP client with a good feature set.",
-40 |     images: ["https://www.chatlima.com/twitter-image.png"],
+15 | import { IOSInstallPrompt } from "@/components/ios-install-prompt";
+16 | 
+17 | const inter = Inter({ subsets: ["latin"] });
+18 | 
+19 | export const metadata: Metadata = {
+20 |   metadataBase: new URL("https://www.chatlima.com/"),
+21 |   title: "ChatLima",
+22 |   description: "ChatLima is a minimalistic MCP client with a good feature set.",
+23 |   icons: {
+24 |     icon: "/logo.png",
+25 |     apple: [
+26 |       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+27 |       { url: "/apple-touch-icon-120x120.png", sizes: "120x120", type: "image/png" },
+28 |       { url: "/apple-touch-icon-152x152.png", sizes: "152x152", type: "image/png" },
+29 |       { url: "/apple-touch-icon-167x167.png", sizes: "167x167", type: "image/png" },
+30 |       { url: "/apple-touch-icon-180x180.png", sizes: "180x180", type: "image/png" },
+31 |     ],
+32 |   },
+33 |   manifest: "/manifest.json",
+34 |   appleWebApp: {
+35 |     capable: true,
+36 |     statusBarStyle: "default",
+37 |     title: "ChatLima",
+38 |   },
+39 |   formatDetection: {
+40 |     telephone: false,
 41 |   },
-42 | };
-43 | 
-44 | export default function RootLayout({
-45 |   children,
-46 | }: Readonly<{
-47 |   children: React.ReactNode;
-48 | }>) {
-49 |   return (
-50 |     <html lang="en" suppressHydrationWarning>
-51 |       <body className={`${inter.className}`}>
-52 |         <Providers>
-53 |           <WebSearchProvider>
-54 |             <div className="flex h-dvh w-full">
-55 |               <ChatSidebar />
-56 |               <main className="flex-1 flex flex-col relative">
-57 |                 <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
-58 |                   <SidebarTrigger>
-59 |                     <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
-60 |                       <Image src="/logo.png" alt="ChatLima logo" width={16} height={16} />
-61 |                     </button>
-62 |                   </SidebarTrigger>
-63 |                   <Button
-64 |                     variant="ghost"
-65 |                     size="icon"
-66 |                     className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors"
-67 |                     asChild
-68 |                   >
-69 |                     <Link href="/" title="New Chat">
-70 |                       <PlusCircle className="h-4 w-4" />
-71 |                     </Link>
-72 |                   </Button>
-73 |                 </div>
-74 |                 <div className="flex-1 flex justify-center">
-75 |                   {children}
-76 |                 </div>
-77 |               </main>
-78 |             </div>
-79 |           </WebSearchProvider>
-80 |         </Providers>
-81 |         <Script defer src="https://cloud.umami.is/script.js" data-website-id="bd3f8736-1562-47e0-917c-c10fde7ef0d2" />
-82 |       </body>
-83 |     </html>
-84 |   );
-85 | }
+42 |   openGraph: {
+43 |     siteName: "ChatLima",
+44 |     url: "https://www.chatlima.com/",
+45 |     images: [
+46 |       {
+47 |         url: "https://www.chatlima.com/opengraph-image.png",
+48 |         width: 1200,
+49 |         height: 630,
+50 |       },
+51 |     ],
+52 |   },
+53 |   twitter: {
+54 |     card: "summary_large_image",
+55 |     title: "ChatLima",
+56 |     description: "ChatLima is a minimalistic MCP client with a good feature set.",
+57 |     images: ["https://www.chatlima.com/twitter-image.png"],
+58 |   },
+59 |   other: {
+60 |     "mobile-web-app-capable": "yes",
+61 |     "apple-mobile-web-app-capable": "yes",
+62 |     "apple-mobile-web-app-status-bar-style": "default",
+63 |     "apple-mobile-web-app-title": "ChatLima",
+64 |   },
+65 | };
+66 | 
+67 | export default function RootLayout({
+68 |   children,
+69 | }: Readonly<{
+70 |   children: React.ReactNode;
+71 | }>) {
+72 |   return (
+73 |     <html lang="en" suppressHydrationWarning>
+74 |       <head>
+75 |         <meta 
+76 |           name="viewport" 
+77 |           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" 
+78 |         />
+79 |       </head>
+80 |       <body className={`${inter.className}`}>
+81 |         <Providers>
+82 |           <WebSearchProvider>
+83 |             <div className="flex h-dvh w-full">
+84 |               <ChatSidebar />
+85 |               <main className="flex-1 flex flex-col relative">
+86 |                 <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+87 |                   <SidebarTrigger>
+88 |                     <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
+89 |                       <Image src="/logo.png" alt="ChatLima logo" width={16} height={16} />
+90 |                     </button>
+91 |                   </SidebarTrigger>
+92 |                   <Button
+93 |                     variant="ghost"
+94 |                     size="icon"
+95 |                     className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors"
+96 |                     asChild
+97 |                   >
+98 |                     <Link href="/" title="New Chat">
+99 |                       <PlusCircle className="h-4 w-4" />
+100 |                     </Link>
+101 |                   </Button>
+102 |                 </div>
+103 |                 <div className="flex-1 flex justify-center">
+104 |                   {children}
+105 |                 </div>
+106 |               </main>
+107 |             </div>
+108 |             <IOSInstallPrompt />
+109 |           </WebSearchProvider>
+110 |         </Providers>
+111 |         <Script defer src="https://cloud.umami.is/script.js" data-website-id="bd3f8736-1562-47e0-917c-c10fde7ef0d2" />
+112 |       </body>
+113 |     </html>
+114 |   );
+115 | }
 ```
 
 app/page.tsx
@@ -1868,238 +2916,6 @@ drizzle/0021_aberrant_baron_zemo.sql
 1 | ALTER TABLE "user" ADD COLUMN "metadata" json;
 ```
 
-hooks/use-mobile.ts
-```
-1 | import * as React from "react"
-2 | 
-3 | const MOBILE_BREAKPOINT = 768
-4 | 
-5 | export function useIsMobile() {
-6 |   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
-7 | 
-8 |   React.useEffect(() => {
-9 |     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-10 |     const onChange = () => {
-11 |       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-12 |     }
-13 |     mql.addEventListener("change", onChange)
-14 |     setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-15 |     return () => mql.removeEventListener("change", onChange)
-16 |   }, [])
-17 | 
-18 |   return !!isMobile
-19 | }
-```
-
-hooks/useAuth.ts
-```
-1 | import { useEffect, useState } from 'react';
-2 | import { auth } from '@/lib/auth';
-3 | 
-4 | type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unauthenticated';
-5 | 
-6 | interface AuthUser {
-7 |     id: string;
-8 |     name?: string | null;
-9 |     email?: string | null;
-10 |     image?: string | null;
-11 |     isAnonymous?: boolean;
-12 |     messageLimit?: number;
-13 |     messageRemaining?: number;
-14 |     hasSubscription?: boolean;
-15 | }
-16 | 
-17 | export function useAuth() {
-18 |     const [status, setStatus] = useState<AuthStatus>('loading');
-19 |     const [user, setUser] = useState<AuthUser | null>(null);
-20 |     const [error, setError] = useState<Error | null>(null);
-21 | 
-22 |     useEffect(() => {
-23 |         const fetchSession = async () => {
-24 |             try {
-25 |                 // Get session (handles both signed in and anonymous users)
-26 |                 const session = await auth.api.getSession({ headers: new Headers() });
-27 | 
-28 |                 if (session && session.user) {
-29 |                     // If we have a user with ID, we're authenticated in some form
-30 |                     if (session.user.id) {
-31 |                         const isAnonymous = (session.user as any).isAnonymous === true;
-32 | 
-33 |                         setUser({
-34 |                             id: session.user.id,
-35 |                             name: session.user.name || null,
-36 |                             email: session.user.email || null,
-37 |                             image: session.user.image || null,
-38 |                             isAnonymous: isAnonymous,
-39 |                             // These values would be fetched separately from an API endpoint
-40 |                             messageLimit: isAnonymous ? 10 : 20,
-41 |                             messageRemaining: 0, // Would be updated via API
-42 |                             hasSubscription: !!(session.user as any)?.metadata?.hasSubscription,
-43 |                         });
-44 | 
-45 |                         setStatus(isAnonymous ? 'anonymous' : 'authenticated');
-46 |                     } else {
-47 |                         setStatus('unauthenticated');
-48 |                         setUser(null);
-49 |                     }
-50 |                 } else {
-51 |                     // No session means not authenticated
-52 |                     setStatus('unauthenticated');
-53 |                     setUser(null);
-54 |                 }
-55 |             } catch (err) {
-56 |                 setError(err instanceof Error ? err : new Error(String(err)));
-57 |                 setStatus('unauthenticated');
-58 |                 setUser(null);
-59 |             }
-60 |         };
-61 | 
-62 |         fetchSession();
-63 |     }, []);
-64 | 
-65 |     // Sign in with Google
-66 |     const signIn = async () => {
-67 |         try {
-68 |             // Redirect to Google sign-in page
-69 |             window.location.href = '/api/auth/signin/google';
-70 |         } catch (err) {
-71 |             setError(err instanceof Error ? err : new Error(String(err)));
-72 |         }
-73 |     };
-74 | 
-75 |     // Sign out
-76 |     const signOut = async () => {
-77 |         try {
-78 |             // Redirect to sign-out page
-79 |             window.location.href = '/api/auth/signout';
-80 | 
-81 |             // The server will create a new anonymous session automatically
-82 |             // We'll need to wait for the redirect to complete and then reload
-83 |         } catch (err) {
-84 |             setError(err instanceof Error ? err : new Error(String(err)));
-85 |         }
-86 |     };
-87 | 
-88 |     // Get message usage data
-89 |     const refreshMessageUsage = async () => {
-90 |         if (!user) return;
-91 | 
-92 |         try {
-93 |             const response = await fetch('/api/usage/messages');
-94 |             if (response.ok) {
-95 |                 const data = await response.json();
-96 |                 setUser(prev => prev ? {
-97 |                     ...prev,
-98 |                     messageLimit: data.limit,
-99 |                     messageRemaining: data.remaining
-100 |                 } : null);
-101 |             }
-102 |         } catch (err) {
-103 |             console.error('Failed to fetch message usage:', err);
-104 |         }
-105 |     };
-106 | 
-107 |     return {
-108 |         status,
-109 |         user,
-110 |         error,
-111 |         signIn,
-112 |         signOut,
-113 |         refreshMessageUsage,
-114 |         isLoading: status === 'loading',
-115 |         isAuthenticated: status === 'authenticated',
-116 |         isAnonymous: status === 'anonymous',
-117 |     };
-118 | } 
-```
-
-hooks/useCredits.ts
-```
-1 | import { useState, useEffect } from 'react';
-2 | import { getRemainingCredits, getRemainingCreditsByExternalId } from '../lib/polar';
-3 | 
-4 | /**
-5 |  * Hook to get and manage a user's credits
-6 |  * 
-7 |  * @param polarCustomerId The customer's ID in Polar system (legacy)
-8 |  * @param userId The user's ID in our application (used as external ID in Polar)
-9 |  * @returns Object containing the user's credits status and related functions
-10 |  */
-11 | export function useCredits(polarCustomerId?: string, userId?: string) {
-12 |     const [credits, setCredits] = useState<number | null>(null);
-13 |     const [loading, setLoading] = useState<boolean>(false);
-14 |     const [error, setError] = useState<Error | null>(null);
-15 | 
-16 |     // Function to fetch credits
-17 |     const fetchCredits = async () => {
-18 |         // If neither ID is provided, we can't fetch credits
-19 |         if (!polarCustomerId && !userId) {
-20 |             setCredits(null);
-21 |             return;
-22 |         }
-23 | 
-24 |         setLoading(true);
-25 |         setError(null);
-26 | 
-27 |         try {
-28 |             // Try the external ID approach first if a userId is provided
-29 |             if (userId) {
-30 |                 try {
-31 |                     const remainingCreditsByExternal = await getRemainingCreditsByExternalId(userId);
-32 |                     if (remainingCreditsByExternal !== null) {
-33 |                         setCredits(remainingCreditsByExternal);
-34 |                         setLoading(false);
-35 |                         return;
-36 |                     }
-37 |                     // If external ID lookup fails, fall through to legacy method
-38 |                 } catch (externalError) {
-39 |                     console.warn('Failed to get credits via external ID, falling back to legacy method:', externalError);
-40 |                     // Continue to legacy method
-41 |                 }
-42 |             }
-43 | 
-44 |             // Legacy method using polarCustomerId
-45 |             if (polarCustomerId) {
-46 |                 const remainingCredits = await getRemainingCredits(polarCustomerId);
-47 |                 setCredits(remainingCredits);
-48 |             } else {
-49 |                 setCredits(null);
-50 |             }
-51 |         } catch (err) {
-52 |             console.error('Error fetching credits:', err);
-53 |             setError(err instanceof Error ? err : new Error('Failed to fetch credits'));
-54 |         } finally {
-55 |             setLoading(false);
-56 |         }
-57 |     };
-58 | 
-59 |     // Fetch credits on mount and when IDs change
-60 |     useEffect(() => {
-61 |         fetchCredits();
-62 |     }, [polarCustomerId, userId]);
-63 | 
-64 |     // Helper function to format credits display with thousands separator
-65 |     const formattedCredits = credits !== null
-66 |         ? credits.toLocaleString()
-67 |         : 'Unknown';
-68 | 
-69 |     // Function to check if user has sufficient credits for an operation
-70 |     const hasSufficientCredits = (requiredAmount: number = 1): boolean => {
-71 |         if (credits === null) return true; // Allow if credits unknown
-72 |         return credits >= requiredAmount;
-73 |     };
-74 | 
-75 |     return {
-76 |         credits,
-77 |         formattedCredits,
-78 |         loading,
-79 |         error,
-80 |         fetchCredits,
-81 |         hasSufficientCredits,
-82 |     };
-83 | } 
-```
-
 components/api-key-manager.tsx
 ```
 1 | import { useState, useEffect } from "react";
@@ -2154,124 +2970,131 @@ components/api-key-manager.tsx
 50 |     storageKey: "OPENROUTER_API_KEY",
 51 |     label: "Openrouter API Key",
 52 |     placeholder: "sk-or-..."
-53 |   }
-54 | ];
-55 | 
-56 | interface ApiKeyManagerProps {
-57 |   open: boolean;
-58 |   onOpenChange: (open: boolean) => void;
-59 | }
-60 | 
-61 | export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
-62 |   // State to store API keys
-63 |   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
-64 | 
-65 |   // Load API keys from localStorage on initial mount
-66 |   useEffect(() => {
-67 |     const storedKeys: Record<string, string> = {};
-68 |     
-69 |     API_KEYS_CONFIG.forEach(config => {
-70 |       const value = localStorage.getItem(config.storageKey);
-71 |       if (value) {
-72 |         storedKeys[config.key] = value;
-73 |       }
-74 |     });
+53 |   },
+54 |   {
+55 |     name: "Requesty",
+56 |     key: "requesty", 
+57 |     storageKey: "REQUESTY_API_KEY",
+58 |     label: "Requesty API Key",
+59 |     placeholder: "req-..."
+60 |   }
+61 | ];
+62 | 
+63 | interface ApiKeyManagerProps {
+64 |   open: boolean;
+65 |   onOpenChange: (open: boolean) => void;
+66 | }
+67 | 
+68 | export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
+69 |   // State to store API keys
+70 |   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+71 | 
+72 |   // Load API keys from localStorage on initial mount
+73 |   useEffect(() => {
+74 |     const storedKeys: Record<string, string> = {};
 75 |     
-76 |     setApiKeys(storedKeys);
-77 |   }, []);
-78 | 
-79 |   // Update API key in state
-80 |   const handleApiKeyChange = (key: string, value: string) => {
-81 |     setApiKeys(prev => ({
-82 |       ...prev,
-83 |       [key]: value
-84 |     }));
-85 |   };
-86 | 
-87 |   // Save API keys to localStorage
-88 |   const handleSaveApiKeys = () => {
-89 |     try {
-90 |       API_KEYS_CONFIG.forEach(config => {
-91 |         const value = apiKeys[config.key];
-92 |         
-93 |         if (value && value.trim()) {
-94 |           localStorage.setItem(config.storageKey, value.trim());
-95 |         } else {
-96 |           localStorage.removeItem(config.storageKey);
-97 |         }
-98 |       });
-99 |       
-100 |       toast.success("API keys saved successfully");
-101 |       onOpenChange(false);
-102 |     } catch (error) {
-103 |       console.error("Error saving API keys:", error);
-104 |       toast.error("Failed to save API keys");
-105 |     }
-106 |   };
-107 | 
-108 |   // Clear all API keys
-109 |   const handleClearApiKeys = () => {
-110 |     try {
-111 |       API_KEYS_CONFIG.forEach(config => {
-112 |         localStorage.removeItem(config.storageKey);
-113 |       });
-114 |       
-115 |       setApiKeys({});
-116 |       toast.success("All API keys cleared");
-117 |     } catch (error) {
-118 |       console.error("Error clearing API keys:", error);
-119 |       toast.error("Failed to clear API keys");
-120 |     }
-121 |   };
-122 | 
-123 |   return (
-124 |     <Dialog open={open} onOpenChange={onOpenChange}>
-125 |       <DialogContent className="sm:max-w-[500px]">
-126 |         <DialogHeader>
-127 |           <DialogTitle>API Key Settings</DialogTitle>
-128 |           <DialogDescription>
-129 |             Enter your own API keys for different AI providers. Keys are stored securely in your browser&apos;s local storage.
-130 |           </DialogDescription>
-131 |         </DialogHeader>
-132 |         
-133 |         <div className="grid gap-4 py-4">
-134 |           {API_KEYS_CONFIG.map(config => (
-135 |             <div key={config.key} className="grid gap-2">
-136 |               <Label htmlFor={config.key}>{config.label}</Label>
-137 |               <Input
-138 |                 id={config.key}
-139 |                 type="password"
-140 |                 value={apiKeys[config.key] || ""}
-141 |                 onChange={(e) => handleApiKeyChange(config.key, e.target.value)}
-142 |                 placeholder={config.placeholder}
-143 |               />
-144 |             </div>
-145 |           ))}
-146 |         </div>
-147 |         
-148 |         <DialogFooter className="flex justify-between sm:justify-between">
-149 |           <Button
-150 |             variant="destructive"
-151 |             onClick={handleClearApiKeys}
-152 |           >
-153 |             Clear All Keys
-154 |           </Button>
-155 |           <div className="flex gap-2">
-156 |             <Button
-157 |               variant="outline"
-158 |               onClick={() => onOpenChange(false)}
-159 |             >
-160 |               Cancel
-161 |             </Button>
-162 |             <Button onClick={handleSaveApiKeys}>
-163 |               Save Keys
-164 |             </Button>
-165 |           </div>
-166 |         </DialogFooter>
-167 |       </DialogContent>
-168 |     </Dialog>
-169 |   );
-170 | } 
+76 |     API_KEYS_CONFIG.forEach(config => {
+77 |       const value = localStorage.getItem(config.storageKey);
+78 |       if (value) {
+79 |         storedKeys[config.key] = value;
+80 |       }
+81 |     });
+82 |     
+83 |     setApiKeys(storedKeys);
+84 |   }, []);
+85 | 
+86 |   // Update API key in state
+87 |   const handleApiKeyChange = (key: string, value: string) => {
+88 |     setApiKeys(prev => ({
+89 |       ...prev,
+90 |       [key]: value
+91 |     }));
+92 |   };
+93 | 
+94 |   // Save API keys to localStorage
+95 |   const handleSaveApiKeys = () => {
+96 |     try {
+97 |       API_KEYS_CONFIG.forEach(config => {
+98 |         const value = apiKeys[config.key];
+99 |         
+100 |         if (value && value.trim()) {
+101 |           localStorage.setItem(config.storageKey, value.trim());
+102 |         } else {
+103 |           localStorage.removeItem(config.storageKey);
+104 |         }
+105 |       });
+106 |       
+107 |       toast.success("API keys saved successfully");
+108 |       onOpenChange(false);
+109 |     } catch (error) {
+110 |       console.error("Error saving API keys:", error);
+111 |       toast.error("Failed to save API keys");
+112 |     }
+113 |   };
+114 | 
+115 |   // Clear all API keys
+116 |   const handleClearApiKeys = () => {
+117 |     try {
+118 |       API_KEYS_CONFIG.forEach(config => {
+119 |         localStorage.removeItem(config.storageKey);
+120 |       });
+121 |       
+122 |       setApiKeys({});
+123 |       toast.success("All API keys cleared");
+124 |     } catch (error) {
+125 |       console.error("Error clearing API keys:", error);
+126 |       toast.error("Failed to clear API keys");
+127 |     }
+128 |   };
+129 | 
+130 |   return (
+131 |     <Dialog open={open} onOpenChange={onOpenChange}>
+132 |       <DialogContent className="sm:max-w-[500px]">
+133 |         <DialogHeader>
+134 |           <DialogTitle>API Key Settings</DialogTitle>
+135 |           <DialogDescription>
+136 |             Enter your own API keys for different AI providers. Keys are stored securely in your browser&apos;s local storage.
+137 |           </DialogDescription>
+138 |         </DialogHeader>
+139 |         
+140 |         <div className="grid gap-4 py-4">
+141 |           {API_KEYS_CONFIG.map(config => (
+142 |             <div key={config.key} className="grid gap-2">
+143 |               <Label htmlFor={config.key}>{config.label}</Label>
+144 |               <Input
+145 |                 id={config.key}
+146 |                 type="password"
+147 |                 value={apiKeys[config.key] || ""}
+148 |                 onChange={(e) => handleApiKeyChange(config.key, e.target.value)}
+149 |                 placeholder={config.placeholder}
+150 |               />
+151 |             </div>
+152 |           ))}
+153 |         </div>
+154 |         
+155 |         <DialogFooter className="flex justify-between sm:justify-between">
+156 |           <Button
+157 |             variant="destructive"
+158 |             onClick={handleClearApiKeys}
+159 |           >
+160 |             Clear All Keys
+161 |           </Button>
+162 |           <div className="flex gap-2">
+163 |             <Button
+164 |               variant="outline"
+165 |               onClick={() => onOpenChange(false)}
+166 |             >
+167 |               Cancel
+168 |             </Button>
+169 |             <Button onClick={handleSaveApiKeys}>
+170 |               Save Keys
+171 |             </Button>
+172 |           </div>
+173 |         </DialogFooter>
+174 |       </DialogContent>
+175 |     </Dialog>
+176 |   );
+177 | } 
 ```
 
 components/chat-list.tsx
@@ -2299,296 +3122,301 @@ components/chat-list.tsx
 21 |     TooltipProvider,
 22 |     TooltipTrigger,
 23 | } from "@/components/ui/tooltip";
-24 | 
-25 | interface Chat {
-26 |     id: string;
-27 |     title: string;
-28 |     userId: string;
-29 |     createdAt: Date;
-30 |     updatedAt: Date;
-31 |     sharePath?: string | null;
-32 | }
-33 | 
-34 | interface ChatListProps {
-35 |     chats: Chat[];
-36 |     isLoading: boolean;
-37 |     isCollapsed: boolean;
-38 |     isUpdatingChatTitle: boolean;
-39 |     onNewChat: () => void;
-40 |     onDeleteChat: (chatId: string, e: React.MouseEvent) => void;
-41 |     onUpdateChatTitle: (params: { chatId: string, title: string }, options: { onSuccess: () => void, onError: () => void }) => void;
-42 | }
-43 | 
-44 | export function ChatList({
-45 |     chats,
-46 |     isLoading,
-47 |     isCollapsed,
-48 |     isUpdatingChatTitle,
-49 |     onNewChat,
-50 |     onDeleteChat,
-51 |     onUpdateChatTitle,
-52 | }: ChatListProps) {
-53 |     const router = useRouter();
-54 |     const pathname = usePathname();
-55 |     const [searchTerm, setSearchTerm] = useState("");
-56 |     const [editingChatId, setEditingChatId] = useState<string | null>(null);
-57 |     const [editingChatTitle, setEditingChatTitle] = useState<string>("");
-58 |     const inputRef = useRef<HTMLInputElement>(null);
-59 | 
-60 |     const filteredChats = chats?.filter(chat =>
-61 |         chat.title.toLowerCase().includes(searchTerm.toLowerCase())
-62 |     ) || [];
-63 | 
-64 |     const handleStartEdit = (chatId: string, currentTitle: string, e: React.MouseEvent) => {
-65 |         e.stopPropagation();
-66 |         e.preventDefault();
-67 |         setEditingChatId(chatId);
-68 |         setEditingChatTitle(currentTitle);
-69 |         setTimeout(() => {
-70 |             inputRef.current?.focus();
-71 |             inputRef.current?.select();
-72 |         }, 0);
-73 |     };
-74 | 
-75 |     const handleCancelEdit = () => {
-76 |         setEditingChatId(null);
-77 |         setEditingChatTitle("");
-78 |     };
-79 | 
-80 |     const handleSaveEdit = () => {
-81 |         if (!editingChatId || editingChatTitle.trim() === "") {
-82 |             toast.error("Chat title cannot be empty.");
-83 |             inputRef.current?.focus();
-84 |             return;
-85 |         }
-86 | 
-87 |         onUpdateChatTitle(
-88 |             { chatId: editingChatId, title: editingChatTitle.trim() },
-89 |             {
-90 |                 onSuccess: () => {
-91 |                     setEditingChatId(null);
-92 |                     setEditingChatTitle("");
-93 |                 },
-94 |                 onError: () => {
-95 |                     inputRef.current?.focus();
-96 |                     inputRef.current?.select();
-97 |                 }
-98 |             }
-99 |         );
-100 |     };
-101 | 
-102 |     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-103 |         setEditingChatTitle(e.target.value);
-104 |     };
-105 | 
-106 |     const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-107 |         if (e.key === 'Enter') {
-108 |             e.preventDefault();
-109 |             handleSaveEdit();
-110 |         } else if (e.key === 'Escape') {
-111 |             e.preventDefault();
-112 |             handleCancelEdit();
-113 |         }
-114 |     };
-115 | 
-116 |     const handleInputBlur = (e: FocusEvent<HTMLInputElement>) => {
-117 |         if (e.relatedTarget && (e.relatedTarget.id === `save-chat-${editingChatId}` || e.relatedTarget.id === `cancel-chat-${editingChatId}`)) {
-118 |             return;
-119 |         }
-120 |         setTimeout(() => {
-121 |             if (editingChatId && document.activeElement !== inputRef.current) {
-122 |                 const activeElementId = document.activeElement?.id;
-123 |                 if (activeElementId !== `save-chat-${editingChatId}` && activeElementId !== `cancel-chat-${editingChatId}`) {
-124 |                     handleCancelEdit();
-125 |                 }
-126 |             }
-127 |         }, 100);
-128 |     };
-129 | 
-130 |     const renderChatSkeletons = () => {
-131 |         return Array(3).fill(0).map((_, index) => (
-132 |             <SidebarMenuItem key={`skeleton-${index}`}>
-133 |                 <div className={`flex items-center gap-2 px-3 py-2 ${isCollapsed ? "justify-center" : ""}`}>
-134 |                     <Skeleton className="h-4 w-4 rounded-full" />
-135 |                     {!isCollapsed && (
-136 |                         <>
-137 |                             <Skeleton className="h-4 w-full max-w-[180px]" />
-138 |                             <Skeleton className="h-5 w-5 ml-auto rounded-md flex-shrink-0" />
-139 |                         </>
-140 |                     )}
-141 |                 </div>
-142 |             </SidebarMenuItem>
-143 |         ));
-144 |     };
-145 | 
-146 |     return (
-147 |         <>
-148 |             {!isCollapsed && (
-149 |                 <div className="px-3 pt-1 pb-2 border-b border-border/40">
-150 |                     <Button
-151 |                         variant="outline"
-152 |                         className="w-full mb-2"
-153 |                         onClick={onNewChat}
-154 |                     >
-155 |                         <PlusCircle className="mr-2 h-4 w-4" />
-156 |                         New Chat
-157 |                     </Button>
-158 |                     <Input
-159 |                         type="search"
-160 |                         placeholder="Search chats..."
-161 |                         aria-label="Search chats by title"
-162 |                         value={searchTerm}
-163 |                         onChange={e => setSearchTerm(e.target.value)}
-164 |                         className="w-full"
-165 |                     />
-166 |                 </div>
-167 |             )}
-168 |             <SidebarGroupContent className={cn(
-169 |                 "overflow-y-auto",
-170 |                 isCollapsed ? "overflow-x-hidden overflow-y-hidden" : ""
-171 |             )}>
-172 |                 {isLoading ? (
-173 |                     renderChatSkeletons()
-174 |                 ) : filteredChats && filteredChats.length > 0 ? (
-175 |                     <AnimatePresence initial={false}>
-176 |                         {filteredChats.map((chat) => {
-177 |                             const isActive = pathname === `/chat/${chat.id}`;
-178 |                             const isEditingThisChat = editingChatId === chat.id;
-179 |                             return (
-180 |                                 <motion.div
-181 |                                     key={chat.id}
-182 |                                     initial={{ opacity: 0, height: 0 }}
-183 |                                     animate={{ opacity: 1, height: "auto" }}
-184 |                                     exit={{ opacity: 0, height: 0 }}
-185 |                                     transition={{ duration: 0.2 }}
-186 |                                     className="overflow-hidden list-none"
-187 |                                 >
-188 |                                     <SidebarMenuItem>
-189 |                                         {isEditingThisChat ? (
-190 |                                             <div className="flex items-center gap-2 px-3 py-2 w-full">
-191 |                                                 <Input
-192 |                                                     ref={inputRef}
-193 |                                                     value={editingChatTitle}
-194 |                                                     onChange={handleInputChange}
-195 |                                                     onKeyDown={handleInputKeyDown}
-196 |                                                     onBlur={handleInputBlur}
-197 |                                                     className="h-7 flex-grow px-1 text-sm"
-198 |                                                     maxLength={100}
-199 |                                                 />
-200 |                                                 <Button
-201 |                                                     id={`save-chat-${chat.id}`}
-202 |                                                     variant="ghost"
-203 |                                                     size="icon"
-204 |                                                     className="h-6 w-6 text-green-500 hover:text-green-600"
-205 |                                                     onClick={handleSaveEdit}
-206 |                                                     disabled={isUpdatingChatTitle}
-207 |                                                 >
-208 |                                                     {isUpdatingChatTitle && editingChatId === chat.id ? (
-209 |                                                         <Loader2 className="h-4 w-4 animate-spin" />
-210 |                                                     ) : (
-211 |                                                         <CheckIcon className="h-4 w-4" />
-212 |                                                     )}
-213 |                                                 </Button>
-214 |                                                 <Button
-215 |                                                     id={`cancel-chat-${chat.id}`}
-216 |                                                     variant="ghost"
-217 |                                                     size="icon"
-218 |                                                     className="h-6 w-6 text-red-500 hover:text-red-600"
-219 |                                                     onClick={handleCancelEdit}
-220 |                                                     disabled={isUpdatingChatTitle}
-221 |                                                 >
-222 |                                                     <XIcon className="h-4 w-4" />
-223 |                                                 </Button>
-224 |                                             </div>
-225 |                                         ) : (
-226 |                                             <>
-227 |                                                 {isCollapsed ? (
-228 |                                                     <TooltipProvider delayDuration={0}>
-229 |                                                         <Tooltip>
-230 |                                                             <TooltipTrigger asChild>
-231 |                                                                 <SidebarMenuButton
-232 |                                                                     onClick={() => router.push(`/chat/${chat.id}`)}
-233 |                                                                     isActive={isActive}
-234 |                                                                     className={cn(
-235 |                                                                         "w-full flex justify-center",
-236 |                                                                         isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
-237 |                                                                     )}
-238 |                                                                 >
-239 |                                                                     <MessageSquare className="h-4 w-4" />
-240 |                                                                 </SidebarMenuButton>
-241 |                                                             </TooltipTrigger>
-242 |                                                             <TooltipContent side="right" sideOffset={5}>
-243 |                                                                 <p>{chat.title}</p>
-244 |                                                             </TooltipContent>
-245 |                                                         </Tooltip>
-246 |                                                     </TooltipProvider>
-247 |                                                 ) : (
-248 |                                                     <TooltipProvider delayDuration={0}>
-249 |                                                         <Tooltip>
-250 |                                                             <TooltipTrigger asChild>
-251 |                                                                 <SidebarMenuButton
-252 |                                                                     asChild
-253 |                                                                     isActive={isActive}
-254 |                                                                     className={cn(
-255 |                                                                         "w-full flex justify-start pr-10",
-256 |                                                                         isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
-257 |                                                                     )}
-258 |                                                                 >
-259 |                                                                     <Link href={`/chat/${chat.id}`} className="flex items-center flex-grow overflow-hidden">
-260 |                                                                         <span className="truncate max-w-[160px]">
-261 |                                                                             {chat.title || `Chat ${chat.id.substring(0, 8)}...`}
-262 |                                                                         </span>
-263 |                                                                     </Link>
-264 |                                                                 </SidebarMenuButton>
-265 |                                                             </TooltipTrigger>
-266 |                                                             <TooltipContent side="right" sideOffset={5}>
-267 |                                                                 <p>{chat.title}</p>
-268 |                                                             </TooltipContent>
-269 |                                                         </Tooltip>
-270 |                                                     </TooltipProvider>
-271 |                                                 )}
-272 |                                                 {!isCollapsed && (
-273 |                                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
-274 |                                                         <Button
-275 |                                                             variant="ghost"
-276 |                                                             size="icon"
-277 |                                                             className="h-6 w-6 hover:text-blue-500"
-278 |                                                             onClick={(e) => handleStartEdit(chat.id, chat.title, e)}
-279 |                                                             title="Edit title"
-280 |                                                         >
-281 |                                                             <Pencil className="h-3 w-3" />
-282 |                                                         </Button>
-283 |                                                         <Button
-284 |                                                             variant="ghost"
-285 |                                                             size="icon"
-286 |                                                             className="h-6 w-6 hover:text-red-500"
-287 |                                                             onClick={(e) => onDeleteChat(chat.id, e)}
-288 |                                                             title="Delete chat"
-289 |                                                         >
-290 |                                                             <Trash2 className="h-3 w-3" />
-291 |                                                         </Button>
-292 |                                                     </div>
-293 |                                                 )}
-294 |                                             </>
-295 |                                         )}
-296 |                                     </SidebarMenuItem>
-297 |                                 </motion.div>
-298 |                             );
-299 |                         })}
-300 |                     </AnimatePresence>
-301 |                 ) : searchTerm ? (
-302 |                     <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2">
-303 |                         {!isCollapsed && "No results found."}
-304 |                     </SidebarMenuItem>
-305 |                 ) : (
-306 |                     <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2">
-307 |                         {!isCollapsed && "No chats yet. Start a new one!"}
-308 |                     </SidebarMenuItem>
-309 |                 )}
-310 |             </SidebarGroupContent>
-311 |         </>
-312 |     );
-313 | } 
+24 | import { SidebarMenu } from "@/components/ui/sidebar";
+25 | 
+26 | interface Chat {
+27 |     id: string;
+28 |     title: string;
+29 |     userId: string;
+30 |     createdAt: Date;
+31 |     updatedAt: Date;
+32 |     sharePath?: string | null;
+33 | }
+34 | 
+35 | interface ChatListProps {
+36 |     chats: Chat[];
+37 |     isLoading: boolean;
+38 |     isCollapsed: boolean;
+39 |     isUpdatingChatTitle: boolean;
+40 |     onNewChat: () => void;
+41 |     onDeleteChat: (chatId: string, e: React.MouseEvent) => void;
+42 |     onUpdateChatTitle: (params: { chatId: string, title: string }, options: { onSuccess: () => void, onError: () => void }) => void;
+43 | }
+44 | 
+45 | export function ChatList({
+46 |     chats,
+47 |     isLoading,
+48 |     isCollapsed,
+49 |     isUpdatingChatTitle,
+50 |     onNewChat,
+51 |     onDeleteChat,
+52 |     onUpdateChatTitle,
+53 | }: ChatListProps) {
+54 |     const router = useRouter();
+55 |     const pathname = usePathname();
+56 |     const [searchTerm, setSearchTerm] = useState("");
+57 |     const [editingChatId, setEditingChatId] = useState<string | null>(null);
+58 |     const [editingChatTitle, setEditingChatTitle] = useState<string>("");
+59 |     const inputRef = useRef<HTMLInputElement>(null);
+60 | 
+61 |     const filteredChats = chats?.filter(chat =>
+62 |         chat.title.toLowerCase().includes(searchTerm.toLowerCase())
+63 |     ) || [];
+64 | 
+65 |     const handleStartEdit = (chatId: string, currentTitle: string, e: React.MouseEvent) => {
+66 |         e.stopPropagation();
+67 |         e.preventDefault();
+68 |         setEditingChatId(chatId);
+69 |         setEditingChatTitle(currentTitle);
+70 |         setTimeout(() => {
+71 |             inputRef.current?.focus();
+72 |             inputRef.current?.select();
+73 |         }, 0);
+74 |     };
+75 | 
+76 |     const handleCancelEdit = () => {
+77 |         setEditingChatId(null);
+78 |         setEditingChatTitle("");
+79 |     };
+80 | 
+81 |     const handleSaveEdit = () => {
+82 |         if (!editingChatId || editingChatTitle.trim() === "") {
+83 |             toast.error("Chat title cannot be empty.");
+84 |             inputRef.current?.focus();
+85 |             return;
+86 |         }
+87 | 
+88 |         onUpdateChatTitle(
+89 |             { chatId: editingChatId, title: editingChatTitle.trim() },
+90 |             {
+91 |                 onSuccess: () => {
+92 |                     setEditingChatId(null);
+93 |                     setEditingChatTitle("");
+94 |                 },
+95 |                 onError: () => {
+96 |                     inputRef.current?.focus();
+97 |                     inputRef.current?.select();
+98 |                 }
+99 |             }
+100 |         );
+101 |     };
+102 | 
+103 |     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+104 |         setEditingChatTitle(e.target.value);
+105 |     };
+106 | 
+107 |     const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+108 |         if (e.key === 'Enter') {
+109 |             e.preventDefault();
+110 |             handleSaveEdit();
+111 |         } else if (e.key === 'Escape') {
+112 |             e.preventDefault();
+113 |             handleCancelEdit();
+114 |         }
+115 |     };
+116 | 
+117 |     const handleInputBlur = (e: FocusEvent<HTMLInputElement>) => {
+118 |         if (e.relatedTarget && (e.relatedTarget.id === `save-chat-${editingChatId}` || e.relatedTarget.id === `cancel-chat-${editingChatId}`)) {
+119 |             return;
+120 |         }
+121 |         setTimeout(() => {
+122 |             if (editingChatId && document.activeElement !== inputRef.current) {
+123 |                 const activeElementId = document.activeElement?.id;
+124 |                 if (activeElementId !== `save-chat-${editingChatId}` && activeElementId !== `cancel-chat-${editingChatId}`) {
+125 |                     handleCancelEdit();
+126 |                 }
+127 |             }
+128 |         }, 100);
+129 |     };
+130 | 
+131 |     const renderChatSkeletons = () => {
+132 |         return Array(3).fill(0).map((_, index) => (
+133 |             <SidebarMenuItem key={`skeleton-${index}`}>
+134 |                 <div className={`flex items-center gap-2 px-3 py-2 ${isCollapsed ? "justify-center" : ""}`}>
+135 |                     <Skeleton className="h-4 w-4 rounded-full" />
+136 |                     {!isCollapsed && (
+137 |                         <>
+138 |                             <Skeleton className="h-4 w-full max-w-[180px]" />
+139 |                             <Skeleton className="h-5 w-5 ml-auto rounded-md flex-shrink-0" />
+140 |                         </>
+141 |                     )}
+142 |                 </div>
+143 |             </SidebarMenuItem>
+144 |         ));
+145 |     };
+146 | 
+147 |     return (
+148 |         <>
+149 |             {!isCollapsed && (
+150 |                 <div className="px-3 pt-1 pb-2 border-b border-border/40">
+151 |                     <Button
+152 |                         variant="outline"
+153 |                         className="w-full mb-2"
+154 |                         onClick={onNewChat}
+155 |                     >
+156 |                         <PlusCircle className="mr-2 h-4 w-4" />
+157 |                         New Chat
+158 |                     </Button>
+159 |                     <Input
+160 |                         type="search"
+161 |                         placeholder="Search chats..."
+162 |                         aria-label="Search chats by title"
+163 |                         value={searchTerm}
+164 |                         onChange={e => setSearchTerm(e.target.value)}
+165 |                         className="w-full"
+166 |                     />
+167 |                 </div>
+168 |             )}
+169 |             <SidebarGroupContent className={cn(
+170 |                 "overflow-y-auto",
+171 |                 isCollapsed ? "overflow-x-hidden overflow-y-hidden" : ""
+172 |             )}>
+173 |                 {isLoading ? (
+174 |                     renderChatSkeletons()
+175 |                 ) : filteredChats && filteredChats.length > 0 ? (
+176 |                     <AnimatePresence initial={false}>
+177 |                         {filteredChats.map((chat) => {
+178 |                             const isActive = pathname === `/chat/${chat.id}`;
+179 |                             const isEditingThisChat = editingChatId === chat.id;
+180 |                             return (
+181 |                                 <motion.div
+182 |                                     key={chat.id}
+183 |                                     initial={{ opacity: 0, height: 0 }}
+184 |                                     animate={{ opacity: 1, height: "auto" }}
+185 |                                     exit={{ opacity: 0, height: 0 }}
+186 |                                     transition={{ duration: 0.2 }}
+187 |                                     className="overflow-hidden list-none"
+188 |                                 >
+189 |                                     <SidebarMenuItem>
+190 |                                         {isEditingThisChat ? (
+191 |                                             <div className="flex items-center gap-2 px-3 py-2 w-full">
+192 |                                                 <Input
+193 |                                                     ref={inputRef}
+194 |                                                     value={editingChatTitle}
+195 |                                                     onChange={handleInputChange}
+196 |                                                     onKeyDown={handleInputKeyDown}
+197 |                                                     onBlur={handleInputBlur}
+198 |                                                     className="h-7 flex-grow px-1 text-sm"
+199 |                                                     maxLength={100}
+200 |                                                 />
+201 |                                                 <Button
+202 |                                                     id={`save-chat-${chat.id}`}
+203 |                                                     variant="ghost"
+204 |                                                     size="icon"
+205 |                                                     className="h-6 w-6 text-green-500 hover:text-green-600"
+206 |                                                     onClick={handleSaveEdit}
+207 |                                                     disabled={isUpdatingChatTitle}
+208 |                                                 >
+209 |                                                     {isUpdatingChatTitle && editingChatId === chat.id ? (
+210 |                                                         <Loader2 className="h-4 w-4 animate-spin" />
+211 |                                                     ) : (
+212 |                                                         <CheckIcon className="h-4 w-4" />
+213 |                                                     )}
+214 |                                                 </Button>
+215 |                                                 <Button
+216 |                                                     id={`cancel-chat-${chat.id}`}
+217 |                                                     variant="ghost"
+218 |                                                     size="icon"
+219 |                                                     className="h-6 w-6 text-red-500 hover:text-red-600"
+220 |                                                     onClick={handleCancelEdit}
+221 |                                                     disabled={isUpdatingChatTitle}
+222 |                                                 >
+223 |                                                     <XIcon className="h-4 w-4" />
+224 |                                                 </Button>
+225 |                                             </div>
+226 |                                         ) : (
+227 |                                             <>
+228 |                                                 {isCollapsed ? (
+229 |                                                     <TooltipProvider delayDuration={0}>
+230 |                                                         <Tooltip>
+231 |                                                             <TooltipTrigger asChild>
+232 |                                                                 <SidebarMenuButton
+233 |                                                                     onClick={() => router.push(`/chat/${chat.id}`)}
+234 |                                                                     isActive={isActive}
+235 |                                                                     className={cn(
+236 |                                                                         "w-full flex justify-center",
+237 |                                                                         isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
+238 |                                                                     )}
+239 |                                                                 >
+240 |                                                                     <MessageSquare className="h-4 w-4" />
+241 |                                                                 </SidebarMenuButton>
+242 |                                                             </TooltipTrigger>
+243 |                                                             <TooltipContent side="right" sideOffset={5}>
+244 |                                                                 <p>{chat.title}</p>
+245 |                                                             </TooltipContent>
+246 |                                                         </Tooltip>
+247 |                                                     </TooltipProvider>
+248 |                                                 ) : (
+249 |                                                     <TooltipProvider delayDuration={0}>
+250 |                                                         <Tooltip>
+251 |                                                             <TooltipTrigger asChild>
+252 |                                                                 <SidebarMenuButton
+253 |                                                                     asChild
+254 |                                                                     isActive={isActive}
+255 |                                                                     className={cn(
+256 |                                                                         "w-full flex justify-start pr-10",
+257 |                                                                         isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
+258 |                                                                     )}
+259 |                                                                 >
+260 |                                                                     <Link href={`/chat/${chat.id}`} className="flex items-center flex-grow overflow-hidden">
+261 |                                                                         <span className="truncate max-w-[160px]">
+262 |                                                                             {chat.title || `Chat ${chat.id.substring(0, 8)}...`}
+263 |                                                                         </span>
+264 |                                                                     </Link>
+265 |                                                                 </SidebarMenuButton>
+266 |                                                             </TooltipTrigger>
+267 |                                                             <TooltipContent side="right" sideOffset={5}>
+268 |                                                                 <p>{chat.title}</p>
+269 |                                                             </TooltipContent>
+270 |                                                         </Tooltip>
+271 |                                                     </TooltipProvider>
+272 |                                                 )}
+273 |                                                 {!isCollapsed && (
+274 |                                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
+275 |                                                         <Button
+276 |                                                             variant="ghost"
+277 |                                                             size="icon"
+278 |                                                             className="h-6 w-6 hover:text-blue-500"
+279 |                                                             onClick={(e) => handleStartEdit(chat.id, chat.title, e)}
+280 |                                                             title="Edit title"
+281 |                                                         >
+282 |                                                             <Pencil className="h-3 w-3" />
+283 |                                                         </Button>
+284 |                                                         <Button
+285 |                                                             variant="ghost"
+286 |                                                             size="icon"
+287 |                                                             className="h-6 w-6 hover:text-red-500"
+288 |                                                             onClick={(e) => onDeleteChat(chat.id, e)}
+289 |                                                             title="Delete chat"
+290 |                                                         >
+291 |                                                             <Trash2 className="h-3 w-3" />
+292 |                                                         </Button>
+293 |                                                     </div>
+294 |                                                 )}
+295 |                                             </>
+296 |                                         )}
+297 |                                     </SidebarMenuItem>
+298 |                                 </motion.div>
+299 |                             );
+300 |                         })}
+301 |                     </AnimatePresence>
+302 |                 ) : (
+303 |                     <SidebarMenu>
+304 |                         {searchTerm ? (
+305 |                             <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2 list-none">
+306 |                                 {!isCollapsed && "No results found."}
+307 |                             </SidebarMenuItem>
+308 |                         ) : (
+309 |                             <SidebarMenuItem className="text-sm text-muted-foreground px-3 py-2 list-none">
+310 |                                 {!isCollapsed && "No chats yet. Start a new one!"}
+311 |                             </SidebarMenuItem>
+312 |                         )}
+313 |                     </SidebarMenu>
+314 |                 )}
+315 |             </SidebarGroupContent>
+316 |         </>
+317 |     );
+318 | } 
 ```
 
 components/chat-sidebar.tsx
@@ -2597,7 +3425,7 @@ components/chat-sidebar.tsx
 2 | 
 3 | import { useState, useEffect, useRef } from "react";
 4 | import { useRouter, usePathname } from "next/navigation";
-5 | import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe } from "lucide-react";
+5 | import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen } from "lucide-react";
 6 | import {
 7 |     Sidebar,
 8 |     SidebarContent,
@@ -2769,14 +3597,14 @@ components/chat-sidebar.tsx
 174 |             <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
 175 |                 <SidebarHeader className="p-4 border-b border-border/40">
 176 |                     <div className="flex items-center justify-start">
-177 |                         <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
+177 |                         <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isCollapsed ? "justify-center w-full" : ""}`}>
 178 |                             <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
 179 |                                 <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
 180 |                             </div>
 181 |                             {!isCollapsed && (
 182 |                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
 183 |                             )}
-184 |                         </div>
+184 |                         </Link>
 185 |                     </div>
 186 |                 </SidebarHeader>
 187 |                 
@@ -2867,14 +3695,14 @@ components/chat-sidebar.tsx
 272 |             <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
 273 |                 <SidebarHeader className="p-4 border-b border-border/40">
 274 |                     <div className="flex items-center justify-start">
-275 |                         <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center w-full" : ""}`}>
+275 |                         <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isCollapsed ? "justify-center w-full" : ""}`}>
 276 |                             <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
 277 |                                 <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
 278 |                             </div>
 279 |                             {!isCollapsed && (
 280 |                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
 281 |                             )}
-282 |                         </div>
+282 |                         </Link>
 283 |                     </div>
 284 |                 </SidebarHeader>
 285 |                 
@@ -2902,16 +3730,16 @@ components/chat-sidebar.tsx
 307 |                             <Separator className="w-full h-px bg-border/40" />
 308 |                         </div>
 309 |                     </div>
-310 |                     
+310 | 
 311 |                     <SidebarGroup className="flex-shrink-0">
 312 |                         <SidebarGroupLabel className={cn(
-313 |                             "px-4 pt-0 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
+313 |                             "px-4 pt-2 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
 314 |                             isCollapsed ? "sr-only" : ""
 315 |                         )}>
-316 |                             MCP Servers
+316 |                             Settings
 317 |                         </SidebarGroupLabel>
 318 |                         <SidebarGroupContent>
-319 |                             <SidebarMenu>
+319 |                            <SidebarMenu>
 320 |                                 <SidebarMenuItem>
 321 |                                     <SidebarMenuButton 
 322 |                                         onClick={() => setMcpSettingsOpen(true)}
@@ -2941,163 +3769,183 @@ components/chat-sidebar.tsx
 346 |                                         ) : null}
 347 |                                     </SidebarMenuButton>
 348 |                                 </SidebarMenuItem>
-349 |                             </SidebarMenu>
-350 |                         </SidebarGroupContent>
-351 |                     </SidebarGroup>
-352 | 
-353 |                     <div className="relative my-0">
-354 |                         <div className="absolute inset-x-0">
-355 |                             <Separator className="w-full h-px bg-border/40" />
-356 |                         </div>
-357 |                     </div>
-358 | 
-359 |                     <SidebarGroup className="flex-shrink-0">
-360 |                         <SidebarGroupLabel className={cn(
-361 |                             "px-4 pt-2 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-362 |                             isCollapsed ? "sr-only" : ""
-363 |                         )}>
-364 |                             Settings
-365 |                         </SidebarGroupLabel>
-366 |                         <SidebarGroupContent>
-367 |                            <SidebarMenu>
-368 |                                 <SidebarMenuItem>
-369 |                                     <ThemeToggle
-370 |                                         className={cn(
-371 |                                             "w-full flex items-center gap-2 transition-all text-sm text-foreground/80",
-372 |                                             isCollapsed ? "justify-center" : "justify-start"
-373 |                                         )}
-374 |                                         showLabel={!isCollapsed}
-375 |                                         labelText={<span className="flex-grow text-left">Theme</span>}
-376 |                                     />
-377 |                                 </SidebarMenuItem>
-378 |                                 {webSearchEnabled && (
-379 |                                     <SidebarMenuItem>
-380 |                                         <DropdownMenu>
-381 |                                             <TooltipProvider>
-382 |                                                 <Tooltip>
-383 |                                                     <DropdownMenuTrigger asChild>
-384 |                                                         <TooltipTrigger asChild>
-385 |                                                             <SidebarMenuButton
-386 |                                                                 className={cn(
-387 |                                                                     "w-full flex items-center gap-2 transition-all",
-388 |                                                                     "hover:bg-secondary/50 active:bg-secondary/70",
-389 |                                                                     isCollapsed ? "justify-center" : ""
-390 |                                                                 )}
-391 |                                                             >
-392 |                                                                 <Globe className={cn(
-393 |                                                                     "h-4 w-4 flex-shrink-0",
-394 |                                                                     webSearchEnabled ? "text-primary" : "text-muted-foreground"
-395 |                                                                 )} />
-396 |                                                                 {!isCollapsed && (
-397 |                                                                     <span className="text-sm text-foreground/80 flex-grow text-left">
-398 |                                                                         Search Context ({webSearchContextSize.charAt(0).toUpperCase() + webSearchContextSize.slice(1)}) 
-399 |                                                                     </span>
-400 |                                                                 )}
-401 |                                                             </SidebarMenuButton>
-402 |                                                         </TooltipTrigger>
-403 |                                                     </DropdownMenuTrigger>
-404 |                                                     {isCollapsed && (
-405 |                                                         <TooltipContent side="right" sideOffset={5}>
-406 |                                                             Web Search Context: {webSearchContextSize.charAt(0).toUpperCase() + webSearchContextSize.slice(1)}
-407 |                                                         </TooltipContent>
-408 |                                                     )}
-409 |                                                 </Tooltip>
-410 |                                             </TooltipProvider>
-411 |                                             <DropdownMenuContent 
-412 |                                                 align="end" 
-413 |                                                 side={isCollapsed ? "right" : "bottom"} 
-414 |                                                 sideOffset={8} 
-415 |                                                 className="min-w-[120px]"
-416 |                                             >
-417 |                                                 <DropdownMenuLabel>Search Context Size</DropdownMenuLabel>
-418 |                                                 <DropdownMenuSeparator />
-419 |                                                 <DropdownMenuItem 
-420 |                                                     onClick={() => setWebSearchContextSize('low')}
-421 |                                                     className={cn(webSearchContextSize === 'low' && "bg-secondary")}
-422 |                                                 >
-423 |                                                     Low
-424 |                                                 </DropdownMenuItem>
-425 |                                                 <DropdownMenuItem 
-426 |                                                     onClick={() => setWebSearchContextSize('medium')}
-427 |                                                     className={cn(webSearchContextSize === 'medium' && "bg-secondary")}
-428 |                                                 >
-429 |                                                     Medium
-430 |                                                 </DropdownMenuItem>
-431 |                                                 <DropdownMenuItem 
-432 |                                                     onClick={() => setWebSearchContextSize('high')}
-433 |                                                     className={cn(webSearchContextSize === 'high' && "bg-secondary")}
-434 |                                                 >
-435 |                                                     High
-436 |                                                 </DropdownMenuItem>
-437 |                                             </DropdownMenuContent>
-438 |                                         </DropdownMenu>
-439 |                                     </SidebarMenuItem>
-440 |                                 )}
-441 |                            </SidebarMenu>
-442 |                         </SidebarGroupContent>
-443 |                     </SidebarGroup>
-444 |                 </SidebarContent>
-445 |                 
-446 |                 <SidebarFooter className="flex flex-col gap-2 p-3 border-t border-border/40">
-447 |                     <SidebarMenu>
-448 |                         {/* Item removed */}
-449 |                     </SidebarMenu>
-450 |                     
-451 |                     <div className="relative my-0 pt-2">
-452 |                         <div className="absolute inset-x-0">
-453 |                             <Separator className="w-full h-px bg-border/40" />
-454 |                         </div>
-455 |                     </div>
-456 | 
-457 |                     {isSessionLoading ? (
-458 |                         <div className="flex items-center gap-2 px-3 py-2 mt-2">
-459 |                             <Skeleton className="h-8 w-8 rounded-full" />
-460 |                             {!isCollapsed && <Skeleton className="h-4 w-24" />}
-461 |                         </div>
-462 |                     ) : session?.user?.isAnonymous === true ? (
-463 |                         <div className={cn(
-464 |                             "flex items-center mt-2", 
-465 |                             isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2 gap-2" 
-466 |                         )}>
-467 |                             <SignInButton isCollapsed={isCollapsed} />
-468 |                         </div>
-469 |                     ) : (
-470 |                         <div className={cn(
-471 |                             "flex items-center mt-2", 
-472 |                             isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2" 
-473 |                         )}>
-474 |                             <UserAccountMenu />
-475 |                         </div>
-476 |                     )}
-477 | 
-478 |                     <Link 
-479 |                         href="https://github.com/zaidmukaddam/scira-mcp-chat" 
-480 |                         target="_blank" 
-481 |                         rel="noopener noreferrer"
-482 |                         className={cn(
-483 |                             "flex items-center text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors py-2 mt-2 w-full",
-484 |                             isCollapsed ? "justify-center" : "justify-start px-3 gap-2"
-485 |                         )}
-486 |                     >
-487 |                         <div className={cn("flex items-center justify-center", isCollapsed ? "w-8 h-8" : "w-6 h-6")}>
-488 |                             <Github className="h-4 w-4" />
-489 |                         </div>
-490 |                         {!isCollapsed && <span>Powered by Scira Chat</span>}
-491 |                     </Link>
-492 |                 </SidebarFooter>
-493 |             </Sidebar>
-494 | 
-495 |             <MCPServerManager
-496 |                 servers={mcpServers}
-497 |                 onServersChange={setMcpServers}
-498 |                 selectedServers={selectedMcpServers}
-499 |                 onSelectedServersChange={setSelectedMcpServers}
-500 |                 open={mcpSettingsOpen}
-501 |                 onOpenChange={setMcpSettingsOpen}
-502 |             />
-503 |         </>
-504 |     );
-505 | }
+349 |                                 <SidebarMenuItem>
+350 |                                     <SidebarMenuButton 
+351 |                                         onClick={() => setApiKeySettingsOpen(true)}
+352 |                                         className={cn(
+353 |                                             "w-full flex items-center gap-2 transition-all"
+354 |                                         )}
+355 |                                         tooltip={isCollapsed ? "API Keys" : undefined}
+356 |                                     >
+357 |                                         <Key className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+358 |                                         {!isCollapsed && (
+359 |                                             <span className="flex-grow text-sm text-foreground/80 text-left">API Keys</span>
+360 |                                         )}
+361 |                                     </SidebarMenuButton>
+362 |                                 </SidebarMenuItem>
+363 |                                 <SidebarMenuItem>
+364 |                                     <SidebarMenuButton asChild>
+365 |                                         <ThemeToggle
+366 |                                             className={cn(
+367 |                                                 "w-full flex items-center gap-2 transition-all text-sm text-foreground/80",
+368 |                                                 isCollapsed ? "justify-center" : "justify-start"
+369 |                                             )}
+370 |                                             showLabel={!isCollapsed}
+371 |                                             labelText={<span className="flex-grow text-left">Theme</span>}
+372 |                                         />
+373 |                                     </SidebarMenuButton>
+374 |                                 </SidebarMenuItem>
+375 |                                 {webSearchEnabled && (
+376 |                                     <SidebarMenuItem>
+377 |                                         <DropdownMenu>
+378 |                                             <TooltipProvider>
+379 |                                                 <Tooltip>
+380 |                                                     <DropdownMenuTrigger asChild>
+381 |                                                         <TooltipTrigger asChild>
+382 |                                                             <SidebarMenuButton
+383 |                                                                 className={cn(
+384 |                                                                     "w-full flex items-center gap-2 transition-all",
+385 |                                                                     "hover:bg-secondary/50 active:bg-secondary/70",
+386 |                                                                     isCollapsed ? "justify-center" : ""
+387 |                                                                 )}
+388 |                                                             >
+389 |                                                                 <Globe className={cn(
+390 |                                                                     "h-4 w-4 flex-shrink-0",
+391 |                                                                     webSearchEnabled ? "text-primary" : "text-muted-foreground"
+392 |                                                                 )} />
+393 |                                                                 {!isCollapsed && (
+394 |                                                                     <span className="text-sm text-foreground/80 flex-grow text-left">
+395 |                                                                         Search Context ({webSearchContextSize.charAt(0).toUpperCase() + webSearchContextSize.slice(1)}) 
+396 |                                                                     </span>
+397 |                                                                 )}
+398 |                                                             </SidebarMenuButton>
+399 |                                                         </TooltipTrigger>
+400 |                                                     </DropdownMenuTrigger>
+401 |                                                     {isCollapsed && (
+402 |                                                         <TooltipContent side="right" sideOffset={5}>
+403 |                                                             Web Search Context: {webSearchContextSize.charAt(0).toUpperCase() + webSearchContextSize.slice(1)}
+404 |                                                         </TooltipContent>
+405 |                                                     )}
+406 |                                                 </Tooltip>
+407 |                                             </TooltipProvider>
+408 |                                             <DropdownMenuContent 
+409 |                                                 align="end" 
+410 |                                                 side={isCollapsed ? "right" : "bottom"} 
+411 |                                                 sideOffset={8} 
+412 |                                                 className="min-w-[120px]"
+413 |                                             >
+414 |                                                 <DropdownMenuLabel>Search Context Size</DropdownMenuLabel>
+415 |                                                 <DropdownMenuSeparator />
+416 |                                                 <DropdownMenuItem 
+417 |                                                     onClick={() => setWebSearchContextSize('low')}
+418 |                                                     className={cn(webSearchContextSize === 'low' && "bg-secondary")}
+419 |                                                 >
+420 |                                                     Low
+421 |                                                 </DropdownMenuItem>
+422 |                                                 <DropdownMenuItem 
+423 |                                                     onClick={() => setWebSearchContextSize('medium')}
+424 |                                                     className={cn(webSearchContextSize === 'medium' && "bg-secondary")}
+425 |                                                 >
+426 |                                                     Medium
+427 |                                                 </DropdownMenuItem>
+428 |                                                 <DropdownMenuItem 
+429 |                                                     onClick={() => setWebSearchContextSize('high')}
+430 |                                                     className={cn(webSearchContextSize === 'high' && "bg-secondary")}
+431 |                                                 >
+432 |                                                     High
+433 |                                                 </DropdownMenuItem>
+434 |                                             </DropdownMenuContent>
+435 |                                         </DropdownMenu>
+436 |                                     </SidebarMenuItem>
+437 |                                 )}
+438 |                            </SidebarMenu>
+439 |                         </SidebarGroupContent>
+440 |                     </SidebarGroup>
+441 |                 </SidebarContent>
+442 |                 
+443 |                 <SidebarFooter className="flex flex-col gap-2 p-3 border-t border-border/40">
+444 |                     
+445 | 
+446 |                     {isSessionLoading ? (
+447 |                         <div className="flex items-center gap-2 px-3 py-2 mt-2">
+448 |                             <Skeleton className="h-8 w-8 rounded-full" />
+449 |                             {!isCollapsed && <Skeleton className="h-4 w-24" />}
+450 |                         </div>
+451 |                     ) : session?.user?.isAnonymous === true ? (
+452 |                         <div className={cn(
+453 |                             "flex items-center mt-2", 
+454 |                             isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2 gap-2" 
+455 |                         )}>
+456 |                             <SignInButton isCollapsed={isCollapsed} />
+457 |                         </div>
+458 |                     ) : (
+459 |                         <div className={cn(
+460 |                             "flex items-center mt-2", 
+461 |                             isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2" 
+462 |                         )}>
+463 |                             <UserAccountMenu />
+464 |                         </div>
+465 |                     )}
+466 | 
+467 |                     <div className={cn(
+468 |                         "flex items-center justify-center py-2",
+469 |                         isCollapsed ? "flex-col gap-2" : "gap-3"
+470 |                     )}>
+471 |                         <TooltipProvider>
+472 |                             <Tooltip>
+473 |                                 <TooltipTrigger asChild>
+474 |                                     <Link
+475 |                                         href="https://chatlima-docs.netlify.app/"
+476 |                                         target="_blank"
+477 |                                         rel="noopener noreferrer"
+478 |                                         className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+479 |                                     >
+480 |                                         <BookOpen className="h-4 w-4" />
+481 |                                     </Link>
+482 |                                 </TooltipTrigger>
+483 |                                 <TooltipContent side="top" sideOffset={5}>
+484 |                                     Documentation
+485 |                                 </TooltipContent>
+486 |                             </Tooltip>
+487 |                         </TooltipProvider>
+488 | 
+489 |                         <TooltipProvider>
+490 |                             <Tooltip>
+491 |                                 <TooltipTrigger asChild>
+492 |                                     <Link 
+493 |                                         href="https://github.com/brooksy4503/chatlima" 
+494 |                                         target="_blank" 
+495 |                                         rel="noopener noreferrer"
+496 |                                         className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+497 |                                     >
+498 |                                         <Github className="h-4 w-4" />
+499 |                                     </Link>
+500 |                                 </TooltipTrigger>
+501 |                                 <TooltipContent side="top" sideOffset={5}>
+502 |                                     ChatLima on GitHub
+503 |                                 </TooltipContent>
+504 |                             </Tooltip>
+505 |                         </TooltipProvider>
+506 |                     </div>
+507 |                 </SidebarFooter>
+508 |             </Sidebar>
+509 | 
+510 |             <MCPServerManager
+511 |                 servers={mcpServers}
+512 |                 onServersChange={setMcpServers}
+513 |                 selectedServers={selectedMcpServers}
+514 |                 onSelectedServersChange={setSelectedMcpServers}
+515 |                 open={mcpSettingsOpen}
+516 |                 onOpenChange={setMcpSettingsOpen}
+517 |             />
+518 | 
+519 |             <ApiKeyManager
+520 |                 open={apiKeySettingsOpen}
+521 |                 onOpenChange={setApiKeySettingsOpen}
+522 |             />
+523 |         </>
+524 |     );
+525 | }
 ```
 
 components/chat.tsx
@@ -3218,104 +4066,264 @@ components/chat.tsx
 114 |       role: msg.role as Message['role'],
 115 |       content: msg.content,
 116 |       parts: msg.parts,
-117 |     } as Message));
-118 |   }, [chatData]);
-119 |   
-120 |   const { messages, input, handleInputChange, handleSubmit, status, stop } =
-121 |     useChat({
-122 |       id: chatId || generatedChatId,
-123 |       initialMessages,
-124 |       maxSteps: 20,
-125 |       body: {
-126 |         selectedModel,
-127 |         mcpServers: mcpServersForApi,
-128 |         chatId: chatId || generatedChatId,
-129 |         webSearch: {
-130 |           enabled: webSearchEnabled,
-131 |           contextSize: webSearchContextSize,
-132 |         }
-133 |       },
-134 |       experimental_throttle: 500,
-135 |       onFinish: (message) => {
-136 |         queryClient.invalidateQueries({ queryKey: ['chats'] });
-137 |         queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
-138 |         if (!chatId && generatedChatId) {
-139 |           if (window.location.pathname !== `/chat/${generatedChatId}`) {
-140 |              router.push(`/chat/${generatedChatId}`, { scroll: false }); 
-141 |           }
-142 |         }
-143 |       },
-144 |       onError: (error) => {
-145 |         let errorMessage = "An error occurred, please try again later."; // Default message
-146 |         try {
-147 |           // Attempt to parse the error message as JSON, assuming the API error response body might be stringified here
-148 |           const parsedError = JSON.parse(error.message);
-149 |           // If parsing is successful and a specific message exists in the parsed object, use it
-150 |           if (parsedError && typeof parsedError.message === 'string' && parsedError.message.length > 0) {
-151 |             errorMessage = parsedError.message;
-152 |           } else if (error.message.length > 0) {
-153 |             // Fallback to the original error message if parsing fails or doesn't yield a message field
-154 |             errorMessage = error.message;
-155 |           }
-156 |         } catch (e) {
-157 |           // If parsing fails, check if the original error message is non-empty
-158 |           if (error.message && error.message.length > 0) {
-159 |             errorMessage = error.message;
-160 |           }
-161 |         }
-162 |         toast.error(
-163 |           errorMessage,
-164 |           { position: "top-center", richColors: true },
-165 |         );
-166 |       },
-167 |     });
-168 |     
-169 |   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
-170 |     e.preventDefault();
-171 |     
-172 |     handleSubmit(e);
-173 |   }, [handleSubmit]);
+117 |       hasWebSearch: msg.hasWebSearch,
+118 |     } as Message & { hasWebSearch?: boolean }));
+119 |   }, [chatData]);
+120 |   
+121 |   // Function to get API keys from localStorage
+122 |   const getClientApiKeys = () => {
+123 |     if (typeof window === 'undefined') return {};
+124 |     
+125 |     const apiKeys: Record<string, string> = {};
+126 |     const keyNames = [
+127 |       'OPENAI_API_KEY',
+128 |       'ANTHROPIC_API_KEY', 
+129 |       'GROQ_API_KEY',
+130 |       'XAI_API_KEY',
+131 |       'OPENROUTER_API_KEY',
+132 |       'REQUESTY_API_KEY'
+133 |     ];
+134 |     
+135 |     keyNames.forEach(keyName => {
+136 |       const value = localStorage.getItem(keyName);
+137 |       if (value) {
+138 |         apiKeys[keyName] = value;
+139 |       }
+140 |     });
+141 |     
+142 |     return apiKeys;
+143 |   };
+144 | 
+145 |   const { messages, input, handleInputChange, handleSubmit, status, stop } =
+146 |     useChat({
+147 |       id: chatId || generatedChatId,
+148 |       initialMessages,
+149 |       maxSteps: 20,
+150 |       body: {
+151 |         selectedModel,
+152 |         mcpServers: mcpServersForApi,
+153 |         chatId: chatId || generatedChatId,
+154 |         webSearch: {
+155 |           enabled: webSearchEnabled,
+156 |           contextSize: webSearchContextSize,
+157 |         },
+158 |         apiKeys: getClientApiKeys()
+159 |       },
+160 |       experimental_throttle: 500,
+161 |       onFinish: (message) => {
+162 |         queryClient.invalidateQueries({ queryKey: ['chats'] });
+163 |         queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+164 |         if (!chatId && generatedChatId) {
+165 |           if (window.location.pathname !== `/chat/${generatedChatId}`) {
+166 |              router.push(`/chat/${generatedChatId}`, { scroll: false }); 
+167 |           }
+168 |         }
+169 |       },
+170 |       onError: (error) => {
+171 |         let errorMessage = "An error occurred, please try again later."; // Default message
+172 |         let errorCode = "UNKNOWN_ERROR";
+173 |         let errorDetails = "No additional details available.";
 174 | 
-175 |   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
-176 | 
-177 |   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
+175 |         try {
+176 |           // The error.message from the Vercel AI SDK is now expected to be a JSON string.
+177 |           const parsedBody = JSON.parse(error.message);
 178 | 
-179 |   return (
-180 |     <div className="h-dvh flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
-181 |       {/* Main content area: Either ProjectOverview or Messages */}
-182 |       <div className="flex-1 overflow-y-auto min-h-0 pb-2">
-183 |         {messages.length === 0 && !isLoadingChat ? (
-184 |           <div className="max-w-xl mx-auto w-full pt-4 sm:pt-8">
-185 |             <ProjectOverview />
-186 |           </div>
-187 |         ) : (
-188 |           <Messages messages={messages} isLoading={isLoading} status={status} />
-189 |         )}
-190 |       </div>
-191 | 
-192 |       {/* Input area: Always rendered at the bottom */}
-193 |       <div className="mt-2 w-full mx-auto mb-4 sm:mb-auto shrink-0">
-194 |         {/* Conditionally render ProjectOverview above input only when no messages and not loading */}
-195 |         {messages.length === 0 && !isLoadingChat && (
-196 |           <div className="max-w-xl mx-auto w-full mb-4 sm:hidden"> {/* Hidden on sm+, shown on mobile */}
-197 |             {/* Maybe a condensed overview or nothing here if ProjectOverview is too large */}
-198 |           </div>
-199 |         )}
-200 |         <form onSubmit={handleFormSubmit} className="mt-2">
-201 |           <Textarea
-202 |             selectedModel={selectedModel}
-203 |             setSelectedModel={setSelectedModel}
-204 |             handleInputChange={handleInputChange}
-205 |             input={input}
-206 |             isLoading={isLoading}
-207 |             status={status}
-208 |             stop={stop}
-209 |           />
-210 |         </form>
-211 |       </div>
-212 |     </div>
-213 |   );
-214 | }
+179 |           // Check for the structure from getErrorMessage (nested error object)
+180 |           if (parsedBody.error && typeof parsedBody.error === 'object' && parsedBody.error.code) {
+181 |             const apiErrorObject = parsedBody.error;
+182 |             errorMessage = apiErrorObject.message || errorMessage;
+183 |             errorCode = apiErrorObject.code || errorCode;
+184 |             errorDetails = apiErrorObject.details || errorDetails;
+185 |           } 
+186 |           // Check for the flatter structure (e.g., from direct 429 response)
+187 |           else if (typeof parsedBody.error === 'string' && parsedBody.message) {
+188 |             errorMessage = parsedBody.message; // Use the detailed message from the API
+189 |             if (parsedBody.error === "Message limit reached") {
+190 |               errorCode = "MESSAGE_LIMIT_REACHED";
+191 |               // Optionally, capture other details like limit and remaining
+192 |               const details: any = {};
+193 |               if (typeof parsedBody.limit !== 'undefined') details.limit = parsedBody.limit;
+194 |               if (typeof parsedBody.remaining !== 'undefined') details.remaining = parsedBody.remaining;
+195 |               if (Object.keys(details).length > 0) errorDetails = JSON.stringify(details);
+196 | 
+197 |             } else {
+198 |               // For other flat errors, we might not have a specific code yet
+199 |               // but we have the detailed message.
+200 |               // errorCode remains UNKNOWN_ERROR or could be set to a generic API_ERROR
+201 |             }
+202 |           }
+203 |           // Fallback for other JSON structures or if parsing was incomplete
+204 |           else if (parsedBody.message) {
+205 |             errorMessage = parsedBody.message;
+206 |           }
+207 |            else {
+208 |             // If parsing was successful but structure is unrecognized
+209 |             // and errorMessage hasn't been updated from a recognized structure.
+210 |              if (error.message && error.message.length > 0 && errorMessage === "An error occurred, please try again later.") {
+211 |                  errorMessage = error.message; // use raw JSON string if no better message found
+212 |             }
+213 |             console.warn("Received JSON error message with unrecognized structure:", error.message);
+214 |           }
+215 |         } catch (e) {
+216 |           // If parsing fails, it means error.message was not a JSON string.
+217 |           // Use the raw error.message if available.
+218 |           if (error.message && error.message.length > 0) {
+219 |             errorMessage = error.message;
+220 |           }
+221 |           console.warn("Failed to parse error message as JSON:", e, "Raw error message:", error.message);
+222 |         }
+223 | 
+224 |         // Log the detailed error for debugging
+225 |         console.error(`Chat Error [Code: ${errorCode}]: ${errorMessage}`, { details: errorDetails, originalError: error });
+226 | 
+227 |         // Display user-friendly toast messages based on error code
+228 |         let toastMessage = errorMessage;
+229 |         switch (errorCode) {
+230 |           case "AUTHENTICATION_REQUIRED":
+231 |             toastMessage = "Authentication required. Please log in to continue.";
+232 |             // Optionally, redirect to login or prompt user
+233 |             // router.push('/login'); 
+234 |             break;
+235 |           case "MESSAGE_LIMIT_REACHED":
+236 |             // The message from the backend (now correctly assigned to errorMessage) is descriptive.
+237 |             // toastMessage will use this errorMessage.
+238 |             break;
+239 |           case "INSUFFICIENT_CREDITS":
+240 |             toastMessage = "You have insufficient credits. Please top up your account.";
+241 |             break;
+242 |           case "RATE_LIMIT_EXCEEDED":
+243 |             toastMessage = "Too many requests. Please wait a moment and try again.";
+244 |             break;
+245 |           case "LLM_PROVIDER_ERROR":
+246 |             toastMessage = "The AI model provider is experiencing issues. Please try a different model or try again later.";
+247 |             break;
+248 |           case "MODEL_INIT_FAILED":
+249 |             toastMessage = "Failed to initialize the selected AI model. Please try another model.";
+250 |             break;
+251 |           case "STREAM_ERROR": // Generic stream error from backend
+252 |             toastMessage = "A problem occurred while getting the response. Please try again.";
+253 |             break;
+254 |           // Add more cases as new error codes are defined in the backend
+255 |           default:
+256 |             // For UNKNOWN_ERROR or other unhandled codes, use the errorMessage as is (or a generic one)
+257 |             if (!errorMessage || errorMessage === "An error occurred, please try again later.") {
+258 |                 toastMessage = "An unexpected issue occurred. Please try again.";
+259 |             }
+260 |             break;
+261 |         }
+262 | 
+263 |         toast.error(
+264 |           toastMessage,
+265 |           { 
+266 |             position: "top-center", 
+267 |             richColors: true,
+268 |             description: errorCode !== "UNKNOWN_ERROR" && errorMessage !== toastMessage ? errorMessage : undefined,
+269 |             duration: 8000 // Longer duration for errors
+270 |           }
+271 |         );
+272 |       },
+273 |     });
+274 |     
+275 |   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+276 |     e.preventDefault();
+277 |     
+278 |     handleSubmit(e);
+279 |   }, [handleSubmit]);
+280 | 
+281 |   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
+282 | 
+283 |   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
+284 | 
+285 |   // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
+286 |   const enhancedMessages = useMemo(() => {
+287 |     return messages.map((message, index) => {
+288 |       // Check if this is an assistant message and if web search was enabled for the preceding user message
+289 |       if (message.role === 'assistant' && index > 0) {
+290 |         const previousMessage = messages[index - 1];
+291 |         // If the previous message was from user and web search was enabled, mark this assistant message
+292 |         if (previousMessage.role === 'user' && webSearchEnabled && isOpenRouterModel) {
+293 |           return {
+294 |             ...message,
+295 |             hasWebSearch: true
+296 |           } as Message & { hasWebSearch?: boolean };
+297 |         }
+298 |       }
+299 |       return {
+300 |         ...message,
+301 |         hasWebSearch: (message as any).hasWebSearch || false
+302 |       } as Message & { hasWebSearch?: boolean };
+303 |     });
+304 |   }, [messages, webSearchEnabled, isOpenRouterModel]);
+305 | 
+306 |   return (
+307 |     <div className="h-dvh flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
+308 |       {/* Main content area: Either ProjectOverview or Messages */}
+309 |       <div className="flex-1 overflow-y-auto min-h-0 pb-2">
+310 |         {messages.length === 0 && !isLoadingChat ? (
+311 |           <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
+312 |             <ProjectOverview />
+313 |           </div>
+314 |         ) : (
+315 |           <Messages messages={enhancedMessages} isLoading={isLoading} status={status} />
+316 |         )}
+317 |       </div>
+318 | 
+319 |       {/* Input area: Always rendered at the bottom */}
+320 |       <div className="mt-2 w-full max-w-3xl mx-auto mb-4 sm:mb-auto shrink-0">
+321 |         {/* Conditionally render ProjectOverview above input only when no messages and not loading */}
+322 |         {messages.length === 0 && !isLoadingChat && (
+323 |           <div className="max-w-3xl mx-auto w-full mb-4 sm:hidden"> {/* Hidden on sm+, shown on mobile */}
+324 |             {/* Maybe a condensed overview or nothing here if ProjectOverview is too large */}
+325 |           </div>
+326 |         )}
+327 |         <form onSubmit={handleFormSubmit} className="mt-2">
+328 |           <Textarea
+329 |             selectedModel={selectedModel}
+330 |             setSelectedModel={setSelectedModel}
+331 |             handleInputChange={handleInputChange}
+332 |             input={input}
+333 |             isLoading={isLoading}
+334 |             status={status}
+335 |             stop={stop}
+336 |           />
+337 |         </form>
+338 |       </div>
+339 |     </div>
+340 |   );
+341 | }
+```
+
+components/checkout-button.tsx
+```
+1 | 'use client';
+2 | 
+3 | import { useAuth } from '@/hooks/useAuth';
+4 | import { Button } from '@/components/ui/button';
+5 | import { useRouter } from 'next/navigation';
+6 | import { CreditCard } from 'lucide-react';
+7 | 
+8 | export const CheckoutButton = () => {
+9 |   const { user, isAnonymous, isAuthenticated } = useAuth();
+10 |   const router = useRouter();
+11 | 
+12 |   const handleCheckout = () => {
+13 |     if (isAnonymous || !isAuthenticated) {
+14 |       // Guide anonymous users to sign in first
+15 |       router.push('/api/auth/sign-in/google');
+16 |     } else {
+17 |       // Redirect authenticated users to the Polar checkout page
+18 |       // The slug 'ai-usage' must match the one defined in lib/auth.ts
+19 |       window.location.href = '/api/auth/checkout/ai-usage';
+20 |     }
+21 |   };
+22 | 
+23 |   return (
+24 |     <Button onClick={handleCheckout} className="w-full">
+25 |       <CreditCard className="mr-2 h-4 w-4" />
+26 |       {isAnonymous || !isAuthenticated ? 'Sign In to Purchase Credits' : 'Purchase More Credits'}
+27 |     </Button>
+28 |   );
+29 | }; 
 ```
 
 components/citation.tsx
@@ -3682,183 +4690,376 @@ components/input.tsx
 64 | };
 ```
 
+components/ios-install-prompt.tsx
+```
+1 | 'use client';
+2 | 
+3 | import { useState, useEffect } from 'react';
+4 | import { X, Share, Plus } from 'lucide-react';
+5 | import { Button } from '@/components/ui/button';
+6 | import { Card, CardContent } from '@/components/ui/card';
+7 | 
+8 | interface IOSInstallPromptProps {
+9 |   onDismiss?: () => void;
+10 | }
+11 | 
+12 | export function IOSInstallPrompt({ onDismiss }: IOSInstallPromptProps) {
+13 |   const [isVisible, setIsVisible] = useState(false);
+14 |   const [isIOS, setIsIOS] = useState(false);
+15 |   const [isStandalone, setIsStandalone] = useState(false);
+16 | 
+17 |   useEffect(() => {
+18 |     // Check if running on iOS
+19 |     const userAgent = navigator.userAgent.toLowerCase();
+20 |     const isiOS = /iphone|ipad|ipod/.test(userAgent);
+21 |     setIsIOS(isiOS);
+22 | 
+23 |     // Check if already running in standalone mode
+24 |     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
+25 |                            (window.navigator as any).standalone === true;
+26 |     setIsStandalone(isStandaloneMode);
+27 | 
+28 |     // Check if user has previously dismissed the prompt
+29 |     const dismissed = localStorage.getItem('chatlima-ios-install-dismissed');
+30 |     
+31 |     // Only show if: iOS Safari, not in standalone mode, not previously dismissed
+32 |     if (isiOS && !isStandaloneMode && !dismissed) {
+33 |       // Show after a short delay to ensure user has interacted with the page
+34 |       const timer = setTimeout(() => {
+35 |         setIsVisible(true);
+36 |       }, 3000);
+37 |       
+38 |       return () => clearTimeout(timer);
+39 |     }
+40 |   }, []);
+41 | 
+42 |   const handleDismiss = () => {
+43 |     setIsVisible(false);
+44 |     localStorage.setItem('chatlima-ios-install-dismissed', 'true');
+45 |     onDismiss?.();
+46 |   };
+47 | 
+48 |   const handleNeverShow = () => {
+49 |     setIsVisible(false);
+50 |     localStorage.setItem('chatlima-ios-install-dismissed', 'permanent');
+51 |     onDismiss?.();
+52 |   };
+53 | 
+54 |   if (!isVisible || !isIOS || isStandalone) {
+55 |     return null;
+56 |   }
+57 | 
+58 |   return (
+59 |     <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-80">
+60 |       <Card className="shadow-lg border-2">
+61 |         <CardContent className="p-4">
+62 |           <div className="flex items-start justify-between mb-3">
+63 |             <div className="flex items-center gap-2">
+64 |               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+65 |                 <span className="text-white text-sm font-bold">CL</span>
+66 |               </div>
+67 |               <div>
+68 |                 <h3 className="font-semibold text-sm">Add to Home Screen</h3>
+69 |                 <p className="text-xs text-muted-foreground">Quick access to ChatLima</p>
+70 |               </div>
+71 |             </div>
+72 |             <Button
+73 |               variant="ghost"
+74 |               size="sm"
+75 |               onClick={handleDismiss}
+76 |               className="h-6 w-6 p-0"
+77 |             >
+78 |               <X className="h-4 w-4" />
+79 |             </Button>
+80 |           </div>
+81 |           
+82 |           <div className="space-y-2 mb-3">
+83 |             <div className="flex items-center gap-2 text-xs">
+84 |               <span className="w-4 h-4 border rounded flex items-center justify-center">1</span>
+85 |               <span>Tap the</span>
+86 |               <Share className="h-4 w-4" />
+87 |               <span>Share button below</span>
+88 |             </div>
+89 |             <div className="flex items-center gap-2 text-xs">
+90 |               <span className="w-4 h-4 border rounded flex items-center justify-center">2</span>
+91 |               <span>Select</span>
+92 |               <div className="flex items-center gap-1 px-1 py-0.5 bg-muted rounded text-xs">
+93 |                 <Plus className="h-3 w-3" />
+94 |                 <span>Add to Home Screen</span>
+95 |               </div>
+96 |             </div>
+97 |           </div>
+98 |           
+99 |           <div className="flex gap-2">
+100 |             <Button
+101 |               variant="outline"
+102 |               size="sm"
+103 |               onClick={handleNeverShow}
+104 |               className="text-xs flex-1"
+105 |             >
+106 |               Don&apos;t show again
+107 |             </Button>
+108 |             <Button
+109 |               size="sm"
+110 |               onClick={handleDismiss}
+111 |               className="text-xs flex-1"
+112 |             >
+113 |               Got it
+114 |             </Button>
+115 |           </div>
+116 |         </CardContent>
+117 |       </Card>
+118 |     </div>
+119 |   );
+120 | } 
+```
+
 components/markdown.tsx
 ```
 1 | import Link from "next/link";
 2 | import React, { memo } from "react";
 3 | import ReactMarkdown, { type Components } from "react-markdown";
 4 | import remarkGfm from "remark-gfm";
-5 | import { cn } from "@/lib/utils";
-6 | 
-7 | const components: Partial<Components> = {
-8 |   pre: ({ children, ...props }) => (
-9 |     <pre className="overflow-x-auto rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 p-2.5 my-1.5 text-sm" {...props}>
-10 |       {children}
-11 |     </pre>
-12 |   ),
-13 |   code: ({ children, className, ...props }: React.HTMLProps<HTMLElement> & { className?: string }) => {
-14 |     const match = /language-(\w+)/.exec(className || '');
-15 |     const isInline = !match && !className;
-16 | 
-17 |     if (isInline) {
-18 |       return (
-19 |         <code
-20 |           className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 text-[0.9em] font-mono"
-21 |           {...props}
-22 |         >
-23 |           {children}
-24 |         </code>
-25 |       );
-26 |     }
-27 |     return (
-28 |       <code className={cn("block font-mono text-sm", className)} {...props}>
-29 |         {children}
-30 |       </code>
-31 |     );
-32 |   },
-33 |   ol: ({ node, children, ...props }) => (
-34 |     <ol className="list-decimal list-outside ml-4 space-y-0.5 my-1.5" {...props}>
-35 |       {children}
-36 |     </ol>
-37 |   ),
-38 |   ul: ({ node, children, ...props }) => (
-39 |     <ul className="list-disc list-outside ml-4 space-y-0.5 my-1.5" {...props}>
-40 |       {children}
-41 |     </ul>
-42 |   ),
-43 |   li: ({ node, children, ...props }) => (
-44 |     <li className="leading-normal" {...props}>
-45 |       {children}
-46 |     </li>
-47 |   ),
-48 |   p: ({ node, children, ...props }) => (
-49 |     <p className="leading-relaxed my-1" {...props}>
-50 |       {children}
-51 |     </p>
-52 |   ),
-53 |   strong: ({ node, children, ...props }) => (
-54 |     <strong className="font-semibold" {...props}>
-55 |       {children}
-56 |     </strong>
-57 |   ),
-58 |   em: ({ node, children, ...props }) => (
-59 |     <em className="italic" {...props}>
-60 |       {children}
-61 |     </em>
-62 |   ),
-63 |   blockquote: ({ node, children, ...props }) => (
-64 |     <blockquote
-65 |       className="border-l-2 border-zinc-200 dark:border-zinc-700 black:border-zinc-700 pl-3 my-1.5 italic text-zinc-600 dark:text-zinc-400 black:text-zinc-400"
-66 |       {...props}
-67 |     >
-68 |       {children}
-69 |     </blockquote>
-70 |   ),
-71 |   a: ({ node, href, children, ...props }) => {
-72 |     const isInternal = href && (href.startsWith("/") || href.startsWith("#"));
-73 |     if (isInternal) {
-74 |       return (
-75 |         <Link href={href} {...props}>
-76 |           {children}
-77 |         </Link>
-78 |       );
-79 |     }
-80 |     return (
-81 |       <a
-82 |         href={href}
-83 |         target="_blank"
-84 |         rel="noopener noreferrer"
-85 |         {...props}
-86 |         className="text-blue-500 hover:underline hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 black:text-blue-400 black:hover:text-blue-300 transition-colors"
-87 |       >
-88 |         {children}
-89 |       </a>
-90 |     );
-91 |   },
-92 |   h1: ({ node, children, ...props }) => (
-93 |     <h1 className="text-2xl font-semibold mt-3 mb-1.5 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
-94 |       {children}
-95 |     </h1>
-96 |   ),
-97 |   h2: ({ node, children, ...props }) => (
-98 |     <h2 className="text-xl font-semibold mt-2.5 mb-1.5 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
-99 |       {children}
-100 |     </h2>
-101 |   ),
-102 |   h3: ({ node, children, ...props }) => (
-103 |     <h3 className="text-lg font-semibold mt-2 mb-1 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
-104 |       {children}
-105 |     </h3>
-106 |   ),
-107 |   h4: ({ node, children, ...props }) => (
-108 |     <h4 className="text-base font-semibold mt-2 mb-1 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
-109 |       {children}
-110 |     </h4>
-111 |   ),
-112 |   h5: ({ node, children, ...props }) => (
-113 |     <h5 className="text-sm font-semibold mt-2 mb-1 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
-114 |       {children}
-115 |     </h5>
-116 |   ),
-117 |   h6: ({ node, children, ...props }) => (
-118 |     <h6 className="text-xs font-semibold mt-2 mb-0.5 text-zinc-800 dark:text-zinc-200 black:text-zinc-200" {...props}>
-119 |       {children}
-120 |     </h6>
-121 |   ),
-122 |   table: ({ node, children, ...props }) => (
-123 |     <div className="my-1.5 overflow-x-auto">
-124 |       <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700" {...props}>
-125 |         {children}
-126 |       </table>
-127 |     </div>
-128 |   ),
-129 |   thead: ({ node, children, ...props }) => (
-130 |     <thead className="bg-zinc-50 dark:bg-zinc-800/50 black:bg-zinc-800/50" {...props}>
-131 |       {children}
-132 |     </thead>
-133 |   ),
-134 |   tbody: ({ node, children, ...props }) => (
-135 |     <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700 bg-white dark:bg-transparent black:bg-transparent" {...props}>
-136 |       {children}
-137 |     </tbody>
-138 |   ),
-139 |   tr: ({ node, children, ...props }) => (
-140 |     <tr className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30 black:hover:bg-zinc-800/30" {...props}>
-141 |       {children}
-142 |     </tr>
-143 |   ),
-144 |   th: ({ node, children, ...props }) => (
-145 |     <th
-146 |       className="px-3 py-1.5 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 black:text-zinc-400 uppercase tracking-wider"
-147 |       {...props}
-148 |     >
-149 |       {children}
-150 |     </th>
-151 |   ),
-152 |   td: ({ node, children, ...props }) => (
-153 |     <td className="px-3 py-1.5 text-sm" {...props}>
-154 |       {children}
-155 |     </td>
-156 |   ),
-157 |   hr: ({ node, ...props }) => (
-158 |     <hr className="my-1.5 border-zinc-200 dark:border-zinc-700 black:border-zinc-700" {...props} />
+5 | import remarkMath from "remark-math";
+6 | import rehypeKatex from "rehype-katex";
+7 | import "katex/dist/katex.min.css";
+8 | import { cn } from "@/lib/utils";
+9 | 
+10 | const components: Partial<Components> = {
+11 |   pre: ({ children, ...props }) => (
+12 |     <pre className="overflow-x-auto max-w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 p-2.5 my-1.5 text-sm whitespace-pre-wrap break-words" {...props}>
+13 |       {children}
+14 |     </pre>
+15 |   ),
+16 |   code: ({ children, className, ...props }: React.HTMLProps<HTMLElement> & { className?: string }) => {
+17 |     const match = /language-(\w+)/.exec(className || '');
+18 |     const isInline = !match && !className;
+19 | 
+20 |     if (isInline) {
+21 |       return (
+22 |         <code
+23 |           className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 text-[0.9em] font-mono"
+24 |           {...props}
+25 |         >
+26 |           {children}
+27 |         </code>
+28 |       );
+29 |     }
+30 |     return (
+31 |       <code className={cn("block font-mono text-sm whitespace-pre-wrap break-words max-w-full", className)} {...props}>
+32 |         {children}
+33 |       </code>
+34 |     );
+35 |   },
+36 |   ol: ({ node, children, ...props }) => (
+37 |     <ol className="list-decimal list-outside ml-4 space-y-0.5 my-1.5" {...props}>
+38 |       {children}
+39 |     </ol>
+40 |   ),
+41 |   ul: ({ node, children, ...props }) => (
+42 |     <ul className="list-disc list-outside ml-4 space-y-0.5 my-1.5" {...props}>
+43 |       {children}
+44 |     </ul>
+45 |   ),
+46 |   li: ({ node, children, ...props }) => (
+47 |     <li className="leading-normal" {...props}>
+48 |       {children}
+49 |     </li>
+50 |   ),
+51 |   p: ({ node, children, ...props }) => (
+52 |     <p className="leading-relaxed my-1" {...props}>
+53 |       {children}
+54 |     </p>
+55 |   ),
+56 |   strong: ({ node, children, ...props }) => (
+57 |     <strong className="font-semibold" {...props}>
+58 |       {children}
+59 |     </strong>
+60 |   ),
+61 |   em: ({ node, children, ...props }) => (
+62 |     <em className="italic" {...props}>
+63 |       {children}
+64 |     </em>
+65 |   ),
+66 |   blockquote: ({ node, children, ...props }) => (
+67 |     <blockquote
+68 |       className="border-l-2 border-zinc-200 dark:border-zinc-700 black:border-zinc-700 pl-3 my-1.5 italic text-zinc-600 dark:text-zinc-400 black:text-zinc-400"
+69 |       {...props}
+70 |     >
+71 |       {children}
+72 |     </blockquote>
+73 |   ),
+74 |   a: ({ node, href, children, ...props }) => {
+75 |     const isInternal = href && (href.startsWith("/") || href.startsWith("#"));
+76 |     if (isInternal) {
+77 |       return (
+78 |         <Link href={href} {...props}>
+79 |           {children}
+80 |         </Link>
+81 |       );
+82 |     }
+83 |     return (
+84 |       <a
+85 |         href={href}
+86 |         target="_blank"
+87 |         rel="noopener noreferrer"
+88 |         {...props}
+89 |         className="text-blue-500 hover:underline hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 black:text-blue-400 black:hover:text-blue-300 transition-colors"
+90 |       >
+91 |         {children}
+92 |       </a>
+93 |     );
+94 |   },
+95 |   h1: ({ node, children, ...props }) => (
+96 |     <h1
+97 |       className="text-2xl font-semibold mt-3 mb-1.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+98 |       {...props}
+99 |     >
+100 |       {children}
+101 |     </h1>
+102 |   ),
+103 |   h2: ({ node, children, ...props }) => (
+104 |     <h2
+105 |       className="text-xl font-semibold mt-2.5 mb-1.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+106 |       {...props}
+107 |     >
+108 |       {children}
+109 |     </h2>
+110 |   ),
+111 |   h3: ({ node, children, ...props }) => (
+112 |     <h3
+113 |       className="text-lg font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+114 |       {...props}
+115 |     >
+116 |       {children}
+117 |     </h3>
+118 |   ),
+119 |   h4: ({ node, children, ...props }) => (
+120 |     <h4
+121 |       className="text-base font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+122 |       {...props}
+123 |     >
+124 |       {children}
+125 |     </h4>
+126 |   ),
+127 |   h5: ({ node, children, ...props }) => (
+128 |     <h5
+129 |       className="text-sm font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+130 |       {...props}
+131 |     >
+132 |       {children}
+133 |     </h5>
+134 |   ),
+135 |   h6: ({ node, children, ...props }) => (
+136 |     <h6
+137 |       className="text-xs font-semibold mt-2 mb-0.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+138 |       {...props}
+139 |     >
+140 |       {children}
+141 |     </h6>
+142 |   ),
+143 |   table: ({ node, children, ...props }) => (
+144 |     <div className="my-1.5 overflow-x-auto">
+145 |       <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700" {...props}>
+146 |         {children}
+147 |       </table>
+148 |     </div>
+149 |   ),
+150 |   thead: ({ node, children, ...props }) => (
+151 |     <thead className="bg-zinc-50 dark:bg-zinc-800/50 black:bg-zinc-800/50" {...props}>
+152 |       {children}
+153 |     </thead>
+154 |   ),
+155 |   tbody: ({ node, children, ...props }) => (
+156 |     <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700 bg-white dark:bg-transparent black:bg-transparent" {...props}>
+157 |       {children}
+158 |     </tbody>
 159 |   ),
-160 | };
-161 | 
-162 | const remarkPlugins = [remarkGfm];
-163 | 
-164 | const NonMemoizedMarkdown = ({ children }: { children: string }) => {
-165 |   return (
-166 |     <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
-167 |       {children}
-168 |     </ReactMarkdown>
-169 |   );
-170 | };
-171 | 
-172 | export const Markdown = memo(
-173 |   NonMemoizedMarkdown,
-174 |   (prevProps, nextProps) => prevProps.children === nextProps.children,
-175 | );
+160 |   tr: ({ node, children, ...props }) => (
+161 |     <tr className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30 black:hover:bg-zinc-800/30" {...props}>
+162 |       {children}
+163 |     </tr>
+164 |   ),
+165 |   th: ({ node, children, ...props }) => (
+166 |     <th
+167 |       className="px-3 py-1.5 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 black:text-zinc-400 uppercase tracking-wider"
+168 |       {...props}
+169 |     >
+170 |       {children}
+171 |     </th>
+172 |   ),
+173 |   td: ({ node, children, ...props }) => (
+174 |     <td className="px-3 py-1.5 text-sm" {...props}>
+175 |       {children}
+176 |     </td>
+177 |   ),
+178 |   hr: ({ node, ...props }) => (
+179 |     <hr className="my-1.5 border-zinc-200 dark:border-zinc-700 black:border-zinc-700" {...props} />
+180 |   ),
+181 | };
+182 | 
+183 | const remarkPlugins = [remarkGfm, remarkMath];
+184 | const rehypePlugins = [rehypeKatex];
+185 | 
+186 | // Preprocesses markdown to convert \(...\) to $...$ and \[...\] to $...$
+187 | function preprocessMathDelimiters(markdown: string): string {
+188 |   // Convert block math: \[...\] => $...$
+189 |   markdown = markdown.replace(/\\\[([\s\S]+?)\\\]/g, (match, p1) => `$${p1}$`);
+190 |   // Convert inline math: \(...\) => $...$
+191 |   markdown = markdown.replace(/\\\(([\s\S]+?)\\\)/g, (match, p1) => `${p1}You are a senior developer. You produce optimized, maintainable code that follows best practices. 
+
+Your task is to review the current codebase and fix the current issues.
+
+Current Issue:
+<issue>
+{{MESSAGE}}
+</issue>
+
+Rules:
+- Keep your suggestions concise and focused. Avoid unnecessary explanations or fluff. 
+- Your output should be a series of specific, actionable changes.
+
+When approaching this task:
+1. Carefully review the provided code.
+2. Identify the area thats raising this issue or error and provide a fix.
+3. Consider best practices for the specific programming language used.
+
+For each suggested change, provide:
+1. A short description of the change (one line maximum).
+2. The modified code block.
+
+Use the following format for your output:
+
+[Short Description]
+```[language]:[path/to/file]
+[code block]
+```
+
+Begin fixing the codebase provide your solutions.
+
+My current codebase:
+<current_codebase>
+);
+192 |   return markdown;
+193 | }
+194 | 
+195 | const NonMemoizedMarkdown = ({ children }: { children: string }) => {
+196 |   const processed = preprocessMathDelimiters(children);
+197 |   return (
+198 |     <ReactMarkdown 
+199 |       remarkPlugins={remarkPlugins} 
+200 |       rehypePlugins={rehypePlugins}
+201 |       components={components}
+202 |     >
+203 |       {processed}
+204 |     </ReactMarkdown>
+205 |   );
+206 | };
+207 | 
+208 | export const Markdown = memo(
+209 |   NonMemoizedMarkdown,
+210 |   (prevProps, nextProps) => prevProps.children === nextProps.children,
+211 | );
 ```
 
 components/mcp-server-manager.tsx
@@ -3984,786 +5185,811 @@ components/mcp-server-manager.tsx
 119 |             return;
 120 |         }
 121 | 
-122 |         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
-123 |             toast.error("Command and at least one argument are required for stdio transport");
+122 |         if (newServer.type === 'streamable-http' && !newServer.url) {
+123 |             toast.error("Server URL is required for Streamable HTTP transport");
 124 |             return;
 125 |         }
 126 | 
-127 |         const id = crypto.randomUUID();
-128 |         const updatedServers = [...servers, { ...newServer, id }];
-129 |         onServersChange(updatedServers);
-130 | 
-131 |         toast.success(`Added MCP server: ${newServer.name}`);
-132 |         setView('list');
-133 |         setNewServer(INITIAL_NEW_SERVER);
-134 |         setNewEnvVar({ key: '', value: '' });
-135 |         setNewHeader({ key: '', value: '' });
-136 |         setShowSensitiveEnvValues({});
-137 |         setShowSensitiveHeaderValues({});
-138 |     };
-139 | 
-140 |     const removeServer = (id: string, e: React.MouseEvent) => {
-141 |         e.stopPropagation();
-142 |         const updatedServers = servers.filter(server => server.id !== id);
-143 |         onServersChange(updatedServers);
+127 |         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
+128 |             toast.error("Command and at least one argument are required for stdio transport");
+129 |             return;
+130 |         }
+131 | 
+132 |         const id = crypto.randomUUID();
+133 |         const updatedServers = [...servers, { ...newServer, id }];
+134 |         onServersChange(updatedServers);
+135 | 
+136 |         toast.success(`Added MCP server: ${newServer.name}`);
+137 |         setView('list');
+138 |         setNewServer(INITIAL_NEW_SERVER);
+139 |         setNewEnvVar({ key: '', value: '' });
+140 |         setNewHeader({ key: '', value: '' });
+141 |         setShowSensitiveEnvValues({});
+142 |         setShowSensitiveHeaderValues({});
+143 |     };
 144 | 
-145 |         // If the removed server was selected, remove it from selected servers
-146 |         if (selectedServers.includes(id)) {
-147 |             onSelectedServersChange(selectedServers.filter(serverId => serverId !== id));
-148 |         }
+145 |     const removeServer = (id: string, e: React.MouseEvent) => {
+146 |         e.stopPropagation();
+147 |         const updatedServers = servers.filter(server => server.id !== id);
+148 |         onServersChange(updatedServers);
 149 | 
-150 |         toast.success("Server removed");
-151 |     };
-152 | 
-153 |     const toggleServer = (id: string) => {
-154 |         if (selectedServers.includes(id)) {
-155 |             // Remove from selected servers
-156 |             onSelectedServersChange(selectedServers.filter(serverId => serverId !== id));
-157 |             const server = servers.find(s => s.id === id);
-158 |             if (server) {
-159 |                 toast.success(`Disabled MCP server: ${server.name}`);
-160 |             }
-161 |         } else {
-162 |             // Add to selected servers
-163 |             onSelectedServersChange([...selectedServers, id]);
-164 |             const server = servers.find(s => s.id === id);
-165 |             if (server) {
-166 |                 toast.success(`Enabled MCP server: ${server.name}`);
-167 |             }
-168 |         }
-169 |     };
-170 | 
-171 |     const clearAllServers = () => {
-172 |         if (selectedServers.length > 0) {
-173 |             onSelectedServersChange([]);
-174 |             toast.success("All MCP servers disabled");
-175 |             resetAndClose();
-176 |         }
-177 |     };
-178 | 
-179 |     const handleArgsChange = (value: string) => {
-180 |         try {
-181 |             // Try to parse as JSON if it starts with [ (array)
-182 |             const argsArray = value.trim().startsWith('[')
-183 |                 ? JSON.parse(value)
-184 |                 : value.split(' ').filter(Boolean);
-185 | 
-186 |             setNewServer({ ...newServer, args: argsArray });
-187 |         } catch (error) {
-188 |             // If parsing fails, just split by spaces
-189 |             setNewServer({ ...newServer, args: value.split(' ').filter(Boolean) });
-190 |         }
-191 |     };
-192 | 
-193 |     const addEnvVar = () => {
-194 |         if (!newEnvVar.key) return;
-195 | 
-196 |         setNewServer({
-197 |             ...newServer,
-198 |             env: [...(newServer.env || []), { ...newEnvVar }]
-199 |         });
+150 |         // If the removed server was selected, remove it from selected servers
+151 |         if (selectedServers.includes(id)) {
+152 |             onSelectedServersChange(selectedServers.filter(serverId => serverId !== id));
+153 |         }
+154 | 
+155 |         toast.success("Server removed");
+156 |     };
+157 | 
+158 |     const toggleServer = (id: string) => {
+159 |         if (selectedServers.includes(id)) {
+160 |             // Remove from selected servers
+161 |             onSelectedServersChange(selectedServers.filter(serverId => serverId !== id));
+162 |             const server = servers.find(s => s.id === id);
+163 |             if (server) {
+164 |                 toast.success(`Disabled MCP server: ${server.name}`);
+165 |             }
+166 |         } else {
+167 |             // Add to selected servers
+168 |             onSelectedServersChange([...selectedServers, id]);
+169 |             const server = servers.find(s => s.id === id);
+170 |             if (server) {
+171 |                 toast.success(`Enabled MCP server: ${server.name}`);
+172 |             }
+173 |         }
+174 |     };
+175 | 
+176 |     const clearAllServers = () => {
+177 |         if (selectedServers.length > 0) {
+178 |             onSelectedServersChange([]);
+179 |             toast.success("All MCP servers disabled");
+180 |             resetAndClose();
+181 |         }
+182 |     };
+183 | 
+184 |     const handleArgsChange = (value: string) => {
+185 |         try {
+186 |             // Try to parse as JSON if it starts with [ (array)
+187 |             const argsArray = value.trim().startsWith('[')
+188 |                 ? JSON.parse(value)
+189 |                 : value.split(' ').filter(Boolean);
+190 | 
+191 |             setNewServer({ ...newServer, args: argsArray });
+192 |         } catch (error) {
+193 |             // If parsing fails, just split by spaces
+194 |             setNewServer({ ...newServer, args: value.split(' ').filter(Boolean) });
+195 |         }
+196 |     };
+197 | 
+198 |     const addEnvVar = () => {
+199 |         if (!newEnvVar.key) return;
 200 | 
-201 |         setNewEnvVar({ key: '', value: '' });
-202 |     };
-203 | 
-204 |     const removeEnvVar = (index: number) => {
-205 |         const updatedEnv = [...(newServer.env || [])];
-206 |         updatedEnv.splice(index, 1);
-207 |         setNewServer({ ...newServer, env: updatedEnv });
-208 |         
-209 |         // Clean up visibility state for this index
-210 |         const updatedVisibility = { ...showSensitiveEnvValues };
-211 |         delete updatedVisibility[index];
-212 |         setShowSensitiveEnvValues(updatedVisibility);
+201 |         setNewServer({
+202 |             ...newServer,
+203 |             env: [...(newServer.env || []), { ...newEnvVar }]
+204 |         });
+205 | 
+206 |         setNewEnvVar({ key: '', value: '' });
+207 |     };
+208 | 
+209 |     const removeEnvVar = (index: number) => {
+210 |         const updatedEnv = [...(newServer.env || [])];
+211 |         updatedEnv.splice(index, 1);
+212 |         setNewServer({ ...newServer, env: updatedEnv });
 213 |         
-214 |         // If currently editing this value, cancel editing
-215 |         if (editingEnvIndex === index) {
-216 |             setEditingEnvIndex(null);
-217 |         }
-218 |     };
-219 | 
-220 |     const startEditEnvValue = (index: number, value: string) => {
-221 |         setEditingEnvIndex(index);
-222 |         setEditedEnvValue(value);
+214 |         // Clean up visibility state for this index
+215 |         const updatedVisibility = { ...showSensitiveEnvValues };
+216 |         delete updatedVisibility[index];
+217 |         setShowSensitiveEnvValues(updatedVisibility);
+218 |         
+219 |         // If currently editing this value, cancel editing
+220 |         if (editingEnvIndex === index) {
+221 |             setEditingEnvIndex(null);
+222 |         }
 223 |     };
 224 | 
-225 |     const saveEditedEnvValue = () => {
-226 |         if (editingEnvIndex !== null) {
-227 |             const updatedEnv = [...(newServer.env || [])];
-228 |             updatedEnv[editingEnvIndex] = {
-229 |                 ...updatedEnv[editingEnvIndex],
-230 |                 value: editedEnvValue
-231 |             };
-232 |             setNewServer({ ...newServer, env: updatedEnv });
-233 |             setEditingEnvIndex(null);
-234 |         }
-235 |     };
-236 | 
-237 |     const addHeader = () => {
-238 |         if (!newHeader.key) return;
-239 | 
-240 |         setNewServer({
-241 |             ...newServer,
-242 |             headers: [...(newServer.headers || []), { ...newHeader }]
-243 |         });
+225 |     const startEditEnvValue = (index: number, value: string) => {
+226 |         setEditingEnvIndex(index);
+227 |         setEditedEnvValue(value);
+228 |     };
+229 | 
+230 |     const saveEditedEnvValue = () => {
+231 |         if (editingEnvIndex !== null) {
+232 |             const updatedEnv = [...(newServer.env || [])];
+233 |             updatedEnv[editingEnvIndex] = {
+234 |                 ...updatedEnv[editingEnvIndex],
+235 |                 value: editedEnvValue
+236 |             };
+237 |             setNewServer({ ...newServer, env: updatedEnv });
+238 |             setEditingEnvIndex(null);
+239 |         }
+240 |     };
+241 | 
+242 |     const addHeader = () => {
+243 |         if (!newHeader.key) return;
 244 | 
-245 |         setNewHeader({ key: '', value: '' });
-246 |     };
-247 | 
-248 |     const removeHeader = (index: number) => {
-249 |         const updatedHeaders = [...(newServer.headers || [])];
-250 |         updatedHeaders.splice(index, 1);
-251 |         setNewServer({ ...newServer, headers: updatedHeaders });
-252 |         
-253 |         // Clean up visibility state for this index
-254 |         const updatedVisibility = { ...showSensitiveHeaderValues };
-255 |         delete updatedVisibility[index];
-256 |         setShowSensitiveHeaderValues(updatedVisibility);
+245 |         setNewServer({
+246 |             ...newServer,
+247 |             headers: [...(newServer.headers || []), { ...newHeader }]
+248 |         });
+249 | 
+250 |         setNewHeader({ key: '', value: '' });
+251 |     };
+252 | 
+253 |     const removeHeader = (index: number) => {
+254 |         const updatedHeaders = [...(newServer.headers || [])];
+255 |         updatedHeaders.splice(index, 1);
+256 |         setNewServer({ ...newServer, headers: updatedHeaders });
 257 |         
-258 |         // If currently editing this value, cancel editing
-259 |         if (editingHeaderIndex === index) {
-260 |             setEditingHeaderIndex(null);
-261 |         }
-262 |     };
-263 | 
-264 |     const startEditHeaderValue = (index: number, value: string) => {
-265 |         setEditingHeaderIndex(index);
-266 |         setEditedHeaderValue(value);
+258 |         // Clean up visibility state for this index
+259 |         const updatedVisibility = { ...showSensitiveHeaderValues };
+260 |         delete updatedVisibility[index];
+261 |         setShowSensitiveHeaderValues(updatedVisibility);
+262 |         
+263 |         // If currently editing this value, cancel editing
+264 |         if (editingHeaderIndex === index) {
+265 |             setEditingHeaderIndex(null);
+266 |         }
 267 |     };
 268 | 
-269 |     const saveEditedHeaderValue = () => {
-270 |         if (editingHeaderIndex !== null) {
-271 |             const updatedHeaders = [...(newServer.headers || [])];
-272 |             updatedHeaders[editingHeaderIndex] = {
-273 |                 ...updatedHeaders[editingHeaderIndex],
-274 |                 value: editedHeaderValue
-275 |             };
-276 |             setNewServer({ ...newServer, headers: updatedHeaders });
-277 |             setEditingHeaderIndex(null);
-278 |         }
-279 |     };
-280 | 
-281 |     const toggleSensitiveEnvValue = (index: number) => {
-282 |         setShowSensitiveEnvValues(prev => ({
-283 |             ...prev,
-284 |             [index]: !prev[index]
-285 |         }));
-286 |     };
-287 | 
-288 |     const toggleSensitiveHeaderValue = (index: number) => {
-289 |         setShowSensitiveHeaderValues(prev => ({
-290 |             ...prev,
-291 |             [index]: !prev[index]
-292 |         }));
-293 |     };
-294 | 
-295 |     const hasAdvancedConfig = (server: MCPServer) => {
-296 |         return (server.env && server.env.length > 0) ||
-297 |             (server.headers && server.headers.length > 0);
+269 |     const startEditHeaderValue = (index: number, value: string) => {
+270 |         setEditingHeaderIndex(index);
+271 |         setEditedHeaderValue(value);
+272 |     };
+273 | 
+274 |     const saveEditedHeaderValue = () => {
+275 |         if (editingHeaderIndex !== null) {
+276 |             const updatedHeaders = [...(newServer.headers || [])];
+277 |             updatedHeaders[editingHeaderIndex] = {
+278 |                 ...updatedHeaders[editingHeaderIndex],
+279 |                 value: editedHeaderValue
+280 |             };
+281 |             setNewServer({ ...newServer, headers: updatedHeaders });
+282 |             setEditingHeaderIndex(null);
+283 |         }
+284 |     };
+285 | 
+286 |     const toggleSensitiveEnvValue = (index: number) => {
+287 |         setShowSensitiveEnvValues(prev => ({
+288 |             ...prev,
+289 |             [index]: !prev[index]
+290 |         }));
+291 |     };
+292 | 
+293 |     const toggleSensitiveHeaderValue = (index: number) => {
+294 |         setShowSensitiveHeaderValues(prev => ({
+295 |             ...prev,
+296 |             [index]: !prev[index]
+297 |         }));
 298 |     };
 299 | 
-300 |     // Editing support
-301 |     const startEditing = (server: MCPServer) => {
-302 |         setEditingServerId(server.id);
-303 |         setNewServer({
-304 |             name: server.name,
-305 |             url: server.url,
-306 |             type: server.type,
-307 |             command: server.command,
-308 |             args: server.args,
-309 |             env: server.env,
-310 |             headers: server.headers
-311 |         });
-312 |         setView('add');
-313 |         // Reset sensitive value visibility states
-314 |         setShowSensitiveEnvValues({});
-315 |         setShowSensitiveHeaderValues({});
-316 |         setEditingEnvIndex(null);
-317 |         setEditingHeaderIndex(null);
-318 |     };
-319 | 
-320 |     const handleFormCancel = () => {
-321 |         if (view === 'add') {
-322 |             setView('list');
-323 |             setEditingServerId(null);
-324 |             setNewServer(INITIAL_NEW_SERVER);
-325 |             setShowSensitiveEnvValues({});
-326 |             setShowSensitiveHeaderValues({});
-327 |             setEditingEnvIndex(null);
-328 |             setEditingHeaderIndex(null);
-329 |         } else {
-330 |             resetAndClose();
-331 |         }
-332 |     };
-333 | 
-334 |     const updateServer = () => {
-335 |         if (!newServer.name) {
-336 |             toast.error("Server name is required");
-337 |             return;
-338 |         }
-339 |         if (newServer.type === 'sse' && !newServer.url) {
-340 |             toast.error("Server URL is required for SSE transport");
-341 |             return;
-342 |         }
-343 |         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
-344 |             toast.error("Command and at least one argument are required for stdio transport");
-345 |             return;
-346 |         }
-347 |         const updated = servers.map(s =>
-348 |             s.id === editingServerId ? { ...newServer, id: editingServerId! } : s
-349 |         );
-350 |         onServersChange(updated);
-351 |         toast.success(`Updated MCP server: ${newServer.name}`);
-352 |         setView('list');
-353 |         setEditingServerId(null);
-354 |         setNewServer(INITIAL_NEW_SERVER);
-355 |         setShowSensitiveEnvValues({});
-356 |         setShowSensitiveHeaderValues({});
-357 |     };
-358 | 
-359 |     return (
-360 |         <Dialog open={open} onOpenChange={onOpenChange}>
-361 |             <DialogContent className="sm:max-w-[480px] max-h-[85vh] overflow-hidden flex flex-col">
-362 |                 <DialogHeader>
-363 |                     <DialogTitle className="flex items-center gap-2">
-364 |                         <ServerIcon className="h-5 w-5 text-primary" />
-365 |                         MCP Server Configuration
-366 |                     </DialogTitle>
-367 |                     <DialogDescription>
-368 |                         Connect to Model Context Protocol servers to access additional AI tools.
-369 |                         {selectedServers.length > 0 && (
-370 |                             <span className="block mt-1 text-xs font-medium text-primary">
-371 |                                 {selectedServers.length} server{selectedServers.length !== 1 ? 's' : ''} currently active
-372 |                             </span>
-373 |                         )}
-374 |                     </DialogDescription>
-375 |                 </DialogHeader>
-376 | 
-377 |                 {view === 'list' ? (
-378 |                     <div className="flex-1 overflow-hidden flex flex-col">
-379 |                         {servers.length > 0 ? (
-380 |                             <div className="flex-1 overflow-hidden flex flex-col">
-381 |                                 <div className="flex-1 overflow-hidden flex flex-col">
-382 |                                     <div className="flex items-center justify-between mb-3">
-383 |                                         <h3 className="text-sm font-medium">Available Servers</h3>
-384 |                                         <span className="text-xs text-muted-foreground">
-385 |                                             Select multiple servers to combine their tools
-386 |                                         </span>
-387 |                                     </div>
-388 |                                     <div className="overflow-y-auto pr-1 flex-1 gap-2.5 flex flex-col pb-16">
-389 |                                         {servers
-390 |                                             .sort((a, b) => {
-391 |                                                 const aActive = selectedServers.includes(a.id);
-392 |                                                 const bActive = selectedServers.includes(b.id);
-393 |                                                 if (aActive && !bActive) return -1;
-394 |                                                 if (!aActive && bActive) return 1;
-395 |                                                 return 0;
-396 |                                             })
-397 |                                             .map((server) => {
-398 |                                             const isActive = selectedServers.includes(server.id);
-399 |                                             return (
-400 |                                                 <div
-401 |                                                     key={server.id}
-402 |                                                     className={`
-403 |                             relative flex flex-col p-3.5 rounded-xl transition-colors
-404 |                             border ${isActive
-405 |                                                             ? 'border-primary bg-primary/10'
-406 |                                                             : 'border-border hover:border-primary/30 hover:bg-primary/5'}
-407 |                           `}
-408 |                                                 >
-409 |                                                     {/* Server Header with Type Badge and Delete Button */}
-410 |                                                     <div className="flex items-center justify-between mb-2">
-411 |                                                         <div className="flex items-center gap-2">
-412 |                                                             {server.type === 'sse' ? (
-413 |                                                                 <Globe className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
-414 |                                                             ) : (
-415 |                                                                 <Terminal className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
-416 |                                                             )}
-417 |                                                             <h4 className="text-sm font-medium truncate max-w-[220px]">{server.name}</h4>
-418 |                                                             {hasAdvancedConfig(server) && (
-419 |                                                                 <span className="flex-shrink-0">
-420 |                                                                     <Cog className="h-3 w-3 text-muted-foreground" />
-421 |                                                                 </span>
-422 |                                                             )}
-423 |                                                         </div>
-424 |                                                         <div className="flex items-center gap-2">
-425 |                                                             <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-426 |                                                                 {server.type.toUpperCase()}
-427 |                                                             </span>
-428 |                                                             <button
-429 |                                                                 onClick={(e) => removeServer(server.id, e)}
-430 |                                                                 className="p-1 rounded-full hover:bg-muted/70"
-431 |                                                                 aria-label="Remove server"
-432 |                                                             >
-433 |                                                                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-434 |                                                             </button>
-435 |                                                             <button
-436 |                                                                 onClick={() => startEditing(server)}
-437 |                                                                 className="p-1 rounded-full hover:bg-muted/50"
-438 |                                                                 aria-label="Edit server"
-439 |                                                             >
-440 |                                                                 <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-441 |                                                             </button>
-442 |                                                         </div>
-443 |                                                     </div>
-444 | 
-445 |                                                     {/* Server Details */}
-446 |                                                     <p className="text-xs text-muted-foreground mb-2.5 truncate">
-447 |                                                         {server.type === 'sse'
-448 |                                                             ? server.url
-449 |                                                             : `${server.command} ${server.args?.join(' ')}`
-450 |                                                         }
-451 |                                                     </p>
-452 | 
-453 |                                                     {/* Action Button */}
-454 |                                                     <Button
-455 |                                                         size="sm"
-456 |                                                         className="w-full gap-1.5 hover:text-black hover:dark:text-white rounded-lg"
-457 |                                                         variant={isActive ? "default" : "outline"}
-458 |                                                         onClick={() => toggleServer(server.id)}
-459 |                                                     >
-460 |                                                         {isActive && <CheckCircle className="h-3.5 w-3.5" />}
-461 |                                                         {isActive ? "Active" : "Enable Server"}
-462 |                                                     </Button>
-463 |                                                 </div>
-464 |                                             );
-465 |                                         })}
-466 |                                     </div>
-467 |                                 </div>
-468 |                             </div>
-469 |                         ) : (
-470 |                             <div className="flex-1 py-8 pb-16 flex flex-col items-center justify-center space-y-4">
-471 |                                 <div className="rounded-full p-3 bg-primary/10">
-472 |                                     <ServerIcon className="h-7 w-7 text-primary" />
-473 |                                 </div>
-474 |                                 <div className="text-center space-y-1">
-475 |                                     <h3 className="text-base font-medium">No MCP Servers Added</h3>
-476 |                                     <p className="text-sm text-muted-foreground max-w-[300px]">
-477 |                                         Add your first MCP server to access additional AI tools
-478 |                                     </p>
-479 |                                 </div>
-480 |                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4">
-481 |                                     <a
-482 |                                         href="https://modelcontextprotocol.io"
-483 |                                         target="_blank"
-484 |                                         rel="noopener noreferrer"
-485 |                                         className="flex items-center gap-1 hover:text-primary transition-colors"
-486 |                                     >
-487 |                                         Learn about MCP
-488 |                                         <ExternalLink className="h-3 w-3" />
-489 |                                     </a>
-490 |                                 </div>
-491 |                             </div>
-492 |                         )}
-493 |                     </div>
-494 |                 ) : (
-495 |                     <div className="space-y-4 overflow-y-auto px-1 py-0.5 mb-14 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-496 |                         <h3 className="text-sm font-medium">{editingServerId ? "Edit MCP Server" : "Add New MCP Server"}</h3>
-497 |                         <div className="space-y-4">
-498 |                             <div className="grid gap-1.5">
-499 |                                 <Label htmlFor="name">
-500 |                                     Server Name
-501 |                                 </Label>
-502 |                                 <Input
-503 |                                     id="name"
-504 |                                     value={newServer.name}
-505 |                                     onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-506 |                                     placeholder="My MCP Server"
-507 |                                     className="relative z-0"
-508 |                                 />
-509 |                             </div>
-510 | 
-511 |                             <div className="grid gap-1.5">
-512 |                                 <Label htmlFor="transport-type">
-513 |                                     Transport Type
-514 |                                 </Label>
-515 |                                 <div className="space-y-2">
-516 |                                     <p className="text-xs text-muted-foreground">Choose how to connect to your MCP server:</p>
-517 |                                     <div className="grid gap-2 grid-cols-2">
-518 |                                         <button
-519 |                                             type="button"
-520 |                                             onClick={() => setNewServer({ ...newServer, type: 'sse' })}
-521 |                                             className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
-522 |                                                 newServer.type === 'sse' 
-523 |                                                     ? 'border-primary bg-primary/10 ring-1 ring-primary' 
-524 |                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
-525 |                                             }`}
-526 |                                         >
-527 |                                             <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'sse' ? 'text-primary' : ''}`} />
-528 |                                             <div>
-529 |                                                 <p className="font-medium">SSE</p>
-530 |                                                 <p className="text-xs text-muted-foreground">Server-Sent Events</p>
-531 |                                             </div>
-532 |                                         </button>
-533 |                                         
-534 |                                         <button
-535 |                                             type="button"
-536 |                                             onClick={() => setNewServer({ ...newServer, type: 'stdio' })}
-537 |                                             className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
-538 |                                                 newServer.type === 'stdio' 
-539 |                                                     ? 'border-primary bg-primary/10 ring-1 ring-primary' 
-540 |                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
-541 |                                             }`}
-542 |                                         >
-543 |                                             <Terminal className={`h-5 w-5 shrink-0 ${newServer.type === 'stdio' ? 'text-primary' : ''}`} />
-544 |                                             <div>
-545 |                                                 <p className="font-medium">stdio</p>
-546 |                                                 <p className="text-xs text-muted-foreground">Standard I/O</p>
-547 |                                             </div>
-548 |                                         </button>
-549 |                                     </div>
-550 |                                 </div>
-551 |                             </div>
-552 | 
-553 |                             {newServer.type === 'sse' ? (
-554 |                                 <div className="grid gap-1.5">
-555 |                                     <Label htmlFor="url">
-556 |                                         Server URL
-557 |                                     </Label>
-558 |                                     <Input
-559 |                                         id="url"
-560 |                                         value={newServer.url}
-561 |                                         onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
-562 |                                         placeholder="https://mcp.example.com/token/sse"
-563 |                                         className="relative z-0"
-564 |                                     />
-565 |                                     <p className="text-xs text-muted-foreground">
-566 |                                         Full URL to the SSE endpoint of the MCP server
-567 |                                     </p>
-568 |                                 </div>
-569 |                             ) : (
-570 |                                 <>
-571 |                                     <div className="grid gap-1.5">
-572 |                                         <Label htmlFor="command">
-573 |                                             Command
-574 |                                         </Label>
-575 |                                         <Input
-576 |                                             id="command"
-577 |                                             value={newServer.command}
-578 |                                             onChange={(e) => setNewServer({ ...newServer, command: e.target.value })}
-579 |                                             placeholder="node"
-580 |                                             className="relative z-0"
-581 |                                         />
-582 |                                         <p className="text-xs text-muted-foreground">
-583 |                                             Executable to run (e.g., node, python)
-584 |                                         </p>
-585 |                                     </div>
-586 |                                     <div className="grid gap-1.5">
-587 |                                         <Label htmlFor="args">
-588 |                                             Arguments
-589 |                                         </Label>
-590 |                                         <Input
-591 |                                             id="args"
-592 |                                             value={newServer.args?.join(' ') || ''}
-593 |                                             onChange={(e) => handleArgsChange(e.target.value)}
-594 |                                             placeholder="src/mcp-server.js --port 3001"
-595 |                                             className="relative z-0"
-596 |                                         />
-597 |                                         <p className="text-xs text-muted-foreground">
-598 |                                             Space-separated arguments or JSON array
-599 |                                         </p>
-600 |                                     </div>
-601 |                                 </>
-602 |                             )}
-603 | 
-604 |                             {/* Advanced Configuration */}
-605 |                             <Accordion type="single" collapsible className="w-full">
-606 |                                 <AccordionItem value="env-vars">
-607 |                                     <AccordionTrigger className="text-sm py-2">
-608 |                                         Environment Variables
-609 |                                     </AccordionTrigger>
-610 |                                     <AccordionContent>
-611 |                                         <div className="space-y-3">
-612 |                                             <div className="flex items-end gap-2">
-613 |                                                 <div className="flex-1">
-614 |                                                     <Label htmlFor="env-key" className="text-xs mb-1 block">
-615 |                                                         Key
-616 |                                                     </Label>
-617 |                                                     <Input
-618 |                                                         id="env-key"
-619 |                                                         value={newEnvVar.key}
-620 |                                                         onChange={(e) => setNewEnvVar({ ...newEnvVar, key: e.target.value })}
-621 |                                                         placeholder="API_KEY"
-622 |                                                         className="h-8 relative z-0"
-623 |                                                     />
-624 |                                                 </div>
-625 |                                                 <div className="flex-1">
-626 |                                                     <Label htmlFor="env-value" className="text-xs mb-1 block">
-627 |                                                         Value
-628 |                                                     </Label>
-629 |                                                     <Input
-630 |                                                         id="env-value"
-631 |                                                         value={newEnvVar.value}
-632 |                                                         onChange={(e) => setNewEnvVar({ ...newEnvVar, value: e.target.value })}
-633 |                                                         placeholder="your-secret-key"
-634 |                                                         className="h-8 relative z-0"
-635 |                                                         type="text"
-636 |                                                     />
-637 |                                                 </div>
-638 |                                                 <Button
-639 |                                                     type="button"
-640 |                                                     variant="outline"
-641 |                                                     size="sm"
-642 |                                                     onClick={addEnvVar}
-643 |                                                     disabled={!newEnvVar.key}
-644 |                                                     className="h-8 mt-1"
-645 |                                                 >
-646 |                                                     <Plus className="h-3.5 w-3.5" />
-647 |                                                 </Button>
-648 |                                             </div>
-649 | 
-650 |                                             {newServer.env && newServer.env.length > 0 ? (
-651 |                                                 <div className="border rounded-md divide-y">
-652 |                                                     {newServer.env.map((env, index) => (
-653 |                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
-654 |                                                             <div className="flex-1 flex items-center gap-1 truncate">
-655 |                                                                 <span className="font-mono text-xs">{env.key}</span>
-656 |                                                                 <span className="mx-2 text-muted-foreground">=</span>
-657 |                                                                 
-658 |                                                                 {editingEnvIndex === index ? (
-659 |                                                                     <div className="flex gap-1 flex-1">
-660 |                                                                         <Input
-661 |                                                                             className="h-6 text-xs py-1 px-2"
-662 |                                                                             value={editedEnvValue}
-663 |                                                                             onChange={(e) => setEditedEnvValue(e.target.value)}
-664 |                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedEnvValue()}
-665 |                                                                             autoFocus
-666 |                                                                         />
-667 |                                                                         <Button 
-668 |                                                                             size="sm" 
-669 |                                                                             className="h-6 px-2"
-670 |                                                                             onClick={saveEditedEnvValue}
-671 |                                                                         >
-672 |                                                                             Save
-673 |                                                                         </Button>
-674 |                                                                     </div>
-675 |                                                                 ) : (
-676 |                                                                     <>
-677 |                                                                         <span className="text-xs text-muted-foreground truncate">
-678 |                                                                             {isSensitiveKey(env.key) && !showSensitiveEnvValues[index] 
-679 |                                                                                 ? maskValue(env.value) 
-680 |                                                                                 : env.value}
-681 |                                                                         </span>
-682 |                                                                         <span className="flex ml-1 gap-1">
-683 |                                                                             {isSensitiveKey(env.key) && (
-684 |                                                                                 <button
-685 |                                                                                     onClick={() => toggleSensitiveEnvValue(index)}
-686 |                                                                                     className="p-1 hover:bg-muted/50 rounded-full"
-687 |                                                                                 >
-688 |                                                                                     {showSensitiveEnvValues[index] ? (
-689 |                                                                                         <EyeOff className="h-3 w-3 text-muted-foreground" />
-690 |                                                                                     ) : (
-691 |                                                                                         <Eye className="h-3 w-3 text-muted-foreground" />
-692 |                                                                                     )}
-693 |                                                                                 </button>
-694 |                                                                             )}
-695 |                                                                             <button
-696 |                                                                                 onClick={() => startEditEnvValue(index, env.value)}
-697 |                                                                                 className="p-1 hover:bg-muted/50 rounded-full"
-698 |                                                                             >
-699 |                                                                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
-700 |                                                                             </button>
-701 |                                                                         </span>
-702 |                                                                     </>
-703 |                                                                 )}
-704 |                                                             </div>
-705 |                                                             <Button
-706 |                                                                 type="button"
-707 |                                                                 variant="ghost"
-708 |                                                                 size="sm"
-709 |                                                                 onClick={() => removeEnvVar(index)}
-710 |                                                                 className="h-6 w-6 p-0 ml-2"
-711 |                                                             >
-712 |                                                                 <X className="h-3 w-3" />
-713 |                                                             </Button>
-714 |                                                         </div>
-715 |                                                     ))}
-716 |                                                 </div>
-717 |                                             ) : (
-718 |                                                 <p className="text-xs text-muted-foreground text-center py-2">
-719 |                                                     No environment variables added
-720 |                                                 </p>
-721 |                                             )}
-722 |                                             <p className="text-xs text-muted-foreground">
-723 |                                                 Environment variables will be passed to the MCP server process.
-724 |                                             </p>
-725 |                                         </div>
-726 |                                     </AccordionContent>
-727 |                                 </AccordionItem>
-728 | 
-729 |                                 <AccordionItem value="headers">
-730 |                                     <AccordionTrigger className="text-sm py-2">
-731 |                                         {newServer.type === 'sse' ? 'HTTP Headers' : 'Additional Configuration'}
-732 |                                     </AccordionTrigger>
-733 |                                     <AccordionContent>
-734 |                                         <div className="space-y-3">
-735 |                                             <div className="flex items-end gap-2">
-736 |                                                 <div className="flex-1">
-737 |                                                     <Label htmlFor="header-key" className="text-xs mb-1 block">
-738 |                                                         Key
-739 |                                                     </Label>
-740 |                                                     <Input
-741 |                                                         id="header-key"
-742 |                                                         value={newHeader.key}
-743 |                                                         onChange={(e) => setNewHeader({ ...newHeader, key: e.target.value })}
-744 |                                                         placeholder="Authorization"
-745 |                                                         className="h-8 relative z-0"
-746 |                                                     />
-747 |                                                 </div>
-748 |                                                 <div className="flex-1">
-749 |                                                     <Label htmlFor="header-value" className="text-xs mb-1 block">
-750 |                                                         Value
-751 |                                                     </Label>
-752 |                                                     <Input
-753 |                                                         id="header-value"
-754 |                                                         value={newHeader.value}
-755 |                                                         onChange={(e) => setNewHeader({ ...newHeader, value: e.target.value })}
-756 |                                                         placeholder="Bearer token123"
-757 |                                                         className="h-8 relative z-0"
-758 |                                                     />
-759 |                                                 </div>
-760 |                                                 <Button
-761 |                                                     type="button"
-762 |                                                     variant="outline"
-763 |                                                     size="sm"
-764 |                                                     onClick={addHeader}
-765 |                                                     disabled={!newHeader.key}
-766 |                                                     className="h-8 mt-1"
-767 |                                                 >
-768 |                                                     <Plus className="h-3.5 w-3.5" />
-769 |                                                 </Button>
-770 |                                             </div>
-771 | 
-772 |                                             {newServer.headers && newServer.headers.length > 0 ? (
-773 |                                                 <div className="border rounded-md divide-y">
-774 |                                                     {newServer.headers.map((header, index) => (
-775 |                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
-776 |                                                             <div className="flex-1 flex items-center gap-1 truncate">
-777 |                                                                 <span className="font-mono text-xs">{header.key}</span>
-778 |                                                                 <span className="mx-2 text-muted-foreground">:</span>
-779 |                                                                 
-780 |                                                                 {editingHeaderIndex === index ? (
-781 |                                                                     <div className="flex gap-1 flex-1">
-782 |                                                                         <Input
-783 |                                                                             className="h-6 text-xs py-1 px-2"
-784 |                                                                             value={editedHeaderValue}
-785 |                                                                             onChange={(e) => setEditedHeaderValue(e.target.value)}
-786 |                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedHeaderValue()}
-787 |                                                                             autoFocus
-788 |                                                                         />
-789 |                                                                         <Button 
-790 |                                                                             size="sm" 
-791 |                                                                             className="h-6 px-2"
-792 |                                                                             onClick={saveEditedHeaderValue}
-793 |                                                                         >
-794 |                                                                             Save
-795 |                                                                         </Button>
-796 |                                                                     </div>
-797 |                                                                 ) : (
-798 |                                                                     <>
-799 |                                                                         <span className="text-xs text-muted-foreground truncate">
-800 |                                                                             {isSensitiveKey(header.key) && !showSensitiveHeaderValues[index] 
-801 |                                                                                 ? maskValue(header.value) 
-802 |                                                                                 : header.value}
-803 |                                                                         </span>
-804 |                                                                         <span className="flex ml-1 gap-1">
-805 |                                                                             {isSensitiveKey(header.key) && (
-806 |                                                                                 <button
-807 |                                                                                     onClick={() => toggleSensitiveHeaderValue(index)}
-808 |                                                                                     className="p-1 hover:bg-muted/50 rounded-full"
-809 |                                                                                 >
-810 |                                                                                     {showSensitiveHeaderValues[index] ? (
-811 |                                                                                         <EyeOff className="h-3 w-3 text-muted-foreground" />
-812 |                                                                                     ) : (
-813 |                                                                                         <Eye className="h-3 w-3 text-muted-foreground" />
-814 |                                                                                     )}
-815 |                                                                                 </button>
-816 |                                                                             )}
-817 |                                                                             <button
-818 |                                                                                 onClick={() => startEditHeaderValue(index, header.value)}
-819 |                                                                                 className="p-1 hover:bg-muted/50 rounded-full"
-820 |                                                                             >
-821 |                                                                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
-822 |                                                                             </button>
-823 |                                                                         </span>
-824 |                                                                     </>
-825 |                                                                 )}
-826 |                                                             </div>
-827 |                                                             <Button
-828 |                                                                 type="button"
-829 |                                                                 variant="ghost"
-830 |                                                                 size="sm"
-831 |                                                                 onClick={() => removeHeader(index)}
-832 |                                                                 className="h-6 w-6 p-0 ml-2"
-833 |                                                             >
-834 |                                                                 <X className="h-3 w-3" />
-835 |                                                             </Button>
-836 |                                                         </div>
-837 |                                                     ))}
-838 |                                                 </div>
-839 |                                             ) : (
-840 |                                                 <p className="text-xs text-muted-foreground text-center py-2">
-841 |                                                     No {newServer.type === 'sse' ? 'headers' : 'additional configuration'} added
-842 |                                                 </p>
-843 |                                             )}
-844 |                                             <p className="text-xs text-muted-foreground">
-845 |                                                 {newServer.type === 'sse'
-846 |                                                     ? 'HTTP headers will be sent with requests to the SSE endpoint.'
-847 |                                                     : 'Additional configuration parameters for the stdio transport.'}
-848 |                                             </p>
-849 |                                         </div>
-850 |                                     </AccordionContent>
-851 |                                 </AccordionItem>
-852 |                             </Accordion>
-853 |                         </div>
-854 |                     </div>
-855 |                 )}
-856 | 
-857 |                 {/* Persistent fixed footer with buttons */}
-858 |                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex justify-between z-10">
-859 |                     {view === 'list' ? (
-860 |                         <>
-861 |                             <Button
-862 |                                 variant="outline"
-863 |                                 onClick={clearAllServers}
-864 |                                 size="sm"
-865 |                                 className="gap-1.5 hover:text-black hover:dark:text-white"
-866 |                                 disabled={selectedServers.length === 0}
-867 |                             >
-868 |                                 <X className="h-3.5 w-3.5" />
-869 |                                 Disable All
-870 |                             </Button>
-871 |                             <Button
-872 |                                 onClick={() => setView('add')}
-873 |                                 size="sm"
-874 |                                 className="gap-1.5"
-875 |                             >
-876 |                                 <PlusCircle className="h-3.5 w-3.5" />
-877 |                                 Add Server
-878 |                             </Button>
-879 |                         </>
-880 |                     ) : (
-881 |                         <>
-882 |                             <Button variant="outline" onClick={handleFormCancel}>
-883 |                                 Cancel
-884 |                             </Button>
+300 |     const hasAdvancedConfig = (server: MCPServer) => {
+301 |         return (server.env && server.env.length > 0) ||
+302 |             (server.headers && server.headers.length > 0);
+303 |     };
+304 | 
+305 |     // Editing support
+306 |     const startEditing = (server: MCPServer) => {
+307 |         setEditingServerId(server.id);
+308 |         setNewServer({
+309 |             name: server.name,
+310 |             url: server.url,
+311 |             type: server.type,
+312 |             command: server.command,
+313 |             args: server.args,
+314 |             env: server.env,
+315 |             headers: server.headers
+316 |         });
+317 |         setView('add');
+318 |         // Reset sensitive value visibility states
+319 |         setShowSensitiveEnvValues({});
+320 |         setShowSensitiveHeaderValues({});
+321 |         setEditingEnvIndex(null);
+322 |         setEditingHeaderIndex(null);
+323 |     };
+324 | 
+325 |     const handleFormCancel = () => {
+326 |         if (view === 'add') {
+327 |             setView('list');
+328 |             setEditingServerId(null);
+329 |             setNewServer(INITIAL_NEW_SERVER);
+330 |             setShowSensitiveEnvValues({});
+331 |             setShowSensitiveHeaderValues({});
+332 |             setEditingEnvIndex(null);
+333 |             setEditingHeaderIndex(null);
+334 |         } else {
+335 |             resetAndClose();
+336 |         }
+337 |     };
+338 | 
+339 |     const updateServer = () => {
+340 |         if (!newServer.name) {
+341 |             toast.error("Server name is required");
+342 |             return;
+343 |         }
+344 |         if (newServer.type === 'sse' && !newServer.url) {
+345 |             toast.error("Server URL is required for SSE transport");
+346 |             return;
+347 |         }
+348 |         if (newServer.type === 'streamable-http' && !newServer.url) {
+349 |             toast.error("Server URL is required for Streamable HTTP transport");
+350 |             return;
+351 |         }
+352 |         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
+353 |             toast.error("Command and at least one argument are required for stdio transport");
+354 |             return;
+355 |         }
+356 |         const updated = servers.map(s =>
+357 |             s.id === editingServerId ? { ...newServer, id: editingServerId! } : s
+358 |         );
+359 |         onServersChange(updated);
+360 |         toast.success(`Updated MCP server: ${newServer.name}`);
+361 |         setView('list');
+362 |         setEditingServerId(null);
+363 |         setNewServer(INITIAL_NEW_SERVER);
+364 |         setShowSensitiveEnvValues({});
+365 |         setShowSensitiveHeaderValues({});
+366 |     };
+367 | 
+368 |     return (
+369 |         <Dialog open={open} onOpenChange={onOpenChange}>
+370 |             <DialogContent className="sm:max-w-[480px] max-h-[85vh] overflow-hidden flex flex-col">
+371 |                 <DialogHeader>
+372 |                     <DialogTitle className="flex items-center gap-2">
+373 |                         <ServerIcon className="h-5 w-5 text-primary" />
+374 |                         MCP Server Configuration
+375 |                     </DialogTitle>
+376 |                     <DialogDescription>
+377 |                         Connect to Model Context Protocol servers to access additional AI tools.
+378 |                         {selectedServers.length > 0 && (
+379 |                             <span className="block mt-1 text-xs font-medium text-primary">
+380 |                                 {selectedServers.length} server{selectedServers.length !== 1 ? 's' : ''} currently active
+381 |                             </span>
+382 |                         )}
+383 |                     </DialogDescription>
+384 |                 </DialogHeader>
+385 | 
+386 |                 {view === 'list' ? (
+387 |                     <div className="flex-1 overflow-hidden flex flex-col">
+388 |                         {servers.length > 0 ? (
+389 |                             <div className="flex-1 overflow-hidden flex flex-col">
+390 |                                 <div className="flex-1 overflow-hidden flex flex-col">
+391 |                                     <div className="flex items-center justify-between mb-3">
+392 |                                         <h3 className="text-sm font-medium">Available Servers</h3>
+393 |                                         <span className="text-xs text-muted-foreground">
+394 |                                             Select multiple servers to combine their tools
+395 |                                         </span>
+396 |                                     </div>
+397 |                                     <div className="overflow-y-auto pr-1 flex-1 gap-2.5 flex flex-col pb-16">
+398 |                                         {servers
+399 |                                             .sort((a, b) => {
+400 |                                                 const aActive = selectedServers.includes(a.id);
+401 |                                                 const bActive = selectedServers.includes(b.id);
+402 |                                                 if (aActive && !bActive) return -1;
+403 |                                                 if (!aActive && bActive) return 1;
+404 |                                                 return 0;
+405 |                                             })
+406 |                                             .map((server) => {
+407 |                                             const isActive = selectedServers.includes(server.id);
+408 |                                             return (
+409 |                                                 <div
+410 |                                                     key={server.id}
+411 |                                                     className={`
+412 |                             relative flex flex-col p-3.5 rounded-xl transition-colors
+413 |                             border ${isActive
+414 |                                                             ? 'border-primary bg-primary/10'
+415 |                                                             : 'border-border hover:border-primary/30 hover:bg-primary/5'}
+416 |                           `}
+417 |                                                 >
+418 |                                                     {/* Server Header with Type Badge and Delete Button */}
+419 |                                                     <div className="flex items-center justify-between mb-2">
+420 |                                                         <div className="flex items-center gap-2">
+421 |                                                             {server.type === 'sse' ? (
+422 |                                                                 <Globe className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
+423 |                                                             ) : (
+424 |                                                                 <Terminal className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
+425 |                                                             )}
+426 |                                                             <h4 className="text-sm font-medium truncate max-w-[220px]">{server.name}</h4>
+427 |                                                             {hasAdvancedConfig(server) && (
+428 |                                                                 <span className="flex-shrink-0">
+429 |                                                                     <Cog className="h-3 w-3 text-muted-foreground" />
+430 |                                                                 </span>
+431 |                                                             )}
+432 |                                                         </div>
+433 |                                                         <div className="flex items-center gap-2">
+434 |                                                             <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+435 |                                                                 {server.type.toUpperCase()}
+436 |                                                             </span>
+437 |                                                             <button
+438 |                                                                 onClick={(e) => removeServer(server.id, e)}
+439 |                                                                 className="p-1 rounded-full hover:bg-muted/70"
+440 |                                                                 aria-label="Remove server"
+441 |                                                             >
+442 |                                                                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+443 |                                                             </button>
+444 |                                                             <button
+445 |                                                                 onClick={() => startEditing(server)}
+446 |                                                                 className="p-1 rounded-full hover:bg-muted/50"
+447 |                                                                 aria-label="Edit server"
+448 |                                                             >
+449 |                                                                 <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+450 |                                                             </button>
+451 |                                                         </div>
+452 |                                                     </div>
+453 | 
+454 |                                                     {/* Server Details */}
+455 |                                                     <p className="text-xs text-muted-foreground mb-2.5 truncate">
+456 |                                                         {server.type === 'sse' || server.type === 'streamable-http'
+457 |                                                             ? server.url
+458 |                                                             : `${server.command} ${server.args?.join(' ')}`
+459 |                                                         }
+460 |                                                     </p>
+461 | 
+462 |                                                     {/* Action Button */}
+463 |                                                     <Button
+464 |                                                         size="sm"
+465 |                                                         className="w-full gap-1.5 hover:text-black hover:dark:text-white rounded-lg"
+466 |                                                         variant={isActive ? "default" : "outline"}
+467 |                                                         onClick={() => toggleServer(server.id)}
+468 |                                                     >
+469 |                                                         {isActive && <CheckCircle className="h-3.5 w-3.5" />}
+470 |                                                         {isActive ? "Active" : "Enable Server"}
+471 |                                                     </Button>
+472 |                                                 </div>
+473 |                                             );
+474 |                                         })}
+475 |                                     </div>
+476 |                                 </div>
+477 |                             </div>
+478 |                         ) : (
+479 |                             <div className="flex-1 py-8 pb-16 flex flex-col items-center justify-center space-y-4">
+480 |                                 <div className="rounded-full p-3 bg-primary/10">
+481 |                                     <ServerIcon className="h-7 w-7 text-primary" />
+482 |                                 </div>
+483 |                                 <div className="text-center space-y-1">
+484 |                                     <h3 className="text-base font-medium">No MCP Servers Added</h3>
+485 |                                     <p className="text-sm text-muted-foreground max-w-[300px]">
+486 |                                         Add your first MCP server to access additional AI tools
+487 |                                     </p>
+488 |                                 </div>
+489 |                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4">
+490 |                                     <a
+491 |                                         href="https://modelcontextprotocol.io"
+492 |                                         target="_blank"
+493 |                                         rel="noopener noreferrer"
+494 |                                         className="flex items-center gap-1 hover:text-primary transition-colors"
+495 |                                     >
+496 |                                         Learn about MCP
+497 |                                         <ExternalLink className="h-3 w-3" />
+498 |                                     </a>
+499 |                                 </div>
+500 |                             </div>
+501 |                         )}
+502 |                     </div>
+503 |                 ) : (
+504 |                     <div className="space-y-4 overflow-y-auto px-1 py-0.5 mb-14 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+505 |                         <h3 className="text-sm font-medium">{editingServerId ? "Edit MCP Server" : "Add New MCP Server"}</h3>
+506 |                         <div className="space-y-4">
+507 |                             <div className="grid gap-1.5">
+508 |                                 <Label htmlFor="name">
+509 |                                     Server Name
+510 |                                 </Label>
+511 |                                 <Input
+512 |                                     id="name"
+513 |                                     value={newServer.name}
+514 |                                     onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
+515 |                                     placeholder="My MCP Server"
+516 |                                     className="relative z-0"
+517 |                                 />
+518 |                             </div>
+519 | 
+520 |                             <div className="grid gap-1.5">
+521 |                                 <Label htmlFor="transport-type">
+522 |                                     Transport Type
+523 |                                 </Label>
+524 |                                 <div className="space-y-2">
+525 |                                     <p className="text-xs text-muted-foreground">Choose how to connect to your MCP server:</p>
+526 |                                     <div className="grid gap-2 grid-cols-2">
+527 |                                         <button
+528 |                                             type="button"
+529 |                                             onClick={() => setNewServer({ ...newServer, type: 'sse' })}
+530 |                                             className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
+531 |                                                 newServer.type === 'sse' 
+532 |                                                     ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+533 |                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
+534 |                                             }`}
+535 |                                         >
+536 |                                             <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'sse' ? 'text-primary' : ''}`} />
+537 |                                             <div>
+538 |                                                 <p className="font-medium">SSE</p>
+539 |                                                 <p className="text-xs text-muted-foreground">Server-Sent Events</p>
+540 |                                             </div>
+541 |                                         </button>
+542 |                                         
+543 |                                         <button
+544 |                                             type="button"
+545 |                                             onClick={() => setNewServer({ ...newServer, type: 'stdio' })}
+546 |                                             className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
+547 |                                                 newServer.type === 'stdio' 
+548 |                                                     ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+549 |                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
+550 |                                             }`}
+551 |                                         >
+552 |                                             <Terminal className={`h-5 w-5 shrink-0 ${newServer.type === 'stdio' ? 'text-primary' : ''}`} />
+553 |                                             <div>
+554 |                                                 <p className="font-medium">stdio</p>
+555 |                                                 <p className="text-xs text-muted-foreground">Standard I/O</p>
+556 |                                             </div>
+557 |                                         </button>
+558 |                                     </div>
+559 |                                     <button
+560 |                                         type="button"
+561 |                                         onClick={() => setNewServer({ ...newServer, type: 'streamable-http' })}
+562 |                                         className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all col-span-2 ${
+563 |                                             newServer.type === 'streamable-http' 
+564 |                                                 ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+565 |                                                 : 'border-border hover:border-border/80 hover:bg-muted/50'
+566 |                                         }`}
+567 |                                     >
+568 |                                         <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'streamable-http' ? 'text-primary' : ''}`} />
+569 |                                         <div>
+570 |                                             <p className="font-medium">Streamable HTTP</p>
+571 |                                             <p className="text-xs text-muted-foreground">Streamable HTTP Server</p>
+572 |                                         </div>
+573 |                                     </button>
+574 |                                 </div>
+575 |                             </div>
+576 | 
+577 |                             {newServer.type === 'sse' || newServer.type === 'streamable-http' ? (
+578 |                                 <div className="grid gap-1.5">
+579 |                                     <Label htmlFor="url">
+580 |                                         Server URL
+581 |                                     </Label>
+582 |                                     <Input
+583 |                                         id="url"
+584 |                                         value={newServer.url}
+585 |                                         onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
+586 |                                         placeholder={newServer.type === 'streamable-http' ? "https://mcp.example.com/token/mcp" : "https://mcp.example.com/token/sse"}
+587 |                                         className="relative z-0"
+588 |                                     />
+589 |                                     <p className="text-xs text-muted-foreground">
+590 |                                         Full URL to the {newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint of the MCP server
+591 |                                     </p>
+592 |                                 </div>
+593 |                             ) : (
+594 |                                 <>
+595 |                                     <div className="grid gap-1.5">
+596 |                                         <Label htmlFor="command">
+597 |                                             Command
+598 |                                         </Label>
+599 |                                         <Input
+600 |                                             id="command"
+601 |                                             value={newServer.command}
+602 |                                             onChange={(e) => setNewServer({ ...newServer, command: e.target.value })}
+603 |                                             placeholder="node"
+604 |                                             className="relative z-0"
+605 |                                         />
+606 |                                         <p className="text-xs text-muted-foreground">
+607 |                                             Executable to run (e.g., node, python)
+608 |                                         </p>
+609 |                                     </div>
+610 |                                     <div className="grid gap-1.5">
+611 |                                         <Label htmlFor="args">
+612 |                                             Arguments
+613 |                                         </Label>
+614 |                                         <Input
+615 |                                             id="args"
+616 |                                             value={newServer.args?.join(' ') || ''}
+617 |                                             onChange={(e) => handleArgsChange(e.target.value)}
+618 |                                             placeholder="src/mcp-server.js --port 3001"
+619 |                                             className="relative z-0"
+620 |                                         />
+621 |                                         <p className="text-xs text-muted-foreground">
+622 |                                             Space-separated arguments or JSON array
+623 |                                         </p>
+624 |                                     </div>
+625 |                                 </>
+626 |                             )}
+627 | 
+628 |                             {/* Advanced Configuration */}
+629 |                             <Accordion type="single" collapsible className="w-full">
+630 |                                 <AccordionItem value="env-vars">
+631 |                                     <AccordionTrigger className="text-sm py-2">
+632 |                                         Environment Variables
+633 |                                     </AccordionTrigger>
+634 |                                     <AccordionContent>
+635 |                                         <div className="space-y-3">
+636 |                                             <div className="flex items-end gap-2">
+637 |                                                 <div className="flex-1">
+638 |                                                     <Label htmlFor="env-key" className="text-xs mb-1 block">
+639 |                                                         Key
+640 |                                                     </Label>
+641 |                                                     <Input
+642 |                                                         id="env-key"
+643 |                                                         value={newEnvVar.key}
+644 |                                                         onChange={(e) => setNewEnvVar({ ...newEnvVar, key: e.target.value })}
+645 |                                                         placeholder="API_KEY"
+646 |                                                         className="h-8 relative z-0"
+647 |                                                     />
+648 |                                                 </div>
+649 |                                                 <div className="flex-1">
+650 |                                                     <Label htmlFor="env-value" className="text-xs mb-1 block">
+651 |                                                         Value
+652 |                                                     </Label>
+653 |                                                     <Input
+654 |                                                         id="env-value"
+655 |                                                         value={newEnvVar.value}
+656 |                                                         onChange={(e) => setNewEnvVar({ ...newEnvVar, value: e.target.value })}
+657 |                                                         placeholder="your-secret-key"
+658 |                                                         className="h-8 relative z-0"
+659 |                                                         type="text"
+660 |                                                     />
+661 |                                                 </div>
+662 |                                                 <Button
+663 |                                                     type="button"
+664 |                                                     variant="outline"
+665 |                                                     size="sm"
+666 |                                                     onClick={addEnvVar}
+667 |                                                     disabled={!newEnvVar.key}
+668 |                                                     className="h-8 mt-1"
+669 |                                                 >
+670 |                                                     <Plus className="h-3.5 w-3.5" />
+671 |                                                 </Button>
+672 |                                             </div>
+673 | 
+674 |                                             {newServer.env && newServer.env.length > 0 ? (
+675 |                                                 <div className="border rounded-md divide-y">
+676 |                                                     {newServer.env.map((env, index) => (
+677 |                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
+678 |                                                             <div className="flex-1 flex items-center gap-1 truncate">
+679 |                                                                 <span className="font-mono text-xs">{env.key}</span>
+680 |                                                                 <span className="mx-2 text-muted-foreground">=</span>
+681 |                                                                 
+682 |                                                                 {editingEnvIndex === index ? (
+683 |                                                                     <div className="flex gap-1 flex-1">
+684 |                                                                         <Input
+685 |                                                                             className="h-6 text-xs py-1 px-2"
+686 |                                                                             value={editedEnvValue}
+687 |                                                                             onChange={(e) => setEditedEnvValue(e.target.value)}
+688 |                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedEnvValue()}
+689 |                                                                             autoFocus
+690 |                                                                         />
+691 |                                                                         <Button 
+692 |                                                                             size="sm" 
+693 |                                                                             className="h-6 px-2"
+694 |                                                                             onClick={saveEditedEnvValue}
+695 |                                                                         >
+696 |                                                                             Save
+697 |                                                                         </Button>
+698 |                                                                     </div>
+699 |                                                                 ) : (
+700 |                                                                     <>
+701 |                                                                         <span className="text-xs text-muted-foreground truncate">
+702 |                                                                             {isSensitiveKey(env.key) && !showSensitiveEnvValues[index] 
+703 |                                                                                 ? maskValue(env.value) 
+704 |                                                                                 : env.value}
+705 |                                                                         </span>
+706 |                                                                         <span className="flex ml-1 gap-1">
+707 |                                                                             {isSensitiveKey(env.key) && (
+708 |                                                                                 <button
+709 |                                                                                     onClick={() => toggleSensitiveEnvValue(index)}
+710 |                                                                                     className="p-1 hover:bg-muted/50 rounded-full"
+711 |                                                                                 >
+712 |                                                                                     {showSensitiveEnvValues[index] ? (
+713 |                                                                                         <EyeOff className="h-3 w-3 text-muted-foreground" />
+714 |                                                                                     ) : (
+715 |                                                                                         <Eye className="h-3 w-3 text-muted-foreground" />
+716 |                                                                                     )}
+717 |                                                                                 </button>
+718 |                                                                             )}
+719 |                                                                             <button
+720 |                                                                                 onClick={() => startEditEnvValue(index, env.value)}
+721 |                                                                                 className="p-1 hover:bg-muted/50 rounded-full"
+722 |                                                                             >
+723 |                                                                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
+724 |                                                                             </button>
+725 |                                                                         </span>
+726 |                                                                     </>
+727 |                                                                 )}
+728 |                                                             </div>
+729 |                                                             <Button
+730 |                                                                 type="button"
+731 |                                                                 variant="ghost"
+732 |                                                                 size="sm"
+733 |                                                                 onClick={() => removeEnvVar(index)}
+734 |                                                                 className="h-6 w-6 p-0 ml-2"
+735 |                                                             >
+736 |                                                                 <X className="h-3 w-3" />
+737 |                                                             </Button>
+738 |                                                         </div>
+739 |                                                     ))}
+740 |                                                 </div>
+741 |                                             ) : (
+742 |                                                 <p className="text-xs text-muted-foreground text-center py-2">
+743 |                                                     No environment variables added
+744 |                                                 </p>
+745 |                                             )}
+746 |                                             <p className="text-xs text-muted-foreground">
+747 |                                                 Environment variables will be passed to the MCP server process.
+748 |                                             </p>
+749 |                                         </div>
+750 |                                     </AccordionContent>
+751 |                                 </AccordionItem>
+752 | 
+753 |                                 <AccordionItem value="headers">
+754 |                                     <AccordionTrigger className="text-sm py-2">
+755 |                                         {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'HTTP Headers' : 'Additional Configuration'}
+756 |                                     </AccordionTrigger>
+757 |                                     <AccordionContent>
+758 |                                         <div className="space-y-3">
+759 |                                             <div className="flex items-end gap-2">
+760 |                                                 <div className="flex-1">
+761 |                                                     <Label htmlFor="header-key" className="text-xs mb-1 block">
+762 |                                                         Key
+763 |                                                     </Label>
+764 |                                                     <Input
+765 |                                                         id="header-key"
+766 |                                                         value={newHeader.key}
+767 |                                                         onChange={(e) => setNewHeader({ ...newHeader, key: e.target.value })}
+768 |                                                         placeholder="Authorization"
+769 |                                                         className="h-8 relative z-0"
+770 |                                                     />
+771 |                                                 </div>
+772 |                                                 <div className="flex-1">
+773 |                                                     <Label htmlFor="header-value" className="text-xs mb-1 block">
+774 |                                                         Value
+775 |                                                     </Label>
+776 |                                                     <Input
+777 |                                                         id="header-value"
+778 |                                                         value={newHeader.value}
+779 |                                                         onChange={(e) => setNewHeader({ ...newHeader, value: e.target.value })}
+780 |                                                         placeholder="Bearer token123"
+781 |                                                         className="h-8 relative z-0"
+782 |                                                     />
+783 |                                                 </div>
+784 |                                                 <Button
+785 |                                                     type="button"
+786 |                                                     variant="outline"
+787 |                                                     size="sm"
+788 |                                                     onClick={addHeader}
+789 |                                                     disabled={!newHeader.key}
+790 |                                                     className="h-8 mt-1"
+791 |                                                 >
+792 |                                                     <Plus className="h-3.5 w-3.5" />
+793 |                                                 </Button>
+794 |                                             </div>
+795 | 
+796 |                                             {newServer.headers && newServer.headers.length > 0 ? (
+797 |                                                 <div className="border rounded-md divide-y">
+798 |                                                     {newServer.headers.map((header, index) => (
+799 |                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
+800 |                                                             <div className="flex-1 flex items-center gap-1 truncate">
+801 |                                                                 <span className="font-mono text-xs">{header.key}</span>
+802 |                                                                 <span className="mx-2 text-muted-foreground">:</span>
+803 |                                                                 
+804 |                                                                 {editingHeaderIndex === index ? (
+805 |                                                                     <div className="flex gap-1 flex-1">
+806 |                                                                         <Input
+807 |                                                                             className="h-6 text-xs py-1 px-2"
+808 |                                                                             value={editedHeaderValue}
+809 |                                                                             onChange={(e) => setEditedHeaderValue(e.target.value)}
+810 |                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedHeaderValue()}
+811 |                                                                             autoFocus
+812 |                                                                         />
+813 |                                                                         <Button 
+814 |                                                                             size="sm" 
+815 |                                                                             className="h-6 px-2"
+816 |                                                                             onClick={saveEditedHeaderValue}
+817 |                                                                         >
+818 |                                                                             Save
+819 |                                                                         </Button>
+820 |                                                                     </div>
+821 |                                                                 ) : (
+822 |                                                                     <>
+823 |                                                                         <span className="text-xs text-muted-foreground truncate">
+824 |                                                                             {isSensitiveKey(header.key) && !showSensitiveHeaderValues[index] 
+825 |                                                                                 ? maskValue(header.value) 
+826 |                                                                                 : header.value}
+827 |                                                                         </span>
+828 |                                                                         <span className="flex ml-1 gap-1">
+829 |                                                                             {isSensitiveKey(header.key) && (
+830 |                                                                                 <button
+831 |                                                                                     onClick={() => toggleSensitiveHeaderValue(index)}
+832 |                                                                                     className="p-1 hover:bg-muted/50 rounded-full"
+833 |                                                                                 >
+834 |                                                                                     {showSensitiveHeaderValues[index] ? (
+835 |                                                                                         <EyeOff className="h-3 w-3 text-muted-foreground" />
+836 |                                                                                     ) : (
+837 |                                                                                         <Eye className="h-3 w-3 text-muted-foreground" />
+838 |                                                                                     )}
+839 |                                                                                 </button>
+840 |                                                                             )}
+841 |                                                                             <button
+842 |                                                                                 onClick={() => startEditHeaderValue(index, header.value)}
+843 |                                                                                 className="p-1 hover:bg-muted/50 rounded-full"
+844 |                                                                             >
+845 |                                                                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
+846 |                                                                             </button>
+847 |                                                                         </span>
+848 |                                                                     </>
+849 |                                                                 )}
+850 |                                                             </div>
+851 |                                                             <Button
+852 |                                                                 type="button"
+853 |                                                                 variant="ghost"
+854 |                                                                 size="sm"
+855 |                                                                 onClick={() => removeHeader(index)}
+856 |                                                                 className="h-6 w-6 p-0 ml-2"
+857 |                                                             >
+858 |                                                                 <X className="h-3 w-3" />
+859 |                                                             </Button>
+860 |                                                         </div>
+861 |                                                     ))}
+862 |                                                 </div>
+863 |                                             ) : (
+864 |                                                 <p className="text-xs text-muted-foreground text-center py-2">
+865 |                                                     No {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'headers' : 'additional configuration'} added
+866 |                                                 </p>
+867 |                                             )}
+868 |                                             <p className="text-xs text-muted-foreground">
+869 |                                                 {newServer.type === 'sse' || newServer.type === 'streamable-http'
+870 |                                                     ? `HTTP headers will be sent with requests to the ${newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint.`
+871 |                                                     : 'Additional configuration parameters for the stdio transport.'}
+872 |                                             </p>
+873 |                                         </div>
+874 |                                     </AccordionContent>
+875 |                                 </AccordionItem>
+876 |                             </Accordion>
+877 |                         </div>
+878 |                     </div>
+879 |                 )}
+880 | 
+881 |                 {/* Persistent fixed footer with buttons */}
+882 |                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex justify-between z-10">
+883 |                     {view === 'list' ? (
+884 |                         <>
 885 |                             <Button
-886 |                                 onClick={editingServerId ? updateServer : addServer}
-887 |                                 disabled={
-888 |                                     !newServer.name ||
-889 |                                     (newServer.type === 'sse' && !newServer.url) ||
-890 |                                     (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length))
-891 |                                 }
-892 |                             >
-893 |                                 {editingServerId ? "Save Changes" : "Add Server"}
+886 |                                 variant="outline"
+887 |                                 onClick={clearAllServers}
+888 |                                 size="sm"
+889 |                                 className="gap-1.5 hover:text-black hover:dark:text-white"
+890 |                                 disabled={selectedServers.length === 0}
+891 |                             >
+892 |                                 <X className="h-3.5 w-3.5" />
+893 |                                 Disable All
 894 |                             </Button>
-895 |                         </>
-896 |                     )}
-897 |                 </div>
-898 |             </DialogContent>
-899 |         </Dialog>
-900 |     );
-901 | }; 
+895 |                             <Button
+896 |                                 onClick={() => setView('add')}
+897 |                                 size="sm"
+898 |                                 className="gap-1.5"
+899 |                             >
+900 |                                 <PlusCircle className="h-3.5 w-3.5" />
+901 |                                 Add Server
+902 |                             </Button>
+903 |                         </>
+904 |                     ) : (
+905 |                         <>
+906 |                             <Button variant="outline" onClick={handleFormCancel}>
+907 |                                 Cancel
+908 |                             </Button>
+909 |                             <Button
+910 |                                 onClick={editingServerId ? updateServer : addServer}
+911 |                                 disabled={
+912 |                                     !newServer.name ||
+913 |                                     (newServer.type === 'sse' && !newServer.url) ||
+914 |                                     (newServer.type === 'streamable-http' && !newServer.url) ||
+915 |                                     (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length))
+916 |                                 }
+917 |                             >
+918 |                                 {editingServerId ? "Save Changes" : "Add Server"}
+919 |                             </Button>
+920 |                         </>
+921 |                     )}
+922 |                 </div>
+923 |             </DialogContent>
+924 |         </Dialog>
+925 |     );
+926 | }; 
 ```
 
 components/message.tsx
@@ -4783,244 +6009,263 @@ components/message.tsx
 13 | import { Citations } from "./citation";
 14 | import type { TextUIPart, ToolInvocationUIPart } from "@/lib/types";
 15 | import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
-16 | 
-17 | interface ReasoningPart {
-18 |   type: "reasoning";
-19 |   reasoning: string;
-20 |   details: Array<{ type: "text"; text: string }>;
-21 | }
-22 | 
-23 | interface ReasoningMessagePartProps {
-24 |   part: ReasoningUIPart;
-25 |   isReasoning: boolean;
-26 | }
-27 | 
-28 | export function ReasoningMessagePart({
-29 |   part,
-30 |   isReasoning,
-31 | }: ReasoningMessagePartProps) {
-32 |   const [isExpanded, setIsExpanded] = useState(false);
-33 | 
-34 |   const memoizedSetIsExpanded = useCallback((value: boolean) => {
-35 |     setIsExpanded(value);
-36 |   }, []);
-37 | 
-38 |   useEffect(() => {
-39 |     memoizedSetIsExpanded(isReasoning);
-40 |   }, [isReasoning, memoizedSetIsExpanded]);
-41 | 
-42 |   return (
-43 |     <div className="flex flex-col mb-2 group">
-44 |       {isReasoning ? (
-45 |         <div className={cn(
-46 |           "flex items-center gap-2.5 rounded-full py-1.5 px-3",
-47 |           "bg-indigo-50/50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300",
-48 |           "border border-indigo-200/50 dark:border-indigo-700/20 w-fit"
-49 |         )}>
-50 |           <div className="animate-spin h-3.5 w-3.5">
-51 |             <SpinnerIcon />
-52 |           </div>
-53 |           <div className="text-xs font-medium tracking-tight">Thinking...</div>
-54 |         </div>
-55 |       ) : (
-56 |         <button 
-57 |           onClick={() => setIsExpanded(!isExpanded)}
-58 |           className={cn(
-59 |             "flex items-center justify-between w-full",
-60 |             "rounded-md py-2 px-3 mb-0.5",
-61 |             "bg-muted/50 border border-border/60 hover:border-border/80",
-62 |             "transition-all duration-150 cursor-pointer",
-63 |             isExpanded ? "bg-muted border-primary/20" : ""
-64 |           )}
-65 |         >
-66 |           <div className="flex items-center gap-2.5">
-67 |             <div className={cn(
-68 |               "flex items-center justify-center w-6 h-6 rounded-full",
-69 |               "bg-amber-50 dark:bg-amber-900/20",
-70 |               "text-amber-600 dark:text-amber-400 ring-1 ring-amber-200 dark:ring-amber-700/30",
-71 |             )}>
-72 |               <LightbulbIcon className="h-3.5 w-3.5" />
-73 |             </div>
-74 |             <div className="text-sm font-medium text-foreground flex items-center gap-1.5">
-75 |               Reasoning
-76 |               <span className="text-xs text-muted-foreground font-normal">
-77 |                 (click to {isExpanded ? "hide" : "view"})
-78 |               </span>
-79 |             </div>
-80 |           </div>
-81 |           <div className={cn(
-82 |             "flex items-center justify-center",
-83 |             "rounded-full p-0.5 w-5 h-5",
-84 |             "text-muted-foreground hover:text-foreground",
-85 |             "bg-background/80 border border-border/50",
-86 |             "transition-colors",
-87 |           )}>
-88 |             {isExpanded ? (
-89 |               <ChevronDownIcon className="h-3 w-3" />
-90 |             ) : (
-91 |               <ChevronUpIcon className="h-3 w-3" />
-92 |             )}
-93 |           </div>
-94 |         </button>
-95 |       )}
-96 | 
-97 |       <AnimatePresence initial={false}>
-98 |         {isExpanded && (
-99 |           <motion.div
-100 |             key="reasoning"
-101 |             className={cn(
-102 |               "text-sm text-muted-foreground flex flex-col gap-2",
-103 |               "pl-3.5 ml-0.5 mt-1",
-104 |               "border-l border-amber-200/50 dark:border-amber-700/30"
-105 |             )}
-106 |             initial={{ height: 0, opacity: 0 }}
-107 |             animate={{ height: "auto", opacity: 1 }}
-108 |             exit={{ height: 0, opacity: 0 }}
-109 |             transition={{ duration: 0.2, ease: "easeInOut" }}
-110 |           >
-111 |             <div className="text-xs text-muted-foreground/70 pl-1 font-medium">
-112 |               The assistant&apos;s thought process:
-113 |             </div>
-114 |             {part.details.map((detail, detailIndex) =>
-115 |               detail.type === "text" ? (
-116 |                 <div key={detailIndex} className="px-2 py-1.5 bg-muted/10 rounded-md border border-border/30">
-117 |                   <Markdown>{detail.text}</Markdown>
-118 |                 </div>
-119 |               ) : (
-120 |                 "<redacted>"
-121 |               ),
-122 |             )}
-123 |           </motion.div>
-124 |         )}
-125 |       </AnimatePresence>
-126 |     </div>
-127 |   );
-128 | }
-129 | 
-130 | interface MessageProps {
-131 |   message: TMessage & {
-132 |     parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
-133 |   };
-134 |   isLoading: boolean;
-135 |   status: "error" | "submitted" | "streaming" | "ready";
-136 |   isLatestMessage: boolean;
-137 | }
-138 | 
-139 | const PurePreviewMessage = ({
-140 |   message,
-141 |   isLatestMessage,
-142 |   status,
-143 |   isLoading,
-144 | }: MessageProps) => {
-145 |   // Create a string with all text parts for copy functionality
-146 |   const getMessageText = () => {
-147 |     if (!message.parts) return "";
-148 |     return message.parts
-149 |       .filter(part => part.type === "text")
-150 |       .map(part => (part.type === "text" ? part.text : ""))
-151 |       .join("\n\n");
-152 |   };
-153 | 
-154 |   // Only show copy button if the message is from the assistant or user, and not currently streaming
-155 |   const shouldShowCopyButton = (message.role === "assistant" || message.role === "user") && (!isLatestMessage || status !== "streaming");
-156 | 
-157 |   return (
-158 |     <AnimatePresence key={message.id}>
-159 |       <motion.div
-160 |         className={cn(
-161 |           "w-full mx-auto px-4 group/message",
-162 |           message.role === "assistant" ? "mb-8" : "mb-6"
-163 |         )}
-164 |         initial={{ y: 5, opacity: 0 }}
-165 |         animate={{ y: 0, opacity: 1 }}
-166 |         key={`message-${message.id}`}
-167 |         data-role={message.role}
-168 |       >
-169 |         <div
-170 |           className={cn(
-171 |             "flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl",
-172 |             "group-data-[role=user]/message:w-fit",
-173 |           )}
-174 |         >
-175 |           <div className="flex flex-col w-full space-y-3">
-176 |             {message.parts?.map((part, i) => {
-177 |               switch (part.type) {
-178 |                 case "text":
-179 |                   const textPart = part as TextUIPart;
-180 |                   return (
-181 |                     <motion.div
-182 |                       initial={{ y: 5, opacity: 0 }}
-183 |                       animate={{ y: 0, opacity: 1 }}
-184 |                       key={`message-${message.id}-part-${i}`}
-185 |                       className="flex flex-row gap-2 items-start w-full"
-186 |                     >
-187 |                       <div
-188 |                         className={cn("flex flex-col gap-3 w-full", {
-189 |                           "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl flex items-center gap-2":
-190 |                             message.role === "user",
-191 |                         })}
-192 |                       >
-193 |                         <Markdown>{textPart.text}</Markdown>
-194 |                         {textPart.citations && <Citations citations={textPart.citations} />}
-195 |                         {message.role === 'user' && shouldShowCopyButton && (
-196 |                           <CopyButton text={getMessageText()} className="ml-auto" />
-197 |                         )}
-198 |                       </div>
-199 |                     </motion.div>
-200 |                   );
-201 |                 case "tool-invocation":
-202 |                   const toolPart = part as ToolInvocationUIPart;
-203 |                   const { toolName, state, args } = toolPart.toolInvocation;
-204 |                   const result = 'result' in toolPart.toolInvocation ? toolPart.toolInvocation.result : null;
-205 |                   
-206 |                   return (
-207 |                     <ToolInvocation
-208 |                       key={`message-${message.id}-part-${i}`}
-209 |                       toolName={toolName}
-210 |                       state={state}
-211 |                       args={args}
-212 |                       result={result}
-213 |                       isLatestMessage={isLatestMessage}
-214 |                       status={status}
-215 |                     />
-216 |                   );
-217 |                 case "reasoning":
-218 |                   const reasoningPart = part as ReasoningUIPart;
-219 |                   return (
-220 |                     <ReasoningMessagePart
-221 |                       key={`message-${message.id}-${i}`}
-222 |                       part={reasoningPart}
-223 |                       isReasoning={
-224 |                         (message.parts &&
-225 |                           status === "streaming" &&
-226 |                           i === message.parts.length - 1) ??
-227 |                         false
-228 |                       }
-229 |                     />
-230 |                   );
-231 |                 default:
-232 |                   return null;
-233 |               }
-234 |             })}
-235 |             {message.role === 'assistant' && shouldShowCopyButton && (
-236 |               <div className="flex justify-start mt-2">
-237 |                 <CopyButton text={getMessageText()} />
-238 |               </div>
-239 |             )}
-240 |           </div>
-241 |         </div>
-242 |       </motion.div>
-243 |     </AnimatePresence>
-244 |   );
-245 | };
-246 | 
-247 | export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
-248 |   if (prevProps.status !== nextProps.status) return false;
-249 |   if (prevProps.message.annotations !== nextProps.message.annotations)
-250 |     return false;
-251 |   if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
-252 |   return true;
-253 | });
+16 | import { WebSearchSuggestion } from "./web-search-suggestion";
+17 | 
+18 | interface ReasoningPart {
+19 |   type: "reasoning";
+20 |   reasoning: string;
+21 |   details: Array<{ type: "text"; text: string }>;
+22 | }
+23 | 
+24 | interface ReasoningMessagePartProps {
+25 |   part: ReasoningUIPart;
+26 |   isReasoning: boolean;
+27 | }
+28 | 
+29 | export function ReasoningMessagePart({
+30 |   part,
+31 |   isReasoning,
+32 | }: ReasoningMessagePartProps) {
+33 |   const [isExpanded, setIsExpanded] = useState(false);
+34 | 
+35 |   const memoizedSetIsExpanded = useCallback((value: boolean) => {
+36 |     setIsExpanded(value);
+37 |   }, []);
+38 | 
+39 |   useEffect(() => {
+40 |     memoizedSetIsExpanded(isReasoning);
+41 |   }, [isReasoning, memoizedSetIsExpanded]);
+42 | 
+43 |   return (
+44 |     <div className="flex flex-col mb-2 group">
+45 |       {isReasoning ? (
+46 |         <div className={cn(
+47 |           "flex items-center gap-2.5 rounded-full py-1.5 px-3",
+48 |           "bg-indigo-50/50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300",
+49 |           "border border-indigo-200/50 dark:border-indigo-700/20 w-fit"
+50 |         )}>
+51 |           <div className="animate-spin h-3.5 w-3.5">
+52 |             <SpinnerIcon />
+53 |           </div>
+54 |           <div className="text-xs font-medium tracking-tight">Thinking...</div>
+55 |         </div>
+56 |       ) : (
+57 |         <button 
+58 |           onClick={() => setIsExpanded(!isExpanded)}
+59 |           className={cn(
+60 |             "flex items-center justify-between w-full",
+61 |             "rounded-md py-2 px-3 mb-0.5",
+62 |             "bg-muted/50 border border-border/60 hover:border-border/80",
+63 |             "transition-all duration-150 cursor-pointer",
+64 |             isExpanded ? "bg-muted border-primary/20" : ""
+65 |           )}
+66 |         >
+67 |           <div className="flex items-center gap-2.5">
+68 |             <div className={cn(
+69 |               "flex items-center justify-center w-6 h-6 rounded-full",
+70 |               "bg-amber-50 dark:bg-amber-900/20",
+71 |               "text-amber-600 dark:text-amber-400 ring-1 ring-amber-200 dark:ring-amber-700/30",
+72 |             )}>
+73 |               <LightbulbIcon className="h-3.5 w-3.5" />
+74 |             </div>
+75 |             <div className="text-sm font-medium text-foreground flex items-center gap-1.5">
+76 |               Reasoning
+77 |               <span className="text-xs text-muted-foreground font-normal">
+78 |                 (click to {isExpanded ? "hide" : "view"})
+79 |               </span>
+80 |             </div>
+81 |           </div>
+82 |           <div className={cn(
+83 |             "flex items-center justify-center",
+84 |             "rounded-full p-0.5 w-5 h-5",
+85 |             "text-muted-foreground hover:text-foreground",
+86 |             "bg-background/80 border border-border/50",
+87 |             "transition-colors",
+88 |           )}>
+89 |             {isExpanded ? (
+90 |               <ChevronDownIcon className="h-3 w-3" />
+91 |             ) : (
+92 |               <ChevronUpIcon className="h-3 w-3" />
+93 |             )}
+94 |           </div>
+95 |         </button>
+96 |       )}
+97 | 
+98 |       <AnimatePresence initial={false}>
+99 |         {isExpanded && (
+100 |           <motion.div
+101 |             key="reasoning"
+102 |             className={cn(
+103 |               "text-sm text-muted-foreground flex flex-col gap-2",
+104 |               "pl-3.5 ml-0.5 mt-1",
+105 |               "border-l border-amber-200/50 dark:border-amber-700/30"
+106 |             )}
+107 |             initial={{ height: 0, opacity: 0 }}
+108 |             animate={{ height: "auto", opacity: 1 }}
+109 |             exit={{ height: 0, opacity: 0 }}
+110 |             transition={{ duration: 0.2, ease: "easeInOut" }}
+111 |           >
+112 |             <div className="text-xs text-muted-foreground/70 pl-1 font-medium">
+113 |               The assistant&apos;s thought process:
+114 |             </div>
+115 |             {part.details.map((detail, detailIndex) =>
+116 |               detail.type === "text" ? (
+117 |                 <div key={detailIndex} className="px-2 py-1.5 bg-muted/10 rounded-md border border-border/30">
+118 |                   <Markdown>{detail.text}</Markdown>
+119 |                 </div>
+120 |               ) : (
+121 |                 "<redacted>"
+122 |               ),
+123 |             )}
+124 |           </motion.div>
+125 |         )}
+126 |       </AnimatePresence>
+127 |     </div>
+128 |   );
+129 | }
+130 | 
+131 | interface MessageProps {
+132 |   message: TMessage & {
+133 |     parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+134 |     hasWebSearch?: boolean;
+135 |   };
+136 |   isLoading: boolean;
+137 |   status: "error" | "submitted" | "streaming" | "ready";
+138 |   isLatestMessage: boolean;
+139 | }
+140 | 
+141 | const PurePreviewMessage = ({
+142 |   message,
+143 |   isLatestMessage,
+144 |   status,
+145 |   isLoading,
+146 | }: MessageProps) => {
+147 |   // Create a string with all text parts for copy functionality
+148 |   const getMessageText = () => {
+149 |     if (!message.parts) return "";
+150 |     return message.parts
+151 |       .filter(part => part.type === "text")
+152 |       .map(part => (part.type === "text" ? part.text : ""))
+153 |       .join("\n\n");
+154 |   };
+155 | 
+156 |   // Check if message has web search results - use hasWebSearch flag if available, otherwise detect from parts
+157 |   const hasWebSearchResults = message.hasWebSearch || message.parts?.some(part => 
+158 |     (part.type === "text" && (part as TextUIPart).citations && (part as TextUIPart).citations!.length > 0) ||
+159 |     (part.type === "tool-invocation" && (part as ToolInvocationUIPart).toolInvocation.toolName === "web_search")
+160 |   );
+161 |   
+162 | 
+163 | 
+164 |   // Only show copy button if the message is from the assistant or user, and not currently streaming
+165 |   const shouldShowCopyButton = (message.role === "assistant" || message.role === "user") && (!isLatestMessage || status !== "streaming");
+166 | 
+167 |   return (
+168 |     <AnimatePresence key={message.id}>
+169 |       <motion.div
+170 |         className={cn(
+171 |           "w-full mx-auto px-4 group/message",
+172 |           message.role === "assistant" ? "mb-8" : "mb-6"
+173 |         )}
+174 |         initial={{ y: 5, opacity: 0 }}
+175 |         animate={{ y: 0, opacity: 1 }}
+176 |         key={`message-${message.id}`}
+177 |         data-role={message.role}
+178 |       >
+179 |         <div
+180 |           className={cn(
+181 |             "flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl",
+182 |             "group-data-[role=user]/message:w-fit",
+183 |           )}
+184 |         >
+185 |           <div className="flex flex-col w-full space-y-3">
+186 |             {message.parts?.map((part, i) => {
+187 |               switch (part.type) {
+188 |                 case "text":
+189 |                   const textPart = part as TextUIPart;
+190 |                   return (
+191 |                     <motion.div
+192 |                       initial={{ y: 5, opacity: 0 }}
+193 |                       animate={{ y: 0, opacity: 1 }}
+194 |                       key={`message-${message.id}-part-${i}`}
+195 |                       className="flex flex-row gap-2 items-start w-full"
+196 |                     >
+197 |                       <div
+198 |                         className={cn("flex flex-col gap-3 w-full", {
+199 |                           "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl flex items-center gap-2":
+200 |                             message.role === "user",
+201 |                         })}
+202 |                       >
+203 |                         <Markdown>{textPart.text}</Markdown>
+204 |                         {textPart.citations && <Citations citations={textPart.citations} />}
+205 |                         {message.role === 'user' && shouldShowCopyButton && (
+206 |                           <CopyButton text={getMessageText()} className="ml-auto" />
+207 |                         )}
+208 |                       </div>
+209 |                     </motion.div>
+210 |                   );
+211 |                 case "tool-invocation":
+212 |                   const toolPart = part as ToolInvocationUIPart;
+213 |                   const { toolName, state, args } = toolPart.toolInvocation;
+214 |                   const result = 'result' in toolPart.toolInvocation ? toolPart.toolInvocation.result : null;
+215 |                   
+216 |                   return (
+217 |                     <ToolInvocation
+218 |                       key={`message-${message.id}-part-${i}`}
+219 |                       toolName={toolName}
+220 |                       state={state}
+221 |                       args={args}
+222 |                       result={result}
+223 |                       isLatestMessage={isLatestMessage}
+224 |                       status={status}
+225 |                     />
+226 |                   );
+227 |                 case "reasoning":
+228 |                   const reasoningPart = part as ReasoningUIPart;
+229 |                   return (
+230 |                     <ReasoningMessagePart
+231 |                       key={`message-${message.id}-${i}`}
+232 |                       part={reasoningPart}
+233 |                       isReasoning={
+234 |                         (message.parts &&
+235 |                           status === "streaming" &&
+236 |                           i === message.parts.length - 1) ??
+237 |                         false
+238 |                       }
+239 |                     />
+240 |                   );
+241 |                 default:
+242 |                   return null;
+243 |               }
+244 |             })}
+245 |             
+246 |             {/* Web Search Suggestion - only for assistant messages with web search results and when not streaming */}
+247 |             {message.role === 'assistant' && hasWebSearchResults && status !== "streaming" && (
+248 |               <WebSearchSuggestion 
+249 |                 messageId={message.id} 
+250 |                 hasWebSearchResults={hasWebSearchResults}
+251 |               />
+252 |             )}
+253 |             
+254 |             {message.role === 'assistant' && shouldShowCopyButton && (
+255 |               <div className="flex justify-start mt-2">
+256 |                 <CopyButton text={getMessageText()} />
+257 |               </div>
+258 |             )}
+259 |           </div>
+260 |         </div>
+261 |       </motion.div>
+262 |     </AnimatePresence>
+263 |   );
+264 | };
+265 | 
+266 | export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
+267 |   if (prevProps.status !== nextProps.status) return false;
+268 |   if (prevProps.message.annotations !== nextProps.message.annotations)
+269 |     return false;
+270 |   if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
+271 |   return true;
+272 | });
 ```
 
 components/messages.tsx
@@ -5034,7 +6279,7 @@ components/messages.tsx
 7 |   isLoading,
 8 |   status,
 9 | }: {
-10 |   messages: TMessage[];
+10 |   messages: (TMessage & { hasWebSearch?: boolean })[];
 11 |   isLoading: boolean;
 12 |   status: "error" | "submitted" | "streaming" | "ready";
 13 | }) => {
@@ -5051,15 +6296,18 @@ components/messages.tsx
 24 |             key={i}
 25 |             isLatestMessage={i === messages.length - 1}
 26 |             isLoading={isLoading}
-27 |             message={m}
-28 |             status={status}
-29 |           />
-30 |         ))}
-31 |         <div className="h-1" ref={endRef} />
-32 |       </div>
-33 |     </div>
-34 |   );
-35 | };
+27 |             message={{
+28 |               ...m,
+29 |               hasWebSearch: m.hasWebSearch
+30 |             }}
+31 |             status={status}
+32 |           />
+33 |         ))}
+34 |         <div className="h-1" ref={endRef} />
+35 |       </div>
+36 |     </div>
+37 |   );
+38 | };
 ```
 
 components/model-picker.tsx
@@ -5077,230 +6325,264 @@ components/model-picker.tsx
 11 | import { cn } from "@/lib/utils";
 12 | import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot } from "lucide-react";
 13 | import { useState } from "react";
-14 | 
-15 | interface ModelPickerProps {
-16 |   selectedModel: modelID;
-17 |   setSelectedModel: (model: modelID) => void;
-18 | }
-19 | 
-20 | export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProps) => {
-21 |   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
-22 |   
-23 |   // Ensure we always have a valid model ID immediately for stable rendering
-24 |   // const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel; // Replaced by direct use of selectedModel
-25 |   
-26 |   // Function to get the appropriate icon for each provider
-27 |   const getProviderIcon = (provider: string) => {
-28 |     switch (provider.toLowerCase()) {
-29 |       case 'anthropic':
-30 |         return <Zap className="h-3 w-3 text-orange-600" />;
-31 |       case 'openai':
-32 |         return <Zap className="h-3 w-3 text-green-500" />;
-33 |       case 'google':
-34 |         return <Zap className="h-3 w-3 text-red-500" />;
-35 |       case 'groq':
-36 |         return <Zap className="h-3 w-3 text-blue-500" />;
-37 |       case 'xai':
-38 |         return <Zap className="h-3 w-3 text-yellow-500" />;
-39 |       case 'openrouter':
-40 |         return <Zap className="h-3 w-3 text-purple-500" />;
-41 |       default:
-42 |         return <Zap className="h-3 w-3 text-blue-500" />;
-43 |     }
-44 |   };
-45 |   
-46 |   // Function to get capability icon
-47 |   const getCapabilityIcon = (capability: string) => {
-48 |     switch (capability.toLowerCase()) {
-49 |       case 'code':
-50 |         return <Code className="h-2.5 w-2.5" />;
-51 |       case 'reasoning':
-52 |         return <Brain className="h-2.5 w-2.5" />;
-53 |       case 'research':
-54 |         return <Lightbulb className="h-2.5 w-2.5" />;
-55 |       case 'vision':
-56 |         // eslint-disable-next-line jsx-a11y/alt-text
-57 |         return <Image className="h-2.5 w-2.5" />;
-58 |       case 'fast':
-59 |       case 'rapid':
-60 |         return <Bolt className="h-2.5 w-2.5" />;
-61 |       case 'efficient':
-62 |       case 'compact':
-63 |         return <Gauge className="h-2.5 w-2.5" />;
-64 |       case 'creative':
-65 |       case 'balance':
-66 |         return <Rocket className="h-2.5 w-2.5" />;
-67 |       case 'agentic':
-68 |         return <Bot className="h-2.5 w-2.5" />;
-69 |       default:
-70 |         return <Info className="h-2.5 w-2.5" />;
-71 |     }
-72 |   };
-73 |   
-74 |   // Get capability badge color
-75 |   const getCapabilityColor = (capability: string) => {
-76 |     switch (capability.toLowerCase()) {
-77 |       case 'code':
-78 |         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-79 |       case 'reasoning':
-80 |       case 'research':
-81 |         return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
-82 |       case 'vision':
-83 |         return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300";
-84 |       case 'fast':
-85 |       case 'rapid':
-86 |         return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
-87 |       case 'efficient':
-88 |       case 'compact':
-89 |         return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
-90 |       case 'creative':
-91 |       case 'balance':
-92 |         return "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300";
-93 |       case 'agentic':
-94 |         return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300";
-95 |       default:
-96 |         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-97 |     }
-98 |   };
-99 |   
-100 |   // Get current model details to display
-101 |   const displayModelId = hoveredModel || selectedModel; // Use selectedModel
-102 |   const currentModelDetails = modelDetails[displayModelId];
-103 | 
-104 |   // Handle model change
-105 |   const handleModelChange = (modelId: string) => {
-106 |     if ((MODELS as string[]).includes(modelId)) {
-107 |       const typedModelId = modelId as modelID;
-108 |       setSelectedModel(typedModelId);
-109 |     }
-110 |   };
-111 | 
-112 |   return (
-113 |     <div>
-114 |       <Select 
-115 |         value={selectedModel} // Use selectedModel directly
-116 |         onValueChange={handleModelChange} 
-117 |       >
-118 |         <SelectTrigger 
-119 |           className="max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full group border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
-120 |         >
-121 |           <SelectValue 
-122 |             placeholder="Select model" 
-123 |             className="text-xs font-medium flex items-center gap-1 sm:gap-2 text-primary dark:text-primary-foreground"
-124 |           >
-125 |             <div className="flex items-center gap-1 sm:gap-2">
-126 |               {getProviderIcon(modelDetails[selectedModel].provider)} {/* Use selectedModel */}
-127 |               <span className="font-medium truncate">{modelDetails[selectedModel].name}</span> {/* Use selectedModel */}
-128 |             </div>
-129 |           </SelectValue>
-130 |         </SelectTrigger>
-131 |         <SelectContent
-132 |           align="start"
-133 |           className="bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 rounded-lg overflow-hidden p-0 w-[280px] sm:w-[350px] md:w-[515px]"
-134 |         >
-135 |           <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] md:grid-cols-[260px_1fr] items-start">
-136 |             {/* Model selector column */}
-137 |             <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1">
-138 |               <SelectGroup className="space-y-1">
-139 |                 {MODELS.map((id) => {
-140 |                   const modelId = id as modelID;
-141 |                   return (
-142 |                     <SelectItem 
-143 |                       key={id} 
-144 |                       value={id}
-145 |                       onMouseEnter={() => setHoveredModel(modelId)}
-146 |                       onMouseLeave={() => setHoveredModel(null)}
-147 |                       className={cn(
-148 |                         "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
-149 |                         "hover:bg-primary/5 hover:text-primary-foreground",
-150 |                         "focus:bg-primary/10 focus:text-primary focus:outline-none",
-151 |                         "data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
-152 |                         selectedModel === id && "!bg-primary/15 !text-primary font-medium" // Use selectedModel
-153 |                       )}
-154 |                     >
-155 |                       <div className="flex flex-col gap-0.5">
-156 |                         <div className="flex items-center gap-1.5">
-157 |                           {getProviderIcon(modelDetails[modelId].provider)}
-158 |                           <span className="font-medium truncate">{modelDetails[modelId].name}</span>
-159 |                         </div>
-160 |                         <span className="text-[10px] sm:text-xs text-muted-foreground">
-161 |                           {modelDetails[modelId].provider}
-162 |                         </span>
-163 |                       </div>
-164 |                     </SelectItem>
-165 |                   );
-166 |                 })}
-167 |               </SelectGroup>
-168 |             </div>
-169 |             
-170 |             {/* Model details column - hidden on smallest screens, visible on sm+ */}
-171 |             <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col sticky top-0">
-172 |               <div>
-173 |                 <div className="flex items-center gap-2 mb-1">
-174 |                   {getProviderIcon(currentModelDetails.provider)}
-175 |                   <h3 className="text-sm font-semibold">{currentModelDetails.name}</h3>
-176 |                 </div>
-177 |                 <div className="text-xs text-muted-foreground mb-1">
-178 |                   Provider: <span className="font-medium">{currentModelDetails.provider}</span>
-179 |                 </div>
-180 |                 
-181 |                 {/* Capability badges */}
-182 |                 <div className="flex flex-wrap gap-1 mt-2 mb-3">
-183 |                   {currentModelDetails.capabilities.map((capability) => (
-184 |                     <span 
-185 |                       key={capability}
-186 |                       className={cn(
-187 |                         "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
-188 |                         getCapabilityColor(capability)
-189 |                       )}
-190 |                     >
-191 |                       {getCapabilityIcon(capability)}
-192 |                       <span>{capability}</span>
-193 |                     </span>
-194 |                   ))}
-195 |                 </div>
-196 |                 
-197 |                 <div className="text-xs text-foreground/90 leading-relaxed mb-3 hidden md:block">
-198 |                   {currentModelDetails.description}
-199 |                 </div>
-200 |               </div>
-201 |               
-202 |               <div className="bg-muted/40 rounded-md p-2 hidden md:block">
-203 |                 <div className="text-[10px] text-muted-foreground flex justify-between items-center">
-204 |                   <span>API Version:</span>
-205 |                   <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
-206 |                     {currentModelDetails.apiVersion}
-207 |                   </code>
-208 |                 </div>
-209 |               </div>
-210 |             </div>
-211 |             
-212 |             {/* Condensed model details for mobile only */}
-213 |             <div className="p-3 sm:hidden border-t border-border/30">
-214 |               <div className="flex flex-wrap gap-1 mb-2">
-215 |                 {currentModelDetails.capabilities.slice(0, 4).map((capability) => (
-216 |                   <span 
-217 |                     key={capability}
-218 |                     className={cn(
-219 |                       "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
-220 |                       getCapabilityColor(capability)
-221 |                     )}
-222 |                   >
-223 |                     {getCapabilityIcon(capability)}
-224 |                     <span>{capability}</span>
-225 |                   </span>
-226 |                 ))}
-227 |                 {currentModelDetails.capabilities.length > 4 && (
-228 |                   <span className="text-[10px] text-muted-foreground">+{currentModelDetails.capabilities.length - 4} more</span>
-229 |                 )}
-230 |               </div>
-231 |             </div>
-232 |           </div>
-233 |         </SelectContent>
-234 |       </Select>
-235 |     </div>
-236 |   );
-237 | };
+14 | import { useCredits } from "@/hooks/useCredits";
+15 | import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+16 | import { useAuth } from "@/hooks/useAuth";
+17 | 
+18 | interface ModelPickerProps {
+19 |   selectedModel: modelID;
+20 |   setSelectedModel: (model: modelID) => void;
+21 | }
+22 | 
+23 | export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProps) => {
+24 |   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
+25 |   const { user } = useAuth();
+26 |   const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
+27 |   
+28 |   // Ensure we always have a valid model ID immediately for stable rendering
+29 |   // const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel; // Replaced by direct use of selectedModel
+30 |   
+31 |   // Function to get the appropriate icon for each provider
+32 |   const getProviderIcon = (provider: string) => {
+33 |     switch (provider.toLowerCase()) {
+34 |       case 'anthropic':
+35 |         return <Zap className="h-3 w-3 text-orange-600" />;
+36 |       case 'openai':
+37 |         return <Zap className="h-3 w-3 text-green-500" />;
+38 |       case 'google':
+39 |         return <Zap className="h-3 w-3 text-red-500" />;
+40 |       case 'groq':
+41 |         return <Zap className="h-3 w-3 text-blue-500" />;
+42 |       case 'xai':
+43 |         return <Zap className="h-3 w-3 text-yellow-500" />;
+44 |       case 'openrouter':
+45 |         return <Zap className="h-3 w-3 text-purple-500" />;
+46 |       default:
+47 |         return <Zap className="h-3 w-3 text-blue-500" />;
+48 |     }
+49 |   };
+50 |   
+51 |   // Function to get capability icon
+52 |   const getCapabilityIcon = (capability: string) => {
+53 |     switch (capability.toLowerCase()) {
+54 |       case 'code':
+55 |         return <Code className="h-2.5 w-2.5" />;
+56 |       case 'reasoning':
+57 |         return <Brain className="h-2.5 w-2.5" />;
+58 |       case 'research':
+59 |         return <Lightbulb className="h-2.5 w-2.5" />;
+60 |       case 'vision':
+61 |         // eslint-disable-next-line jsx-a11y/alt-text
+62 |         return <Image className="h-2.5 w-2.5" />;
+63 |       case 'fast':
+64 |       case 'rapid':
+65 |         return <Bolt className="h-2.5 w-2.5" />;
+66 |       case 'efficient':
+67 |       case 'compact':
+68 |         return <Gauge className="h-2.5 w-2.5" />;
+69 |       case 'creative':
+70 |       case 'balance':
+71 |         return <Rocket className="h-2.5 w-2.5" />;
+72 |       case 'agentic':
+73 |         return <Bot className="h-2.5 w-2.5" />;
+74 |       default:
+75 |         return <Info className="h-2.5 w-2.5" />;
+76 |     }
+77 |   };
+78 |   
+79 |   // Get capability badge color
+80 |   const getCapabilityColor = (capability: string) => {
+81 |     switch (capability.toLowerCase()) {
+82 |       case 'code':
+83 |         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
+84 |       case 'reasoning':
+85 |       case 'research':
+86 |         return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
+87 |       case 'vision':
+88 |         return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300";
+89 |       case 'fast':
+90 |       case 'rapid':
+91 |         return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
+92 |       case 'efficient':
+93 |       case 'compact':
+94 |         return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
+95 |       case 'creative':
+96 |       case 'balance':
+97 |         return "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300";
+98 |       case 'agentic':
+99 |         return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300";
+100 |       default:
+101 |         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+102 |     }
+103 |   };
+104 |   
+105 |   // Get current model details to display
+106 |   const displayModelId = hoveredModel || selectedModel; // Use selectedModel
+107 |   const currentModelDetails = modelDetails[displayModelId];
+108 | 
+109 |   // Sort models alphabetically by name
+110 |   const sortedModels = [...MODELS].sort((idA, idB) => {
+111 |     const nameA = modelDetails[idA].name;
+112 |     const nameB = modelDetails[idB].name;
+113 |     return nameA.localeCompare(nameB);
+114 |   });
+115 | 
+116 |   // Handle model change
+117 |   const handleModelChange = (modelId: string) => {
+118 |     if ((MODELS as string[]).includes(modelId)) {
+119 |       const typedModelId = modelId as modelID;
+120 |       setSelectedModel(typedModelId);
+121 |     }
+122 |   };
+123 | 
+124 |   return (
+125 |     <div>
+126 |       <Select 
+127 |         value={selectedModel} // Use selectedModel directly
+128 |         onValueChange={handleModelChange} 
+129 |       >
+130 |         <SelectTrigger 
+131 |           className="max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full group border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
+132 |         >
+133 |           <SelectValue 
+134 |             placeholder="Select model" 
+135 |             className="text-xs font-medium flex items-center gap-1 sm:gap-2 text-primary dark:text-primary-foreground"
+136 |           >
+137 |             <div className="flex items-center gap-1 sm:gap-2">
+138 |               {getProviderIcon(modelDetails[selectedModel].provider)} {/* Use selectedModel */}
+139 |               <span className="font-medium truncate">{modelDetails[selectedModel].name}</span> {/* Use selectedModel */}
+140 |             </div>
+141 |           </SelectValue>
+142 |         </SelectTrigger>
+143 |         <SelectContent
+144 |           align="start"
+145 |           className="bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 rounded-lg overflow-hidden p-0 w-[320px] sm:w-[480px] md:w-[680px]"
+146 |         >
+147 |           <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start">
+148 |             {/* Model selector column */}
+149 |             <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1">
+150 |               <SelectGroup className="space-y-1">
+151 |                 {sortedModels.map((id) => {
+152 |                   const modelId = id as modelID;
+153 |                   const item = (
+154 |                     <SelectItem 
+155 |                       key={id} 
+156 |                       value={id}
+157 |                       onMouseEnter={() => setHoveredModel(modelId)}
+158 |                       onMouseLeave={() => setHoveredModel(null)}
+159 |                       className={cn(
+160 |                         "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
+161 |                         "hover:bg-primary/5 hover:text-primary-foreground",
+162 |                         "focus:bg-primary/10 focus:text-primary focus:outline-none",
+163 |                         "data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
+164 |                         selectedModel === id && "!bg-primary/15 !text-primary font-medium",
+165 |                         modelDetails[modelId].premium && !canAccessPremiumModels() && "opacity-50 cursor-not-allowed"
+166 |                       )}
+167 |                       disabled={creditsLoading || (modelDetails[modelId].premium && !canAccessPremiumModels())}
+168 |                     >
+169 |                       <div className="flex flex-col gap-0.5">
+170 |                         <div className="flex items-center gap-1.5">
+171 |                           {getProviderIcon(modelDetails[modelId].provider)}
+172 |                           <span className="font-medium truncate">{modelDetails[modelId].name}</span>
+173 |                           {modelDetails[modelId].premium && (
+174 |                             <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
+175 |                           )}
+176 |                         </div>
+177 |                         <span className="text-[10px] sm:text-xs text-muted-foreground">
+178 |                           {modelDetails[modelId].provider}
+179 |                         </span>
+180 |                       </div>
+181 |                     </SelectItem>
+182 |                   );
+183 | 
+184 |                   if (modelDetails[modelId].premium && !canAccessPremiumModels() && !creditsLoading) {
+185 |                     return (
+186 |                       <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
+187 |                         <Tooltip>
+188 |                           <TooltipTrigger asChild>{item}</TooltipTrigger>
+189 |                           <TooltipContent className="max-w-xs">
+190 |                             <p className="text-xs">This is a premium model. Credits are required to use it.</p>
+191 |                           </TooltipContent>
+192 |                         </Tooltip>
+193 |                       </TooltipProvider>
+194 |                     );
+195 |                   }
+196 |                   return item;
+197 |                 })}
+198 |               </SelectGroup>
+199 |             </div>
+200 |             
+201 |             {/* Model details column - hidden on smallest screens, visible on sm+ */}
+202 |             <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col sticky top-0">
+203 |               <div>
+204 |                 <div className="flex items-center gap-2 mb-1">
+205 |                   {getProviderIcon(currentModelDetails.provider)}
+206 |                   <h3 className="text-sm font-semibold">{currentModelDetails.name}</h3>
+207 |                   {currentModelDetails.premium && (
+208 |                     <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
+209 |                   )}
+210 |                 </div>
+211 |                 <div className="text-xs text-muted-foreground mb-1">
+212 |                   Provider: <span className="font-medium">{currentModelDetails.provider}</span>
+213 |                 </div>
+214 |                 
+215 |                 {/* Capability badges */}
+216 |                 <div className="flex flex-wrap gap-1 mt-2 mb-3">
+217 |                   {currentModelDetails.capabilities.map((capability) => (
+218 |                     <span 
+219 |                       key={capability}
+220 |                       className={cn(
+221 |                         "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
+222 |                         getCapabilityColor(capability)
+223 |                       )}
+224 |                     >
+225 |                       {getCapabilityIcon(capability)}
+226 |                       <span>{capability}</span>
+227 |                     </span>
+228 |                   ))}
+229 |                 </div>
+230 |                 
+231 |                 <div className="text-xs text-foreground/90 leading-relaxed mb-3 hidden md:block">
+232 |                   {currentModelDetails.description}
+233 |                 </div>
+234 |               </div>
+235 |               
+236 |               <div className="bg-muted/40 rounded-md p-2 hidden md:block">
+237 |                 <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+238 |                   <span>API Version:</span>
+239 |                   <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
+240 |                     {currentModelDetails.apiVersion}
+241 |                   </code>
+242 |                 </div>
+243 |               </div>
+244 |             </div>
+245 |             
+246 |             {/* Condensed model details for mobile only */}
+247 |             <div className="p-3 sm:hidden border-t border-border/30">
+248 |               <div className="flex flex-wrap gap-1 mb-2">
+249 |                 {currentModelDetails.capabilities.slice(0, 4).map((capability) => (
+250 |                   <span 
+251 |                     key={capability}
+252 |                     className={cn(
+253 |                       "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
+254 |                       getCapabilityColor(capability)
+255 |                     )}
+256 |                   >
+257 |                     {getCapabilityIcon(capability)}
+258 |                     <span>{capability}</span>
+259 |                   </span>
+260 |                 ))}
+261 |                 {currentModelDetails.capabilities.length > 4 && (
+262 |                   <span className="text-[10px] text-muted-foreground">+{currentModelDetails.capabilities.length - 4} more</span>
+263 |                 )}
+264 |               </div>
+265 |             </div>
+266 |           </div>
+267 |         </SelectContent>
+268 |       </Select>
+269 |     </div>
+270 |   );
+271 | };
 ```
 
 components/project-overview.tsx
@@ -5398,98 +6680,158 @@ components/textarea.tsx
 ```
 1 | import { modelID } from "@/ai/providers";
 2 | import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-3 | import { ArrowUp, Loader2, Globe } from "lucide-react";
+3 | import { ArrowUp, Loader2, Globe, AlertCircle } from "lucide-react";
 4 | import { ModelPicker } from "./model-picker";
 5 | import { useRef } from "react";
 6 | import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 7 | import { useWebSearch } from "@/lib/context/web-search-context";
-8 | 
-9 | interface InputProps {
-10 |   input: string;
-11 |   handleInputChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-12 |   isLoading: boolean;
-13 |   status: string;
-14 |   stop: () => void;
-15 |   selectedModel: modelID;
-16 |   setSelectedModel: (model: modelID) => void;
-17 | }
-18 | 
-19 | export const Textarea = ({
-20 |   input,
-21 |   handleInputChange,
-22 |   isLoading,
-23 |   status,
-24 |   stop,
-25 |   selectedModel,
-26 |   setSelectedModel,
-27 | }: InputProps) => {
-28 |   const isStreaming = status === "streaming" || status === "submitted";
-29 |   const iconButtonRef = useRef<HTMLButtonElement>(null);
-30 | 
-31 |   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
+8 | import { useAuth } from "@/hooks/useAuth";
+9 | import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
+10 | 
+11 | interface InputProps {
+12 |   input: string;
+13 |   handleInputChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+14 |   isLoading: boolean;
+15 |   status: string;
+16 |   stop: () => void;
+17 |   selectedModel: modelID;
+18 |   setSelectedModel: (model: modelID) => void;
+19 | }
+20 | 
+21 | export const Textarea = ({
+22 |   input,
+23 |   handleInputChange,
+24 |   isLoading,
+25 |   status,
+26 |   stop,
+27 |   selectedModel,
+28 |   setSelectedModel,
+29 | }: InputProps) => {
+30 |   const isStreaming = status === "streaming" || status === "submitted";
+31 |   const iconButtonRef = useRef<HTMLButtonElement>(null);
 32 | 
-33 |   const handleWebSearchToggle = () => {
-34 |     setWebSearchEnabled(!webSearchEnabled);
-35 |   };
-36 | 
-37 |   return (
-38 |     <div className="relative w-full">
-39 |       <ShadcnTextarea
-40 |         className="resize-none bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl pr-12 pt-4 pb-16 border-input focus-visible:ring-ring placeholder:text-muted-foreground"
-41 |         value={input}
-42 |         autoFocus
-43 |         placeholder="Send a message..."
-44 |         onChange={handleInputChange}
-45 |         onKeyDown={(e) => {
-46 |           if (e.key === "Enter" && !e.shiftKey && !isLoading && input.trim()) {
-47 |             e.preventDefault();
-48 |             e.currentTarget.form?.requestSubmit();
-49 |           }
-50 |         }}
-51 |       />
-52 |       <div className="absolute left-2 bottom-2 z-10">
-53 |         <div className="flex items-center gap-2">
-54 |           <ModelPicker
-55 |             setSelectedModel={setSelectedModel}
-56 |             selectedModel={selectedModel}
-57 |           />
-58 |           {selectedModel.startsWith("openrouter/") && (
-59 |             <div className="relative flex items-center">
-60 |               <Tooltip>
-61 |                 <TooltipTrigger asChild>
-62 |                   <button
-63 |                     type="button"
-64 |                     ref={iconButtonRef}
-65 |                     aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
-66 |                     onClick={handleWebSearchToggle}
-67 |                     className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${webSearchEnabled ? 'bg-primary text-primary-foreground border-primary shadow' : 'bg-background border-border text-muted-foreground hover:bg-accent'} focus:outline-none focus:ring-2 focus:ring-primary/30`}
-68 |                   >
-69 |                     <Globe className="h-5 w-5" />
-70 |                   </button>
-71 |                 </TooltipTrigger>
-72 |                 <TooltipContent sideOffset={8}>
-73 |                   {webSearchEnabled ? 'Disable web search' : 'Enable web search'}
-74 |                 </TooltipContent>
-75 |               </Tooltip>
-76 |             </div>
-77 |           )}
-78 |         </div>
-79 |       </div>
-80 |       <button
-81 |         type={isStreaming ? "button" : "submit"}
-82 |         onClick={isStreaming ? stop : undefined}
-83 |         disabled={(!isStreaming && !input.trim()) || (isStreaming && status === "submitted")}
-84 |         className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed transition-all duration-200"
-85 |       >
-86 |         {isStreaming ? (
-87 |           <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
-88 |         ) : (
-89 |           <ArrowUp className="h-4 w-4 text-primary-foreground" />
-90 |         )}
-91 |       </button>
-92 |     </div>
-93 |   );
-94 | };
+33 |   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
+34 |   const { user } = useAuth();
+35 | 
+36 |   const handleWebSearchToggle = () => {
+37 |     setWebSearchEnabled(!webSearchEnabled);
+38 |   };
+39 | 
+40 |   // Check if user has enough credits for web search (5 credits minimum)
+41 |   // Use a more resilient check that handles temporary null values during hot reload
+42 |   const userCredits = user?.credits ?? 0;
+43 |   const hasEnoughCreditsForWebSearch = user?.hasCredits !== false && userCredits >= WEB_SEARCH_COST;
+44 |   const isAnonymousUser = !user || user?.isAnonymous;
+45 |   // Only allow web search if user has sufficient credits and is not anonymous
+46 |   const canUseWebSearch = !isAnonymousUser && hasEnoughCreditsForWebSearch;
+47 | 
+48 |   // Calculate estimated cost
+49 |   const getEstimatedCost = () => {
+50 |     const baseCost = 1; // Base cost for any message
+51 |     const webSearchCost = webSearchEnabled ? WEB_SEARCH_COST : 0;
+52 |     return baseCost + webSearchCost;
+53 |   };
+54 | 
+55 |   const estimatedCost = getEstimatedCost();
+56 |   const shouldShowCostWarning = webSearchEnabled && canUseWebSearch && input.trim();
+57 | 
+58 |   // Determine tooltip message based on credit status
+59 |   const getWebSearchTooltipMessage = () => {
+60 |     if (isAnonymousUser) {
+61 |       return "Sign in and purchase credits to enable Web Search";
+62 |     }
+63 |     if (!hasEnoughCreditsForWebSearch) {
+64 |       return "Purchase credits to enable Web Search";
+65 |     }
+66 |     return webSearchEnabled ? 'Disable web search' : 'Enable web search';
+67 |   };
+68 | 
+69 |   return (
+70 |     <div className="relative w-full">
+71 |       <ShadcnTextarea
+72 |         className="resize-none bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl pr-12 pt-4 pb-16 border-input focus-visible:ring-ring placeholder:text-muted-foreground"
+73 |         value={input}
+74 |         autoFocus
+75 |         placeholder="Send a message..."
+76 |         onChange={handleInputChange}
+77 |         onKeyDown={(e) => {
+78 |           if (e.key === "Enter" && !e.shiftKey && !isLoading && input.trim()) {
+79 |             e.preventDefault();
+80 |             e.currentTarget.form?.requestSubmit();
+81 |           }
+82 |         }}
+83 |       />
+84 |       
+85 |       {/* Cost visibility warning */}
+86 |       {shouldShowCostWarning && (
+87 |         <div className="absolute top-2 right-14 z-10">
+88 |           <Tooltip>
+89 |             <TooltipTrigger asChild>
+90 |               <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full border border-amber-200 dark:border-amber-700/30">
+91 |                 <AlertCircle className="h-3 w-3" />
+92 |                 <span className="font-medium">{estimatedCost} credits</span>
+93 |               </div>
+94 |             </TooltipTrigger>
+95 |             <TooltipContent side="top" sideOffset={8}>
+96 |               <div className="text-xs">
+97 |                 <div>Estimated cost: {estimatedCost} credits</div>
+98 |                 <div className="text-muted-foreground">Base: 1 credit + Web Search: {WEB_SEARCH_COST} credits</div>
+99 |               </div>
+100 |             </TooltipContent>
+101 |           </Tooltip>
+102 |         </div>
+103 |       )}
+104 | 
+105 |       <div className="absolute left-2 bottom-2 z-10">
+106 |         <div className="flex items-center gap-2">
+107 |           <ModelPicker
+108 |             setSelectedModel={setSelectedModel}
+109 |             selectedModel={selectedModel}
+110 |           />
+111 |           {selectedModel.startsWith("openrouter/") && (
+112 |             <div className="relative flex items-center">
+113 |               <Tooltip>
+114 |                 <TooltipTrigger asChild>
+115 |                   <button
+116 |                     type="button"
+117 |                     ref={iconButtonRef}
+118 |                     aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+119 |                     onClick={handleWebSearchToggle}
+120 |                     disabled={!canUseWebSearch}
+121 |                     className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+122 |                       !canUseWebSearch 
+123 |                         ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50' 
+124 |                         : webSearchEnabled 
+125 |                           ? 'bg-primary text-primary-foreground border-primary shadow' 
+126 |                           : 'bg-background border-border text-muted-foreground hover:bg-accent'
+127 |                     } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+128 |                   >
+129 |                     <Globe className="h-5 w-5" />
+130 |                   </button>
+131 |                 </TooltipTrigger>
+132 |                 <TooltipContent sideOffset={8}>
+133 |                   {getWebSearchTooltipMessage()}
+134 |                 </TooltipContent>
+135 |               </Tooltip>
+136 |             </div>
+137 |           )}
+138 |         </div>
+139 |       </div>
+140 |       <button
+141 |         type={isStreaming ? "button" : "submit"}
+142 |         onClick={isStreaming ? stop : undefined}
+143 |         disabled={(!isStreaming && !input.trim()) || (isStreaming && status === "submitted")}
+144 |         className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+145 |       >
+146 |         {isStreaming ? (
+147 |           <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
+148 |         ) : (
+149 |           <ArrowUp className="h-4 w-4 text-primary-foreground" />
+150 |         )}
+151 |       </button>
+152 |     </div>
+153 |   );
+154 | };
 ```
 
 components/theme-provider.tsx
@@ -5532,7 +6874,7 @@ components/theme-toggle.tsx
 19 | 
 20 |   // Determine the icon to display
 21 |   let IconComponent;
-22 |   const iconClassName = "h-4 w-4 hover:text-sidebar-accent";
+22 |   const iconClassName = "h-4 w-4 flex-shrink-0 text-muted-foreground";
 23 | 
 24 |   // Use `theme` if it's one of the explicit themes we set
 25 |   // Otherwise, rely on `resolvedTheme` which handles 'system' or initial undefined `theme`
@@ -5569,60 +6911,62 @@ components/theme-toggle.tsx
 56 |   const TriggerComponent = trigger ? (
 57 |     <DropdownMenuTrigger asChild={true}>{trigger}</DropdownMenuTrigger>
 58 |   ) : (
-59 |     <DropdownMenuTrigger asChild={true}>
-60 |       <Button
-61 |         variant="ghost"
-62 |         size={showLabel && labelText ? "default" : "icon"}
-63 |         className={cn(
-64 |           `rounded-md`,
-65 |           showLabel && labelText ? "px-2 py-1 h-auto" : "", // Adjust padding/height if label is shown
-66 |           className
-67 |         )}
-68 |         {...props}
-69 |       >
-70 |         {IconComponent}
-71 |         {showLabel && labelText && <span>{labelText}</span>}
-72 |         {(!showLabel || !labelText) && <span className="sr-only">Toggle theme</span>}
-73 |       </Button>
-74 |     </DropdownMenuTrigger>
-75 |   );
-76 | 
-77 |   return (
-78 |     <DropdownMenu>
-79 |       {TriggerComponent}
-80 |       <DropdownMenuContent align="end">
-81 |         <DropdownMenuItem onSelect={() => setTheme("dark")}>
-82 |           <Flame className="mr-2 h-4 w-4" />
-83 |           <span>Dark</span>
-84 |         </DropdownMenuItem>
-85 |         <DropdownMenuItem onSelect={() => setTheme("light")}>
-86 |           <Sun className="mr-2 h-4 w-4" />
-87 |           <span>Light</span>
-88 |         </DropdownMenuItem>
-89 |         <DropdownMenuItem onSelect={() => setTheme("black")}>
-90 |           <CircleDashed className="mr-2 h-4 w-4" />
-91 |           <span>Black</span>
-92 |         </DropdownMenuItem>
-93 |         <DropdownMenuItem onSelect={() => setTheme("sunset")}>
-94 |           <Sun className="mr-2 h-4 w-4" />
-95 |           <span>Sunset</span>
-96 |         </DropdownMenuItem>
-97 |         <DropdownMenuItem onSelect={() => setTheme("cyberpunk")}>
-98 |           <TerminalSquare className="mr-2 h-4 w-4" />
-99 |           <span>Cyberpunk</span>
-100 |         </DropdownMenuItem>
-101 |         <DropdownMenuItem onSelect={() => setTheme("retro")}>
-102 |           <CassetteTape className="mr-2 h-4 w-4" />
-103 |           <span>Retro</span>
-104 |         </DropdownMenuItem>
-105 |         <DropdownMenuItem onSelect={() => setTheme("nature")}>
-106 |           <Leaf className="mr-2 h-4 w-4" />
-107 |           <span>Nature</span>
-108 |         </DropdownMenuItem>
-109 |       </DropdownMenuContent>
-110 |     </DropdownMenu>
-111 |   )
-112 | }
+59 |     <DropdownMenuTrigger asChild={!showLabel || !labelText}>
+60 |       {showLabel && labelText ? (
+61 |         <div className={cn("flex items-center gap-2", className)}>
+62 |           {IconComponent}
+63 |           {labelText}
+64 |         </div>
+65 |       ) : (
+66 |         <Button
+67 |           variant="ghost"
+68 |           size="icon"
+69 |           className={cn("rounded-md", className)}
+70 |           {...props}
+71 |         >
+72 |           {IconComponent}
+73 |           <span className="sr-only">Toggle theme</span>
+74 |         </Button>
+75 |       )}
+76 |     </DropdownMenuTrigger>
+77 |   );
+78 | 
+79 |   return (
+80 |     <DropdownMenu>
+81 |       {TriggerComponent}
+82 |       <DropdownMenuContent align="end">
+83 |         <DropdownMenuItem onSelect={() => setTheme("dark")}>
+84 |           <Flame className="mr-2 h-4 w-4" />
+85 |           <span>Dark</span>
+86 |         </DropdownMenuItem>
+87 |         <DropdownMenuItem onSelect={() => setTheme("light")}>
+88 |           <Sun className="mr-2 h-4 w-4" />
+89 |           <span>Light</span>
+90 |         </DropdownMenuItem>
+91 |         <DropdownMenuItem onSelect={() => setTheme("black")}>
+92 |           <CircleDashed className="mr-2 h-4 w-4" />
+93 |           <span>Black</span>
+94 |         </DropdownMenuItem>
+95 |         <DropdownMenuItem onSelect={() => setTheme("sunset")}>
+96 |           <Sun className="mr-2 h-4 w-4" />
+97 |           <span>Sunset</span>
+98 |         </DropdownMenuItem>
+99 |         <DropdownMenuItem onSelect={() => setTheme("cyberpunk")}>
+100 |           <TerminalSquare className="mr-2 h-4 w-4" />
+101 |           <span>Cyberpunk</span>
+102 |         </DropdownMenuItem>
+103 |         <DropdownMenuItem onSelect={() => setTheme("retro")}>
+104 |           <CassetteTape className="mr-2 h-4 w-4" />
+105 |           <span>Retro</span>
+106 |         </DropdownMenuItem>
+107 |         <DropdownMenuItem onSelect={() => setTheme("nature")}>
+108 |           <Leaf className="mr-2 h-4 w-4" />
+109 |           <span>Nature</span>
+110 |         </DropdownMenuItem>
+111 |       </DropdownMenuContent>
+112 |     </DropdownMenu>
+113 |   )
+114 | }
 ```
 
 components/tool-invocation.tsx
@@ -5791,6 +7135,363 @@ components/tool-invocation.tsx
 162 | } 
 ```
 
+components/web-search-suggestion.tsx
+```
+1 | "use client";
+2 | 
+3 | import { useState, useEffect } from "react";
+4 | import { X, Lightbulb, Globe } from "lucide-react";
+5 | import { useWebSearch } from "@/lib/context/web-search-context";
+6 | import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
+7 | import { motion, AnimatePresence } from "framer-motion";
+8 | 
+9 | interface WebSearchSuggestionProps {
+10 |   messageId: string;
+11 |   hasWebSearchResults?: boolean;
+12 | }
+13 | 
+14 | export function WebSearchSuggestion({ messageId, hasWebSearchResults }: WebSearchSuggestionProps) {
+15 |   const [dismissed, setDismissed] = useState(false);
+16 |   const [showSuggestion, setShowSuggestion] = useState(false);
+17 |   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
+18 | 
+19 |   // Show suggestion only if:
+20 |   // 1. Web search is currently enabled
+21 |   // 2. Message has web search results (indicates this was a web search response)
+22 |   // 3. User hasn't dismissed it
+23 |   useEffect(() => {
+24 |     if (webSearchEnabled && hasWebSearchResults && !dismissed) {
+25 |       setShowSuggestion(true);
+26 |     } else {
+27 |       setShowSuggestion(false);
+28 |     }
+29 |   }, [webSearchEnabled, hasWebSearchResults, dismissed, messageId]);
+30 | 
+31 |   // Reset dismissed state when web search is toggled back on
+32 |   useEffect(() => {
+33 |     if (!webSearchEnabled) {
+34 |       setDismissed(false);
+35 |     }
+36 |   }, [webSearchEnabled]);
+37 | 
+38 |   const handleDisableWebSearch = () => {
+39 |     setWebSearchEnabled(false);
+40 |     setDismissed(true);
+41 |   };
+42 | 
+43 |   const handleDismiss = () => {
+44 |     setDismissed(true);
+45 |   };
+46 | 
+47 |   if (!showSuggestion) return null;
+48 | 
+49 |   return (
+50 |     <AnimatePresence>
+51 |       <motion.div
+52 |         key={`suggestion-${messageId}`}
+53 |         initial={{ opacity: 0, y: 10, scale: 0.95 }}
+54 |         animate={{ opacity: 1, y: 0, scale: 1 }}
+55 |         exit={{ opacity: 0, y: -10, scale: 0.95 }}
+56 |         transition={{ duration: 0.3, ease: "easeInOut" }}
+57 |         className="mt-3 p-3 bg-blue-50/80 dark:bg-blue-900/20 border border-blue-200/60 dark:border-blue-700/40 rounded-lg"
+58 |       >
+59 |         <div className="flex items-start gap-3">
+60 |           <div className="flex-shrink-0 mt-0.5">
+61 |             <div className="p-1 bg-blue-100 dark:bg-blue-800/40 rounded-full">
+62 |               <Lightbulb className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+63 |             </div>
+64 |           </div>
+65 |           
+66 |           <div className="flex-1 min-w-0">
+67 |             <div className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-1">
+68 |               Save credits on follow-up questions
+69 |             </div>
+70 |             <div className="text-xs text-blue-700 dark:text-blue-200 mb-3 leading-relaxed">
+71 |               Follow-up questions about these results don&apos;t need web search. 
+72 |               Disable it to save {WEB_SEARCH_COST} credits per message.
+73 |             </div>
+74 |             
+75 |             <div className="flex items-center gap-2">
+76 |               <button
+77 |                 onClick={handleDisableWebSearch}
+78 |                 className="inline-flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-full transition-colors duration-150 font-medium"
+79 |               >
+80 |                 <Globe className="h-3 w-3" />
+81 |                 Disable Web Search
+82 |               </button>
+83 |               <button
+84 |                 onClick={handleDismiss}
+85 |                 className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors duration-150"
+86 |               >
+87 |                 Keep enabled
+88 |               </button>
+89 |             </div>
+90 |           </div>
+91 |           
+92 |           <button
+93 |             onClick={handleDismiss}
+94 |             className="flex-shrink-0 p-1 text-blue-400 hover:text-blue-600 dark:text-blue-500 dark:hover:text-blue-300 transition-colors duration-150"
+95 |             aria-label="Dismiss suggestion"
+96 |           >
+97 |             <X className="h-3.5 w-3.5" />
+98 |           </button>
+99 |         </div>
+100 |       </motion.div>
+101 |     </AnimatePresence>
+102 |   );
+103 | } 
+```
+
+hooks/use-mobile.ts
+```
+1 | import * as React from "react"
+2 | 
+3 | const MOBILE_BREAKPOINT = 768
+4 | 
+5 | export function useIsMobile() {
+6 |   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+7 | 
+8 |   React.useEffect(() => {
+9 |     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+10 |     const onChange = () => {
+11 |       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+12 |     }
+13 |     mql.addEventListener("change", onChange)
+14 |     setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+15 |     return () => mql.removeEventListener("change", onChange)
+16 |   }, [])
+17 | 
+18 |   return !!isMobile
+19 | }
+```
+
+hooks/useAuth.ts
+```
+1 | import { useEffect, useState, useCallback } from 'react';
+2 | import { signIn, signOut, useSession } from '@/lib/auth-client';
+3 | 
+4 | type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unauthenticated';
+5 | 
+6 | interface AuthUser {
+7 |     id: string;
+8 |     name?: string | null;
+9 |     email?: string | null;
+10 |     image?: string | null;
+11 |     isAnonymous?: boolean;
+12 |     messageLimit?: number;
+13 |     messageRemaining?: number;
+14 |     hasSubscription?: boolean;
+15 |     credits?: number;
+16 |     hasCredits?: boolean;
+17 |     usedCredits?: boolean;
+18 | }
+19 | 
+20 | export function useAuth() {
+21 |     const { data: session, isPending } = useSession();
+22 |     const [status, setStatus] = useState<AuthStatus>('loading');
+23 |     const [user, setUser] = useState<AuthUser | null>(null);
+24 |     const [error, setError] = useState<Error | null>(null);
+25 | 
+26 |     useEffect(() => {
+27 |         if (isPending) {
+28 |             setStatus('loading');
+29 |             return;
+30 |         }
+31 | 
+32 |         try {
+33 |             if (session && session.user) {
+34 |                 // If we have a user with ID, we're authenticated in some form
+35 |                 if (session.user.id) {
+36 |                     const isAnonymous = (session.user as any).isAnonymous === true;
+37 | 
+38 |                     setUser({
+39 |                         id: session.user.id,
+40 |                         name: session.user.name || null,
+41 |                         email: session.user.email || null,
+42 |                         image: session.user.image || null,
+43 |                         isAnonymous: isAnonymous,
+44 |                         // These values would be fetched separately from an API endpoint
+45 |                         messageLimit: isAnonymous ? 10 : 20,
+46 |                         messageRemaining: 0, // Would be updated via API
+47 |                         hasSubscription: !!(session.user as any)?.metadata?.hasSubscription,
+48 |                     });
+49 | 
+50 |                     setStatus(isAnonymous ? 'anonymous' : 'authenticated');
+51 |                 } else {
+52 |                     setStatus('unauthenticated');
+53 |                     setUser(null);
+54 |                 }
+55 |             } else {
+56 |                 // No session means not authenticated
+57 |                 setStatus('unauthenticated');
+58 |                 setUser(null);
+59 |             }
+60 |             setError(null);
+61 |         } catch (err) {
+62 |             setError(err instanceof Error ? err : new Error(String(err)));
+63 |             setStatus('unauthenticated');
+64 |             setUser(null);
+65 |         }
+66 |     }, [session, isPending]);
+67 | 
+68 |     // Get message usage data
+69 |     const refreshMessageUsage = useCallback(async () => {
+70 |         try {
+71 |             const response = await fetch('/api/usage/messages');
+72 |             if (response.ok) {
+73 |                 const data = await response.json();
+74 |                 setUser(prev => prev ? {
+75 |                     ...prev,
+76 |                     messageLimit: data.limit,
+77 |                     messageRemaining: data.remaining,
+78 |                     credits: data.credits,
+79 |                     hasCredits: data.hasCredits,
+80 |                     usedCredits: data.usedCredits
+81 |                 } : null);
+82 |             }
+83 |         } catch (err) {
+84 |             console.error('Failed to fetch message usage:', err);
+85 |         }
+86 |     }, []);
+87 | 
+88 |     // Auto-fetch credit information when user is available (for both authenticated and anonymous users)
+89 |     useEffect(() => {
+90 |         if (user && user.credits === undefined && (status === 'authenticated' || status === 'anonymous')) {
+91 |             refreshMessageUsage();
+92 |         }
+93 |     }, [user?.id, status]); // Removed refreshMessageUsage from dependency array to prevent re-runs during hot reload
+94 | 
+95 |     // Sign in with Google
+96 |     const handleSignIn = async () => {
+97 |         try {
+98 |             // Use Better Auth client to sign in with Google
+99 |             await signIn.social({
+100 |                 provider: 'google',
+101 |                 callbackURL: window.location.origin
+102 |             });
+103 |         } catch (err) {
+104 |             setError(err instanceof Error ? err : new Error(String(err)));
+105 |         }
+106 |     };
+107 | 
+108 |     // Sign out
+109 |     const handleSignOut = async () => {
+110 |         try {
+111 |             // Use Better Auth client to sign out
+112 |             await signOut();
+113 | 
+114 |             // Refresh the page to get new anonymous session
+115 |             window.location.reload();
+116 |         } catch (err) {
+117 |             setError(err instanceof Error ? err : new Error(String(err)));
+118 |         }
+119 |     };
+120 | 
+121 | 
+122 | 
+123 |     return {
+124 |         status,
+125 |         user,
+126 |         error,
+127 |         signIn: handleSignIn,
+128 |         signOut: handleSignOut,
+129 |         refreshMessageUsage,
+130 |         isLoading: status === 'loading',
+131 |         isAuthenticated: status === 'authenticated',
+132 |         isAnonymous: status === 'anonymous',
+133 |     };
+134 | } 
+```
+
+hooks/useCredits.ts
+```
+1 | import { useState, useEffect } from 'react';
+2 | 
+3 | /**
+4 |  * Hook to get and manage a user's credits
+5 |  * 
+6 |  * @param polarCustomerId The customer's ID in Polar system (legacy) - deprecated, kept for compatibility
+7 |  * @param userId The user's ID in our application (used as external ID in Polar)
+8 |  * @returns Object containing the user's credits status and related functions
+9 |  */
+10 | export function useCredits(polarCustomerId?: string, userId?: string) {
+11 |     const [credits, setCredits] = useState<number | null>(null);
+12 |     const [loading, setLoading] = useState<boolean>(false);
+13 |     const [error, setError] = useState<Error | null>(null);
+14 | 
+15 |     // Function to fetch credits via API endpoint
+16 |     const fetchCredits = async () => {
+17 |         // If no userId is provided, we can't fetch credits
+18 |         if (!userId) {
+19 |             console.log('[DEBUG] useCredits: No userId provided, setting credits to null');
+20 |             setCredits(null);
+21 |             return;
+22 |         }
+23 | 
+24 |         console.log(`[DEBUG] useCredits: Fetching credits for userId: ${userId}`);
+25 |         setLoading(true);
+26 |         setError(null);
+27 | 
+28 |         try {
+29 |             const response = await fetch('/api/credits');
+30 | 
+31 |             if (!response.ok) {
+32 |                 throw new Error(`Failed to fetch credits: ${response.status}`);
+33 |             }
+34 | 
+35 |             const data = await response.json();
+36 |             console.log(`[DEBUG] useCredits: API response:`, data);
+37 | 
+38 |             if (data.error) {
+39 |                 throw new Error(data.error);
+40 |             }
+41 | 
+42 |             console.log(`[DEBUG] useCredits: Setting credits to: ${data.credits}`);
+43 |             setCredits(data.credits);
+44 |         } catch (err) {
+45 |             console.error('Error fetching credits:', err);
+46 |             setError(err instanceof Error ? err : new Error('Failed to fetch credits'));
+47 |             setCredits(null);
+48 |         } finally {
+49 |             setLoading(false);
+50 |         }
+51 |     };
+52 | 
+53 |     // Fetch credits on mount and when IDs change
+54 |     useEffect(() => {
+55 |         fetchCredits();
+56 |     }, [polarCustomerId, userId]);
+57 | 
+58 |     // Helper function to format credits display with thousands separator
+59 |     const formattedCredits = credits !== null
+60 |         ? credits.toLocaleString()
+61 |         : 'Unknown';
+62 | 
+63 |     // Function to check if user has sufficient credits for an operation
+64 |     const hasSufficientCredits = (requiredAmount: number = 1): boolean => {
+65 |         if (credits === null) return true; // Allow if credits unknown
+66 |         return credits >= requiredAmount;
+67 |     };
+68 | 
+69 |     // Function to check if user can access premium models
+70 |     const canAccessPremiumModels = (): boolean => {
+71 |         const canAccess = credits !== null && credits > 0;
+72 |         // console.log(`[DEBUG] canAccessPremiumModels: credits=${credits}, canAccess=${canAccess}`);
+73 |         return canAccess;
+74 |     };
+75 | 
+76 |     return {
+77 |         credits,
+78 |         formattedCredits,
+79 |         loading,
+80 |         error,
+81 |         fetchCredits,
+82 |         hasSufficientCredits,
+83 |         canAccessPremiumModels,
+84 |     };
+85 | } 
+```
+
 lib/auth-client.ts
 ```
 1 | "use client";
@@ -5817,257 +7518,336 @@ lib/auth.ts
 8 | import { count, eq, and, gte } from 'drizzle-orm';
 9 | import { getRemainingCreditsByExternalId } from './polar';
 10 | 
-11 | 
-12 | if (!process.env.GOOGLE_CLIENT_ID) {
-13 |     throw new Error('Missing GOOGLE_CLIENT_ID environment variable');
-14 | }
-15 | if (!process.env.GOOGLE_CLIENT_SECRET) {
-16 |     throw new Error('Missing GOOGLE_CLIENT_SECRET environment variable');
-17 | }
-18 | if (!process.env.AUTH_SECRET) {
-19 |     throw new Error('Missing AUTH_SECRET environment variable');
-20 | }
-21 | if (!process.env.POLAR_ACCESS_TOKEN) {
-22 |     throw new Error('Missing POLAR_ACCESS_TOKEN environment variable');
-23 | }
-24 | if (!process.env.POLAR_PRODUCT_ID) {
-25 |     throw new Error('Missing POLAR_PRODUCT_ID environment variable');
-26 | }
-27 | if (!process.env.SUCCESS_URL) {
-28 |     throw new Error('Missing SUCCESS_URL environment variable');
-29 | }
-30 | 
-31 | const polarClient = new Polar({
-32 |     accessToken: process.env.POLAR_ACCESS_TOKEN,
-33 |     server: 'sandbox', // As per your instruction
-34 | });
-35 | 
-36 | export const auth = betterAuth({
-37 |     database: drizzleAdapter(db, {
-38 |         provider: "pg",
-39 |         // Explicitly pass the schema tables using the standard names
-40 |         schema: {
-41 |             user: schema.users,       // Use the exported const 'users'
-42 |             account: schema.accounts, // Use the exported const 'accounts'
-43 |             session: schema.sessions, // Use the exported const 'sessions'
-44 |             verification: schema.verification // Updated from verificationTokens
-45 |         },
-46 |         // We might need to explicitly pass the schema tables here later
-47 |         // schema: { ...schema } 
-48 |         // Or potentially use this flag if table names are standard plurals
-49 |         // usePlural: true
-50 |     }),
-51 |     secret: process.env.AUTH_SECRET,
-52 |     sessionMaxAge: 30 * 24 * 60 * 60, // 30 days
-53 |     // Add session field mapping based on documentation
-54 |     session: {
-55 |         fields: {
-56 |             token: "sessionToken" // Map internal token to sessionToken column
-57 |             // If your expires column was different, you'd map expiresAt here too
-58 |         }
-59 |     },
-61 |     socialProviders: {
-62 |         google: {
-63 |             clientId: process.env.GOOGLE_CLIENT_ID,
-64 |             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-65 |             // Set higher message limit for authenticated users
-66 |             onAccountCreated: async ({ user }: { user: any }) => {
-67 |                 console.log('[Google Provider] onAccountCreated: Triggered for user', user.id);
-68 |                 // Update user metadata to add higher message limit
-69 |                 await db.update(schema.users)
-70 |                     .set({
-71 |                         metadata: {
-72 |                             ...user.metadata,
-73 |                             messageLimit: 20 // 20 messages per day for Google signed-in users
-74 |                         }
-75 |                     })
-76 |                     .where(eq(schema.users.id, user.id));
-77 | 
-78 |                 return user;
-79 |             }
-80 |         },
-81 |     },
-82 |     plugins: [
-83 |         anonymous({
-84 |             emailDomainName: "anonymous.chatlima.com", // Use a proper domain for anonymous users
-85 |             onLinkAccount: async ({ anonymousUser, newUser }) => {
-86 |                 console.log('--- Anonymous Plugin onLinkAccount Fired ---');
-87 |                 console.log('Anonymous User:', JSON.stringify(anonymousUser, null, 2));
-88 |                 console.log('New User:', JSON.stringify(newUser, null, 2));
+11 | // Dynamic Google OAuth configuration based on environment
+12 | const getGoogleOAuthConfig = () => {
+13 |     const isProduction = process.env.NODE_ENV === 'production' &&
+14 |         process.env.VERCEL_ENV === 'production';
+15 | 
+16 |     if (isProduction) {
+17 |         // Production OAuth app
+18 |         if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD) {
+19 |             throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD environment variable');
+20 |         }
+21 |         if (!process.env.GOOGLE_CLIENT_SECRET_PROD) {
+22 |             throw new Error('Missing GOOGLE_CLIENT_SECRET_PROD environment variable');
+23 |         }
+24 |         const config = {
+25 |             clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_PROD,
+26 |             clientSecret: process.env.GOOGLE_CLIENT_SECRET_PROD,
+27 |         };
+28 |         console.log('🔐 Using PRODUCTION Google OAuth client:', config.clientId);
+29 |         return config;
+30 |     } else {
+31 |         // Development/Preview OAuth app
+32 |         if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV) {
+33 |             throw new Error('Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV environment variable');
+34 |         }
+35 |         if (!process.env.GOOGLE_CLIENT_SECRET_DEV) {
+36 |             throw new Error('Missing GOOGLE_CLIENT_SECRET_DEV environment variable');
+37 |         }
+38 |         const config = {
+39 |             clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV,
+40 |             clientSecret: process.env.GOOGLE_CLIENT_SECRET_DEV,
+41 |         };
+42 |         console.log('🔐 Using DEVELOPMENT Google OAuth client:', config.clientId);
+43 |         return config;
+44 |     }
+45 | };
+46 | 
+47 | if (!process.env.AUTH_SECRET) {
+48 |     throw new Error('Missing AUTH_SECRET environment variable');
+49 | }
+50 | if (!process.env.POLAR_ACCESS_TOKEN) {
+51 |     throw new Error('Missing POLAR_ACCESS_TOKEN environment variable');
+52 | }
+53 | if (!process.env.POLAR_PRODUCT_ID) {
+54 |     throw new Error('Missing POLAR_PRODUCT_ID environment variable');
+55 | }
+56 | if (!process.env.SUCCESS_URL) {
+57 |     throw new Error('Missing SUCCESS_URL environment variable');
+58 | }
+59 | 
+60 | // Polar server environment configuration
+61 | // Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
+62 | const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
+63 | 
+64 | const polarClient = new Polar({
+65 |     accessToken: process.env.POLAR_ACCESS_TOKEN,
+66 |     server: polarServerEnv,
+67 | });
+68 | 
+69 | // Dynamic trusted origins based on environment
+70 | const getTrustedOrigins = () => {
+71 |     const origins = [
+72 |         'http://localhost:3000',
+73 |         'https://www.chatlima.com',
+74 |         'https://preview.chatlima.com'
+75 |     ];
+76 | 
+77 |     // Add Vercel preview URLs
+78 |     if (process.env.VERCEL_URL) {
+79 |         origins.push(`https://${process.env.VERCEL_URL}`);
+80 |     }
+81 | 
+82 |     // Add any Vercel deployment URLs (for preview deployments)
+83 |     if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+84 |         origins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+85 |     }
+86 | 
+87 |     // Allow all *.vercel.app domains for previews
+88 |     origins.push('https://*.vercel.app');
 89 | 
-90 |                 console.log('Linking anonymous user to authenticated user', {
-91 |                     anonymousId: anonymousUser.user?.id,
-92 |                     newUserId: newUser.user?.id
-93 |                 });
-94 |                 // Optional: Migrate any data from anonymousUser to newUser here
+90 |     // Add any custom preview domain if specified
+91 |     if (process.env.PREVIEW_DOMAIN) {
+92 |         origins.push(`https://${process.env.PREVIEW_DOMAIN}`);
+93 |         origins.push(`https://*.${process.env.PREVIEW_DOMAIN}`);
+94 |     }
 95 | 
-96 |                 // ***** MOVED POLAR CUSTOMER CREATION LOGIC HERE *****
-97 |                 const userForPolar = newUser.user; // Get the actual user object
-98 | 
-99 |                 // Ensure we have a valid user object and it's not anonymous
-100 |                 // (though after linking, newUser.user should be the authenticated one)
-101 |                 if (userForPolar && userForPolar.id && !userForPolar.isAnonymous) {
-102 |                     console.log('[onLinkAccount] Processing Polar customer for authenticated user:', userForPolar.id, 'Email:', userForPolar.email);
-103 |                     try {
-104 |                         let polarCustomer;
-105 |                         try {
-106 |                             // Attempt to fetch customer by externalId (userForPolar.id from your app)
-107 |                             polarCustomer = await polarClient.customers.getExternal({ externalId: userForPolar.id });
-108 |                             console.log('[onLinkAccount] Found existing Polar customer by externalId:', polarCustomer.id, 'for user:', userForPolar.id);
-109 | 
-110 |                             // Optional: If found, ensure email matches or update if necessary
-111 |                             if (polarCustomer.email !== userForPolar.email && userForPolar.email) {
-112 |                                 console.log(`[onLinkAccount] Polar customer ${polarCustomer.id} has email ${polarCustomer.email}, app user has ${userForPolar.email}. Updating Polar customer's email.`);
-113 |                                 await polarClient.customers.updateExternal({
-114 |                                     externalId: userForPolar.id,
-115 |                                     customerUpdateExternalID: { email: userForPolar.email, name: userForPolar.name }
-116 |                                 });
-117 |                                 console.log('[onLinkAccount] Polar customer email updated for externalId:', userForPolar.id);
-118 |                             }
-119 | 
-120 |                         } catch (error: any) {
-121 |                             if (error.name === 'ResourceNotFound' || error.statusCode === 404 || (error.response && error.response.status === 404)) {
-122 |                                 console.log('[onLinkAccount] No Polar customer found with externalId:', userForPolar.id, '. Attempting to create.');
-123 | 
-124 |                                 try {
-125 |                                     polarCustomer = await polarClient.customers.create({
-126 |                                         email: userForPolar.email,
-127 |                                         name: userForPolar.name,
-128 |                                         externalId: userForPolar.id
-129 |                                     });
-130 |                                     console.log('[onLinkAccount] Polar customer created successfully:', polarCustomer.id, 'with externalId:', userForPolar.id);
-131 |                                 } catch (createError: any) {
-132 |                                     console.error('[onLinkAccount] Failed to create Polar customer for user:', userForPolar.id, '. Create Error:', createError);
-133 |                                     if (createError.response && createError.response.data) {
-134 |                                         console.error('[onLinkAccount] Polar API error details:', createError.response.data);
-135 |                                     }
-136 |                                 }
-137 |                             } else {
-138 |                                 console.error('[onLinkAccount] Error fetching Polar customer by externalId for user:', userForPolar.id, 'Fetch Error:', error);
-139 |                                 if (error.response && error.response.data) {
-140 |                                     console.error('[onLinkAccount] Polar API error details:', error.response.data);
-141 |                                 }
-142 |                             }
-143 |                         }
-144 |                     } catch (error) {
-145 |                         console.error('[onLinkAccount] Unhandled error in Polar processing for user:', userForPolar.id, 'Error:', error);
-146 |                     }
-147 |                 } else {
-148 |                     console.log('[onLinkAccount] Skipping Polar customer processing for user:', userForPolar?.id, 'isAnonymous:', userForPolar?.isAnonymous);
-149 |                 }
-150 |             },
-151 |         }),
-152 |         polarPlugin({
-153 |             client: polarClient,
-154 |             createCustomerOnSignUp: false,
-155 |             // onAccountCreated: async ({ user }: { user: { id: string, email: string, name?: string, isAnonymous?: boolean } }) => {
-156 |             //     console.log('[Polar Plugin] onAccountCreated: Triggered for user', user.id); // THIS WAS NOT FIRING
-157 |             //     // ...  previous logic commented out as it's moved ...
-158 |             //     return user;
-159 |             // },
-160 |             enableCustomerPortal: true,
-161 |             checkout: {
-162 |                 enabled: true,
-163 |                 products: [
-164 |                     {
-165 |                         productId: process.env.POLAR_PRODUCT_ID || '',
-166 |                         slug: 'ai-usage',
-167 |                         // Remove name and description as they're not part of the expected type
-168 |                     }
-169 |                 ],
-170 |                 successUrl: process.env.SUCCESS_URL,
-171 |             },
-172 |             webhooks: {
-173 |                 secret: process.env.POLAR_WEBHOOK_SECRET || '', // Use empty string if not set yet
-174 |                 onPayload: async (payload) => {
-175 |                     console.log('Polar webhook received:', payload.type);
-176 |                 },
-177 |                 // Add specific event handlers
-178 |                 onSubscriptionCreated: async (payload) => {
-179 |                     console.log('Subscription created:', payload.data.id);
-180 |                     // Credits will be managed by Polar meter
-181 |                 },
-182 |                 onOrderCreated: async (payload) => {
-183 |                     console.log('Order created:', payload.data.id);
-184 |                 },
-185 |                 onSubscriptionCanceled: async (payload) => {
-186 |                     console.log('Subscription canceled:', payload.data.id);
-187 |                 },
-188 |                 onSubscriptionRevoked: async (payload) => {
-189 |                     console.log('Subscription revoked:', payload.data.id);
-190 |                 }
-191 |             },
-192 |         }),
-193 |     ],
-194 |     // session: { ... } // Potentially configure session strategy if needed
-195 | });
-196 | 
-197 | // Helper to check if user has reached their daily message or credit limit
-198 | export async function checkMessageLimit(userId: string, isAnonymous: boolean): Promise<{
-199 |     hasReachedLimit: boolean;
-200 |     limit: number;
-201 |     remaining: number;
-202 |     credits?: number | null;
-203 |     usedCredits?: boolean;
-204 | }> {
-205 |     try {
-206 |         // 1. Check Polar credits (for authenticated users only)
-207 |         if (!isAnonymous) {
-208 |             const credits = await getRemainingCreditsByExternalId(userId);
-209 |             if (typeof credits === 'number' && credits > 0) {
-210 |                 // User has credits, so allow usage and show credits left
-211 |                 return {
-212 |                     hasReachedLimit: false,
-213 |                     limit: 250, // Soft cap for display, actual limit is credits
-214 |                     remaining: credits,
-215 |                     credits,
-216 |                     usedCredits: true
-217 |                 };
-218 |             }
-219 |         }
-220 | 
-221 |         // 2. If no credits (or anonymous), use daily message limit
-222 |         // Get user info
-223 |         const user = await db.query.users.findFirst({
-224 |             where: eq(schema.users.id, userId)
-225 |         });
-226 | 
-227 |         // Set daily limits
-228 |         let messageLimit = isAnonymous ? 10 : 20;
-229 |         if (!isAnonymous && user) {
-230 |             messageLimit = (user as any).metadata?.messageLimit || 20;
-231 |         }
-232 | 
-233 |         // Count today's messages for this user
-234 |         const startOfDay = new Date();
-235 |         startOfDay.setHours(0, 0, 0, 0);
-236 | 
-237 |         const messageCount = await db.select({ count: count() })
-238 |             .from(schema.messages)
-239 |             .innerJoin(schema.chats, eq(schema.chats.id, schema.messages.chatId))
-240 |             .where(
-241 |                 and(
-242 |                     eq(schema.chats.userId, userId),
-243 |                     gte(schema.messages.createdAt, startOfDay),
-244 |                     eq(schema.messages.role, 'user')
-245 |                 )
-246 |             )
-247 |             .execute()
-248 |             .then(result => result[0]?.count || 0);
-249 | 
-250 |         return {
-251 |             hasReachedLimit: messageCount >= messageLimit,
-252 |             limit: messageLimit,
-253 |             remaining: Math.max(0, messageLimit - messageCount),
-254 |             credits: 0,
-255 |             usedCredits: false
-256 |         };
-257 |     } catch (error) {
-258 |         console.error('Error checking message limit:', error);
-259 |         // Default to allowing messages if there's an error
-260 |         return { hasReachedLimit: false, limit: 10, remaining: 10 };
-261 |     }
-262 | }
+96 |     console.log('🔐 Auth trusted origins configured:', origins);
+97 | 
+98 |     return origins;
+99 | };
+100 | 
+101 | export const auth = betterAuth({
+102 |     database: drizzleAdapter(db, {
+103 |         provider: "pg",
+104 |         // Explicitly pass the schema tables using the standard names
+105 |         schema: {
+106 |             user: schema.users,       // Use the exported const 'users'
+107 |             account: schema.accounts, // Use the exported const 'accounts'
+108 |             session: schema.sessions, // Use the exported const 'sessions'
+109 |             verification: schema.verification // Updated from verificationTokens
+110 |         },
+111 |         // We might need to explicitly pass the schema tables here later
+112 |         // schema: { ...schema } 
+113 |         // Or potentially use this flag if table names are standard plurals
+114 |         // usePlural: true
+115 |     }),
+116 |     secret: process.env.AUTH_SECRET,
+117 |     sessionMaxAge: 30 * 24 * 60 * 60, // 30 days
+118 |     // Add session field mapping based on documentation
+119 |     session: {
+120 |         fields: {
+121 |             token: "sessionToken" // Map internal token to sessionToken column
+122 |             // If your expires column was different, you'd map expiresAt here too
+123 |         }
+124 |     },
+125 |     trustedOrigins: getTrustedOrigins(),
+126 |     socialProviders: {
+127 |         google: {
+128 |             ...getGoogleOAuthConfig(),
+129 |             // Set higher message limit for authenticated users
+130 |             onAccountCreated: async ({ user }: { user: any }) => {
+131 |                 const oauthConfig = getGoogleOAuthConfig();
+132 |                 console.log('[Google Provider] onAccountCreated: Triggered for user', user.id, 'using client:', oauthConfig.clientId);
+133 |                 // Update user metadata to add higher message limit
+134 |                 await db.update(schema.users)
+135 |                     .set({
+136 |                         metadata: {
+137 |                             ...user.metadata,
+138 |                             messageLimit: 20 // 20 messages per day for Google signed-in users
+139 |                         }
+140 |                     })
+141 |                     .where(eq(schema.users.id, user.id));
+142 | 
+143 |                 return user;
+144 |             }
+145 |         },
+146 |     },
+147 |     plugins: [
+148 |         anonymous({
+149 |             emailDomainName: "anonymous.chatlima.com", // Use a proper domain for anonymous users
+150 |             onLinkAccount: async ({ anonymousUser, newUser }) => {
+151 |                 console.log('--- Anonymous Plugin onLinkAccount Fired ---');
+152 |                 console.log('Anonymous User:', JSON.stringify(anonymousUser, null, 2));
+153 |                 console.log('New User:', JSON.stringify(newUser, null, 2));
+154 | 
+155 |                 console.log('Linking anonymous user to authenticated user', {
+156 |                     anonymousId: anonymousUser.user?.id,
+157 |                     newUserId: newUser.user?.id
+158 |                 });
+159 |                 // Optional: Migrate any data from anonymousUser to newUser here
+160 | 
+161 |                 // ***** MOVED POLAR CUSTOMER CREATION LOGIC HERE *****
+162 |                 const userForPolar = newUser.user; // Get the actual user object
+163 | 
+164 |                 // Ensure we have a valid user object and it's not anonymous
+165 |                 // (though after linking, newUser.user should be the authenticated one)
+166 |                 if (userForPolar && userForPolar.id && !userForPolar.isAnonymous) {
+167 |                     console.log('[onLinkAccount] Processing Polar customer for authenticated user:', userForPolar.id, 'Email:', userForPolar.email);
+168 |                     try {
+169 |                         let polarCustomer;
+170 |                         try {
+171 |                             // Attempt to fetch customer by externalId (userForPolar.id from your app)
+172 |                             polarCustomer = await polarClient.customers.getExternal({ externalId: userForPolar.id });
+173 |                             console.log('[onLinkAccount] Found existing Polar customer by externalId:', polarCustomer.id, 'for user:', userForPolar.id);
+174 | 
+175 |                             // Optional: If found, ensure email matches or update if necessary
+176 |                             if (polarCustomer.email !== userForPolar.email && userForPolar.email) {
+177 |                                 console.log(`[onLinkAccount] Polar customer ${polarCustomer.id} has email ${polarCustomer.email}, app user has ${userForPolar.email}. Updating Polar customer's email.`);
+178 |                                 await polarClient.customers.updateExternal({
+179 |                                     externalId: userForPolar.id,
+180 |                                     customerUpdateExternalID: { email: userForPolar.email, name: userForPolar.name }
+181 |                                 });
+182 |                                 console.log('[onLinkAccount] Polar customer email updated for externalId:', userForPolar.id);
+183 |                             }
+184 | 
+185 |                         } catch (error: any) {
+186 |                             if (error.name === 'ResourceNotFound' || error.statusCode === 404 || (error.response && error.response.status === 404)) {
+187 |                                 console.log('[onLinkAccount] No Polar customer found with externalId:', userForPolar.id, '. Attempting to create.');
+188 | 
+189 |                                 try {
+190 |                                     polarCustomer = await polarClient.customers.create({
+191 |                                         email: userForPolar.email,
+192 |                                         name: userForPolar.name,
+193 |                                         externalId: userForPolar.id
+194 |                                     });
+195 |                                     console.log('[onLinkAccount] Polar customer created successfully:', polarCustomer.id, 'with externalId:', userForPolar.id);
+196 |                                 } catch (createError: any) {
+197 |                                     console.error('[onLinkAccount] Failed to create Polar customer for user:', userForPolar.id, '. Create Error:', createError);
+198 |                                     if (createError.response && createError.response.data) {
+199 |                                         console.error('[onLinkAccount] Polar API error details:', createError.response.data);
+200 |                                     }
+201 |                                 }
+202 |                             } else {
+203 |                                 console.error('[onLinkAccount] Error fetching Polar customer by externalId for user:', userForPolar.id, 'Fetch Error:', error);
+204 |                                 if (error.response && error.response.data) {
+205 |                                     console.error('[onLinkAccount] Polar API error details:', error.response.data);
+206 |                                 }
+207 |                             }
+208 |                         }
+209 |                     } catch (error) {
+210 |                         console.error('[onLinkAccount] Unhandled error in Polar processing for user:', userForPolar.id, 'Error:', error);
+211 |                     }
+212 |                 } else {
+213 |                     console.log('[onLinkAccount] Skipping Polar customer processing for user:', userForPolar?.id, 'isAnonymous:', userForPolar?.isAnonymous);
+214 |                 }
+215 |             },
+216 |         }),
+217 |         polarPlugin({
+218 |             client: polarClient,
+219 |             createCustomerOnSignUp: false,
+220 |             // onAccountCreated: async ({ user }: { user: { id: string, email: string, name?: string, isAnonymous?: boolean } }) => {
+221 |             //     console.log('[Polar Plugin] onAccountCreated: Triggered for user', user.id); // THIS WAS NOT FIRING
+222 |             //     // ...  previous logic commented out as it's moved ...
+223 |             //     return user;
+224 |             // },
+225 |             enableCustomerPortal: true,
+226 |             checkout: {
+227 |                 enabled: true,
+228 |                 products: [
+229 |                     {
+230 |                         productId: process.env.POLAR_PRODUCT_ID || '',
+231 |                         slug: 'ai-usage',
+232 |                         // Remove name and description as they're not part of the expected type
+233 |                     }
+234 |                 ],
+235 |                 successUrl: process.env.SUCCESS_URL,
+236 |             },
+237 |             webhooks: {
+238 |                 secret: process.env.POLAR_WEBHOOK_SECRET || '', // Use empty string if not set yet
+239 |                 onPayload: async (payload) => {
+240 |                     console.log('Polar webhook received:', payload.type);
+241 |                 },
+242 |                 // Add specific event handlers
+243 |                 onSubscriptionCreated: async (payload) => {
+244 |                     console.log('Subscription created:', payload.data.id);
+245 |                     // Credits will be managed by Polar meter
+246 |                 },
+247 |                 onOrderCreated: async (payload) => {
+248 |                     console.log('Order created:', payload.data.id);
+249 |                 },
+250 |                 onSubscriptionCanceled: async (payload) => {
+251 |                     console.log('Subscription canceled:', payload.data.id);
+252 |                 },
+253 |                 onSubscriptionRevoked: async (payload) => {
+254 |                     console.log('Subscription revoked:', payload.data.id);
+255 |                 }
+256 |             },
+257 |         }),
+258 |     ],
+259 |     // session: { ... } // Potentially configure session strategy if needed
+260 | });
+261 | 
+262 | // Helper to check if user has reached their daily message or credit limit
+263 | export async function checkMessageLimit(userId: string, isAnonymous: boolean): Promise<{
+264 |     hasReachedLimit: boolean;
+265 |     limit: number;
+266 |     remaining: number;
+267 |     credits?: number | null;
+268 |     usedCredits?: boolean;
+269 | }> {
+270 |     try {
+271 |         // 1. Check Polar credits (for authenticated users only)
+272 |         if (!isAnonymous) {
+273 |             const credits = await getRemainingCreditsByExternalId(userId);
+274 |             if (typeof credits === 'number') {
+275 |                 // If user has negative credits, block them
+276 |                 if (credits < 0) {
+277 |                     return {
+278 |                         hasReachedLimit: true,
+279 |                         limit: 0,
+280 |                         remaining: 0,
+281 |                         credits,
+282 |                         usedCredits: true
+283 |                     };
+284 |                 }
+285 |                 // If user has positive credits, allow usage and show credits left
+286 |                 if (credits > 0) {
+287 |                     return {
+288 |                         hasReachedLimit: false,
+289 |                         limit: 250, // Soft cap for display, actual limit is credits
+290 |                         remaining: credits,
+291 |                         credits,
+292 |                         usedCredits: true
+293 |                     };
+294 |                 }
+295 |                 // If credits === 0, fall through to daily message limit
+296 |             }
+297 |         }
+298 | 
+299 |         // 2. If no credits (or anonymous), use daily message limit
+300 |         // Get user info
+301 |         const user = await db.query.users.findFirst({
+302 |             where: eq(schema.users.id, userId)
+303 |         });
+304 | 
+305 |         // Set daily limits
+306 |         let messageLimit = isAnonymous ? 10 : 20;
+307 |         if (!isAnonymous && user) {
+308 |             messageLimit = (user as any).metadata?.messageLimit || 20;
+309 |         }
+310 | 
+311 |         // Count today's messages for this user
+312 |         const startOfDay = new Date();
+313 |         startOfDay.setHours(0, 0, 0, 0);
+314 | 
+315 |         const messageCount = await db.select({ count: count() })
+316 |             .from(schema.messages)
+317 |             .innerJoin(schema.chats, eq(schema.chats.id, schema.messages.chatId))
+318 |             .where(
+319 |                 and(
+320 |                     eq(schema.chats.userId, userId),
+321 |                     gte(schema.messages.createdAt, startOfDay),
+322 |                     eq(schema.messages.role, 'user')
+323 |                 )
+324 |             )
+325 |             .execute()
+326 |             .then(result => result[0]?.count || 0);
+327 | 
+328 |         return {
+329 |             hasReachedLimit: messageCount >= messageLimit,
+330 |             limit: messageLimit,
+331 |             remaining: Math.max(0, messageLimit - messageCount),
+332 |             credits: 0,
+333 |             usedCredits: false
+334 |         };
+335 |     } catch (error) {
+336 |         console.error('Error checking message limit:', error);
+337 |         // Default to allowing messages if there's an error
+338 |         return { hasReachedLimit: false, limit: 10, remaining: 10 };
+339 |     }
+340 | }
 ```
 
 lib/chat-store.ts
@@ -6104,264 +7884,266 @@ lib/chat-store.ts
 30 |   userId: string;
 31 |   messages?: any[];
 32 |   title?: string;
-33 | };
-34 | 
-35 | type ChatWithMessages = Chat & {
-36 |   messages: Message[];
-37 | };
-38 | 
-39 | export async function saveMessages({
-40 |   messages: dbMessages,
-41 | }: {
-42 |   messages: Array<DBMessage>;
-43 | }) {
-44 |   try {
-45 |     if (dbMessages.length > 0) {
-46 |       const chatId = dbMessages[0].chatId;
-47 | 
-48 |       // First delete any existing messages for this chat
-49 |       await db
-50 |         .delete(messages)
-51 |         .where(eq(messages.chatId, chatId));
-52 | 
-53 |       // Then insert the new messages
-54 |       return await db.insert(messages).values(dbMessages);
-55 |     }
-56 |     return null;
-57 |   } catch (error) {
-58 |     console.error('Failed to save messages in database', error);
-59 |     throw error;
-60 |   }
-61 | }
-62 | 
-63 | // Function to convert AI messages to DB format
-64 | export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DBMessage[] {
-65 |   return aiMessages.map(msg => {
-66 |     // Use existing id or generate a new one
-67 |     const messageId = msg.id || nanoid();
-68 | 
-69 |     // If msg has parts, use them directly
-70 |     if (msg.parts) {
-71 |       return {
-72 |         id: messageId,
-73 |         chatId,
-74 |         role: msg.role,
-75 |         parts: msg.parts,
-76 |         hasWebSearch: msg.hasWebSearch || false,
-77 |         webSearchContextSize: msg.webSearchContextSize || 'medium',
-78 |         createdAt: new Date()
-79 |       };
-80 |     }
-81 | 
-82 |     // Otherwise, convert content to parts
-83 |     let parts: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
-84 | 
-85 |     if (typeof msg.content === 'string') {
-86 |       parts = [{ type: 'text', text: msg.content } as TextUIPart];
-87 |     } else if (Array.isArray(msg.content)) {
-88 |       if (msg.content.every(item => typeof item === 'object' && item !== null)) {
-89 |         // Content is already in parts-like format
-90 |         parts = msg.content as Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
-91 |       } else {
-92 |         // Content is an array but not in parts format
-93 |         parts = [{ type: 'text', text: JSON.stringify(msg.content) } as TextUIPart];
-94 |       }
-95 |     } else {
-96 |       // Default case
-97 |       parts = [{ type: 'text', text: String(msg.content) } as TextUIPart];
-98 |     }
-99 | 
-100 |     return {
-101 |       id: messageId,
-102 |       chatId,
-103 |       role: msg.role,
-104 |       parts,
-105 |       hasWebSearch: msg.hasWebSearch || false,
-106 |       webSearchContextSize: msg.webSearchContextSize || 'medium',
-107 |       createdAt: new Date()
-108 |     };
-109 |   });
-110 | }
-111 | 
-112 | // Convert DB messages to UI format
-113 | export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage> {
-114 |   return dbMessages.map((message) => ({
-115 |     id: message.id,
-116 |     parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
-117 |     role: message.role as string,
-118 |     content: getTextContent(message), // For backward compatibility
-119 |     createdAt: message.createdAt,
-120 |     hasWebSearch: message.hasWebSearch || false,
-121 |     webSearchContextSize: (message.webSearchContextSize || 'medium') as 'low' | 'medium' | 'high'
-122 |   }));
-123 | }
-124 | 
-125 | export async function saveChat({ id, userId, messages: aiMessages, title }: SaveChatParams) {
-126 |   // Generate a new ID if one wasn't provided
-127 |   const chatId = id || nanoid();
-128 | 
-129 |   // Check if title is provided, if not generate one
-130 |   let chatTitle = title;
-131 | 
-132 |   // Generate title if messages are provided and no title is specified
-133 |   if (aiMessages && aiMessages.length > 0) {
-134 |     const hasEnoughMessages = aiMessages.length >= 2 &&
-135 |       aiMessages.some(m => m.role === 'user') &&
-136 |       aiMessages.some(m => m.role === 'assistant');
-137 | 
-138 |     if (!chatTitle || chatTitle === 'New Chat' || chatTitle === undefined) {
-139 |       if (hasEnoughMessages) {
-140 |         try {
-141 |           // Use AI to generate a meaningful title based on conversation
-142 |           chatTitle = await generateTitle(aiMessages);
-143 |         } catch (error) {
-144 |           console.error('Error generating title:', error);
-145 |           // Fallback to basic title extraction if AI title generation fails
-146 |           const firstUserMessage = aiMessages.find(m => m.role === 'user');
-147 |           if (firstUserMessage) {
-148 |             // Check for parts first (new format)
-149 |             if (firstUserMessage.parts && Array.isArray(firstUserMessage.parts)) {
-150 |               const textParts = firstUserMessage.parts.filter((p: MessagePart) => p.type === 'text' && p.text);
-151 |               if (textParts.length > 0) {
-152 |                 chatTitle = textParts[0].text?.slice(0, 50) || 'New Chat';
-153 |                 if ((textParts[0].text?.length || 0) > 50) {
-154 |                   chatTitle += '...';
-155 |                 }
-156 |               } else {
-157 |                 chatTitle = 'New Chat';
-158 |               }
-159 |             }
-160 |             // Fallback to content (old format)
-161 |             else if (typeof firstUserMessage.content === 'string') {
-162 |               chatTitle = firstUserMessage.content.slice(0, 50);
-163 |               if (firstUserMessage.content.length > 50) {
-164 |                 chatTitle += '...';
-165 |               }
-166 |             } else {
-167 |               chatTitle = 'New Chat';
-168 |             }
-169 |           } else {
-170 |             chatTitle = 'New Chat';
-171 |           }
-172 |         }
-173 |       } else {
-174 |         // Not enough messages for AI title, use first message
-175 |         const firstUserMessage = aiMessages.find(m => m.role === 'user');
-176 |         if (firstUserMessage) {
-177 |           // Check for parts first (new format)
-178 |           if (firstUserMessage.parts && Array.isArray(firstUserMessage.parts)) {
-179 |             const textParts = firstUserMessage.parts.filter((p: MessagePart) => p.type === 'text' && p.text);
-180 |             if (textParts.length > 0) {
-181 |               chatTitle = textParts[0].text?.slice(0, 50) || 'New Chat';
-182 |               if ((textParts[0].text?.length || 0) > 50) {
-183 |                 chatTitle += '...';
-184 |               }
-185 |             } else {
-186 |               chatTitle = 'New Chat';
-187 |             }
-188 |           }
-189 |           // Fallback to content (old format)
-190 |           else if (typeof firstUserMessage.content === 'string') {
-191 |             chatTitle = firstUserMessage.content.slice(0, 50);
-192 |             if (firstUserMessage.content.length > 50) {
-193 |               chatTitle += '...';
-194 |             }
-195 |           } else {
-196 |             chatTitle = 'New Chat';
-197 |           }
-198 |         } else {
-199 |           chatTitle = 'New Chat';
-200 |         }
-201 |       }
-202 |     }
-203 |   } else {
-204 |     chatTitle = chatTitle || 'New Chat';
-205 |   }
-206 | 
-207 |   // Check if chat already exists
-208 |   const existingChat = await db.query.chats.findFirst({
-209 |     where: and(
-210 |       eq(chats.id, chatId),
-211 |       eq(chats.userId, userId)
-212 |     ),
-213 |   });
-214 | 
-215 |   if (existingChat) {
-216 |     // Update existing chat
-217 |     await db
-218 |       .update(chats)
-219 |       .set({
-220 |         title: chatTitle,
-221 |         updatedAt: new Date()
-222 |       })
-223 |       .where(and(
-224 |         eq(chats.id, chatId),
-225 |         eq(chats.userId, userId)
-226 |       ));
-227 |   } else {
-228 |     // Create new chat
-229 |     await db.insert(chats).values({
-230 |       id: chatId,
-231 |       userId,
-232 |       title: chatTitle,
-233 |       createdAt: new Date(),
-234 |       updatedAt: new Date()
-235 |     });
-236 |   }
-237 | 
-238 |   return { id: chatId };
-239 | }
-240 | 
-241 | // Helper to get just the text content for display
-242 | export function getTextContent(message: Message): string {
-243 |   try {
-244 |     const parts = message.parts as MessagePart[];
-245 |     return parts
-246 |       .filter(part => part.type === 'text' && part.text)
-247 |       .map(part => part.text)
-248 |       .join('\n');
-249 |   } catch (e) {
-250 |     // If parsing fails, return empty string
-251 |     return '';
-252 |   }
-253 | }
-254 | 
-255 | export async function getChats(userId: string) {
-256 |   return await db.query.chats.findMany({
-257 |     where: eq(chats.userId, userId),
-258 |     orderBy: [desc(chats.updatedAt)]
-259 |   });
-260 | }
-261 | 
-262 | export async function getChatById(id: string, userId: string): Promise<ChatWithMessages | null> {
-263 |   const chat = await db.query.chats.findFirst({
-264 |     where: and(
-265 |       eq(chats.id, id),
-266 |       eq(chats.userId, userId)
-267 |     ),
-268 |   });
-269 | 
-270 |   if (!chat) return null;
+33 |   selectedModel?: string;
+34 |   apiKeys?: Record<string, string>;
+35 | };
+36 | 
+37 | type ChatWithMessages = Chat & {
+38 |   messages: Message[];
+39 | };
+40 | 
+41 | export async function saveMessages({
+42 |   messages: dbMessages,
+43 | }: {
+44 |   messages: Array<DBMessage>;
+45 | }) {
+46 |   try {
+47 |     if (dbMessages.length > 0) {
+48 |       const chatId = dbMessages[0].chatId;
+49 | 
+50 |       // First delete any existing messages for this chat
+51 |       await db
+52 |         .delete(messages)
+53 |         .where(eq(messages.chatId, chatId));
+54 | 
+55 |       // Then insert the new messages
+56 |       return await db.insert(messages).values(dbMessages);
+57 |     }
+58 |     return null;
+59 |   } catch (error) {
+60 |     console.error('Failed to save messages in database', error);
+61 |     throw error;
+62 |   }
+63 | }
+64 | 
+65 | // Function to convert AI messages to DB format
+66 | export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DBMessage[] {
+67 |   return aiMessages.map(msg => {
+68 |     // Use existing id or generate a new one
+69 |     const messageId = msg.id || nanoid();
+70 | 
+71 |     // If msg has parts, use them directly
+72 |     if (msg.parts) {
+73 |       return {
+74 |         id: messageId,
+75 |         chatId,
+76 |         role: msg.role,
+77 |         parts: msg.parts,
+78 |         hasWebSearch: msg.hasWebSearch || false,
+79 |         webSearchContextSize: msg.webSearchContextSize || 'medium',
+80 |         createdAt: new Date()
+81 |       };
+82 |     }
+83 | 
+84 |     // Otherwise, convert content to parts
+85 |     let parts: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+86 | 
+87 |     if (typeof msg.content === 'string') {
+88 |       parts = [{ type: 'text', text: msg.content } as TextUIPart];
+89 |     } else if (Array.isArray(msg.content)) {
+90 |       if (msg.content.every(item => typeof item === 'object' && item !== null)) {
+91 |         // Content is already in parts-like format
+92 |         parts = msg.content as Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+93 |       } else {
+94 |         // Content is an array but not in parts format
+95 |         parts = [{ type: 'text', text: JSON.stringify(msg.content) } as TextUIPart];
+96 |       }
+97 |     } else {
+98 |       // Default case
+99 |       parts = [{ type: 'text', text: String(msg.content) } as TextUIPart];
+100 |     }
+101 | 
+102 |     return {
+103 |       id: messageId,
+104 |       chatId,
+105 |       role: msg.role,
+106 |       parts,
+107 |       hasWebSearch: msg.hasWebSearch || false,
+108 |       webSearchContextSize: msg.webSearchContextSize || 'medium',
+109 |       createdAt: new Date()
+110 |     };
+111 |   });
+112 | }
+113 | 
+114 | // Convert DB messages to UI format
+115 | export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage> {
+116 |   return dbMessages.map((message) => ({
+117 |     id: message.id,
+118 |     parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
+119 |     role: message.role as string,
+120 |     content: getTextContent(message), // For backward compatibility
+121 |     createdAt: message.createdAt,
+122 |     hasWebSearch: message.hasWebSearch || false,
+123 |     webSearchContextSize: (message.webSearchContextSize || 'medium') as 'low' | 'medium' | 'high'
+124 |   }));
+125 | }
+126 | 
+127 | export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys }: SaveChatParams) {
+128 |   // Generate a new ID if one wasn't provided
+129 |   const chatId = id || nanoid();
+130 | 
+131 |   // Check if title is provided, if not generate one
+132 |   let chatTitle = title;
+133 | 
+134 |   // Generate title if messages are provided and no title is specified
+135 |   if (aiMessages && aiMessages.length > 0) {
+136 |     const hasEnoughMessages = aiMessages.length >= 2 &&
+137 |       aiMessages.some(m => m.role === 'user') &&
+138 |       aiMessages.some(m => m.role === 'assistant');
+139 | 
+140 |     if (!chatTitle || chatTitle === 'New Chat' || chatTitle === undefined) {
+141 |       if (hasEnoughMessages) {
+142 |         try {
+143 |           // Use AI to generate a meaningful title based on conversation
+144 |           chatTitle = await generateTitle(aiMessages, selectedModel, apiKeys);
+145 |         } catch (error) {
+146 |           console.error('Error generating title:', error);
+147 |           // Fallback to basic title extraction if AI title generation fails
+148 |           const firstUserMessage = aiMessages.find(m => m.role === 'user');
+149 |           if (firstUserMessage) {
+150 |             // Check for parts first (new format)
+151 |             if (firstUserMessage.parts && Array.isArray(firstUserMessage.parts)) {
+152 |               const textParts = firstUserMessage.parts.filter((p: MessagePart) => p.type === 'text' && p.text);
+153 |               if (textParts.length > 0) {
+154 |                 chatTitle = textParts[0].text?.slice(0, 50) || 'New Chat';
+155 |                 if ((textParts[0].text?.length || 0) > 50) {
+156 |                   chatTitle += '...';
+157 |                 }
+158 |               } else {
+159 |                 chatTitle = 'New Chat';
+160 |               }
+161 |             }
+162 |             // Fallback to content (old format)
+163 |             else if (typeof firstUserMessage.content === 'string') {
+164 |               chatTitle = firstUserMessage.content.slice(0, 50);
+165 |               if (firstUserMessage.content.length > 50) {
+166 |                 chatTitle += '...';
+167 |               }
+168 |             } else {
+169 |               chatTitle = 'New Chat';
+170 |             }
+171 |           } else {
+172 |             chatTitle = 'New Chat';
+173 |           }
+174 |         }
+175 |       } else {
+176 |         // Not enough messages for AI title, use first message
+177 |         const firstUserMessage = aiMessages.find(m => m.role === 'user');
+178 |         if (firstUserMessage) {
+179 |           // Check for parts first (new format)
+180 |           if (firstUserMessage.parts && Array.isArray(firstUserMessage.parts)) {
+181 |             const textParts = firstUserMessage.parts.filter((p: MessagePart) => p.type === 'text' && p.text);
+182 |             if (textParts.length > 0) {
+183 |               chatTitle = textParts[0].text?.slice(0, 50) || 'New Chat';
+184 |               if ((textParts[0].text?.length || 0) > 50) {
+185 |                 chatTitle += '...';
+186 |               }
+187 |             } else {
+188 |               chatTitle = 'New Chat';
+189 |             }
+190 |           }
+191 |           // Fallback to content (old format)
+192 |           else if (typeof firstUserMessage.content === 'string') {
+193 |             chatTitle = firstUserMessage.content.slice(0, 50);
+194 |             if (firstUserMessage.content.length > 50) {
+195 |               chatTitle += '...';
+196 |             }
+197 |           } else {
+198 |             chatTitle = 'New Chat';
+199 |           }
+200 |         } else {
+201 |           chatTitle = 'New Chat';
+202 |         }
+203 |       }
+204 |     }
+205 |   } else {
+206 |     chatTitle = chatTitle || 'New Chat';
+207 |   }
+208 | 
+209 |   // Check if chat already exists
+210 |   const existingChat = await db.query.chats.findFirst({
+211 |     where: and(
+212 |       eq(chats.id, chatId),
+213 |       eq(chats.userId, userId)
+214 |     ),
+215 |   });
+216 | 
+217 |   if (existingChat) {
+218 |     // Update existing chat
+219 |     await db
+220 |       .update(chats)
+221 |       .set({
+222 |         title: chatTitle,
+223 |         updatedAt: new Date()
+224 |       })
+225 |       .where(and(
+226 |         eq(chats.id, chatId),
+227 |         eq(chats.userId, userId)
+228 |       ));
+229 |   } else {
+230 |     // Create new chat
+231 |     await db.insert(chats).values({
+232 |       id: chatId,
+233 |       userId,
+234 |       title: chatTitle,
+235 |       createdAt: new Date(),
+236 |       updatedAt: new Date()
+237 |     });
+238 |   }
+239 | 
+240 |   return { id: chatId };
+241 | }
+242 | 
+243 | // Helper to get just the text content for display
+244 | export function getTextContent(message: Message): string {
+245 |   try {
+246 |     const parts = message.parts as MessagePart[];
+247 |     return parts
+248 |       .filter(part => part.type === 'text' && part.text)
+249 |       .map(part => part.text)
+250 |       .join('\n');
+251 |   } catch (e) {
+252 |     // If parsing fails, return empty string
+253 |     return '';
+254 |   }
+255 | }
+256 | 
+257 | export async function getChats(userId: string) {
+258 |   return await db.query.chats.findMany({
+259 |     where: eq(chats.userId, userId),
+260 |     orderBy: [desc(chats.updatedAt)]
+261 |   });
+262 | }
+263 | 
+264 | export async function getChatById(id: string, userId: string): Promise<ChatWithMessages | null> {
+265 |   const chat = await db.query.chats.findFirst({
+266 |     where: and(
+267 |       eq(chats.id, id),
+268 |       eq(chats.userId, userId)
+269 |     ),
+270 |   });
 271 | 
-272 |   const chatMessages = await db.query.messages.findMany({
-273 |     where: eq(messages.chatId, id),
-274 |     orderBy: [messages.createdAt]
-275 |   });
-276 | 
-277 |   return {
-278 |     ...chat,
-279 |     messages: chatMessages
-280 |   };
-281 | }
-282 | 
-283 | export async function deleteChat(id: string, userId: string) {
-284 |   await db.delete(chats).where(
-285 |     and(
-286 |       eq(chats.id, id),
-287 |       eq(chats.userId, userId)
-288 |     )
-289 |   );
-290 | } 
+272 |   if (!chat) return null;
+273 | 
+274 |   const chatMessages = await db.query.messages.findMany({
+275 |     where: eq(messages.chatId, id),
+276 |     orderBy: [messages.createdAt]
+277 |   });
+278 | 
+279 |   return {
+280 |     ...chat,
+281 |     messages: chatMessages
+282 |   };
+283 | }
+284 | 
+285 | export async function deleteChat(id: string, userId: string) {
+286 |   await db.delete(chats).where(
+287 |     and(
+288 |       eq(chats.id, id),
+289 |       eq(chats.userId, userId)
+290 |     )
+291 |   );
+292 | } 
 ```
 
 lib/constants.ts
@@ -6386,298 +8168,438 @@ lib/polar.ts
 3 | import { Polar } from '@polar-sh/sdk';
 4 | import { nanoid } from 'nanoid';
 5 | 
-6 | // Determine Polar server environment
-7 | // Use POLAR_SERVER_ENV if set, otherwise fallback to NODE_ENV logic
-8 | const polarServerEnv = process.env.POLAR_SERVER_ENV === "sandbox" ? "sandbox"
-9 |     : process.env.POLAR_SERVER_ENV === "production" ? "production"
-10 |         : process.env.NODE_ENV === "production" ? "production"
-11 |             : "sandbox";
-12 | 
-13 | // Initialize Polar SDK client
-14 | const polarClient = new Polar({
-15 |     accessToken: process.env.POLAR_ACCESS_TOKEN as string,
-16 |     // Use the determined server environment
-17 |     server: polarServerEnv,
-18 | });
-19 | 
-20 | /**
-21 |  * Reports AI usage to Polar and logs it in the local database
-22 |  * 
-23 |  * @param userId The ID of the user in your local database
-24 |  * @param tokenCount The number of completion tokens consumed
-25 |  * @param polarCustomerId Optional - The customer's ID in the Polar system (deprecated, will be replaced by external_id)
-26 |  * @param additionalProperties Optional - Any additional properties to include in the event payload
-27 |  * @returns A promise that resolves when both the Polar API call and DB insertion are complete
-28 |  */
-29 | export async function reportAIUsage(
-30 |     userId: string,
-31 |     _placeholder_param_for_now: number, // Keeping signature for now, but will be 1
-32 |     polarCustomerId?: string,
-33 |     additionalProperties: Record<string, any> = {}
-34 | ) {
-35 |     const eventName = 'message.processed'; // Changed from 'ai-usage'
-36 |     const eventPayload = {
-37 |         credits_consumed: 1, // Changed from completionTokens: tokenCount
-38 |         ...additionalProperties
-39 |     };
+6 | // Polar server environment configuration
+7 | // Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
+8 | const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
+9 | 
+10 | // Initialize Polar SDK client
+11 | const polarClient = new Polar({
+12 |     accessToken: process.env.POLAR_ACCESS_TOKEN as string,
+13 |     server: polarServerEnv,
+14 | });
+15 | 
+16 | /**
+17 |  * Reports AI usage to Polar and logs it in the local database
+18 |  * 
+19 |  * @param userId The ID of the user in your local database
+20 |  * @param tokenCount The number of completion tokens consumed
+21 |  * @param polarCustomerId Optional - The customer's ID in the Polar system (deprecated, will be replaced by external_id)
+22 |  * @param additionalProperties Optional - Any additional properties to include in the event payload
+23 |  * @returns A promise that resolves when both the Polar API call and DB insertion are complete
+24 |  */
+25 | export async function reportAIUsage(
+26 |     userId: string,
+27 |     creditsToConsume: number, // Use the actual credits to consume, not hardcoded 1
+28 |     polarCustomerId?: string,
+29 |     additionalProperties: Record<string, any> = {}
+30 | ) {
+31 |     const eventName = 'message.processed'; // Changed from 'ai-usage'
+32 |     const eventPayload = {
+33 |         credits_consumed: creditsToConsume, // Use the actual credits passed in
+34 |         ...additionalProperties
+35 |     };
+36 | 
+37 |     try {
+38 |         // 1. Try to get the customer by external ID first (using userId as external ID)
+39 |         let customerId = polarCustomerId;
 40 | 
-41 |     try {
-42 |         // 1. Try to get the customer by external ID first (using userId as external ID)
-43 |         let customerId = polarCustomerId;
-44 | 
-45 |         if (!customerId) {
-46 |             try {
-47 |                 const customer = await getCustomerByExternalId(userId);
-48 |                 if (customer) {
-49 |                     customerId = customer.id;
-50 |                 }
-51 |             } catch (externalIdError) {
-52 |                 console.warn(`Could not find Polar customer with external ID ${userId}:`, externalIdError);
-53 |                 // Continue with regular flow, we'll try the map or just log locally
-54 |             }
-55 |         }
-56 | 
-57 |         // 2. Report to Polar (if we have a customer ID)
-58 |         if (customerId) {
-59 |             await polarClient.events.ingest({
-60 |                 events: [
-61 |                     {
-62 |                         name: eventName,
-63 |                         customerId: customerId,
-64 |                         metadata: eventPayload
-65 |                     }
-66 |                 ]
-67 |             });
-68 |         }
-69 | 
-70 |         // 3. Log the event in our database regardless
-71 |         try {
-72 |             await db.insert(polarUsageEvents).values({
-73 |                 id: nanoid(),
-74 |                 userId,
-75 |                 polarCustomerId: customerId, // Use the potentially found customerId from external ID
-76 |                 eventName,
-77 |                 eventPayload,
-78 |                 createdAt: new Date()
-79 |             });
-80 |         } catch (dbError: any) {
-81 |             // Check for foreign key constraint violation
-82 |             if (dbError.code === '23503' && dbError.constraint?.includes('user_id')) {
-83 |                 console.warn(`User ${userId} not found in database. Skipping usage tracking in DB.`);
-84 |                 // Still return success since we reported to Polar if applicable
-85 |                 return { success: true, userExistsInDB: false };
-86 |             }
-87 |             // Rethrow other database errors
-88 |             throw dbError;
-89 |         }
-90 | 
-91 |         return { success: true, userExistsInDB: true };
-92 |     } catch (error) {
-93 |         console.error('Error reporting AI usage to Polar:', error);
-94 |         throw error;
-95 |     }
-96 | }
-97 | 
-98 | /**
-99 |  * Gets a user's remaining credits from Polar using their external ID (app user ID)
-100 |  * 
-101 |  * @param userId The user's ID in our application (used as external ID in Polar)
-102 |  * @returns A promise that resolves to the number of credits remaining, or null if there was an error
-103 |  */
-104 | export async function getRemainingCreditsByExternalId(userId: string): Promise<number | null> {
-105 |     try {
-106 |         // First try to get the customer state by external ID
-107 |         const customerState = await polarClient.customers.getStateExternal({
-108 |             externalId: userId
-109 |         });
+41 |         if (!customerId) {
+42 |             try {
+43 |                 const customer = await getCustomerByExternalId(userId);
+44 |                 if (customer) {
+45 |                     customerId = customer.id;
+46 |                 }
+47 |             } catch (externalIdError) {
+48 |                 console.warn(`Could not find Polar customer with external ID ${userId}:`, externalIdError);
+49 |                 // Continue with regular flow, we'll try the map or just log locally
+50 |             }
+51 |         }
+52 | 
+53 |         // 2. Report to Polar (if we have a customer ID)
+54 |         if (customerId) {
+55 |             await polarClient.events.ingest({
+56 |                 events: [
+57 |                     {
+58 |                         name: eventName,
+59 |                         customerId: customerId,
+60 |                         metadata: eventPayload
+61 |                     }
+62 |                 ]
+63 |             });
+64 |         }
+65 | 
+66 |         // 3. Log the event in our database regardless
+67 |         try {
+68 |             await db.insert(polarUsageEvents).values({
+69 |                 id: nanoid(),
+70 |                 userId,
+71 |                 polarCustomerId: customerId, // Use the potentially found customerId from external ID
+72 |                 eventName,
+73 |                 eventPayload,
+74 |                 createdAt: new Date()
+75 |             });
+76 |         } catch (dbError: any) {
+77 |             // Check for foreign key constraint violation
+78 |             if (dbError.code === '23503' && dbError.constraint?.includes('user_id')) {
+79 |                 console.warn(`User ${userId} not found in database. Skipping usage tracking in DB.`);
+80 |                 // Still return success since we reported to Polar if applicable
+81 |                 return { success: true, userExistsInDB: false };
+82 |             }
+83 |             // Rethrow other database errors
+84 |             throw dbError;
+85 |         }
+86 | 
+87 |         return { success: true, userExistsInDB: true };
+88 |     } catch (error) {
+89 |         console.error('Error reporting AI usage to Polar:', error);
+90 |         throw error;
+91 |     }
+92 | }
+93 | 
+94 | /**
+95 |  * Gets a user's remaining credits from Polar using their external ID (app user ID)
+96 |  * 
+97 |  * @param userId The user's ID in our application (used as external ID in Polar)
+98 |  * @returns A promise that resolves to the number of credits remaining, or null if there was an error
+99 |  */
+100 | export async function getRemainingCreditsByExternalId(userId: string): Promise<number | null> {
+101 |     try {
+102 |         console.log(`[DEBUG] Attempting to get credits for external ID: ${userId}`);
+103 | 
+104 |         // First try to get the customer state by external ID
+105 |         const customerState = await polarClient.customers.getStateExternal({
+106 |             externalId: userId
+107 |         });
+108 | 
+109 |         console.log(`[DEBUG] Customer state response:`, JSON.stringify(customerState, null, 2));
 110 | 
 111 |         if (!customerState) {
-112 |             return null;
-113 |         }
-114 | 
-115 |         // Look for AI usage meter in the customer state
-116 |         // The meters property might be under a different name depending on the SDK version
-117 |         const meters = (customerState as any).meters || [];
-118 |         for (const meter of meters) {
-119 |             if (meter?.meter?.name === 'Message Credits Used') { // New check
-120 |                 return meter.balance || 0;
-121 |             }
-122 |         }
-123 | 
-124 |         return null;
-125 |     } catch (error) {
-126 |         console.error(`Error getting credits for external ID ${userId}:`, error);
-127 |         return null;
-128 |     }
-129 | }
-130 | 
-131 | /**
-132 |  * Gets a user's remaining credits from Polar
-133 |  * 
-134 |  * @param polarCustomerId The customer's ID in the Polar system
-135 |  * @returns A promise that resolves to the number of credits remaining, or null if there was an error
-136 |  */
-137 | export async function getRemainingCredits(polarCustomerId: string): Promise<number | null> {
-138 |     try {
-139 |         // Get the customer meters response - use 'any' to bypass type checking
-140 |         // since the Polar SDK types may vary by version
-141 |         const response: any = await polarClient.customerMeters.list({
-142 |             customerId: polarCustomerId
-143 |         });
-144 | 
-145 |         // Try to handle both paginated and non-paginated responses safely
-146 |         const processResult = async (data: any): Promise<number | null> => {
-147 |             // Check if data contains meters directly
-148 |             if (Array.isArray(data)) {
-149 |                 for (const meter of data) {
-150 |                     if (meter?.meter?.name === 'Message Credits Used') { // New check
-151 |                         return meter.balance || meter.remaining || 0;
-152 |                     }
-153 |                 }
-154 |             }
-155 | 
-156 |             // Check if the data has nested items
-157 |             if (data?.items && Array.isArray(data.items)) {
-158 |                 for (const meter of data.items) {
-159 |                     if (meter?.meter?.name === 'Message Credits Used') { // New check
-160 |                         return meter.balance || meter.remaining || 0;
-161 |                     }
-162 |                 }
-163 |             }
-164 | 
-165 |             return null;
-166 |         };
-167 | 
-168 |         // First try to process the direct response
-169 |         let result = await processResult(response);
-170 |         if (result !== null) return result;
+112 |             console.log(`[DEBUG] No customer state found for external ID: ${userId}`);
+113 |             return null;
+114 |         }
+115 | 
+116 |         // Look for AI usage meter in the customer state
+117 |         // The meter data is in activeMeters, not meters
+118 |         const activeMeters = (customerState as any).activeMeters || [];
+119 |         console.log(`[DEBUG] Found ${activeMeters.length} active meters for user ${userId}`);
+120 | 
+121 |         // Search for the correct "Message Credits Used" meter among active meters
+122 |         for (const meter of activeMeters) {
+123 |             console.log(`[DEBUG] Active meter:`, JSON.stringify(meter, null, 2));
+124 | 
+125 |             // Try to get the full meter details to check the name
+126 |             if (meter.meterId) {
+127 |                 try {
+128 |                     const meterDetails = await polarClient.meters.get({
+129 |                         id: meter.meterId
+130 |                     });
+131 |                     console.log(`[DEBUG] Meter details for ${meter.meterId}:`, JSON.stringify(meterDetails, null, 2));
+132 | 
+133 |                     if (meterDetails?.name === 'Message Credits Used') {
+134 |                         const balance = meter.balance || 0;
+135 |                         console.log(`[DEBUG] Found 'Message Credits Used' active meter with balance: ${balance}`);
+136 |                         return balance;
+137 |                     }
+138 |                 } catch (meterError) {
+139 |                     console.warn(`[DEBUG] Failed to get meter details for ${meter.meterId}:`, meterError);
+140 |                 }
+141 |             }
+142 | 
+143 |             // Fallback: check if the meter object has the nested structure
+144 |             if (meter?.meter?.name === 'Message Credits Used') {
+145 |                 const balance = meter.balance || 0;
+146 |                 console.log(`[DEBUG] Found 'Message Credits Used' active meter with balance: ${balance}`);
+147 |                 return balance;
+148 |             }
+149 |         }
+150 | 
+151 |         // Fallback: also check the legacy meters array (just in case)
+152 |         const meters = (customerState as any).meters || [];
+153 |         console.log(`[DEBUG] Found ${meters.length} legacy meters for user ${userId}`);
+154 | 
+155 |         for (const meter of meters) {
+156 |             console.log(`[DEBUG] Legacy Meter:`, JSON.stringify(meter, null, 2));
+157 |             if (meter?.meter?.name === 'Message Credits Used') {
+158 |                 const balance = meter.balance || 0;
+159 |                 console.log(`[DEBUG] Found 'Message Credits Used' meter with balance: ${balance}`);
+160 |                 return balance;
+161 |             }
+162 |         }
+163 | 
+164 |         console.log(`[DEBUG] No active meters or legacy 'Message Credits Used' meter found`);
+165 |         return null;
+166 |     } catch (error) {
+167 |         console.error(`Error getting credits for external ID ${userId}:`, error);
+168 |         return null;
+169 |     }
+170 | }
 171 | 
-172 |         // If that doesn't work, try to handle the paginated response
-173 |         // by getting the first page explicitly
-174 |         try {
-175 |             // Attempt to get first page if the response is paginated
-176 |             if (typeof response.next === 'function') {
-177 |                 const firstPage = await response.next();
-178 |                 if (firstPage?.value) {
-179 |                     result = await processResult(firstPage.value);
-180 |                     if (result !== null) return result;
-181 |                 }
-182 |             }
-183 |         } catch (err) {
-184 |             // Silently ignore pagination errors
-185 |             console.warn('Error processing paginated response', err);
-186 |         }
-187 | 
-188 |         console.warn(`No 'Message Credits Used' meter found for customer ${polarCustomerId}`); // Updated warning
-189 |         return null;
-190 |     } catch (error) {
-191 |         console.error('Error getting remaining credits from Polar:', error);
-192 |         return null;
-193 |     }
-194 | }
-195 | 
-196 | /**
-197 |  * Gets a customer by their external ID (app user ID)
-198 |  * 
-199 |  * @param externalId The external ID (your app's user ID)
-200 |  * @returns The customer object or null if not found
-201 |  */
-202 | export async function getCustomerByExternalId(externalId: string) {
-203 |     try {
-204 |         const customer = await polarClient.customers.getExternal({
-205 |             externalId: externalId
-206 |         });
-207 |         return customer;
-208 |     } catch (error) {
-209 |         // If the customer doesn't exist, return null instead of throwing
-210 |         if ((error as any)?.statusCode === 404) {
-211 |             return null;
-212 |         }
-213 |         // Otherwise re-throw the error
-214 |         throw error;
-215 |     }
-216 | }
-217 | 
-218 | /**
-219 |  * Creates or updates a customer in Polar using external ID
-220 |  * 
-221 |  * @param userId The ID of the user in your local database (will be used as external_id)
-222 |  * @param email The user's email
-223 |  * @param name Optional - The user's name
-224 |  * @param metadata Optional - Any additional metadata to include
-225 |  * @returns The created or updated customer
-226 |  */
-227 | export async function createOrUpdateCustomerWithExternalId(
-228 |     userId: string,
-229 |     email: string,
-230 |     name?: string,
-231 |     metadata: Record<string, any> = {}
-232 | ) {
-233 |     try {
-234 |         // First check if the customer already exists with this external ID
-235 |         const existingCustomer = await getCustomerByExternalId(userId);
+172 | /**
+173 |  * Gets a user's remaining credits from Polar
+174 |  * 
+175 |  * @param polarCustomerId The customer's ID in the Polar system
+176 |  * @returns A promise that resolves to the number of credits remaining, or null if there was an error
+177 |  */
+178 | export async function getRemainingCredits(polarCustomerId: string): Promise<number | null> {
+179 |     try {
+180 |         // Get the customer meters response - use 'any' to bypass type checking
+181 |         // since the Polar SDK types may vary by version
+182 |         const response: any = await polarClient.customerMeters.list({
+183 |             customerId: polarCustomerId
+184 |         });
+185 | 
+186 |         // Try to handle both paginated and non-paginated responses safely
+187 |         const processResult = async (data: any): Promise<number | null> => {
+188 |             // Check if data contains meters directly
+189 |             if (Array.isArray(data)) {
+190 |                 for (const meter of data) {
+191 |                     if (meter?.meter?.name === 'Message Credits Used') { // New check
+192 |                         return meter.balance || meter.remaining || 0;
+193 |                     }
+194 |                 }
+195 |             }
+196 | 
+197 |             // Check if the data has nested items
+198 |             if (data?.items && Array.isArray(data.items)) {
+199 |                 for (const meter of data.items) {
+200 |                     if (meter?.meter?.name === 'Message Credits Used') { // New check
+201 |                         return meter.balance || meter.remaining || 0;
+202 |                     }
+203 |                 }
+204 |             }
+205 | 
+206 |             return null;
+207 |         };
+208 | 
+209 |         // First try to process the direct response
+210 |         let result = await processResult(response);
+211 |         if (result !== null) return result;
+212 | 
+213 |         // If that doesn't work, try to handle the paginated response
+214 |         // by getting the first page explicitly
+215 |         try {
+216 |             // Attempt to get first page if the response is paginated
+217 |             if (typeof response.next === 'function') {
+218 |                 const firstPage = await response.next();
+219 |                 if (firstPage?.value) {
+220 |                     result = await processResult(firstPage.value);
+221 |                     if (result !== null) return result;
+222 |                 }
+223 |             }
+224 |         } catch (err) {
+225 |             // Silently ignore pagination errors
+226 |             console.warn('Error processing paginated response', err);
+227 |         }
+228 | 
+229 |         console.warn(`No 'Message Credits Used' meter found for customer ${polarCustomerId}`); // Updated warning
+230 |         return null;
+231 |     } catch (error) {
+232 |         console.error('Error getting remaining credits from Polar:', error);
+233 |         return null;
+234 |     }
+235 | }
 236 | 
-237 |         if (existingCustomer) {
-238 |             // Customer exists, update them
-239 |             const updatedCustomer = await polarClient.customers.updateExternal({
-240 |                 externalId: userId,
-241 |                 customerUpdateExternalID: {
-242 |                     email: email,
-243 |                     name: name,
-244 |                     metadata: metadata
-245 |                 }
-246 |             });
-247 |             return updatedCustomer;
-248 |         } else {
-249 |             // Customer doesn't exist, create them
-250 |             const newCustomer = await polarClient.customers.create({
-251 |                 email: email,
-252 |                 name: name,
-253 |                 externalId: userId,
-254 |                 metadata: metadata
-255 |             });
-256 |             return newCustomer;
-257 |         }
-258 |     } catch (error) {
-259 |         console.error('Error creating/updating customer with external ID:', error);
-260 |         throw error;
-261 |     }
-262 | }
-263 | 
-264 | /**
-265 |  * Helper to associate a Polar customer ID with a user
-266 |  * 
-267 |  * @param userId The ID of the user in your local database
-268 |  * @param polarCustomerId The customer's ID in the Polar system
-269 |  */
-270 | export async function associatePolarCustomer(userId: string, polarCustomerId: string) {
-271 |     try {
-272 |         // This would typically update your User model to store the Polar customer ID
-273 |         // For now, we'll just log a usage event to record the association
-274 |         await db.insert(polarUsageEvents).values({
-275 |             id: nanoid(),
-276 |             userId,
-277 |             polarCustomerId,
-278 |             eventName: 'polar-customer-association',
-279 |             eventPayload: {
-280 |                 associated: true,
-281 |                 timestamp: new Date().toISOString()
-282 |             },
-283 |             createdAt: new Date()
-284 |         });
-285 |         return { success: true };
-286 |     } catch (dbError: any) {
-287 |         // Check for foreign key constraint violation
-288 |         if (dbError.code === '23503' && dbError.constraint?.includes('user_id')) {
-289 |             console.warn(`User ${userId} not found in database. Cannot associate Polar customer.`);
-290 |             return { success: false, reason: 'user_not_found' };
-291 |         }
-292 |         // Rethrow other database errors
-293 |         console.error('Error associating Polar customer:', dbError);
-294 |         throw dbError;
-295 |     }
-296 | }
+237 | /**
+238 |  * Gets a customer by their external ID (app user ID)
+239 |  * 
+240 |  * @param externalId The external ID (your app's user ID)
+241 |  * @returns The customer object or null if not found
+242 |  */
+243 | export async function getCustomerByExternalId(externalId: string) {
+244 |     try {
+245 |         const customer = await polarClient.customers.getExternal({
+246 |             externalId: externalId
+247 |         });
+248 |         return customer;
+249 |     } catch (error) {
+250 |         // If the customer doesn't exist, return null instead of throwing
+251 |         if ((error as any)?.statusCode === 404) {
+252 |             return null;
+253 |         }
+254 |         // Otherwise re-throw the error
+255 |         throw error;
+256 |     }
+257 | }
+258 | 
+259 | /**
+260 |  * Gets a customer by their email address
+261 |  * 
+262 |  * @param email The customer's email address
+263 |  * @returns The customer object or null if not found
+264 |  */
+265 | export async function getCustomerByEmail(email: string) {
+266 |     try {
+267 |         console.log(`[getCustomerByEmail] Searching for customer with email: ${email}`);
+268 | 
+269 |         const response = await polarClient.customers.list({
+270 |             email: email,
+271 |             limit: 1
+272 |         });
+273 | 
+274 |         console.log(`[getCustomerByEmail] Response type:`, typeof response);
+275 | 
+276 |         // Handle the paginated response - try direct iteration first
+277 |         try {
+278 |             for await (const customerResponse of response) {
+279 |                 console.log(`[getCustomerByEmail] Raw iteration response:`, JSON.stringify(customerResponse, null, 2));
+280 | 
+281 |                 // The response might be wrapped in a result object
+282 |                 const responseAny = customerResponse as any;
+283 |                 if (responseAny.result && responseAny.result.items && Array.isArray(responseAny.result.items) && responseAny.result.items.length > 0) {
+284 |                     const customer = responseAny.result.items[0];
+285 |                     console.log(`[getCustomerByEmail] Found customer via result.items:`, JSON.stringify(customer, null, 2));
+286 |                     return customer;
+287 |                 }
+288 | 
+289 |                 // If it's already a customer object
+290 |                 if (responseAny.id && responseAny.email) {
+291 |                     console.log(`[getCustomerByEmail] Found customer directly:`, JSON.stringify(responseAny, null, 2));
+292 |                     return responseAny;
+293 |                 }
+294 |             }
+295 |         } catch (iterError) {
+296 |             console.log(`[getCustomerByEmail] Iteration failed:`, iterError);
 297 | 
+298 |             // Fallback: Try to access response as any to bypass type checking
+299 |             try {
+300 |                 const responseAny = response as any;
+301 |                 console.log(`[getCustomerByEmail] Response (as any):`, JSON.stringify(responseAny, null, 2));
+302 | 
+303 |                 // Check if response has result.items structure
+304 |                 if (responseAny.result && responseAny.result.items && Array.isArray(responseAny.result.items) && responseAny.result.items.length > 0) {
+305 |                     const customer = responseAny.result.items[0];
+306 |                     console.log(`[getCustomerByEmail] Found customer via result.items fallback:`, JSON.stringify(customer, null, 2));
+307 |                     return customer;
+308 |                 }
+309 | 
+310 |                 // Check if response has items directly
+311 |                 if (responseAny.items && Array.isArray(responseAny.items) && responseAny.items.length > 0) {
+312 |                     const customer = responseAny.items[0];
+313 |                     console.log(`[getCustomerByEmail] Found customer via items array:`, JSON.stringify(customer, null, 2));
+314 |                     return customer;
+315 |                 }
+316 | 
+317 |                 // Check if response has data
+318 |                 if (responseAny.data && Array.isArray(responseAny.data) && responseAny.data.length > 0) {
+319 |                     const customer = responseAny.data[0];
+320 |                     console.log(`[getCustomerByEmail] Found customer via data array:`, JSON.stringify(customer, null, 2));
+321 |                     return customer;
+322 |                 }
+323 |             } catch (fallbackError) {
+324 |                 console.log(`[getCustomerByEmail] Fallback failed:`, fallbackError);
+325 |             }
+326 |         }
+327 | 
+328 |         console.log(`[getCustomerByEmail] No customer found with email: ${email}`);
+329 |         return null;
+330 |     } catch (error) {
+331 |         console.error('Error getting customer by email:', error);
+332 |         return null;
+333 |     }
+334 | }
+335 | 
+336 | /**
+337 |  * Updates an existing customer's external ID
+338 |  * 
+339 |  * @param customerId The customer's ID in Polar
+340 |  * @param externalId The external ID to set
+341 |  * @returns The updated customer or null if failed
+342 |  */
+343 | export async function updateCustomerExternalId(customerId: string, externalId: string) {
+344 |     try {
+345 |         const updatedCustomer = await polarClient.customers.update({
+346 |             id: customerId,
+347 |             customerUpdate: {
+348 |                 externalId: externalId
+349 |             }
+350 |         });
+351 |         return updatedCustomer;
+352 |     } catch (error) {
+353 |         console.error('Error updating customer external ID:', error);
+354 |         throw error;
+355 |     }
+356 | }
+357 | 
+358 | /**
+359 |  * Creates or updates a customer in Polar using external ID
+360 |  * 
+361 |  * @param userId The ID of the user in your local database (will be used as external_id)
+362 |  * @param email The user's email
+363 |  * @param name Optional - The user's name
+364 |  * @param metadata Optional - Any additional metadata to include
+365 |  * @returns The created or updated customer
+366 |  */
+367 | export async function createOrUpdateCustomerWithExternalId(
+368 |     userId: string,
+369 |     email: string,
+370 |     name?: string,
+371 |     metadata: Record<string, any> = {}
+372 | ) {
+373 |     try {
+374 |         // First check if the customer already exists with this external ID
+375 |         const existingCustomer = await getCustomerByExternalId(userId);
+376 | 
+377 |         if (existingCustomer) {
+378 |             // Customer exists, update them
+379 |             const updatedCustomer = await polarClient.customers.updateExternal({
+380 |                 externalId: userId,
+381 |                 customerUpdateExternalID: {
+382 |                     email: email,
+383 |                     name: name,
+384 |                     metadata: metadata
+385 |                 }
+386 |             });
+387 |             return updatedCustomer;
+388 |         } else {
+389 |             // Customer doesn't exist, create them
+390 |             const newCustomer = await polarClient.customers.create({
+391 |                 email: email,
+392 |                 name: name,
+393 |                 externalId: userId,
+394 |                 metadata: metadata
+395 |             });
+396 |             return newCustomer;
+397 |         }
+398 |     } catch (error) {
+399 |         console.error('Error creating/updating customer with external ID:', error);
+400 |         throw error;
+401 |     }
+402 | }
+403 | 
+404 | /**
+405 |  * Helper to associate a Polar customer ID with a user
+406 |  * 
+407 |  * @param userId The ID of the user in your local database
+408 |  * @param polarCustomerId The customer's ID in the Polar system
+409 |  */
+410 | export async function associatePolarCustomer(userId: string, polarCustomerId: string) {
+411 |     try {
+412 |         // This would typically update your User model to store the Polar customer ID
+413 |         // For now, we'll just log a usage event to record the association
+414 |         await db.insert(polarUsageEvents).values({
+415 |             id: nanoid(),
+416 |             userId,
+417 |             polarCustomerId,
+418 |             eventName: 'polar-customer-association',
+419 |             eventPayload: {
+420 |                 associated: true,
+421 |                 timestamp: new Date().toISOString()
+422 |             },
+423 |             createdAt: new Date()
+424 |         });
+425 |         return { success: true };
+426 |     } catch (dbError: any) {
+427 |         // Check for foreign key constraint violation
+428 |         if (dbError.code === '23503' && dbError.constraint?.includes('user_id')) {
+429 |             console.warn(`User ${userId} not found in database. Cannot associate Polar customer.`);
+430 |             return { success: false, reason: 'user_not_found' };
+431 |         }
+432 |         // Rethrow other database errors
+433 |         console.error('Error associating Polar customer:', dbError);
+434 |         throw dbError;
+435 |     }
+436 | }
+437 | 
 ```
 
 lib/types.ts
@@ -6721,1030 +8643,2546 @@ lib/utils.ts
 6 | }
 ```
 
-docs/client-side-chat-search-plan.md
+public/manifest.json
 ```
-1 | # Implementation Plan: Client-Side Chat Title Search in Sidebar
-2 | 
-3 | ## Overview
-4 | Add a search input to the chat sidebar that allows users to filter the list of chats by their titles. The filtering should be performed client-side, updating the displayed chat list in real time as the user types.
-5 | 
-6 | ---
-7 | 
-8 | ## Steps
-9 | 
-10 | ### 1. UI: Add Search Input
-11 | - Place a search input field at the top of the chat list section in the sidebar, below the "Chats" label.
-12 | - Use a suitable UI component (e.g., the existing `Input` from `@/components/ui/input`).
-13 | - Add a search icon (optional, for better UX).
-14 | 
-15 | ### 2. State Management
-16 | - Add a new state variable, e.g., `searchTerm`, using `useState("")` in the `ChatSidebar` component.
-17 | - Bind the search input's value to `searchTerm`.
-18 | - Update `searchTerm` on every input change.
-19 | 
-20 | ### 3. Filtering Logic
-21 | - When rendering the chat list (`chats.map(...)`), filter the `chats` array based on the `searchTerm`.
-22 | - The filter should be case-insensitive and only match against the chat title.
-23 | - If `searchTerm` is empty, show all chats.
-24 | 
-25 | ### 4. UX Considerations
-26 | - If no chats match the search, display a "No results found" message.
-27 | - Optionally, clear the search input when the sidebar is collapsed or when the user navigates away.
-28 | - Ensure accessibility: label the search input appropriately.
-29 | 
-30 | ### 5. Styling
-31 | - Ensure the search input fits visually with the sidebar design.
-32 | - Add padding/margin as needed to separate it from the chat list and label.
-33 | 
-34 | ---
-35 | 
-36 | ## Example Pseudocode
-37 | 
-38 | ```tsx
-39 | // State
-40 | const [searchTerm, setSearchTerm] = useState("");
-41 | 
-42 | // In render
-43 | <Input
-44 |   value={searchTerm}
-45 |   onChange={e => setSearchTerm(e.target.value)}
-46 |   placeholder="Search chats..."
-47 |   aria-label="Search chats by title"
-48 | />
-49 | 
-50 | // Filtered chats
-51 | const filteredChats = chats.filter(chat =>
-52 |   chat.title.toLowerCase().includes(searchTerm.toLowerCase())
-53 | );
-54 | 
-55 | // Render filteredChats instead of chats
-56 | ```
-57 | 
-58 | ---
-59 | 
-60 | ## File(s) to Update
-61 | - `components/chat-sidebar.tsx`
-62 | 
-63 | ---
-64 | 
-65 | ## Testing
-66 | - Type in the search input and verify that the chat list updates in real time.
-67 | - Test with different cases (upper/lower).
-68 | - Test with no matches.
-69 | - Test with sidebar collapsed/expanded.
-70 | 
-71 | ---
-72 | 
-73 | ## Optional Enhancements
-74 | - Add a clear ("X") button to the search input.
-75 | - Highlight the matching part of the chat title.
-76 | - Debounce the search input for performance (not strictly necessary for small lists).
-77 | 
-78 | ---
-79 | 
-80 | **Next Steps:**  
-81 | Implement the above plan in `components/chat-sidebar.tsx`. 
+1 | {
+2 |     "name": "ChatLima",
+3 |     "short_name": "ChatLima",
+4 |     "description": "AI-powered chat interface with MCP support",
+5 |     "start_url": "/",
+6 |     "display": "standalone",
+7 |     "background_color": "#ffffff",
+8 |     "theme_color": "#000000",
+9 |     "orientation": "portrait-primary",
+10 |     "scope": "/",
+11 |     "lang": "en",
+12 |     "icons": [
+13 |         {
+14 |             "src": "/apple-touch-icon-120x120.png",
+15 |             "sizes": "120x120",
+16 |             "type": "image/png",
+17 |             "purpose": "any maskable"
+18 |         },
+19 |         {
+20 |             "src": "/apple-touch-icon-152x152.png",
+21 |             "sizes": "152x152",
+22 |             "type": "image/png",
+23 |             "purpose": "any maskable"
+24 |         },
+25 |         {
+26 |             "src": "/apple-touch-icon-167x167.png",
+27 |             "sizes": "167x167",
+28 |             "type": "image/png",
+29 |             "purpose": "any maskable"
+30 |         },
+31 |         {
+32 |             "src": "/apple-touch-icon-180x180.png",
+33 |             "sizes": "180x180",
+34 |             "type": "image/png",
+35 |             "purpose": "any maskable"
+36 |         },
+37 |         {
+38 |             "src": "/apple-touch-icon.png",
+39 |             "sizes": "180x180",
+40 |             "type": "image/png",
+41 |             "purpose": "any maskable"
+42 |         }
+43 |     ]
+44 | }
 ```
 
-docs/deepseek_r1_openrouter_integration.md
+scripts/analyze-openrouter-data.py
 ```
-1 | # Integrating DeepSeek R1 via OpenRouter with Vercel AI SDK
+1 | #!/usr/bin/env python3
 2 | 
-3 | This document outlines the necessary configurations and prompting strategies to successfully integrate the DeepSeek R1 model when accessed through OpenRouter, using the Vercel AI SDK. These steps address common issues such as Zod validation errors for `logprobs` and ensuring the final answer is correctly displayed in the UI.
-4 | 
-5 | ## Summary of Key Configurations
-6 | 
-7 | To ensure DeepSeek R1 functions correctly, the following adjustments were made:
+3 | """
+4 | OpenRouter Data Analysis Script
+5 | 
+6 | This script analyzes the OpenRouter activity CSV to determine realistic token estimates
+7 | for the pricing analysis tool.
 8 | 
-9 | 1.  **Model Definition in `ai/providers.ts`**:
-10 |     *   The `openrouter/deepseek/deepseek-r1` model was enabled.
-11 |     *   It was wrapped with `extractReasoningMiddleware` to separate reasoning from the final answer.
-12 |     *   `logprobs: false` was added to the `openrouterClient` configuration for this model to prevent validation errors.
-13 |     *   The `extractReasoningMiddleware` for DeepSeek R1 was configured to use `tagName: 'think'` and `startWithReasoning: false` (or rely on the default, which is `false`).
-14 | 
-15 |     ```typescript
-16 |     // In ai/providers.ts
-17 | 
-18 |     // ... other imports ...
-19 |     import {
-20 |       customProvider,
-21 |       wrapLanguageModel,
-22 |       extractReasoningMiddleware
-23 |     } from "ai";
-24 | 
-25 |     // Middleware for general reasoning (if any)
-26 |     const middleware = extractReasoningMiddleware({
-27 |       tagName: 'think',
-28 |     });
-29 | 
-30 |     // Specific middleware for DeepSeek R1
-31 |     const deepseekR1Middleware = extractReasoningMiddleware({
-32 |       tagName: 'think',
-33 |       // startWithReasoning: true, // This was found to cause issues, default (false) is better
-34 |     });
-35 | 
-36 |     const openrouterClient = createOpenRouter({
-37 |       apiKey: getApiKey('OPENROUTER_API_KEY'),
-38 |       // ... other headers ...
-39 |     });
-40 | 
-41 |     const languageModels = {
-42 |       // ... other models ...
-43 |       "openrouter/deepseek/deepseek-r1": wrapLanguageModel({
-44 |         model: openrouterClient("deepseek/deepseek-r1", { logprobs: false }), // Disable logprobs
-45 |         middleware: deepseekR1Middleware,
-46 |       }),
-47 |       // ... other models ...
-48 |     };
-49 | 
-50 |     export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
-51 |       // ... other model details ...
-52 |       "openrouter/deepseek/deepseek-r1": {
-53 |         provider: "OpenRouter",
-54 |         name: "DeepSeek R1",
-55 |         description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed.",
-56 |         apiVersion: "deepseek/deepseek-r1",
-57 |         capabilities: ["Reasoning", "Open Source"],
-58 |         enabled: true // Ensure the model is enabled
-59 |       },
-60 |       // ... other model details ...
-61 |     };
-62 |     // ... rest of the file ...
-63 |     ```
-64 | 
-65 | 2.  **System Prompt in API Route (`app/api/chat/route.ts`)**:
-66 |     *   A specific system message is prepended to the conversation history when `openrouter/deepseek/deepseek-r1` is selected. This prompt guides the model to structure its output correctly.
-67 | 
-68 |     ```typescript
-69 |     // In app/api/chat/route.ts
-70 | 
-71 |     // ... other imports ...
-72 |     import { type UIMessage, nanoid } from 'ai'; // Assuming nanoid is used for IDs
-73 | 
-74 |     export async function POST(req: Request) {
-75 |       const {
-76 |         messages,
-77 |         selectedModel,
-78 |         // ... other parameters ...
-79 |       }: {
-80 |         messages: UIMessage[];
-81 |         selectedModel: modelID;
-82 |         // ... other types ...
-83 |       } = await req.json();
-84 | 
-85 |       let modelMessages: UIMessage[] = [...messages];
-86 | 
-87 |       if (selectedModel === "openrouter/deepseek/deepseek-r1") {
-88 |         const systemContent = "Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags.";
-89 |         modelMessages.unshift({
-90 |           role: "system",
-91 |           id: nanoid(), // Or any unique ID generation method
-92 |           content: systemContent,
-93 |           parts: [{ type: "text", text: systemContent }]
-94 |         });
-95 |       }
-96 | 
-97 |       // ... rest of the API route logic ...
-98 | 
-99 |       // When instantiating model for web search, also disable logprobs for DeepSeek R1
-100 |       if (webSearch.enabled && selectedModel.startsWith("openrouter/")) {
-101 |         const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
-102 |         // ... client instantiation ...
-103 |         if (selectedModel === "openrouter/deepseek/deepseek-r1") {
-104 |           modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
-105 |         } else {
-106 |           modelInstance = openrouterClient(openrouterModelId);
-107 |         }
-108 |       }
-109 |       // ...
-110 |     }
-111 |     ```
-112 | 
-113 | ## Explanation of Changes
-114 | 
-115 | *   **`logprobs: false`**: The DeepSeek R1 model, when accessed via OpenRouter, sometimes sends `logprobs` in a format (or with missing sub-fields like `content` as an array) that causes Zod validation errors in the Vercel AI SDK. Disabling `logprobs` altogether avoids this issue.
-116 | *   **`extractReasoningMiddleware` with `startWithReasoning: false` (default)**: While `startWithReasoning: true` might seem logical for a model that uses reasoning tags, it can be too strict. If the model outputs any leading characters (even whitespace) before the `<think>` tag, it can cause errors. The default `false` is more robust as it searches for the tag within the stream.
-117 | *   **System Prompt**: DeepSeek R1 requires explicit guidance on how to structure its output. The prompt:
-118 |     `"Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags."`
-119 |     ensures that:
-120 |     *   Reasoning is wrapped in `<think>...</think>` and captured by `message.reasoning`.
-121 |     *   The final answer is provided as plain text immediately after, becoming `message.content`, which can be directly rendered by the UI without issues from unhandled tags like `<answer>`.
-122 | 
-123 | By implementing these configurations, DeepSeek R1 can be used effectively with OpenRouter and the Vercel AI SDK, providing both its reasoning process and the final answer in a usable format. 
+9 | Usage: python scripts/analyze-openrouter-data.py /path/to/openrouter_activity.csv
+10 | """
+11 | 
+12 | import csv
+13 | import statistics
+14 | import sys
+15 | from collections import defaultdict
+16 | 
+17 | def analyze_openrouter_data(csv_file_path):
+18 |     """Analyze OpenRouter CSV data to extract token usage statistics."""
+19 |     
+20 |     data = []
+21 |     app_stats = defaultdict(list)
+22 |     model_stats = defaultdict(list)
+23 |     
+24 |     print("🔍 Analyzing OpenRouter activity data...")
+25 |     print("=" * 50)
+26 |     
+27 |     # Read and parse CSV data
+28 |     with open(csv_file_path, 'r') as file:
+29 |         reader = csv.DictReader(file)
+30 |         for row in reader:
+31 |             # Filter for actual completion data (exclude cancelled/failed)
+32 |             if (row['tokens_prompt'] and row['tokens_completion'] and 
+33 |                 row['cancelled'] == 'false' and 
+34 |                 int(row['tokens_prompt']) > 0 and 
+35 |                 int(row['tokens_completion']) > 0):
+36 |                 
+37 |                 prompt_tokens = int(row['tokens_prompt'])
+38 |                 completion_tokens = int(row['tokens_completion'])
+39 |                 app_name = row['app_name']
+40 |                 model = row['model_permaslug']
+41 |                 cost = float(row['cost_total']) if row['cost_total'] else 0
+42 |                 
+43 |                 data.append({
+44 |                     'prompt_tokens': prompt_tokens,
+45 |                     'completion_tokens': completion_tokens,
+46 |                     'total_tokens': prompt_tokens + completion_tokens,
+47 |                     'app_name': app_name,
+48 |                     'model': model,
+49 |                     'cost': cost
+50 |                 })
+51 |                 
+52 |                 app_stats[app_name].append({
+53 |                     'prompt': prompt_tokens,
+54 |                     'completion': completion_tokens,
+55 |                     'total': prompt_tokens + completion_tokens
+56 |                 })
+57 |                 
+58 |                 model_stats[model].append({
+59 |                     'prompt': prompt_tokens,
+60 |                     'completion': completion_tokens,
+61 |                     'total': prompt_tokens + completion_tokens,
+62 |                     'cost': cost
+63 |                 })
+64 |     
+65 |     if not data:
+66 |         print("❌ No valid data found in CSV file!")
+67 |         return
+68 |     
+69 |     print(f"📊 Analyzed {len(data)} valid API requests")
+70 |     print()
+71 |     
+72 |     # Overall statistics
+73 |     prompt_tokens = [d['prompt_tokens'] for d in data]
+74 |     completion_tokens = [d['completion_tokens'] for d in data]
+75 |     total_tokens = [d['total_tokens'] for d in data]
+76 |     costs = [d['cost'] for d in data if d['cost'] > 0]
+77 |     
+78 |     print("📈 OVERALL TOKEN STATISTICS")
+79 |     print("-" * 30)
+80 |     print(f"Prompt Tokens:")
+81 |     print(f"  • Average: {statistics.mean(prompt_tokens):,.0f}")
+82 |     print(f"  • Median:  {statistics.median(prompt_tokens):,.0f}")
+83 |     print(f"  • Min:     {min(prompt_tokens):,.0f}")
+84 |     print(f"  • Max:     {max(prompt_tokens):,.0f}")
+85 |     print()
+86 |     
+87 |     print(f"Completion Tokens:")
+88 |     print(f"  • Average: {statistics.mean(completion_tokens):,.0f}")
+89 |     print(f"  • Median:  {statistics.median(completion_tokens):,.0f}")
+90 |     print(f"  • Min:     {min(completion_tokens):,.0f}")
+91 |     print(f"  • Max:     {max(completion_tokens):,.0f}")
+92 |     print()
+93 |     
+94 |     print(f"Total Tokens:")
+95 |     print(f"  • Average: {statistics.mean(total_tokens):,.0f}")
+96 |     print(f"  • Median:  {statistics.median(total_tokens):,.0f}")
+97 |     print()
+98 |     
+99 |     if costs:
+100 |         print(f"Cost per Request:")
+101 |         print(f"  • Average: ${statistics.mean(costs):.6f}")
+102 |         print(f"  • Median:  ${statistics.median(costs):.6f}")
+103 |         print(f"  • Total:   ${sum(costs):.4f}")
+104 |         print()
+105 |     
+106 |     # App-specific statistics (ChatLima focus)
+107 |     print("🎯 APP-SPECIFIC STATISTICS")
+108 |     print("-" * 30)
+109 |     for app_name, requests in app_stats.items():
+110 |         if len(requests) >= 5:  # Only show apps with significant usage
+111 |             prompts = [r['prompt'] for r in requests]
+112 |             completions = [r['completion'] for r in requests]
+113 |             
+114 |             print(f"{app_name} ({len(requests)} requests):")
+115 |             print(f"  • Avg Prompt: {statistics.mean(prompts):,.0f} tokens")
+116 |             print(f"  • Avg Completion: {statistics.mean(completions):,.0f} tokens")
+117 |             print(f"  • Median Prompt: {statistics.median(prompts):,.0f} tokens")
+118 |             print(f"  • Median Completion: {statistics.median(completions):,.0f} tokens")
+119 |             print()
+120 |     
+121 |     # Model-specific statistics for high-usage models
+122 |     print("🤖 TOP MODELS BY USAGE")
+123 |     print("-" * 30)
+124 |     model_usage = [(model, len(requests)) for model, requests in model_stats.items()]
+125 |     model_usage.sort(key=lambda x: x[1], reverse=True)
+126 |     
+127 |     for model, count in model_usage[:10]:  # Top 10 models
+128 |         requests = model_stats[model]
+129 |         prompts = [r['prompt'] for r in requests]
+130 |         completions = [r['completion'] for r in requests]
+131 |         model_costs = [r['cost'] for r in requests if r['cost'] > 0]
+132 |         
+133 |         print(f"{model} ({count} requests):")
+134 |         print(f"  • Avg Prompt: {statistics.mean(prompts):,.0f} tokens")
+135 |         print(f"  • Avg Completion: {statistics.mean(completions):,.0f} tokens")
+136 |         if model_costs:
+137 |             print(f"  • Avg Cost: ${statistics.mean(model_costs):.6f}")
+138 |         print()
+139 |     
+140 |     # ChatLima-specific recommendations
+141 |     chatlima_data = [d for d in data if d['app_name'] == 'ChatLima']
+142 |     if chatlima_data:
+143 |         print("🎯 CHATLIMA-SPECIFIC RECOMMENDATIONS")
+144 |         print("-" * 40)
+145 |         
+146 |         chatlima_prompts = [d['prompt_tokens'] for d in chatlima_data]
+147 |         chatlima_completions = [d['completion_tokens'] for d in chatlima_data]
+148 |         
+149 |         avg_prompt = statistics.mean(chatlima_prompts)
+150 |         avg_completion = statistics.mean(chatlima_completions)
+151 |         median_prompt = statistics.median(chatlima_prompts)
+152 |         median_completion = statistics.median(chatlima_completions)
+153 |         
+154 |         print(f"Based on {len(chatlima_data)} ChatLima requests:")
+155 |         print()
+156 |         print(f"📊 Current estimates in script: 5000 input, 3000 output")
+157 |         print(f"📈 Actual averages: {avg_prompt:.0f} input, {avg_completion:.0f} output")
+158 |         print(f"📉 Actual medians: {median_prompt:.0f} input, {median_completion:.0f} output")
+159 |         print()
+160 |         
+161 |         # Recommendations
+162 |         recommended_input = max(int(avg_prompt * 1.2), int(median_prompt * 1.5))  # 20% buffer on average or 50% on median
+163 |         recommended_output = max(int(avg_completion * 1.2), int(median_completion * 1.5))
+164 |         
+165 |         print("💡 RECOMMENDED ESTIMATES:")
+166 |         print(f"   ESTIMATED_INPUT_TOKENS = {recommended_input}")
+167 |         print(f"   ESTIMATED_OUTPUT_TOKENS = {recommended_output}")
+168 |         print()
+169 |         print("🔍 These estimates include a buffer for realistic usage scenarios")
+170 |         
+171 |         # Cost impact analysis
+172 |         chatlima_costs = [d['cost'] for d in chatlima_data if d['cost'] > 0]
+173 |         if chatlima_costs:
+174 |             avg_cost_per_request = statistics.mean(chatlima_costs)
+175 |             daily_cost_anon = avg_cost_per_request * 10
+176 |             daily_cost_google = avg_cost_per_request * 20
+177 |             monthly_cost_anon = daily_cost_anon * 30
+178 |             monthly_cost_google = daily_cost_google * 30
+179 |             
+180 |             print()
+181 |             print("💰 ACTUAL COST ANALYSIS (ChatLima):")
+182 |             print(f"   Average cost per request: ${avg_cost_per_request:.6f}")
+183 |             print(f"   Anonymous users (10/day): ${daily_cost_anon:.6f}/day, ${monthly_cost_anon:.4f}/month")
+184 |             print(f"   Google users (20/day): ${daily_cost_google:.6f}/day, ${monthly_cost_google:.4f}/month")
+185 | 
+186 | if __name__ == "__main__":
+187 |     if len(sys.argv) != 2:
+188 |         print("Usage: python scripts/analyze-openrouter-data.py /path/to/openrouter_activity.csv")
+189 |         sys.exit(1)
+190 |     
+191 |     csv_file_path = sys.argv[1]
+192 |     try:
+193 |         analyze_openrouter_data(csv_file_path)
+194 |     except FileNotFoundError:
+195 |         print(f"❌ Error: Could not find file {csv_file_path}")
+196 |         sys.exit(1)
+197 |     except Exception as e:
+198 |         print(f"❌ Error: {e}")
+199 |         sys.exit(1) 
 ```
 
-docs/feature_plan_rename_chat_title_sidebar.md
+scripts/openrouter-pricing-analysis.ts
 ```
-1 | # Feature Plan: Rename Chat Title in Sidebar
+1 | #!/usr/bin/env tsx
 2 | 
-3 | ## Overview
-4 | Enable users to rename the title of a chat directly from the sidebar. This feature will improve chat organization and user experience by allowing custom, meaningful chat names.
-5 | 
-6 | ---
+3 | /**
+4 |  * OpenRouter Pricing Analysis Tool
+5 |  * 
+6 |  * This developer-only script fetches pricing information for all OpenRouter models
+7 |  * configured in the application and calculates estimated costs for different user types.
+8 |  * 
+9 |  * Usage: npx tsx scripts/openrouter-pricing-analysis.ts
+10 |  */
+11 | 
+12 | import dotenv from 'dotenv';
+13 | 
+14 | // Load environment variables
+15 | dotenv.config();
+16 | 
+17 | interface OpenRouterModel {
+18 |     id: string;
+19 |     name: string;
+20 |     description: string;
+21 |     context_length: number;
+22 |     architecture: {
+23 |         modality: string;
+24 |         tokenizer: string;
+25 |         instruct_type: string;
+26 |     };
+27 |     pricing: {
+28 |         prompt: string;  // Price per token for input
+29 |         completion: string;  // Price per token for output
+30 |         image?: string;  // Price per image (if applicable)
+31 |         request?: string;  // Price per request (if applicable)
+32 |     };
+33 |     top_provider: {
+34 |         context_length: number;
+35 |         max_completion_tokens: number | null;
+36 |         is_moderated: boolean;
+37 |     };
+38 |     per_request_limits: {
+39 |         prompt_tokens: string;
+40 |         completion_tokens: string;
+41 |     } | null;
+42 | }
+43 | 
+44 | interface PricingAnalysis {
+45 |     modelId: string;
+46 |     displayName: string;
+47 |     inputPricePerToken: number;
+48 |     outputPricePerToken: number;
+49 |     estimatedInputTokens: number;
+50 |     estimatedOutputTokens: number;
+51 |     costPerMessage: number;
+52 |     costAnonDaily: number;  // 10 messages per day
+53 |     costGoogleDaily: number;  // 20 messages per day
+54 |     costAnonMonthly: number;  // 10 * 30 days
+55 |     costGoogleMonthly: number;  // 20 * 30 days
+56 | }
+57 | 
+58 | // Extract OpenRouter model IDs from our configuration
+59 | const openRouterModels = [
+60 |     'anthropic/claude-3.5-sonnet',
+61 |     'anthropic/claude-3.7-sonnet',
+62 |     'anthropic/claude-3.7-sonnet:thinking',
+63 |     'deepseek/deepseek-chat-v3-0324',
+64 |     'deepseek/deepseek-r1',
+65 |     'deepseek/deepseek-r1-0528',
+66 |     'deepseek/deepseek-r1-0528-qwen3-8b',
+67 |     'google/gemini-2.5-flash-preview',
+68 |     'google/gemini-2.5-flash-preview:thinking',
+69 |     'google/gemini-2.5-flash-preview-05-20',
+70 |     'google/gemini-2.5-flash-preview-05-20:thinking',
+71 |     'google/gemini-2.5-pro-preview-03-25',
+72 |     'openai/gpt-4.1',
+73 |     'openai/gpt-4.1-mini',
+74 |     'x-ai/grok-3-beta',
+75 |     'x-ai/grok-3-mini-beta',
+76 |     'mistralai/mistral-medium-3',
+77 |     'mistralai/mistral-small-3.1-24b-instruct',
+78 |     'meta-llama/llama-4-maverick',
+79 |     'openai/o4-mini-high',
+80 |     'qwen/qwq-32b',
+81 |     'qwen/qwen3-235b-a22b',
+82 |     'anthropic/claude-sonnet-4',
+83 |     'anthropic/claude-opus-4'
+84 | ];
+85 | 
+86 | // Model display names mapping
+87 | const modelDisplayNames: Record<string, string> = {
+88 |     'anthropic/claude-3.5-sonnet': 'Claude 3.5 Sonnet',
+89 |     'anthropic/claude-3.7-sonnet': 'Claude 3.7 Sonnet',
+90 |     'anthropic/claude-3.7-sonnet:thinking': 'Claude 3.7 Sonnet (thinking)',
+91 |     'deepseek/deepseek-chat-v3-0324': 'DeepSeek Chat V3',
+92 |     'deepseek/deepseek-r1': 'DeepSeek R1',
+93 |     'deepseek/deepseek-r1-0528': 'DeepSeek R1 (0528)',
+94 |     'deepseek/deepseek-r1-0528-qwen3-8b': 'DeepSeek R1 0528 Qwen3 8B',
+95 |     'google/gemini-2.5-flash-preview': 'Gemini 2.5 Flash Preview',
+96 |     'google/gemini-2.5-flash-preview:thinking': 'Gemini 2.5 Flash Preview (thinking)',
+97 |     'google/gemini-2.5-flash-preview-05-20': 'Gemini 2.5 Flash Preview (05-20)',
+98 |     'google/gemini-2.5-flash-preview-05-20:thinking': 'Gemini 2.5 Flash Preview (05-20, thinking)',
+99 |     'google/gemini-2.5-pro-preview-03-25': 'Gemini 2.5 Pro Preview (03-25)',
+100 |     'openai/gpt-4.1': 'GPT-4.1',
+101 |     'openai/gpt-4.1-mini': 'GPT-4.1 Mini',
+102 |     'x-ai/grok-3-beta': 'Grok 3 Beta',
+103 |     'x-ai/grok-3-mini-beta': 'Grok 3 Mini Beta',
+104 |     'mistralai/mistral-medium-3': 'Mistral Medium 3',
+105 |     'mistralai/mistral-small-3.1-24b-instruct': 'Mistral Small 3.1 24B',
+106 |     'meta-llama/llama-4-maverick': 'Llama 4 Maverick',
+107 |     'openai/o4-mini-high': 'O4 Mini High',
+108 |     'qwen/qwq-32b': 'Qwen QWQ 32B',
+109 |     'qwen/qwen3-235b-a22b': 'Qwen3 235B A22B',
+110 |     'anthropic/claude-sonnet-4': 'Claude 4 Sonnet',
+111 |     'anthropic/claude-opus-4': 'Claude 4 Opus'
+112 | };
+113 | 
+114 | async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
+115 |     const apiKey = process.env.OPENROUTER_API_KEY;
+116 | 
+117 |     if (!apiKey) {
+118 |         throw new Error('OPENROUTER_API_KEY not found in environment variables');
+119 |     }
+120 | 
+121 |     console.log('🔍 Fetching OpenRouter model data...');
+122 | 
+123 |     const response = await fetch('https://openrouter.ai/api/v1/models', {
+124 |         headers: {
+125 |             'Authorization': `Bearer ${apiKey}`,
+126 |             'Content-Type': 'application/json',
+127 |         },
+128 |     });
+129 | 
+130 |     if (!response.ok) {
+131 |         throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+132 |     }
+133 | 
+134 |     const data = await response.json();
+135 |     return data.data;
+136 | }
+137 | 
+138 | function calculatePricing(models: OpenRouterModel[]): PricingAnalysis[] {
+139 |     // Estimated tokens per message (based on actual ChatLima usage data)
+140 |     const ESTIMATED_INPUT_TOKENS = 2701;  // User prompt + context (avg: 2251 + 20% buffer)
+141 |     const ESTIMATED_OUTPUT_TOKENS = 441;  // AI response (avg: 368 + 20% buffer)
+142 | 
+143 |     const analyses: PricingAnalysis[] = [];
+144 | 
+145 |     for (const model of models) {
+146 |         if (!openRouterModels.includes(model.id)) {
+147 |             continue; // Skip models not in our configuration
+148 |         }
+149 | 
+150 |         const inputPricePerToken = parseFloat(model.pricing.prompt);
+151 |         const outputPricePerToken = parseFloat(model.pricing.completion);
+152 | 
+153 |         const inputCost = (ESTIMATED_INPUT_TOKENS * inputPricePerToken) / 1000000; // Convert from per-million to actual
+154 |         const outputCost = (ESTIMATED_OUTPUT_TOKENS * outputPricePerToken) / 1000000;
+155 |         const costPerMessage = inputCost + outputCost;
+156 | 
+157 |         analyses.push({
+158 |             modelId: model.id,
+159 |             displayName: modelDisplayNames[model.id] || model.name,
+160 |             inputPricePerToken,
+161 |             outputPricePerToken,
+162 |             estimatedInputTokens: ESTIMATED_INPUT_TOKENS,
+163 |             estimatedOutputTokens: ESTIMATED_OUTPUT_TOKENS,
+164 |             costPerMessage,
+165 |             costAnonDaily: costPerMessage * 10,  // 10 messages per day for anon
+166 |             costGoogleDaily: costPerMessage * 20, // 20 messages per day for Google users
+167 |             costAnonMonthly: costPerMessage * 10 * 30,  // Monthly cost for anon
+168 |             costGoogleMonthly: costPerMessage * 20 * 30, // Monthly cost for Google users
+169 |         });
+170 |     }
+171 | 
+172 |     // Sort by cost per message (descending - most expensive first)
+173 |     return analyses.sort((a, b) => b.costPerMessage - a.costPerMessage);
+174 | }
+175 | 
+176 | function formatCurrency(amount: number): string {
+177 |     return `${amount.toFixed(6)}`;
+178 | }
+179 | 
+180 | function displayPricingTable(analyses: PricingAnalysis[]): void {
+181 |     console.log('\n📊 OpenRouter Model Pricing Analysis');
+182 |     console.log('=====================================\n');
+183 | 
+184 |     // Table header
+185 |     console.log('Model'.padEnd(35) +
+186 |         'Input/M'.padEnd(12) +
+187 |         'Output/M'.padEnd(12) +
+188 |         'Per Msg'.padEnd(12) +
+189 |         'Anon Daily'.padEnd(12) +
+190 |         'Google Daily'.padEnd(14) +
+191 |         'Anon Monthly'.padEnd(14) +
+192 |         'Google Monthly');
+193 |     console.log('-'.repeat(35 + 12 + 12 + 12 + 12 + 14 + 14 + 14));
+194 | 
+195 |     // Table rows
+196 |     for (const analysis of analyses) {
+197 |         console.log(
+198 |             analysis.displayName.substring(0, 34).padEnd(35) +
+199 |             formatCurrency(analysis.inputPricePerToken).padEnd(12) +
+200 |             formatCurrency(analysis.outputPricePerToken).padEnd(12) +
+201 |             formatCurrency(analysis.costPerMessage).padEnd(12) +
+202 |             formatCurrency(analysis.costAnonDaily).padEnd(12) +
+203 |             formatCurrency(analysis.costGoogleDaily).padEnd(14) +
+204 |             formatCurrency(analysis.costAnonMonthly).padEnd(14) +
+205 |             formatCurrency(analysis.costGoogleMonthly)
+206 |         );
+207 |     }
+208 | 
+209 |     console.log('\n💡 Notes:');
+210 |     console.log(`• Input/Output pricing is per million tokens`);
+211 |     console.log(`• Per message estimate: ${analyses[0]?.estimatedInputTokens || 500} input + ${analyses[0]?.estimatedOutputTokens || 300} output tokens`);
+212 |     console.log('• Anonymous users: 10 messages/day limit');
+213 |     console.log('• Google users: 20 messages/day limit');
+214 |     console.log('• Monthly estimates assume 30 days');
+215 | }
+216 | 
+217 | function displayCostSummary(analyses: PricingAnalysis[]): void {
+218 |     if (analyses.length === 0) return;
+219 | 
+220 |     const mostExpensive = analyses[0];
+221 |     const cheapest = analyses[analyses.length - 1];
+222 | 
+223 |     console.log('\n💰 Cost Summary');
+224 |     console.log('===============\n');
+225 | 
+226 |     console.log('🔥 MOST EXPENSIVE MODEL:');
+227 |     console.log(`   ${mostExpensive.displayName}`);
+228 |     console.log(`   Anonymous users (10 msg/day): ${formatCurrency(mostExpensive.costAnonDaily)}/day, ${formatCurrency(mostExpensive.costAnonMonthly)}/month`);
+229 |     console.log(`   Google users (20 msg/day): ${formatCurrency(mostExpensive.costGoogleDaily)}/day, ${formatCurrency(mostExpensive.costGoogleMonthly)}/month`);
+230 | 
+231 |     console.log('\n💚 CHEAPEST MODEL:');
+232 |     console.log(`   ${cheapest.displayName}`);
+233 |     console.log(`   Anonymous users (10 msg/day): ${formatCurrency(cheapest.costAnonDaily)}/day, ${formatCurrency(cheapest.costAnonMonthly)}/month`);
+234 |     console.log(`   Google users (20 msg/day): ${formatCurrency(cheapest.costGoogleDaily)}/day, ${formatCurrency(cheapest.costGoogleMonthly)}/month`);
+235 | 
+236 |     const ratio = mostExpensive.costPerMessage / cheapest.costPerMessage;
+237 |     console.log(`\n📈 Price Difference: Most expensive is ${ratio.toFixed(1)}x more costly than cheapest`);
+238 | }
+239 | 
+240 | async function main(): Promise<void> {
+241 |     try {
+242 |         console.log('🚀 OpenRouter Pricing Analysis Tool');
+243 |         console.log('===================================\n');
+244 | 
+245 |         const models = await fetchOpenRouterModels();
+246 |         console.log(`✅ Fetched ${models.length} total models from OpenRouter`);
+247 | 
+248 |         const analyses = calculatePricing(models);
+249 |         console.log(`📋 Analyzing ${analyses.length} models configured in ChatLima`);
+250 | 
+251 |         displayPricingTable(analyses);
+252 |         displayCostSummary(analyses);
+253 | 
+254 |         console.log('\n✨ Analysis complete!');
+255 | 
+256 |     } catch (error) {
+257 |         console.error('❌ Error:', error instanceof Error ? error.message : String(error));
+258 |         process.exit(1);
+259 |     }
+260 | }
+261 | 
+262 | // Run the script
+263 | if (require.main === module) {
+264 |     main();
+265 | } 
+```
+
+tests/auth.local.setup.ts
+```
+1 | import { test as setup, expect } from '@playwright/test';
+2 | 
+3 | const authFile = 'playwright/.auth/local-user.json';
+4 | 
+5 | setup('authenticate locally', async ({ page }) => {
+6 |     console.log('🔐 Starting local authentication setup...');
 7 | 
-8 | ## 1. UI/UX Changes
-9 | 
-10 | ### Sidebar
-11 | - [x] Add an edit (pencil) icon or make the chat title clickable in the sidebar chat list. (Implemented with a pencil icon on hover)
-12 | - [x] On click, replace the chat title with an input field pre-filled with the current title.
-13 | - [x] Show save (checkmark) and cancel (X) icons/buttons next to the input.
-14 | - [x] On save, update the title in the sidebar and persist the change.
-15 | - [x] On cancel or blur, revert to the original title. (Blur and Escape key revert)
-16 | - [x] Show loading indicator or disable input while saving. (Input disabled, loader on save button)
-17 | - [x] Optionally, show error feedback if renaming fails. (Implemented via toasts)
-18 | 
-19 | ### Accessibility
-20 | - [x] Ensure input is focusable and accessible via keyboard. (Enter/Escape for save/cancel)
-21 | - [x] Provide appropriate ARIA labels for edit/save/cancel actions.
-22 | 
-23 | ---
+8 |     // Go to local ChatLima
+9 |     await page.goto('/', { waitUntil: 'networkidle' });
+10 | 
+11 |     // Take a screenshot to see what we're dealing with
+12 |     await page.screenshot({ path: 'playwright-report/local-auth-step-1-initial-load.png' });
+13 | 
+14 |     // Check what page we're on
+15 |     const title = await page.title();
+16 |     console.log(`📄 Page title: "${title}"`);
+17 | 
+18 |     // Wait for the page to stabilize
+19 |     await page.waitForTimeout(2000);
+20 | 
+21 |     // Check if we have ChatLima interface
+22 |     const chatLimaHeading = page.locator('h1:has-text("ChatLima")');
+23 |     const signInButton = page.getByRole('button', { name: 'Sign in with Google' });
 24 | 
-25 | ## 2. State Management
-26 | - [x] Track which chat (if any) is currently being edited in the sidebar state. (`editingChatId` in `ChatSidebar.tsx`)
-27 | - [x] Store the temporary input value for the chat being edited. (`editingChatTitle` in `ChatSidebar.tsx`)
-28 | - [x] Handle optimistic UI updates: update the title immediately, revert if API call fails. (Handled in `useChats.ts` hook)
-29 | 
-30 | ---
+25 |     // Verify we have the ChatLima interface
+26 |     await expect(chatLimaHeading).toBeVisible();
+27 |     console.log('✅ ChatLima interface detected on localhost');
+28 | 
+29 |     // Check if we need to sign in
+30 |     if (await signInButton.isVisible()) {
+31 |         console.log('🔑 Sign in button available - for local testing, we can continue with anonymous user');
+32 |         console.log('💡 Local development typically supports anonymous users out of the box');
+33 |     } else {
+34 |         console.log('✅ Already authenticated or anonymous access available');
+35 |     }
+36 | 
+37 |     // Wait for the interface to settle
+38 |     await page.waitForTimeout(2000);
+39 | 
+40 |     // Save authentication state (anonymous state for local)
+41 |     await page.context().storageState({ path: authFile });
+42 | 
+43 |     console.log('💾 Local authentication state saved to:', authFile);
+44 |     console.log('✨ Local authentication setup completed');
+45 | }); 
+```
+
+tests/auth.setup.ts
+```
+1 | import { test as setup, expect } from '@playwright/test';
+2 | 
+3 | const authFile = 'playwright/.auth/user.json';
+4 | 
+5 | setup('authenticate', async ({ page }) => {
+6 |     console.log('🔐 Starting authentication setup...');
+7 | 
+8 |     // Go to ChatLima
+9 |     await page.goto('https://preview.chatlima.com/', { waitUntil: 'networkidle' });
+10 | 
+11 |     // Take a screenshot to see what we're dealing with
+12 |     await page.screenshot({ path: 'playwright-report/auth-step-1-initial-load.png' });
+13 | 
+14 |     // Check what page we're on
+15 |     const title = await page.title();
+16 |     console.log(`📄 Page title: "${title}"`);
+17 | 
+18 |     if (title.includes('Login – Vercel')) {
+19 |         console.log('🚫 Detected Vercel login page - this means the preview site requires authentication');
+20 |         console.log('💡 You may need to set up proper preview authentication or use a different URL');
+21 | 
+22 |         // Let's try to continue anyway and see if we can get past it
+23 |         await page.waitForTimeout(3000);
+24 |     }
+25 | 
+26 |     // Wait for the page to stabilize
+27 |     await page.waitForTimeout(2000);
+28 | 
+29 |     // Check if we have ChatLima interface
+30 |     const chatLimaHeading = page.locator('h1:has-text("ChatLima")');
+31 |     const signInButton = page.getByRole('button', { name: 'Sign in with Google' });
+32 | 
+33 |     if (await chatLimaHeading.isVisible()) {
+34 |         console.log('✅ ChatLima interface detected');
+35 | 
+36 |         // Check if we need to sign in
+37 |         if (await signInButton.isVisible()) {
+38 |             console.log('🔑 Sign in required - attempting Google authentication');
+39 | 
+40 |             // Click the Google sign in button
+41 |             await signInButton.click();
+42 | 
+43 |             // Handle the authentication flow
+44 |             try {
+45 |                 // Wait for either Google OAuth or redirect back
+46 |                 await page.waitForURL(/accounts\.google\.com|preview\.chatlima\.com/, { timeout: 10000 });
+47 | 
+48 |                 if (page.url().includes('accounts.google.com')) {
+49 |                     console.log('🌐 Redirected to Google OAuth');
+50 | 
+51 |                     // Fill in Google credentials if environment variables are set
+52 |                     if (process.env.TEST_GOOGLE_EMAIL && process.env.TEST_GOOGLE_PASSWORD) {
+53 |                         console.log('🤖 Using automated Google authentication');
+54 | 
+55 |                         // Fill email
+56 |                         await page.fill('input[type="email"]', process.env.TEST_GOOGLE_EMAIL);
+57 |                         await page.click('#identifierNext');
+58 | 
+59 |                         // Wait for password field and fill it
+60 |                         await page.waitForSelector('input[type="password"]', { timeout: 5000 });
+61 |                         await page.fill('input[type="password"]', process.env.TEST_GOOGLE_PASSWORD);
+62 |                         await page.click('#passwordNext');
+63 |                     } else {
+64 |                         console.log('👤 Manual authentication required - waiting for user to complete sign in...');
+65 |                         console.log('⏳ Please sign in manually in the browser. Waiting up to 60 seconds...');
+66 |                     }
+67 | 
+68 |                     // Wait to be redirected back to ChatLima
+69 |                     await page.waitForURL(/preview\.chatlima\.com/, { timeout: 60000 });
+70 |                     console.log('🔄 Redirected back to ChatLima');
+71 |                 }
+72 |             } catch (error) {
+73 |                 console.log('⚠️ Authentication flow error:', error);
+74 |                 console.log('🔄 Continuing with current state...');
+75 |             }
+76 |         } else {
+77 |             console.log('✅ Already authenticated or anonymous access available');
+78 |         }
+79 | 
+80 |         // Wait for the interface to settle
+81 |         await page.waitForTimeout(3000);
+82 | 
+83 |         // Verify we have the ChatLima interface
+84 |         await expect(chatLimaHeading).toBeVisible();
+85 |         console.log('✅ ChatLima interface confirmed');
+86 | 
+87 |     } else {
+88 |         console.log('❌ ChatLima interface not detected');
+89 |         console.log('🔍 Current URL:', page.url());
+90 |         console.log('📄 Current title:', await page.title());
+91 | 
+92 |         // Take a screenshot for debugging
+93 |         await page.screenshot({ path: 'playwright-report/auth-step-final-error.png' });
+94 | 
+95 |         // Instead of failing, let's save whatever state we have
+96 |         console.log('⚠️ Proceeding with current state (may be unauthenticated)');
+97 |     }
+98 | 
+99 |     // Save authentication state (even if partial)
+100 |     await page.context().storageState({ path: authFile });
+101 | 
+102 |     console.log('💾 Authentication state saved to:', authFile);
+103 |     console.log('✨ Authentication setup completed');
+104 | }); 
+```
+
+tests/chatlima-anonymous-test.spec.ts
+```
+1 | import { test, expect } from '@playwright/test';
+2 | 
+3 | test.describe('ChatLima Anonymous User Test', () => {
+4 |     test('should work with anonymous authentication', async ({ page }) => {
+5 |         // Step 1: Navigate to ChatLima (using baseURL from config)
+6 |         await page.goto('/');
+7 | 
+8 |         // Wait for page to load
+9 |         await expect(page).toHaveTitle('ChatLima');
+10 | 
+11 |         // Since ChatLima supports anonymous users, we should be able to use it without signing in
+12 |         // Wait for the interface to load
+13 |         await page.waitForLoadState('networkidle');
+14 | 
+15 |         // Step 2: Check if message input is available (anonymous users should be able to chat)
+16 |         const messageInput = page.getByRole('textbox', { name: 'Send a message...' });
+17 |         await expect(messageInput).toBeVisible();
+18 | 
+19 |         // Step 3: Click on the model selector dropdown
+20 |         await page.getByRole('combobox').first().click();
+21 | 
+22 |         // Step 4: Select DeepSeek Chat V3 0324 model (if available for anonymous users)
+23 |         const deepSeekOption = page.getByRole('option', { name: 'DeepSeek Chat V3 0324' });
+24 |         if (await deepSeekOption.isVisible()) {
+25 |             await deepSeekOption.click();
+26 | 
+27 |             // Verify the model is selected (check the combobox specifically)
+28 |             await expect(page.getByRole('combobox').filter({ hasText: 'DeepSeek Chat V3 0324' })).toBeVisible();
+29 |             console.log('✅ DeepSeek model selected');
+30 |         } else {
+31 |             console.log('💡 DeepSeek model not available, testing with default model');
+32 |             // Close the dropdown by clicking somewhere else
+33 |             await page.click('h1:has-text("ChatLima")');
+34 |         }
+35 | 
+36 |         // Step 5: Type test message in the input field
+37 |         const testMessage = 'Hello! This is a test message from an anonymous user. Can you respond with a simple greeting?';
+38 |         await messageInput.fill(testMessage);
+39 | 
+40 |         // Step 6: Check if send button is enabled
+41 |         const sendButton = page.getByRole('button').filter({ hasText: '' }).nth(1);
+42 |         await expect(sendButton).toBeEnabled();
+43 | 
+44 |         // Step 7: Click the send button
+45 |         await sendButton.click();
+46 | 
+47 |         // Step 8: Wait for and verify response is received
+48 |         // Wait for the user message to appear
+49 |         await expect(page.getByText(testMessage)).toBeVisible();
+50 | 
+51 |         // Wait for AI response (anonymous users might have limited functionality)
+52 |         await page.waitForFunction(() => {
+53 |             const messages = document.querySelectorAll('p');
+54 |             return messages.length >= 2; // At least user message + AI response
+55 |         }, { timeout: 30000 });
+56 | 
+57 |         // Step 9: Verify chat appears in sidebar (if available for anonymous users)
+58 |         try {
+59 |             await expect(page.getByText('Simple Greeting Request')).toBeVisible({ timeout: 5000 });
+60 |             console.log('✅ Chat sidebar working for anonymous users');
+61 |         } catch {
+62 |             console.log('💡 Chat sidebar not available for anonymous users - this is expected');
+63 |         }
+64 | 
+65 |         // Step 10: Verify messages are displayed
+66 |         const allParagraphs = page.locator('p');
+67 |         await expect(allParagraphs).toHaveCount(2, { timeout: 30000 });
+68 | 
+69 |         // Verify user message is displayed
+70 |         await expect(page.getByText(testMessage)).toBeVisible();
+71 | 
+72 |         // Verify AI response is displayed (should contain some response text)
+73 |         const aiResponse = allParagraphs.nth(1);
+74 |         const responseText = await aiResponse.textContent();
+75 |         console.log('🤖 AI Response received:', responseText?.substring(0, 100) + '...');
+76 | 
+77 |         // Just verify that we got some response that's different from the user message
+78 |         await expect(aiResponse).not.toHaveText(testMessage);
+79 |         await expect(aiResponse).toContainText(/.+/); // At least some text
+80 | 
+81 |         console.log('✅ Anonymous user test completed successfully!');
+82 |         console.log('- Anonymous access working');
+83 |         console.log('- Message sent successfully');
+84 |         console.log('- Response received from AI');
+85 |         console.log('- Interface functioning for anonymous users');
+86 |     });
+87 | 
+88 |     test('should have proper interface elements for anonymous users', async ({ page }) => {
+89 |         // Navigate to ChatLima (using baseURL from config)
+90 |         await page.goto('/');
+91 | 
+92 |         // Check if ChatLima interface is loaded
+93 |         await expect(page.getByRole('heading', { name: 'ChatLima' })).toBeVisible();
+94 | 
+95 |         // Verify input field is ready
+96 |         await expect(page.getByRole('textbox', { name: 'Send a message...' })).toBeVisible();
+97 | 
+98 |         // Check if model selector is available
+99 |         await expect(page.getByRole('combobox').first()).toBeVisible();
+100 | 
+101 |         // Check if sign in button is visible (optional for anonymous users)
+102 |         const signInButton = page.getByRole('button', { name: 'Sign in with Google' });
+103 |         if (await signInButton.isVisible()) {
+104 |             console.log('✅ Sign in option available for upgrading');
+105 |         } else {
+106 |             console.log('💡 No sign in button visible - anonymous mode working directly');
+107 |         }
+108 | 
+109 |         console.log('✅ Anonymous user interface test completed!');
+110 |     });
+111 | }); 
+```
+
+tests/chatlima-deepseek-test.spec.ts
+```
+1 | import { test, expect } from '@playwright/test';
+2 | 
+3 | test.describe('ChatLima DeepSeek Model Test', () => {
+4 |     test('should select DeepSeek Chat V3 0324 model, send message, and receive response', async ({ page }) => {
+5 |         // Step 1: Navigate to ChatLima (using baseURL from config)
+6 |         await page.goto('/');
+7 | 
+8 |         // Wait for page to load
+9 |         await expect(page).toHaveTitle('ChatLima');
+10 | 
+11 |         // Step 2: Click on the model selector dropdown
+12 |         await page.getByRole('combobox').first().click();
+13 | 
+14 |         // Step 3: Select DeepSeek Chat V3 0324 model
+15 |         await page.getByRole('option', { name: 'DeepSeek Chat V3 0324' }).click();
+16 | 
+17 |         // Verify the model is selected - target the combobox specifically
+18 |         await expect(page.getByRole('combobox').getByText('DeepSeek Chat V3 0324')).toBeVisible();
+19 | 
+20 |         // Step 4: Type test message in the input field
+21 |         const testMessage = 'Hello! This is a test message. Can you respond with a simple greeting?';
+22 |         await page.getByRole('textbox', { name: 'Send a message...' }).fill(testMessage);
+23 | 
+24 |         // Step 5: Click the send button - target the submit button with ArrowUp icon
+25 |         const sendButton = page.locator('button[type="submit"]');
+26 |         await sendButton.click();
+27 | 
+28 |         // Step 6: Wait for and verify response is received
+29 |         // Wait for the user message to appear
+30 |         await expect(page.getByText(testMessage)).toBeVisible();
 31 | 
-32 | ## 3. Backend/API Changes
+32 |         // Wait for AI response with more robust approach
+33 |         await page.waitForFunction(() => {
+34 |             // Look for multiple message elements in the chat
+35 |             const chatMessages = document.querySelectorAll('[data-role="user"], [data-role="assistant"], .message, [class*="message"]');
+36 |             if (chatMessages.length >= 2) return true;
+37 | 
+38 |             // Fallback: look for paragraphs that might contain messages
+39 |             const paragraphs = document.querySelectorAll('p');
+40 |             return paragraphs.length >= 2;
+41 |         }, { timeout: 45000 });
+42 | 
+43 |         // Wait for streaming to complete - look for submit button to be enabled again
+44 |         await expect(sendButton).toBeEnabled({ timeout: 30000 });
+45 | 
+46 |         // Step 7: Verify chat appears in sidebar (with more flexible text matching)
+47 |         const chatTitle = page.locator('text=/Simple Greeting|Test|Chat|Hello/i').first();
+48 |         await expect(chatTitle).toBeVisible({ timeout: 10000 });
+49 | 
+50 |         // Step 8: Verify both messages are displayed
+51 |         const allParagraphs = page.locator('p');
+52 |         await expect(allParagraphs).toHaveCount(2, { timeout: 30000 });
+53 | 
+54 |         // Verify user message is displayed
+55 |         await expect(page.getByText(testMessage)).toBeVisible();
+56 | 
+57 |         // Verify AI response is displayed (should contain greeting-like text)
+58 |         const aiResponse = allParagraphs.nth(1);
+59 |         await expect(aiResponse).toContainText(/hello|hi|thanks|great|day|greeting/i);
+60 | 
+61 |         // Verify copy buttons are present - wait for streaming to complete first
+62 |         await expect(page.getByRole('button', { name: 'Copy' })).toHaveCount(2, { timeout: 10000 });
+63 | 
+64 |         // Additional verification: Ensure the model is still selected - target combobox specifically
+65 |         await expect(page.getByRole('combobox').getByText('DeepSeek Chat V3 0324')).toBeVisible();
+66 | 
+67 |         console.log('✅ Test completed successfully!');
+68 |         console.log('- Model selected: DeepSeek Chat V3 0324');
+69 |         console.log('- Message sent successfully');
+70 |         console.log('- Response received from AI');
+71 |         console.log('- Chat created in sidebar');
+72 |         console.log('- Both messages displayed correctly');
+73 |     });
+74 | 
+75 |     test('should handle model selection and maintain state', async ({ page }) => {
+76 |         // Navigate to ChatLima (using baseURL from config)
+77 |         await page.goto('/');
+78 | 
+79 |         // Open model selector
+80 |         await page.getByRole('combobox').first().click();
+81 | 
+82 |         // Verify DeepSeek model is available
+83 |         await expect(page.getByRole('option', { name: 'DeepSeek Chat V3 0324' })).toBeVisible();
+84 | 
+85 |         // Select the model
+86 |         await page.getByRole('option', { name: 'DeepSeek Chat V3 0324' }).click();
+87 | 
+88 |         // Verify model persists after selection - target combobox specifically
+89 |         await expect(page.getByRole('combobox').getByText('DeepSeek Chat V3 0324')).toBeVisible();
+90 | 
+91 |         // Verify input field is ready
+92 |         await expect(page.getByRole('textbox', { name: 'Send a message...' })).toBeVisible();
+93 | 
+94 |         // Verify send button starts disabled - target the submit button
+95 |         const sendButton = page.locator('button[type="submit"]');
+96 |         await expect(sendButton).toBeDisabled();
+97 | 
+98 |         // Type a message to enable send button
+99 |         await page.getByRole('textbox', { name: 'Send a message...' }).fill('test');
+100 |         await expect(sendButton).toBeEnabled();
+101 |     });
+102 | }); 
+```
+
+releases/RELEASE_NOTES_v0.10.0.md
+```
+1 | # 🚀 ChatLima v0.10.0 - Enhanced Model Support & Navigation
+2 | 
+3 | ## 🎯 What's New
+4 | - **New Mistral Models**: Added support for the latest Mistral Magistral Small and Medium 2506 models
+5 | - **Enhanced Model Descriptions**: Detailed capabilities and use-case information for better model selection
+6 | - **Improved Post-Checkout Navigation**: Better user flow after successful checkout completion
+7 | - **Enhanced Mathematical Rendering**: Improved KaTeX styling for consistent mathematical expressions across themes
+8 | 
+9 | ## 🤖 AI Model Enhancements
+10 | - **Mistral Magistral Small 2506**: Fast and efficient model for everyday tasks with cost-effective performance
+11 | - **Mistral Magistral Medium 2506**: Balanced model offering enhanced capabilities for complex reasoning tasks
+12 | - Comprehensive model descriptions help users choose the right model for their specific needs
+13 | - Updated model selection interface with clear capability indicators
+14 | 
+15 | ## 🎨 User Experience Improvements
+16 | - **Better Checkout Flow**: Post-purchase navigation now redirects to home page for improved user orientation
+17 | - **Enhanced Mathematical Display**: Upgraded KaTeX styling ensures consistent mathematical notation rendering
+18 | - **Theme Consistency**: Mathematical expressions now display properly across light and dark themes
+19 | - **Improved Visual Hierarchy**: Better styling consistency throughout the application
+20 | 
+21 | ## 🔧 Technical Improvements
+22 | - Added new model configurations with proper metadata and pricing information
+23 | - Enhanced CSS styling for mathematical content rendering
+24 | - Improved navigation logic for better user flow management
+25 | - Updated model selection components with expanded capability descriptions
+26 | 
+27 | ## 📈 Benefits
+28 | - **More Model Choices**: Access to latest Mistral models for diverse use cases
+29 | - **Better Decision Making**: Comprehensive model descriptions help users select optimal models
+30 | - **Smoother User Journey**: Improved post-checkout experience reduces confusion
+31 | - **Enhanced Readability**: Better mathematical content display improves technical discussions
+32 | - **Consistent Theming**: Unified visual experience across all interface elements
 33 | 
-34 | ### API Endpoint
-35 | - [x] Add or update an endpoint to allow renaming a chat (e.g., `PATCH /api/chats/[id]` or similar). (Implemented: `PATCH /api/chats/[id]`)
-36 | - [x] Request body: `{ title: string }`
-37 | - [x] Response: updated chat object or success status.
-38 | - [x] Validate input (e.g., non-empty, reasonable length). (Non-empty, max 255 chars)
-39 | - [x] Ensure only authorized users can rename their own chats.
-40 | 
-41 | ### Database
-42 | - [x] Ensure the chat table/model has a `title` field that can be updated. (API updates `title` and `updatedAt`)
+34 | ## 🔄 Migration Notes
+35 | - New models are immediately available in the model selection interface
+36 | - No breaking changes to existing functionality
+37 | - Enhanced styling is automatically applied to all mathematical content
+38 | - Existing model preferences remain unchanged and fully functional
+39 | 
+40 | ## 🚀 Deployment
+41 | - Standard deployment process with automatic model availability
+42 | - No additional configuration required for new models
+43 | - Enhanced styling takes effect immediately after deployment
+44 | - All existing user data and preferences remain intact
+45 | 
+46 | ---
+47 | 
+48 | **Full Changelog**: [v0.9.1...v0.10.0](https://github.com/brooksy4503/chatlima/compare/v0.9.1...v0.10.0) 
+```
+
+releases/RELEASE_NOTES_v0.11.0.md
+```
+1 | # 🚀 ChatLima v0.11.0 - Polar Integration & Enhanced Features
+2 | 
+3 | ## 🎯 What's New
+4 | - **Polar Integration**: Complete integration with Polar billing platform for customer management and payments
+5 | - **Paid Web Search**: New premium web search feature with credit-based billing and usage tracking
+6 | - **Dynamic Environment Configuration**: Environment-based Polar server configuration for seamless production deployment
+7 | - **Customer Portal Access**: Direct access to Polar customer portal for subscription and billing management
+8 | - **Enhanced Testing Infrastructure**: Comprehensive Playwright testing suite with multiple configuration options
+9 | - **Smart Title Generation**: Dynamic model selection for AI-powered conversation title generation
+10 | - **Improved Credit Management**: Enhanced credit validation with better user experience and error handling
+11 | 
+12 | ## 🔧 Technical Implementation
+13 | - **Polar SDK Integration**: Full integration with Polar billing platform using environment-based configuration
+14 | - **Web Search Billing**: Backend credit validation and surcharge system for paid web search functionality
+15 | - **Enhanced OAuth Configuration**: Dynamic Google OAuth setup with improved logging and error handling
+16 | - **Customer Management**: Advanced customer retrieval and creation logic with fallback mechanisms
+17 | - **Credit Exposure**: Frontend access to user credit balance for better UX and transparency
+18 | - **Testing Suite**: Added comprehensive Playwright testing scripts with local and CI configurations
+19 | - **API Route Enhancements**: New customer portal API route and improved existing endpoints
+20 | 
+21 | ## 🛡️ Security & Privacy
+22 | - **Environment-Based Configuration**: Secure Polar server environment selection based on deployment context
+23 | - **Enhanced OAuth Security**: Improved Google OAuth client configuration with detailed logging
+24 | - **Credit Validation**: Robust credit checking with proper error handling and user feedback
+25 | - **Customer Data Protection**: Secure customer management with proper API integration patterns
+26 | 
+27 | ## 📈 Benefits
+28 | - **Streamlined Billing**: Direct integration with Polar for seamless payment and subscription management
+29 | - **Premium Features**: Monetized web search capabilities with transparent credit-based pricing
+30 | - **Better User Experience**: Clear credit balance visibility and improved error messaging
+31 | - **Development Quality**: Comprehensive testing infrastructure for better code reliability
+32 | - **Operational Excellence**: Environment-aware configuration for smooth production deployments
+33 | - **Customer Self-Service**: Direct portal access for users to manage their billing and subscriptions
+34 | 
+35 | ## 🔄 Migration Notes
+36 | - **Polar Configuration**: New environment variables required for Polar integration
+37 |   - Configure Polar environment settings based on deployment context
+38 |   - Update customer management workflows to use new Polar API integration
+39 | - **Web Search Credits**: New credit deduction system for web search features
+40 |   - Existing users will see new web search billing in their account
+41 |   - Credit validation now includes web search cost calculations
+42 | - **Testing Infrastructure**: New Playwright configuration files added
+43 |   - Development teams should update their testing workflows
+44 |   - New test scripts available for comprehensive UI testing
+45 | - **API Changes**: Enhanced API routes with improved error handling
+46 |   - Existing integrations remain compatible
+47 |   - New customer portal functionality available immediately
+48 | 
+49 | ## 🚀 Deployment
+50 | - **Environment Variables**: Ensure Polar configuration environment variables are set
+51 | - **Database Updates**: No schema changes required for this release
+52 | - **Testing**: Run new Playwright test suite to validate deployment
+53 | - **Customer Portal**: New portal access will be available immediately after deployment
+54 | - **Web Search**: Paid web search features activate automatically with credit system
+55 | 
+56 | ## 🆕 New Features Detail
+57 | - **Polar Customer Portal**: Users can access billing portal directly from account menu
+58 | - **Web Search Billing**: Transparent credit usage for premium web search functionality
+59 | - **Dynamic Title Generation**: Improved conversation titles using advanced AI models
+60 | - **Enhanced Credit UI**: Real-time credit balance display and usage tracking
+61 | - **Testing Scripts**: Multiple Playwright configurations for different testing scenarios
+62 | - **Environment Awareness**: Automatic Polar environment selection for production/development
+63 | 
+64 | ---
+65 | 
+66 | **Full Changelog**: [v0.10.0...v0.11.0](https://github.com/brooksy4503/chatlima/compare/v0.10.0...v0.11.0) 
+```
+
+releases/RELEASE_NOTES_v0.12.0.md
+```
+1 | # 🚀 ChatLima v0.12.0 - Polar Production Checkout Integration
+2 | 
+3 | ## 🎯 What's New
+4 | - **Production Checkout System**: Complete Polar checkout integration with user-friendly purchase flow
+5 | - **Smart User Flow Handling**: Seamless experience for both anonymous and authenticated users
+6 | - **Integrated Purchase Interface**: Checkout button directly accessible from user account menu
+7 | - **Comprehensive Error Handling**: Dedicated error pages for failed, canceled, and problematic transactions
+8 | - **Credit Purchase Workflow**: Streamlined process for users to purchase AI usage credits
+9 | - **Enhanced User Experience**: Context-aware messaging and intuitive purchase flow
+10 | 
+11 | ## 🔧 Technical Implementation
+12 | - **CheckoutButton Component**: Reusable React component with intelligent user state detection
+13 | - **Dual User Flow Logic**: Automatic handling of anonymous users (redirect to sign-in) vs authenticated users (direct checkout)
+14 | - **Error Page Framework**: Complete error handling with detailed error states and recovery options
+15 | - **User Menu Integration**: Seamless integration of purchase functionality into existing user interface
+16 | - **Production Environment**: Full migration to Polar production environment with proper security configurations
+17 | - **Webhook Integration**: Backend webhook handling for real-time credit updates after successful purchases
+18 | 
+19 | ## 🛡️ Security & Privacy
+20 | - **Production Environment**: Secure Polar production environment configuration
+21 | - **Authenticated Checkout**: Proper user authentication verification before checkout access
+22 | - **Secure Payment Processing**: All payment processing handled securely through Polar platform
+23 | - **Error Information Protection**: Safe error handling that doesn't expose sensitive checkout data
+24 | - **Environment Variable Security**: Production keys and secrets properly configured in deployment environment
+25 | 
+26 | ## 📈 Benefits
+27 | - **Simplified Credit Purchase**: Users can purchase credits directly from the application interface
+28 | - **Improved User Onboarding**: Anonymous users guided through sign-up process for credit purchases
+29 | - **Better Error Recovery**: Clear error messages with actionable recovery options
+30 | - **Seamless Integration**: Native checkout experience without external redirects
+31 | - **Real-time Updates**: Immediate credit balance updates after successful purchases
+32 | - **Enhanced Accessibility**: Intuitive interface accessible to users of all technical levels
+33 | 
+34 | ## 🔄 Migration Notes
+35 | - **Environment Configuration**: Production Polar environment variables now active
+36 |   - All checkout functionality now uses production Polar endpoints
+37 |   - Webhook endpoints configured for production credit updates
+38 | - **User Interface Updates**: New checkout button integrated into user account menu
+39 |   - Existing users will see new "Purchase More Credits" option in account menu
+40 |   - Anonymous users will see "Sign In to Purchase Credits" with guided flow
+41 | - **Error Handling**: New error pages for checkout failures
+42 |   - Users experiencing checkout issues will be directed to helpful error pages
+43 |   - Recovery options provided for failed or canceled transactions
+44 | 
+45 | ## 🚀 Deployment
+46 | - **Environment Variables**: Production Polar configuration active
+47 | - **Component Integration**: New checkout components deployed and integrated
+48 | - **Error Pages**: Checkout error handling pages now available at `/checkout/error`
+49 | - **User Menu Updates**: Enhanced account menu with integrated purchase functionality
+50 | - **Webhook Verification**: Production webhook endpoints for credit updates confirmed active
+51 | 
+52 | ## 🆕 New Features Detail
+53 | - **Smart Checkout Button**: Context-aware button that adapts to user authentication state
+54 |   - Anonymous users: "Sign In to Purchase Credits" with Google OAuth flow
+55 |   - Authenticated users: "Purchase More Credits" with direct checkout access
+56 | - **Comprehensive Error Handling**: Dedicated error page with specific error state handling
+57 |   - Canceled transactions: User-friendly messaging with retry options
+58 |   - Failed payments: Clear error explanation with troubleshooting guidance
+59 |   - General errors: Helpful recovery options and support contact information
+60 | - **Seamless User Flow**: Integrated purchase experience within the application
+61 |   - No external redirects or confusing navigation
+62 |   - Clear calls-to-action and intuitive user interface
+63 |   - Immediate access to purchased credits after successful payment
+64 | 
+65 | ## 🐛 Bug Fixes
+66 | - **Checkout Flow Reliability**: Improved error handling and user feedback
+67 | - **Authentication State Management**: Better handling of anonymous vs authenticated user scenarios
+68 | - **UI Consistency**: Consistent styling and messaging across checkout flow
+69 | 
+70 | ---
+71 | 
+72 | **Full Changelog**: [v0.11.0...v0.12.0](https://github.com/brooksy4503/chatlima/compare/v0.11.0...v0.12.0) 
+```
+
+releases/RELEASE_NOTES_v0.12.1.md
+```
+1 | # 🔐 ChatLima v0.12.1 - Web Search Security & Credit Validation Fix
+2 | 
+3 | ## 🎯 What's Fixed
+4 | - **Enhanced Web Search Security**: Implemented robust server-side validation for web search feature access
+5 | - **Credit Validation Improvements**: Strengthened credit checking to prevent unauthorized feature usage
+6 | - **Anonymous User Protection**: Added proper blocking for anonymous users attempting to access premium features
+7 | - **Security Logging**: Enhanced monitoring and logging for unauthorized access attempts
+8 | 
+9 | ## 🔧 Technical Fixes
+10 | - **Server-Side Validation**: Complete overhaul of web search authorization logic
+11 |   - Server now determines web search eligibility instead of relying on client requests
+12 |   - Prevents potential security bypasses through client-side manipulation
+13 | - **Anonymous User Blocking**: Explicit prevention of web search access for non-authenticated users
+14 | - **Credit Verification**: Enhanced credit checking before allowing premium feature access
+15 | - **Security Incident Logging**: Improved logging for tracking unauthorized access attempts
+16 | - **Authorization Flow**: Streamlined permission checking with proper error responses
+17 | 
+18 | ## 🛡️ Security Improvements
+19 | - **Access Control**: Strict server-side enforcement of web search feature permissions
+20 | - **Credit Protection**: Prevents users with insufficient credits from accessing premium features
+21 | - **Anonymous User Safety**: Clear boundaries preventing anonymous users from accessing paid features
+22 | - **Audit Trail**: Enhanced logging for security monitoring and incident response
+23 | - **Input Validation**: Improved validation of user requests to prevent unauthorized actions
+24 | 
+25 | ## 🐛 Critical Bug Fixes
+26 | - **Web Search Authorization**: Fixed potential security vulnerability where unauthorized users could access web search
+27 | - **Credit Validation**: Resolved issue where credit checks could be bypassed
+28 | - **User State Verification**: Enhanced user authentication state validation
+29 | - **Request Processing**: Improved handling of unauthorized feature access attempts
+30 | 
+31 | ## 📈 Impact
+32 | - **Improved Security**: Significantly enhanced protection against unauthorized feature access
+33 | - **Better Credit Management**: More accurate and secure credit usage tracking
+34 | - **Enhanced User Experience**: Clear error messages for users attempting unauthorized actions
+35 | - **Reduced Security Risk**: Eliminated potential vectors for premium feature bypass
+36 | - **Better Monitoring**: Improved visibility into security-related events
+37 | 
+38 | ## 🔄 Changes
+39 | - **API Route Updates**: Modified `/api/chat/route.ts` with enhanced security checks
+40 | - **Authorization Logic**: Completely rewritten web search permission validation
+41 | - **Error Handling**: Improved error responses for unauthorized access attempts
+42 | - **Logging Infrastructure**: Enhanced security event logging and monitoring
 43 | 
 44 | ---
 45 | 
-46 | ## 4. Frontend Integration
-47 | - [x] Update sidebar chat list component to support edit mode per chat. (`ChatSidebar.tsx`)
-48 | - [x] Add event handlers for edit, save, and cancel actions.
-49 | - [x] Call the API to persist the new title. (Via `updateChatTitle` in `useChats.ts`)
-50 | - [x] Update local state/store on success, handle errors gracefully. (Handled in `useChats.ts`)
-51 | 
-52 | ---
-53 | 
-54 | ## 5. Testing
-55 | - Unit tests for sidebar component logic (edit, save, cancel, error handling).
-56 | - Integration tests for API endpoint (authorization, validation, success, failure).
-57 | - Manual/automated UI tests for user flow and accessibility.
-58 | 
-59 | ---
-60 | 
-61 | ## 6. Optional Enhancements
-62 | - Allow renaming from the main chat view as well.
-63 | - Support undo/redo for title changes.
-64 | - Show a tooltip or helper text for the edit action.
-65 | 
-66 | ---
-67 | 
-68 | ## 7. Rollout & Documentation
-69 | - Update user documentation/help to describe the new feature.
-70 | - Announce the feature in release notes or changelog. 
+46 | **Full Changelog**: [v0.12.0...v0.12.1](https://github.com/brooksy4503/chatlima/compare/v0.12.0...v0.12.1) 
 ```
 
-docs/mcp_fetch_server_sse_deployment_plan.md
+releases/RELEASE_NOTES_v0.13.0.md
 ```
-1 | # Implementation Plan: MCP Fetch Server as SSE Endpoint
+1 | # 📱 ChatLima v0.13.0 - iOS Homescreen Shortcut Support
 2 | 
-3 | ## 1. **Understand the MCP Fetch Server**
-4 | - Review the [MCP fetch server source code](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch) to understand its requirements, configuration, and capabilities.
-5 | - The fetch server is designed to act as a bridge between MCP clients and remote LLMs or APIs, exposing them via the MCP protocol.
-6 | 
-7 | ## 2. **Prerequisites**
-8 | - Node.js (LTS version recommended)
-9 | - `pnpm` or `npm` for package management
-10 | - Access to the MCP fetch server codebase (clone or install via npm if published)
-11 | - (Optional) Cloudflare account if deploying via Cloudflare Workers (see [Cloudflare blog](https://blog.cloudflare.com/remote-model-context-protocol-servers-mcp/))
-12 | 
-13 | ## 3. **Setup the MCP Fetch Server Locally**
-14 | 1. **Clone the repository:**
-15 |    ```bash
-16 |    git clone https://github.com/modelcontextprotocol/servers.git
-17 |    cd servers/src/fetch
-18 |    ```
-19 | 2. **Install dependencies:**
-20 |    ```bash
-21 |    pnpm install # or npm install
-22 |    ```
-23 | 3. **Configure the server:**
-24 |    - Create a configuration file (e.g., `config.json` or `.env`) specifying the remote LLM endpoints, API keys, and any required MCP options.
-25 |    - Reference the [MCP documentation](https://modelcontextprotocol.io/llms-full.txt) for supported features and configuration examples.
-26 | 
-27 | ## 4. **Expose as an SSE Endpoint**
-28 | - The MCP protocol supports multiple transports; for SSE (Server-Sent Events), ensure the fetch server is configured to listen on HTTP and stream responses using the SSE format.
-29 | - If the server does not natively support SSE, implement a thin HTTP wrapper that:
-30 |   - Accepts incoming MCP requests
-31 |   - Forwards them to the fetch server (via stdio or HTTP)
-32 |   - Streams responses back to the client using SSE headers (`Content-Type: text/event-stream`)
-33 | - Example Node.js SSE handler:
-34 |   ```js
-35 |   res.setHeader('Content-Type', 'text/event-stream');
-36 |   res.setHeader('Cache-Control', 'no-cache');
-37 |   res.setHeader('Connection', 'keep-alive');
-38 |   // Stream MCP responses as events
-39 |   ```
-40 | 
-41 | ## 5. **Deployment**
-42 | - **Local/VM:**
-43 |   - Run the server on a public IP or behind a reverse proxy (e.g., Nginx) with HTTPS.
-44 | - **Cloudflare Workers:**
-45 |   - Package the server as a Worker or use [Cloudflare's MCP Worker template](https://blog.cloudflare.com/remote-model-context-protocol-servers-mcp/).
-46 |   - Deploy using `wrangler` CLI.
-47 | - **Other Cloud Providers:**
-48 |   - Deploy as a container (Docker) or serverless function as needed.
-49 | 
-50 | ## 6. **Integration with MCP Clients**
-51 | - Reference the [MCP client compatibility matrix](https://modelcontextprotocol.io/llms-full.txt) to select/test with compatible clients (e.g., Claude Desktop, Continue, VS Code Copilot, etc.).
-52 | - Configure the client to point to your SSE endpoint (URL and any required authentication).
-53 | 
-54 | ## 7. **Testing and Debugging**
-55 | - Use the [MCP Inspector tool](https://github.com/modelcontextprotocol/inspector) for local testing:
-56 |   ```bash
-57 |   npx @modelcontextprotocol/inspector --server http://localhost:PORT
-58 |   ```
-59 | - Monitor logs for errors and protocol compliance (see [logging best practices](https://modelcontextprotocol.io/llms-full.txt)).
-60 | 
-61 | ## 8. **Security and Environment**
-62 | - Use environment variables for secrets (API keys, etc.).
-63 | - Restrict access to the endpoint (IP allowlist, authentication, etc.).
-64 | - Sanitize logs to avoid leaking sensitive data.
-65 | 
-66 | ## 9. **References**
-67 | - [MCP fetch server source](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch)
-68 | - [MCP client/server feature matrix](https://modelcontextprotocol.io/llms-full.txt)
-69 | - [Cloudflare blog: Remote MCP servers](https://blog.cloudflare.com/remote-model-context-protocol-servers-mcp/)
-70 | - [MCP Inspector tool](https://github.com/modelcontextprotocol/inspector)
-71 | 
-72 | ---
-73 | **Next Steps:**
-74 | - Decide on deployment target (local, VM, Cloudflare, etc.)
-75 | - Prepare configuration for your target LLM/API
-76 | - Implement or adapt SSE wrapper if needed
-77 | - Test with MCP Inspector and compatible clients 
-78 | 
-79 | # Cloudflare Deployment Focus: MCP Fetch Server as SSE Endpoint
-80 | 
-81 | ## 1. Do You Need to Download the Fetch Repo?
-82 | - **Not always required.**
-83 |   - If the MCP fetch server is published as an npm package (check [npmjs.com](https://www.npmjs.com/) for `@modelcontextprotocol/fetch` or similar), you can install it directly in your Cloudflare Worker project using `npm install` or `pnpm add`.
-84 |   - If not published, you must clone or copy the relevant code from the [fetch server repo](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch) into your Worker project.
-85 |   - **Check the repo's README or package.json for publish status.**
-86 | 
-87 | ## 2. Using GitHub Packages or Templates for Cloudflare Workers
-88 | - **Cloudflare Worker Templates:**
-89 |   - The [Cloudflare blog](https://blog.cloudflare.com/remote-model-context-protocol-servers-mcp/) and [MCP documentation](https://modelcontextprotocol.io/llms-full.txt) recommend using a Worker template or starter project for MCP servers.
-90 |   - There may be official or community templates for MCP Workers. Search GitHub for `modelcontextprotocol cloudflare worker` or similar keywords.
-91 |   - Example: `npx create-cloudflare@latest` to scaffold a Worker, then add MCP fetch server logic.
-92 | - **Converting Existing Repos:**
-93 |   - If you have an existing Node.js MCP server, you may need to:
-94 |     - Refactor code to be compatible with the Cloudflare Workers runtime (no Node.js APIs, use Web APIs only).
-95 |     - Bundle dependencies using a tool like [esbuild](https://esbuild.github.io/) or [wrangler](https://developers.cloudflare.com/workers/wrangler/).
-96 |     - Move configuration and secrets to Cloudflare environment variables.
-97 |   - There is no "automatic" converter, but many repos provide a `worker` or `cloudflare` subdirectory or branch for this purpose.
-98 | 
-99 | ## 3. Steps for Cloudflare Worker Deployment
-100 | 1. **Scaffold a Worker project:**
-101 |    ```bash
-102 |    npx create-cloudflare@latest
-103 |    cd <your-worker>
-104 |    pnpm install # or npm install
-105 |    ```
-106 | 2. **Add MCP Fetch Server Logic:**
-107 |    - If available as a package: `pnpm add @modelcontextprotocol/fetch`
-108 |    - Otherwise, copy necessary files from the fetch repo.
-109 | 3. **Implement SSE Endpoint:**
-110 |    - Use the [Cloudflare Workers Streams API](https://developers.cloudflare.com/workers/runtime-apis/streams/) to implement SSE.
-111 |    - Set headers: `Content-Type: text/event-stream`, etc.
-112 | 4. **Configure wrangler.toml:**
-113 |    - Set environment variables, routes, and build commands as needed.
-114 | 5. **Deploy:**
-115 |    ```bash
-116 |    npx wrangler deploy
-117 |    ```
-118 | 6. **Test with MCP Inspector and clients.**
-119 | 
-120 | ## 4. References
-121 | - [Cloudflare blog: Remote MCP servers](https://blog.cloudflare.com/remote-model-context-protocol-servers-mcp/)
-122 | - [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
-123 | - [MCP fetch server source](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch)
-124 | - [MCP Inspector tool](https://github.com/modelcontextprotocol/inspector)
-125 | 
-126 | ---
-127 | **Summary:**
-128 | - You do **not** always need to download the fetch repo if an npm package exists.
-129 | - There are no "automatic" converters, but templates and manual adaptation are common.
-130 | - Focus on using Worker-compatible code and follow Cloudflare's deployment best practices. 
-```
-
-docs/mem0ai_integration_plan.md
-```
-1 | # Implementation Plan: Integrating Mem0AI (mem0) into the Chat-Bot App
-2 | 
-3 | ## 1. Objectives
-4 | - Add persistent, contextual memory to the chat-bot so it can remember user interactions and personalize future responses.
-5 | - Leverage Mem0AI's modular memory layer for scalable, extensible memory management.
-6 | 
-7 | ## 2. High-Level Architecture
-8 | - **Mem0AI as Memory Layer:** Use Mem0AI as a service or library to handle memory operations (add, search, get, delete) for chat sessions.
-9 | - **Integration Points:**
-10 |   - When a user sends a message, store the interaction in Mem0.
-11 |   - When generating a response, retrieve relevant memories from Mem0 to provide context.
-12 |   - Optionally, use advanced features like entity/relationship tracking or contradiction resolution.
-13 | 
-14 | ## 3. Integration Steps
-15 | 
-16 | ### 3.1. Integration Mode
-17 | - **TypeScript SDK:**
-18 |   - We will use Mem0AI's TypeScript SDK directly in the Next.js app (API routes or server components).
-19 | 
-20 | ### 3.2. LLM Provider
-21 | - **OpenRouter:**
-22 |   - Use OpenRouter as the LLM provider for generating responses and memory processing.
-23 |   - Configure Mem0AI to use OpenRouter endpoints and API keys.
-24 | 
-25 | ### 3.3. Vector Store & Embedding Provider
-26 | - **Pinecone (Serverless):**
-27 |   - Use Pinecone as both the vector store and embedding provider, leveraging its built-in OpenAI embedding integration.
-28 |   - This allows you to send raw text to Pinecone, which will handle embedding generation and vector storage in a single API call.
-29 |   - **Pros:** Simplifies architecture, reduces API calls, managed scaling, no need to manage separate embedding service.
-30 |   - **Cons:** Usage-based pricing, managed service only.
-31 | 
-32 | ### 3.4. Install Dependencies
-33 | - Add Mem0AI TypeScript SDK to the project:
-34 |   - `npm install @mem0ai/mem0` (or the correct package name from the docs)
-35 | - Add Pinecone client library:
-36 |   - `npm install @pinecone-database/pinecone`
-37 | 
-38 | ### 3.5. Configure Mem0AI
-39 | - Create a configuration file or environment variables for:
-40 |   - LLM provider: OpenRouter endpoint and API key
-41 |   - Vector store & embedding: Pinecone API key, environment, and index name
-42 | - Example: `mem0.config.ts` or extend `.env.local`
-43 | 
-44 | ### 3.6. Integrate with Chat API
-45 | - **On Message Send:**
-46 |   - After a user sends a message, call `Memory.add()` to store the message and any relevant metadata. Mem0AI will use Pinecone to generate embeddings and store vectors.
-47 | - **On Message Generation:**
-48 |   - Before generating a bot response, call `Memory.search()` with the current context/query to retrieve relevant past memories from Pinecone.
-49 |   - Use retrieved memories to augment the prompt for the LLM.
-50 | - **On Chat Load:**
-51 |   - Optionally, fetch a summary or key memories for the chat session.
-52 | 
-53 | ### 3.7. Advanced Features (Optional)
-54 | - **Entity/Relationship Tracking:** Use Mem0's graph memory features to track entities and their relationships across conversations.
-55 | - **Contradiction Resolution:** Use LLM-based memory processing to resolve conflicting information.
-56 | 
-57 | ## 4. Development Steps
-58 | 1. **Research and Prototype:**
-59 |    - Review Mem0AI TypeScript SDK documentation and examples.
-60 |    - Prototype basic memory add/search in a test script or isolated API route.
-61 | 2. **Dependency Installation:**
-62 |    - Add Mem0AI SDK and Pinecone client library.
-63 | 3. **Configuration:**
-64 |    - Set up config files and environment variables for Mem0AI, OpenRouter, and Pinecone.
-65 | 4. **API Integration:**
-66 |    - Update chat API routes (`app/api/chat/`, `app/api/chats/[id]/`) to call Mem0AI methods at appropriate points.
-67 |    - Ensure error handling and fallbacks if memory service is unavailable.
-68 | 5. **Prompt Augmentation:**
-69 |    - Update LLM prompt construction to include retrieved memories/context.
-70 | 6. **Testing:**
-71 |    - Write unit/integration tests for memory operations.
-72 |    - Test with real chat sessions to verify memory persistence and retrieval.
-73 | 7. **Performance and Scaling:**
-74 |    - Monitor latency and optimize Pinecone queries as needed.
-75 |    - Consider background processing for heavy memory operations.
-76 | 8. **Documentation:**
-77 |    - Document memory integration points and configuration for future maintainers.
-78 | 
-79 | ## 5. Future Enhancements
-80 | - Add UI for users to view/edit their chat history/memories.
-81 | - Support for multiple memory backends (switchable via config).
-82 | - Analytics on memory usage and retrieval effectiveness.
-83 | 
-84 | ## 6. References
-85 | - [Mem0AI DeepWiki](https://deepwiki.com/mem0ai/mem0)
-86 | - [Mem0AI GitHub](https://github.com/mem0ai/mem0)
-87 | - [Mem0AI SDK Docs](https://github.com/mem0ai/mem0#readme)
-88 | - [Pinecone Docs](https://docs.pinecone.io/) 
-```
-
-docs/model-picker-infinite-loop-debugging.md
-```
-1 | # Debugging: Model Picker Infinite Update Loop in React Context
-2 | 
-3 | ## Error Observed
-4 | 
-5 | ```
-6 | Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
-7 | ```
-8 | 
-9 | ## Root Cause
+3 | ## 🎯 What's New
+4 | - **iOS Homescreen Integration**: Complete iOS homescreen shortcut functionality with native app-like experience
+5 | - **Apple Touch Icons**: High-quality branded icons optimized for all iOS device sizes and configurations
+6 | - **Smart Installation Prompt**: Intelligent iOS detection with contextual "Add to Home Screen" suggestions
+7 | - **Enhanced Mobile Experience**: Comprehensive iOS-specific styling and touch optimizations
+8 | - **Progressive Web Enhancement**: Web app manifest and meta tags for standalone display mode
+9 | - **Mobile UI Improvements**: Enhanced chat interface and typography optimized for mobile devices
 10 | 
-11 | - The error was caused by an infinite update loop between a consumer component (`components/chat.tsx`) and the context provider (`lib/context/model-context.tsx`).
-12 | - The consumer was reading from `localStorage` and calling `setSelectedModel` in a `useEffect`, while the context provider was also managing the same state and syncing with `localStorage`.
-13 | - This caused repeated state updates and re-renders, resulting in the React error above.
-14 | 
-15 | ## Failed Fixes
-16 | 
-17 | ### 1. Guarding setSelectedModel in Context
-18 | - **Attempt:** Only call `setSelectedModelState` if the new model is different from the current one.
-19 | - **Result:** Did not resolve the issue, as the consumer effect still caused repeated updates.
-20 | 
-21 | ### 2. Removing setSelectedModel from useEffect in Consumer (Partial)
-22 | - **Attempt:** Remove the effect, but it was not fully removed in all places, so the loop persisted.
-23 | - **Result:** Error continued until the effect was completely removed.
-24 | 
-25 | ## Correct Fix
-26 | 
-27 | - **Solution:** Remove the `useEffect` in `components/chat.tsx` that set `selectedModel` from `localStorage`.
-28 | - **Reason:** The context provider (`lib/context/model-context.tsx`) is solely responsible for initializing and syncing the model state with `localStorage`. Consumers should only use the context value and setter, not re-read or re-set from `localStorage`.
-29 | - **Result:** Infinite update loop resolved. Model picker works as expected.
+11 | ## 🔧 Technical Implementation
+12 | - **Apple Touch Icon Assets**: Complete icon set for all iOS devices and screen densities
+13 |   - 180x180px for iPhone 6 Plus and newer devices
+14 |   - 167x167px for iPad Pro with Retina display
+15 |   - 152x152px for standard iPad Retina display
+16 |   - 120x120px for iPhone Retina display
+17 |   - Optimized PNG format with no transparency for perfect iOS integration
+18 | - **Web App Manifest**: Comprehensive `manifest.json` with proper metadata and standalone display configuration
+19 | - **iOS Detection Component**: Smart `ios-install-prompt.tsx` component with user preference memory and installation status detection
+20 | - **Meta Tag Enhancements**: Complete iOS-specific meta tag implementation for optimal homescreen experience
+21 | - **CSS Mobile Optimization**: Enhanced styling for iOS Safari and homescreen app mode with safe area support
+22 | 
+23 | ## 🛡️ Mobile Experience & UX
+24 | - **Native App Feel**: When launched from home screen, ChatLima opens without browser chrome for seamless experience
+25 | - **Safe Area Support**: Proper handling for notched devices (iPhone X and newer) with appropriate padding and layout
+26 | - **Touch Optimization**: Improved touch targets and interactions specifically designed for mobile use
+27 | - **Enhanced Typography**: Better mobile typography and spacing for improved readability on smaller screens
+28 | - **Smooth Scrolling**: Optimized scrolling behavior and performance for mobile devices
+29 | - **Installation Memory**: User dismissal preferences saved to avoid annoying repeated prompts
 30 | 
-31 | ## Key Takeaways
-32 | 
-33 | - **State should have a single source of truth.**
-34 | - **Do not duplicate state logic between context and consumers.**
-35 | - **Let context providers handle initialization and persistence.**
-36 | 
-37 | ---
+31 | ## 📈 Benefits
+32 | - **Quick Access**: Users can launch ChatLima directly from iOS home screen like a native app
+33 | - **Improved Engagement**: Easier access encourages more frequent usage on mobile devices
+34 | - **Better Mobile UX**: Comprehensive mobile optimizations improve overall user experience
+35 | - **Reduced Friction**: No need to open Safari and navigate to website each time
+36 | - **Native Integration**: Proper iOS integration with branded icons and standalone display
+37 | - **Future-Proof Foundation**: Groundwork laid for potential PWA features and offline functionality
 38 | 
-39 | **Documented by AI after debugging session, 2024.** 
-```
-
-docs/openrouter_web_search_integration_plan.md
-```
-1 | # Implementation Plan: Adding OpenRouter Web Search Feature
-2 | 
-3 | ## Overview
-4 | Add web search capabilities to the chat application using OpenRouter's web search feature, allowing the AI to ground responses in real-time web data.
-5 | 
-6 | ## 1. API Integration Updates
-7 | 
-8 | ### 1.1 OpenRouter Client Enhancement
-9 | - Update OpenRouter client configuration in `ai/providers.ts` to include web search options:
-10 |   ```typescript
-11 |   const openrouterClient = createOpenRouter({
-12 |     apiKey: getApiKey('OPENROUTER_API_KEY'),
-13 |     headers: {
-14 |       'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL,
-15 |       'X-Title': process.env.NEXT_PUBLIC_APP_TITLE,
-16 |     },
-17 |     plugins: [{ id: "web" }] // Add web search plugin
-18 |   });
-19 |   ```
-20 | 
-21 | ### 1.2 API Client Updates
-22 | - Create new types for web search options and annotations
-23 | - Update API request structure to include web search parameters
-24 | - Add support for handling URL citations in responses
-25 | 
-26 | ## 2. Database Schema Updates
-27 | 
-28 | ### 2.1 Message Table Updates
-29 | - Add columns for storing web search metadata:
-30 |   - `has_web_search`: boolean
-31 |   - `web_search_context_size`: enum ('low', 'medium', 'high')
-32 |   - `citations`: jsonb array for storing URL citations
-33 | 
-34 | ### 2.2 Chat Settings
-35 | - Add web search preferences to chat settings:
-36 |   - Default search context size
-37 |   - Maximum results per query
-38 |   - Enable/disable web search
-39 | 
-40 | ## 3. Backend Implementation
-41 | 
-42 | ### 3.1 API Route Updates
-43 | Location: `app/api/chat/route.ts`
-44 | - Add web search options to request processing
-45 | - Implement citation handling
-46 | - Add error handling for web search-specific cases
-47 | 
-48 | ### 3.2 Chat Processing
-49 | - Update chat processing logic to:
-50 |   - Include web search parameters
-51 |   - Process and store citations
-52 |   - Handle pricing implications
-53 | 
-54 | ## 4. Frontend Implementation
-55 | 
-56 | ### 4.1 Chat Interface Updates
-57 | - Add UI components to existing chat interface:
-58 |   - Web search toggle in message input area
-59 |   - Search context size selector in settings
-60 |   - Citation display in message bubbles
-61 | - Style citations with proper linking
-62 | 
-63 | ### 4.2 Settings Panel
-64 | - Extend existing API Key Manager with web search options:
-65 |   - Default search behavior
-66 |   - Context size preferences
-67 |   - Citation display preferences
-68 | 
-69 | ### 4.3 Message Display
-70 | - Update existing message components to handle citations:
-71 |   - Add citation component with hover states
-72 |   - Implement citation highlighting
-73 |   - Add citation count badges
-74 | 
-75 | ## 5. User Experience
-76 | 
-77 | ### 5.1 Visual Feedback
-78 | - Add loading states for web searches
-79 | - Display search context size indicator
-80 | - Show citation count badges
-81 | 
-82 | ### 5.2 Error Handling
-83 | - Implement user-friendly error messages for:
-84 |   - API rate limits
-85 |   - Search context size limits
-86 |   - Citation processing errors
-87 | 
-88 | ## 6. Testing
-89 | 
-90 | ### 6.1 Unit Tests
-91 | - Test web search parameter validation
-92 | - Test citation processing
-93 | - Test database operations
-94 | 
-95 | ### 6.2 Integration Tests
-96 | - Test complete chat flow with web search
-97 | - Test error scenarios
-98 | - Test citation display and linking
-99 | 
-100 | ### 6.3 E2E Tests
-101 | - Test full user journey with web search
-102 | - Test settings configuration
-103 | - Test citation interaction
-104 | 
-105 | ## 7. Documentation
-106 | 
-107 | ### 7.1 Code Documentation
-108 | - Add JSDoc comments for new functions
-109 | - Document web search configuration options
-110 | - Document citation handling
-111 | 
-112 | ### 7.2 User Documentation
-113 | - Create user guide for web search features
-114 | - Document pricing implications
-115 | - Provide best practices
-116 | 
-117 | ## 8. Deployment
-118 | 
-119 | ### 8.1 Migration Plan
-120 | - Create database migrations
-121 | - Plan staged rollout
-122 | - Configure monitoring
-123 | 
-124 | ### 8.2 Monitoring
-125 | - Add metrics for:
-126 |   - Web search usage
-127 |   - Citation clicks
-128 |   - Error rates
-129 |   - Response times
-130 | 
-131 | ## Timeline Estimate
-132 | 1. API Integration Updates: 1 day
-133 | 2. Database Updates: 1 day
-134 | 3. Backend Implementation: 2 days
-135 | 4. Frontend Implementation: 3 days
-136 | 5. Testing: 2 days
-137 | 6. Documentation: 1 day
-138 | 7. Deployment: 1 day
-139 | 
-140 | Total: ~11 working days
-141 | 
-142 | ## Dependencies
-143 | - Existing OpenRouter integration (✓ Already implemented)
-144 | - Database migration permissions
-145 | - Frontend UI component library (✓ Already using shadcn/ui)
-146 | 
-147 | ## Risks and Mitigation
-148 | 1. Cost Management
-149 |    - Implement usage limits
-150 |    - Add cost monitoring
-151 |    - Create alert thresholds
-152 | 
-153 | 2. Performance
-154 |    - Cache common searches
-155 |    - Optimize citation storage
-156 |    - Implement lazy loading
-157 | 
-158 | 3. Rate Limiting
-159 |    - Add request queuing
-160 |    - Implement backoff strategy
-161 |    - Monitor usage patterns
-162 | 
-163 | ## Success Metrics
-164 | 1. User Engagement
-165 |    - Web search usage rate
-166 |    - Citation click-through rate
-167 |    - User feedback scores
-168 | 
-169 | 2. Performance
-170 |    - Response time with web search
-171 |    - Error rate
-172 |    - Search relevance scores
-173 | 
-174 | 3. Business Impact
-175 |    - Cost per chat
-176 |    - User retention
-177 |    - Feature adoption rate 
-```
-
-docs/polar-integration-plan.md
-```
-1 | # Polar Integration Plan for Next.js App with Better-Auth & Neon DB
-2 | 
-3 | ## Overview
-4 | This document outlines a step-by-step plan to integrate [Polar](https://docs.polar.sh/introduction) into a Next.js application that uses [Better-Auth](https://docs.polar.sh/integrate/sdk/adapters/better-auth) for authentication and Neon DB for data storage. The plan also covers enabling [Usage-Based Billing](https://docs.polar.sh/features/usage-based-billing/introduction).
-5 | 
-6 | ---
-7 | 
-8 | ## 1. Preparation
-9 | 
-10 | ### 1.1. Polar Account & Organization
-11 | - Sign up at [polar.sh](https://polar.sh/signup) and create an organization.
-12 | - In the Polar dashboard, create an **Organization Access Token** and note it for environment configuration.
-13 | 
-14 | ### 1.2. Environment Variables
-15 | - Add the following to your `.env.local`:
-16 |   - `POLAR_ACCESS_TOKEN=...`
-17 |   - `POLAR_WEBHOOK_SECRET=...` (after webhook setup)
-18 |   - `SUCCESS_URL=...` (URL to redirect after successful checkout)
-19 | 
-20 | ---
-21 | 
-22 | ## 2. Install Dependencies
-23 | - Install the required packages:
-24 |   ```bash
-25 |   pnpm install @polar-sh/nextjs zod better-auth @polar-sh/better-auth
-26 |   ```
-27 |   ([Next.js Adapter](https://docs.polar.sh/integrate/sdk/adapters/nextjs), [Better-Auth Adapter](https://docs.polar.sh/integrate/sdk/adapters/better-auth))
-28 | 
-29 | ---
-30 | 
-31 | ## 3. Integrate Polar with Better-Auth
-32 | 
-33 | ### 3.1. Configure Better-Auth Plugin
-34 | - In your Better-Auth setup file (`lib/auth.ts`), add the Polar plugin:
-35 |   - Import and instantiate the Polar SDK client with your access token.
-36 |   - Configure the `polar` plugin within the `betterAuth` initialization.
-37 |   - Enable automatic customer creation on signup (`createCustomerOnSignUp: true`).
-38 |   - Enable the customer portal (`enableCustomerPortal: true`).
-39 |   - Configure checkout:
-40 |     - `enabled: true`
-41 |     - Define `products` (array of product objects with `productId` and `slug`).
-42 |     - Set `successUrl`.
-43 |   - Configure webhooks:
-44 |     - Provide `secret` (from `POLAR_WEBHOOK_SECRET`).
-45 |     - Optionally, define specific `onPayload` handlers (e.g., `onSubscriptionCreated`, `onOrderCreated`).
-46 | - Reference: [Better-Auth Adapter Docs](https://docs.polar.sh/integrate/sdk/adapters/better-auth)
-47 | 
-48 | ### 3.2. API Routes Provided by Plugin (via `app/api/auth/[...betterauth]/route.ts`)
-49 | - The Polar Better-Auth plugin will expose its routes relative to your BetterAuth instance. Given the existing setup at `app/api/auth/[...betterauth]/route.ts`, the Polar routes will be:
-50 |   - `GET /api/auth/checkout/:slug` — Redirect to Polar checkout
-51 |   - `GET /api/auth/state` — Customer state (subscriptions, entitlements, etc.) for the authenticated user
-52 |   - `GET /api/auth/portal` — Redirects to Polar Customer Portal for authenticated user
-53 |   - `POST /api/auth/polar/webhooks` — Incoming webhooks (ensure this path is configured in your Polar Organization Settings)
+39 | ## 🔄 Migration Notes
+40 | - **Automatic Availability**: iOS homescreen functionality is automatically available to all users on compatible devices
+41 | - **No Configuration Required**: All necessary assets and configurations deployed automatically
+42 | - **Backward Compatibility**: All existing functionality remains unchanged for non-iOS users
+43 | - **Progressive Enhancement**: iOS users get enhanced experience while maintaining compatibility
+44 | - **Asset Optimization**: New icon assets added without affecting site performance
+45 | - **Component Integration**: iOS install prompt integrated seamlessly into existing UI
+46 | 
+47 | ## 🚀 Deployment
+48 | - **Icon Assets**: All Apple touch icon variants deployed to public directory
+49 | - **Manifest Configuration**: Web app manifest active with proper metadata
+50 | - **Meta Tag Integration**: iOS-specific meta tags added to application layout
+51 | - **Component Activation**: iOS installation prompt component deployed and active
+52 | - **CSS Enhancements**: Mobile-optimized styling deployed across all components
+53 | - **Documentation**: Implementation plan and guidelines added to project documentation
 54 | 
-55 | ---
-56 | 
-57 | ## 4. Next.js API Route Integration (Standalone if needed)
-58 | 
-59 | While the Better-Auth plugin handles most cases, you might need dedicated API routes for more custom checkout or portal logic not covered by the plugin. The existing API structure is `app/api/<feature>/route.ts`.
-60 | 
-61 | ### 4.1. Checkout Handler (If not using Better-Auth plugin's checkout exclusively)
-62 | - Create a route (e.g., `/app/api/checkout/polar/route.ts` or a more specific path if needed) using the Polar Next.js adapter:
-63 |   ```typescript
-64 |   import { Checkout } from "@polar-sh/nextjs";
-65 |   export const GET = Checkout({
-66 |     accessToken: process.env.POLAR_ACCESS_TOKEN,
-67 |     successUrl: process.env.SUCCESS_URL,
-68 |     server: "sandbox", // or 'production'
-69 |   });
-70 |   ```
-71 | - [Reference](https://docs.polar.sh/integrate/sdk/adapters/nextjs)
+55 | ## 🆕 New Features Detail
+56 | - **Smart iOS Detection**: Automatic detection of iOS Safari users with contextual prompting
+57 |   - Detects device type and browser for targeted user experience
+58 |   - Checks if already added to home screen to avoid duplicate prompts
+59 |   - Respects user dismissal preferences with localStorage persistence
+60 | - **Progressive Installation Prompt**: Non-intrusive "Add to Home Screen" suggestions
+61 |   - Appears only for eligible iOS users at appropriate moments
+62 |   - Clear instructions and value proposition for homescreen installation
+63 |   - Easy dismissal with memory to avoid repeated interruptions
+64 | - **Standalone App Mode**: Complete standalone display experience when launched from home screen
+65 |   - No browser address bar or navigation controls
+66 |   - Proper status bar styling and safe area handling
+67 |   - Native app-like navigation and interaction patterns
+68 | - **Enhanced Mobile Interface**: Comprehensive mobile UI improvements
+69 |   - Better chat component responsiveness and touch handling
+70 |   - Improved textarea component styling for mobile input
+71 |   - Enhanced markdown rendering optimized for mobile screens
 72 | 
-73 | ### 4.2. Customer Portal Handler (If not using Better-Auth plugin's portal exclusively)
-74 | - Create a route (e.g., `/app/api/portal/polar/route.ts`) for the customer portal:
-75 |   ```typescript
-76 |   import { CustomerPortal } from "@polar-sh/nextjs";
-77 |   export const GET = CustomerPortal({
-78 |     accessToken: process.env.POLAR_ACCESS_TOKEN,
-79 |     getCustomerId: (req) => { /* resolve Polar customer ID */ },
-80 |     server: "sandbox",
-81 |   });
-82 |   ```
-83 | 
-84 | ### 4.3. Webhook Handler (If not using Better-Auth plugin's webhook handler)
-85 | - Create a webhook endpoint (e.g., `/app/api/webhooks/polar/route.ts` to distinguish from the Better-Auth one, or if a separate handler is preferred):
-86 |   ```typescript
-87 |   import { Webhooks } from "@polar-sh/nextjs";
-88 |   export const POST = Webhooks({
-89 |     webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
-90 |     onPayload: async (payload) => { /* handle events */ },
-91 |   });
-92 |   ```
-93 | - [Reference](https://docs.polar.sh/integrate/sdk/adapters/nextjs)
-94 | 
-95 | ---
-96 | 
-97 | ## 5. Usage-Based Billing Integration
-98 | 
-99 | ### 5.1. Understand Usage-Based Billing
-100 | - Review the [Usage-Based Billing Introduction](https://docs.polar.sh/features/usage-based-billing/introduction) to understand concepts like usage records, metered products, and reporting usage.
-101 | 
-102 | ### 5.2. Product Setup
-103 | - In the Polar dashboard, create products with usage-based pricing models.
-104 | - Note product IDs for use in your integration.
-105 | 
-106 | ### 5.3. Reporting Usage
-107 | - Implement backend logic to report usage events to Polar via their API.
-108 | - Ensure usage is tracked in your Neon DB and reported in near real-time or on a schedule.
-109 | - Reference: [Usage-Based Billing Docs](https://docs.polar.sh/features/usage-based-billing/introduction)
-110 | 
-111 | ---
-112 | 
-113 | ## 6. Database (Neon DB) Considerations
-114 | - Ensure user and customer records in Neon DB are linked to Polar customer IDs (externalId mapping).
-115 | - Store usage events and billing history for auditing and reconciliation.
-116 | 
-117 | ---
-118 | 
-119 | ## 7. Testing & Sandbox
-120 | - Use the `server: "sandbox"` option in all Polar SDK calls during development.
-121 | - Test the full flow: signup, checkout, usage reporting, webhook handling, and customer portal.
-122 | 
-123 | ---
-124 | 
-125 | ## 8. Go Live
-126 | - Switch `server` to `production` in all Polar SDK calls.
-127 | - Update environment variables with production tokens and webhook secrets.
-128 | - Monitor webhooks and billing events for correctness.
-129 | 
-130 | ---
-131 | 
-132 | ## References
-133 | - [Polar Introduction](https://docs.polar.sh/introduction)
-134 | - [Next.js Adapter](https://docs.polar.sh/integrate/sdk/adapters/nextjs)
-135 | - [Better-Auth Adapter](https://docs.polar.sh/integrate/sdk/adapters/better-auth)
-136 | - [Next.js Guide](https://docs.polar.sh/guides/nextjs)
-137 | - [Usage-Based Billing](https://docs.polar.sh/features/usage-based-billing/introduction) 
-```
-
-docs/polar_external_id_integration_resolution.md
-```
-1 | # Resolving Polar external_id Integration with BetterAuth
-2 | 
-3 | ## 1. Problem Statement
-4 | 
-5 | The primary goal was to ensure that when a new user signs up for the application (initially via Google Sign-In), a corresponding customer record is created in Polar, and the application's internal user ID is stored as the `external_id` in the Polar customer record.
-6 | 
-7 | This was crucial to resolve errors like "Could not find Polar customer with external ID" which occurred when the application attempted to perform operations like fetching credit balances or reporting usage for users whose `external_id` was not known to Polar.
-8 | 
-9 | ## 2. Initial Approaches & Challenges
-10 | 
-11 | ### 2.1. Using `createCustomerOnSignUp` in Polar Plugin
-12 | - The `@polar-sh/better-auth` plugin offers a `createCustomerOnSignUp: true` option.
-13 | - Initial attempts might have used this, but direct control over the `externalId` and handling specific scenarios (like anonymous users vs. registered users) led to exploring custom hooks.
-14 | 
-15 | ### 2.2. Using `onAccountCreated` in Polar Plugin
-16 | - The next approach involved setting `createCustomerOnSignUp: false` and leveraging the `onAccountCreated` hook provided within the `polarPlugin` configuration in `lib/auth.ts`.
-17 | - The logic here was to explicitly call `polarClient.customers.create({ ... externalId: user.id })`.
-18 | - **Challenge**: Through systematic logging, it was discovered that this `onAccountCreated` hook (and a similar one at the `socialProviders.google` level) was **not being triggered** for new users signing up via Google, especially when the anonymous user linking flow was involved. This meant the Polar customer creation logic was never executed.
-19 | 
-20 | ## 3. Identifying the Correct Hook for Execution
-21 | 
-22 | - **Observation**: While the `onAccountCreated` hooks were silent, detailed logging revealed that the `onLinkAccount` hook within the `anonymous` plugin (also configured in `lib/auth.ts`) *was* consistently firing after a new user successfully authenticated via Google and their temporary anonymous user record was linked to their new registered user record.
-23 | - **Key Insight**: The `onLinkAccount` hook provides a `newUser` object, which contains `newUser.user` with all the necessary details for Polar customer creation: `id` (the application's user ID), `email`, and `name`.
-24 | 
-25 | ## 4. Solution Implemented
-26 | 
-27 | The core of the solution was to relocate the Polar customer creation and linking logic to a place where it was guaranteed to run with the correct user data.
-28 | 
-29 | ### 4.1. Moving Logic to `onLinkAccount`
-30 | - The entire try-catch block responsible for Polar customer operations was moved from the (non-firing) `onAccountCreated` hook of the `polarPlugin` into the (verified firing) `onLinkAccount` hook of the `anonymous` plugin in `lib/auth.ts`.
-31 | 
-32 | ### 4.2. Logic within `onLinkAccount`
-33 | The implemented logic for the `newUser.user` (referred to as `userForPolar` in the code) is as follows:
-34 | 1.  **Log Processing**: Log that Polar customer processing is starting for the authenticated user, including their app ID and email.
-35 | 2.  **Check for Existing by `externalId`**: Attempt to fetch an existing Polar customer using `polarClient.customers.getExternal({ externalId: userForPolar.id })`.
-36 |     *   If found, log this and, as an optional step, verify if the email matches, offering a point to update the Polar customer's email if necessary (though `externalId` is the primary link).
-37 | 3.  **Create if Not Found by `externalId`**:
-38 |     *   If the `getExternal` call fails with a "ResourceNotFound" (or 404) error, it means no Polar customer is currently linked to this application `user.id`.
-39 |     *   Log this and proceed to attempt creation: `polarClient.customers.create({ email: userForPolar.email, name: userForPolar.name, externalId: userForPolar.id })`.
-40 |     *   If creation is successful, log the new Polar customer ID and the associated `externalId`.
-41 | 4.  **Error Handling for Creation**:
-42 |     *   If the `create` call itself fails, log the error. Crucially, this includes logging detailed API error responses from Polar.
-43 | 
-44 | ## 5. Handling Pre-existing Polar Customers (Email Conflict)
-45 | 
-46 | - **Scenario**: A test case involved a user (`brooksy4503@gmail.com`) who already existed as a customer in the Polar (Sandbox) dashboard by email, but *without* an `external_id` set that matched the application's `user.id`.
-47 | - **Observed Behavior**: When the `onLinkAccount` logic attempted to `polarClient.customers.create()` for this user, Polar's API correctly returned an error: `{"detail":[{"loc":["body","email"],"msg":"A customer with this email address already exists.","type":"value_error"}]}`.
-48 | - **Resolution for Test Case**: For the specific test account (`brooksy4503@gmail.com`), the resolution was to manually delete this customer from the Polar Sandbox dashboard. Upon the next sign-in to the application, the `onLinkAccount` logic treated it as a completely new user (from Polar's perspective) and successfully created the Polar customer with the correct `external_id`.
-49 | - **General Implication**: This confirmed that Polar's `create` API does not automatically link/update an `external_id` if it finds an existing customer by email; it flags it as a conflict.
-50 | - **Current State for Production**: Since it was determined that there were no other existing application users who also pre-existed in Polar in this unlinked state, a complex automated backfill logic (e.g., attempting to list Polar customers by email and then update with `externalId` if a conflict on create occurs) was not added to the `onLinkAccount` hook. The current implementation will log the "email already exists" error from Polar if such a case arises. If this becomes a more common scenario, this error logging will be the starting point for implementing a more sophisticated linking strategy within the `createError` block.
-51 | 
-52 | ## 6. Key Files Modified
-53 | - `lib/auth.ts`: This file saw all the significant changes, specifically within the `plugins` array, moving logic to the `anonymous` plugin's `onLinkAccount` hook and effectively commenting out the non-operational `onAccountCreated` hook in the `polarPlugin`.
-54 | 
-55 | ## 7. Outcome
-56 | - New users signing up via Google are now correctly having Polar customer records created.
-57 | - The application's internal `user.id` is successfully stored as the `external_id` on these Polar customer records.
-58 | - Subsequent operations like credit checking and usage reporting for these users function correctly, as the link via `externalId` is established.
-59 | - The initial "Could not find Polar customer with external ID" errors have been resolved for new user flows and for test accounts that were reset/recreated. 
-```
-
-docs/uvx-mcp-server-issue.md
-```
-1 | # Handling `uvx` MCP Servers in `app/api/chat/route.ts`
-2 | 
-3 | This document describes an issue encountered when integrating MCP (Multi-Compute Protocol) servers configured to run via `uvx` within the chat API endpoint (`app/api/chat/route.ts`) and the solution implemented.
-4 | 
-5 | ## Problem
-6 | 
-7 | Stdio MCP servers configured in `mcp.json` (or similar) using `command: "uvx"` were failing to initialize correctly. The expected behavior of `uvx` is to download the specified package (e.g., `aci-mcp`) and execute it with the given arguments.
-8 | 
-9 | However, the `app/api/chat/route.ts` handler was encountering errors when trying to spawn the process:
-10 | 
-11 | - Initial attempts to directly spawn `uvx` or the target executable (e.g., `aci-mcp`) often resulted in "No such file or directory" errors, suggesting path issues or that the executable wasn't installed where the Node.js `spawn` function expected it.
-12 | - Attempts to manually replicate `uvx` behavior by:
-13 |     1. Transforming `uvx tool ...` to `python3 -m uv run tool ...` failed.
-14 |     2. Manually installing the tool using `uv pip install tool` also failed, initially due to `uv` requiring a virtual environment or the `--system` flag, and even then, path issues might have persisted.
-15 | 
-16 | ## Root Cause
-17 | 
-18 | The primary issue was that the Node.js code in `app/api/chat/route.ts` was **intercepting the `uvx` command** and attempting to manually manage the installation and execution of the underlying tool. This manual process was overly complex and failed to correctly replicate the integrated download-and-run behavior of `uvx` itself, leading to various environment and path-related errors.
-19 | 
-20 | ## Solution
-21 | 
-22 | The successful solution involved simplifying the handler logic significantly:
-23 | 
-24 | 1.  **Detect `uvx`:** In `app/api/chat/route.ts`, check if `mcpServer.command === 'uvx'`.
-25 | 2.  **Ensure `uv` is Installed:** Since `uvx` is distributed as part of `uv`, ensure `uv` is present in the environment where the Node.js server runs. This is done by running `pip3 install uv` via `spawn`.
-26 | 3.  **Run `uvx` Directly:** **Crucially, do not modify `mcpServer.command` or `mcpServer.args`.** Allow the `StdioMCPTransport` constructor to receive the original command (`uvx`) and its arguments.
-27 | 
-28 | ```typescript
-29 | // Inside the loop processing mcpServers in app/api/chat/route.ts
-30 | 
-31 | if (mcpServer.type === 'stdio') {
-32 |   // ... (check for command/args)
-33 | 
-34 |   // Convert env array to object
-35 |   // ...
-36 | 
-37 |   // Check for uvx pattern
-38 |   if (mcpServer.command === 'uvx') {
-39 |     // Ensure uv is installed, which provides uvx
-40 |     console.log("Ensuring uv (for uvx) is installed...");
-41 |     let uvInstalled = false;
-42 |     const installUvSubprocess = spawn('pip3', ['install', 'uv']);
-43 |     // ... (await subprocess completion and check for errors)
-44 | 
-45 |     if (!uvInstalled) {
-46 |       console.warn("Skipping uvx command: Failed to ensure uv installation.");
-47 |       continue;
-48 |     }
-49 | 
-50 |     // Do NOT modify the command or args. Let StdioMCPTransport run uvx directly.
-51 |     console.log(`Proceeding to spawn uvx command directly.`);
-52 | 
-53 |   } else if (mcpServer.command.includes('python3')) {
-54 |     // Handle python3 -m package installation using uv pip install --system
-55 |     // ...
-56 |   }
-57 | 
-58 |   // Log the final command and args before spawning for stdio
-59 |   console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
-60 | 
-61 |   transport = new StdioMCPTransport({
-62 |     command: mcpServer.command,
-63 |     args: mcpServer.args,
-64 |     env: Object.keys(env).length > 0 ? env : undefined
-65 |   });
-66 | 
-67 | } else if (mcpServer.type === 'sse') {
-68 |   // ... (handle SSE)
-69 | }
-70 | 
-71 | // ... (create MCP client with transport)
-72 | ```
-73 | 
-74 | ## Why it Works
-75 | 
-76 | By ensuring `uv` is installed and then allowing `StdioMCPTransport` to execute `uvx` directly, we leverage `uvx`'s intended functionality. `uvx` correctly handles:
-77 | 
-78 | - Downloading the specified package (e.g., `aci-mcp`) into its own cache.
-79 | - Executing the package with the provided arguments.
-80 | - Managing the necessary environment setup transparently.
+73 | ## 🐛 Bug Fixes & Improvements
+74 | - **Mobile Responsiveness**: Improved layout handling across all mobile screen sizes
+75 | - **Touch Interaction**: Better touch target sizing and interaction feedback
+76 | - **Typography Enhancement**: Optimized text rendering and spacing for mobile devices
+77 | - **Asset Loading**: Efficient loading of mobile-specific assets and configurations
+78 | - **Component Styling**: Enhanced styling consistency across chat and input components
+79 | 
+80 | ---
 81 | 
-82 | This avoids the complexities and pitfalls of manually managing Python package installation and execution paths within the Node.js environment. 
+82 | **Full Changelog**: [v0.12.1...v0.13.0](https://github.com/brooksy4503/chatlima/compare/v0.12.1...v0.13.0) 
+```
+
+releases/RELEASE_NOTES_v0.3.0.md
+```
+1 | # 🚀 ChatLima v0.3.0 - SEO & Sitemap Implementation
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | ### 📍 Dynamic Sitemap Generation
+6 | - **New Feature**: Added `/sitemap.xml` route with intelligent content generation
+7 | - **Production-Only**: Sitemap is only available on production domain (`chatlima.com`) for security
+8 | - **SEO Optimized**: Includes proper XML structure with `lastmod`, `changefreq`, and `priority` attributes
+9 | - **Privacy-First**: Excludes private user content (chats, API endpoints, authentication pages)
+10 | - **Extensible**: Easy-to-maintain structure for adding future public pages
+11 | 
+12 | ### 🤖 Enhanced Robots.txt
+13 | - **Environment-Aware**: Different rules for production vs development environments
+14 | - **Privacy Protection**: Explicitly disallows crawling of user chat content and sensitive endpoints
+15 | - **Production Ready**: Allows search engine crawling of public pages while protecting user privacy
+16 | - **Development Safe**: Completely disallows crawling in non-production environments
+17 | 
+18 | ## 🔧 Technical Implementation
+19 | 
+20 | ### Sitemap Features
+21 | - Dynamic base URL detection using request headers
+22 | - Proper XML formatting following sitemap protocol standards
+23 | - 24-hour caching for optimal performance
+24 | - Structured for easy addition of future pages (docs, pricing, about, etc.)
+25 | 
+26 | ### Robots.txt Features
+27 | - Environment detection based on domain
+28 | - Comprehensive crawl rules protecting user privacy
+29 | - Sitemap reference for search engines
+30 | - 1-hour caching for efficient delivery
+31 | 
+32 | ## 🛡️ Security & Privacy
+33 | 
+34 | - **User Privacy**: Chat content and user-specific pages are completely excluded from search indexing
+35 | - **API Protection**: All API endpoints are disallowed from crawling
+36 | - **Authentication Security**: Auth-related pages are protected from indexing
+37 | - **Development Safety**: Non-production environments block all crawling
+38 | 
+39 | ## 📈 SEO Benefits
+40 | 
+41 | - **Search Engine Discovery**: Proper sitemap helps search engines find and index public content
+42 | - **Crawl Efficiency**: Robots.txt guides search engines to relevant content while avoiding private areas
+43 | - **Performance**: Caching headers ensure efficient delivery of SEO files
+44 | - **Standards Compliance**: Follows official sitemap and robots.txt protocols
+45 | 
+46 | ## 🔄 Migration Notes
+47 | 
+48 | - No breaking changes in this release
+49 | - New routes are automatically available: `/sitemap.xml` and `/robots.txt`
+50 | - No database migrations required
+51 | - No configuration changes needed
+52 | 
+53 | ## 🚀 Deployment
+54 | 
+55 | This release is ready for production deployment with no additional setup required. The sitemap and robots.txt will automatically adapt to your deployment environment.
+56 | 
+57 | ---
+58 | 
+59 | **Full Changelog**: [v0.2.0...v0.3.0](https://github.com/your-username/chatlima/compare/v0.2.0...v0.3.0)
+60 | 
+61 | ## 👥 Contributors
+62 | 
+63 | Thanks to all contributors who made this release possible!
+64 | 
+65 | ---
+66 | 
+67 | *For questions or issues, please open a GitHub issue or reach out to the maintainers.* 
+```
+
+releases/RELEASE_NOTES_v0.3.1.md
+```
+1 | # 🚀 ChatLima v0.3.1 - Documentation Link Update
+2 | 
+3 | ## 🎯 What's New
+4 | - Added a new link to the documentation website.
+5 | 
+6 | ## 🔧 Technical Implementation
+7 | - Updated relevant files to include the new documentation link.
+8 | 
+9 | ## 🛡️ Security & Privacy
+10 | - No security or privacy related changes in this update.
+11 | 
+12 | ## 📈 Benefits
+13 | - Improved access to documentation for users.
+14 | 
+15 | ## 🔄 Migration Notes
+16 | - No breaking changes.
+17 | - No configuration changes required.
+18 | - No database migrations needed.
+19 | 
+20 | ## 🚀 Deployment
+21 | - Standard deployment procedures apply.
+22 | - No special environment considerations.
+23 | - No special setup requirements.
+24 | 
+25 | ---
+26 | 
+27 | **Full Changelog**: [v0.3.0...v0.3.1](https://github.com/brooksy4503/chatlima/compare/v0.3.0...v0.3.1) 
+```
+
+releases/RELEASE_NOTES_v0.4.0.md
+```
+1 | # 🚀 ChatLima v0.4.0 - Support for DeepSeek R1 0528
+2 | 
+3 | ## 🎯 What's New
+4 | - Added support for the DeepSeek R1 0528 model.
+5 | - Users can now select DeepSeek R1 0528 for chat interactions.
+6 | - Enhanced model selection capabilities in the UI.
+7 | 
+8 | ## 🔧 Technical Implementation
+9 | - Integrated DeepSeek R1 0528 API.
+10 | - Updated model provider logic to include DeepSeek.
+11 | - Modified chat interface to accommodate new model options.
+12 | - New API route for DeepSeek interactions (if applicable, specify route).
+13 | 
+14 | ## 🛡️ Security & Privacy
+15 | - Ensured secure API key management for DeepSeek.
+16 | - Maintained existing privacy standards with the new model integration.
+17 | - No changes to user data handling.
+18 | 
+19 | ## 📈 Benefits
+20 | - Access to a new, powerful language model.
+21 | - Potentially improved response quality and capabilities.
+22 | - More options for users to tailor their chat experience.
+23 | 
+24 | ## 🔄 Migration Notes
+25 | - No breaking changes.
+26 | - Ensure DeepSeek API key is configured in environment variables if self-hosting.
+27 | - No database migrations needed.
+28 | 
+29 | ## 🚀 Deployment
+30 | - Standard deployment process.
+31 | - Verify DeepSeek API connectivity in the production environment.
+32 | - Ensure `.env` includes `DEEPSEEK_API_KEY` (or similar).
+33 | 
+34 | ---
+35 | 
+36 | **Full Changelog**: [v0.3.1...v0.4.0](https://github.com/brooksy4503/chatlima/compare/v0.3.1...v0.4.0) 
+```
+
+releases/RELEASE_NOTES_v0.4.1.md
+```
+1 | # 🚀 ChatLima v0.4.1 - Model Updates and Refinements
+2 | 
+3 | ## 🎯 What's New
+4 | - Added new DeepSeek R1 0528 model to disabled servers list for specific configurations.
+5 | - Updated DeepSeek R1 0528 model description and capabilities for better user understanding.
+6 | 
+7 | ## 🔧 Technical Implementation
+8 | - Refactored model descriptions for Grok models These models can use Tool Calling (MCP Servers).
+9 | - Enhanced error handling in the chat API for clearer responses and improved debugging.
+10 | 
+11 | ---
+12 | 
+13 | **Full Changelog**: [v0.4.0...v0.4.1](https://github.com/username/chatlima/compare/v0.4.0...v0.4.1) 
+```
+
+releases/RELEASE_NOTES_v0.5.0.md
+```
+1 | # 🚀 ChatLima v0.5.0 - Premium Access Control & Enhanced Model Management
+2 | 
+3 | ## 🎯 What's New
+4 | - **Premium Model Access Control**: Introduced intelligent credit checking system for premium AI models
+5 | - **Enhanced Model Management**: Added new "DeepSeek R1 0528 Qwen3 8B" model with proper access controls
+6 | - **Improved User Experience**: Better feedback and access control throughout the application
+7 | - **Smart Model Picker**: Real-time premium access validation in model selection interface
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | - Added premium flag support to model definitions for fine-grained access control
+11 | - Implemented credit checking logic in chat API (`/api/chat`) for premium model usage
+12 | - Enhanced model picker component with real-time premium access validation
+13 | - Updated chat API to include new DeepSeek R1 model in server-specific disabled lists
+14 | - Improved error handling and user feedback mechanisms across the platform
+15 | 
+16 | ## 🛡️ Security & Privacy
+17 | - Robust access control prevents unauthorized use of premium models
+18 | - Server-side validation ensures credit requirements are properly enforced
+19 | - Enhanced error handling provides clear feedback without exposing sensitive system details
+20 | 
+21 | ## 📈 Benefits
+22 | - **Better User Experience**: Clear feedback when premium models require credits
+23 | - **Resource Management**: Prevents accidental usage of premium models without sufficient credits
+24 | - **Improved Performance**: Optimized model access validation reduces unnecessary API calls
+25 | - **Enhanced Accessibility**: Better model availability management across different server configurations
+26 | 
+27 | ## 🔄 Migration Notes
+28 | - No breaking changes in this release
+29 | - Existing chat sessions and model preferences are preserved
+30 | - Premium model access is now properly validated - users may need sufficient credits to access certain models
+31 | 
+32 | ## 🚀 Deployment
+33 | - Standard deployment process applies
+34 | - No database migrations required
+35 | - Environment variables remain unchanged
+36 | - Ensure credit system is properly configured for premium model access
+37 | 
+38 | ## 🎨 User Interface Enhancements
+39 | - Model picker now shows real-time premium access status
+40 | - Improved error messages for better user guidance
+41 | - Enhanced visual feedback for model availability
+42 | 
+43 | ---
+44 | 
+45 | **Full Changelog**: [v0.4.1...v0.5.0](https://github.com/brooksy4503/chatlima/compare/v0.4.1...v0.5.0) 
+```
+
+releases/RELEASE_NOTES_v0.5.1.md
+```
+1 | # 🚀 ChatLima v0.5.1 - Debugging & Traceability Enhancements
+2 | 
+3 | ## 🎯 What's New
+4 | - Enhanced debugging capabilities in credits API and user credits tracking
+5 | - Improved error traceability across session validation and credit management
+6 | - Better development experience with comprehensive logging for troubleshooting
+7 | - Cleaner repository structure with updated .gitignore configurations
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | - **Enhanced Debugging Logs**: Added comprehensive debug logging to credits API endpoints for better issue diagnosis
+11 | - **useCredits Hook Improvements**: Enhanced the useCredits hook with detailed error tracking and session validation logs
+12 | - **Repository Cleanup**: Added documentation directory to .gitignore to maintain cleaner version control
+13 | - **Error Handling**: Improved error handling and logging in credit fetching operations for better debugging
+14 | 
+15 | ## 🛡️ Security & Privacy
+16 | - Enhanced session validation logging helps identify potential authentication issues
+17 | - Improved credit system monitoring maintains better financial security oversight
+18 | - Debug logs are structured to avoid exposing sensitive user information
+19 | 
+20 | ## 📈 Benefits
+21 | - **Developer Experience**: Faster debugging and issue resolution with detailed logging
+22 | - **System Reliability**: Better monitoring of credit operations reduces financial discrepancies
+23 | - **Troubleshooting**: Enhanced traceability makes it easier to identify and fix issues
+24 | - **Maintenance**: Cleaner repository structure improves long-term maintainability
+25 | 
+26 | ## 🔄 Migration Notes
+27 | - No breaking changes in this patch release
+28 | - Existing functionality remains fully compatible
+29 | - Debug logs are automatically enabled - no configuration changes required
+30 | - .gitignore updates are automatically applied
+31 | 
+32 | ## 🚀 Deployment
+33 | - Standard deployment process applies
+34 | - No additional setup or configuration required
+35 | - Compatible with all existing environments
+36 | - Debug logging works in both development and production environments
+37 | 
+38 | ## 🔍 Technical Details
+39 | - **Files Enhanced**: Credits API routes, useCredits hook implementation
+40 | - **Logging Scope**: Session validation, credit fetching, error handling
+41 | - **Development**: Improved .gitignore for documentation directories
+42 | - **Monitoring**: Better visibility into credit system operations
+43 | 
+44 | ---
+45 | 
+46 | **Full Changelog**: [v0.5.0...v0.5.1](https://github.com/brooksy4503/chatlima/compare/v0.5.0...v0.5.1) 
+```
+
+releases/RELEASE_NOTES_v0.5.2.md
+```
+1 | # 🚀 ChatLima v0.5.2 - Enhanced Credit Management & Error Handling
+2 | 
+3 | ## 🎯 What's New
+4 | - **Improved Credit Balance Checks**: Enhanced validation to prevent negative credit balance issues
+5 | - **Better Error Handling**: More robust error handling in chat API for better user experience
+6 | - **Enhanced Token Usage Tracking**: Refined credit deduction logic for more accurate billing
+7 | - **Cleaner Codebase**: Updated .gitignore for better project management
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | - **Credit Management Overhaul**: Implemented comprehensive checks for negative credit balances in chat API
+11 | - **Enhanced Credit Fetching Logic**: Improved credit retrieval mechanisms with better error handling
+12 | - **Refined Token Usage Tracking**: Updated credit deduction logic to ensure accurate reporting and user feedback
+13 | - **Project Maintenance**: Added Aider-related files to .gitignore for better development workflow management
+14 | 
+15 | ## 🛡️ Security & Privacy
+16 | - **Credit Validation**: Strengthened credit balance validation to prevent unauthorized usage
+17 | - **Error Response Security**: Improved error handling to avoid exposing sensitive information
+18 | - **User Session Protection**: Enhanced session validation for better security
+19 | 
+20 | ## 📈 Benefits
+21 | - **Improved User Experience**: Better error messages and feedback when credit issues occur
+22 | - **More Accurate Billing**: Enhanced token tracking ensures users are charged correctly
+23 | - **Reduced Support Issues**: Better error handling prevents common credit-related problems
+24 | - **Development Efficiency**: Cleaner project structure with improved .gitignore management
+25 | 
+26 | ## 🔄 Migration Notes
+27 | - No breaking changes in this patch release
+28 | - All existing functionality remains compatible
+29 | - Credit management improvements are automatically applied
+30 | 
+31 | ## 🚀 Deployment
+32 | - Standard deployment process applies
+33 | - No special configuration changes required
+34 | - Enhanced error handling will automatically improve user experience
+35 | 
+36 | ---
+37 | 
+38 | **Full Changelog**: [v0.5.1...v0.5.2](https://github.com/brooksy4503/chatlima/compare/v0.5.1...v0.5.2) 
+```
+
+releases/RELEASE_NOTES_v0.6.0.md
+```
+1 | # 🚀 ChatLima v0.6.0 - OpenRouter Pricing Analysis Tool
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | - **📊 Real-time Pricing Analysis**: New developer tool to analyze OpenRouter model costs in real-time
+6 | - **💰 Cost Planning Dashboard**: Calculate estimated costs for different user scenarios (anonymous vs Google users)
+7 | - **📈 Data-Driven Insights**: Token estimates based on actual ChatLima usage data from 1,254 real API requests
+8 | - **🎯 Model Comparison**: Side-by-side cost analysis for all ChatLima-configured models
+9 | - **📋 Formatted Reports**: Clean table output with daily/monthly cost projections
+10 | 
+11 | ## 🔧 Technical Implementation
+12 | 
+13 | ### New Scripts Added:
+14 | - **`scripts/openrouter-pricing-analysis.ts`**: Main pricing analysis tool with real-time API integration
+15 | - **`scripts/analyze-openrouter-data.py`**: Python script for analyzing historical usage data
+16 | - **`scripts/README.md`**: Comprehensive documentation for developer tools
+17 | 
+18 | ### Enhanced Package Configuration:
+19 | - Added `tsx` dependency for TypeScript script execution
+20 | - New npm script: `pricing:analysis` for easy tool execution
+21 | - Updated package.json with real-world token estimates
+22 | 
+23 | ### Key Technical Features:
+24 | - Direct OpenRouter API integration for live pricing data
+25 | - TypeScript implementation with proper error handling
+26 | - Configurable token estimates based on actual usage patterns
+27 | - Support for both npm and direct execution methods
+28 | 
+29 | ## 🛡️ Security & Privacy
+30 | 
+31 | - **🔐 API Key Protection**: Secure handling of OpenRouter API credentials via environment variables
+32 | - **🎯 Developer-Only Tool**: Scripts are designed for development/analysis use only, not user-facing
+33 | - **📊 Privacy-First Data Analysis**: Historical usage analysis uses aggregated, anonymized data
+34 | 
+35 | ## 📈 Benefits
+36 | 
+37 | ### For Developers:
+38 | - **💡 Informed Decision Making**: Choose cost-effective models based on real data
+39 | - **📊 Budget Forecasting**: Accurate monthly cost projections for different usage scenarios
+40 | - **🔍 Real-time Monitoring**: Track pricing changes and model performance
+41 | - **⚡ Quick Analysis**: Run pricing analysis in seconds with simple npm command
+42 | 
+43 | ### For Business:
+44 | - **💰 Cost Optimization**: Identify most cost-effective models for different use cases
+45 | - **📈 Scalability Planning**: Understand cost implications of user growth
+46 | - **🎯 Model Strategy**: Data-driven model selection for optimal cost/performance ratio
+47 | 
+48 | ### For Users:
+49 | - **🚀 Better Performance**: Optimized model selection based on cost-effectiveness analysis
+50 | - **💚 Sustainable Service**: Enhanced cost management supports long-term service sustainability
+51 | 
+52 | ## 📊 Data-Driven Accuracy
+53 | 
+54 | ### Real Usage Analysis:
+55 | - Analyzed **1,254 actual ChatLima requests** from OpenRouter API
+56 | - **Input tokens**: 2,701 average (based on real avg: 2,251 + 20% buffer)
+57 | - **Output tokens**: 441 average (based on real avg: 368 + 20% buffer)
+58 | - **More accurate projections**: ~$0.003/request vs previous overestimates
+59 | 
+60 | ### Model Coverage:
+61 | - Analysis covers all ChatLima-configured models
+62 | - Real-time pricing from OpenRouter API
+63 | - Cost comparison across 30+ AI models
+64 | 
+65 | ## 🔄 Migration Notes
+66 | 
+67 | ### For Developers:
+68 | - No breaking changes to existing functionality
+69 | - New optional tool requires OpenRouter API key in `.env` file
+70 | - Scripts are completely separate from main application code
+71 | 
+72 | ### Environment Setup:
+73 | ```bash
+74 | # Add to your .env file (for developers only)
+75 | OPENROUTER_API_KEY=your_api_key_here
+76 | ```
+77 | 
+78 | ### New Commands Available:
+79 | ```bash
+80 | # Run pricing analysis
+81 | pnpm run pricing:analysis
+82 | 
+83 | # Analyze historical data (if you have CSV exports)
+84 | python scripts/analyze-openrouter-data.py /path/to/data.csv
+85 | ```
+86 | 
+87 | ## 🚀 Deployment
+88 | 
+89 | ### Development Environment:
+90 | 1. Ensure OpenRouter API key is configured in `.env`
+91 | 2. Install dependencies: `pnpm install`
+92 | 3. Run analysis: `pnpm run pricing:analysis`
+93 | 
+94 | ### Production Considerations:
+95 | - Scripts are development-only tools
+96 | - No impact on production application
+97 | - No new environment variables required for production deployment
+98 | 
+99 | ## 🎯 Usage Examples
+100 | 
+101 | ### Quick Cost Analysis:
+102 | ```bash
+103 | pnpm run pricing:analysis
+104 | ```
+105 | 
+106 | ### Expected Output:
+107 | - Detailed pricing table for all models
+108 | - Daily/monthly cost estimates
+109 | - Most/least expensive model identification
+110 | - Price comparison ratios
+111 | 
+112 | ### Use Cases:
+113 | - **Pre-deployment**: Cost planning for new features
+114 | - **Model Selection**: Choose optimal models for specific scenarios
+115 | - **Budget Planning**: Monthly cost forecasting
+116 | - **Performance Monitoring**: Track pricing trends over time
+117 | 
+118 | ## 🔮 Future Enhancements
+119 | 
+120 | - Automated pricing alerts for significant changes
+121 | - Historical pricing trend analysis
+122 | - Integration with usage monitoring
+123 | - Cost optimization recommendations
+124 | 
+125 | ---
+126 | 
+127 | **Full Changelog**: [v0.5.2...v0.6.0](https://github.com/brooksy4503/chatlima/compare/v0.5.2...v0.6.0)
+128 | 
+129 | ## 🙏 Acknowledgments
+130 | 
+131 | This release includes pricing analysis based on real ChatLima usage data, providing developers with accurate, data-driven insights for cost optimization and model selection. 
+```
+
+releases/RELEASE_NOTES_v0.8.0.md
+```
+1 | # 🚀 ChatLima v0.8.0 - Requesty Provider & Enhanced Model Selection
+2 | 
+3 | ## 🎯 What's New
+4 | - **New AI Provider**: Introduced Requesty as a new AI provider option alongside OpenRouter, Anthropic, OpenAI, Groq, and X AI
+5 | - **7 New Requesty Models**: Access popular AI models through Requesty's infrastructure:
+6 |   - `requesty/openai/gpt-4o` - OpenAI's advanced GPT-4O model
+7 |   - `requesty/openai/gpt-4o-mini` - Efficient GPT-4O Mini variant  
+8 |   - `requesty/anthropic/claude-3.5-sonnet` - Anthropic's Claude 3.5 Sonnet
+9 |   - `requesty/anthropic/claude-3.7-sonnet` - Latest Claude 3.7 Sonnet
+10 |   - `requesty/google/gemini-2.5-flash-preview` - Google's Gemini 2.5 Flash
+11 |   - `requesty/meta-llama/llama-3.1-70b-instruct` - Meta's Llama 3.1 70B
+12 |   - `requesty/anthropic/claude-sonnet-4-20250514` - Claude Sonnet 4 (May 2025)
+13 | - **New OpenRouter Model**: Added `google/gemini-2.5-pro-preview` - Google's state-of-the-art AI model for advanced reasoning, coding, mathematics, and scientific tasks
+14 | - **Enhanced Model Diversity**: Users now have access to 8 additional high-quality AI models across multiple providers
+15 | 
+16 | ## 🔧 Technical Implementation
+17 | - Integrated `@requesty/ai-sdk` package (version ^0.0.7) for Requesty provider support
+18 | - Added Requesty client configuration with proper API key management and headers
+19 | - Updated `ai/providers.ts` with comprehensive Requesty model definitions
+20 | - Enhanced model metadata with detailed capabilities, pricing tiers, and web search support
+21 | - Maintained consistent provider architecture for seamless integration
+22 | - Added proper error handling and API key fallback mechanisms
+23 | 
+24 | ## 🛡️ Security & Privacy
+25 | - Implemented secure API key management for Requesty provider through environment variables
+26 | - Added proper request headers including HTTP-Referer and X-Title for provider identification
+27 | - Maintained existing security protocols across all provider integrations
+28 | - Ensured consistent authentication flow for new provider
+29 | 
+30 | ## 📈 Benefits
+31 | - **Expanded Choice**: Users can now choose from 8 additional AI models based on their specific needs
+32 | - **Provider Redundancy**: Multiple providers offer increased reliability and availability
+33 | - **Cost Options**: Mix of premium and standard models provides flexibility for different use cases
+34 | - **Performance Variety**: Access to models optimized for different tasks (reasoning, coding, efficiency)
+35 | - **Future-Proofing**: Establishes foundation for easy addition of more Requesty models
+36 | 
+37 | ## 🔄 Migration Notes
+38 | - **No Breaking Changes**: Existing users continue to use their current models without any changes
+39 | - **Automatic Detection**: New Requesty models are automatically available in the model picker
+40 | - **API Key Setup**: Users wanting to use Requesty models need to add `REQUESTY_API_KEY` to their environment variables
+41 | - **Backward Compatibility**: All existing OpenRouter, Anthropic, OpenAI, Groq, and X AI models remain fully functional
+42 | 
+43 | ## 🚀 Deployment
+44 | - No special deployment requirements - changes are backward compatible
+45 | - New models become available immediately after deployment
+46 | - Users can start using Requesty models by adding their API key to environment variables
+47 | - All existing functionality remains unchanged
+48 | 
+49 | ## 🎯 Model Highlights
+50 | 
+51 | ### Requesty Provider Models:
+52 | - **GPT-4O Series**: Advanced OpenAI models with reasoning and multimodal capabilities
+53 | - **Claude Series**: Anthropic's latest models including Claude 3.5, 3.7, and Sonnet 4
+54 | - **Gemini 2.5 Flash**: Google's fast and efficient model optimized for speed
+55 | - **Llama 3.1 70B**: Meta's open-source model for instruction following
+56 | 
+57 | ### OpenRouter Addition:
+58 | - **Gemini 2.5 Pro Preview**: Google's flagship model for advanced reasoning and scientific tasks
+59 | 
+60 | ---
+61 | 
+62 | **Full Changelog**: [v0.7.0...v0.8.0](https://github.com/brooksy4503/chatlima/compare/v0.7.0...v0.8.0) 
+```
+
+releases/RELEASE_NOTES_v0.9.0.md
+```
+1 | # 🚀 ChatLima v0.9.0 - Enhanced API Key Management
+2 | 
+3 | ## 🎯 What's New
+4 | - **Dynamic API Key Management**: Runtime API key overrides for all AI providers
+5 | - **Enhanced Client Creation**: New helper functions for creating clients with custom API keys
+6 | - **Improved UI Experience**: Better API key settings interface in the chat and sidebar components
+7 | - **Flexible Provider Configuration**: Support for per-request API key customization
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | - Added new provider helper functions supporting runtime API key overrides
+11 | - Introduced dynamic client creation utilities for flexible API key management
+12 | - Enhanced chat and sidebar components with new API key management features
+13 | - Improved user interface for API key configuration and settings
+14 | - Streamlined provider initialization with dynamic configuration support
+15 | 
+16 | ## 🛡️ Security & Privacy
+17 | - Enhanced API key handling with secure runtime management
+18 | - Improved isolation of API key configurations per request
+19 | - Better protection of user-provided API keys through dynamic handling
+20 | - Secure client creation patterns for API key management
+21 | 
+22 | ## 📈 Benefits
+23 | - **User Flexibility**: Users can now provide their own API keys for any supported provider
+24 | - **Cost Control**: Better control over API usage and costs with custom keys
+25 | - **Provider Independence**: Reduced dependency on system-wide API key configurations
+26 | - **Enhanced UX**: Streamlined interface for managing API keys across different providers
+27 | 
+28 | ## 🔄 Migration Notes
+29 | - No breaking changes in this release
+30 | - Existing API key configurations remain fully compatible
+31 | - New dynamic features are additive and optional
+32 | - All existing provider integrations continue to work unchanged
+33 | 
+34 | ## 🚀 Deployment
+35 | - Standard deployment process applies
+36 | - No additional configuration required
+37 | - New features are automatically available after deployment
+38 | - Backward compatibility maintained for all existing functionality
+39 | 
+40 | ---
+41 | 
+42 | **Full Changelog**: [v0.8.0...v0.9.0](https://github.com/brooksy4503/chatlima/compare/v0.8.0...v0.9.0) 
+```
+
+releases/RELEASE_NOTES_v0.9.1.md
+```
+1 | # 🚀 ChatLima v0.9.1 - Smart Credit Validation
+2 | 
+3 | ## 🎯 What's New
+4 | - **Smart Credit Validation**: Intelligent credit checking that bypasses validation when users provide their own API keys
+5 | - **Enhanced User Experience**: Users with personal API keys now get seamless access without credit deductions
+6 | - **Flexible Payment Model**: Automatic detection of user-provided API keys to optimize credit usage
+7 | 
+8 | ## 🔧 Technical Implementation
+9 | - Added `isUsingOwnApiKey()` helper function to detect when users are using personal API keys
+10 | - Enhanced credit validation logic in chat route to conditionally bypass credit checks
+11 | - Improved request handling with intelligent API key detection
+12 | - Streamlined credit deduction process for better user experience
+13 | - Updated chat route logic with 72 insertions and 36 deletions for robust implementation
+14 | 
+15 | ## 🛡️ Security & Privacy
+16 | - Secure API key detection without exposing sensitive information
+17 | - Improved credit validation logic that maintains security while enhancing flexibility
+18 | - Safe handling of user-provided API keys during validation process
+19 | 
+20 | ## 📈 Benefits
+21 | - **Cost Efficiency**: Users with personal API keys avoid unnecessary credit deductions
+22 | - **Better UX**: Seamless experience for users who provide their own API keys
+23 | - **Smart Resource Management**: Automatic optimization of credit usage based on API key source
+24 | - **Enhanced Flexibility**: System adapts to different user configurations automatically
+25 | 
+26 | ## 🔄 Migration Notes
+27 | - No breaking changes in this patch release
+28 | - Existing credit validation continues to work for users without personal API keys
+29 | - New logic is additive and automatically detects the optimal validation path
+30 | - All existing functionality remains fully compatible
+31 | 
+32 | ## 🚀 Deployment
+33 | - Standard deployment process applies
+34 | - No additional configuration required
+35 | - Changes are automatically active after deployment
+36 | - Backward compatibility maintained for all user scenarios
+37 | 
+38 | ---
+39 | 
+40 | **Full Changelog**: [v0.9.0...v0.9.1](https://github.com/brooksy4503/chatlima/compare/v0.9.0...v0.9.1) 
+```
+
+.cursor/rules/feature-branch-creation-workflow.mdc
+```
+1 | ---
+2 | description: 
+3 | globs: 
+4 | alwaysApply: false
+5 | ---
+6 | # Feature Branch Creation Workflow
+7 | 
+8 | This rule provides a standardized workflow for creating new feature branches in the ChatLima project, ensuring consistent naming conventions, proper setup, and clear documentation.
+9 | 
+10 | ## 🌟 Branch Creation Process
+11 | 
+12 | ### 1. Pre-Creation Planning
+13 | Before creating a new feature branch:
+14 | - Define the feature scope and requirements
+15 | - Choose an appropriate branch naming convention
+16 | - Ensure you're starting from the latest main branch
+17 | - Check for any conflicting features in development
+18 | 
+19 | ### 2. Branch Naming Convention
+20 | Use descriptive, kebab-case names that clearly identify the feature:
+21 | 
+22 | ```bash
+23 | # Feature branches (new functionality)
+24 | feature/auth-integration
+25 | feature/polar-payment-system
+26 | feature/chat-history-export
+27 | feature/user-dashboard-redesign
+28 | 
+29 | # Bug fix branches
+30 | fix/credit-deduction-bug
+31 | fix/negative-balance-blocking
+32 | fix/auth-session-timeout
+33 | 
+34 | # Enhancement branches
+35 | enhance/ui-accessibility
+36 | enhance/performance-optimization
+37 | enhance/mobile-responsiveness
+38 | 
+39 | # Documentation branches
+40 | docs/api-documentation
+41 | docs/deployment-guide
+42 | docs/user-manual-update
+43 | ```
+44 | 
+45 | ### 3. Create and Setup Feature Branch
+46 | 
+47 | #### Quick Setup Commands:
+48 | ```bash
+49 | # Ensure you're on main and up to date
+50 | git checkout main
+51 | git pull origin main
+52 | 
+53 | # Create and switch to new feature branch
+54 | git checkout -b feature/your-feature-name
+55 | 
+56 | # Push the new branch to remote and set upstream
+57 | git push -u origin feature/your-feature-name
+58 | ```
+59 | 
+60 | #### Alternative Step-by-Step:
+61 | ```bash
+62 | # 1. Switch to main branch
+63 | git checkout main
+64 | 
+65 | # 2. Pull latest changes
+66 | git pull origin main
+67 | 
+68 | # 3. Create new branch from main
+69 | git branch feature/your-feature-name
+70 | 
+71 | # 4. Switch to the new branch
+72 | git checkout feature/your-feature-name
+73 | 
+74 | # 5. Push to remote and set upstream tracking
+75 | git push -u origin feature/your-feature-name
+76 | ```
+77 | 
+78 | ### 4. Initial Branch Setup
+79 | 
+80 | #### Create Feature Documentation
+81 | Create a brief feature plan (optional but recommended):
+82 | 
+83 | ```bash
+84 | # Create a feature plan file (optional)
+85 | touch docs/features/your-feature-name.md
+86 | ```
+87 | 
+88 | #### Feature Plan Template:
+89 | ```markdown
+90 | # Feature: [Feature Name]
+91 | 
+92 | ## 🎯 Overview
+93 | Brief description of what this feature does and why it's needed.
+94 | 
+95 | ## 📋 Requirements
+96 | - [ ] Requirement 1
+97 | - [ ] Requirement 2
+98 | - [ ] Requirement 3
+99 | 
+100 | ## 🏗️ Implementation Plan
+101 | 1. Step 1: Component/API design
+102 | 2. Step 2: Core functionality
+103 | 3. Step 3: UI/UX implementation
+104 | 4. Step 4: Testing and validation
+105 | 5. Step 5: Documentation
+106 | 
+107 | ## 📁 Files to Modify/Create
+108 | - `app/api/new-endpoint/route.ts`
+109 | - `components/NewComponent.tsx`
+110 | - `lib/new-utility.ts`
+111 | 
+112 | ## 🧪 Testing Strategy
+113 | - Unit tests for core functions
+114 | - Integration tests for API endpoints
+115 | - E2E tests for user workflows
+116 | 
+117 | ## 📝 Notes
+118 | Any additional notes, considerations, or dependencies.
+119 | ```
+120 | 
+121 | ### 5. Development Workflow
+122 | 
+123 | #### Regular Commits
+124 | Follow conventional commit messages:
+125 | ```bash
+126 | # Feature commits
+127 | git commit -m "feat: add user authentication middleware"
+128 | git commit -m "feat(api): implement payment processing endpoint"
+129 | 
+130 | # Fix commits
+131 | git commit -m "fix: resolve credit deduction for Google users"
+132 | git commit -m "fix(ui): correct mobile navigation alignment"
+133 | 
+134 | # Enhancement commits
+135 | git commit -m "enhance: improve database query performance"
+136 | git commit -m "enhance(ux): add loading states to buttons"
+137 | 
+138 | # Documentation commits
+139 | git commit -m "docs: add API endpoint documentation"
+140 | git commit -m "docs: update deployment instructions"
+141 | ```
+142 | 
+143 | #### Regular Pushes
+144 | Push your work regularly to keep the remote branch updated:
+145 | ```bash
+146 | # Push current branch changes
+147 | git push
+148 | 
+149 | # Or explicitly push to origin
+150 | git push origin feature/your-feature-name
+151 | ```
+152 | 
+153 | ### 6. Keep Branch Updated
+154 | 
+155 | #### Sync with Main Regularly
+156 | ```bash
+157 | # Method 1: Merge main into feature branch
+158 | git checkout feature/your-feature-name
+159 | git pull origin main
+160 | 
+161 | # Method 2: Rebase feature branch onto main (cleaner history)
+162 | git checkout feature/your-feature-name
+163 | git rebase main
+164 | 
+165 | # If conflicts occur during rebase:
+166 | # 1. Resolve conflicts in affected files
+167 | # 2. Stage resolved files: git add .
+168 | # 3. Continue rebase: git rebase --continue
+169 | ```
+170 | 
+171 | ### 7. Safe Vercel Deployment Testing
+172 | 
+173 | #### ⚠️ CRITICAL: Vercel CLI Safety Rules
+174 | **NEVER run Vercel setup commands while on feature branches!**
+175 | 
+176 | The Vercel CLI has dangerous behavior during initial setup:
+177 | - `--prod=false` flag gets **ignored** during first-time setup
+178 | - "Set up and deploy" process defaults to **production deployment**
+179 | - This can accidentally deploy untested feature branches to production
+180 | 
+181 | #### Safe Deployment Workflow:
+182 | ```bash
+183 | # ❌ DANGEROUS - Don't do this on feature branches
+184 | vercel --prod=false  # This can still deploy to production!
+185 | 
+186 | # ✅ SAFE - Proper testing workflow
+187 | # 1. Setup project on main branch first (one-time only)
+188 | git checkout main
+189 | vercel link  # Setup only, no deployment
+190 | 
+191 | # 2. Switch to feature branch for testing  
+192 | git checkout feature/your-feature-name
+193 | 
+194 | # 3. Deploy as preview only
+195 | vercel deploy  # Always creates preview deployment
+196 | 
+197 | # 4. Test thoroughly on preview URL
+198 | # 5. Never use --prod unless ready for production release
+199 | ```
+200 | 
+201 | #### Emergency Production Revert:
+202 | If you accidentally deploy a feature branch to production:
+203 | ```bash
+204 | # 1. Switch to safe main branch immediately
+205 | git checkout main
+206 | git stash  # if you have uncommitted changes
+207 | 
+208 | # 2. Deploy main to restore production
+209 | vercel deploy --prod
+210 | 
+211 | # 3. Create proper preview for testing
+212 | git checkout feature/your-feature-name
+213 | git stash pop  # restore changes if stashed
+214 | vercel deploy  # Preview only
+215 | ```
+216 | 
+217 | #### Vercel Best Practices:
+218 | - **Always use `vercel deploy`** for feature branch testing
+219 | - **Only use `vercel deploy --prod`** for production releases
+220 | - **Setup projects on main branch** before working on features
+221 | - **Test on preview URLs first** before any production deployment
+222 | - **Use Git integration** - let Vercel auto-create previews from pushed branches
+223 | 
+224 | ## 📋 Branch Management Commands
+225 | 
+226 | ### Useful Git Commands
+227 | ```bash
+228 | # Check current branch and status
+229 | git status
+230 | 
+231 | # List all branches (local and remote)
+232 | git branch -a
+233 | 
+234 | # Check branch tracking information
+235 | git branch -vv
+236 | 
+237 | # See commits unique to your branch
+238 | git log main..HEAD --oneline
+239 | 
+240 | # See what files have changed
+241 | git diff --name-only main
+242 | 
+243 | # Stash current work temporarily
+244 | git stash
+245 | git stash pop  # restore stashed work
+246 | 
+247 | # Delete local branch (if no longer needed)
+248 | git branch -d feature/branch-name
+249 | 
+250 | # Delete remote branch
+251 | git push origin --delete feature/branch-name
+252 | ```
+253 | 
+254 | ### Branch Information
+255 | ```bash
+256 | # See commit history for current branch
+257 | git log --oneline -10
+258 | 
+259 | # See detailed diff with main
+260 | git diff main
+261 | 
+262 | # Check if branch is ahead/behind main
+263 | git status -uno
+264 | ```
+265 | 
+266 | ## 🎯 Best Practices
+267 | 
+268 | ### Naming Guidelines:
+269 | - Use descriptive names that explain the feature
+270 | - Keep names concise but clear
+271 | - Use kebab-case (hyphens between words)
+272 | - Include the type prefix (feature/, fix/, enhance/, docs/)
+273 | - Avoid abbreviations that might be unclear
+274 | 
+275 | ### Development Guidelines:
+276 | - Make small, focused commits with clear messages
+277 | - Test your changes regularly
+278 | - Keep the branch updated with main to avoid large conflicts
+279 | - Document complex changes as you go
+280 | - Consider creating draft PRs early for feedback
+281 | 
+282 | ### Project-Specific Considerations:
+283 | For ChatLima specifically, consider these areas when creating branches:
+284 | - **Authentication**: Features related to [auth-schema.ts](mdc:chatlima/auth-schema.ts)
+285 | - **API Routes**: New endpoints in [app/api/](mdc:chatlima/app/api)
+286 | - **Database**: Changes requiring [drizzle/](mdc:chatlima/drizzle) migrations
+287 | - **UI Components**: New components in [components/](mdc:chatlima/components)
+288 | - **AI Integration**: Features in [ai/](mdc:chatlima/ai) directory
+289 | - **Payment System**: Polar integration features
+290 | - **Credit System**: User credit and usage tracking
+291 | 
+292 | ### File Organization:
+293 | - Keep related changes in logical commits
+294 | - Update relevant configuration files ([next.config.ts](mdc:chatlima/next.config.ts), [tsconfig.json](mdc:chatlima/tsconfig.json))
+295 | - Add new dependencies to [package.json](mdc:chatlima/package.json) as needed
+296 | - Update [README.md](mdc:chatlima/README.md) if the feature affects setup or usage
+297 | 
+298 | ## 🚨 Important Reminders
+299 | 
+300 | - Always start from an updated main branch
+301 | - Use descriptive branch names that clearly indicate the feature
+302 | - Push branches to remote early to enable collaboration
+303 | - Keep feature branches focused on a single feature or fix
+304 | - Regularly sync with main to avoid integration conflicts
+305 | - Document complex features as you develop them
+306 | - Consider the impact on existing functionality
+307 | - Test thoroughly before requesting reviews
+308 | 
+309 | ## 🔄 Integration with Release Workflow
+310 | 
+311 | This workflow is designed to work seamlessly with the [feature-release-workflow.mdc](mdc:chatlima/feature-release-workflow.mdc):
+312 | 
+313 | 1. **Create branch** using this workflow
+314 | 2. **Develop feature** following the guidelines here
+315 | 3. **Merge and release** using the feature release workflow
+316 | 
+317 | ### Ready for Release Checklist:
+318 | - [ ] Feature is complete and tested
+319 | - [ ] Branch is up to date with main
+320 | - [ ] All commits have clear messages
+321 | - [ ] Documentation is updated
+322 | - [ ] No merge conflicts with main
+323 | - [ ] Feature has been tested in development environment
+324 | - [ ] Ready to follow the [feature-release-workflow.mdc](mdc:chatlima/feature-release-workflow.mdc)
+```
+
+.cursor/rules/feature-release-workflow.mdc
+```
+1 | ---
+2 | description: 
+3 | globs: 
+4 | alwaysApply: false
+5 | ---
+6 | # Feature Release Workflow
+7 | 
+8 | This rule provides a complete workflow for releasing new features in the ChatLima project, from merging feature branches to creating GitHub release notes.
+9 | 
+10 | ## 🔄 Complete Release Process
+11 | 
+12 | ### 1. Pre-Release Checks
+13 | Before starting the release process:
+14 | - Ensure all tests pass
+15 | - Verify the feature branch is up to date with main
+16 | - Check that [package.json](mdc:chatlima/package.json) reflects the current version
+17 | - Review recent commits with `git log --oneline -10`
+18 | 
+19 | ### 2. Merge Feature Branch
+20 | ```bash
+21 | # Switch to main branch
+22 | git checkout main
+23 | 
+24 | # Pull latest changes
+25 | git pull origin main
+26 | 
+27 | # Merge feature branch (replace 'feature/branch-name' with actual branch)
+28 | git merge feature/branch-name
+29 | 
+30 | # Delete the feature branch locally
+31 | git branch -d feature/branch-name
+32 | 
+33 | # Delete the feature branch remotely
+34 | git push origin --delete feature/branch-name
+35 | ```
+36 | 
+37 | ### 3. Version Increment
+38 | Use npm version to automatically update [package.json](mdc:chatlima/package.json) and create a git tag:
+39 | 
+40 | ```bash
+41 | # For patch releases (0.3.0 -> 0.3.1)
+42 | npm version patch
+43 | 
+44 | # For minor releases (0.3.0 -> 0.4.0)
+45 | npm version minor
+46 | 
+47 | # For major releases (0.3.0 -> 1.0.0)
+48 | npm version major
+49 | ```
+50 | 
+51 | This command:
+52 | - Updates the version in [package.json](mdc:chatlima/package.json)
+53 | - Creates a git commit with the version change
+54 | - Creates a git tag (e.g., v0.3.1)
+55 | 
+56 | ### 4. Push Changes
+57 | ```bash
+58 | # Push commits and tags to remote
+59 | git push origin main --tags
+60 | ```
+61 | 
+62 | ### 5. Create Release Notes
+63 | Generate comprehensive release notes following this structure:
+64 | 
+65 | #### Template Structure:
+66 | ```markdown
+67 | # 🚀 ChatLima v[VERSION] - [FEATURE_NAME]
+68 | 
+69 | ## 🎯 What's New
+70 | - List major features added
+71 | - Highlight user-facing improvements
+72 | - Note any new capabilities
+73 | 
+74 | ## 🔧 Technical Implementation
+75 | - Detail technical changes
+76 | - Mention new routes, APIs, or components
+77 | - Include performance improvements
+78 | 
+79 | ## 🛡️ Security & Privacy
+80 | - Highlight security enhancements
+81 | - Note privacy protections
+82 | - Mention any security-related changes
+83 | 
+84 | ## 📈 Benefits
+85 | - Explain user benefits
+86 | - Note SEO, performance, or UX improvements
+87 | - Highlight business value
+88 | 
+89 | ## 🔄 Migration Notes
+90 | - List any breaking changes (if any)
+91 | - Note required configuration changes
+92 | - Mention database migrations needed
+93 | 
+94 | ## 🚀 Deployment
+95 | - Deployment instructions
+96 | - Environment considerations
+97 | - Any special setup requirements
+98 | 
+99 | ---
+100 | 
+101 | **Full Changelog**: [v[PREV_VERSION]...v[NEW_VERSION]](https://github.com/username/chatlima/compare/v[PREV_VERSION]...v[NEW_VERSION])
+102 | ```
+103 | 
+104 | #### Save Release Notes
+105 | Create a file named `RELEASE_NOTES_v[VERSION].md` in the `releases/` folder for reference.
+106 | 
+107 | ### 6. Safe Production Deployment
+108 | 
+109 | #### ⚠️ CRITICAL: Vercel Production Deployment Safety
+110 | Before deploying to production, ensure you're following safe deployment practices:
+111 | 
+112 | ```bash
+113 | # ✅ SAFE - Production deployment workflow
+114 | # 1. Ensure you're on main branch with merged changes
+115 | git checkout main
+116 | git pull origin main
+117 | 
+118 | # 2. Verify everything is ready for production
+119 | npm run build  # Test build locally
+120 | npm run test   # Run all tests
+121 | 
+122 | # 3. Deploy to production explicitly
+123 | vercel deploy --prod  # Explicit production deployment
+124 | 
+125 | # 4. Verify production deployment
+126 | # Check the production URL and test critical functionality
+127 | ```
+128 | 
+129 | #### Production Deployment Checklist:
+130 | - [ ] All tests passing
+131 | - [ ] Feature thoroughly tested on preview deployments
+132 | - [ ] Environment variables configured for production
+133 | - [ ] Database migrations completed (if applicable)
+134 | - [ ] Monitoring and error tracking enabled
+135 | - [ ] Rollback plan ready
+136 | 
+137 | #### Emergency Rollback:
+138 | If issues are discovered after production deployment:
+139 | ```bash
+140 | # Quick rollback to previous version
+141 | git checkout main
+142 | git reset --hard HEAD~1  # Go back one commit
+143 | vercel deploy --prod     # Deploy previous version
+144 | ```
+145 | 
+146 | ### 7. GitHub Release Creation
+147 | 1. Go to GitHub repository → Releases → "Create a new release"
+148 | 2. Select the version tag created by `npm version`
+149 | 3. Copy content from the release notes file
+150 | 4. Set release title: "v[VERSION] - [FEATURE_NAME]"
+151 | 5. Mark as "Latest release" if it's the newest version
+152 | 6. Publish the release
+153 | 
+154 | ## 📋 Quick Reference Commands
+155 | 
+156 | ```bash
+157 | # Complete release workflow
+158 | git checkout main
+159 | git pull origin main
+160 | git merge feature/[branch-name]
+161 | npm version [patch|minor|major]
+162 | git push origin main --tags
+163 | git branch -d feature/[branch-name]
+164 | git push origin --delete feature/[branch-name]
+165 | ```
+166 | 
+167 | ## 🎯 Best Practices
+168 | 
+169 | ### Version Selection Guidelines:
+170 | - **Patch** (0.3.0 → 0.3.1): Bug fixes, small improvements, security patches
+171 | - **Minor** (0.3.0 → 0.4.0): New features, significant improvements, new capabilities
+172 | - **Major** (0.3.0 → 1.0.0): Breaking changes, major rewrites, API changes
+173 | 
+174 | ### Release Notes Guidelines:
+175 | - Use emojis for visual appeal and categorization
+176 | - Focus on user benefits, not just technical details
+177 | - Include migration instructions for any breaking changes
+178 | - Highlight security and privacy improvements
+179 | - Keep technical details accessible to non-developers
+180 | - Reference relevant files using [filename](mdc:chatlima/filename) format
+181 | 
+182 | ### File References:
+183 | - Version information: [package.json](mdc:chatlima/package.json)
+184 | - Previous release notes: Look for existing `RELEASE_NOTES_v*.md` files in the `releases/` folder
+185 | - Implementation details: Check [app/](mdc:chatlima/app) directory for new routes
+186 | - Configuration: [next.config.ts](mdc:chatlima/next.config.ts), [tsconfig.json](mdc:chatlima/tsconfig.json)
+187 | 
+188 | ## 🚨 Important Notes
+189 | 
+190 | - Always test the feature thoroughly before merging
+191 | - Ensure the production environment can handle new features
+192 | - Keep release notes user-focused while including technical details
+193 | - Tag releases consistently for easy tracking
+194 | - Delete feature branches after successful merge to keep repository clean
+195 | - Use descriptive commit messages for the version bump commits
+```
+
+.cursor/rules/quick-branch-commands.mdc
+```
+1 | ---
+2 | description: 
+3 | globs: 
+4 | alwaysApply: false
+5 | ---
+6 | # Quick Branch Commands Reference
+7 | 
+8 | Quick reference for common feature branch operations in ChatLima.
+9 | 
+10 | ## 🚀 Create New Feature Branch
+11 | ```bash
+12 | # One-liner to create and setup a new feature branch
+13 | git checkout main && git pull origin main && git checkout -b feature/your-feature-name && git push -u origin feature/your-feature-name
+14 | ```
+15 | 
+16 | ## 📋 Common Branch Types
+17 | 
+18 | ### Feature Branch
+19 | ```bash
+20 | git checkout -b feature/new-auth-system
+21 | git checkout -b feature/polar-integration
+22 | git checkout -b feature/chat-export
+23 | ```
+24 | 
+25 | ### Bug Fix Branch
+26 | ```bash
+27 | git checkout -b fix/credit-deduction-bug
+28 | git checkout -b fix/auth-session-timeout
+29 | ```
+30 | 
+31 | ### Enhancement Branch
+32 | ```bash
+33 | git checkout -b enhance/mobile-ui
+34 | git checkout -b enhance/performance-optimization
+35 | ```
+36 | 
+37 | ## 🔄 Daily Workflow Commands
+38 | 
+39 | ### Start Working
+40 | ```bash
+41 | git checkout feature/your-branch
+42 | git pull origin main  # sync with main
+43 | ```
+44 | 
+45 | ### Save Progress
+46 | ```bash
+47 | git add .
+48 | git commit -m "feat: implement core functionality"
+49 | git push
+50 | ```
+51 | 
+52 | ### End of Day
+53 | ```bash
+54 | git add .
+55 | git commit -m "wip: work in progress on feature"
+56 | git push
+57 | ```
+58 | 
+59 | ## 🛠️ Branch Management
+60 | 
+61 | ### Check Status
+62 | ```bash
+63 | git status                    # current status
+64 | git branch -a                 # all branches
+65 | git log main..HEAD --oneline  # commits unique to branch
+66 | ```
+67 | 
+68 | ### Sync with Main
+69 | ```bash
+70 | git pull origin main          # merge main into current branch
+71 | # OR
+72 | git rebase main              # rebase current branch onto main
+73 | ```
+74 | 
+75 | ### Clean Up
+76 | ```bash
+77 | git branch -d feature/old-branch      # delete local branch
+78 | git push origin --delete feature/old-branch  # delete remote branch
+79 | ```
+80 | 
+81 | ## 🚀 Vercel Deployment Commands
+82 | 
+83 | ### ⚠️ CRITICAL SAFETY WARNING
+84 | **NEVER run Vercel setup while on feature branches!**
+85 | 
+86 | ### Safe Testing Workflow
+87 | ```bash
+88 | # ✅ Setup project (one-time, on main branch)
+89 | git checkout main
+90 | vercel link  # Setup only, no deployment
+91 | 
+92 | # ✅ Test feature branch safely
+93 | git checkout feature/your-branch
+94 | vercel deploy  # Always creates preview deployment
+95 | 
+96 | # ✅ Production deployment (only when ready)
+97 | git checkout main
+98 | vercel deploy --prod  # Explicit production deployment
+99 | ```
+100 | 
+101 | ### Emergency Commands
+102 | ```bash
+103 | # 🚨 If you accidentally deployed feature branch to production
+104 | git checkout main
+105 | git stash  # if needed
+106 | vercel deploy --prod  # Restore safe production
+107 | 
+108 | # Then create proper preview
+109 | git checkout feature/your-branch  
+110 | git stash pop  # if needed
+111 | vercel deploy  # Preview only
+112 | ```
+113 | 
+114 | ### Deployment Status
+115 | ```bash
+116 | vercel ls                    # List all deployments
+117 | vercel logs --follow        # Monitor deployment logs
+118 | vercel inspect [URL]        # Get deployment details
+119 | ```
+120 | 
+121 | ## 📝 Commit Message Templates
+122 | 
+123 | ```bash
+124 | # Feature commits
+125 | git commit -m "feat: add user authentication"
+126 | git commit -m "feat(api): implement payment endpoint"
+127 | 
+128 | # Bug fixes
+129 | git commit -m "fix: resolve credit deduction issue"
+130 | git commit -m "fix(ui): correct mobile navigation"
+131 | 
+132 | # Enhancements
+133 | git commit -m "enhance: improve query performance"
+134 | git commit -m "enhance(ux): add loading states"
+135 | ```
+136 | 
+137 | For complete workflow details, see [feature-branch-creation-workflow.mdc](mdc:chatlima/feature-branch-creation-workflow.mdc)
+```
+
+app/robots.txt/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server'
+2 | 
+3 | export async function GET(request: NextRequest) {
+4 |     const host = request.headers.get('host')
+5 |     const protocol = request.headers.get('x-forwarded-proto') || 'https'
+6 |     const baseUrl = `${protocol}://${host}`
+7 | 
+8 |     // Check if we're in production (chatlima.com)
+9 |     const isProduction = host?.includes('chatlima.com')
+10 | 
+11 |     let robotsContent: string
+12 | 
+13 |     if (isProduction) {
+14 |         // Production robots.txt - allow crawling with restrictions
+15 |         robotsContent = `User-agent: *
+16 | Allow: /
+17 | Disallow: /api/
+18 | Disallow: /chat/
+19 | Disallow: /checkout/
+20 | Disallow: /auth/
+21 | Crawl-delay: 1
+22 | 
+23 | # Protect user privacy - no crawling of chat content
+24 | User-agent: *
+25 | Disallow: /chat/*
+26 | 
+27 | # Allow access to public pages
+28 | Allow: /$
+29 | Allow: /docs
+30 | Allow: /docs/*
+31 | 
+32 | Sitemap: https://www.chatlima.com/sitemap.xml`
+33 |     } else {
+34 |         // Development/staging - disallow all crawling
+35 |         robotsContent = `User-agent: *
+36 | Disallow: /
+37 | 
+38 | # Development environment - no crawling allowed`
+39 |     }
+40 | 
+41 |     return new NextResponse(robotsContent, {
+42 |         headers: {
+43 |             'Content-Type': 'text/plain',
+44 |             'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+45 |         },
+46 |     })
+47 | } 
 ```
 
 drizzle/meta/0001_snapshot.json
@@ -15193,6 +18631,71 @@ drizzle/meta/_journal.json
 153 | }
 ```
 
+app/sitemap.xml/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server'
+2 | 
+3 | export async function GET(request: NextRequest) {
+4 |     const host = request.headers.get('host')
+5 |     const protocol = request.headers.get('x-forwarded-proto') || 'https'
+6 |     const baseUrl = `${protocol}://${host}`
+7 | 
+8 |     // Only generate sitemap for production
+9 |     const isProduction = host?.includes('chatlima.com')
+10 | 
+11 |     if (!isProduction) {
+12 |         return new NextResponse('Sitemap not available in development', {
+13 |             status: 404,
+14 |             headers: { 'Content-Type': 'text/plain' }
+15 |         })
+16 |     }
+17 | 
+18 |     const currentDate = new Date().toISOString()
+19 | 
+20 |     // Define static pages to include in sitemap
+21 |     const staticPages = [
+22 |         {
+23 |             url: '/',
+24 |             lastmod: currentDate,
+25 |             changefreq: 'daily',
+26 |             priority: '1.0'
+27 |         }
+28 |         // Future pages can be added here:
+29 |         // {
+30 |         //     url: '/about',
+31 |         //     lastmod: currentDate,
+32 |         //     changefreq: 'monthly',
+33 |         //     priority: '0.8'
+34 |         // },
+35 |         // {
+36 |         //     url: '/pricing',
+37 |         //     lastmod: currentDate,
+38 |         //     changefreq: 'weekly',
+39 |         //     priority: '0.9'
+40 |         // }
+41 |     ]
+42 | 
+43 |     const urlEntries = staticPages.map(page => `    <url>
+44 |         <loc>${baseUrl}${page.url}</loc>
+45 |         <lastmod>${page.lastmod}</lastmod>
+46 |         <changefreq>${page.changefreq}</changefreq>
+47 |         <priority>${page.priority}</priority>
+48 |     </url>`).join('\n')
+49 | 
+50 |     const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+51 | <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+52 | ${urlEntries}
+53 | </urlset>`
+54 | 
+55 |     return new NextResponse(sitemapXml, {
+56 |         headers: {
+57 |             'Content-Type': 'application/xml',
+58 |             'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+59 |         },
+60 |     })
+61 | } 
+```
+
 components/auth/AnonymousAuth.tsx
 ```
 1 | "use client";
@@ -15301,61 +18804,75 @@ components/auth/UserAccountMenu.tsx
 10 |   DropdownMenuSeparator, 
 11 |   DropdownMenuTrigger 
 12 | } from "@/components/ui/dropdown-menu";
-13 | import { LogOut, User, Settings } from "lucide-react";
+13 | import { LogOut, User, Settings, LayoutDashboard } from "lucide-react";
 14 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-15 | 
-16 | export function UserAccountMenu() {
-17 |   const { data: session } = useSession();
-18 | 
-19 |   if (!session?.user) return null;
-20 | 
-21 |   const handleSignOut = async () => {
-22 |     try {
-23 |       await signOut({});
-24 |     } catch (error) {
-25 |       console.error("Sign-out error:", error);
-26 |     }
-27 |   };
-28 | 
-29 |   const userInitials = session.user.name
-30 |     ? session.user.name
-31 |         .split(' ')
-32 |         .map(name => name[0])
-33 |         .join('')
-34 |         .toUpperCase()
-35 |     : session.user.email?.[0]?.toUpperCase() || 'U';
-36 | 
-37 |   return (
-38 |     <DropdownMenu>
-39 |       <DropdownMenuTrigger asChild>
-40 |         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-41 |           <Avatar className="h-8 w-8">
-42 |             <AvatarImage 
-43 |               src={session.user.image || ''} 
-44 |               alt={session.user.name || 'User'} 
-45 |             />
-46 |             <AvatarFallback>{userInitials}</AvatarFallback>
-47 |           </Avatar>
-48 |         </Button>
-49 |       </DropdownMenuTrigger>
-50 |       <DropdownMenuContent className="w-56" align="end" forceMount>
-51 |         <DropdownMenuLabel className="font-normal">
-52 |           <div className="flex flex-col space-y-1">
-53 |             <p className="text-sm font-medium leading-none">{session.user.name}</p>
-54 |             <p className="text-xs leading-none text-muted-foreground">
-55 |               {session.user.email}
-56 |             </p>
-57 |           </div>
-58 |         </DropdownMenuLabel>
-59 |         <DropdownMenuSeparator />
-60 |         <DropdownMenuItem onClick={handleSignOut}>
-61 |           <LogOut className="mr-2 h-4 w-4" />
-62 |           <span>Log out</span>
-63 |         </DropdownMenuItem>
-64 |       </DropdownMenuContent>
-65 |     </DropdownMenu>
-66 |   );
-67 | } 
+15 | import { CheckoutButton } from "@/components/checkout-button";
+16 | 
+17 | export function UserAccountMenu() {
+18 |   const { data: session } = useSession();
+19 | 
+20 |   if (!session?.user) return null;
+21 | 
+22 |   const handleSignOut = async () => {
+23 |     try {
+24 |       await signOut({});
+25 |     } catch (error) {
+26 |       console.error("Sign-out error:", error);
+27 |     }
+28 |   };
+29 | 
+30 |   const userInitials = session.user.name
+31 |     ? session.user.name
+32 |         .split(' ')
+33 |         .map(name => name[0])
+34 |         .join('')
+35 |         .toUpperCase()
+36 |     : session.user.email?.[0]?.toUpperCase() || 'U';
+37 | 
+38 |   return (
+39 |     <DropdownMenu>
+40 |       <DropdownMenuTrigger asChild>
+41 |         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+42 |           <Avatar className="h-8 w-8">
+43 |             <AvatarImage 
+44 |               src={session.user.image || ''} 
+45 |               alt={session.user.name || 'User'} 
+46 |             />
+47 |             <AvatarFallback>{userInitials}</AvatarFallback>
+48 |           </Avatar>
+49 |         </Button>
+50 |       </DropdownMenuTrigger>
+51 |       <DropdownMenuContent className="w-56" align="end" forceMount>
+52 |         <DropdownMenuLabel className="font-normal">
+53 |           <div className="flex flex-col space-y-1">
+54 |             <p className="text-sm font-medium leading-none">{session.user.name}</p>
+55 |             <p className="text-xs leading-none text-muted-foreground">
+56 |               {session.user.email}
+57 |             </p>
+58 |           </div>
+59 |         </DropdownMenuLabel>
+60 |         <DropdownMenuSeparator />
+61 |         
+62 |         <div className="p-2">
+63 |           <CheckoutButton />
+64 |         </div>
+65 |         
+66 |         <DropdownMenuSeparator />
+67 |         <DropdownMenuItem asChild>
+68 |           <a href="/api/portal" target="_blank" rel="noopener noreferrer">
+69 |             <LayoutDashboard className="mr-2 h-4 w-4" />
+70 |             <span>Customer Portal</span>
+71 |           </a>
+72 |         </DropdownMenuItem>
+73 |         <DropdownMenuSeparator />
+74 |         <DropdownMenuItem onClick={handleSignOut}>
+75 |           <LogOut className="mr-2 h-4 w-4" />
+76 |           <span>Log out</span>
+77 |         </DropdownMenuItem>
+78 |       </DropdownMenuContent>
+79 |     </DropdownMenu>
+80 |   );
+81 | } 
 ```
 
 lib/context/mcp-context.tsx
@@ -15376,7 +18893,7 @@ lib/context/mcp-context.tsx
 14 |   id: string;
 15 |   name: string;
 16 |   url: string;
-17 |   type: 'sse' | 'stdio';
+17 |   type: 'sse' | 'stdio' | 'streamable-http';
 18 |   command?: string;
 19 |   args?: string[];
 20 |   env?: KeyValuePair[];
@@ -15386,7 +18903,7 @@ lib/context/mcp-context.tsx
 24 | 
 25 | // Type for processed MCP server config for API
 26 | export interface MCPServerApi {
-27 |   type: 'sse' | 'stdio';
+27 |   type: 'sse' | 'stdio' | 'streamable-http';
 28 |   url: string;
 29 |   command?: string;
 30 |   args?: string[];
@@ -15608,6 +19125,176 @@ lib/context/web-search-context.tsx
 53 |   }
 54 |   return context;
 55 | }; 
+```
+
+lib/db/index.ts
+```
+1 | import { drizzle } from "drizzle-orm/neon-serverless";
+2 | import { Pool } from "@neondatabase/serverless";
+3 | import * as schema from "./schema";
+4 | 
+5 | // Initialize the connection pool
+6 | const pool = new Pool({
+7 |   connectionString: process.env.DATABASE_URL,
+8 | });
+9 | 
+10 | // Initialize Drizzle with the connection pool and schema
+11 | export const db = drizzle(pool, { schema }); 
+```
+
+lib/db/schema.ts
+```
+1 | import { timestamp, pgTable, text, primaryKey, json, boolean, integer } from "drizzle-orm/pg-core";
+2 | import { nanoid } from "nanoid";
+3 | 
+4 | // Message role enum type
+5 | export enum MessageRole {
+6 |   USER = "user",
+7 |   ASSISTANT = "assistant",
+8 |   TOOL = "tool"
+9 | }
+10 | 
+11 | export const chats = pgTable('chats', {
+12 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+13 |   userId: text('user_id').notNull(),
+14 |   title: text('title').notNull().default('New Chat'),
+15 |   createdAt: timestamp('created_at').defaultNow().notNull(),
+16 |   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+17 | });
+18 | 
+19 | export const messages = pgTable('messages', {
+20 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+21 |   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+22 |   role: text('role').notNull(), // user, assistant, or tool
+23 |   parts: json('parts').notNull(), // Store parts as JSON in the database
+24 |   hasWebSearch: boolean('has_web_search').default(false),
+25 |   webSearchContextSize: text('web_search_context_size').default('medium'), // 'low', 'medium', 'high'
+26 |   createdAt: timestamp('created_at').defaultNow().notNull(),
+27 | });
+28 | 
+29 | // Types for structured message content
+30 | export type MessagePart = {
+31 |   type: string;
+32 |   text?: string;
+33 |   toolCallId?: string;
+34 |   toolName?: string;
+35 |   args?: any;
+36 |   result?: any;
+37 |   citations?: WebSearchCitation[];
+38 |   [key: string]: any;
+39 | };
+40 | 
+41 | export type Attachment = {
+42 |   type: string;
+43 |   [key: string]: any;
+44 | };
+45 | 
+46 | export type Chat = typeof chats.$inferSelect;
+47 | export type Message = typeof messages.$inferSelect;
+48 | export type DBMessage = {
+49 |   id: string;
+50 |   chatId: string;
+51 |   role: string;
+52 |   parts: MessagePart[];
+53 |   createdAt: Date;
+54 | };
+55 | 
+56 | // --- Better Auth Core Schema ---
+57 | 
+58 | export const users = pgTable("user", {
+59 |   id: text("id").primaryKey().$defaultFn(() => nanoid()),
+60 |   name: text("name"),
+61 |   email: text("email").unique().notNull(),
+62 |   emailVerified: boolean("emailVerified"),
+63 |   image: text("image"),
+64 |   isAnonymous: boolean("isAnonymous").default(false),
+65 |   metadata: json("metadata"),
+66 |   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+67 |   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+68 | });
+69 | 
+70 | export const accounts = pgTable(
+71 |   "account",
+72 |   {
+73 |     id: text("id").primaryKey().$defaultFn(() => nanoid()),
+74 |     userId: text("userId")
+75 |       .notNull()
+76 |       .references(() => users.id, { onDelete: "cascade" }),
+77 |     providerId: text("providerId").notNull(), // e.g., "google", "github", "email"
+78 |     accountId: text("accountId").notNull(), // The user's ID with the provider or email/password hash
+79 |     providerType: text("providerType"), // "oauth", "email", etc. REMOVED .notNull()
+80 |     accessToken: text("access_token"),
+81 |     refreshToken: text("refresh_token"),
+82 |     accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
+83 |     tokenType: text("token_type"), // e.g., "bearer"
+84 |     scope: text("scope"),
+85 |     idToken: text("id_token"), // For OIDC providers like Google
+86 |     sessionState: text("session_state"), // For OIDC providers
+87 | 
+88 |     // Fields specific to email/password - not needed for Google-only
+89 |     // password: text("password"),
+90 | 
+91 |     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+92 |     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+93 |   }
+94 | );
+95 | 
+96 | export const sessions = pgTable("session", {
+97 |   id: text("id").primaryKey().$defaultFn(() => nanoid()),
+98 |   sessionToken: text("sessionToken").unique().notNull(),
+99 |   userId: text("userId")
+100 |     .notNull()
+101 |     .references(() => users.id, { onDelete: "cascade" }),
+102 |   expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+103 |   ipAddress: text("ipAddress"),
+104 |   userAgent: text("userAgent"),
+105 |   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+106 |   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+107 | });
+108 | 
+109 | // Corrected Verification Token Schema -> Renamed Verification Schema
+110 | export const verification = pgTable( // Renamed from verificationTokens
+111 |   "verification", // Renamed from verificationToken
+112 |   {
+113 |     id: text("id").primaryKey().$defaultFn(() => nanoid()),
+114 |     identifier: text("identifier").notNull(),
+115 |     // token: text("token").unique().notNull(), // Removed this line
+116 |     value: text("value").notNull(), // Ensure this exists as per docs (though error wasn't about this)
+117 |     expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+118 |     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+119 |     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+120 |   }
+121 | );
+122 | 
+123 | // --- End Better Auth Core Schema ---
+124 | 
+125 | // Infer types for Better Auth tables
+126 | export type AuthUser = typeof users.$inferSelect;
+127 | export type AuthAccount = typeof accounts.$inferSelect;
+128 | export type AuthSession = typeof sessions.$inferSelect;
+129 | // export type AuthVerificationToken = typeof verificationTokens.$inferSelect; // Removed old type export
+130 | export type AuthVerification = typeof verification.$inferSelect; // Added new type export
+131 | 
+132 | export type WebSearchCitation = {
+133 |   url: string;
+134 |   title: string;
+135 |   content?: string;
+136 |   startIndex: number;
+137 |   endIndex: number;
+138 | };
+139 | 
+140 | // --- Polar Usage Events Schema ---
+141 | 
+142 | export const polarUsageEvents = pgTable('polar_usage_events', {
+143 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()), // Unique ID for the log entry
+144 |   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }), // Links to your existing users table
+145 |   polarCustomerId: text('polar_customer_id'), // The customer ID from Polar
+146 |   eventName: text('event_name').notNull(), // The name of the event (e.g., "ai-usage")
+147 |   eventPayload: json('event_payload').notNull(), // The full payload sent to Polar's ingest API (e.g., { "completionTokens": 100 })
+148 |   createdAt: timestamp('created_at').defaultNow().notNull(), // When this log entry was created
+149 | });
+150 | 
+151 | export type PolarUsageEvent = typeof polarUsageEvents.$inferSelect; 
 ```
 
 components/ui/BuildInfo.tsx
@@ -17849,176 +21536,6 @@ components/ui/tooltip.tsx
 61 | export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
 ```
 
-lib/db/index.ts
-```
-1 | import { drizzle } from "drizzle-orm/neon-serverless";
-2 | import { Pool } from "@neondatabase/serverless";
-3 | import * as schema from "./schema";
-4 | 
-5 | // Initialize the connection pool
-6 | const pool = new Pool({
-7 |   connectionString: process.env.DATABASE_URL,
-8 | });
-9 | 
-10 | // Initialize Drizzle with the connection pool and schema
-11 | export const db = drizzle(pool, { schema }); 
-```
-
-lib/db/schema.ts
-```
-1 | import { timestamp, pgTable, text, primaryKey, json, boolean, integer } from "drizzle-orm/pg-core";
-2 | import { nanoid } from "nanoid";
-3 | 
-4 | // Message role enum type
-5 | export enum MessageRole {
-6 |   USER = "user",
-7 |   ASSISTANT = "assistant",
-8 |   TOOL = "tool"
-9 | }
-10 | 
-11 | export const chats = pgTable('chats', {
-12 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
-13 |   userId: text('user_id').notNull(),
-14 |   title: text('title').notNull().default('New Chat'),
-15 |   createdAt: timestamp('created_at').defaultNow().notNull(),
-16 |   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-17 | });
-18 | 
-19 | export const messages = pgTable('messages', {
-20 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
-21 |   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
-22 |   role: text('role').notNull(), // user, assistant, or tool
-23 |   parts: json('parts').notNull(), // Store parts as JSON in the database
-24 |   hasWebSearch: boolean('has_web_search').default(false),
-25 |   webSearchContextSize: text('web_search_context_size').default('medium'), // 'low', 'medium', 'high'
-26 |   createdAt: timestamp('created_at').defaultNow().notNull(),
-27 | });
-28 | 
-29 | // Types for structured message content
-30 | export type MessagePart = {
-31 |   type: string;
-32 |   text?: string;
-33 |   toolCallId?: string;
-34 |   toolName?: string;
-35 |   args?: any;
-36 |   result?: any;
-37 |   citations?: WebSearchCitation[];
-38 |   [key: string]: any;
-39 | };
-40 | 
-41 | export type Attachment = {
-42 |   type: string;
-43 |   [key: string]: any;
-44 | };
-45 | 
-46 | export type Chat = typeof chats.$inferSelect;
-47 | export type Message = typeof messages.$inferSelect;
-48 | export type DBMessage = {
-49 |   id: string;
-50 |   chatId: string;
-51 |   role: string;
-52 |   parts: MessagePart[];
-53 |   createdAt: Date;
-54 | };
-55 | 
-56 | // --- Better Auth Core Schema ---
-57 | 
-58 | export const users = pgTable("user", {
-59 |   id: text("id").primaryKey().$defaultFn(() => nanoid()),
-60 |   name: text("name"),
-61 |   email: text("email").unique().notNull(),
-62 |   emailVerified: boolean("emailVerified"),
-63 |   image: text("image"),
-64 |   isAnonymous: boolean("isAnonymous").default(false),
-65 |   metadata: json("metadata"),
-66 |   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-67 |   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
-68 | });
-69 | 
-70 | export const accounts = pgTable(
-71 |   "account",
-72 |   {
-73 |     id: text("id").primaryKey().$defaultFn(() => nanoid()),
-74 |     userId: text("userId")
-75 |       .notNull()
-76 |       .references(() => users.id, { onDelete: "cascade" }),
-77 |     providerId: text("providerId").notNull(), // e.g., "google", "github", "email"
-78 |     accountId: text("accountId").notNull(), // The user's ID with the provider or email/password hash
-79 |     providerType: text("providerType"), // "oauth", "email", etc. REMOVED .notNull()
-80 |     accessToken: text("access_token"),
-81 |     refreshToken: text("refresh_token"),
-82 |     accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
-83 |     tokenType: text("token_type"), // e.g., "bearer"
-84 |     scope: text("scope"),
-85 |     idToken: text("id_token"), // For OIDC providers like Google
-86 |     sessionState: text("session_state"), // For OIDC providers
-87 | 
-88 |     // Fields specific to email/password - not needed for Google-only
-89 |     // password: text("password"),
-90 | 
-91 |     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-92 |     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
-93 |   }
-94 | );
-95 | 
-96 | export const sessions = pgTable("session", {
-97 |   id: text("id").primaryKey().$defaultFn(() => nanoid()),
-98 |   sessionToken: text("sessionToken").unique().notNull(),
-99 |   userId: text("userId")
-100 |     .notNull()
-101 |     .references(() => users.id, { onDelete: "cascade" }),
-102 |   expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
-103 |   ipAddress: text("ipAddress"),
-104 |   userAgent: text("userAgent"),
-105 |   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-106 |   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
-107 | });
-108 | 
-109 | // Corrected Verification Token Schema -> Renamed Verification Schema
-110 | export const verification = pgTable( // Renamed from verificationTokens
-111 |   "verification", // Renamed from verificationToken
-112 |   {
-113 |     id: text("id").primaryKey().$defaultFn(() => nanoid()),
-114 |     identifier: text("identifier").notNull(),
-115 |     // token: text("token").unique().notNull(), // Removed this line
-116 |     value: text("value").notNull(), // Ensure this exists as per docs (though error wasn't about this)
-117 |     expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
-118 |     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-119 |     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
-120 |   }
-121 | );
-122 | 
-123 | // --- End Better Auth Core Schema ---
-124 | 
-125 | // Infer types for Better Auth tables
-126 | export type AuthUser = typeof users.$inferSelect;
-127 | export type AuthAccount = typeof accounts.$inferSelect;
-128 | export type AuthSession = typeof sessions.$inferSelect;
-129 | // export type AuthVerificationToken = typeof verificationTokens.$inferSelect; // Removed old type export
-130 | export type AuthVerification = typeof verification.$inferSelect; // Added new type export
-131 | 
-132 | export type WebSearchCitation = {
-133 |   url: string;
-134 |   title: string;
-135 |   content?: string;
-136 |   startIndex: number;
-137 |   endIndex: number;
-138 | };
-139 | 
-140 | // --- Polar Usage Events Schema ---
-141 | 
-142 | export const polarUsageEvents = pgTable('polar_usage_events', {
-143 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()), // Unique ID for the log entry
-144 |   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }), // Links to your existing users table
-145 |   polarCustomerId: text('polar_customer_id'), // The customer ID from Polar
-146 |   eventName: text('event_name').notNull(), // The name of the event (e.g., "ai-usage")
-147 |   eventPayload: json('event_payload').notNull(), // The full payload sent to Polar's ingest API (e.g., { "completionTokens": 100 })
-148 |   createdAt: timestamp('created_at').defaultNow().notNull(), // When this log entry was created
-149 | });
-150 | 
-151 | export type PolarUsageEvent = typeof polarUsageEvents.$inferSelect; 
-```
-
 lib/hooks/use-chats.ts
 ```
 1 | import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18363,7 +21880,7 @@ drizzle/migrations/0003_add_web_search.sql
 
 app/api/chat/route.ts
 ```
-1 | import { model, type modelID } from "@/ai/providers";
+1 | import { model, type modelID, modelDetails, getLanguageModelWithKeys, createOpenRouterClientWithKey } from "@/ai/providers";
 2 | import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 3 | import { getApiKey } from "@/ai/providers";
 4 | import { streamText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
@@ -18373,576 +21890,810 @@ app/api/chat/route.ts
 8 | import { db } from '@/lib/db';
 9 | import { chats } from '@/lib/db/schema';
 10 | import { eq, and } from 'drizzle-orm';
-11 | import { trackTokenUsage, hasEnoughCredits } from '@/lib/tokenCounter';
-12 | import { auth, checkMessageLimit } from '@/lib/auth';
-13 | 
-14 | import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
-15 | import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
-16 | import { spawn } from "child_process";
-17 | 
-18 | // Allow streaming responses up to 60 seconds on Hobby plan
-19 | export const maxDuration = 60;
-20 | 
-21 | interface KeyValuePair {
-22 |   key: string;
-23 |   value: string;
-24 | }
-25 | 
-26 | interface MCPServerConfig {
-27 |   url: string;
-28 |   type: 'sse' | 'stdio';
-29 |   command?: string;
-30 |   args?: string[];
-31 |   env?: KeyValuePair[];
-32 |   headers?: KeyValuePair[];
-33 | }
+11 | import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
+12 | import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
+13 | import { auth, checkMessageLimit } from '@/lib/auth';
+14 | 
+15 | import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
+16 | import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
+17 | import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+18 | import { spawn } from "child_process";
+19 | 
+20 | // Allow streaming responses up to 60 seconds on Hobby plan
+21 | export const maxDuration = 60;
+22 | 
+23 | // Helper function to check if user is using their own API keys for the selected model
+24 | function checkIfUsingOwnApiKeys(selectedModel: modelID, apiKeys: Record<string, string> = {}): boolean {
+25 |   // Map model providers to their API key names
+26 |   const providerKeyMap: Record<string, string> = {
+27 |     'openai': 'OPENAI_API_KEY',
+28 |     'anthropic': 'ANTHROPIC_API_KEY',
+29 |     'groq': 'GROQ_API_KEY',
+30 |     'xai': 'XAI_API_KEY',
+31 |     'openrouter': 'OPENROUTER_API_KEY',
+32 |     'requesty': 'REQUESTY_API_KEY'
+33 |   };
 34 | 
-35 | interface WebSearchOptions {
-36 |   enabled: boolean;
-37 |   contextSize: 'low' | 'medium' | 'high';
-38 | }
-39 | 
-40 | interface UrlCitation {
-41 |   url: string;
-42 |   title: string;
-43 |   content?: string;
-44 |   start_index: number;
-45 |   end_index: number;
-46 | }
-47 | 
-48 | interface Annotation {
-49 |   type: string;
-50 |   url_citation: UrlCitation;
-51 | }
-52 | 
-53 | interface OpenRouterResponse extends LanguageModelResponseMetadata {
-54 |   readonly messages: Message[];
-55 |   annotations?: Annotation[];
-56 |   body?: unknown;
-57 | }
-58 | 
-59 | export async function POST(req: Request) {
-60 |   const {
-61 |     messages,
-62 |     chatId,
-63 |     selectedModel,
-64 |     mcpServers: initialMcpServers = [],
-65 |     webSearch = { enabled: false, contextSize: 'medium' }
-66 |   }: {
-67 |     messages: UIMessage[];
-68 |     chatId?: string;
-69 |     selectedModel: modelID;
-70 |     mcpServers?: MCPServerConfig[];
-71 |     webSearch?: WebSearchOptions;
-72 |   } = await req.json();
-73 | 
-74 |   let mcpServers = initialMcpServers;
+35 |   // Extract provider from model ID
+36 |   const provider = selectedModel.split('/')[0];
+37 |   const requiredApiKey = providerKeyMap[provider];
+38 | 
+39 |   if (!requiredApiKey) {
+40 |     return false; // Unknown provider
+41 |   }
+42 | 
+43 |   // Check if user has provided their own API key for this provider
+44 |   const hasApiKey = Boolean(apiKeys[requiredApiKey] && apiKeys[requiredApiKey].trim().length > 0);
+45 | 
+46 |   return hasApiKey;
+47 | }
+48 | 
+49 | interface KeyValuePair {
+50 |   key: string;
+51 |   value: string;
+52 | }
+53 | 
+54 | interface MCPServerConfig {
+55 |   url: string;
+56 |   type: 'sse' | 'stdio' | 'streamable-http';
+57 |   command?: string;
+58 |   args?: string[];
+59 |   env?: KeyValuePair[];
+60 |   headers?: KeyValuePair[];
+61 | }
+62 | 
+63 | interface WebSearchOptions {
+64 |   enabled: boolean;
+65 |   contextSize: 'low' | 'medium' | 'high';
+66 | }
+67 | 
+68 | interface UrlCitation {
+69 |   url: string;
+70 |   title: string;
+71 |   content?: string;
+72 |   start_index: number;
+73 |   end_index: number;
+74 | }
 75 | 
-76 |   // Disable MCP servers for DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, and Grok 3 Mini Beta (High Reasoning)
-77 |   if (
-78 |     selectedModel === "openrouter/deepseek/deepseek-r1" ||
-79 |     selectedModel === "openrouter/x-ai/grok-3-beta" ||
-80 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-81 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
-82 |   ) {
-83 |     mcpServers = [];
-84 |   }
-85 | 
-86 |   // Get the authenticated session (including anonymous users)
-87 |   const session = await auth.api.getSession({ headers: req.headers });
-88 | 
-89 |   // If no session exists, return error
-90 |   if (!session || !session.user || !session.user.id) {
-91 |     return new Response(
-92 |       JSON.stringify({ error: "Authentication required" }),
-93 |       { status: 401, headers: { "Content-Type": "application/json" } }
-94 |     );
-95 |   }
-96 | 
-97 |   const userId = session.user.id;
-98 |   const isAnonymous = (session.user as any).isAnonymous === true;
+76 | interface Annotation {
+77 |   type: string;
+78 |   url_citation: UrlCitation;
+79 | }
+80 | 
+81 | interface OpenRouterResponse extends LanguageModelResponseMetadata {
+82 |   readonly messages: Message[];
+83 |   annotations?: Annotation[];
+84 |   body?: unknown;
+85 | }
+86 | 
+87 | // Helper to create standardized error responses
+88 | const createErrorResponse = (
+89 |   code: string,
+90 |   message: string,
+91 |   status: number,
+92 |   details?: string
+93 | ) => {
+94 |   return new Response(
+95 |     JSON.stringify({ error: { code, message, details } }),
+96 |     { status, headers: { "Content-Type": "application/json" } }
+97 |   );
+98 | };
 99 | 
-100 |   // Try to get the Polar customer ID from session
-101 |   const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
-102 |     (session.user as any)?.metadata?.polarCustomerId;
-103 | 
-104 |   // Estimate ~30 tokens per message as a basic check
-105 |   const estimatedTokens = 30;
-106 | 
-107 |   // 1. Check if user has sufficient credits (if they have a Polar account)
-108 |   let hasCredits = false;
-109 |   try {
-110 |     // Check credits using both the external ID (userId) and legacy polarCustomerId
-111 |     // Pass isAnonymous flag to skip Polar checks for anonymous users
-112 |     hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous);
-113 |   } catch (error) {
-114 |     // Log but continue - don't block users if credit check fails
-115 |     console.error('Error checking credits:', error);
-116 |   }
-117 | 
-118 |   // 2. If user has credits, allow request (skip daily message limit)
-119 |   if (!isAnonymous && hasCredits) {
-120 |     // proceed
-121 |   } else {
-122 |     // 3. Otherwise, check message limit based on authentication status
-123 |     const limitStatus = await checkMessageLimit(userId, isAnonymous);
-124 |     if (limitStatus.hasReachedLimit) {
-125 |       return new Response(
-126 |         JSON.stringify({
-127 |           error: "Message limit reached",
-128 |           message: `You've reached your daily limit of ${limitStatus.limit} messages. ${isAnonymous ? "Sign in with Google to get more messages." : "Purchase credits to continue."}`,
-129 |           limit: limitStatus.limit,
-130 |           remaining: limitStatus.remaining
-131 |         }),
-132 |         { status: 429, headers: { "Content-Type": "application/json" } }
-133 |       );
-134 |     }
-135 |   }
-136 | 
-137 |   const id = chatId || nanoid();
-138 | 
-139 |   // Check if chat already exists for the given ID
-140 |   // If not, we'll create it in onFinish
-141 |   let isNewChat = false;
-142 |   if (chatId) {
-143 |     try {
-144 |       const existingChat = await db.query.chats.findFirst({
-145 |         where: and(
-146 |           eq(chats.id, chatId),
-147 |           eq(chats.userId, userId)
-148 |         )
-149 |       });
-150 |       isNewChat = !existingChat;
-151 |     } catch (error) {
-152 |       console.error("Error checking for existing chat:", error);
-153 |       // Continue anyway, we'll create the chat in onFinish
-154 |       isNewChat = true;
-155 |     }
-156 |   } else {
-157 |     // No ID provided, definitely new
-158 |     isNewChat = true;
-159 |   }
-160 | 
-161 |   // Prepare messages for the model
-162 |   const modelMessages: UIMessage[] = [...messages];
-163 | 
-164 |   if (
-165 |     selectedModel === "openrouter/deepseek/deepseek-r1" ||
-166 |     selectedModel === "openrouter/x-ai/grok-3-beta" ||
-167 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-168 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-169 |     selectedModel === "openrouter/qwen/qwq-32b"
-170 |   ) {
-171 |     const systemContent = "Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags.";
-172 |     modelMessages.unshift({
-173 |       role: "system",
-174 |       id: nanoid(), // Ensure a unique ID for the system message
-175 |       content: systemContent, // Add top-level content
-176 |       parts: [{ type: "text", text: systemContent }]
-177 |     });
-178 |   }
-179 | 
-180 |   // Pre-emptively save the chat if it's new
-181 |   if (isNewChat) {
-182 |     try {
-183 |       await saveChat({
-184 |         id, // The generated or provided chatId
-185 |         userId,
-186 |         messages: [], // Start with empty messages, will be updated in onFinish
-187 |       });
-188 |       console.log(`[Chat ${id}] Pre-emptively created chat record.`);
-189 |     } catch (error) {
-190 |       console.error(`[Chat ${id}] Error pre-emptively creating chat:`, error);
-191 |       // Decide if we should bail out or continue. For now, let's continue
-192 |       // but the onFinish save might fail later if the chat wasn't created.
-193 |     }
-194 |   }
-195 | 
-196 |   // Initialize tools
-197 |   let tools = {};
-198 |   const mcpClients: any[] = [];
-199 | 
-200 |   // Process each MCP server configuration
-201 |   for (const mcpServer of mcpServers) {
-202 |     try {
-203 |       // Create appropriate transport based on type
-204 |       let transport: MCPTransport | { type: 'sse', url: string, headers?: Record<string, string> };
-205 | 
-206 |       if (mcpServer.type === 'sse') {
-207 |         // Convert headers array to object for SSE transport
-208 |         const headers: Record<string, string> = {};
-209 |         if (mcpServer.headers && mcpServer.headers.length > 0) {
-210 |           mcpServer.headers.forEach(header => {
-211 |             if (header.key) headers[header.key] = header.value || '';
-212 |           });
-213 |         }
+100 | export async function POST(req: Request) {
+101 |   const {
+102 |     messages,
+103 |     chatId,
+104 |     selectedModel,
+105 |     mcpServers: initialMcpServers = [],
+106 |     webSearch = { enabled: false, contextSize: 'medium' },
+107 |     apiKeys = {}
+108 |   }: {
+109 |     messages: UIMessage[];
+110 |     chatId?: string;
+111 |     selectedModel: modelID;
+112 |     mcpServers?: MCPServerConfig[];
+113 |     webSearch?: WebSearchOptions;
+114 |     apiKeys?: Record<string, string>;
+115 |   } = await req.json();
+116 | 
+117 |   let mcpServers = initialMcpServers;
+118 | 
+119 |   // Disable MCP servers for DeepSeek R1 models
+120 |   if (
+121 |     selectedModel === "openrouter/deepseek/deepseek-r1" ||
+122 |     selectedModel === "openrouter/deepseek/deepseek-r1-0528" ||
+123 |     selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b"
+124 |     //selectedModel === "openrouter/x-ai/grok-3-beta" ||
+125 |     //selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+126 |     //selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
+127 |   ) {
+128 |     mcpServers = [];
+129 |   }
+130 | 
+131 |   // Get the authenticated session (including anonymous users)
+132 |   const session = await auth.api.getSession({ headers: req.headers });
+133 | 
+134 |   // If no session exists, return error
+135 |   if (!session || !session.user || !session.user.id) {
+136 |     return createErrorResponse(
+137 |       "AUTHENTICATION_REQUIRED",
+138 |       "Authentication required. Please log in.",
+139 |       401
+140 |     );
+141 |   }
+142 | 
+143 |   const userId = session.user.id;
+144 |   const isAnonymous = (session.user as any).isAnonymous === true;
+145 | 
+146 |   // Try to get the Polar customer ID from session
+147 |   const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
+148 |     (session.user as any)?.metadata?.polarCustomerId;
+149 | 
+150 |   // Estimate ~30 tokens per message as a basic check
+151 |   const estimatedTokens = 30;
+152 | 
+153 |   // Check if user is using their own API keys
+154 |   const isUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+155 |   console.log(`[Debug] User ${userId} - isUsingOwnApiKeys: ${isUsingOwnApiKeys}`);
+156 | 
+157 |   // 1. Check if user has sufficient credits (if they have a Polar account and not using own keys)
+158 |   let hasCredits = false;
+159 |   let actualCredits: number | null = null;
+160 |   console.log(`[Debug] User ${userId} - isAnonymous: ${isAnonymous}, polarCustomerId: ${polarCustomerId}`);
+161 | 
+162 |   // Skip credit checks entirely if user is using their own API keys
+163 |   if (isUsingOwnApiKeys) {
+164 |     console.log(`[Debug] User ${userId} is using own API keys, skipping credit checks`);
+165 |     hasCredits = true; // Allow request to proceed
+166 |   } else {
+167 |     try {
+168 |       // Check credits using both the external ID (userId) and legacy polarCustomerId
+169 |       // Pass isAnonymous flag to skip Polar checks for anonymous users
+170 |       // Pass selectedModel to check for premium model access
+171 |       hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, selectedModel);
+172 |       console.log(`[Debug] hasEnoughCredits result: ${hasCredits}`);
+173 | 
+174 |       // Also get the actual credit balance to check for negative balances
+175 |       if (!isAnonymous) {
+176 |         if (userId) {
+177 |           try {
+178 |             actualCredits = await getRemainingCreditsByExternalId(userId);
+179 |             console.log(`[Debug] Actual credits for user ${userId}: ${actualCredits}`);
+180 |           } catch (error) {
+181 |             console.warn('Error getting actual credits by external ID:', error);
+182 |             // Fall back to legacy method
+183 |             if (polarCustomerId) {
+184 |               try {
+185 |                 actualCredits = await getRemainingCredits(polarCustomerId);
+186 |                 console.log(`[Debug] Actual credits via legacy method: ${actualCredits}`);
+187 |               } catch (legacyError) {
+188 |                 console.warn('Error getting actual credits by legacy method:', legacyError);
+189 |               }
+190 |             }
+191 |           }
+192 |         }
+193 |       }
+194 |     } catch (error: any) {
+195 |       // Log but continue - don't block users if credit check fails
+196 |       console.error('[CreditCheckError] Error checking credits:', error);
+197 |       // Potentially return a specific error if this failure is critical
+198 |       // For now, matches existing behavior of allowing request if check fails.
+199 |     }
+200 |   }
+201 | 
+202 |   // 2. Check for negative credit balance - block if user has negative credits (skip if using own API keys)
+203 |   if (!isUsingOwnApiKeys && !isAnonymous && actualCredits !== null && actualCredits < 0) {
+204 |     console.log(`[Debug] User ${userId} has negative credits (${actualCredits}), blocking request`);
+205 |     return createErrorResponse(
+206 |       "INSUFFICIENT_CREDITS",
+207 |       `Your account has a negative credit balance (${actualCredits}). Please purchase more credits to continue.`,
+208 |       402,
+209 |       `User has ${actualCredits} credits`
+210 |     );
+211 |   }
+212 | 
+213 |   // 2.5. Check Web Search credit requirement - ensure user has enough credits for web search (skip if using own API keys)
 214 | 
-215 |         transport = {
-216 |           type: 'sse' as const,
-217 |           url: mcpServer.url,
-218 |           headers: Object.keys(headers).length > 0 ? headers : undefined
-219 |         };
-220 |       } else if (mcpServer.type === 'stdio') {
-221 |         // For stdio transport, we need command and args
-222 |         if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
-223 |           console.warn("Skipping stdio MCP server due to missing command or args");
-224 |           continue;
-225 |         }
+215 |   // SECURITY FIX: Don't trust client's webSearch.enabled, determine server-side
+216 |   let serverSideWebSearchEnabled = false;
+217 | 
+218 |   // Only enable web search if user actually has credits AND not anonymous AND not using own keys
+219 |   if (!isUsingOwnApiKeys && !isAnonymous && actualCredits !== null && actualCredits >= WEB_SEARCH_COST) {
+220 |     // User has sufficient credits, allow them to use web search if requested
+221 |     serverSideWebSearchEnabled = webSearch.enabled;
+222 |   } else if (isUsingOwnApiKeys && webSearch.enabled) {
+223 |     // Users with own API keys can use web search if they requested it
+224 |     serverSideWebSearchEnabled = true;
+225 |   }
 226 | 
-227 |         // Convert env array to object for stdio transport
-228 |         const env: Record<string, string> = {};
-229 |         if (mcpServer.env && mcpServer.env.length > 0) {
-230 |           mcpServer.env.forEach(envVar => {
-231 |             if (envVar.key) env[envVar.key] = envVar.value || '';
-232 |           });
-233 |         }
-234 | 
-235 |         // Check for uvx pattern
-236 |         if (mcpServer.command === 'uvx') {
-237 |           // Ensure uv is installed, which provides uvx
-238 |           console.log("Ensuring uv (for uvx) is installed...");
-239 |           let uvInstalled = false;
-240 |           const installUvSubprocess = spawn('pip3', ['install', 'uv']);
-241 |           // Capture output for debugging
-242 |           let uvInstallStdout = '';
-243 |           let uvInstallStderr = '';
-244 |           installUvSubprocess.stdout.on('data', (data) => { uvInstallStdout += data.toString(); });
-245 |           installUvSubprocess.stderr.on('data', (data) => { uvInstallStderr += data.toString(); });
-246 | 
-247 |           await new Promise<void>((resolve) => {
-248 |             installUvSubprocess.on('close', (code: number) => {
-249 |               if (code !== 0) {
-250 |                 console.error(`Failed to install uv using pip3: exit code ${code}`);
-251 |                 console.error('pip3 stdout:', uvInstallStdout);
-252 |                 console.error('pip3 stderr:', uvInstallStderr);
-253 |               } else {
-254 |                 console.log("uv installed or already present.");
-255 |                 if (uvInstallStdout) console.log('pip3 stdout:', uvInstallStdout);
-256 |                 if (uvInstallStderr) console.log('pip3 stderr:', uvInstallStderr);
-257 |                 uvInstalled = true;
-258 |               }
-259 |               resolve();
-260 |             });
-261 |             installUvSubprocess.on('error', (err) => {
-262 |               console.error("Error spawning pip3 to install uv:", err);
-263 |               resolve(); // Resolve anyway
-264 |             });
-265 |           });
-266 | 
-267 |           if (!uvInstalled) {
-268 |             console.warn("Skipping uvx command: Failed to ensure uv installation.");
-269 |             continue;
-270 |           }
-271 | 
-272 |           // Do NOT modify the command or args. Let StdioMCPTransport run uvx directly.
-273 |           console.log(`Proceeding to spawn uvx command directly.`);
-274 |         }
-275 |         // If python is passed in the command, install the python package mentioned in args after -m
-276 |         else if (mcpServer.command.includes('python3')) {
-277 |           const packageName = mcpServer.args[mcpServer.args.indexOf('-m') + 1];
-278 |           console.log("Attempting to install python package using uv:", packageName);
-279 |           // Use uv to install the package
-280 |           const subprocess = spawn('uv', ['pip', 'install', packageName]);
-281 |           subprocess.on('close', (code: number) => {
-282 |             if (code !== 0) {
-283 |               console.error(`Failed to install python package ${packageName} using uv: ${code}`);
-284 |             } else {
-285 |               console.log(`Successfully installed python package ${packageName} using uv.`);
-286 |             }
-287 |           });
-288 |           // wait for the subprocess to finish
-289 |           await new Promise<void>((resolve) => {
-290 |             subprocess.on('close', () => resolve());
-291 |             subprocess.on('error', (err) => {
-292 |               console.error(`Error spawning uv command for package ${packageName}:`, err);
-293 |               resolve(); // Resolve anyway to avoid hanging
-294 |             });
-295 |           });
-296 |         }
-297 | 
-298 |         // Log the final command and args before spawning for stdio
-299 |         console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
-300 | 
-301 |         transport = new StdioMCPTransport({
-302 |           command: mcpServer.command,
-303 |           args: mcpServer.args,
-304 |           env: Object.keys(env).length > 0 ? env : undefined
-305 |         });
-306 |       } else {
-307 |         console.warn(`Skipping MCP server with unsupported transport type: ${mcpServer.type}`);
-308 |         continue;
-309 |       }
+227 |   // Block unpaid attempts
+228 |   if (webSearch.enabled && !serverSideWebSearchEnabled) {
+229 |     if (isAnonymous) {
+230 |       console.log(`[Security] Anonymous user ${userId} tried to use Web Search, blocking request`);
+231 |       return createErrorResponse(
+232 |         "FEATURE_RESTRICTED",
+233 |         "Web Search is only available to signed-in users with credits. Please sign in and purchase credits to use this feature.",
+234 |         403,
+235 |         "Anonymous users cannot use Web Search"
+236 |       );
+237 |     }
+238 | 
+239 |     if (actualCredits !== null && actualCredits < WEB_SEARCH_COST) {
+240 |       console.log(`[Security] User ${userId} tried to bypass Web Search payment (${actualCredits} < ${WEB_SEARCH_COST})`);
+241 |       return createErrorResponse(
+242 |         "INSUFFICIENT_CREDITS",
+243 |         `You need at least ${WEB_SEARCH_COST} credits to use Web Search. Your balance is ${actualCredits}.`,
+244 |         402,
+245 |         `User attempted to bypass Web Search payment with ${actualCredits} credits`
+246 |       );
+247 |     }
+248 |   }
+249 | 
+250 |   // Use server-determined web search status instead of client's request
+251 |   const secureWebSearch = {
+252 |     enabled: serverSideWebSearchEnabled,
+253 |     contextSize: webSearch.contextSize
+254 |   };
+255 | 
+256 |   // 3. If user has credits or is using own API keys, allow request (skip daily message limit)
+257 |   console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys}`);
+258 | 
+259 |   if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys) {
+260 |     console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : 'has credits'}, skipping message limit check`);
+261 |     // proceed
+262 |   } else {
+263 |     console.log(`[Debug] User ${userId} entering message limit check - isAnonymous: ${isAnonymous}`);
+264 |     // 4. Otherwise, check message limit based on authentication status
+265 |     const limitStatus = await checkMessageLimit(userId, isAnonymous);
+266 |     console.log(`[Debug] limitStatus:`, limitStatus);
+267 | 
+268 |     // Log message usage for anonymous users
+269 |     if (isAnonymous) {
+270 |       const used = limitStatus.limit - limitStatus.remaining;
+271 |       console.log(`[Anonymous User ${userId}] Messages used: ${used}/${limitStatus.limit}, Remaining: ${limitStatus.remaining}`);
+272 |     }
+273 | 
+274 |     if (limitStatus.hasReachedLimit) {
+275 |       return new Response(
+276 |         JSON.stringify({
+277 |           error: "Message limit reached",
+278 |           message: `You've reached your daily limit of ${limitStatus.limit} messages. ${isAnonymous ? "Sign in with Google to get more messages." : "Purchase credits to continue."}`,
+279 |           limit: limitStatus.limit,
+280 |           remaining: limitStatus.remaining
+281 |         }),
+282 |         { status: 429, headers: { "Content-Type": "application/json" } }
+283 |       );
+284 |     }
+285 |   }
+286 | 
+287 |   const id = chatId || nanoid();
+288 | 
+289 |   // Check if chat already exists for the given ID
+290 |   // If not, we'll create it in onFinish
+291 |   let isNewChat = false;
+292 |   if (chatId) {
+293 |     try {
+294 |       const existingChat = await db.query.chats.findFirst({
+295 |         where: and(
+296 |           eq(chats.id, chatId),
+297 |           eq(chats.userId, userId)
+298 |         )
+299 |       });
+300 |       isNewChat = !existingChat;
+301 |     } catch (error) {
+302 |       console.error("Error checking for existing chat:", error);
+303 |       // Continue anyway, we'll create the chat in onFinish
+304 |       isNewChat = true;
+305 |     }
+306 |   } else {
+307 |     // No ID provided, definitely new
+308 |     isNewChat = true;
+309 |   }
 310 | 
-311 |       const mcpClient = await createMCPClient({ transport });
-312 |       mcpClients.push(mcpClient);
+311 |   // Prepare messages for the model
+312 |   const modelMessages: UIMessage[] = [...messages];
 313 | 
-314 |       const mcptools = await mcpClient.tools();
-315 | 
-316 |       console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(mcptools));
-317 | 
-318 |       // Add MCP tools to tools object
-319 |       tools = { ...tools, ...mcptools };
-320 |     } catch (error) {
-321 |       console.error("Failed to initialize MCP client:", error);
-322 |       // Continue with other servers instead of failing the entire request
-323 |     }
-324 |   }
-325 | 
-326 |   // Register cleanup for all clients
-327 |   if (mcpClients.length > 0) {
-328 |     req.signal.addEventListener('abort', async () => {
-329 |       for (const client of mcpClients) {
-330 |         try {
-331 |           await client.close();
-332 |         } catch (error) {
-333 |           console.error("Error closing MCP client:", error);
-334 |         }
-335 |       }
-336 |     });
-337 |   }
-338 | 
-339 |   console.log("messages", messages);
-340 |   console.log("parts", messages.map(m => m.parts.map(p => p)));
-341 | 
-342 |   // Log web search status
-343 |   if (webSearch.enabled) {
-344 |     console.log(`[Web Search] ENABLED with context size: ${webSearch.contextSize}`);
-345 |   } else {
-346 |     console.log(`[Web Search] DISABLED`);
-347 |   }
-348 | 
-349 |   // Add web search tool if enabled
-350 |   if (webSearch.enabled) {
-351 |     const apiKey = getApiKey('OPENROUTER_API_KEY');
-352 |     if (!apiKey) {
-353 |       console.error("[Web Search] OPENROUTER_API_KEY is missing. Web search will be disabled.");
-354 |     } else {
-355 |       const openrouterClient: any = createOpenRouter({ apiKey }); // Treat as any for the check
-356 |       if (openrouterClient && typeof openrouterClient.toolFactory === 'object' && openrouterClient.toolFactory !== null && typeof openrouterClient.toolFactory.searchWeb === 'function') {
-357 |         tools = {
-358 |           ...tools,
-359 |           web_search: openrouterClient.toolFactory.searchWeb({
-360 |             contextSize: webSearch.contextSize,
-361 |           }),
-362 |         };
-363 |         console.log("[Web Search] Tool configured successfully.");
-364 |       } else {
-365 |         console.error("[Web Search] Failed to initialize openrouterClient or toolFactory.searchWeb is not a function. Web search will be disabled. Check API key and provider library.");
-366 |       }
-367 |     }
-368 |   }
-369 | 
-370 |   let modelInstance;
-371 |   if (webSearch.enabled && selectedModel.startsWith("openrouter/")) {
-372 |     // Remove 'openrouter/' prefix for the OpenRouter client
-373 |     const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
-374 |     const openrouterClient = createOpenRouter({
-375 |       apiKey: getApiKey('OPENROUTER_API_KEY'),
-376 |       headers: {
-377 |         'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
-378 |         'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
-379 |       }
-380 |     });
-381 |     // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
-382 |     if (
-383 |       selectedModel === "openrouter/deepseek/deepseek-r1" ||
-384 |       selectedModel === "openrouter/x-ai/grok-3-beta" ||
-385 |       selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-386 |       selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-387 |       selectedModel === "openrouter/qwen/qwq-32b"
-388 |     ) {
-389 |       modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
-390 |     } else {
-391 |       modelInstance = openrouterClient(openrouterModelId);
-392 |     }
-393 |   } else {
-394 |     modelInstance = model.languageModel(selectedModel);
-395 |   }
-396 | 
-397 |   const modelOptions = {
-398 |     ...(webSearch.enabled && {
-399 |       web_search_options: {
-400 |         search_context_size: webSearch.contextSize
-401 |       }
-402 |     })
-403 |   };
-404 | 
-405 |   // Construct the payload for OpenRouter
-406 |   const openRouterPayload = {
-407 |     model: modelInstance,
-408 |     system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
+314 |   if (
+315 |     selectedModel === "openrouter/deepseek/deepseek-r1" ||
+316 |     // selectedModel === "openrouter/x-ai/grok-3-beta" ||
+317 |     // selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+318 |     // selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+319 |     selectedModel === "openrouter/qwen/qwq-32b"
+320 |   ) {
+321 |     const systemContent = "Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags.";
+322 |     modelMessages.unshift({
+323 |       role: "system",
+324 |       id: nanoid(), // Ensure a unique ID for the system message
+325 |       content: systemContent, // Add top-level content
+326 |       parts: [{ type: "text", text: systemContent }]
+327 |     });
+328 |   }
+329 | 
+330 |   // Pre-emptively save the chat if it's new
+331 |   if (isNewChat) {
+332 |     try {
+333 |       await saveChat({
+334 |         id, // The generated or provided chatId
+335 |         userId,
+336 |         messages: [], // Start with empty messages, will be updated in onFinish
+337 |         selectedModel,
+338 |         apiKeys,
+339 |       });
+340 |       console.log(`[Chat ${id}] Pre-emptively created chat record.`);
+341 |     } catch (error) {
+342 |       console.error(`[Chat ${id}] Error pre-emptively creating chat:`, error);
+343 |       // Decide if we should bail out or continue. For now, let's continue
+344 |       // but the onFinish save might fail later if the chat wasn't created.
+345 |       // If this is critical, we could return an error:
+346 |       // return createErrorResponse("DATABASE_ERROR", "Failed to initialize chat session.", 500, error.message);
+347 |     }
+348 |   }
+349 | 
+350 |   // Initialize tools
+351 |   let tools = {};
+352 |   const mcpClients: any[] = [];
+353 | 
+354 |   // Process each MCP server configuration
+355 |   for (const mcpServer of mcpServers) {
+356 |     try {
+357 |       // Create appropriate transport based on type
+358 |       let finalTransportForClient: MCPTransport | { type: 'sse', url: string, headers?: Record<string, string> };
+359 | 
+360 |       if (mcpServer.type === 'sse') {
+361 |         const headers: Record<string, string> = {};
+362 |         if (mcpServer.headers && mcpServer.headers.length > 0) {
+363 |           mcpServer.headers.forEach(header => {
+364 |             if (header.key) headers[header.key] = header.value || '';
+365 |           });
+366 |         }
+367 |         finalTransportForClient = {
+368 |           type: 'sse' as const,
+369 |           url: mcpServer.url,
+370 |           headers: Object.keys(headers).length > 0 ? headers : undefined
+371 |         };
+372 |       } else if (mcpServer.type === 'streamable-http') {
+373 |         const headers: Record<string, string> = {};
+374 |         if (mcpServer.headers && mcpServer.headers.length > 0) {
+375 |           mcpServer.headers.forEach(header => {
+376 |             if (header.key) headers[header.key] = header.value || '';
+377 |           });
+378 |         }
+379 |         // Use StreamableHTTPClientTransport from @modelcontextprotocol/sdk
+380 |         const transportUrl = new URL(mcpServer.url);
+381 |         finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
+382 |           // sessionId: nanoid(), // Optionally, provide a session ID if your server uses it
+383 |           requestInit: {
+384 |             headers: Object.keys(headers).length > 0 ? headers : undefined
+385 |           }
+386 |         });
+387 |       } else if (mcpServer.type === 'stdio') {
+388 |         if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
+389 |           console.warn("Skipping stdio MCP server due to missing command or args");
+390 |           continue;
+391 |         }
+392 |         const env: Record<string, string> = {};
+393 |         if (mcpServer.env && mcpServer.env.length > 0) {
+394 |           mcpServer.env.forEach(envVar => {
+395 |             if (envVar.key) env[envVar.key] = envVar.value || '';
+396 |           });
+397 |         }
+398 |         // Check for uvx pattern
+399 |         if (mcpServer.command === 'uvx') {
+400 |           // Ensure uv is installed, which provides uvx
+401 |           console.log("Ensuring uv (for uvx) is installed...");
+402 |           let uvInstalled = false;
+403 |           const installUvSubprocess = spawn('pip3', ['install', 'uv']);
+404 |           // Capture output for debugging
+405 |           let uvInstallStdout = '';
+406 |           let uvInstallStderr = '';
+407 |           installUvSubprocess.stdout.on('data', (data) => { uvInstallStdout += data.toString(); });
+408 |           installUvSubprocess.stderr.on('data', (data) => { uvInstallStderr += data.toString(); });
 409 | 
-410 |     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
-411 | 
-412 |     ${webSearch.enabled ? `
-413 |     ## Web Search Enabled:
-414 |     You have web search capabilities enabled. When you use web search:
-415 |     1. Cite your sources using markdown links
-416 |     2. Use the format [domain.com](full-url) for citations
-417 |     3. Only cite reliable and relevant sources
-418 |     4. Integrate the information naturally into your responses
-419 |     ` : ''}
-420 | 
-421 |     ## How to Respond:
-422 |     1.  **Analyze the Request:** Understand what the user is asking.
-423 |     2.  **Use Tools When Necessary:** If an external tool provides the best way to answer (e.g., fetching specific data, performing calculations, interacting with services), select the most relevant tool(s) and use them. You can use multiple tools in sequence. Clearly indicate when you are using a tool and what it's doing.
-424 |     3.  **Use Your Own Abilities:** For requests involving brainstorming, explanation, writing, summarization, analysis, or general knowledge, rely on your own reasoning and knowledge base. You don't need to force the use of an external tool if it's not suitable or required for these tasks.
-425 |     4.  **Respond Clearly:** Provide your answer directly when using your own abilities. If using tools, explain the steps taken and present the results clearly.
-426 |     5.  **Handle Limitations:** If you cannot answer fully (due to lack of information, missing tools, or capability limits), explain the limitation clearly. Don't just say "I don't know" if you can provide partial information or explain *why* you can't answer. If relevant tools seem to be missing, you can mention that the user could potentially add them via the server configuration.
-427 | 
-428 |     ## Response Format:
-429 |     - Use Markdown for formatting.
-430 |     - Base your response on the results from any tools used, or on your own reasoning and knowledge.
-431 |     `,
-432 |     messages: modelMessages,
-433 |     tools,
-434 |     maxSteps: 20,
-435 |     providerOptions: {
-436 |       google: {
-437 |         thinkingConfig: {
-438 |           thinkingBudget: 2048,
-439 |         },
-440 |       },
-441 |       anthropic: {
-442 |         thinking: {
-443 |           type: 'enabled',
-444 |           budgetTokens: 12000
-445 |         },
-446 |       },
-447 |       openrouter: modelOptions
-448 |     },
-449 |     onError: (error: any) => {
-450 |       console.error(JSON.stringify(error, null, 2));
-451 |     },
-452 |     async onFinish(event: any) {
-453 |       // Minimal fix: cast event.response to OpenRouterResponse
-454 |       const response = event.response as OpenRouterResponse;
-455 |       const allMessages = appendResponseMessages({
-456 |         messages: modelMessages,
-457 |         responseMessages: response.messages as any, // Cast to any to bypass type error
-458 |       });
-459 | 
-460 |       // Extract citations from response messages
-461 |       const processedMessages = allMessages.map(msg => {
-462 |         if (msg.role === 'assistant' && (response.annotations?.length)) {
-463 |           const citations = response.annotations
-464 |             .filter((a: Annotation) => a.type === 'url_citation')
-465 |             .map((c: Annotation) => ({
-466 |               url: c.url_citation.url,
-467 |               title: c.url_citation.title,
-468 |               content: c.url_citation.content,
-469 |               startIndex: c.url_citation.start_index,
-470 |               endIndex: c.url_citation.end_index
-471 |             }));
-472 | 
-473 |           // Add citations to message parts if they exist
-474 |           if (citations.length > 0 && msg.parts) {
-475 |             msg.parts = (msg.parts as any[]).map(part => ({
-476 |               ...part,
-477 |               citations
-478 |             }));
-479 |           }
-480 |         }
-481 |         return msg;
-482 |       });
-483 | 
-484 |       // Update the chat with the full message history
-485 |       // Note: saveChat here acts as an upsert based on how it's likely implemented
-486 |       await saveChat({
-487 |         id,
-488 |         userId,
-489 |         messages: processedMessages as any, // Cast to any to bypass type error
-490 |       });
-491 | 
-492 |       const dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
-493 |         ...msg,
-494 |         hasWebSearch: webSearch.enabled,
-495 |         webSearchContextSize: webSearch.contextSize
-496 |       }));
-497 | 
-498 |       await saveMessages({ messages: dbMessages });
-499 | 
-500 |       // Extract token usage from response - OpenRouter may provide it in different formats
-501 |       let completionTokens = 0;
-502 | 
-503 |       // Access response with type assertion to avoid TypeScript errors
-504 |       // The actual structure may vary by provider
-505 |       const typedResponse = response as any;
+410 |           await new Promise<void>((resolve) => {
+411 |             installUvSubprocess.on('close', (code: number) => {
+412 |               if (code !== 0) {
+413 |                 console.error(`Failed to install uv using pip3: exit code ${code}`);
+414 |                 console.error('pip3 stdout:', uvInstallStdout);
+415 |                 console.error('pip3 stderr:', uvInstallStderr);
+416 |               } else {
+417 |                 console.log("uv installed or already present.");
+418 |                 if (uvInstallStdout) console.log('pip3 stdout:', uvInstallStdout);
+419 |                 if (uvInstallStderr) console.log('pip3 stderr:', uvInstallStderr);
+420 |                 uvInstalled = true;
+421 |               }
+422 |               resolve();
+423 |             });
+424 |             installUvSubprocess.on('error', (err) => {
+425 |               console.error("Error spawning pip3 to install uv:", err);
+426 |               resolve(); // Resolve anyway
+427 |             });
+428 |           });
+429 | 
+430 |           if (!uvInstalled) {
+431 |             console.warn("Skipping uvx command: Failed to ensure uv installation.");
+432 |             continue;
+433 |           }
+434 | 
+435 |           // Do NOT modify the command or args. Let StdioMCPTransport run uvx directly.
+436 |           console.log(`Proceeding to spawn uvx command directly.`);
+437 |         }
+438 |         // If python is passed in the command, install the python package mentioned in args after -m
+439 |         else if (mcpServer.command.includes('python3')) {
+440 |           const packageName = mcpServer.args[mcpServer.args.indexOf('-m') + 1];
+441 |           console.log("Attempting to install python package using uv:", packageName);
+442 |           // Use uv to install the package
+443 |           const subprocess = spawn('uv', ['pip', 'install', packageName]);
+444 |           subprocess.on('close', (code: number) => {
+445 |             if (code !== 0) {
+446 |               console.error(`Failed to install python package ${packageName} using uv: ${code}`);
+447 |             } else {
+448 |               console.log(`Successfully installed python package ${packageName} using uv.`);
+449 |             }
+450 |           });
+451 |           // wait for the subprocess to finish
+452 |           await new Promise<void>((resolve) => {
+453 |             subprocess.on('close', () => resolve());
+454 |             subprocess.on('error', (err) => {
+455 |               console.error(`Error spawning uv command for package ${packageName}:`, err);
+456 |               resolve(); // Resolve anyway to avoid hanging
+457 |             });
+458 |           });
+459 |         }
+460 | 
+461 |         // Log the final command and args before spawning for stdio
+462 |         console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
+463 | 
+464 |         finalTransportForClient = new StdioMCPTransport({
+465 |           command: mcpServer.command!,
+466 |           args: mcpServer.args!,
+467 |           env: Object.keys(env).length > 0 ? env : undefined
+468 |         });
+469 |       } else {
+470 |         console.warn(`Skipping MCP server with unsupported transport type: ${(mcpServer as any).type}`);
+471 |         continue;
+472 |       }
+473 | 
+474 |       const mcpClient = await createMCPClient({ transport: finalTransportForClient });
+475 |       mcpClients.push(mcpClient);
+476 | 
+477 |       const mcptools = await mcpClient.tools();
+478 | 
+479 |       console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(mcptools));
+480 | 
+481 |       // Add MCP tools to tools object
+482 |       tools = { ...tools, ...mcptools };
+483 |     } catch (error) {
+484 |       console.error("Failed to initialize MCP client:", error);
+485 |       // Continue with other servers instead of failing the entire request
+486 |       // If any MCP client is essential, we might return an error here:
+487 |       // return createErrorResponse("MCP_CLIENT_ERROR", "Failed to initialize a required external tool.", 500, error.message);
+488 |     }
+489 |   }
+490 | 
+491 |   // Register cleanup for all clients
+492 |   if (mcpClients.length > 0) {
+493 |     req.signal.addEventListener('abort', async () => {
+494 |       for (const client of mcpClients) {
+495 |         try {
+496 |           await client.close();
+497 |         } catch (error) {
+498 |           console.error("Error closing MCP client:", error);
+499 |         }
+500 |       }
+501 |     });
+502 |   }
+503 | 
+504 |   console.log("messages", messages);
+505 |   console.log("parts", messages.map(m => m.parts.map(p => p)));
 506 | 
-507 |       // Try to extract tokens from different possible response structures
-508 |       if (typedResponse.usage?.completion_tokens) {
-509 |         completionTokens = typedResponse.usage.completion_tokens;
-510 |       } else if (typedResponse.usage?.output_tokens) {
-511 |         completionTokens = typedResponse.usage.output_tokens;
-512 |       } else {
-513 |         // Estimate based on last message content length if available
-514 |         const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
-515 |         if (lastMessage?.content) {
-516 |           // Rough estimate: 1 token ≈ 4 characters
-517 |           completionTokens = Math.ceil(lastMessage.content.length / 4);
-518 |         } else if (typeof typedResponse.content === 'string') {
-519 |           completionTokens = Math.ceil(typedResponse.content.length / 4);
-520 |         } else {
-521 |           // Default minimum to track something
-522 |           completionTokens = 10;
-523 |         }
-524 |       }
-525 | 
-526 |       // Existing code for tracking tokens
-527 |       let polarCustomerId: string | undefined;
-528 | 
-529 |       // Get from session
-530 |       try {
-531 |         const session = await auth.api.getSession({ headers: req.headers });
-532 | 
-533 |         // Try to get from session first
-534 |         polarCustomerId = (session?.user as any)?.polarCustomerId ||
-535 |           (session?.user as any)?.metadata?.polarCustomerId;
-536 |       } catch (error) {
-537 |         console.warn('Failed to get session for Polar customer ID:', error);
-538 |       }
-539 | 
-540 |       // Track token usage
-541 |       if (completionTokens > 0) {
-542 |         try {
-543 |           // Get isAnonymous status from session if available
-544 |           let isAnonymous = false;
-545 |           try {
-546 |             isAnonymous = (session?.user as any)?.isAnonymous === true;
-547 |           } catch (error) {
-548 |             console.warn('Could not determine if user is anonymous, assuming not anonymous');
-549 |           }
-550 | 
-551 |           // Pass isAnonymous flag to skip Polar reporting for anonymous users
-552 |           await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous);
-553 |           console.log(`${isAnonymous ? 'Tracked' : 'Reported'} ${completionTokens} tokens for user ${userId}${isAnonymous ? ' (anonymous)' : ' to Polar'}`);
-554 |         } catch (error) {
-555 |           console.error('Failed to track token usage:', error);
-556 |           // Don't break the response flow if tracking fails
-557 |         }
-558 |       }
-559 |     }
-560 |   };
-561 | 
-562 |   console.log("OpenRouter API Payload:", JSON.stringify(openRouterPayload, null, 2));
+507 |   // Log web search status
+508 |   if (secureWebSearch.enabled) {
+509 |     console.log(`[Web Search] ENABLED with context size: ${secureWebSearch.contextSize}`);
+510 |   } else {
+511 |     console.log(`[Web Search] DISABLED`);
+512 |   }
+513 | 
+514 |   let modelInstance;
+515 |   let effectiveWebSearchEnabled = secureWebSearch.enabled; // Initialize with requested value
+516 | 
+517 |   // Check if the selected model supports web search
+518 |   const currentModelDetails = modelDetails[selectedModel];
+519 |   if (secureWebSearch.enabled && selectedModel.startsWith("openrouter/")) {
+520 |     if (currentModelDetails?.supportsWebSearch === true) {
+521 |       // Model supports web search, use :online variant
+522 |       const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
+523 |       const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+524 |       // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
+525 |       if (
+526 |         selectedModel === "openrouter/deepseek/deepseek-r1" ||
+527 |         selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
+528 |         selectedModel === "openrouter/x-ai/grok-3-beta" ||
+529 |         selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+530 |         selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+531 |         selectedModel === "openrouter/qwen/qwq-32b"
+532 |       ) {
+533 |         modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
+534 |       } else {
+535 |         modelInstance = openrouterClient(openrouterModelId);
+536 |       }
+537 |       console.log(`[Web Search] Enabled for ${selectedModel} using ${openrouterModelId}`);
+538 |     } else {
+539 |       // Model does not support web search, or flag is not explicitly true
+540 |       effectiveWebSearchEnabled = false;
+541 |       modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
+542 |       console.log(`[Web Search] Requested for ${selectedModel}, but not supported or not enabled for this model. Using standard model.`);
+543 |     }
+544 |   } else {
+545 |     // Web search not enabled in request or model is not an OpenRouter model
+546 |     if (secureWebSearch.enabled) {
+547 |       console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
+548 |     }
+549 |     effectiveWebSearchEnabled = false;
+550 |     modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
+551 |   }
+552 | 
+553 |   const modelOptions: { // Add type for clarity and to allow logprobs
+554 |     web_search_options?: { search_context_size: 'low' | 'medium' | 'high' };
+555 |     logprobs?: boolean;
+556 |   } = {};
+557 | 
+558 |   if (effectiveWebSearchEnabled) {
+559 |     modelOptions.web_search_options = {
+560 |       search_context_size: secureWebSearch.contextSize
+561 |     };
+562 |   }
 563 | 
-564 |   // Now call streamText as before
-565 |   const result = streamText(openRouterPayload);
-566 | 
-567 |   result.consumeStream()
-568 |   return result.toDataStreamResponse({
-569 |     sendReasoning: true,
-570 |     getErrorMessage: (error) => {
-571 |       if (error instanceof Error) {
-572 |         if (error.message.includes("Rate limit")) {
-573 |           return "Rate limit exceeded. Please try again later.";
-574 |         }
-575 |       }
-576 |       console.error(error);
-577 |       return "An error occurred.";
-578 |     },
-579 |   });
-580 | }
+564 |   // Always set logprobs: false for these models at the providerOptions level for streamText
+565 |   if (
+566 |     selectedModel === "openrouter/deepseek/deepseek-r1" ||
+567 |     selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
+568 |     selectedModel === "openrouter/x-ai/grok-3-beta" ||
+569 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+570 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+571 |     selectedModel === "openrouter/qwen/qwq-32b"
+572 |   ) {
+573 |     modelOptions.logprobs = false;
+574 |   }
+575 | 
+576 |   // Enhanced security logging
+577 |   if (webSearch.enabled && !serverSideWebSearchEnabled) {
+578 |     console.error(`[SECURITY ALERT] User ${userId} attempted to bypass Web Search payment:`, {
+579 |       userId,
+580 |       isAnonymous,
+581 |       actualCredits,
+582 |       isUsingOwnApiKeys,
+583 |       userAgent: req.headers.get('user-agent'),
+584 |       requestTime: new Date().toISOString(),
+585 |       sessionInfo: {
+586 |         email: session.user.email,
+587 |         name: session.user.name
+588 |       }
+589 |     });
+590 |   }
+591 | 
+592 |   // Construct the payload for OpenRouter
+593 |   const openRouterPayload = {
+594 |     model: modelInstance,
+595 |     system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
+596 | 
+597 |     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
+598 | 
+599 |     ${effectiveWebSearchEnabled ? `
+600 |     ## Web Search Enabled:
+601 |     You have web search capabilities enabled. When you use web search:
+602 |     1. Cite your sources using markdown links
+603 |     2. Use the format [domain.com](full-url) for citations
+604 |     3. Only cite reliable and relevant sources
+605 |     4. Integrate the information naturally into your responses
+606 |     ` : ''}
+607 | 
+608 |     ## How to Respond:
+609 |     1.  **Analyze the Request:** Understand what the user is asking.
+610 |     2.  **Use Tools When Necessary:** If an external tool provides the best way to answer (e.g., fetching specific data, performing calculations, interacting with services), select the most relevant tool(s) and use them. You can use multiple tools in sequence. Clearly indicate when you are using a tool and what it's doing.
+611 |     3.  **Use Your Own Abilities:** For requests involving brainstorming, explanation, writing, summarization, analysis, or general knowledge, rely on your own reasoning and knowledge base. You don't need to force the use of an external tool if it's not suitable or required for these tasks.
+612 |     4.  **Respond Clearly:** Provide your answer directly when using your own abilities. If using tools, explain the steps taken and present the results clearly.
+613 |     5.  **Handle Limitations:** If you cannot answer fully (due to lack of information, missing tools, or capability limits), explain the limitation clearly. Don't just say "I don't know" if you can provide partial information or explain *why* you can't answer. If relevant tools seem to be missing, you can mention that the user could potentially add them via the server configuration.
+614 | 
+615 |     ## Response Format:
+616 |     - Use Markdown for formatting.
+617 |     - Base your response on the results from any tools used, or on your own reasoning and knowledge.
+618 |     `,
+619 |     messages: modelMessages,
+620 |     tools,
+621 |     maxSteps: 20,
+622 |     providerOptions: {
+623 |       google: {
+624 |         thinkingConfig: {
+625 |           thinkingBudget: 2048,
+626 |         },
+627 |       },
+628 |       anthropic: {
+629 |         thinking: {
+630 |           type: 'enabled',
+631 |           budgetTokens: 12000
+632 |         },
+633 |       },
+634 |       openrouter: modelOptions
+635 |     },
+636 |     onError: (error: any) => {
+637 |       console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));
+638 |     },
+639 |     async onFinish(event: any) {
+640 |       // Minimal fix: cast event.response to OpenRouterResponse
+641 |       const response = event.response as OpenRouterResponse;
+642 |       const allMessages = appendResponseMessages({
+643 |         messages: modelMessages,
+644 |         responseMessages: response.messages as any, // Cast to any to bypass type error
+645 |       });
+646 | 
+647 |       // Extract citations from response messages
+648 |       const processedMessages = allMessages.map(msg => {
+649 |         if (msg.role === 'assistant' && (response.annotations?.length)) {
+650 |           const citations = response.annotations
+651 |             .filter((a: Annotation) => a.type === 'url_citation')
+652 |             .map((c: Annotation) => ({
+653 |               url: c.url_citation.url,
+654 |               title: c.url_citation.title,
+655 |               content: c.url_citation.content,
+656 |               startIndex: c.url_citation.start_index,
+657 |               endIndex: c.url_citation.end_index
+658 |             }));
+659 | 
+660 |           // Add citations to message parts if they exist
+661 |           if (citations.length > 0 && msg.parts) {
+662 |             msg.parts = (msg.parts as any[]).map(part => ({
+663 |               ...part,
+664 |               citations
+665 |             }));
+666 |           }
+667 |         }
+668 |         return msg;
+669 |       });
+670 | 
+671 |       // Update the chat with the full message history
+672 |       // Note: saveChat here acts as an upsert based on how it's likely implemented
+673 |       try {
+674 |         await saveChat({
+675 |           id,
+676 |           userId,
+677 |           messages: processedMessages as any, // Cast to any to bypass type error
+678 |           selectedModel,
+679 |           apiKeys,
+680 |         });
+681 |         console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
+682 |       } catch (dbError: any) {
+683 |         console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving chat:`, dbError);
+684 |         // This error occurs after the stream has finished.
+685 |         // We can't change the HTTP response to the client here.
+686 |         // Robust logging is key.
+687 |       }
+688 | 
+689 |       let dbMessages;
+690 |       try {
+691 |         dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
+692 |           ...msg,
+693 |           hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
+694 |           webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
+695 |         }));
+696 |       } catch (conversionError: any) {
+697 |         console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
+698 |         // If conversion fails, we cannot save messages.
+699 |         // Log and potentially skip saving messages or save raw if possible.
+700 |         return; // Exit onFinish early if messages can't be processed for DB.
+701 |       }
+702 | 
+703 |       try {
+704 |         await saveMessages({ messages: dbMessages });
+705 |         console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
+706 |       } catch (dbMessagesError: any) {
+707 |         console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
+708 |       }
+709 | 
+710 |       // Extract token usage from response - OpenRouter may provide it in different formats
+711 |       let completionTokens = 0;
+712 | 
+713 |       // Access response with type assertion to avoid TypeScript errors
+714 |       // The actual structure may vary by provider
+715 |       const typedResponse = response as any;
+716 | 
+717 |       // Try to extract tokens from different possible response structures
+718 |       if (typedResponse.usage?.completion_tokens) {
+719 |         completionTokens = typedResponse.usage.completion_tokens;
+720 |       } else if (typedResponse.usage?.output_tokens) {
+721 |         completionTokens = typedResponse.usage.output_tokens;
+722 |       } else {
+723 |         // Estimate based on last message content length if available
+724 |         const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+725 |         if (lastMessage?.content) {
+726 |           // Rough estimate: 1 token ≈ 4 characters
+727 |           completionTokens = Math.ceil(lastMessage.content.length / 4);
+728 |         } else if (typeof typedResponse.content === 'string') {
+729 |           completionTokens = Math.ceil(typedResponse.content.length / 4);
+730 |         } else {
+731 |           // Default minimum to track something
+732 |           completionTokens = 1;
+733 |         }
+734 |       }
+735 | 
+736 |       // Existing code for tracking tokens
+737 |       let polarCustomerId: string | undefined;
+738 | 
+739 |       // Get from session
+740 |       try {
+741 |         const session = await auth.api.getSession({ headers: req.headers });
+742 | 
+743 |         // Try to get from session first
+744 |         polarCustomerId = (session?.user as any)?.polarCustomerId ||
+745 |           (session?.user as any)?.metadata?.polarCustomerId;
+746 |       } catch (error) {
+747 |         console.warn('Failed to get session for Polar customer ID:', error);
+748 |       }
+749 | 
+750 |       // Track token usage
+751 |       if (completionTokens > 0) {
+752 |         try {
+753 |           // Get isAnonymous status from session if available
+754 |           let isAnonymous = false;
+755 |           try {
+756 |             isAnonymous = (session?.user as any)?.isAnonymous === true;
+757 |           } catch (error) {
+758 |             console.warn('Could not determine if user is anonymous, assuming not anonymous');
+759 |           }
+760 | 
+761 |           // Recalculate isUsingOwnApiKeys in callback scope since it's not accessible here
+762 |           const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+763 | 
+764 |           // Get actual credits in callback scope
+765 |           let callbackActualCredits: number | null = null;
+766 |           if (!isAnonymous && userId) {
+767 |             try {
+768 |               callbackActualCredits = await getRemainingCreditsByExternalId(userId);
+769 |             } catch (error) {
+770 |               console.warn('Error getting actual credits in onFinish callback:', error);
+771 |             }
+772 |           }
+773 | 
+774 |           // Determine if user should have credits deducted or just use daily message tracking
+775 |           // Only deduct credits if user actually has purchased credits (positive balance) AND not using own API keys
+776 |           let shouldDeductCredits = false;
+777 |           if (!isAnonymous && !callbackIsUsingOwnApiKeys && callbackActualCredits !== null && callbackActualCredits > 0) {
+778 |             shouldDeductCredits = true;
+779 |           }
+780 | 
+781 |           // Calculate additional cost for web search - use webSearch from outer scope (it should be accessible)
+782 |           let additionalCost = 0;
+783 |           if (secureWebSearch.enabled && !callbackIsUsingOwnApiKeys && shouldDeductCredits) {
+784 |             additionalCost = WEB_SEARCH_COST;
+785 |           }
+786 | 
+787 |           // Pass flags to control credit deduction vs daily message tracking, including web search surcharge
+788 |           await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
+789 |           const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
+790 |           console.log(`${isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : 'Tracked (daily limit)'} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
+791 |         } catch (error: any) {
+792 |           console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
+793 |           // Don't break the response flow if tracking fails
+794 |         }
+795 |       }
+796 |     }
+797 |   };
+798 | 
+799 |   console.log("OpenRouter API Payload:", JSON.stringify(openRouterPayload, null, 2));
+800 | 
+801 |   // Now call streamText as before
+802 |   // const result = streamText(openRouterPayload); // Will be moved into try-catch
+803 | 
+804 |   // result.consumeStream() // This is likely redundant and will be removed.
+805 |   // return result.toDataStreamResponse({ // Will be moved into try-catch
+806 | 
+807 |   try {
+808 |     const result = streamText(openRouterPayload);
+809 | 
+810 |     return result.toDataStreamResponse({
+811 |       sendReasoning: true,
+812 |       getErrorMessage: (error: any) => {
+813 |         // Log the full error object for server-side debugging
+[TRUNCATED]
 ```
 
 app/api/chats/route.ts
@@ -18976,6 +22727,438 @@ app/api/chats/route.ts
 27 |     );
 28 |   }
 29 | } 
+```
+
+app/api/create-polar-customer/route.ts
+```
+1 | import { NextResponse } from 'next/server';
+2 | import { auth } from '@/lib/auth';
+3 | import { createOrUpdateCustomerWithExternalId, getCustomerByExternalId, getCustomerByEmail, updateCustomerExternalId } from '@/lib/polar';
+4 | 
+5 | /**
+6 |  * Endpoint to manually create or update a Polar customer for testing
+7 |  */
+8 | export async function POST(req: Request) {
+9 |     try {
+10 |         // Get the authenticated session
+11 |         const session = await auth.api.getSession({ headers: req.headers });
+12 | 
+13 |         // If no session exists, return error
+14 |         if (!session || !session.user || !session.user.id) {
+15 |             return NextResponse.json(
+16 |                 { error: 'Unauthorized' },
+17 |                 { status: 401 }
+18 |             );
+19 |         }
+20 | 
+21 |         const userId = session.user.id;
+22 |         const isAnonymous = (session.user as any).isAnonymous === true;
+23 |         const userEmail = session.user.email;
+24 |         const userName = session.user.name;
+25 | 
+26 |         if (isAnonymous) {
+27 |             return NextResponse.json(
+28 |                 { error: 'Cannot create Polar customer for anonymous user' },
+29 |                 { status: 400 }
+30 |             );
+31 |         }
+32 | 
+33 |         if (!userEmail) {
+34 |             return NextResponse.json(
+35 |                 { error: 'User email required to create Polar customer' },
+36 |                 { status: 400 }
+37 |             );
+38 |         }
+39 | 
+40 |         console.log(`[CREATE POLAR CUSTOMER] Processing customer for user ${userId} (${userEmail})`);
+41 | 
+42 |         // Step 1: Check if customer already exists by external ID
+43 |         let existingCustomer;
+44 |         try {
+45 |             existingCustomer = await getCustomerByExternalId(userId);
+46 |         } catch (error) {
+47 |             console.log(`[CREATE POLAR CUSTOMER] No existing customer found for external ID ${userId}`);
+48 |         }
+49 | 
+50 |         if (existingCustomer) {
+51 |             return NextResponse.json({
+52 |                 success: true,
+53 |                 message: 'Customer already exists with external ID',
+54 |                 customer: existingCustomer,
+55 |                 action: 'found_existing_by_external_id'
+56 |             });
+57 |         }
+58 | 
+59 |         // Step 2: Check if customer exists by email (but without external ID)
+60 |         let customerByEmail: any;
+61 |         try {
+62 |             customerByEmail = await getCustomerByEmail(userEmail);
+63 |             console.log(`[CREATE POLAR CUSTOMER] Customer lookup by email result:`, JSON.stringify(customerByEmail, null, 2));
+64 |             console.log(`[CREATE POLAR CUSTOMER] Customer ID:`, customerByEmail?.id);
+65 |             console.log(`[CREATE POLAR CUSTOMER] Customer type:`, typeof customerByEmail);
+66 |         } catch (error) {
+67 |             console.error(`[CREATE POLAR CUSTOMER] Error looking up customer by email:`, error);
+68 |         }
+69 | 
+70 |         if (customerByEmail) {
+71 |             // Validate that we have a customer with an ID
+72 |             if (!customerByEmail.id) {
+73 |                 console.error(`[CREATE POLAR CUSTOMER] Customer found but missing ID field:`, customerByEmail);
+74 |                 return NextResponse.json(
+75 |                     {
+76 |                         error: 'Customer found but missing ID field',
+77 |                         customerData: customerByEmail,
+78 |                         userId,
+79 |                         userEmail
+80 |                     },
+81 |                     { status: 500 }
+82 |                 );
+83 |             }
+84 | 
+85 |             // Customer exists by email but doesn't have the external ID set
+86 |             console.log(`[CREATE POLAR CUSTOMER] Found existing customer by email: ${customerByEmail.id}. Setting external ID to ${userId}`);
+87 | 
+88 |             try {
+89 |                 const updatedCustomer = await updateCustomerExternalId(customerByEmail.id, userId);
+90 |                 console.log(`[CREATE POLAR CUSTOMER] Successfully updated customer external ID:`, updatedCustomer);
+91 | 
+92 |                 return NextResponse.json({
+93 |                     success: true,
+94 |                     message: 'Customer found by email and external ID updated successfully',
+95 |                     customer: updatedCustomer,
+96 |                     action: 'updated_external_id'
+97 |                 });
+98 |             } catch (updateError) {
+99 |                 console.error(`[CREATE POLAR CUSTOMER] Error updating customer external ID:`, updateError);
+100 |                 return NextResponse.json(
+101 |                     {
+102 |                         error: 'Failed to update customer external ID',
+103 |                         details: updateError,
+104 |                         customerId: customerByEmail.id,
+105 |                         userId,
+106 |                         userEmail
+107 |                     },
+108 |                     { status: 500 }
+109 |                 );
+110 |             }
+111 |         }
+112 | 
+113 |         // Step 3: Create new customer (no existing customer found)
+114 |         try {
+115 |             const newCustomer = await createOrUpdateCustomerWithExternalId(
+116 |                 userId,
+117 |                 userEmail,
+118 |                 userName || undefined,
+119 |                 {
+120 |                     source: 'manual_creation',
+121 |                     created_via: 'debug_endpoint'
+122 |                 }
+123 |             );
+124 | 
+125 |             console.log(`[CREATE POLAR CUSTOMER] Successfully created customer:`, newCustomer);
+126 | 
+127 |             return NextResponse.json({
+128 |                 success: true,
+129 |                 message: 'Customer created successfully',
+130 |                 customer: newCustomer,
+131 |                 action: 'created_new'
+132 |             });
+133 | 
+134 |         } catch (createError) {
+135 |             console.error(`[CREATE POLAR CUSTOMER] Error creating customer:`, createError);
+136 |             return NextResponse.json(
+137 |                 {
+138 |                     error: 'Failed to create customer',
+139 |                     details: createError,
+140 |                     userId,
+141 |                     userEmail
+142 |                 },
+143 |                 { status: 500 }
+144 |             );
+145 |         }
+146 | 
+147 |     } catch (error) {
+148 |         console.error('Error in create Polar customer API:', error);
+149 |         return NextResponse.json(
+150 |             { error: 'Internal server error', details: error },
+151 |             { status: 500 }
+152 |         );
+153 |     }
+154 | } 
+```
+
+app/api/debug-credits/route.ts
+```
+1 | import { NextResponse } from 'next/server';
+2 | import { auth } from '@/lib/auth';
+3 | import { getRemainingCredits, getRemainingCreditsByExternalId, getCustomerByExternalId } from '@/lib/polar';
+4 | 
+5 | /**
+6 |  * Debug endpoint to help diagnose Polar credits issues
+7 |  */
+8 | export async function GET(req: Request) {
+9 |     try {
+10 |         // Get the authenticated session
+11 |         const session = await auth.api.getSession({ headers: req.headers });
+12 | 
+13 |         // If no session exists, return error
+14 |         if (!session || !session.user || !session.user.id) {
+15 |             return NextResponse.json(
+16 |                 { error: 'Unauthorized', debug: 'No valid session found' },
+17 |                 { status: 401 }
+18 |             );
+19 |         }
+20 | 
+21 |         const userId = session.user.id;
+22 |         const isAnonymous = (session.user as any).isAnonymous === true;
+23 |         const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
+24 |             (session.user as any)?.metadata?.polarCustomerId;
+25 | 
+26 |         console.log(`[DEBUG CREDITS] Session info:`, {
+27 |             userId,
+28 |             isAnonymous,
+29 |             polarCustomerId,
+30 |             userEmail: session.user.email,
+31 |             userName: session.user.name
+32 |         });
+33 | 
+34 |         const debugInfo: any = {
+35 |             userId,
+36 |             isAnonymous,
+37 |             polarCustomerId,
+38 |             userEmail: session.user.email,
+39 |             userName: session.user.name,
+40 |             steps: []
+41 |         };
+42 | 
+43 |         // For anonymous users, return debug info
+44 |         if (isAnonymous) {
+45 |             debugInfo.result = 'User is anonymous - no credits check needed';
+46 |             return NextResponse.json(debugInfo);
+47 |         }
+48 | 
+49 |         // Step 1: Try to find customer by external ID
+50 |         try {
+51 |             debugInfo.steps.push('Attempting to find customer by external ID...');
+52 |             const customer = await getCustomerByExternalId(userId);
+53 |             debugInfo.polarCustomer = customer;
+54 | 
+55 |             if (customer) {
+56 |                 debugInfo.steps.push(`✅ Found customer: ${customer.id} (${customer.email})`);
+57 |                 debugInfo.polarCustomerIdFromExternal = customer.id;
+58 |             } else {
+59 |                 debugInfo.steps.push('❌ No customer found by external ID');
+60 |             }
+61 |         } catch (error) {
+62 |             debugInfo.steps.push(`❌ Error finding customer: ${error}`);
+63 |             debugInfo.customerLookupError = error;
+64 |         }
+65 | 
+66 |         // Step 2: Try to get credits via external ID
+67 |         try {
+68 |             debugInfo.steps.push('Attempting to get credits via external ID...');
+69 |             const creditsByExternal = await getRemainingCreditsByExternalId(userId);
+70 |             debugInfo.creditsByExternalId = creditsByExternal;
+71 | 
+72 |             if (creditsByExternal !== null) {
+73 |                 debugInfo.steps.push(`✅ Credits via external ID: ${creditsByExternal}`);
+74 |             } else {
+75 |                 debugInfo.steps.push('❌ No credits found via external ID');
+76 |             }
+77 |         } catch (error) {
+78 |             debugInfo.steps.push(`❌ Error getting credits via external ID: ${error}`);
+79 |             debugInfo.creditsExternalError = error;
+80 |         }
+81 | 
+82 |         // Step 3: Try legacy method if we have polarCustomerId
+83 |         if (polarCustomerId) {
+84 |             try {
+85 |                 debugInfo.steps.push('Attempting to get credits via legacy customer ID...');
+86 |                 const creditsLegacy = await getRemainingCredits(polarCustomerId);
+87 |                 debugInfo.creditsByLegacyId = creditsLegacy;
+88 | 
+89 |                 if (creditsLegacy !== null) {
+90 |                     debugInfo.steps.push(`✅ Credits via legacy ID: ${creditsLegacy}`);
+91 |                 } else {
+92 |                     debugInfo.steps.push('❌ No credits found via legacy ID');
+93 |                 }
+94 |             } catch (error) {
+95 |                 debugInfo.steps.push(`❌ Error getting credits via legacy ID: ${error}`);
+96 |                 debugInfo.creditsLegacyError = error;
+97 |             }
+98 |         } else {
+99 |             debugInfo.steps.push('⚠️ No legacy polar customer ID available');
+100 |         }
+101 | 
+102 |         // Final assessment
+103 |         const finalCredits = debugInfo.creditsByExternalId ?? debugInfo.creditsByLegacyId ?? null;
+104 |         debugInfo.finalCreditsResult = finalCredits;
+105 |         debugInfo.canAccessPremium = finalCredits !== null && finalCredits > 0;
+106 | 
+107 |         return NextResponse.json(debugInfo);
+108 | 
+109 |     } catch (error) {
+110 |         console.error('Error in debug credits API:', error);
+111 |         return NextResponse.json(
+112 |             { error: 'Internal server error', details: error },
+113 |             { status: 500 }
+114 |         );
+115 |     }
+116 | } 
+```
+
+app/api/credits/route.ts
+```
+1 | import { NextResponse } from 'next/server';
+2 | import { auth } from '@/lib/auth';
+3 | import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
+4 | 
+5 | /**
+6 |  * API endpoint to get credit information for the current user
+7 |  */
+8 | export async function GET(req: Request) {
+9 |     try {
+10 |         // Get the authenticated session
+11 |         const session = await auth.api.getSession({ headers: req.headers });
+12 | 
+13 |         // If no session exists, return error
+14 |         if (!session || !session.user || !session.user.id) {
+15 |             console.log('[DEBUG] Credits API: No valid session found');
+16 |             return NextResponse.json(
+17 |                 { error: 'Unauthorized' },
+18 |                 { status: 401 }
+19 |             );
+20 |         }
+21 | 
+22 |         const userId = session.user.id;
+23 |         const isAnonymous = (session.user as any).isAnonymous === true;
+24 |         const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
+25 |             (session.user as any)?.metadata?.polarCustomerId;
+26 | 
+27 |         console.log(`[DEBUG] Credits API: userId=${userId}, isAnonymous=${isAnonymous}, polarCustomerId=${polarCustomerId}`);
+28 | 
+29 |         // For anonymous users, return null credits
+30 |         if (isAnonymous) {
+31 |             console.log('[DEBUG] Credits API: User is anonymous, returning null credits');
+32 |             return NextResponse.json({
+33 |                 credits: null,
+34 |                 isAnonymous: true
+35 |             });
+36 |         }
+37 | 
+38 |         let credits: number | null = null;
+39 | 
+40 |         try {
+41 |             // Try the external ID approach first if a userId is provided
+42 |             if (userId) {
+43 |                 try {
+44 |                     console.log(`[DEBUG] Credits API: Attempting to get credits via external ID for user ${userId}`);
+45 |                     const remainingCreditsByExternal = await getRemainingCreditsByExternalId(userId);
+46 |                     console.log(`[DEBUG] Credits API: External ID result: ${remainingCreditsByExternal}`);
+47 |                     if (remainingCreditsByExternal !== null) {
+48 |                         credits = remainingCreditsByExternal;
+49 |                     }
+50 |                 } catch (externalError) {
+51 |                     console.warn('Failed to get credits via external ID, falling back to legacy method:', externalError);
+52 |                     // Continue to legacy method
+53 |                 }
+54 |             }
+55 | 
+56 |             // Legacy method using polarCustomerId if external ID didn't work
+57 |             if (credits === null && polarCustomerId) {
+58 |                 console.log(`[DEBUG] Credits API: Attempting to get credits via legacy polarCustomerId ${polarCustomerId}`);
+59 |                 const remainingCredits = await getRemainingCredits(polarCustomerId);
+60 |                 console.log(`[DEBUG] Credits API: Legacy method result: ${remainingCredits}`);
+61 |                 credits = remainingCredits;
+62 |             }
+63 | 
+64 |             console.log(`[DEBUG] Credits API: Final credits result: ${credits}`);
+65 |             return NextResponse.json({
+66 |                 credits,
+67 |                 isAnonymous: false
+68 |             });
+69 |         } catch (error) {
+70 |             console.error('Error fetching credits:', error);
+71 |             return NextResponse.json(
+72 |                 { error: 'Failed to fetch credits' },
+73 |                 { status: 500 }
+74 |             );
+75 |         }
+76 |     } catch (error) {
+77 |         console.error('Error in credits API:', error);
+78 |         return NextResponse.json(
+79 |             { error: 'Internal server error' },
+80 |             { status: 500 }
+81 |         );
+82 |     }
+83 | } 
+```
+
+app/api/portal/route.ts
+```
+1 | import { NextRequest, NextResponse } from "next/server";
+2 | import { auth } from "@/lib/auth";
+3 | import { Polar } from "@polar-sh/sdk";
+4 | 
+5 | // Polar server environment configuration
+6 | // Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
+7 | const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
+8 | 
+9 | const polar = new Polar({
+10 |     accessToken: process.env.POLAR_ACCESS_TOKEN!,
+11 |     server: polarServerEnv,
+12 | });
+13 | 
+14 | export async function GET(request: NextRequest) {
+15 |     try {
+16 |         // Get the current session
+17 |         const session = await auth.api.getSession({
+18 |             headers: request.headers,
+19 |         });
+20 | 
+21 |         if (!session?.user) {
+22 |             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+23 |         }
+24 | 
+25 |         const userId = session.user.id;
+26 | 
+27 |         // Get the Polar customer using external ID (the user's app ID)
+28 |         try {
+29 |             const customer = await polar.customers.getExternal({
+30 |                 externalId: userId,
+31 |             });
+32 | 
+33 |             // Create an authenticated customer portal session
+34 |             const customerSession = await polar.customerSessions.create({
+35 |                 customerId: customer.id,
+36 |             });
+37 | 
+38 |             // Redirect to the customer portal
+39 |             return NextResponse.redirect(customerSession.customerPortalUrl);
+40 |         } catch (error) {
+41 |             console.error("Error getting Polar customer or creating portal session:", error);
+42 | 
+43 |             // If customer not found, return error with helpful message
+44 |             if (error instanceof Error && error.message.includes("not found")) {
+45 |                 return NextResponse.json(
+46 |                     { error: "Customer not found. Please contact support." },
+47 |                     { status: 404 }
+48 |                 );
+49 |             }
+50 | 
+51 |             return NextResponse.json(
+52 |                 { error: "Failed to access customer portal" },
+53 |                 { status: 500 }
+54 |             );
+55 |         }
+56 |     } catch (error) {
+57 |         console.error("Portal API error:", error);
+58 |         return NextResponse.json(
+59 |             { error: "Internal server error" },
+60 |             { status: 500 }
+61 |         );
+62 |     }
+63 | } 
 ```
 
 app/chat/[id]/page.tsx
@@ -19039,18 +23222,6 @@ app/chat/[id]/page.tsx
 57 | } 
 ```
 
-app/api/version/route.ts
-```
-1 | import { NextResponse } from 'next/server';
-2 | 
-3 | export async function GET() {
-4 |     return NextResponse.json({
-5 |         commit: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'unknown',
-6 |         url: process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL || 'unknown',
-7 |     });
-8 | } 
-```
-
 app/checkout/success/page.tsx
 ```
 1 | import { Button } from "@/components/ui/button";
@@ -19080,7 +23251,7 @@ app/checkout/success/page.tsx
 25 |           </p>
 26 |         </CardContent>
 27 |         <CardFooter className="flex justify-center">
-28 |           <Link href="/chat">
+28 |           <Link href="/">
 29 |             <Button size="lg">
 30 |               Return to Chat
 31 |             </Button>
@@ -19090,6 +23261,117 @@ app/checkout/success/page.tsx
 35 |     </div>
 36 |   );
 37 | } 
+```
+
+app/checkout/error/page.tsx
+```
+1 | import { Button } from "@/components/ui/button";
+2 | import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+3 | import { XCircle, RefreshCw, ArrowLeft } from "lucide-react";
+4 | import Link from "next/link";
+5 | 
+6 | interface CheckoutErrorPageProps {
+7 |   searchParams: {
+8 |     reason?: string;
+9 |     checkout_id?: string;
+10 |   };
+11 | }
+12 | 
+13 | export default function CheckoutErrorPage({ searchParams }: CheckoutErrorPageProps) {
+14 |   const { reason, checkout_id } = searchParams;
+15 |   
+16 |   const getErrorMessage = (reason?: string) => {
+17 |     switch (reason) {
+18 |       case 'canceled':
+19 |         return {
+20 |           title: 'Checkout Canceled',
+21 |           description: 'You canceled the payment process.',
+22 |           suggestion: 'No worries! You can try again whenever you\'re ready.'
+23 |         };
+24 |       case 'failed':
+25 |         return {
+26 |           title: 'Payment Failed',
+27 |           description: 'There was an issue processing your payment.',
+28 |           suggestion: 'Please check your payment method and try again.'
+29 |         };
+30 |       default:
+31 |         return {
+32 |           title: 'Checkout Error',
+33 |           description: 'Something went wrong during the checkout process.',
+34 |           suggestion: 'Please try again or contact support if the issue persists.'
+35 |         };
+36 |     }
+37 |   };
+38 | 
+39 |   const errorInfo = getErrorMessage(reason);
+40 | 
+41 |   return (
+42 |     <div className="container flex items-center justify-center min-h-[calc(100vh-80px)]">
+43 |       <Card className="w-full max-w-md shadow-lg">
+44 |         <CardHeader className="text-center">
+45 |           <div className="flex justify-center mb-4">
+46 |             <XCircle size={48} className="text-red-500" />
+47 |           </div>
+48 |           <CardTitle className="text-2xl">{errorInfo.title}</CardTitle>
+49 |           <CardDescription>
+50 |             {errorInfo.description}
+51 |           </CardDescription>
+52 |         </CardHeader>
+53 |         <CardContent className="text-center">
+54 |           <p className="mb-4 text-muted-foreground">
+55 |             {errorInfo.suggestion}
+56 |           </p>
+57 |           {checkout_id && (
+58 |             <p className="text-xs text-muted-foreground border-t pt-4">
+59 |               Reference ID: {checkout_id}
+60 |             </p>
+61 |           )}
+62 |         </CardContent>
+63 |         <CardFooter className="flex flex-col gap-2">
+64 |           <Link href="/" className="w-full">
+65 |             <Button variant="default" size="lg" className="w-full">
+66 |               <ArrowLeft className="mr-2 h-4 w-4" />
+67 |               Return to Chat
+68 |             </Button>
+69 |           </Link>
+70 |           <Button 
+71 |             variant="outline" 
+72 |             size="lg" 
+73 |             className="w-full"
+74 |             onClick={() => window.location.href = '/api/auth/checkout/ai-usage'}
+75 |           >
+76 |             <RefreshCw className="mr-2 h-4 w-4" />
+77 |             Try Again
+78 |           </Button>
+79 |         </CardFooter>
+80 |       </Card>
+81 |     </div>
+82 |   );
+83 | } 
+```
+
+app/api/version/route.ts
+```
+1 | import { NextResponse } from 'next/server';
+2 | 
+3 | export async function GET() {
+4 |     return NextResponse.json({
+5 |         commit: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'unknown',
+6 |         url: process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL || 'unknown',
+7 |     });
+8 | } 
+```
+
+app/api/auth/[...betterauth]/route.ts
+```
+1 | import { auth } from '@/lib/auth';
+2 | import { toNextJsHandler } from 'better-auth/next-js';
+3 | 
+4 | // Export the handlers wrapped for Next.js App Router
+5 | export const { GET, POST } = toNextJsHandler(auth.handler);
+6 | 
+7 | // Log that Better-Auth routes are registered
+8 | console.log('Better-Auth routes registered successfully'); 
 ```
 
 app/api/chats/[id]/route.ts
@@ -19240,18 +23522,6 @@ app/api/chats/[id]/route.ts
 144 | }
 ```
 
-app/api/auth/[...betterauth]/route.ts
-```
-1 | import { auth } from '@/lib/auth';
-2 | import { toNextJsHandler } from 'better-auth/next-js';
-3 | 
-4 | // Export the handlers wrapped for Next.js App Router
-5 | export const { GET, POST } = toNextJsHandler(auth.handler);
-6 | 
-7 | // Log that Better-Auth routes are registered
-8 | console.log('Better-Auth routes registered successfully'); 
-```
-
 app/api/auth/polar/route.ts
 ```
 1 | import { NextRequest, NextResponse } from 'next/server';
@@ -19280,6 +23550,55 @@ app/api/auth/polar/route.ts
 24 |         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
 25 |     }
 26 | } 
+```
+
+app/api/usage/messages/route.ts
+```
+1 | import { NextResponse } from 'next/server';
+2 | import { auth, checkMessageLimit } from '@/lib/auth';
+3 | 
+4 | /**
+5 |  * API endpoint to get message usage information for the current user
+6 |  */
+7 | export async function GET(req: Request) {
+8 |     try {
+9 |         // Get the authenticated session
+10 |         const session = await auth.api.getSession({ headers: req.headers });
+11 | 
+12 |         // If no session exists, return error
+13 |         if (!session || !session.user || !session.user.id) {
+14 |             return NextResponse.json(
+15 |                 { error: 'Unauthorized' },
+16 |                 { status: 401 }
+17 |             );
+18 |         }
+19 | 
+20 |         const userId = session.user.id;
+21 |         const isAnonymous = (session.user as any).isAnonymous === true;
+22 | 
+23 |         // Check message limit for this user
+24 |         const limitStatus = await checkMessageLimit(userId, isAnonymous);
+25 | 
+26 |         return NextResponse.json({
+27 |             limit: limitStatus.limit,
+28 |             used: limitStatus.limit - limitStatus.remaining,
+29 |             remaining: limitStatus.remaining,
+30 |             isAnonymous,
+31 |             // Check if user has a Polar subscription
+32 |             hasSubscription: (session.user as any)?.metadata?.hasSubscription || false,
+33 |             // Include credit information
+34 |             credits: limitStatus.credits || 0,
+35 |             hasCredits: (limitStatus.credits || 0) > 0,
+36 |             usedCredits: limitStatus.usedCredits || false
+37 |         });
+38 |     } catch (error) {
+39 |         console.error('Error getting message usage:', error);
+40 |         return NextResponse.json(
+41 |             { error: 'Failed to get message usage' },
+42 |             { status: 500 }
+43 |         );
+44 |     }
+45 | } 
 ```
 
 app/api/chats/migrate/route.ts
@@ -19345,51 +23664,6 @@ app/api/chats/migrate/route.ts
 59 |         );
 60 |     }
 61 | } 
-```
-
-app/api/usage/messages/route.ts
-```
-1 | import { NextResponse } from 'next/server';
-2 | import { auth, checkMessageLimit } from '@/lib/auth';
-3 | 
-4 | /**
-5 |  * API endpoint to get message usage information for the current user
-6 |  */
-7 | export async function GET(req: Request) {
-8 |     try {
-9 |         // Get the authenticated session
-10 |         const session = await auth.api.getSession({ headers: req.headers });
-11 | 
-12 |         // If no session exists, return error
-13 |         if (!session || !session.user || !session.user.id) {
-14 |             return NextResponse.json(
-15 |                 { error: 'Unauthorized' },
-16 |                 { status: 401 }
-17 |             );
-18 |         }
-19 | 
-20 |         const userId = session.user.id;
-21 |         const isAnonymous = (session.user as any).isAnonymous === true;
-22 | 
-23 |         // Check message limit for this user
-24 |         const limitStatus = await checkMessageLimit(userId, isAnonymous);
-25 | 
-26 |         return NextResponse.json({
-27 |             limit: limitStatus.limit,
-28 |             used: limitStatus.limit - limitStatus.remaining,
-29 |             remaining: limitStatus.remaining,
-30 |             isAnonymous,
-31 |             // Check if user has a Polar subscription
-32 |             hasSubscription: (session.user as any)?.metadata?.hasSubscription || false
-33 |         });
-34 |     } catch (error) {
-35 |         console.error('Error getting message usage:', error);
-36 |         return NextResponse.json(
-37 |             { error: 'Failed to get message usage' },
-38 |             { status: 500 }
-39 |         );
-40 |     }
-41 | } 
 ```
 
 app/api/auth/sign-in/anonymous/route.ts
