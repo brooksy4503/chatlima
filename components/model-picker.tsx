@@ -1,32 +1,34 @@
 "use client";
 import { MODELS, modelDetails, type modelID, defaultModel } from "@/ai/providers";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "./ui/popover";
 import { cn } from "@/lib/utils";
-import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot } from "lucide-react";
-import { useState } from "react";
+import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check } from "lucide-react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useCredits } from "@/hooks/useCredits";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
 interface ModelPickerProps {
   selectedModel: modelID;
   setSelectedModel: (model: modelID) => void;
+  onModelSelected?: () => void;
 }
 
-export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProps) => {
+export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }: ModelPickerProps) => {
   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number>(-1);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const modelListRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
-  
-  // Ensure we always have a valid model ID immediately for stable rendering
-  // const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel; // Replaced by direct use of selectedModel
   
   // Function to get the appropriate icon for each provider
   const getProviderIcon = (provider: string) => {
@@ -58,7 +60,6 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
       case 'research':
         return <Lightbulb className="h-2.5 w-2.5" />;
       case 'vision':
-        // eslint-disable-next-line jsx-a11y/alt-text
         return <Image className="h-2.5 w-2.5" />;
       case 'fast':
       case 'rapid':
@@ -102,104 +103,256 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
     }
   };
   
+  // Filter and sort models based on search term - memoized to prevent re-renders
+  const filteredAndSortedModels = useMemo(() => {
+    return [...MODELS]
+      .filter((id) => {
+        const modelId = id as modelID;
+        const model = modelDetails[modelId];
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          model.name.toLowerCase().includes(searchLower) ||
+          model.provider.toLowerCase().includes(searchLower) ||
+          model.capabilities.some(cap => cap.toLowerCase().includes(searchLower))
+        );
+      })
+      .sort((idA, idB) => {
+        const nameA = modelDetails[idA].name;
+        const nameB = modelDetails[idB].name;
+        return nameA.localeCompare(nameB);
+      });
+  }, [searchTerm]);
+
+  // Reset keyboard focus when search term changes
+  useEffect(() => {
+    setKeyboardFocusedIndex(-1);
+  }, [searchTerm]);
+
+  // Set initial keyboard focus when picker opens
+  useEffect(() => {
+    if (isOpen && filteredAndSortedModels.length > 0) {
+      const selectedIndex = filteredAndSortedModels.findIndex(id => id === selectedModel);
+      setKeyboardFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    }
+  }, [isOpen, filteredAndSortedModels, selectedModel]);
+
   // Get current model details to display
-  const displayModelId = hoveredModel || selectedModel; // Use selectedModel
+  const keyboardFocusedModel = keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length 
+    ? filteredAndSortedModels[keyboardFocusedIndex] as modelID 
+    : null;
+  const displayModelId = keyboardFocusedModel || hoveredModel || selectedModel;
   const currentModelDetails = modelDetails[displayModelId];
+  const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels && currentModelDetails.premium);
 
-  // Sort models alphabetically by name
-  const sortedModels = [...MODELS].sort((idA, idB) => {
-    const nameA = modelDetails[idA].name;
-    const nameB = modelDetails[idB].name;
-    return nameA.localeCompare(nameB);
-  });
-
-  // Handle model change
-  const handleModelChange = (modelId: string) => {
+  // Handle model change - memoized to prevent re-renders
+  const handleModelChange = useCallback((modelId: string) => {
     if ((MODELS as string[]).includes(modelId)) {
       const typedModelId = modelId as modelID;
       setSelectedModel(typedModelId);
+      setIsOpen(false);
+      setSearchTerm("");
+      setKeyboardFocusedIndex(-1);
+      onModelSelected?.();
     }
-  };
+  }, [setSelectedModel, onModelSelected]);
+
+  // Handle opening the popover - memoized to prevent re-renders
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setSearchTerm("");
+      setKeyboardFocusedIndex(-1);
+    } else {
+      // Focus search input when opening
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, []);
+
+  // Handle search input change - memoized to prevent re-renders
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setKeyboardFocusedIndex(prev => {
+          const newIndex = prev < filteredAndSortedModels.length - 1 ? prev + 1 : 0;
+          // Scroll to keep focused item visible
+          setTimeout(() => {
+            const focusedElement = modelListRef.current?.children[newIndex] as HTMLElement;
+            if (focusedElement) {
+              focusedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          }, 0);
+          return newIndex;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setKeyboardFocusedIndex(prev => {
+          const newIndex = prev > 0 ? prev - 1 : filteredAndSortedModels.length - 1;
+          // Scroll to keep focused item visible
+          setTimeout(() => {
+            const focusedElement = modelListRef.current?.children[newIndex] as HTMLElement;
+            if (focusedElement) {
+              focusedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+          }, 0);
+          return newIndex;
+        });
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length) {
+          const selectedModelId = filteredAndSortedModels[keyboardFocusedIndex];
+          const model = modelDetails[selectedModelId as modelID];
+          const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels);
+          if (!isUnavailable) {
+            handleModelChange(selectedModelId);
+          }
+        }
+        break;
+      case 'Escape':
+        setSearchTerm('');
+        setIsOpen(false);
+        break;
+    }
+  }, [isOpen, filteredAndSortedModels, keyboardFocusedIndex, creditsLoading, canAccessPremiumModels, handleModelChange]);
 
   return (
-    <div>
-      <Select 
-        value={selectedModel} // Use selectedModel directly
-        onValueChange={handleModelChange} 
-      >
-        <SelectTrigger 
-          className="max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full group border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
-        >
-          <SelectValue 
-            placeholder="Select model" 
-            className="text-xs font-medium flex items-center gap-1 sm:gap-2 text-primary dark:text-primary-foreground"
-          >
-            <div className="flex items-center gap-1 sm:gap-2">
-              {getProviderIcon(modelDetails[selectedModel].provider)} {/* Use selectedModel */}
-              <span className="font-medium truncate">{modelDetails[selectedModel].name}</span> {/* Use selectedModel */}
-            </div>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent
+    <TooltipProvider>
+      <Popover open={isOpen} onOpenChange={handleOpenChange}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={isOpen}
+                className={cn(
+                  "max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+                  "border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20",
+                  "transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2",
+                  "text-primary dark:text-primary-foreground font-normal",
+                  isModelUnavailable && "opacity-50"
+                )}
+              >
+                <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                  {getProviderIcon(currentModelDetails.provider)}
+                  <span className="text-xs font-medium truncate">{currentModelDetails.name}</span>
+                </div>
+                <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-xs">
+            {isModelUnavailable ? (
+              <p>This model requires premium access. Please check your credits.</p>
+            ) : (
+              <p>Select an AI model for this conversation. Each model has different capabilities and costs.</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+        
+        <PopoverContent 
+          className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[400px] overflow-hidden" 
           align="start"
-          className="bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 rounded-lg overflow-hidden p-0 w-[320px] sm:w-[480px] md:w-[680px]"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start">
-            {/* Model selector column */}
-            <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1">
-              <SelectGroup className="space-y-1">
-                {sortedModels.map((id) => {
-                  const modelId = id as modelID;
-                  const item = (
-                    <SelectItem 
-                      key={id} 
-                      value={id}
-                      onMouseEnter={() => setHoveredModel(modelId)}
-                      onMouseLeave={() => setHoveredModel(null)}
-                      className={cn(
-                        "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
-                        "hover:bg-primary/5 hover:text-primary-foreground",
-                        "focus:bg-primary/10 focus:text-primary focus:outline-none",
-                        "data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
-                        selectedModel === id && "!bg-primary/15 !text-primary font-medium",
-                        modelDetails[modelId].premium && !canAccessPremiumModels() && "opacity-50 cursor-not-allowed"
-                      )}
-                      disabled={creditsLoading || (modelDetails[modelId].premium && !canAccessPremiumModels())}
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5">
-                          {getProviderIcon(modelDetails[modelId].provider)}
-                          <span className="font-medium truncate">{modelDetails[modelId].name}</span>
-                          {modelDetails[modelId].premium && (
-                            <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
-                          )}
-                        </div>
-                        <span className="text-[10px] sm:text-xs text-muted-foreground">
-                          {modelDetails[modelId].provider}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  );
+          {/* Search input */}
+          <div className="px-3 pt-3 pb-2 border-b border-border/40">
+            <Input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Search models... (Use ↑↓ arrow keys to navigate, Enter to select)"
+              aria-label="Search models by name, provider, or capability"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              className="w-full h-8"
+            />
+          </div>
 
-                  if (modelDetails[modelId].premium && !canAccessPremiumModels() && !creditsLoading) {
-                    return (
-                      <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>{item}</TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="text-xs">This is a premium model. Credits are required to use it.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start max-h-[340px] overflow-hidden">
+            {/* Model selector column */}
+            <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1 overflow-y-auto max-h-[340px]">
+              <div ref={modelListRef} className="space-y-1 p-1">
+                {filteredAndSortedModels.length > 0 ? (
+                  filteredAndSortedModels.map((id, index) => {
+                    const modelId = id as modelID;
+                    const model = modelDetails[modelId];
+                    const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels);
+                    const isSelected = selectedModel === id;
+                    const isKeyboardFocused = keyboardFocusedIndex === index;
+                    
+                    const modelItem = (
+                      <div
+                        key={id}
+                        className={cn(
+                          "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
+                          "hover:bg-primary/10 hover:text-primary",
+                          "focus:bg-primary/10 focus:text-primary focus:outline-none",
+                          isSelected && "!bg-primary/15 !text-primary font-medium",
+                          isKeyboardFocused && "!bg-primary/20 !text-primary ring-2 ring-primary/30",
+                          isUnavailable && "opacity-50 cursor-not-allowed"
+                        )}
+                        onClick={() => {
+                          if (!isUnavailable) {
+                            handleModelChange(id);
+                          }
+                        }}
+                        onMouseEnter={() => {
+                          setHoveredModel(modelId);
+                          setKeyboardFocusedIndex(-1); // Clear keyboard focus when using mouse
+                        }}
+                        onMouseLeave={() => setHoveredModel(null)}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5">
+                            {getProviderIcon(model.provider)}
+                            <span className="font-medium truncate">{model.name}</span>
+                            {model.premium && (
+                              <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
+                            )}
+                            {isSelected && <Check className="h-3 w-3 ml-auto text-primary" />}
+                          </div>
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">
+                            {model.provider}
+                          </span>
+                        </div>
+                      </div>
                     );
-                  }
-                  return item;
-                })}
-              </SelectGroup>
+
+                    if (isUnavailable && !creditsLoading) {
+                      return (
+                        <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>{modelItem}</TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-xs">This is a premium model. Credits are required to use it.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    }
+                    return modelItem;
+                  })
+                ) : (
+                  <div className="px-2 sm:px-3 py-2 text-xs text-muted-foreground">
+                    No models found.
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Model details column - hidden on smallest screens, visible on sm+ */}
-            <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col sticky top-0">
+            <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[340px]">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   {getProviderIcon(currentModelDetails.provider)}
@@ -264,8 +417,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProp
               </div>
             </div>
           </div>
-        </SelectContent>
-      </Select>
-    </div>
+        </PopoverContent>
+      </Popover>
+    </TooltipProvider>
   );
 };

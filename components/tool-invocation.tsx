@@ -103,7 +103,7 @@ export function ToolInvocation({
             {state === "call" ? (isLatestMessage && status !== "ready" ? "Running" : "Waiting") : "Completed"}
           </span>
         </div>
-        <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity sm:opacity-70 sm:group-hover:opacity-100 opacity-100">
           {getStatusIcon()}
           <div className="bg-muted/30 rounded-full p-0.5 border border-border/30">
             {isExpanded ? (

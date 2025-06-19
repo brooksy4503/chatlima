@@ -304,7 +304,7 @@ export default function Chat() {
   }, [messages, webSearchEnabled, isOpenRouterModel]);
 
   return (
-    <div className="h-dvh flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
+    <div className="h-full flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
       {/* Main content area: Either ProjectOverview or Messages */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-2">
         {messages.length === 0 && !isLoadingChat ? (

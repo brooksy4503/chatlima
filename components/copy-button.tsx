@@ -17,6 +17,8 @@ export function CopyButton({ text, className }: CopyButtonProps) {
       size="sm"
       className={cn(
         "transition-opacity opacity-0 group-hover/message:opacity-100 gap-1.5",
+        // Always visible on touch devices (mobile) where hover doesn't work
+        "sm:opacity-0 sm:group-hover/message:opacity-100 opacity-100",
         className
       )}
       onClick={() => copy(text)}

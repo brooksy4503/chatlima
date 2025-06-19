@@ -606,6 +606,66 @@
     color: inherit;
   }
 
+  /* Handle KaTeX overflow to prevent layout breaking */
+  .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    padding: 0.5em 0;
+    /* Add subtle scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  }
+
+  .katex-display::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .katex-display::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .katex-display::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+
+  .dark .katex-display::-webkit-scrollbar-thumb,
+  .black .katex-display::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Handle inline math overflow */
+  .katex {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  /* Ensure the parent container respects the overflow */
+  .katex-html {
+    overflow: visible;
+  }
+
+  /* Prevent math expressions from breaking container bounds */
+  p:has(.katex-display),
+  div:has(.katex-display) {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  /* Ensure message containers handle math overflow properly */
+  .group\/message .katex-display {
+    margin: 0.5em 0;
+  }
+
+  /* Handle very wide inline math expressions */
+  .katex:not(.katex-display) {
+    max-width: calc(100vw - 8rem);
+  }
+
   /* iOS Homescreen Shortcut Enhancements */
 
   /* Safe area handling for iOS devices */
@@ -644,6 +704,48 @@
     [role="button"],
     input[type="submit"],
     input[type="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Mobile-friendly hover states - show elements that are normally hover-only */
+  @media (hover: none) and (pointer: coarse) {
+
+    /* Show copy buttons on touch devices */
+    .group\/message .opacity-0.group-hover\/message\:opacity-100 {
+      opacity: 1 !important;
+    }
+
+    /* Show chat edit/delete buttons on touch devices */
+    .group\/menu-item .opacity-0.group-hover\/menu-item\:opacity-100 {
+      opacity: 1 !important;
+    }
+
+    /* Show other hover-only interactive elements */
+    .opacity-0.group-hover\:opacity-100 {
+      opacity: 1 !important;
+    }
+
+    /* Show elements that are partially transparent and become fully visible on hover */
+    .group .opacity-70.group-hover\:opacity-100 {
+      opacity: 1 !important;
+    }
+
+    /* Generic hover opacity improvements for touch devices */
+    .opacity-70.group-hover\:opacity-100 {
+      opacity: 1 !important;
+    }
+
+    /* Make sure buttons have proper touch targets */
+    button {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Ensure icon buttons maintain proper minimum size for touch */
+    button[data-size="icon"],
+    .size-icon {
       min-height: 44px;
       min-width: 44px;
     }
