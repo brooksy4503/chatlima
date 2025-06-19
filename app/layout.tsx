@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ChatSidebar } from "@/components/chat-sidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { PlusCircle } from "lucide-react";
+import { TopNav } from "@/components/top-nav";
 import { Providers } from "./providers";
 import "./globals.css";
 import Script from "next/script";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { WebSearchProvider } from "@/lib/context/web-search-context";
 import { cn } from "@/lib/utils";
 import BuildInfo from "@/components/ui/BuildInfo";
-import Image from "next/image";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -83,23 +79,7 @@ export default function RootLayout({
             <div className="flex h-dvh w-full">
               <ChatSidebar />
               <main className="flex-1 flex flex-col">
-                <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-2 flex items-center gap-2">
-                  <SidebarTrigger>
-                    <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
-                      <Image src="/logo.png" alt="ChatLima logo" width={16} height={16} />
-                    </button>
-                  </SidebarTrigger>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors"
-                    asChild
-                  >
-                    <Link href="/" title="New Chat">
-                      <PlusCircle className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </nav>
+                <TopNav />
                 <div className="flex-1 flex justify-center overflow-hidden">
                   {children}
                 </div>
