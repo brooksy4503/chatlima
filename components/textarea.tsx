@@ -29,6 +29,7 @@ export const Textarea = ({
 }: InputProps) => {
   const isStreaming = status === "streaming" || status === "submitted";
   const iconButtonRef = useRef<HTMLButtonElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
   const { user } = useAuth();
@@ -55,6 +56,13 @@ export const Textarea = ({
   const estimatedCost = getEstimatedCost();
   const shouldShowCostWarning = webSearchEnabled && canUseWebSearch && input.trim();
 
+  // Focus textarea after model selection
+  const handleModelSelected = () => {
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 100);
+  };
+
   // Determine tooltip message based on credit status
   const getWebSearchTooltipMessage = () => {
     if (isAnonymousUser) {
@@ -69,7 +77,8 @@ export const Textarea = ({
   return (
     <div className="relative w-full">
       <ShadcnTextarea
-        className="resize-none bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl pr-12 pt-4 pb-16 border-input focus-visible:ring-ring placeholder:text-muted-foreground"
+        ref={textareaRef}
+        className="resize-y bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl pr-12 pt-4 pb-16 border-input focus-visible:ring-ring placeholder:text-muted-foreground"
         value={input}
         autoFocus
         placeholder="Send a message..."
@@ -79,6 +88,10 @@ export const Textarea = ({
             e.preventDefault();
             e.currentTarget.form?.requestSubmit();
           }
+        }}
+        style={{
+          maxHeight: '200px',
+          overflowY: 'auto'
         }}
       />
       
@@ -107,6 +120,7 @@ export const Textarea = ({
           <ModelPicker
             setSelectedModel={setSelectedModel}
             selectedModel={selectedModel}
+            onModelSelected={handleModelSelected}
           />
           {selectedModel.startsWith("openrouter/") && (
             <div className="relative flex items-center">
@@ -141,12 +155,12 @@ export const Textarea = ({
         type={isStreaming ? "button" : "submit"}
         onClick={isStreaming ? stop : undefined}
         disabled={(!isStreaming && !input.trim()) || (isStreaming && status === "submitted")}
-        className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+        className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
       >
         {isStreaming ? (
           <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
         ) : (
-          <ArrowUp className="h-4 w-4 text-primary-foreground" />
+          <ArrowUp className={`h-4 w-4 ${(!isStreaming && !input.trim()) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
         )}
       </button>
     </div>

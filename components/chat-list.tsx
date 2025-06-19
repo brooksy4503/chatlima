@@ -271,7 +271,7 @@ export function ChatList({
                                                     </TooltipProvider>
                                                 )}
                                                 {!isCollapsed && (
-                                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
+                                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover/menu-item:opacity-100 sm:group-focus-within/menu-item:opacity-100 opacity-100">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"

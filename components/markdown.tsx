@@ -195,13 +195,15 @@ function preprocessMathDelimiters(markdown: string): string {
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
   const processed = preprocessMathDelimiters(children);
   return (
-    <ReactMarkdown 
-      remarkPlugins={remarkPlugins} 
-      rehypePlugins={rehypePlugins}
-      components={components}
-    >
-      {processed}
-    </ReactMarkdown>
+    <div className="overflow-x-auto max-w-full">
+      <ReactMarkdown 
+        remarkPlugins={remarkPlugins} 
+        rehypePlugins={rehypePlugins}
+        components={components}
+      >
+        {processed}
+      </ReactMarkdown>
+    </div>
   );
 };
 

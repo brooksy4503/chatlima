@@ -82,8 +82,8 @@ export default function RootLayout({
           <WebSearchProvider>
             <div className="flex h-dvh w-full">
               <ChatSidebar />
-              <main className="flex-1 flex flex-col relative">
-                <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+              <main className="flex-1 flex flex-col">
+                <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-2 flex items-center gap-2">
                   <SidebarTrigger>
                     <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
                       <Image src="/logo.png" alt="ChatLima logo" width={16} height={16} />
@@ -99,8 +99,8 @@ export default function RootLayout({
                       <PlusCircle className="h-4 w-4" />
                     </Link>
                   </Button>
-                </div>
-                <div className="flex-1 flex justify-center">
+                </nav>
+                <div className="flex-1 flex justify-center overflow-hidden">
                   {children}
                 </div>
               </main>
