@@ -240,7 +240,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                   "max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
                   "border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20",
                   "transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2",
-                  "text-primary dark:text-primary-foreground font-normal",
+                  "text-foreground hover:text-foreground font-normal",
                   isModelUnavailable && "opacity-50"
                 )}
               >
@@ -296,10 +296,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                         key={id}
                         className={cn(
                           "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
-                          "hover:bg-primary/10 hover:text-primary",
-                          "focus:bg-primary/10 focus:text-primary focus:outline-none",
-                          isSelected && "!bg-primary/15 !text-primary font-medium",
-                          isKeyboardFocused && "!bg-primary/20 !text-primary ring-2 ring-primary/30",
+                          "hover:bg-accent hover:text-accent-foreground",
+                          "focus:bg-accent focus:text-accent-foreground focus:outline-none",
+                          isSelected && "!bg-primary/15 !text-foreground font-medium",
+                          isKeyboardFocused && "!bg-accent !text-accent-foreground ring-2 ring-primary/30",
                           isUnavailable && "opacity-50 cursor-not-allowed"
                         )}
                         onClick={() => {
