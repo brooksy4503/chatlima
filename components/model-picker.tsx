@@ -140,9 +140,14 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
   const keyboardFocusedModel = keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length 
     ? filteredAndSortedModels[keyboardFocusedIndex] as modelID 
     : null;
-  const displayModelId = keyboardFocusedModel || hoveredModel || selectedModel;
-  const currentModelDetails = modelDetails[displayModelId];
-  const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && currentModelDetails.premium);
+  
+  // Separate display logic: button always shows selected model, details panel shows hovered/focused model
+  const detailsPanelModelId = keyboardFocusedModel || hoveredModel || selectedModel;
+  const detailsPanelModelDetails = modelDetails[detailsPanelModelId];
+  
+  // Main button always shows the selected model (no layout flipping)
+  const selectedModelDetails = modelDetails[selectedModel];
+  const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelDetails.premium);
 
   // Handle model change - memoized to prevent re-renders
   const handleModelChange = useCallback((modelId: string) => {
@@ -245,8 +250,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                 )}
               >
                 <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-                  {getProviderIcon(currentModelDetails.provider)}
-                  <span className="text-xs font-medium truncate">{currentModelDetails.name}</span>
+                  {getProviderIcon(selectedModelDetails.provider)}
+                  <span className="text-xs font-medium truncate">{selectedModelDetails.name}</span>
                 </div>
                 <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
               </Button>
@@ -352,22 +357,22 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
             </div>
             
             {/* Model details column - hidden on smallest screens, visible on sm+ */}
-            <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[340px]">
+            <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[340px] min-h-[340px]">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  {getProviderIcon(currentModelDetails.provider)}
-                  <h3 className="text-sm font-semibold">{currentModelDetails.name}</h3>
-                  {currentModelDetails.premium && (
+                  {getProviderIcon(detailsPanelModelDetails.provider)}
+                  <h3 className="text-sm font-semibold">{detailsPanelModelDetails.name}</h3>
+                  {detailsPanelModelDetails.premium && (
                     <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground mb-1">
-                  Provider: <span className="font-medium">{currentModelDetails.provider}</span>
+                  Provider: <span className="font-medium">{detailsPanelModelDetails.provider}</span>
                 </div>
                 
                 {/* Capability badges */}
                 <div className="flex flex-wrap gap-1 mt-2 mb-3">
-                  {currentModelDetails.capabilities.map((capability) => (
+                  {detailsPanelModelDetails.capabilities.map((capability) => (
                     <span 
                       key={capability}
                       className={cn(
@@ -382,7 +387,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                 </div>
                 
                 <div className="text-xs text-foreground/90 leading-relaxed mb-3 hidden md:block">
-                  {currentModelDetails.description}
+                  {detailsPanelModelDetails.description}
                 </div>
               </div>
               
@@ -390,7 +395,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                 <div className="text-[10px] text-muted-foreground flex justify-between items-center">
                   <span>API Version:</span>
                   <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
-                    {currentModelDetails.apiVersion}
+                    {detailsPanelModelDetails.apiVersion}
                   </code>
                 </div>
               </div>
@@ -399,7 +404,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
             {/* Condensed model details for mobile only */}
             <div className="p-3 sm:hidden border-t border-border/30">
               <div className="flex flex-wrap gap-1 mb-2">
-                {currentModelDetails.capabilities.slice(0, 4).map((capability) => (
+                {detailsPanelModelDetails.capabilities.slice(0, 4).map((capability) => (
                   <span 
                     key={capability}
                     className={cn(
@@ -411,8 +416,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                     <span>{capability}</span>
                   </span>
                 ))}
-                {currentModelDetails.capabilities.length > 4 && (
-                  <span className="text-[10px] text-muted-foreground">+{currentModelDetails.capabilities.length - 4} more</span>
+                {detailsPanelModelDetails.capabilities.length > 4 && (
+                  <span className="text-[10px] text-muted-foreground">+{detailsPanelModelDetails.capabilities.length - 4} more</span>
                 )}
               </div>
             </div>
