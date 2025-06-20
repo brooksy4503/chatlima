@@ -13,6 +13,7 @@ export interface KeyValuePair {
 export interface MCPServer {
   id: string;
   name: string;
+  title?: string;
   url: string;
   type: 'sse' | 'stdio' | 'streamable-http';
   command?: string;
@@ -20,6 +21,7 @@ export interface MCPServer {
   env?: KeyValuePair[];
   headers?: KeyValuePair[];
   description?: string;
+  _meta?: Record<string, any>;
 }
 
 // Type for processed MCP server config for API
@@ -30,6 +32,8 @@ export interface MCPServerApi {
   args?: string[];
   env?: KeyValuePair[];
   headers?: KeyValuePair[];
+  title?: string;
+  _meta?: Record<string, any>;
 }
 
 interface MCPContextType {
@@ -70,7 +74,9 @@ export function MCPProvider(props: { children: React.ReactNode }) {
         command: server.command,
         args: server.args,
         env: server.env,
-        headers: server.headers
+        headers: server.headers,
+        title: server.title,
+        _meta: server._meta
       }));
     
     setMcpServersForApi(processedServers);

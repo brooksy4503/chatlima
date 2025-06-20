@@ -31,7 +31,7 @@
     "@ai-sdk/react": "^1.2.9",
     "@ai-sdk/ui-utils": "^1.2.10",
     "@ai-sdk/xai": "^1.2.14",
-    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@modelcontextprotocol/sdk": "^1.13.0",
     "@neondatabase/serverless": "^1.0.0",
     "@openrouter/ai-sdk-provider": "^0.4.5",
     "@polar-sh/better-auth": "^0.1.1",
