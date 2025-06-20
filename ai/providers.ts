@@ -184,6 +184,7 @@ const languageModels = {
   "openrouter/google/gemini-2.5-pro-preview": openrouterClient("google/gemini-2.5-pro-preview"),
   "openrouter/google/gemini-2.5-pro": openrouterClient("google/gemini-2.5-pro"),
   "openrouter/google/gemini-2.5-flash": openrouterClient("google/gemini-2.5-flash"),
+  "openrouter/google/gemini-2.5-flash-lite-preview-06-17": openrouterClient("google/gemini-2.5-flash-lite-preview-06-17"),
   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
@@ -286,6 +287,7 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     "openrouter/google/gemini-2.5-pro-preview": dynamicOpenRouterClient("google/gemini-2.5-pro-preview"),
     "openrouter/google/gemini-2.5-pro": dynamicOpenRouterClient("google/gemini-2.5-pro"),
     "openrouter/google/gemini-2.5-flash": dynamicOpenRouterClient("google/gemini-2.5-flash"),
+    "openrouter/google/gemini-2.5-flash-lite-preview-06-17": dynamicOpenRouterClient("google/gemini-2.5-flash-lite-preview-06-17"),
     "openrouter/openai/gpt-4.1": dynamicOpenRouterClient("openai/gpt-4.1"),
     "openrouter/openai/gpt-4.1-mini": dynamicOpenRouterClient("openai/gpt-4.1-mini"),
     "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
@@ -494,6 +496,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in thinking capabilities, enabling it to provide responses with greater accuracy and nuanced context handling.",
     apiVersion: "google/gemini-2.5-flash",
     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Thinking", "Multimodal"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "openrouter/google/gemini-2.5-flash-lite-preview-06-17": {
+    provider: "OpenRouter",
+    name: "Google Gemini 2.5 Flash Lite Preview 06-17",
+    description: "Gemini 2.5 Flash-Lite is a lightweight reasoning model in the Gemini 2.5 family, optimized for ultra-low latency and cost efficiency. It offers improved throughput, faster token generation, and better performance across common benchmarks compared to earlier Flash models. By default, thinking is disabled to prioritize speed, but can be enabled via the Reasoning API parameter.",
+    apiVersion: "google/gemini-2.5-flash-lite-preview-06-17",
+    capabilities: ["Ultra-low latency", "Cost efficient", "Fast token generation", "Lightweight reasoning", "Improved throughput"],
     enabled: true,
     supportsWebSearch: true,
     premium: false
