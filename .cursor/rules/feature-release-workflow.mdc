@@ -13,7 +13,7 @@ This rule provides a complete workflow for releasing new features in the ChatLim
 Before starting the release process:
 - Ensure all tests pass
 - Verify the feature branch is up to date with main
-- Check that [package.json](mdc:chatlima/package.json) reflects the current version
+- Check that [package.json](mdc:chatlima/chatlima/chatlima/package.json) reflects the current version
 - Review recent commits with `git log --oneline -10`
 
 ### 2. Merge Feature Branch
@@ -35,7 +35,7 @@ git push origin --delete feature/branch-name
 ```
 
 ### 3. Version Increment
-Use npm version to automatically update [package.json](mdc:chatlima/package.json) and create a git tag:
+Use npm version to automatically update [package.json](mdc:chatlima/chatlima/chatlima/package.json) and create a git tag:
 
 ```bash
 # For patch releases (0.3.0 -> 0.3.1)
@@ -49,7 +49,7 @@ npm version major
 ```
 
 This command:
-- Updates the version in [package.json](mdc:chatlima/package.json)
+- Updates the version in [package.json](mdc:chatlima/chatlima/chatlima/package.json)
 - Creates a git commit with the version change
 - Creates a git tag (e.g., v0.3.1)
 
@@ -104,13 +104,13 @@ Generate comprehensive release notes following this structure:
 #### Save Release Notes
 Create a file named `RELEASE_NOTES_v[VERSION].md` in the `releases/` folder for reference.
 
-### 6. Safe Production Deployment
+### 6. Production Deployment
 
-#### ⚠️ CRITICAL: Vercel Production Deployment Safety
-Before deploying to production, ensure you're following safe deployment practices:
+#### 🔄 Automatic Deployment (GitHub Integration)
+With GitHub integration enabled, Vercel automatically handles deployments:
 
 ```bash
-# ✅ SAFE - Production deployment workflow
+# ✅ AUTOMATIC - Normal deployment workflow
 # 1. Ensure you're on main branch with merged changes
 git checkout main
 git pull origin main
@@ -119,11 +119,23 @@ git pull origin main
 npm run build  # Test build locally
 npm run test   # Run all tests
 
-# 3. Deploy to production explicitly
+# 3. Push to main triggers automatic production deployment
+git push origin main  # This automatically deploys to production via GitHub integration
+
+# 4. Monitor deployment
+# Check Vercel dashboard for deployment status
+# Verify production URL once deployment completes
+```
+
+#### 🔧 Manual Deployment (Optional)
+Manual deployment is only needed for special cases:
+
+```bash
+# When you need to deploy without pushing to git
 vercel deploy --prod  # Explicit production deployment
 
-# 4. Verify production deployment
-# Check the production URL and test critical functionality
+# Or for testing local changes before commit
+vercel deploy  # Preview deployment
 ```
 
 #### Production Deployment Checklist:
@@ -132,15 +144,18 @@ vercel deploy --prod  # Explicit production deployment
 - [ ] Environment variables configured for production
 - [ ] Database migrations completed (if applicable)
 - [ ] Monitoring and error tracking enabled
-- [ ] Rollback plan ready
+- [ ] GitHub integration properly configured
 
 #### Emergency Rollback:
 If issues are discovered after production deployment:
 ```bash
-# Quick rollback to previous version
+# Option 1: Rollback via git (triggers auto-deployment)
 git checkout main
 git reset --hard HEAD~1  # Go back one commit
-vercel deploy --prod     # Deploy previous version
+git push origin main --force  # Auto-deploys previous version
+
+# Option 2: Manual rollback (if needed)
+vercel deploy --prod  # Deploy specific version manually
 ```
 
 ### 7. GitHub Release Creation
@@ -177,13 +192,13 @@ git push origin --delete feature/[branch-name]
 - Include migration instructions for any breaking changes
 - Highlight security and privacy improvements
 - Keep technical details accessible to non-developers
-- Reference relevant files using [filename](mdc:chatlima/filename) format
+- Reference relevant files using [filename](mdc:chatlima/chatlima/chatlima/filename) format
 
 ### File References:
-- Version information: [package.json](mdc:chatlima/package.json)
+- Version information: [package.json](mdc:chatlima/chatlima/chatlima/package.json)
 - Previous release notes: Look for existing `RELEASE_NOTES_v*.md` files in the `releases/` folder
-- Implementation details: Check [app/](mdc:chatlima/app) directory for new routes
-- Configuration: [next.config.ts](mdc:chatlima/next.config.ts), [tsconfig.json](mdc:chatlima/tsconfig.json)
+- Implementation details: Check [app/](mdc:chatlima/chatlima/chatlima/app) directory for new routes
+- Configuration: [next.config.ts](mdc:chatlima/chatlima/chatlima/next.config.ts), [tsconfig.json](mdc:chatlima/chatlima/chatlima/tsconfig.json)
 
 ## 🚨 Important Notes
 
