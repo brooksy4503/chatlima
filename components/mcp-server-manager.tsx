@@ -38,6 +38,7 @@ import { KeyValuePair, MCPServer } from "@/lib/context/mcp-context";
 // Default template for a new MCP server
 const INITIAL_NEW_SERVER: Omit<MCPServer, 'id'> = {
     name: '',
+    title: '',
     url: '',
     type: 'sse',
     command: 'node',
@@ -307,6 +308,7 @@ export const MCPServerManager = ({
         setEditingServerId(server.id);
         setNewServer({
             name: server.name,
+            title: server.title,
             url: server.url,
             type: server.type,
             command: server.command,
@@ -515,6 +517,25 @@ export const MCPServerManager = ({
                                     placeholder="My MCP Server"
                                     className="relative z-0"
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Unique identifier for this server
+                                </p>
+                            </div>
+
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="title">
+                                    Display Title (Optional)
+                                </Label>
+                                <Input
+                                    id="title"
+                                    value={newServer.title || ''}
+                                    onChange={(e) => setNewServer({ ...newServer, title: e.target.value })}
+                                    placeholder="File System Access"
+                                    className="relative z-0"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Human-friendly name for UI display
+                                </p>
                             </div>
 
                             <div className="grid gap-1.5">

@@ -381,7 +381,10 @@ export async function POST(req: Request) {
         finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
           // sessionId: nanoid(), // Optionally, provide a session ID if your server uses it
           requestInit: {
-            headers: Object.keys(headers).length > 0 ? headers : undefined
+            headers: {
+              'MCP-Protocol-Version': '2025-06-18', // Required for MCP 1.13.0+
+              ...headers // Spread existing headers after protocol version
+            }
           }
         });
       } else if (mcpServer.type === 'stdio') {
