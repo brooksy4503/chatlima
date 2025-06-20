@@ -142,7 +142,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
     : null;
   const displayModelId = keyboardFocusedModel || hoveredModel || selectedModel;
   const currentModelDetails = modelDetails[displayModelId];
-  const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels && currentModelDetails.premium);
+  const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && currentModelDetails.premium);
 
   // Handle model change - memoized to prevent re-renders
   const handleModelChange = useCallback((modelId: string) => {
@@ -213,7 +213,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
         if (keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length) {
           const selectedModelId = filteredAndSortedModels[keyboardFocusedIndex];
           const model = modelDetails[selectedModelId as modelID];
-          const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels);
+          const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
           if (!isUnavailable) {
             handleModelChange(selectedModelId);
           }
@@ -287,7 +287,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                   filteredAndSortedModels.map((id, index) => {
                     const modelId = id as modelID;
                     const model = modelDetails[modelId];
-                    const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels);
+                    const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
                     const isSelected = selectedModel === id;
                     const isKeyboardFocused = keyboardFocusedIndex === index;
                     
