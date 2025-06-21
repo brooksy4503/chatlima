@@ -188,6 +188,7 @@ const languageModels = {
   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
+  "openrouter/openai/gpt-4.1-nano": openrouterClient("openai/gpt-4.1-nano"),
   "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
     model: openrouterClient("x-ai/grok-3-beta", { logprobs: false }),
     middleware: deepseekR1Middleware,
@@ -228,116 +229,206 @@ const languageModels = {
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
+  "requesty/openai/gpt-4.1": requestyClient("openai/gpt-4.1"),
+  "requesty/openai/gpt-4.1-nano": requestyClient("openai/gpt-4.1-nano"),
+  "requesty/openai/gpt-4.1-mini": requestyClient("openai/gpt-4.1-mini"),
   "requesty/anthropic/claude-3.5-sonnet": requestyClient("anthropic/claude-3-5-sonnet-20241022"),
   "requesty/anthropic/claude-3.7-sonnet": requestyClient("anthropic/claude-3-7-sonnet-20250219"),
   "requesty/google/gemini-2.5-flash-preview": requestyClient("google/gemini-2.5-flash-preview-05-20"),
+  "requesty/google/gemini-2.5-flash": requestyClient("google/gemini-2.5-flash"),
+  "requesty/google/gemini-2.5-pro": requestyClient("google/gemini-2.5-pro"),
   "requesty/meta-llama/llama-3.1-70b-instruct": requestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
   "requesty/anthropic/claude-sonnet-4-20250514": requestyClient("anthropic/claude-sonnet-4-20250514"),
+  "requesty/deepseek/deepseek-chat": requestyClient("deepseek/deepseek-chat"),
+  "requesty/deepseek/deepseek-reasoner": wrapLanguageModel({
+    model: requestyClient("deepseek/deepseek-reasoner", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/deepseek/deepseek-v3": requestyClient("deepinfra/deepseek-ai/DeepSeek-V3"),
+  "requesty/deepseek/deepseek-r1": wrapLanguageModel({
+    model: requestyClient("deepinfra/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/meta-llama/llama-3.3-70b-instruct": requestyClient("deepinfra/meta-llama/Llama-3.3-70B-Instruct"),
+  "requesty/google/gemini-2.5-flash-lite-preview-06-17": requestyClient("google/gemini-2.5-flash-lite-preview-06-17"),
 };
 
 // Helper to get language model with dynamic API keys
 export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>) => {
-  // Create dynamic clients with provided API keys
-  const dynamicOpenAIClient = createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
-  const dynamicAnthropicClient = createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
-  const dynamicGroqClient = createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']);
-  const dynamicXaiClient = createXaiClientWithKey(apiKeys?.['XAI_API_KEY']);
-  const dynamicOpenRouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
-  const dynamicRequestyClient = createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']);
+  // Helper function to create clients on demand
+  const getOpenAIClient = () => createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
+  const getAnthropicClient = () => createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
+  const getGroqClient = () => createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']);
+  const getXaiClient = () => createXaiClientWithKey(apiKeys?.['XAI_API_KEY']);
+  const getOpenRouterClient = () => createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+  const getRequestyClient = () => createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']);
 
-  // Map all models with dynamic clients
-  const dynamicLanguageModels: Record<string, any> = {
+  // Check if the specific model exists and create only the needed client
+  switch (modelId) {
     // Anthropic models
-    "claude-3-7-sonnet": dynamicAnthropicClient('claude-3-7-sonnet-20250219'),
+    case "claude-3-7-sonnet":
+      return getAnthropicClient()('claude-3-7-sonnet-20250219');
 
     // OpenAI models
-    "gpt-4.1-mini": dynamicOpenAIClient("gpt-4.1-mini"),
+    case "gpt-4.1-mini":
+      return getOpenAIClient()("gpt-4.1-mini");
 
     // Groq models
-    "qwen-qwq": wrapLanguageModel({
-      model: dynamicGroqClient("qwen-qwq-32b"),
-      middleware
-    }),
+    case "qwen-qwq":
+      return wrapLanguageModel({
+        model: getGroqClient()("qwen-qwq-32b"),
+        middleware
+      });
 
     // XAI models
-    "grok-3-mini": dynamicXaiClient("grok-3-mini-latest"),
+    case "grok-3-mini":
+      return getXaiClient()("grok-3-mini-latest");
 
     // OpenRouter models
-    "openrouter/anthropic/claude-3.5-sonnet": dynamicOpenRouterClient("anthropic/claude-3.5-sonnet"),
-    "openrouter/anthropic/claude-3.7-sonnet": dynamicOpenRouterClient("anthropic/claude-3.7-sonnet"),
-    "openrouter/anthropic/claude-3.7-sonnet:thinking": dynamicOpenRouterClient("anthropic/claude-3.7-sonnet:thinking"),
-    "openrouter/deepseek/deepseek-chat-v3-0324": dynamicOpenRouterClient("deepseek/deepseek-chat-v3-0324"),
-    "openrouter/deepseek/deepseek-r1": wrapLanguageModel({
-      model: dynamicOpenRouterClient("deepseek/deepseek-r1", { logprobs: false }),
-      middleware: deepseekR1Middleware,
-    }),
-    "openrouter/deepseek/deepseek-r1-0528": wrapLanguageModel({
-      model: dynamicOpenRouterClient("deepseek/deepseek-r1-0528", { logprobs: false }),
-      middleware: deepseekR1Middleware,
-    }),
-    "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": wrapLanguageModel({
-      model: dynamicOpenRouterClient("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
-      middleware: deepseekR1Middleware,
-    }),
-    "openrouter/google/gemini-2.5-flash-preview": dynamicOpenRouterClient("google/gemini-2.5-flash-preview"),
-    "openrouter/google/gemini-2.5-flash-preview:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview:thinking"),
-    "openrouter/google/gemini-2.5-flash-preview-05-20": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20"),
-    "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
-    "openrouter/google/gemini-2.5-pro-preview-03-25": dynamicOpenRouterClient("google/gemini-2.5-pro-preview-03-25"),
-    "openrouter/google/gemini-2.5-pro-preview": dynamicOpenRouterClient("google/gemini-2.5-pro-preview"),
-    "openrouter/google/gemini-2.5-pro": dynamicOpenRouterClient("google/gemini-2.5-pro"),
-    "openrouter/google/gemini-2.5-flash": dynamicOpenRouterClient("google/gemini-2.5-flash"),
-    "openrouter/google/gemini-2.5-flash-lite-preview-06-17": dynamicOpenRouterClient("google/gemini-2.5-flash-lite-preview-06-17"),
-    "openrouter/openai/gpt-4.1": dynamicOpenRouterClient("openai/gpt-4.1"),
-    "openrouter/openai/gpt-4.1-mini": dynamicOpenRouterClient("openai/gpt-4.1-mini"),
-    "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
-      model: dynamicOpenRouterClient("x-ai/grok-3-beta", { logprobs: false }),
-      middleware: deepseekR1Middleware,
-    }),
-    "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
-      model: dynamicOpenRouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
-      middleware: deepseekR1Middleware,
-    }),
-    "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
-      model: dynamicOpenRouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
-      middleware: deepseekR1Middleware,
-    }),
-    "openrouter/mistralai/mistral-medium-3": dynamicOpenRouterClient("mistralai/mistral-medium-3"),
-    "openrouter/mistralai/mistral-small-3.1-24b-instruct": dynamicOpenRouterClient("mistralai/mistral-small-3.1-24b-instruct"),
-    "openrouter/mistralai/magistral-small-2506": dynamicOpenRouterClient("mistralai/magistral-small-2506"),
-    "openrouter/mistralai/magistral-medium-2506": dynamicOpenRouterClient("mistralai/magistral-medium-2506"),
-    "openrouter/mistralai/magistral-medium-2506:thinking": dynamicOpenRouterClient("mistralai/magistral-medium-2506:thinking"),
-    "openrouter/meta-llama/llama-4-maverick": dynamicOpenRouterClient("meta-llama/llama-4-maverick"),
-    "openrouter/openai/o4-mini-high": dynamicOpenRouterClient("openai/o4-mini-high"),
-    "openrouter/qwen/qwq-32b": wrapLanguageModel({
-      model: dynamicOpenRouterClient("qwen/qwq-32b"),
-      middleware: deepseekR1Middleware,
-    }),
-    "openrouter/qwen/qwen3-235b-a22b": dynamicOpenRouterClient("qwen/qwen3-235b-a22b"),
-    "openrouter/anthropic/claude-sonnet-4": dynamicOpenRouterClient("anthropic/claude-sonnet-4"),
-    "openrouter/anthropic/claude-opus-4": dynamicOpenRouterClient("anthropic/claude-opus-4"),
-    "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": dynamicOpenRouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
-    "openrouter/minimax/minimax-m1": dynamicOpenRouterClient("minimax/minimax-m1"),
-    "openrouter/minimax/minimax-m1:extended": dynamicOpenRouterClient("minimax/minimax-m1:extended"),
+    case "openrouter/anthropic/claude-3.5-sonnet":
+      return getOpenRouterClient()("anthropic/claude-3.5-sonnet");
+    case "openrouter/anthropic/claude-3.7-sonnet":
+      return getOpenRouterClient()("anthropic/claude-3.7-sonnet");
+    case "openrouter/anthropic/claude-3.7-sonnet:thinking":
+      return getOpenRouterClient()("anthropic/claude-3.7-sonnet:thinking");
+    case "openrouter/deepseek/deepseek-chat-v3-0324":
+      return getOpenRouterClient()("deepseek/deepseek-chat-v3-0324");
+    case "openrouter/deepseek/deepseek-r1":
+      return wrapLanguageModel({
+        model: getOpenRouterClient()("deepseek/deepseek-r1", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "openrouter/deepseek/deepseek-r1-0528":
+      return wrapLanguageModel({
+        model: getOpenRouterClient()("deepseek/deepseek-r1-0528", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "openrouter/deepseek/deepseek-r1-0528-qwen3-8b":
+      return wrapLanguageModel({
+        model: getOpenRouterClient()("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "openrouter/google/gemini-2.5-flash-preview":
+      return getOpenRouterClient()("google/gemini-2.5-flash-preview");
+    case "openrouter/google/gemini-2.5-flash-preview:thinking":
+      return getOpenRouterClient()("google/gemini-2.5-flash-preview:thinking");
+    case "openrouter/google/gemini-2.5-flash-preview-05-20":
+      return getOpenRouterClient()("google/gemini-2.5-flash-preview-05-20");
+    case "openrouter/google/gemini-2.5-flash-preview-05-20:thinking":
+      return getOpenRouterClient()("google/gemini-2.5-flash-preview-05-20:thinking");
+    case "openrouter/google/gemini-2.5-pro-preview-03-25":
+      return getOpenRouterClient()("google/gemini-2.5-pro-preview-03-25");
+    case "openrouter/google/gemini-2.5-pro-preview":
+      return getOpenRouterClient()("google/gemini-2.5-pro-preview");
+    case "openrouter/google/gemini-2.5-pro":
+      return getOpenRouterClient()("google/gemini-2.5-pro");
+    case "openrouter/google/gemini-2.5-flash":
+      return getOpenRouterClient()("google/gemini-2.5-flash");
+    case "openrouter/google/gemini-2.5-flash-lite-preview-06-17":
+      return getOpenRouterClient()("google/gemini-2.5-flash-lite-preview-06-17");
+    case "openrouter/openai/gpt-4.1":
+      return getOpenRouterClient()("openai/gpt-4.1");
+    case "openrouter/openai/gpt-4.1-mini":
+      return getOpenRouterClient()("openai/gpt-4.1-mini");
+    case "openrouter/openai/gpt-4.1-nano":
+      return getOpenRouterClient()("openai/gpt-4.1-nano");
+    case "openrouter/x-ai/grok-3-beta":
+      return wrapLanguageModel({
+        model: getOpenRouterClient()("x-ai/grok-3-beta", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "openrouter/x-ai/grok-3-mini-beta":
+      return wrapLanguageModel({
+        model: getOpenRouterClient()("x-ai/grok-3-mini-beta", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "openrouter/x-ai/grok-3-mini-beta-reasoning-high":
+      return wrapLanguageModel({
+        model: getOpenRouterClient()("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "openrouter/mistralai/mistral-medium-3":
+      return getOpenRouterClient()("mistralai/mistral-medium-3");
+    case "openrouter/mistralai/mistral-small-3.1-24b-instruct":
+      return getOpenRouterClient()("mistralai/mistral-small-3.1-24b-instruct");
+    case "openrouter/mistralai/magistral-small-2506":
+      return getOpenRouterClient()("mistralai/magistral-small-2506");
+    case "openrouter/mistralai/magistral-medium-2506":
+      return getOpenRouterClient()("mistralai/magistral-medium-2506");
+    case "openrouter/mistralai/magistral-medium-2506:thinking":
+      return getOpenRouterClient()("mistralai/magistral-medium-2506:thinking");
+    case "openrouter/meta-llama/llama-4-maverick":
+      return getOpenRouterClient()("meta-llama/llama-4-maverick");
+    case "openrouter/openai/o4-mini-high":
+      return getOpenRouterClient()("openai/o4-mini-high");
+    case "openrouter/qwen/qwq-32b":
+      return wrapLanguageModel({
+        model: getOpenRouterClient()("qwen/qwq-32b"),
+        middleware: deepseekR1Middleware,
+      });
+    case "openrouter/qwen/qwen3-235b-a22b":
+      return getOpenRouterClient()("qwen/qwen3-235b-a22b");
+    case "openrouter/anthropic/claude-sonnet-4":
+      return getOpenRouterClient()("anthropic/claude-sonnet-4");
+    case "openrouter/anthropic/claude-opus-4":
+      return getOpenRouterClient()("anthropic/claude-opus-4");
+    case "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b":
+      return getOpenRouterClient()("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b");
+    case "openrouter/minimax/minimax-m1":
+      return getOpenRouterClient()("minimax/minimax-m1");
+    case "openrouter/minimax/minimax-m1:extended":
+      return getOpenRouterClient()("minimax/minimax-m1:extended");
 
     // Requesty models
-    "requesty/openai/gpt-4o": dynamicRequestyClient("openai/gpt-4o"),
-    "requesty/openai/gpt-4o-mini": dynamicRequestyClient("openai/gpt-4o-mini"),
-    "requesty/anthropic/claude-3.5-sonnet": dynamicRequestyClient("anthropic/claude-3-5-sonnet-20241022"),
-    "requesty/anthropic/claude-3.7-sonnet": dynamicRequestyClient("anthropic/claude-3-7-sonnet-20250219"),
-    "requesty/google/gemini-2.5-flash-preview": dynamicRequestyClient("google/gemini-2.5-flash-preview-05-20"),
-    "requesty/meta-llama/llama-3.1-70b-instruct": dynamicRequestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
-    "requesty/anthropic/claude-sonnet-4-20250514": dynamicRequestyClient("anthropic/claude-sonnet-4-20250514"),
-  };
+    case "requesty/openai/gpt-4o":
+      return getRequestyClient()("openai/gpt-4o");
+    case "requesty/openai/gpt-4o-mini":
+      return getRequestyClient()("openai/gpt-4o-mini");
+    case "requesty/openai/gpt-4.1":
+      return getRequestyClient()("openai/gpt-4.1");
+    case "requesty/openai/gpt-4.1-nano":
+      return getRequestyClient()("openai/gpt-4.1-nano");
+    case "requesty/openai/gpt-4.1-mini":
+      return getRequestyClient()("openai/gpt-4.1-mini");
+    case "requesty/anthropic/claude-3.5-sonnet":
+      return getRequestyClient()("anthropic/claude-3-5-sonnet-20241022");
+    case "requesty/anthropic/claude-3.7-sonnet":
+      return getRequestyClient()("anthropic/claude-3-7-sonnet-20250219");
+    case "requesty/google/gemini-2.5-flash-preview":
+      return getRequestyClient()("google/gemini-2.5-flash-preview-05-20");
+    case "requesty/google/gemini-2.5-flash":
+      return getRequestyClient()("google/gemini-2.5-flash");
+    case "requesty/google/gemini-2.5-pro":
+      return getRequestyClient()("google/gemini-2.5-pro");
+    case "requesty/meta-llama/llama-3.1-70b-instruct":
+      return getRequestyClient()("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct");
+    case "requesty/anthropic/claude-sonnet-4-20250514":
+      return getRequestyClient()("anthropic/claude-sonnet-4-20250514");
+    case "requesty/deepseek/deepseek-chat":
+      return getRequestyClient()("deepseek/deepseek-chat");
+    case "requesty/deepseek/deepseek-reasoner":
+      return wrapLanguageModel({
+        model: getRequestyClient()("deepseek/deepseek-reasoner", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/deepseek/deepseek-v3":
+      return getRequestyClient()("deepinfra/deepseek-ai/DeepSeek-V3");
+    case "requesty/deepseek/deepseek-r1":
+      return wrapLanguageModel({
+        model: getRequestyClient()("deepinfra/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/meta-llama/llama-3.3-70b-instruct":
+      return getRequestyClient()("deepinfra/meta-llama/Llama-3.3-70B-Instruct");
+    case "requesty/google/gemini-2.5-flash-lite-preview-06-17":
+      return getRequestyClient()("google/gemini-2.5-flash-lite-preview-06-17");
 
-  // Check if the specific model exists in our dynamic models
-  if (dynamicLanguageModels[modelId]) {
-    return dynamicLanguageModels[modelId];
+    default:
+      // Fallback to static models if not found (shouldn't happen in normal cases)
+      console.warn(`Model ${modelId} not found in dynamic models, falling back to static model`);
+      return languageModels[modelId as keyof typeof languageModels];
   }
 
-  // Fallback to static models if not found (shouldn't happen in normal cases)
-  console.warn(`Model ${modelId} not found in dynamic models, falling back to static model`);
-  return languageModels[modelId as keyof typeof languageModels];
 };
 
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
@@ -640,6 +731,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     supportsWebSearch: false,
     premium: false
   },
+  "openrouter/openai/gpt-4.1-nano": {
+    provider: "OpenRouter",
+    name: "OpenAI GPT-4.1 Nano",
+    description: "GPT-4.1 Nano is the fastest and cheapest model in the GPT-4.1 series, designed for low-latency tasks. Features 1M token context window and excels at classification and autocompletion with exceptional performance despite its compact size.",
+    apiVersion: "openai/gpt-4.1-nano",
+    capabilities: ["Ultra-fast", "Cost-effective", "Classification", "Autocompletion", "Long Context"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
+  },
   "openrouter/openai/o4-mini-high": {
     provider: "OpenRouter",
     name: "OpenAI O4 Mini High",
@@ -751,6 +852,36 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     supportsWebSearch: true,
     premium: false
   },
+  "requesty/openai/gpt-4.1": {
+    provider: "Requesty",
+    name: "OpenAI GPT-4.1",
+    description: "OpenAI's GPT-4.1 flagship model accessed via Requesty, excelling in instruction following, software engineering, and long-context reasoning with 1M token context support.",
+    apiVersion: "openai/gpt-4.1",
+    capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: true
+  },
+  "requesty/openai/gpt-4.1-nano": {
+    provider: "Requesty",
+    name: "OpenAI GPT-4.1 Nano",
+    description: "OpenAI's fastest and cheapest model accessed via Requesty, designed for low-latency tasks like classification and autocompletion. Features 1M token context window despite its compact size.",
+    apiVersion: "openai/gpt-4.1-nano",
+    capabilities: ["Ultra-fast", "Cost-effective", "Classification", "Autocompletion", "Long Context"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
+  },
+  "requesty/openai/gpt-4.1-mini": {
+    provider: "Requesty",
+    name: "OpenAI GPT-4.1 Mini",
+    description: "OpenAI's GPT-4.1 Mini model accessed via Requesty, offering a compact and efficient version with balanced performance and speed for various tasks.",
+    apiVersion: "openai/gpt-4.1-mini",
+    capabilities: ["Coding", "Instruction Following", "Compact", "Efficient"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
+  },
   "requesty/anthropic/claude-3.5-sonnet": {
     provider: "Requesty",
     name: "Claude 3.5 Sonnet",
@@ -781,6 +912,26 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     supportsWebSearch: true,
     premium: false
   },
+  "requesty/google/gemini-2.5-flash": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Flash",
+    description: "Google's best model in terms of price-performance, offering well-rounded capabilities. Supports audio, images, video, and text input with adaptive thinking capabilities and optimized for low latency, high volume tasks.",
+    apiVersion: "google/gemini-2.5-flash",
+    capabilities: ["Thinking", "Multimodal", "Low Latency", "Cost-Effective", "High Volume"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
+  },
+  "requesty/google/gemini-2.5-pro": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Pro",
+    description: "Google's most powerful thinking model with maximum response accuracy and state-of-the-art performance. Tackles difficult problems, analyzes large databases, and excels at complex coding, reasoning, and multimodal understanding.",
+    apiVersion: "google/gemini-2.5-pro",
+    capabilities: ["Advanced Reasoning", "Thinking", "Complex Coding", "Data Analysis", "Multimodal Understanding", "Problem Solving"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: true
+  },
   "requesty/meta-llama/llama-3.1-70b-instruct": {
     provider: "Requesty",
     name: "Llama 3.1 70B Instruct",
@@ -800,6 +951,66 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true
+  },
+  "requesty/deepseek/deepseek-chat": {
+    provider: "Requesty",
+    name: "DeepSeek Chat",
+    description: "DeepSeek Chat model accessed via Requesty, offering efficient performance.",
+    apiVersion: "deepseek/deepseek-chat",
+    capabilities: ["Efficient"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
+  },
+  "requesty/deepseek/deepseek-reasoner": {
+    provider: "Requesty",
+    name: "DeepSeek Reasoner",
+    description: "DeepSeek Reasoner model accessed via Requesty, featuring advanced reasoning capabilities. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
+    apiVersion: "deepseek/deepseek-reasoner",
+    capabilities: ["Reasoning", "Problem-solving"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "requesty/deepseek/deepseek-v3": {
+    provider: "Requesty",
+    name: "DeepSeek V3",
+    description: "DeepSeek V3 model accessed via Requesty, offering efficient chat and reasoning capabilities.",
+    apiVersion: "deepinfra/deepseek-ai/DeepSeek-V3",
+    capabilities: ["Chat", "Efficient", "Reasoning"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
+  },
+  "requesty/deepseek/deepseek-r1": {
+    provider: "Requesty",
+    name: "DeepSeek R1",
+    description: "DeepSeek R1 model accessed via Requesty, featuring advanced reasoning capabilities with open reasoning tokens. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
+    apiVersion: "deepinfra/deepseek-ai/DeepSeek-R1",
+    capabilities: ["Reasoning", "Open Source", "Problem-solving"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
+  },
+  "requesty/meta-llama/llama-3.3-70b-instruct": {
+    provider: "Requesty",
+    name: "Meta Llama 3.3 70B Instruct",
+    description: "Meta's Llama 3.3 70B Instruct model accessed via Requesty. A multilingual LLM trained on 15 trillion tokens, fine-tuned for instruction-following and conversational dialogue. Supports 8 languages including English, German, French, Italian, Portuguese, Hindi, Spanish, and Thai. Features 128k context length and uses Grouped-Query Attention (GQA) for improved inference scalability.",
+    apiVersion: "deepinfra/meta-llama/Llama-3.3-70B-Instruct",
+    capabilities: ["Instruction Following", "Multilingual", "Conversational", "Large Context", "Open Source"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
+  },
+  "requesty/google/gemini-2.5-flash-lite-preview-06-17": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Flash Lite Preview 06-17",
+    description: "Gemini 2.5 Flash-Lite is a lightweight reasoning model optimized for ultra-low latency and cost efficiency. Offers improved throughput, faster token generation, and better performance across common benchmarks. By default, thinking is disabled to prioritize speed.",
+    apiVersion: "google/gemini-2.5-flash-lite-preview-06-17",
+    capabilities: ["Ultra-low latency", "Cost efficient", "Fast token generation", "Lightweight reasoning", "Improved throughput"],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false
   },
 };
 
