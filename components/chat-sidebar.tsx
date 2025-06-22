@@ -202,7 +202,7 @@ export function ChatSidebar() {
                     <SidebarGroup className="flex-1 min-h-0">
                         <SidebarGroupLabel className={cn(
                             "px-4 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-                            isCollapsed ? "sr-only" : ""
+                            isLayoutCollapsed ? "sr-only" : ""
                         )}>
                             Chats
                         </SidebarGroupLabel>
@@ -229,7 +229,7 @@ export function ChatSidebar() {
                     <SidebarGroup className="flex-shrink-0">
                         <SidebarGroupLabel className={cn(
                             "px-4 pt-0 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-                            isCollapsed ? "sr-only" : ""
+                            isLayoutCollapsed ? "sr-only" : ""
                         )}>
                             MCP Servers
                         </SidebarGroupLabel>
