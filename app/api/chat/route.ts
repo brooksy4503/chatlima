@@ -154,14 +154,21 @@ export async function POST(req: Request) {
   const isUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
   console.log(`[Debug] User ${userId} - isUsingOwnApiKeys: ${isUsingOwnApiKeys}`);
 
+  // Check if the model is free (ends with :free)
+  const isFreeModel = selectedModel.endsWith(':free');
+  console.log(`[Debug] User ${userId} - isFreeModel: ${isFreeModel}`);
+
   // 1. Check if user has sufficient credits (if they have a Polar account and not using own keys)
   let hasCredits = false;
   let actualCredits: number | null = null;
   console.log(`[Debug] User ${userId} - isAnonymous: ${isAnonymous}, polarCustomerId: ${polarCustomerId}`);
 
-  // Skip credit checks entirely if user is using their own API keys
+  // Skip credit checks entirely if user is using their own API keys or using a free model
   if (isUsingOwnApiKeys) {
     console.log(`[Debug] User ${userId} is using own API keys, skipping credit checks`);
+    hasCredits = true; // Allow request to proceed
+  } else if (isFreeModel) {
+    console.log(`[Debug] User ${userId} is using a free model (${selectedModel}), skipping credit checks`);
     hasCredits = true; // Allow request to proceed
   } else {
     try {
@@ -199,8 +206,8 @@ export async function POST(req: Request) {
     }
   }
 
-  // 2. Check for negative credit balance - block if user has negative credits (skip if using own API keys)
-  if (!isUsingOwnApiKeys && !isAnonymous && actualCredits !== null && actualCredits < 0) {
+  // 2. Check for negative credit balance - block if user has negative credits (skip if using own API keys or free model)
+  if (!isUsingOwnApiKeys && !isFreeModel && !isAnonymous && actualCredits !== null && actualCredits < 0) {
     console.log(`[Debug] User ${userId} has negative credits (${actualCredits}), blocking request`);
     return createErrorResponse(
       "INSUFFICIENT_CREDITS",
@@ -253,11 +260,11 @@ export async function POST(req: Request) {
     contextSize: webSearch.contextSize
   };
 
-  // 3. If user has credits or is using own API keys, allow request (skip daily message limit)
-  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys}`);
+  // 3. If user has credits or is using own API keys or using free model, allow request (skip daily message limit)
+  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, isFreeModel=${isFreeModel}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel}`);
 
-  if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys) {
-    console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : 'has credits'}, skipping message limit check`);
+  if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel) {
+    console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : isFreeModel ? 'using free model' : 'has credits'}, skipping message limit check`);
     // proceed
   } else {
     console.log(`[Debug] User ${userId} entering message limit check - isAnonymous: ${isAnonymous}`);
@@ -517,6 +524,22 @@ export async function POST(req: Request) {
   let modelInstance;
   let effectiveWebSearchEnabled = secureWebSearch.enabled; // Initialize with requested value
 
+  // Add API key validation for OpenRouter models to prevent authentication errors
+  if (selectedModel.startsWith("openrouter/")) {
+    const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
+    if (!openrouterApiKey) {
+      console.error(`[Chat ${id}] OpenRouter API key is missing for model ${selectedModel}`);
+      return createErrorResponse(
+        "MISSING_API_KEY",
+        "OpenRouter API key is required for this model. Please configure your API key.",
+        400
+      );
+    }
+
+    // Log (safely) that we have an API key
+    console.log(`[Chat ${id}] OpenRouter API key available: ${openrouterApiKey.substring(0, 8)}...`);
+  }
+
   // Check if the selected model supports web search
   const currentModelDetails = modelDetails[selectedModel];
   if (secureWebSearch.enabled && selectedModel.startsWith("openrouter/")) {
@@ -774,10 +797,13 @@ export async function POST(req: Request) {
             }
           }
 
+          // Check if the model is free (ends with :free)
+          const isFreeModel = selectedModel.endsWith(':free');
+
           // Determine if user should have credits deducted or just use daily message tracking
-          // Only deduct credits if user actually has purchased credits (positive balance) AND not using own API keys
+          // Only deduct credits if user actually has purchased credits (positive balance) AND not using own API keys AND not using a free model
           let shouldDeductCredits = false;
-          if (!isAnonymous && !callbackIsUsingOwnApiKeys && callbackActualCredits !== null && callbackActualCredits > 0) {
+          if (!isAnonymous && !callbackIsUsingOwnApiKeys && !isFreeModel && callbackActualCredits !== null && callbackActualCredits > 0) {
             shouldDeductCredits = true;
           }
 
@@ -790,7 +816,8 @@ export async function POST(req: Request) {
           // Pass flags to control credit deduction vs daily message tracking, including web search surcharge
           await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
           const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
-          console.log(`${isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : 'Tracked (daily limit)'} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
+          const trackingReason = isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : isFreeModel ? 'Tracked (free model)' : 'Tracked (daily limit)';
+          console.log(`${trackingReason} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
         } catch (error: any) {
           console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
           // Don't break the response flow if tracking fails
@@ -808,6 +835,14 @@ export async function POST(req: Request) {
   // return result.toDataStreamResponse({ // Will be moved into try-catch
 
   try {
+    // Add some defensive validation before calling streamText
+    if (!modelInstance) {
+      throw new Error('Model instance is not properly configured');
+    }
+
+    // Log the model being used for debugging
+    console.log(`[Chat ${id}] Using model: ${selectedModel}, effectiveWebSearchEnabled: ${effectiveWebSearchEnabled}`);
+
     const result = streamText(openRouterPayload);
 
     return result.toDataStreamResponse({
@@ -815,6 +850,51 @@ export async function POST(req: Request) {
       getErrorMessage: (error: any) => {
         // Log the full error object for server-side debugging
         console.error(`[API Error][Chat ${id}] Error in stream processing or before stream response:`, JSON.stringify(error, null, 2));
+
+        // Handle AI_TypeValidationError specifically - this often occurs when OpenRouter returns
+        // an error response that doesn't match the expected AI SDK schema
+        if (error?.name === 'AI_TypeValidationError' || error?.constructor?.name === 'AI_TypeValidationError') {
+          console.error(`[API Error][Chat ${id}] AI_TypeValidationError detected - likely OpenRouter API error response format mismatch`);
+
+          // Try to extract meaningful error from the validation error value
+          if (error?.value?.error) {
+            const errorValue = error.value.error;
+            if (errorValue.message) {
+              // Handle specific OpenRouter error messages
+              if (errorValue.message === "Internal Server Error" && errorValue.code === 500) {
+                return "The AI provider is temporarily experiencing issues. Please try again in a moment.";
+              }
+              return `API Error: ${errorValue.message}`;
+            }
+            if (errorValue.code) {
+              return `API Error (Code ${errorValue.code}): The AI provider returned an error response.`;
+            }
+          }
+
+          // Check if this is a specific OpenRouter format issue
+          if (error?.cause?.issues) {
+            const issues = error.cause.issues;
+            // Look for specific validation issues that suggest OpenRouter API problems
+            for (const issue of issues) {
+              if (issue.unionErrors) {
+                for (const unionError of issue.unionErrors) {
+                  if (unionError.issues) {
+                    for (const innerIssue of unionError.issues) {
+                      if (innerIssue.path && innerIssue.path.includes('choices')) {
+                        return "The AI provider is temporarily unavailable. Please try again in a moment.";
+                      }
+                      if (innerIssue.path && innerIssue.path.includes('error')) {
+                        return "The AI provider returned an unexpected error format. Please try again.";
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          return "The AI provider returned an unexpected response format. Please try again.";
+        }
 
         let errorCode = "STREAM_ERROR";
         let errorMessage = "An error occurred while processing your request.";
@@ -895,6 +975,24 @@ export async function POST(req: Request) {
     });
   } catch (e: any) {
     console.error(`[API Route Top-Level Error][Chat ${id}] Error during streamText or toDataStreamResponse:`, JSON.stringify(e, null, 2));
+
+    // Handle AI_TypeValidationError specifically at the top level too
+    if (e?.name === 'AI_TypeValidationError' || e?.constructor?.name === 'AI_TypeValidationError') {
+      console.error(`[Chat ${id}] Top-level AI_TypeValidationError - OpenRouter API response format issue`);
+
+      let errorMessage = "The AI provider returned an unexpected response format. Please try again.";
+
+      if (e?.value?.error?.message) {
+        errorMessage = `API Error: ${e.value.error.message}`;
+      } else if (e?.value?.error?.code) {
+        errorMessage = `API Error (Code ${e.value.error.code}): The AI provider returned an error response.`;
+      }
+
+      return new Response(
+        JSON.stringify({ error: { code: "TYPE_VALIDATION_ERROR", message: errorMessage, details: "OpenRouter API response validation failed" } }),
+        { status: 502, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     // Save user messages and update chat state on error
     try {

@@ -204,6 +204,7 @@ const languageModels = {
   }),
   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+  "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": openrouterClient("mistralai/mistral-small-3.2-24b-instruct:free"),
   "openrouter/mistralai/magistral-small-2506": openrouterClient("mistralai/magistral-small-2506"),
   "openrouter/mistralai/magistral-medium-2506": openrouterClient("mistralai/magistral-medium-2506"),
   "openrouter/mistralai/magistral-medium-2506:thinking": openrouterClient("mistralai/magistral-medium-2506:thinking"),
@@ -351,6 +352,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("mistralai/mistral-medium-3");
     case "openrouter/mistralai/mistral-small-3.1-24b-instruct":
       return getOpenRouterClient()("mistralai/mistral-small-3.1-24b-instruct");
+    case "openrouter/mistralai/mistral-small-3.2-24b-instruct:free":
+      return getOpenRouterClient()("mistralai/mistral-small-3.2-24b-instruct:free");
     case "openrouter/mistralai/magistral-small-2506":
       return getOpenRouterClient()("mistralai/magistral-small-2506");
     case "openrouter/mistralai/magistral-medium-2506":
@@ -667,6 +670,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Mistral Small 3.1 24B Instruct, an efficient and capable model from Mistral AI, accessed via OpenRouter.",
     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
     capabilities: ["Efficient", "Capable", "Instruct"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": {
+    provider: "OpenRouter",
+    name: "Mistral Small 3.2 24B (free)",
+    description: "Mistral-Small-3.2-24B-Instruct-2506 is an updated 24B parameter model from Mistral optimized for instruction following, repetition reduction, and improved function calling. Supports image and text inputs with structured outputs and excels at coding, STEM, and vision benchmarks. Free variant with rate limits.",
+    apiVersion: "mistralai/mistral-small-3.2-24b-instruct:free",
+    capabilities: ["Coding", "STEM", "Vision", "Function Calling", "Multimodal", "Free"],
     enabled: true,
     supportsWebSearch: true,
     premium: false
