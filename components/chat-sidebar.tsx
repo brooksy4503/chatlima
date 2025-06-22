@@ -72,8 +72,10 @@ export function ChatSidebar() {
     const [userId, setUserId] = useState<string | null>(null);
     const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
-    const { state, setOpen, openMobile, setOpenMobile } = useSidebar();
+    const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
+    // On mobile, always show expanded layout
+    const isLayoutCollapsed = isCollapsed && !isMobile;
 
     const { data: session, isPending: isSessionLoading } = useSession();
     const authenticatedUserId = session?.user?.id;
@@ -186,18 +188,16 @@ export function ChatSidebar() {
                 <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
                     <SidebarHeader className="p-4 border-b border-border/40">
                         <div className="flex items-center justify-between">
-                            <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isCollapsed ? "justify-center w-full" : ""}`}>
-                                <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
-                                    <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
+                            <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isLayoutCollapsed ? "justify-center w-full" : ""}`}>
+                                <div className={`flex items-center justify-center rounded-full bg-primary ${isLayoutCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
+                                    <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isLayoutCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
                                 </div>
-                                {!isCollapsed && (
+                                {!isLayoutCollapsed && (
                                     <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
                                 )}
                             </Link>
-                            {!isCollapsed && (
-                                <div className="hidden md:block">
-                                    <CustomSidebarTrigger variant="expanded" />
-                                </div>
+                            {(!isCollapsed || isMobile) && (
+                                <CustomSidebarTrigger variant="expanded" />
                             )}
                         </div>
                     </SidebarHeader>
@@ -210,7 +210,7 @@ export function ChatSidebar() {
                         )}>
                             Chats
                         </SidebarGroupLabel>
-                        {!isCollapsed && (
+                        {!isLayoutCollapsed && (
                             <div className="px-3 pt-1 pb-2 border-b border-border/40">
                                 <Skeleton className="h-9 w-full mb-2" />
                                 <Skeleton className="h-9 w-full" />
@@ -218,7 +218,7 @@ export function ChatSidebar() {
                         )}
                         <SidebarGroupContent className={cn(
                             "overflow-y-auto pt-1",
-                            isCollapsed ? "overflow-x-hidden overflow-y-hidden" : ""
+                            isLayoutCollapsed ? "overflow-x-hidden overflow-y-hidden" : ""
                         )}>
                             <SidebarMenu>{renderChatSkeletons()}</SidebarMenu>
                         </SidebarGroupContent>
@@ -279,23 +279,21 @@ export function ChatSidebar() {
                     
                     <div className={cn(
                         "flex items-center justify-center py-2",
-                        isCollapsed ? "flex-col gap-2" : "gap-3"
+                        isLayoutCollapsed ? "flex-col gap-2" : "gap-3"
                     )}>
                         <Skeleton className="h-8 w-8 rounded-md" />
                         <Skeleton className="h-8 w-8 rounded-md" />
-                        {isCollapsed && (
-                            <div className="hidden md:block">
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <CustomSidebarTrigger variant="collapsed" />
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" sideOffset={5}>
-                                            Expand sidebar
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </div>
+                        {isCollapsed && !isMobile && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <CustomSidebarTrigger variant="collapsed" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" sideOffset={5}>
+                                        Expand sidebar
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         )}
                     </div>
                 </SidebarFooter>
@@ -312,18 +310,16 @@ export function ChatSidebar() {
             <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
                 <SidebarHeader className="p-4 border-b border-border/40">
                     <div className="flex items-center justify-between">
-                        <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isCollapsed ? "justify-center w-full" : ""}`}>
-                            <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
-                                <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
+                        <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isLayoutCollapsed ? "justify-center w-full" : ""}`}>
+                            <div className={`flex items-center justify-center rounded-full bg-primary ${isLayoutCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
+                                <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isLayoutCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
                             </div>
-                            {!isCollapsed && (
+                            {!isLayoutCollapsed && (
                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
                             )}
                         </Link>
-                        {!isCollapsed && (
-                            <div className="hidden md:block">
-                                <CustomSidebarTrigger variant="expanded" />
-                            </div>
+                        {(!isCollapsed || isMobile) && (
+                            <CustomSidebarTrigger variant="expanded" />
                         )}
                     </div>
                 </SidebarHeader>
@@ -332,14 +328,14 @@ export function ChatSidebar() {
                     <SidebarGroup className="flex-1 min-h-0">
                         <SidebarGroupLabel className={cn(
                             "px-4 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-                            isCollapsed ? "sr-only" : ""
+                            isLayoutCollapsed ? "sr-only" : ""
                         )}>
                             Chats
                         </SidebarGroupLabel>
                         <ChatList
                             chats={chats ?? []}
                             isLoading={isChatsLoading} 
-                            isCollapsed={isCollapsed}
+                            isCollapsed={isLayoutCollapsed}
                             isUpdatingChatTitle={isUpdatingChatTitle}
                             onNewChat={handleNewChat}
                             onDeleteChat={handleDeleteChat}
@@ -357,7 +353,7 @@ export function ChatSidebar() {
                     <SidebarGroup className="flex-shrink-0">
                         <SidebarGroupLabel className={cn(
                             "px-4 pt-2 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-                            isCollapsed ? "sr-only" : ""
+                            isLayoutCollapsed ? "sr-only" : ""
                         )}>
                             Settings
                         </SidebarGroupLabel>
@@ -492,19 +488,19 @@ export function ChatSidebar() {
                     {isSessionLoading ? (
                         <div className="flex items-center gap-2 px-3 py-2 mt-2">
                             <Skeleton className="h-8 w-8 rounded-full" />
-                            {!isCollapsed && <Skeleton className="h-4 w-24" />}
+                            {!isLayoutCollapsed && <Skeleton className="h-4 w-24" />}
                         </div>
                     ) : session?.user?.isAnonymous === true ? (
                         <div className={cn(
                             "flex items-center mt-2", 
-                            isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2 gap-2" 
+                            isLayoutCollapsed ? "justify-center px-1 py-2" : "px-3 py-2 gap-2" 
                         )}>
-                            <SignInButton isCollapsed={isCollapsed} />
+                            <SignInButton isCollapsed={isLayoutCollapsed} />
                         </div>
                     ) : (
                         <div className={cn(
                             "flex items-center mt-2", 
-                            isCollapsed ? "justify-center px-1 py-2" : "px-3 py-2" 
+                            isLayoutCollapsed ? "justify-center px-1 py-2" : "px-3 py-2" 
                         )}>
                             <UserAccountMenu />
                         </div>
@@ -512,7 +508,7 @@ export function ChatSidebar() {
 
                     <div className={cn(
                         "flex items-center justify-center py-2",
-                        isCollapsed ? "flex-col gap-2" : "gap-3"
+                        isLayoutCollapsed ? "flex-col gap-2" : "gap-3"
                     )}>
                         <TooltipProvider>
                             <Tooltip>
@@ -550,19 +546,17 @@ export function ChatSidebar() {
                             </Tooltip>
                         </TooltipProvider>
 
-                        {isCollapsed && (
-                            <div className="hidden md:block">
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <CustomSidebarTrigger variant="collapsed" />
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" sideOffset={5}>
-                                            Expand sidebar
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </div>
+                        {isCollapsed && !isMobile && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <CustomSidebarTrigger variant="collapsed" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" sideOffset={5}>
+                                        Expand sidebar
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         )}
                     </div>
                 </SidebarFooter>
