@@ -183,13 +183,6 @@ export function ChatSidebar() {
     if (isLoading) {
         return (
             <>
-                {/* Collapsed State Trigger - Only show on desktop when sidebar is collapsed */}
-                {isCollapsed && (
-                    <div className="hidden md:block">
-                        <CustomSidebarTrigger variant="collapsed" />
-                    </div>
-                )}
-                
                 <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
                     <SidebarHeader className="p-4 border-b border-border/40">
                         <div className="flex items-center justify-between">
@@ -283,6 +276,28 @@ export function ChatSidebar() {
                 <SidebarFooter className="flex flex-col gap-2 p-3 border-t border-border/40">
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
+                    
+                    <div className={cn(
+                        "flex items-center justify-center py-2",
+                        isCollapsed ? "flex-col gap-2" : "gap-3"
+                    )}>
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                        {isCollapsed && (
+                            <div className="hidden md:block">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <CustomSidebarTrigger variant="collapsed" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" sideOffset={5}>
+                                            Expand sidebar
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                        )}
+                    </div>
                 </SidebarFooter>
             </Sidebar>
             </>
@@ -294,13 +309,6 @@ export function ChatSidebar() {
 
     return (
         <>
-            {/* Collapsed State Trigger - Only show on desktop when sidebar is collapsed */}
-            {isCollapsed && (
-                <div className="hidden md:block">
-                    <CustomSidebarTrigger variant="collapsed" />
-                </div>
-            )}
-            
             <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
                 <SidebarHeader className="p-4 border-b border-border/40">
                     <div className="flex items-center justify-between">
@@ -541,6 +549,21 @@ export function ChatSidebar() {
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
+
+                        {isCollapsed && (
+                            <div className="hidden md:block">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <CustomSidebarTrigger variant="collapsed" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" sideOffset={5}>
+                                            Expand sidebar
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                        )}
                     </div>
                 </SidebarFooter>
             </Sidebar>
