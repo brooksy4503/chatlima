@@ -18,17 +18,15 @@ export function CustomSidebarTrigger({ variant, className }: CustomSidebarTrigge
       <button
         onClick={toggleSidebar}
         className={cn(
-          "flex items-center justify-center w-8 h-8",
-          "bg-muted hover:bg-accent rounded-md",
-          "transition-all duration-300 ease-in-out",
-          "opacity-70 hover:opacity-100",
+          "flex items-center justify-center h-9 w-9",
+          "bg-muted hover:bg-accent rounded-md transition-colors",
           "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2",
           className
         )}
         aria-label="Expand sidebar"
         title="Expand sidebar"
       >
-        <Menu className="h-4 w-4 text-foreground/60 hover:text-foreground/90 transition-colors" />
+        <Menu className="h-4 w-4" />
       </button>
     );
   }
