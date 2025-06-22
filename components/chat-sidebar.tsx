@@ -64,6 +64,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ChatList } from "./chat-list";
+import { CustomSidebarTrigger } from "@/components/ui/custom-sidebar-trigger";
 
 export function ChatSidebar() {
     const router = useRouter();
@@ -153,7 +154,17 @@ export function ChatSidebar() {
 
     const handleNewChat = () => {
         router.push('/');
-        setOpenMobile(false);
+        // Close mobile sidebar when navigating to new chat
+        if (openMobile) {
+            setOpenMobile(false);
+        }
+    };
+
+    const handleNavigateToChat = (chatId: string) => {
+        // Close mobile sidebar when navigating to a chat
+        if (openMobile) {
+            setOpenMobile(false);
+        }
     };
 
     const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
@@ -171,19 +182,32 @@ export function ChatSidebar() {
 
     if (isLoading) {
         return (
-            <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
-                <SidebarHeader className="p-4 border-b border-border/40">
-                    <div className="flex items-center justify-start">
-                        <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isCollapsed ? "justify-center w-full" : ""}`}>
-                            <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
-                                <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
-                            </div>
-                            {!isCollapsed && (
-                                <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
-                            )}
-                        </Link>
+            <>
+                {/* Collapsed State Trigger - Only show on desktop when sidebar is collapsed */}
+                {isCollapsed && (
+                    <div className="hidden md:block">
+                        <CustomSidebarTrigger variant="collapsed" />
                     </div>
-                </SidebarHeader>
+                )}
+                
+                <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
+                    <SidebarHeader className="p-4 border-b border-border/40">
+                        <div className="flex items-center justify-between">
+                            <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isCollapsed ? "justify-center w-full" : ""}`}>
+                                <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
+                                    <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
+                                </div>
+                                {!isCollapsed && (
+                                    <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
+                                )}
+                            </Link>
+                            {!isCollapsed && (
+                                <div className="hidden md:block">
+                                    <CustomSidebarTrigger variant="expanded" />
+                                </div>
+                            )}
+                        </div>
+                    </SidebarHeader>
                 
                 <SidebarContent className="flex flex-col h-[calc(100vh-8rem)]">
                     <SidebarGroup className="flex-1 min-h-0">
@@ -261,6 +285,7 @@ export function ChatSidebar() {
                     <Skeleton className="h-10 w-full" />
                 </SidebarFooter>
             </Sidebar>
+            </>
         );
     }
 
@@ -269,9 +294,16 @@ export function ChatSidebar() {
 
     return (
         <>
+            {/* Collapsed State Trigger - Only show on desktop when sidebar is collapsed */}
+            {isCollapsed && (
+                <div className="hidden md:block">
+                    <CustomSidebarTrigger variant="collapsed" />
+                </div>
+            )}
+            
             <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
                 <SidebarHeader className="p-4 border-b border-border/40">
-                    <div className="flex items-center justify-start">
+                    <div className="flex items-center justify-between">
                         <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isCollapsed ? "justify-center w-full" : ""}`}>
                             <div className={`flex items-center justify-center rounded-full bg-primary ${isCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
                                 <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
@@ -280,6 +312,11 @@ export function ChatSidebar() {
                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
                             )}
                         </Link>
+                        {!isCollapsed && (
+                            <div className="hidden md:block">
+                                <CustomSidebarTrigger variant="expanded" />
+                            </div>
+                        )}
                     </div>
                 </SidebarHeader>
                 
@@ -299,6 +336,7 @@ export function ChatSidebar() {
                             onNewChat={handleNewChat}
                             onDeleteChat={handleDeleteChat}
                             onUpdateChatTitle={updateChatTitle}
+                            onNavigateToChat={handleNavigateToChat}
                         />
                     </SidebarGroup>
                     
