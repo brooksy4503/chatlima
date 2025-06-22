@@ -40,6 +40,7 @@ interface ChatListProps {
     onNewChat: () => void;
     onDeleteChat: (chatId: string, e: React.MouseEvent) => void;
     onUpdateChatTitle: (params: { chatId: string, title: string }, options: { onSuccess: () => void, onError: () => void }) => void;
+    onNavigateToChat?: (chatId: string) => void;
 }
 
 export function ChatList({
@@ -50,6 +51,7 @@ export function ChatList({
     onNewChat,
     onDeleteChat,
     onUpdateChatTitle,
+    onNavigateToChat,
 }: ChatListProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -230,7 +232,10 @@ export function ChatList({
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <SidebarMenuButton
-                                                                    onClick={() => router.push(`/chat/${chat.id}`)}
+                                                                    onClick={() => {
+                                                                        router.push(`/chat/${chat.id}`);
+                                                                        onNavigateToChat?.(chat.id);
+                                                                    }}
                                                                     isActive={isActive}
                                                                     className={cn(
                                                                         "w-full flex justify-center",
@@ -257,7 +262,11 @@ export function ChatList({
                                                                         isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
                                                                     )}
                                                                 >
-                                                                    <Link href={`/chat/${chat.id}`} className="flex items-center flex-grow overflow-hidden">
+                                                                    <Link 
+                                                                        href={`/chat/${chat.id}`} 
+                                                                        className="flex items-center flex-grow overflow-hidden"
+                                                                        onClick={() => onNavigateToChat?.(chat.id)}
+                                                                    >
                                                                         <span className="truncate max-w-[160px]">
                                                                             {chat.title || `Chat ${chat.id.substring(0, 8)}...`}
                                                                         </span>
