@@ -13,7 +13,7 @@ export function TopNav() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-2 flex items-center justify-between md:hidden">
+    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-4 h-[72px] flex items-center justify-between">
       {/* Mobile Hamburger Menu - Left side */}
       <SidebarTrigger>
         <button 
@@ -23,7 +23,10 @@ export function TopNav() {
           <Menu className="h-4 w-4" />
         </button>
       </SidebarTrigger>
-
+      
+      {/* ChatLima title - Centered */}
+      <h1 className="text-3xl font-semibold">ChatLima</h1>
+      
       {/* New Chat Button - Right side */}
       <Button
         variant="ghost"

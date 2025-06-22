@@ -64,7 +64,6 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ChatList } from "./chat-list";
-import { CustomSidebarTrigger } from "@/components/ui/custom-sidebar-trigger";
 
 export function ChatSidebar() {
     const router = useRouter();
@@ -186,7 +185,7 @@ export function ChatSidebar() {
         return (
             <>
                 <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
-                    <SidebarHeader className="p-4 border-b border-border/40">
+                    <SidebarHeader className="p-4 border-b border-border/40 h-[72px]">
                         <div className="flex items-center justify-between">
                             <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isLayoutCollapsed ? "justify-center w-full" : ""}`}>
                                 <div className={`flex items-center justify-center rounded-full bg-primary ${isLayoutCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
@@ -196,9 +195,6 @@ export function ChatSidebar() {
                                     <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
                                 )}
                             </Link>
-                            {(!isCollapsed || isMobile) && (
-                                <CustomSidebarTrigger variant="expanded" />
-                            )}
                         </div>
                     </SidebarHeader>
                 
@@ -283,18 +279,6 @@ export function ChatSidebar() {
                     )}>
                         <Skeleton className="h-8 w-8 rounded-md" />
                         <Skeleton className="h-8 w-8 rounded-md" />
-                        {isCollapsed && !isMobile && (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <CustomSidebarTrigger variant="collapsed" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" sideOffset={5}>
-                                        Expand sidebar
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        )}
                     </div>
                 </SidebarFooter>
             </Sidebar>
@@ -308,7 +292,7 @@ export function ChatSidebar() {
     return (
         <>
             <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
-                <SidebarHeader className="p-4 border-b border-border/40">
+                <SidebarHeader className="p-4 border-b border-border/40 h-[72px]">
                     <div className="flex items-center justify-between">
                         <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isLayoutCollapsed ? "justify-center w-full" : ""}`}>
                             <div className={`flex items-center justify-center rounded-full bg-primary ${isLayoutCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
@@ -318,9 +302,7 @@ export function ChatSidebar() {
                                 <div className="font-semibold text-lg text-foreground/90">ChatLima</div>
                             )}
                         </Link>
-                        {(!isCollapsed || isMobile) && (
-                            <CustomSidebarTrigger variant="expanded" />
-                        )}
+
                     </div>
                 </SidebarHeader>
                 
@@ -546,18 +528,7 @@ export function ChatSidebar() {
                             </Tooltip>
                         </TooltipProvider>
 
-                        {isCollapsed && !isMobile && (
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <CustomSidebarTrigger variant="collapsed" />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" sideOffset={5}>
-                                        Expand sidebar
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        )}
+
                     </div>
                 </SidebarFooter>
             </Sidebar>
