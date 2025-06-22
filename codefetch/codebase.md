@@ -4,7 +4,7 @@ Your task is to review the current codebase and fix the current issues.
 
 Current Issue:
 <issue>
-The sidebar button an new chat button when viewd in mobile overlap text when scrolling thru message. It's hard to see because they float. What options do we have to fix this?
+Suggest 3 New Simple Features to implement 
 </issue>
 
 Rules:
@@ -32,8 +32,8 @@ Begin fixing the codebase provide your solutions.
 My current codebase:
 <current_codebase>
 Project Structure:
-├── HOMESCREEN_SHORTCUT_PLAN.md
 ├── LICENSE
+├── MCP_UPGRADE_GUIDE.md
 ├── README.md
 ├── ai
 │   └── providers.ts
@@ -120,6 +120,7 @@ Project Structure:
 │   ├── theme-provider.tsx
 │   ├── theme-toggle.tsx
 │   ├── tool-invocation.tsx
+│   ├── top-nav.tsx
 │   ├── ui
 │   │   ├── BuildInfo.tsx
 │   │   ├── accordion.tsx
@@ -255,6 +256,13 @@ Project Structure:
 │   ├── RELEASE_NOTES_v0.12.0.md
 │   ├── RELEASE_NOTES_v0.12.1.md
 │   ├── RELEASE_NOTES_v0.13.0.md
+│   ├── RELEASE_NOTES_v0.14.0.md
+│   ├── RELEASE_NOTES_v0.16.0.md
+│   ├── RELEASE_NOTES_v0.16.1.md
+│   ├── RELEASE_NOTES_v0.17.0.md
+│   ├── RELEASE_NOTES_v0.17.1.md
+│   ├── RELEASE_NOTES_v0.17.2.md
+│   ├── RELEASE_NOTES_v0.18.0.md
 │   ├── RELEASE_NOTES_v0.3.0.md
 │   ├── RELEASE_NOTES_v0.3.1.md
 │   ├── RELEASE_NOTES_v0.4.0.md
@@ -270,6 +278,7 @@ Project Structure:
 ├── scripts
 │   ├── README.md
 │   ├── analyze-openrouter-data.py
+│   ├── debug-polar-api.ts
 │   └── openrouter-pricing-analysis.ts
 ├── test-results
 │   ├── auth.local.setup.ts-authenticate-locally-local-setup
@@ -289,175 +298,326 @@ Project Structure:
 └── tsconfig.tsbuildinfo
 
 
-HOMESCREEN_SHORTCUT_PLAN.md
+MCP_UPGRADE_GUIDE.md
 ```
-1 | # Homescreen Shortcut Implementation Plan
+1 | # MCP 1.13.0 Upgrade Guide for ChatLima
 2 | 
-3 | ## Overview
-4 | Add iOS homescreen shortcut functionality to ChatLima without implementing full PWA features. This will allow users to add ChatLima as an icon on their iOS home screen for quick access with a native app-like experience.
-5 | 
-6 | ## Implementation Steps
-7 | 
-8 | ### 1. Apple Touch Icons
-9 | **Location**: `public/`
-10 | **Files to create**:
-11 | - `apple-touch-icon.png` (180x180px) - Default iOS icon
-12 | - `apple-touch-icon-120x120.png` (120x120px) - iPhone retina
-13 | - `apple-touch-icon-152x152.png` (152x152px) - iPad retina
-14 | - `apple-touch-icon-167x167.png` (167x167px) - iPad Pro
-15 | - `apple-touch-icon-180x180.png` (180x180px) - iPhone 6 Plus
+3 | This guide outlines the steps needed to upgrade ChatLima from MCP SDK 1.12.0 to 1.13.0 to leverage the latest Model Context Protocol features and improvements.
+4 | 
+5 | ## Overview
+6 | 
+7 | MCP 1.13.0 introduces several important changes including:
+8 | - **MCP-Protocol-Version header requirement** for HTTP transport (BREAKING CHANGE)
+9 | - **Resource template reference naming changes** (BREAKING CHANGE)
+10 | - **Enhanced metadata support** with `_meta` fields
+11 | - **Tool, resource, and prompt titles** for better UI display
+12 | - **Resource links** in tool outputs
+13 | - **Context-aware completions**
+14 | - **Elicitation capability** for interactive workflows
+15 | - **Resource Indicators** (RFC 8707) for security
 16 | 
-17 | **Design Requirements**:
-18 | - High-quality PNG format
-19 | - No transparency (iOS adds rounded corners automatically)
-20 | - Should match ChatLima branding
-21 | - Optimized for iOS icon guidelines
-22 | 
-23 | ### 2. Web App Manifest
-24 | **File**: `public/manifest.json`
-25 | **Content**:
-26 | ```json
-27 | {
-28 |   "name": "ChatLima",
-29 |   "short_name": "ChatLima",
-30 |   "description": "AI-powered chat interface",
-31 |   "start_url": "/",
-32 |   "display": "standalone",
-33 |   "background_color": "#ffffff",
-34 |   "theme_color": "#000000",
-35 |   "icons": [
-36 |     {
-37 |       "src": "/apple-touch-icon.png",
-38 |       "sizes": "180x180",
-39 |       "type": "image/png"
-40 |     }
-41 |   ]
-42 | }
-43 | ```
-44 | 
-45 | ### 3. Meta Tags Implementation
-46 | **File**: `app/layout.tsx`
-47 | **Add to head section**:
-48 | ```html
-49 | <!-- iOS Homescreen Shortcut Meta Tags -->
-50 | <meta name="apple-mobile-web-app-capable" content="yes" />
-51 | <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-52 | <meta name="apple-mobile-web-app-title" content="ChatLima" />
-53 | <meta name="format-detection" content="telephone=no" />
-54 | <meta name="mobile-web-app-capable" content="yes" />
-55 | 
-56 | <!-- Apple Touch Icons -->
-57 | <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-58 | <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png" />
-59 | <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
-60 | <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png" />
-61 | <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
-62 | 
-63 | <!-- Manifest -->
-64 | <link rel="manifest" href="/manifest.json" />
-65 | ```
-66 | 
-67 | ### 4. iOS Detection and "Add to Home Screen" Prompt
-68 | **File**: `components/ios-install-prompt.tsx`
-69 | **Features**:
-70 | - Detect iOS Safari browser
-71 | - Check if already added to home screen
-72 | - Show subtle prompt to add to home screen
-73 | - Dismiss functionality with localStorage persistence
-74 | - Non-intrusive design that matches ChatLima UI
-75 | 
-76 | **Implementation approach**:
-77 | - Use `navigator.userAgent` for iOS detection
-78 | - Use `window.matchMedia('(display-mode: standalone)')` to detect if already installed
-79 | - Show prompt after user interaction (not immediately on load)
-80 | - Include clear instructions for adding to home screen
+17 | ## Step 1: Update Package Dependencies
+18 | 
+19 | First, update the MCP SDK to the latest version:
+20 | 
+21 | ```bash
+22 | pnpm update @modelcontextprotocol/sdk@^1.13.0
+23 | ```
+24 | 
+25 | Update your `package.json`:
+26 | 
+27 | ```json
+28 | {
+29 |   "dependencies": {
+30 |     "@modelcontextprotocol/sdk": "^1.13.0"
+31 |   }
+32 | }
+33 | ```
+34 | 
+35 | ## Step 2: Update StreamableHTTP Transport (BREAKING CHANGE)
+36 | 
+37 | The most critical change is the **MCP-Protocol-Version header requirement** for HTTP transport.
+38 | 
+39 | ### Current Implementation Issue
+40 | 
+41 | Your current code in `app/api/chat/route.ts` (lines 378-383) creates `StreamableHTTPClientTransport` without the required protocol version header:
+42 | 
+43 | ```typescript
+44 | // CURRENT CODE - NEEDS UPDATE
+45 | finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
+46 |   requestInit: {
+47 |     headers: Object.keys(headers).length > 0 ? headers : undefined
+48 |   }
+49 | });
+50 | ```
+51 | 
+52 | ### Updated Implementation
+53 | 
+54 | ```typescript
+55 | // UPDATED CODE - With MCP-Protocol-Version header
+56 | finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
+57 |   requestInit: {
+58 |     headers: {
+59 |       'MCP-Protocol-Version': '2025-06-18', // Required for MCP 1.13.0
+60 |       ...headers // Spread existing headers
+61 |     }
+62 |   }
+63 | });
+64 | ```
+65 | 
+66 | ## Step 3: Handle Resource Template Reference Changes
+67 | 
+68 | If your code uses `ResourceReference`, update it to `ResourceTemplateReference`:
+69 | 
+70 | ```typescript
+71 | // OLD (1.12.0)
+72 | import { ResourceReference } from '@modelcontextprotocol/sdk';
+73 | 
+74 | // NEW (1.13.0)  
+75 | import { ResourceTemplateReference } from '@modelcontextprotocol/sdk';
+76 | ```
+77 | 
+78 | ## Step 4: Add Enhanced Metadata Support
+79 | 
+80 | ### Tool Metadata with Titles
 81 | 
-82 | ### 5. Enhanced Mobile Experience
-83 | **Files to modify**:
-84 | - `app/globals.css` - Add iOS-specific styles
-85 | - `app/layout.tsx` - Ensure proper viewport settings
-86 | 
-87 | **iOS-specific enhancements**:
-88 | - Proper safe area handling for notched devices
-89 | - Optimized touch targets
-90 | - Prevent zoom on input focus
-91 | - Smooth scrolling behavior
-92 | 
-93 | ### 6. Testing Checklist
-94 | **iOS Safari Testing**:
-95 | - [ ] Icons appear correctly in "Add to Home Screen" dialog
-96 | - [ ] App launches from home screen with correct title
-97 | - [ ] Status bar appears correctly
-98 | - [ ] No address bar when launched from home screen
-99 | - [ ] Touch interactions work smoothly
-100 | - [ ] Safe areas are respected on newer iPhones
-101 | - [ ] Prompt appears and dismisses correctly
+82 | Update your MCP server configurations to include `title` fields for better UI display:
+83 | 
+84 | ```typescript
+85 | // In lib/context/mcp-context.tsx - Update MCPServer interface
+86 | export interface MCPServer {
+87 |   id: string;
+88 |   name: string;
+89 |   title?: string; // NEW: Add title for display
+90 |   url: string;
+91 |   type: 'sse' | 'stdio' | 'streamable-http';
+92 |   command?: string;
+93 |   args?: string[];
+94 |   env?: KeyValuePair[];
+95 |   headers?: KeyValuePair[];
+96 |   description?: string;
+97 |   _meta?: Record<string, any>; // NEW: Add _meta support
+98 | }
+99 | ```
+100 | 
+101 | ### Update MCP Server Manager Component
 102 | 
-103 | **Devices to test**:
-104 | - iPhone (various sizes)
-105 | - iPad
-106 | - Different iOS versions (iOS 14+)
-107 | 
-108 | ### 7. Implementation Order
-109 | 1. **Create icon assets** - Design and export all required icon sizes
-110 | 2. **Add manifest.json** - Basic manifest file with icon references
-111 | 3. **Update layout.tsx** - Add all necessary meta tags
-112 | 4. **Create iOS install prompt component** - User-friendly installation prompt
-113 | 5. **Add CSS enhancements** - iOS-specific styling improvements
-114 | 6. **Testing phase** - Comprehensive testing on iOS devices
-115 | 7. **Documentation** - Update README with homescreen shortcut info
+103 | In `components/mcp-server-manager.tsx`, add support for displaying titles:
+104 | 
+105 | ```typescript
+106 | // Add title field to your server creation/editing forms
+107 | <div className="space-y-2">
+108 |   <Label htmlFor="name">Name (ID)</Label>
+109 |   <Input
+110 |     id="name"
+111 |     placeholder="e.g., filesystem-server"
+112 |     value={formData.name}
+113 |     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+114 |   />
+115 | </div>
 116 | 
-117 | ### 8. Technical Considerations
-118 | **Performance**:
-119 | - Icons should be optimized for file size
-120 | - Lazy load the install prompt component
-121 | - Minimal impact on initial page load
-122 | 
-123 | **User Experience**:
-124 | - Prompt should be contextual and non-annoying
-125 | - Clear value proposition for adding to home screen
-126 | - Easy dismissal with memory of user preference
+117 | <div className="space-y-2">
+118 |   <Label htmlFor="title">Title (Display Name)</Label>
+119 |   <Input
+120 |     id="title"
+121 |     placeholder="e.g., File System Access"
+122 |     value={formData.title || ''}
+123 |     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+124 |   />
+125 | </div>
+126 | ```
 127 | 
-128 | **Maintenance**:
-129 | - Icons should be easily updatable
-130 | - Consider automating icon generation from source
-131 | - Document icon requirements for future updates
-132 | 
-133 | ### 9. Future Enhancements (Optional)
-134 | - Analytics for homescreen usage
-135 | - Custom splash screen (if desired later)
-136 | - Push notification setup (requires service worker)
-137 | - Offline functionality (would move toward PWA territory)
-138 | 
-139 | ## Files to Create/Modify
-140 | 
-141 | ### New Files:
-142 | - `public/apple-touch-icon.png` (and variants)
-143 | - `public/manifest.json`
-144 | - `components/ios-install-prompt.tsx`
-145 | - `HOMESCREEN_SHORTCUT_PLAN.md` (this file)
-146 | 
-147 | ### Files to Modify:
-148 | - `app/layout.tsx` - Add meta tags and manifest link
-149 | - `app/globals.css` - iOS-specific styles
-150 | - `components/ui/` - Potentially add install prompt to main layout
-151 | 
-152 | ## Success Metrics
-153 | - Users can successfully add ChatLima to iOS home screen
-154 | - Homescreen shortcut launches correctly with proper branding
-155 | - No negative impact on existing functionality
-156 | - Positive user feedback on mobile experience
-157 | - Increased mobile engagement (measurable via analytics)
+128 | ## Step 5: Implement Resource Links Support
+129 | 
+130 | Update your tool calling logic to handle resource links in tool outputs:
+131 | 
+132 | ```typescript
+133 | // In app/api/chat/route.ts - Update tool result processing
+134 | interface ResourceLink {
+135 |   type: 'resource_link';
+136 |   uri: string;
+137 |   name?: string;
+138 |   mimeType?: string;
+139 |   description?: string;
+140 | }
+141 | 
+142 | interface ToolCallResult {
+143 |   content: Array<{
+144 |     type: 'text' | 'resource_link';
+145 |     text?: string;
+146 |     uri?: string;
+147 |     name?: string;
+148 |     mimeType?: string;
+149 |     description?: string;
+150 |   }>;
+151 |   isError?: boolean;
+152 | }
+153 | ```
+154 | 
+155 | ## Step 6: Add Context-Aware Completions Support
+156 | 
+157 | If you plan to use completions, update to support the new `context` field:
 158 | 
-159 | ## Timeline Estimate
-160 | - **Icon creation**: 1-2 hours
-161 | - **Manifest and meta tags**: 1 hour
-162 | - **Install prompt component**: 2-3 hours
-163 | - **iOS-specific styling**: 1-2 hours
-164 | - **Testing and refinement**: 2-3 hours
-165 | - **Total**: 7-11 hours
-166 | 
-167 | This plan provides iOS homescreen shortcut functionality without the complexity of a full PWA implementation, focusing specifically on the native app-like access the user requested. 
+159 | ```typescript
+160 | // NEW: Context-aware completion support
+161 | interface CompletionRequest {
+162 |   ref: {
+163 |     type: 'ref/prompt' | 'ref/resource';
+164 |     name?: string;
+165 |     uri?: string;
+166 |   };
+167 |   argument: {
+168 |     name: string;
+169 |     value: string;
+170 |   };
+171 |   context?: {
+172 |     arguments?: Record<string, any>;
+173 |   }; // NEW: Context support
+174 | }
+175 | ```
+176 | 
+177 | ## Step 7: Implement Elicitation Capability (Optional)
+178 | 
+179 | For interactive workflows, you can implement elicitation support:
+180 | 
+181 | ```typescript
+182 | // NEW: Elicitation capability
+183 | interface ElicitationRequest {
+184 |   message: string;
+185 |   requestedSchema: {
+186 |     type: string;
+187 |     properties: Record<string, any>;
+188 |     required?: string[];
+189 |   };
+190 | }
+191 | 
+192 | // In your MCP client setup, add elicitation capability
+193 | const clientCapabilities = {
+194 |   elicitation: {}, // NEW: Declare elicitation support
+195 |   // ... other capabilities
+196 | };
+197 | ```
+198 | 
+199 | ## Step 8: Update Error Handling
+200 | 
+201 | Update error handling to use the new "reject" terminology instead of "decline":
+202 | 
+203 | ```typescript
+204 | // OLD
+205 | if (result.action === 'decline') {
+206 |   // handle decline
+207 | }
+208 | 
+209 | // NEW  
+210 | if (result.action === 'reject') {
+211 |   // handle rejection
+212 | }
+213 | ```
+214 | 
+215 | ## Step 9: Enhanced Security with Resource Indicators
+216 | 
+217 | For production deployments, implement Resource Indicators (RFC 8707) support:
+218 | 
+219 | ```typescript
+220 | // In StreamableHTTP transport configuration
+221 | finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
+222 |   requestInit: {
+223 |     headers: {
+224 |       'MCP-Protocol-Version': '2025-06-18',
+225 |       'Resource': transportUrl.origin, // RFC 8707 Resource Indicator
+226 |       ...headers
+227 |     }
+228 |   }
+229 | });
+230 | ```
+231 | 
+232 | ## Step 10: Update Development Dependencies
+233 | 
+234 | Update any development tools that might be affected:
+235 | 
+236 | ```bash
+237 | # Update all MCP-related dependencies if any
+238 | pnpm update
+239 | ```
+240 | 
+241 | ## Step 11: Testing the Upgrade
+242 | 
+243 | 1. **Test Existing MCP Servers**: Ensure all your current MCP server connections still work
+244 | 2. **Test StreamableHTTP**: Verify that HTTP-based MCP servers can connect properly
+245 | 3. **Test Error Handling**: Ensure error cases are handled gracefully
+246 | 4. **Test UI**: Verify that server titles display correctly in the MCP Server Manager
+247 | 
+248 | ## Step 12: Optional Enhancements
+249 | 
+250 | Consider implementing these new features:
+251 | 
+252 | ### A. Enhanced Tool Output with Resource Links
+253 | 
+254 | ```typescript
+255 | // Example of returning resource links from tools
+256 | const toolResult = {
+257 |   content: [
+258 |     { type: "text", text: "Found the following files:" },
+259 |     {
+260 |       type: "resource_link",
+261 |       uri: "file:///project/README.md", 
+262 |       name: "README.md",
+263 |       mimeType: "text/markdown",
+264 |       description: "Project documentation"
+265 |     }
+266 |   ]
+267 | };
+268 | ```
+269 | 
+270 | ### B. Interactive Workflows with Elicitation
+271 | 
+272 | ```typescript
+273 | // Example elicitation for user confirmation
+274 | const userInput = await mcpClient.elicitInput({
+275 |   message: "Do you want to proceed with deleting these files?",
+276 |   requestedSchema: {
+277 |     type: "object",
+278 |     properties: {
+279 |       confirm: {
+280 |         type: "boolean",
+281 |         title: "Confirm deletion"
+282 |       }
+283 |     },
+284 |     required: ["confirm"]
+285 |   }
+286 | });
+287 | ```
+288 | 
+289 | ## Breaking Changes Summary
+290 | 
+291 | 1. **MCP-Protocol-Version header**: Required for HTTP transport
+292 | 2. **ResourceReference → ResourceTemplateReference**: Update imports
+293 | 3. **decline → reject**: Update error handling terminology
+294 | 
+295 | ## Migration Checklist
+296 | 
+297 | - [ ] Update MCP SDK to 1.13.0
+298 | - [ ] Add MCP-Protocol-Version header to StreamableHttp transport
+299 | - [ ] Update ResourceReference imports if used
+300 | - [ ] Add title and _meta fields to MCP server interface
+301 | - [ ] Update server manager UI to support titles
+302 | - [ ] Test all existing MCP server connections
+303 | - [ ] Update error handling from "decline" to "reject"
+304 | - [ ] Consider implementing elicitation for interactive workflows
+305 | - [ ] Consider implementing resource links for better tool outputs
+306 | 
+307 | ## Resources
+308 | 
+309 | - [MCP 1.13.0 Release Notes](https://github.com/modelcontextprotocol/typescript-sdk/releases/tag/1.13.0)
+310 | - [MCP Specification 2025-06-18](https://modelcontextprotocol.io/specification/2025-06-18/changelog)
+311 | - [MCP TypeScript SDK Documentation](https://github.com/modelcontextprotocol/typescript-sdk)
+312 | 
+313 | ## Support
+314 | 
+315 | If you encounter issues during the upgrade:
+316 | 1. Check the [MCP GitHub Discussions](https://github.com/modelcontextprotocol/typescript-sdk/discussions)
+317 | 2. Review the [MCP specification](https://modelcontextprotocol.io/)
+318 | 3. Test with the [MCP Inspector](https://github.com/modelcontextprotocol/inspector) for debugging
 ```
 
 auth-schema.ts
@@ -644,7 +804,7 @@ package.json
 ```
 1 | {
 2 |   "name": "chatlima",
-3 |   "version": "0.13.0",
+3 |   "version": "0.18.0",
 4 |   "private": true,
 5 |   "scripts": {
 6 |     "dev": "next dev --turbopack",
@@ -675,7 +835,7 @@ package.json
 31 |     "@ai-sdk/react": "^1.2.9",
 32 |     "@ai-sdk/ui-utils": "^1.2.10",
 33 |     "@ai-sdk/xai": "^1.2.14",
-34 |     "@modelcontextprotocol/sdk": "^1.12.0",
+34 |     "@modelcontextprotocol/sdk": "^1.13.0",
 35 |     "@neondatabase/serverless": "^1.0.0",
 36 |     "@openrouter/ai-sdk-provider": "^0.4.5",
 37 |     "@polar-sh/better-auth": "^0.1.1",
@@ -962,10 +1122,11 @@ tsconfig.json
 .cursor/environment.json
 ```
 1 | {
-2 |   "install": "pnpm install",
-3 |   "start": "pnpm run dev",
-4 |   "terminals": []
-5 | }
+2 |   "snapshot": "snapshot-20250620-e9439ea3-9378-42a1-ab4f-e3b0ef16a2f9",
+3 |   "install": "pnpm install",
+4 |   "start": "pnpm run dev",
+5 |   "terminals": []
+6 | }
 ```
 
 ai/providers.ts
@@ -1156,562 +1317,518 @@ ai/providers.ts
 184 |   "openrouter/google/gemini-2.5-pro-preview": openrouterClient("google/gemini-2.5-pro-preview"),
 185 |   "openrouter/google/gemini-2.5-pro": openrouterClient("google/gemini-2.5-pro"),
 186 |   "openrouter/google/gemini-2.5-flash": openrouterClient("google/gemini-2.5-flash"),
-187 |   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
-188 |   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
-189 |   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
-190 |   "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
-191 |     model: openrouterClient("x-ai/grok-3-beta", { logprobs: false }),
-192 |     middleware: deepseekR1Middleware,
-193 |   }),
-194 |   "grok-3-mini": xaiClient("grok-3-mini-latest"),
-195 |   "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
-196 |     model: openrouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
-197 |     middleware: deepseekR1Middleware,
-198 |   }),
-199 |   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
-200 |     model: openrouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
-201 |     middleware: deepseekR1Middleware,
-202 |   }),
-203 |   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
-204 |   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
-205 |   "openrouter/mistralai/magistral-small-2506": openrouterClient("mistralai/magistral-small-2506"),
-206 |   "openrouter/mistralai/magistral-medium-2506": openrouterClient("mistralai/magistral-medium-2506"),
-207 |   "openrouter/mistralai/magistral-medium-2506:thinking": openrouterClient("mistralai/magistral-medium-2506:thinking"),
-208 |   "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
-209 |   "openrouter/openai/o4-mini-high": openrouterClient("openai/o4-mini-high"),
-210 |   "qwen-qwq": wrapLanguageModel(
-211 |     {
-212 |       model: groqClient("qwen-qwq-32b"),
-213 |       middleware
-214 |     }
-215 |   ),
-216 |   "openrouter/qwen/qwq-32b": wrapLanguageModel({
-217 |     model: openrouterClient("qwen/qwq-32b"),
-218 |     middleware: deepseekR1Middleware,
-219 |   }),
-220 |   // "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
-221 |   "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b"),
-222 |   "openrouter/anthropic/claude-sonnet-4": openrouterClient("anthropic/claude-sonnet-4"),
-223 |   "openrouter/anthropic/claude-opus-4": openrouterClient("anthropic/claude-opus-4"),
-224 |   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": openrouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
-225 |   "openrouter/minimax/minimax-m1": openrouterClient("minimax/minimax-m1"),
-226 |   // Requesty models
-227 |   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
-228 |   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
-229 |   "requesty/anthropic/claude-3.5-sonnet": requestyClient("anthropic/claude-3-5-sonnet-20241022"),
-230 |   "requesty/anthropic/claude-3.7-sonnet": requestyClient("anthropic/claude-3-7-sonnet-20250219"),
-231 |   "requesty/google/gemini-2.5-flash-preview": requestyClient("google/gemini-2.5-flash-preview-05-20"),
-232 |   "requesty/meta-llama/llama-3.1-70b-instruct": requestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
-233 |   "requesty/anthropic/claude-sonnet-4-20250514": requestyClient("anthropic/claude-sonnet-4-20250514"),
-234 | };
-235 | 
-236 | // Helper to get language model with dynamic API keys
-237 | export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>) => {
-238 |   // Create dynamic clients with provided API keys
-239 |   const dynamicOpenAIClient = createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
-240 |   const dynamicAnthropicClient = createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
-241 |   const dynamicGroqClient = createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']);
-242 |   const dynamicXaiClient = createXaiClientWithKey(apiKeys?.['XAI_API_KEY']);
-243 |   const dynamicOpenRouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
-244 |   const dynamicRequestyClient = createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']);
-245 | 
-246 |   // Map all models with dynamic clients
-247 |   const dynamicLanguageModels: Record<string, any> = {
-248 |     // Anthropic models
-249 |     "claude-3-7-sonnet": dynamicAnthropicClient('claude-3-7-sonnet-20250219'),
-250 | 
-251 |     // OpenAI models
-252 |     "gpt-4.1-mini": dynamicOpenAIClient("gpt-4.1-mini"),
-253 | 
-254 |     // Groq models
-255 |     "qwen-qwq": wrapLanguageModel({
-256 |       model: dynamicGroqClient("qwen-qwq-32b"),
-257 |       middleware
-258 |     }),
-259 | 
-260 |     // XAI models
-261 |     "grok-3-mini": dynamicXaiClient("grok-3-mini-latest"),
-262 | 
-263 |     // OpenRouter models
-264 |     "openrouter/anthropic/claude-3.5-sonnet": dynamicOpenRouterClient("anthropic/claude-3.5-sonnet"),
-265 |     "openrouter/anthropic/claude-3.7-sonnet": dynamicOpenRouterClient("anthropic/claude-3.7-sonnet"),
-266 |     "openrouter/anthropic/claude-3.7-sonnet:thinking": dynamicOpenRouterClient("anthropic/claude-3.7-sonnet:thinking"),
-267 |     "openrouter/deepseek/deepseek-chat-v3-0324": dynamicOpenRouterClient("deepseek/deepseek-chat-v3-0324"),
-268 |     "openrouter/deepseek/deepseek-r1": wrapLanguageModel({
-269 |       model: dynamicOpenRouterClient("deepseek/deepseek-r1", { logprobs: false }),
-270 |       middleware: deepseekR1Middleware,
-271 |     }),
-272 |     "openrouter/deepseek/deepseek-r1-0528": wrapLanguageModel({
-273 |       model: dynamicOpenRouterClient("deepseek/deepseek-r1-0528", { logprobs: false }),
-274 |       middleware: deepseekR1Middleware,
-275 |     }),
-276 |     "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": wrapLanguageModel({
-277 |       model: dynamicOpenRouterClient("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
-278 |       middleware: deepseekR1Middleware,
-279 |     }),
-280 |     "openrouter/google/gemini-2.5-flash-preview": dynamicOpenRouterClient("google/gemini-2.5-flash-preview"),
-281 |     "openrouter/google/gemini-2.5-flash-preview:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview:thinking"),
-282 |     "openrouter/google/gemini-2.5-flash-preview-05-20": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20"),
-283 |     "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": dynamicOpenRouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
-284 |     "openrouter/google/gemini-2.5-pro-preview-03-25": dynamicOpenRouterClient("google/gemini-2.5-pro-preview-03-25"),
-285 |     "openrouter/google/gemini-2.5-pro-preview": dynamicOpenRouterClient("google/gemini-2.5-pro-preview"),
-286 |     "openrouter/google/gemini-2.5-pro": dynamicOpenRouterClient("google/gemini-2.5-pro"),
-287 |     "openrouter/google/gemini-2.5-flash": dynamicOpenRouterClient("google/gemini-2.5-flash"),
-288 |     "openrouter/openai/gpt-4.1": dynamicOpenRouterClient("openai/gpt-4.1"),
-289 |     "openrouter/openai/gpt-4.1-mini": dynamicOpenRouterClient("openai/gpt-4.1-mini"),
-290 |     "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
-291 |       model: dynamicOpenRouterClient("x-ai/grok-3-beta", { logprobs: false }),
-292 |       middleware: deepseekR1Middleware,
-293 |     }),
-294 |     "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
-295 |       model: dynamicOpenRouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
-296 |       middleware: deepseekR1Middleware,
-297 |     }),
-298 |     "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
-299 |       model: dynamicOpenRouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
-300 |       middleware: deepseekR1Middleware,
-301 |     }),
-302 |     "openrouter/mistralai/mistral-medium-3": dynamicOpenRouterClient("mistralai/mistral-medium-3"),
-303 |     "openrouter/mistralai/mistral-small-3.1-24b-instruct": dynamicOpenRouterClient("mistralai/mistral-small-3.1-24b-instruct"),
-304 |     "openrouter/mistralai/magistral-small-2506": dynamicOpenRouterClient("mistralai/magistral-small-2506"),
-305 |     "openrouter/mistralai/magistral-medium-2506": dynamicOpenRouterClient("mistralai/magistral-medium-2506"),
-306 |     "openrouter/mistralai/magistral-medium-2506:thinking": dynamicOpenRouterClient("mistralai/magistral-medium-2506:thinking"),
-307 |     "openrouter/meta-llama/llama-4-maverick": dynamicOpenRouterClient("meta-llama/llama-4-maverick"),
-308 |     "openrouter/openai/o4-mini-high": dynamicOpenRouterClient("openai/o4-mini-high"),
-309 |     "openrouter/qwen/qwq-32b": wrapLanguageModel({
-310 |       model: dynamicOpenRouterClient("qwen/qwq-32b"),
-311 |       middleware: deepseekR1Middleware,
-312 |     }),
-313 |     "openrouter/qwen/qwen3-235b-a22b": dynamicOpenRouterClient("qwen/qwen3-235b-a22b"),
-314 |     "openrouter/anthropic/claude-sonnet-4": dynamicOpenRouterClient("anthropic/claude-sonnet-4"),
-315 |     "openrouter/anthropic/claude-opus-4": dynamicOpenRouterClient("anthropic/claude-opus-4"),
-316 |     "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": dynamicOpenRouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
-317 |     "openrouter/minimax/minimax-m1": dynamicOpenRouterClient("minimax/minimax-m1"),
-318 | 
-319 |     // Requesty models
-320 |     "requesty/openai/gpt-4o": dynamicRequestyClient("openai/gpt-4o"),
-321 |     "requesty/openai/gpt-4o-mini": dynamicRequestyClient("openai/gpt-4o-mini"),
-322 |     "requesty/anthropic/claude-3.5-sonnet": dynamicRequestyClient("anthropic/claude-3-5-sonnet-20241022"),
-323 |     "requesty/anthropic/claude-3.7-sonnet": dynamicRequestyClient("anthropic/claude-3-7-sonnet-20250219"),
-324 |     "requesty/google/gemini-2.5-flash-preview": dynamicRequestyClient("google/gemini-2.5-flash-preview-05-20"),
-325 |     "requesty/meta-llama/llama-3.1-70b-instruct": dynamicRequestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
-326 |     "requesty/anthropic/claude-sonnet-4-20250514": dynamicRequestyClient("anthropic/claude-sonnet-4-20250514"),
-327 |   };
-328 | 
-329 |   // Check if the specific model exists in our dynamic models
-330 |   if (dynamicLanguageModels[modelId]) {
-331 |     return dynamicLanguageModels[modelId];
-332 |   }
-333 | 
-334 |   // Fallback to static models if not found (shouldn't happen in normal cases)
-335 |   console.warn(`Model ${modelId} not found in dynamic models, falling back to static model`);
-336 |   return languageModels[modelId as keyof typeof languageModels];
-337 | };
-338 | 
-339 | export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
-340 |   "openrouter/anthropic/claude-3.5-sonnet": {
-341 |     provider: "OpenRouter",
-342 |     name: "Claude 3.5 Sonnet",
-343 |     description: "New Claude 3.5 Sonnet delivers better-than-Opus capabilities, faster-than-Sonnet speeds, at the same Sonnet prices. Sonnet is particularly good at: Coding, Data science, Visual processing, Agentic tasks",
-344 |     apiVersion: "anthropic/claude-3.5-sonnet",
-345 |     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
-346 |     enabled: true,
-347 |     supportsWebSearch: true,
-348 |     premium: true
-349 |   },
-350 |   "claude-3-7-sonnet": {
-351 |     provider: "Anthropic",
-352 |     name: "Claude 3.7 Sonnet",
-353 |     description: "Latest version of Anthropic\'s Claude 3.7 Sonnet with strong reasoning and coding capabilities.",
-354 |     apiVersion: "claude-3-7-sonnet-20250219",
-355 |     capabilities: ["Reasoning", "Efficient", "Agentic"],
-356 |     enabled: false,
-357 |     premium: true
-358 |   },
-359 |   "openrouter/anthropic/claude-3.7-sonnet": {
-360 |     provider: "OpenRouter",
-361 |     name: "Claude 3.7 Sonnet",
-362 |     description: "Latest version of Anthropic\'s Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
-363 |     apiVersion: "anthropic/claude-3.7-sonnet",
-364 |     capabilities: ["Reasoning", "Coding", "Agentic"],
-365 |     enabled: true,
-366 |     supportsWebSearch: true,
-367 |     premium: true
-368 |   },
-369 |   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
-370 |     provider: "OpenRouter",
-371 |     name: "Claude 3.7 Sonnet (thinking)",
-372 |     description: "Advanced LLM with improved reasoning, coding, and problem-solving. Features a hybrid reasoning approach for flexible processing.",
-373 |     apiVersion: "anthropic/claude-3.7-sonnet:thinking",
-374 |     capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
-375 |     enabled: true,
-376 |     supportsWebSearch: true,
-377 |     premium: true
-378 |   },
-379 |   "openrouter/deepseek/deepseek-chat-v3-0324": {
-380 |     provider: "OpenRouter",
-381 |     name: "DeepSeek Chat V3 0324",
-382 |     description: "DeepSeek Chat model V3 accessed via OpenRouter.",
-383 |     apiVersion: "deepseek/deepseek-chat-v3-0324",
-384 |     capabilities: ["Chat", "Efficient"],
-385 |     enabled: true,
-386 |     supportsWebSearch: true,
-387 |     premium: false
-388 |   },
-389 |   "openrouter/deepseek/deepseek-r1": {
-390 |     provider: "OpenRouter",
-391 |     name: "DeepSeek R1",
-392 |     description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
-393 |     apiVersion: "deepseek/deepseek-r1",
-394 |     capabilities: ["Reasoning", "Open Source"],
-395 |     enabled: true,
-396 |     supportsWebSearch: true,
-397 |     premium: false
-398 |   },
-399 |   "openrouter/deepseek/deepseek-r1-0528": {
-400 |     provider: "OpenRouter",
-401 |     name: "DeepSeek R1 0528",
-402 |     description: "DeepSeek R1 0528: May 28th update to DeepSeek R1. Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
-403 |     apiVersion: "deepseek/deepseek-r1-0528",
-404 |     capabilities: ["Reasoning", "Open Source"],
-405 |     enabled: true,
-406 |     supportsWebSearch: true,
-407 |     premium: false
-408 |   },
-409 |   "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": {
-410 |     provider: "OpenRouter",
-411 |     name: "DeepSeek R1 0528 Qwen3 8B",
-412 |     description: "DeepSeek-R1-0528-Qwen3-8B, an 8B parameter model distilled from DeepSeek R1 0528, excels in reasoning, math, programming, and logic. Accessed via OpenRouter.",
-413 |     apiVersion: "deepseek/deepseek-r1-0528-qwen3-8b",
-414 |     capabilities: ["Reasoning", "Math", "Programming", "Logic"],
-415 |     enabled: false,
-416 |     supportsWebSearch: true,
-417 |     premium: false
-418 |   },
-419 |   "openrouter/google/gemini-2.5-flash-preview": {
-420 |     provider: "OpenRouter",
-421 |     name: "Google Gemini 2.5 Flash Preview",
-422 |     description: "Google\'s latest Gemini 2.5 Flash model, optimized for speed and efficiency, accessed via OpenRouter.",
-423 |     apiVersion: "google/gemini-2.5-flash-preview",
-424 |     capabilities: ["Fast", "Efficient", "Multimodal"],
-425 |     enabled: true,
-426 |     supportsWebSearch: true,
-427 |     premium: false
-428 |   },
-429 |   "openrouter/google/gemini-2.5-flash-preview:thinking": {
-430 |     provider: "OpenRouter",
-431 |     name: "Google Gemini 2.5 Flash Preview (thinking)",
-432 |     description: "Google\'s latest Gemini 2.5 Flash model with thinking capabilities, optimized for speed and efficiency, accessed via OpenRouter.",
-433 |     apiVersion: "google/gemini-2.5-flash-preview:thinking",
-434 |     capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
-435 |     enabled: true,
-436 |     supportsWebSearch: true,
-437 |     premium: false
-438 |   },
-439 |   "openrouter/google/gemini-2.5-flash-preview-05-20": {
-440 |     provider: "OpenRouter",
-441 |     name: "Google Gemini 2.5 Flash Preview (05-20)",
-442 |     description: "Google\'s Gemini 2.5 Flash model (May 20th version), optimized for speed and efficiency, accessed via OpenRouter.",
-443 |     apiVersion: "google/gemini-2.5-flash-preview-05-20",
-444 |     capabilities: ["Fast", "Efficient", "Multimodal"],
-445 |     enabled: true,
-446 |     supportsWebSearch: true,
-447 |     premium: false
-448 |   },
-449 |   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": {
-450 |     provider: "OpenRouter",
-451 |     name: "Google Gemini 2.5 Flash Preview (05-20, thinking)",
-452 |     description: "Google\'s Gemini 2.5 Flash model (May 20th version) with thinking capabilities, optimized for speed and efficiency, accessed via OpenRouter.",
-453 |     apiVersion: "google/gemini-2.5-flash-preview-05-20:thinking",
-454 |     capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
-455 |     enabled: true,
-456 |     supportsWebSearch: true,
-457 |     premium: false
-458 |   },
-459 |   "openrouter/google/gemini-2.5-pro-preview-03-25": {
-460 |     provider: "OpenRouter",
-461 |     name: "Google Gemini 2.5 Pro Preview (03-25)",
-462 |     description: "Google\'s Gemini 2.5 Pro model (March 25th version), a powerful and versatile model, accessed via OpenRouter.",
-463 |     apiVersion: "google/gemini-2.5-pro-preview-03-25",
-464 |     capabilities: ["Powerful", "Versatile", "Multimodal"],
-465 |     enabled: true,
-466 |     supportsWebSearch: true,
-467 |     premium: true
-468 |   },
-469 |   "openrouter/google/gemini-2.5-pro-preview": {
-470 |     provider: "OpenRouter",
-471 |     name: "Google Gemini 2.5 Pro Preview (06-05)",
-472 |     description: "Google\'s state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. Achieves top-tier performance on multiple benchmarks with superior human-preference alignment.",
-473 |     apiVersion: "google/gemini-2.5-pro-preview",
-474 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
-475 |     enabled: true,
-476 |     supportsWebSearch: true,
-477 |     premium: true
-478 |   },
-479 |   "openrouter/google/gemini-2.5-pro": {
-480 |     provider: "OpenRouter",
-481 |     name: "Google Gemini 2.5 Pro",
-482 |     description: "Google's state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. Achieves top-tier performance on multiple benchmarks with superior human-preference alignment.",
-483 |     apiVersion: "google/gemini-2.5-pro",
-484 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
-485 |     enabled: true,
-486 |     supportsWebSearch: true,
-487 |     premium: true
-488 |   },
-489 |   "openrouter/google/gemini-2.5-flash": {
-490 |     provider: "OpenRouter",
-491 |     name: "Google Gemini 2.5 Flash",
-492 |     description: "Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in thinking capabilities, enabling it to provide responses with greater accuracy and nuanced context handling.",
-493 |     apiVersion: "google/gemini-2.5-flash",
-494 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Thinking", "Multimodal"],
-495 |     enabled: true,
-496 |     supportsWebSearch: true,
-497 |     premium: false
-498 |   },
-499 |   "openrouter/x-ai/grok-3-beta": {
-500 |     provider: "OpenRouter",
-501 |     name: "X AI Grok 3 Beta",
-502 |     description: "Grok 3 Beta from X AI, a cutting-edge model with strong reasoning and problem-solving capabilities, accessed via OpenRouter.",
-503 |     apiVersion: "x-ai/grok-3-beta",
-504 |     capabilities: ["Reasoning", "Problem-solving", "Cutting-edge"],
-505 |     enabled: true,
-506 |     supportsWebSearch: true,
-507 |     premium: true
-508 |   },
-509 |   "grok-3-mini": {
-510 |     provider: "X AI",
-511 |     name: "X AI Grok 3 Mini",
-512 |     description: "Grok 3 Mini from X AI, a compact and efficient model for various tasks.",
-513 |     apiVersion: "grok-3-mini-latest",
-514 |     capabilities: ["Compact", "Efficient", "Versatile"],
-515 |     enabled: false,
-516 |     supportsWebSearch: true,
-517 |     premium: false
-518 |   },
-519 |   "openrouter/x-ai/grok-3-mini-beta": {
-520 |     provider: "OpenRouter",
-521 |     name: "X AI Grok 3 Mini Beta",
-522 |     description: "Grok 3 Mini Beta from X AI, a compact and efficient model, accessed via OpenRouter.",
-523 |     apiVersion: "x-ai/grok-3-mini-beta",
-524 |     capabilities: ["Compact", "Efficient", "Versatile"],
-525 |     enabled: true,
-526 |     supportsWebSearch: true,
-527 |     premium: false
-528 |   },
-529 |   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
-530 |     provider: "OpenRouter",
-531 |     name: "X AI Grok 3 Mini Beta (High Reasoning)",
-532 |     description: "Grok 3 Mini Beta from X AI with high reasoning effort, accessed via OpenRouter.",
-533 |     apiVersion: "x-ai/grok-3-mini-beta",
-534 |     capabilities: ["Compact", "Efficient", "Versatile", "High Reasoning"],
-535 |     enabled: true,
-536 |     supportsWebSearch: true,
-537 |     premium: false
-538 |   },
-539 |   "openrouter/meta-llama/llama-4-maverick": {
-540 |     provider: "OpenRouter",
-541 |     name: "Meta Llama 4 Maverick",
-542 |     description: "Meta Llama 4 Maverick, a cutting-edge model from Meta, accessed via OpenRouter.",
-543 |     apiVersion: "meta-llama/llama-4-maverick",
-544 |     capabilities: ["Cutting-edge", "Versatile"],
-545 |     enabled: true,
-546 |     supportsWebSearch: true,
-547 |     premium: false
-548 |   },
-549 |   "openrouter/mistralai/mistral-medium-3": {
-550 |     provider: "OpenRouter",
-551 |     name: "Mistral Medium 3",
-552 |     description: "Mistral Medium 3, a powerful model from Mistral AI, accessed via OpenRouter.",
-553 |     apiVersion: "mistralai/mistral-medium-3",
-554 |     capabilities: ["Powerful", "Versatile"],
-555 |     enabled: true,
-556 |     supportsWebSearch: true,
-557 |     premium: false
-558 |   },
-559 |   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
-560 |     provider: "OpenRouter",
-561 |     name: "Mistral Small 3.1 24B Instruct",
-562 |     description: "Mistral Small 3.1 24B Instruct, an efficient and capable model from Mistral AI, accessed via OpenRouter.",
-563 |     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
-564 |     capabilities: ["Efficient", "Capable", "Instruct"],
-565 |     enabled: true,
-566 |     supportsWebSearch: true,
-567 |     premium: false
-568 |   },
-569 |   "openrouter/mistralai/magistral-small-2506": {
-570 |     provider: "OpenRouter",
-571 |     name: "Mistral Magistral Small 2506",
-572 |     description: "Magistral Small is a 24B parameter instruction-tuned model based on Mistral-Small-3.1, enhanced through supervised fine-tuning and reinforcement learning. Optimized for reasoning and supports multilingual capabilities across 20+ languages.",
-573 |     apiVersion: "mistralai/magistral-small-2506",
-574 |     capabilities: ["Reasoning", "Multilingual", "Instruction Following", "Enhanced"],
-575 |     enabled: true,
-576 |     supportsWebSearch: true,
-577 |     premium: false
-578 |   },
-579 |   "openrouter/mistralai/magistral-medium-2506": {
-580 |     provider: "OpenRouter",
-581 |     name: "Mistral Magistral Medium 2506",
-582 |     description: "Magistral is Mistral's first reasoning model. Ideal for general purpose use requiring longer thought processing and better accuracy than with non-reasoning LLMs. From legal research and financial forecasting to software development and creative storytelling — this model solves multi-step challenges where transparency and precision are critical.",
-583 |     apiVersion: "mistralai/magistral-medium-2506",
-584 |     capabilities: ["Reasoning", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving"],
-585 |     enabled: true,
-586 |     supportsWebSearch: true,
-587 |     premium: true
-588 |   },
-589 |   "openrouter/mistralai/magistral-medium-2506:thinking": {
-590 |     provider: "OpenRouter",
-591 |     name: "Mistral Magistral Medium 2506 (thinking)",
-592 |     description: "Magistral Medium 2506 with enhanced thinking capabilities. Mistral's first reasoning model optimized for longer thought processing and better accuracy. Excels at legal research, financial forecasting, software development, and creative storytelling with transparent reasoning.",
-593 |     apiVersion: "mistralai/magistral-medium-2506:thinking",
-594 |     capabilities: ["Advanced Reasoning", "Thinking", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving", "Transparent Reasoning"],
-595 |     enabled: true,
-596 |     supportsWebSearch: true,
-597 |     premium: true
-598 |   },
-599 |   "openrouter/openai/gpt-4.1": {
-600 |     provider: "OpenRouter",
-601 |     name: "OpenAI GPT-4.1",
-602 |     description: "GPT-4.1 is a flagship large language model excelling in instruction following, software engineering, and long-context reasoning, supporting a 1 million token context. It\'s tuned for precise code diffs, agent reliability, and high recall, ideal for agents, IDE tooling, and enterprise knowledge retrieval. Note: Web search is not supported for this model.",
-603 |     apiVersion: "openai/gpt-4.1",
-604 |     capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
-605 |     enabled: true,
-606 |     supportsWebSearch: false,
-607 |     premium: true
-608 |   },
-609 |   "gpt-4.1-mini": {
-610 |     provider: "OpenAI",
-611 |     name: "OpenAI GPT-4.1 Mini",
-612 |     description: "GPT-4.1 Mini is a compact and efficient version of GPT-4.1, offering a balance of performance and speed for various tasks.",
-613 |     apiVersion: "gpt-4.1-mini",
-614 |     capabilities: ["Coding", "Instruction Following", "Compact"],
-615 |     enabled: false,
-616 |     supportsWebSearch: false,
-617 |     premium: false
-618 |   },
-619 |   "openrouter/openai/gpt-4.1-mini": {
-620 |     provider: "OpenRouter",
-621 |     name: "OpenAI GPT-4.1 Mini",
-622 |     description: "GPT-4.1 Mini is a compact and efficient version of GPT-4.1, offering a balance of performance and speed for various tasks, accessed via OpenRouter.",
-623 |     apiVersion: "openai/gpt-4.1-mini",
-624 |     capabilities: ["Coding", "Instruction Following", "Compact"],
-625 |     enabled: true,
-626 |     supportsWebSearch: false,
-627 |     premium: false
-628 |   },
-629 |   "openrouter/openai/o4-mini-high": {
-630 |     provider: "OpenRouter",
-631 |     name: "OpenAI O4 Mini High",
-632 |     description: "OpenAI O4 Mini High, an efficient and high-performing model, accessed via OpenRouter.",
-633 |     apiVersion: "openai/o4-mini-high",
-634 |     capabilities: ["Efficient", "High-performing"],
-635 |     enabled: true,
-636 |     supportsWebSearch: false,
-637 |     premium: false
-638 |   },
-639 |   "qwen-qwq": {
-640 |     provider: "Groq",
-641 |     name: "Qwen QWQ",
-642 |     description: "Qwen QWQ model accessed via Groq, known for its speed and efficiency.",
-643 |     apiVersion: "qwen-qwq-32b",
-644 |     capabilities: ["Fast", "Efficient"],
-645 |     enabled: false,
-646 |     supportsWebSearch: true,
-647 |     premium: false
-648 |   },
-649 |   "openrouter/qwen/qwq-32b": {
-650 |     provider: "OpenRouter",
-651 |     name: "Qwen QWQ 32B",
-652 |     description: "Qwen QWQ 32B model accessed via OpenRouter, known for its speed and efficiency.",
-653 |     apiVersion: "qwen/qwq-32b",
-654 |     capabilities: ["Fast", "Efficient"],
-655 |     enabled: true,
-656 |     supportsWebSearch: true,
-657 |     premium: false
-658 |   },
-659 |   "openrouter/qwen/qwen3-235b-a22b": {
-660 |     provider: "OpenRouter",
-661 |     name: "Qwen3 235B A22B",
-662 |     description: "Qwen3 235B A22B, a large and powerful model from Qwen, accessed via OpenRouter.",
-663 |     apiVersion: "qwen/qwen3-235b-a22b",
-664 |     capabilities: ["Large", "Powerful"],
-665 |     enabled: true,
-666 |     supportsWebSearch: true,
-667 |     premium: false
-668 |   },
-669 |   "openrouter/anthropic/claude-sonnet-4": {
-670 |     provider: "OpenRouter",
-671 |     name: "Claude 4 Sonnet",
-672 |     description: "Anthropic\'s Claude Sonnet 4 model, offering a balance of performance and speed, accessed via OpenRouter.",
-673 |     apiVersion: "anthropic/claude-sonnet-4",
-674 |     capabilities: ["Balanced", "Fast", "Efficient"],
-675 |     enabled: true,
-676 |     supportsWebSearch: true,
-677 |     premium: true
-678 |   },
-679 |   "openrouter/anthropic/claude-opus-4": {
-680 |     provider: "OpenRouter",
-681 |     name: "Claude 4 Opus",
-682 |     description: "Anthropic\'s most advanced model, excelling at coding, advanced reasoning, agentic tasks, and long-context operations.",
-683 |     apiVersion: "anthropic/claude-opus-4",
-684 |     capabilities: ["Coding", "Advanced Reasoning", "Agentic Tasks", "Long Context", "Sustained Performance"],
-685 |     enabled: true,
-686 |     supportsWebSearch: true,
-687 |     premium: true
-688 |   },
-689 |   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": {
-690 |     provider: "OpenRouter",
-691 |     name: "SentientAGI Dobby Mini Plus Llama 3.1 8B",
-692 |     description: "Dobby-Mini-Unhinged-Plus-Llama-3.1-8B is a language model fine-tuned from Llama-3.1-8B-Instruct. Dobby models have a strong conviction towards personal freedom, decentralization, and all things crypto. 131K context window.",
-693 |     apiVersion: "sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b",
-694 |     capabilities: ["Chat", "Crypto-focused", "Personal Freedom", "Decentralization", "Fine-tuned"],
-695 |     enabled: true,
-696 |     supportsWebSearch: true,
-697 |     premium: false
-698 |   },
-699 |   "openrouter/minimax/minimax-m1": {
-700 |     provider: "OpenRouter",
-701 |     name: "MiniMax M1",
-702 |     description: "MiniMax-M1 is a large-scale, open-weight reasoning model designed for extended context and high-efficiency inference. With 456 billion total parameters and 45.9B active per token, it leverages a hybrid Mixture-of-Experts (MoE) architecture and custom 'lightning attention' mechanism, processing up to 1 million tokens while maintaining competitive FLOP efficiency.",
-703 |     apiVersion: "minimax/minimax-m1",
-704 |     capabilities: ["Long Context", "Reasoning", "Software Engineering", "Mathematical Reasoning", "Agentic Tool Use", "High Efficiency"],
-705 |     enabled: true,
-706 |     supportsWebSearch: true,
-707 |     premium: true
-708 |   },
-709 |   // Requesty model details
-710 |   "requesty/openai/gpt-4o": {
-711 |     provider: "Requesty",
-712 |     name: "GPT-4O",
-713 |     description: "OpenAI's GPT-4O model accessed via Requesty, offering advanced reasoning and multimodal capabilities.",
-714 |     apiVersion: "openai/gpt-4o",
-715 |     capabilities: ["Reasoning", "Multimodal", "Coding", "Analysis"],
-716 |     enabled: true,
-717 |     supportsWebSearch: true,
-718 |     premium: true
-719 |   },
-720 |   "requesty/openai/gpt-4o-mini": {
-721 |     provider: "Requesty",
-722 |     name: "GPT-4O Mini",
-723 |     description: "OpenAI's GPT-4O Mini model accessed via Requesty, offering efficient performance for various tasks.",
-724 |     apiVersion: "openai/gpt-4o-mini",
-725 |     capabilities: ["Efficient", "Coding", "Analysis", "Chat"],
-726 |     enabled: true,
-727 |     supportsWebSearch: true,
-728 |     premium: false
-729 |   },
-730 |   "requesty/anthropic/claude-3.5-sonnet": {
-731 |     provider: "Requesty",
-732 |     name: "Claude 3.5 Sonnet",
-733 |     description: "Anthropic's Claude 3.5 Sonnet accessed via Requesty, excelling at coding, data science, and visual processing.",
-734 |     apiVersion: "anthropic/claude-3.5-sonnet",
-735 |     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
-736 |     enabled: true,
-737 |     supportsWebSearch: true,
-738 |     premium: true
-739 |   },
-740 |   "requesty/anthropic/claude-3.7-sonnet": {
-741 |     provider: "Requesty",
-742 |     name: "Claude 3.7 Sonnet",
+187 |   "openrouter/google/gemini-2.5-flash-lite-preview-06-17": openrouterClient("google/gemini-2.5-flash-lite-preview-06-17"),
+188 |   "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
+189 |   "openrouter/openai/gpt-4.1": openrouterClient("openai/gpt-4.1"),
+190 |   "openrouter/openai/gpt-4.1-mini": openrouterClient("openai/gpt-4.1-mini"),
+191 |   "openrouter/openai/gpt-4.1-nano": openrouterClient("openai/gpt-4.1-nano"),
+192 |   "openrouter/x-ai/grok-3-beta": wrapLanguageModel({
+193 |     model: openrouterClient("x-ai/grok-3-beta", { logprobs: false }),
+194 |     middleware: deepseekR1Middleware,
+195 |   }),
+196 |   "grok-3-mini": xaiClient("grok-3-mini-latest"),
+197 |   "openrouter/x-ai/grok-3-mini-beta": wrapLanguageModel({
+198 |     model: openrouterClient("x-ai/grok-3-mini-beta", { logprobs: false }),
+199 |     middleware: deepseekR1Middleware,
+200 |   }),
+201 |   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": wrapLanguageModel({
+202 |     model: openrouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
+203 |     middleware: deepseekR1Middleware,
+204 |   }),
+205 |   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
+206 |   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
+207 |   "openrouter/mistralai/magistral-small-2506": openrouterClient("mistralai/magistral-small-2506"),
+208 |   "openrouter/mistralai/magistral-medium-2506": openrouterClient("mistralai/magistral-medium-2506"),
+209 |   "openrouter/mistralai/magistral-medium-2506:thinking": openrouterClient("mistralai/magistral-medium-2506:thinking"),
+210 |   "openrouter/meta-llama/llama-4-maverick": openrouterClient("meta-llama/llama-4-maverick"),
+211 |   "openrouter/openai/o4-mini-high": openrouterClient("openai/o4-mini-high"),
+212 |   "qwen-qwq": wrapLanguageModel(
+213 |     {
+214 |       model: groqClient("qwen-qwq-32b"),
+215 |       middleware
+216 |     }
+217 |   ),
+218 |   "openrouter/qwen/qwq-32b": wrapLanguageModel({
+219 |     model: openrouterClient("qwen/qwq-32b"),
+220 |     middleware: deepseekR1Middleware,
+221 |   }),
+222 |   // "openrouter/qwen/qwq-32b": openrouterClient("qwen/qwq-32b"),
+223 |   "openrouter/qwen/qwen3-235b-a22b": openrouterClient("qwen/qwen3-235b-a22b"),
+224 |   "openrouter/anthropic/claude-sonnet-4": openrouterClient("anthropic/claude-sonnet-4"),
+225 |   "openrouter/anthropic/claude-opus-4": openrouterClient("anthropic/claude-opus-4"),
+226 |   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": openrouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
+227 |   "openrouter/minimax/minimax-m1": openrouterClient("minimax/minimax-m1"),
+228 |   "openrouter/minimax/minimax-m1:extended": openrouterClient("minimax/minimax-m1:extended"),
+229 |   // Requesty models
+230 |   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
+231 |   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
+232 |   "requesty/openai/gpt-4.1": requestyClient("openai/gpt-4.1"),
+233 |   "requesty/openai/gpt-4.1-nano": requestyClient("openai/gpt-4.1-nano"),
+234 |   "requesty/openai/gpt-4.1-mini": requestyClient("openai/gpt-4.1-mini"),
+235 |   "requesty/anthropic/claude-3.5-sonnet": requestyClient("anthropic/claude-3-5-sonnet-20241022"),
+236 |   "requesty/anthropic/claude-3.7-sonnet": requestyClient("anthropic/claude-3-7-sonnet-20250219"),
+237 |   "requesty/google/gemini-2.5-flash-preview": requestyClient("google/gemini-2.5-flash-preview-05-20"),
+238 |   "requesty/google/gemini-2.5-flash": requestyClient("google/gemini-2.5-flash"),
+239 |   "requesty/google/gemini-2.5-pro": requestyClient("google/gemini-2.5-pro"),
+240 |   "requesty/meta-llama/llama-3.1-70b-instruct": requestyClient("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct"),
+241 |   "requesty/anthropic/claude-sonnet-4-20250514": requestyClient("anthropic/claude-sonnet-4-20250514"),
+242 |   "requesty/deepseek/deepseek-chat": requestyClient("deepseek/deepseek-chat"),
+243 |   "requesty/deepseek/deepseek-reasoner": wrapLanguageModel({
+244 |     model: requestyClient("deepseek/deepseek-reasoner", { logprobs: false }),
+245 |     middleware: deepseekR1Middleware,
+246 |   }),
+247 |   "requesty/deepseek/deepseek-v3": requestyClient("deepinfra/deepseek-ai/DeepSeek-V3"),
+248 |   "requesty/deepseek/deepseek-r1": wrapLanguageModel({
+249 |     model: requestyClient("deepinfra/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+250 |     middleware: deepseekR1Middleware,
+251 |   }),
+252 |   "requesty/meta-llama/llama-3.3-70b-instruct": requestyClient("deepinfra/meta-llama/Llama-3.3-70B-Instruct"),
+253 |   "requesty/google/gemini-2.5-flash-lite-preview-06-17": requestyClient("google/gemini-2.5-flash-lite-preview-06-17"),
+254 | };
+255 | 
+256 | // Helper to get language model with dynamic API keys
+257 | export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>) => {
+258 |   // Helper function to create clients on demand
+259 |   const getOpenAIClient = () => createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
+260 |   const getAnthropicClient = () => createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
+261 |   const getGroqClient = () => createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']);
+262 |   const getXaiClient = () => createXaiClientWithKey(apiKeys?.['XAI_API_KEY']);
+263 |   const getOpenRouterClient = () => createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+264 |   const getRequestyClient = () => createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']);
+265 | 
+266 |   // Check if the specific model exists and create only the needed client
+267 |   switch (modelId) {
+268 |     // Anthropic models
+269 |     case "claude-3-7-sonnet":
+270 |       return getAnthropicClient()('claude-3-7-sonnet-20250219');
+271 | 
+272 |     // OpenAI models
+273 |     case "gpt-4.1-mini":
+274 |       return getOpenAIClient()("gpt-4.1-mini");
+275 | 
+276 |     // Groq models
+277 |     case "qwen-qwq":
+278 |       return wrapLanguageModel({
+279 |         model: getGroqClient()("qwen-qwq-32b"),
+280 |         middleware
+281 |       });
+282 | 
+283 |     // XAI models
+284 |     case "grok-3-mini":
+285 |       return getXaiClient()("grok-3-mini-latest");
+286 | 
+287 |     // OpenRouter models
+288 |     case "openrouter/anthropic/claude-3.5-sonnet":
+289 |       return getOpenRouterClient()("anthropic/claude-3.5-sonnet");
+290 |     case "openrouter/anthropic/claude-3.7-sonnet":
+291 |       return getOpenRouterClient()("anthropic/claude-3.7-sonnet");
+292 |     case "openrouter/anthropic/claude-3.7-sonnet:thinking":
+293 |       return getOpenRouterClient()("anthropic/claude-3.7-sonnet:thinking");
+294 |     case "openrouter/deepseek/deepseek-chat-v3-0324":
+295 |       return getOpenRouterClient()("deepseek/deepseek-chat-v3-0324");
+296 |     case "openrouter/deepseek/deepseek-r1":
+297 |       return wrapLanguageModel({
+298 |         model: getOpenRouterClient()("deepseek/deepseek-r1", { logprobs: false }),
+299 |         middleware: deepseekR1Middleware,
+300 |       });
+301 |     case "openrouter/deepseek/deepseek-r1-0528":
+302 |       return wrapLanguageModel({
+303 |         model: getOpenRouterClient()("deepseek/deepseek-r1-0528", { logprobs: false }),
+304 |         middleware: deepseekR1Middleware,
+305 |       });
+306 |     case "openrouter/deepseek/deepseek-r1-0528-qwen3-8b":
+307 |       return wrapLanguageModel({
+308 |         model: getOpenRouterClient()("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
+309 |         middleware: deepseekR1Middleware,
+310 |       });
+311 |     case "openrouter/google/gemini-2.5-flash-preview":
+312 |       return getOpenRouterClient()("google/gemini-2.5-flash-preview");
+313 |     case "openrouter/google/gemini-2.5-flash-preview:thinking":
+314 |       return getOpenRouterClient()("google/gemini-2.5-flash-preview:thinking");
+315 |     case "openrouter/google/gemini-2.5-flash-preview-05-20":
+316 |       return getOpenRouterClient()("google/gemini-2.5-flash-preview-05-20");
+317 |     case "openrouter/google/gemini-2.5-flash-preview-05-20:thinking":
+318 |       return getOpenRouterClient()("google/gemini-2.5-flash-preview-05-20:thinking");
+319 |     case "openrouter/google/gemini-2.5-pro-preview-03-25":
+320 |       return getOpenRouterClient()("google/gemini-2.5-pro-preview-03-25");
+321 |     case "openrouter/google/gemini-2.5-pro-preview":
+322 |       return getOpenRouterClient()("google/gemini-2.5-pro-preview");
+323 |     case "openrouter/google/gemini-2.5-pro":
+324 |       return getOpenRouterClient()("google/gemini-2.5-pro");
+325 |     case "openrouter/google/gemini-2.5-flash":
+326 |       return getOpenRouterClient()("google/gemini-2.5-flash");
+327 |     case "openrouter/google/gemini-2.5-flash-lite-preview-06-17":
+328 |       return getOpenRouterClient()("google/gemini-2.5-flash-lite-preview-06-17");
+329 |     case "openrouter/openai/gpt-4.1":
+330 |       return getOpenRouterClient()("openai/gpt-4.1");
+331 |     case "openrouter/openai/gpt-4.1-mini":
+332 |       return getOpenRouterClient()("openai/gpt-4.1-mini");
+333 |     case "openrouter/openai/gpt-4.1-nano":
+334 |       return getOpenRouterClient()("openai/gpt-4.1-nano");
+335 |     case "openrouter/x-ai/grok-3-beta":
+336 |       return wrapLanguageModel({
+337 |         model: getOpenRouterClient()("x-ai/grok-3-beta", { logprobs: false }),
+338 |         middleware: deepseekR1Middleware,
+339 |       });
+340 |     case "openrouter/x-ai/grok-3-mini-beta":
+341 |       return wrapLanguageModel({
+342 |         model: getOpenRouterClient()("x-ai/grok-3-mini-beta", { logprobs: false }),
+343 |         middleware: deepseekR1Middleware,
+344 |       });
+345 |     case "openrouter/x-ai/grok-3-mini-beta-reasoning-high":
+346 |       return wrapLanguageModel({
+347 |         model: getOpenRouterClient()("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
+348 |         middleware: deepseekR1Middleware,
+349 |       });
+350 |     case "openrouter/mistralai/mistral-medium-3":
+351 |       return getOpenRouterClient()("mistralai/mistral-medium-3");
+352 |     case "openrouter/mistralai/mistral-small-3.1-24b-instruct":
+353 |       return getOpenRouterClient()("mistralai/mistral-small-3.1-24b-instruct");
+354 |     case "openrouter/mistralai/magistral-small-2506":
+355 |       return getOpenRouterClient()("mistralai/magistral-small-2506");
+356 |     case "openrouter/mistralai/magistral-medium-2506":
+357 |       return getOpenRouterClient()("mistralai/magistral-medium-2506");
+358 |     case "openrouter/mistralai/magistral-medium-2506:thinking":
+359 |       return getOpenRouterClient()("mistralai/magistral-medium-2506:thinking");
+360 |     case "openrouter/meta-llama/llama-4-maverick":
+361 |       return getOpenRouterClient()("meta-llama/llama-4-maverick");
+362 |     case "openrouter/openai/o4-mini-high":
+363 |       return getOpenRouterClient()("openai/o4-mini-high");
+364 |     case "openrouter/qwen/qwq-32b":
+365 |       return wrapLanguageModel({
+366 |         model: getOpenRouterClient()("qwen/qwq-32b"),
+367 |         middleware: deepseekR1Middleware,
+368 |       });
+369 |     case "openrouter/qwen/qwen3-235b-a22b":
+370 |       return getOpenRouterClient()("qwen/qwen3-235b-a22b");
+371 |     case "openrouter/anthropic/claude-sonnet-4":
+372 |       return getOpenRouterClient()("anthropic/claude-sonnet-4");
+373 |     case "openrouter/anthropic/claude-opus-4":
+374 |       return getOpenRouterClient()("anthropic/claude-opus-4");
+375 |     case "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b":
+376 |       return getOpenRouterClient()("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b");
+377 |     case "openrouter/minimax/minimax-m1":
+378 |       return getOpenRouterClient()("minimax/minimax-m1");
+379 |     case "openrouter/minimax/minimax-m1:extended":
+380 |       return getOpenRouterClient()("minimax/minimax-m1:extended");
+381 | 
+382 |     // Requesty models
+383 |     case "requesty/openai/gpt-4o":
+384 |       return getRequestyClient()("openai/gpt-4o");
+385 |     case "requesty/openai/gpt-4o-mini":
+386 |       return getRequestyClient()("openai/gpt-4o-mini");
+387 |     case "requesty/openai/gpt-4.1":
+388 |       return getRequestyClient()("openai/gpt-4.1");
+389 |     case "requesty/openai/gpt-4.1-nano":
+390 |       return getRequestyClient()("openai/gpt-4.1-nano");
+391 |     case "requesty/openai/gpt-4.1-mini":
+392 |       return getRequestyClient()("openai/gpt-4.1-mini");
+393 |     case "requesty/anthropic/claude-3.5-sonnet":
+394 |       return getRequestyClient()("anthropic/claude-3-5-sonnet-20241022");
+395 |     case "requesty/anthropic/claude-3.7-sonnet":
+396 |       return getRequestyClient()("anthropic/claude-3-7-sonnet-20250219");
+397 |     case "requesty/google/gemini-2.5-flash-preview":
+398 |       return getRequestyClient()("google/gemini-2.5-flash-preview-05-20");
+399 |     case "requesty/google/gemini-2.5-flash":
+400 |       return getRequestyClient()("google/gemini-2.5-flash");
+401 |     case "requesty/google/gemini-2.5-pro":
+402 |       return getRequestyClient()("google/gemini-2.5-pro");
+403 |     case "requesty/meta-llama/llama-3.1-70b-instruct":
+404 |       return getRequestyClient()("deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct");
+405 |     case "requesty/anthropic/claude-sonnet-4-20250514":
+406 |       return getRequestyClient()("anthropic/claude-sonnet-4-20250514");
+407 |     case "requesty/deepseek/deepseek-chat":
+408 |       return getRequestyClient()("deepseek/deepseek-chat");
+409 |     case "requesty/deepseek/deepseek-reasoner":
+410 |       return wrapLanguageModel({
+411 |         model: getRequestyClient()("deepseek/deepseek-reasoner", { logprobs: false }),
+412 |         middleware: deepseekR1Middleware,
+413 |       });
+414 |     case "requesty/deepseek/deepseek-v3":
+415 |       return getRequestyClient()("deepinfra/deepseek-ai/DeepSeek-V3");
+416 |     case "requesty/deepseek/deepseek-r1":
+417 |       return wrapLanguageModel({
+418 |         model: getRequestyClient()("deepinfra/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+419 |         middleware: deepseekR1Middleware,
+420 |       });
+421 |     case "requesty/meta-llama/llama-3.3-70b-instruct":
+422 |       return getRequestyClient()("deepinfra/meta-llama/Llama-3.3-70B-Instruct");
+423 |     case "requesty/google/gemini-2.5-flash-lite-preview-06-17":
+424 |       return getRequestyClient()("google/gemini-2.5-flash-lite-preview-06-17");
+425 | 
+426 |     default:
+427 |       // Fallback to static models if not found (shouldn't happen in normal cases)
+428 |       console.warn(`Model ${modelId} not found in dynamic models, falling back to static model`);
+429 |       return languageModels[modelId as keyof typeof languageModels];
+430 |   }
+431 | 
+432 | };
+433 | 
+434 | export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
+435 |   "openrouter/anthropic/claude-3.5-sonnet": {
+436 |     provider: "OpenRouter",
+437 |     name: "Claude 3.5 Sonnet",
+438 |     description: "New Claude 3.5 Sonnet delivers better-than-Opus capabilities, faster-than-Sonnet speeds, at the same Sonnet prices. Sonnet is particularly good at: Coding, Data science, Visual processing, Agentic tasks",
+439 |     apiVersion: "anthropic/claude-3.5-sonnet",
+440 |     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
+441 |     enabled: true,
+442 |     supportsWebSearch: true,
+443 |     premium: true
+444 |   },
+445 |   "claude-3-7-sonnet": {
+446 |     provider: "Anthropic",
+447 |     name: "Claude 3.7 Sonnet",
+448 |     description: "Latest version of Anthropic\'s Claude 3.7 Sonnet with strong reasoning and coding capabilities.",
+449 |     apiVersion: "claude-3-7-sonnet-20250219",
+450 |     capabilities: ["Reasoning", "Efficient", "Agentic"],
+451 |     enabled: false,
+452 |     premium: true
+453 |   },
+454 |   "openrouter/anthropic/claude-3.7-sonnet": {
+455 |     provider: "OpenRouter",
+456 |     name: "Claude 3.7 Sonnet",
+457 |     description: "Latest version of Anthropic\'s Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
+458 |     apiVersion: "anthropic/claude-3.7-sonnet",
+459 |     capabilities: ["Reasoning", "Coding", "Agentic"],
+460 |     enabled: true,
+461 |     supportsWebSearch: true,
+462 |     premium: true
+463 |   },
+464 |   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
+465 |     provider: "OpenRouter",
+466 |     name: "Claude 3.7 Sonnet (thinking)",
+467 |     description: "Advanced LLM with improved reasoning, coding, and problem-solving. Features a hybrid reasoning approach for flexible processing.",
+468 |     apiVersion: "anthropic/claude-3.7-sonnet:thinking",
+469 |     capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
+470 |     enabled: true,
+471 |     supportsWebSearch: true,
+472 |     premium: true
+473 |   },
+474 |   "openrouter/deepseek/deepseek-chat-v3-0324": {
+475 |     provider: "OpenRouter",
+476 |     name: "DeepSeek Chat V3 0324",
+477 |     description: "DeepSeek Chat model V3 accessed via OpenRouter.",
+478 |     apiVersion: "deepseek/deepseek-chat-v3-0324",
+479 |     capabilities: ["Chat", "Efficient"],
+480 |     enabled: true,
+481 |     supportsWebSearch: true,
+482 |     premium: false
+483 |   },
+484 |   "openrouter/deepseek/deepseek-r1": {
+485 |     provider: "OpenRouter",
+486 |     name: "DeepSeek R1",
+487 |     description: "DeepSeek R1: Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
+488 |     apiVersion: "deepseek/deepseek-r1",
+489 |     capabilities: ["Reasoning", "Open Source"],
+490 |     enabled: true,
+491 |     supportsWebSearch: true,
+492 |     premium: false
+493 |   },
+494 |   "openrouter/deepseek/deepseek-r1-0528": {
+495 |     provider: "OpenRouter",
+496 |     name: "DeepSeek R1 0528",
+497 |     description: "DeepSeek R1 0528: May 28th update to DeepSeek R1. Open-source model with performance on par with OpenAI o1, featuring open reasoning tokens. 671B parameters (37B active). MIT licensed. Note: This model cannot be used for Tool Calling (e.g., MCP Servers).",
+498 |     apiVersion: "deepseek/deepseek-r1-0528",
+499 |     capabilities: ["Reasoning", "Open Source"],
+500 |     enabled: true,
+501 |     supportsWebSearch: true,
+502 |     premium: false
+503 |   },
+504 |   "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": {
+505 |     provider: "OpenRouter",
+506 |     name: "DeepSeek R1 0528 Qwen3 8B",
+507 |     description: "DeepSeek-R1-0528-Qwen3-8B, an 8B parameter model distilled from DeepSeek R1 0528, excels in reasoning, math, programming, and logic. Accessed via OpenRouter.",
+508 |     apiVersion: "deepseek/deepseek-r1-0528-qwen3-8b",
+509 |     capabilities: ["Reasoning", "Math", "Programming", "Logic"],
+510 |     enabled: false,
+511 |     supportsWebSearch: true,
+512 |     premium: false
+513 |   },
+514 |   "openrouter/google/gemini-2.5-flash-preview": {
+515 |     provider: "OpenRouter",
+516 |     name: "Google Gemini 2.5 Flash Preview",
+517 |     description: "Google\'s latest Gemini 2.5 Flash model, optimized for speed and efficiency, accessed via OpenRouter.",
+518 |     apiVersion: "google/gemini-2.5-flash-preview",
+519 |     capabilities: ["Fast", "Efficient", "Multimodal"],
+520 |     enabled: true,
+521 |     supportsWebSearch: true,
+522 |     premium: false
+523 |   },
+524 |   "openrouter/google/gemini-2.5-flash-preview:thinking": {
+525 |     provider: "OpenRouter",
+526 |     name: "Google Gemini 2.5 Flash Preview (thinking)",
+527 |     description: "Google\'s latest Gemini 2.5 Flash model with thinking capabilities, optimized for speed and efficiency, accessed via OpenRouter.",
+528 |     apiVersion: "google/gemini-2.5-flash-preview:thinking",
+529 |     capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
+530 |     enabled: true,
+531 |     supportsWebSearch: true,
+532 |     premium: false
+533 |   },
+534 |   "openrouter/google/gemini-2.5-flash-preview-05-20": {
+535 |     provider: "OpenRouter",
+536 |     name: "Google Gemini 2.5 Flash Preview (05-20)",
+537 |     description: "Google\'s Gemini 2.5 Flash model (May 20th version), optimized for speed and efficiency, accessed via OpenRouter.",
+538 |     apiVersion: "google/gemini-2.5-flash-preview-05-20",
+539 |     capabilities: ["Fast", "Efficient", "Multimodal"],
+540 |     enabled: true,
+541 |     supportsWebSearch: true,
+542 |     premium: false
+543 |   },
+544 |   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": {
+545 |     provider: "OpenRouter",
+546 |     name: "Google Gemini 2.5 Flash Preview (05-20, thinking)",
+547 |     description: "Google\'s Gemini 2.5 Flash model (May 20th version) with thinking capabilities, optimized for speed and efficiency, accessed via OpenRouter.",
+548 |     apiVersion: "google/gemini-2.5-flash-preview-05-20:thinking",
+549 |     capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
+550 |     enabled: true,
+551 |     supportsWebSearch: true,
+552 |     premium: false
+553 |   },
+554 |   "openrouter/google/gemini-2.5-pro-preview-03-25": {
+555 |     provider: "OpenRouter",
+556 |     name: "Google Gemini 2.5 Pro Preview (03-25)",
+557 |     description: "Google\'s Gemini 2.5 Pro model (March 25th version), a powerful and versatile model, accessed via OpenRouter.",
+558 |     apiVersion: "google/gemini-2.5-pro-preview-03-25",
+559 |     capabilities: ["Powerful", "Versatile", "Multimodal"],
+560 |     enabled: true,
+561 |     supportsWebSearch: true,
+562 |     premium: true
+563 |   },
+564 |   "openrouter/google/gemini-2.5-pro-preview": {
+565 |     provider: "OpenRouter",
+566 |     name: "Google Gemini 2.5 Pro Preview (06-05)",
+567 |     description: "Google\'s state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. Achieves top-tier performance on multiple benchmarks with superior human-preference alignment.",
+568 |     apiVersion: "google/gemini-2.5-pro-preview",
+569 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
+570 |     enabled: true,
+571 |     supportsWebSearch: true,
+572 |     premium: true
+573 |   },
+574 |   "openrouter/google/gemini-2.5-pro": {
+575 |     provider: "OpenRouter",
+576 |     name: "Google Gemini 2.5 Pro",
+577 |     description: "Google's state-of-the-art AI model designed for advanced reasoning, coding, mathematics, and scientific tasks. Achieves top-tier performance on multiple benchmarks with superior human-preference alignment.",
+578 |     apiVersion: "google/gemini-2.5-pro",
+579 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
+580 |     enabled: true,
+581 |     supportsWebSearch: true,
+582 |     premium: true
+583 |   },
+584 |   "openrouter/google/gemini-2.5-flash": {
+585 |     provider: "OpenRouter",
+586 |     name: "Google Gemini 2.5 Flash",
+587 |     description: "Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in thinking capabilities, enabling it to provide responses with greater accuracy and nuanced context handling.",
+588 |     apiVersion: "google/gemini-2.5-flash",
+589 |     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Thinking", "Multimodal"],
+590 |     enabled: true,
+591 |     supportsWebSearch: true,
+592 |     premium: false
+593 |   },
+594 |   "openrouter/google/gemini-2.5-flash-lite-preview-06-17": {
+595 |     provider: "OpenRouter",
+596 |     name: "Google Gemini 2.5 Flash Lite Preview 06-17",
+597 |     description: "Gemini 2.5 Flash-Lite is a lightweight reasoning model in the Gemini 2.5 family, optimized for ultra-low latency and cost efficiency. It offers improved throughput, faster token generation, and better performance across common benchmarks compared to earlier Flash models. By default, thinking is disabled to prioritize speed, but can be enabled via the Reasoning API parameter.",
+598 |     apiVersion: "google/gemini-2.5-flash-lite-preview-06-17",
+599 |     capabilities: ["Ultra-low latency", "Cost efficient", "Fast token generation", "Lightweight reasoning", "Improved throughput"],
+600 |     enabled: true,
+601 |     supportsWebSearch: true,
+602 |     premium: false
+603 |   },
+604 |   "openrouter/x-ai/grok-3-beta": {
+605 |     provider: "OpenRouter",
+606 |     name: "X AI Grok 3 Beta",
+607 |     description: "Grok 3 Beta from X AI, a cutting-edge model with strong reasoning and problem-solving capabilities, accessed via OpenRouter.",
+608 |     apiVersion: "x-ai/grok-3-beta",
+609 |     capabilities: ["Reasoning", "Problem-solving", "Cutting-edge"],
+610 |     enabled: true,
+611 |     supportsWebSearch: true,
+612 |     premium: true
+613 |   },
+614 |   "grok-3-mini": {
+615 |     provider: "X AI",
+616 |     name: "X AI Grok 3 Mini",
+617 |     description: "Grok 3 Mini from X AI, a compact and efficient model for various tasks.",
+618 |     apiVersion: "grok-3-mini-latest",
+619 |     capabilities: ["Compact", "Efficient", "Versatile"],
+620 |     enabled: false,
+621 |     supportsWebSearch: true,
+622 |     premium: false
+623 |   },
+624 |   "openrouter/x-ai/grok-3-mini-beta": {
+625 |     provider: "OpenRouter",
+626 |     name: "X AI Grok 3 Mini Beta",
+627 |     description: "Grok 3 Mini Beta from X AI, a compact and efficient model, accessed via OpenRouter.",
+628 |     apiVersion: "x-ai/grok-3-mini-beta",
+629 |     capabilities: ["Compact", "Efficient", "Versatile"],
+630 |     enabled: true,
+631 |     supportsWebSearch: true,
+632 |     premium: false
+633 |   },
+634 |   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
+635 |     provider: "OpenRouter",
+636 |     name: "X AI Grok 3 Mini Beta (High Reasoning)",
+637 |     description: "Grok 3 Mini Beta from X AI with high reasoning effort, accessed via OpenRouter.",
+638 |     apiVersion: "x-ai/grok-3-mini-beta",
+639 |     capabilities: ["Compact", "Efficient", "Versatile", "High Reasoning"],
+640 |     enabled: true,
+641 |     supportsWebSearch: true,
+642 |     premium: false
+643 |   },
+644 |   "openrouter/meta-llama/llama-4-maverick": {
+645 |     provider: "OpenRouter",
+646 |     name: "Meta Llama 4 Maverick",
+647 |     description: "Meta Llama 4 Maverick, a cutting-edge model from Meta, accessed via OpenRouter.",
+648 |     apiVersion: "meta-llama/llama-4-maverick",
+649 |     capabilities: ["Cutting-edge", "Versatile"],
+650 |     enabled: true,
+651 |     supportsWebSearch: true,
+652 |     premium: false
+653 |   },
+654 |   "openrouter/mistralai/mistral-medium-3": {
+655 |     provider: "OpenRouter",
+656 |     name: "Mistral Medium 3",
+657 |     description: "Mistral Medium 3, a powerful model from Mistral AI, accessed via OpenRouter.",
+658 |     apiVersion: "mistralai/mistral-medium-3",
+659 |     capabilities: ["Powerful", "Versatile"],
+660 |     enabled: true,
+661 |     supportsWebSearch: true,
+662 |     premium: false
+663 |   },
+664 |   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
+665 |     provider: "OpenRouter",
+666 |     name: "Mistral Small 3.1 24B Instruct",
+667 |     description: "Mistral Small 3.1 24B Instruct, an efficient and capable model from Mistral AI, accessed via OpenRouter.",
+668 |     apiVersion: "mistralai/mistral-small-3.1-24b-instruct",
+669 |     capabilities: ["Efficient", "Capable", "Instruct"],
+670 |     enabled: true,
+671 |     supportsWebSearch: true,
+672 |     premium: false
+673 |   },
+674 |   "openrouter/mistralai/magistral-small-2506": {
+675 |     provider: "OpenRouter",
+676 |     name: "Mistral Magistral Small 2506",
+677 |     description: "Magistral Small is a 24B parameter instruction-tuned model based on Mistral-Small-3.1, enhanced through supervised fine-tuning and reinforcement learning. Optimized for reasoning and supports multilingual capabilities across 20+ languages.",
+678 |     apiVersion: "mistralai/magistral-small-2506",
+679 |     capabilities: ["Reasoning", "Multilingual", "Instruction Following", "Enhanced"],
+680 |     enabled: true,
+681 |     supportsWebSearch: true,
+682 |     premium: false
+683 |   },
+684 |   "openrouter/mistralai/magistral-medium-2506": {
+685 |     provider: "OpenRouter",
+686 |     name: "Mistral Magistral Medium 2506",
+687 |     description: "Magistral is Mistral's first reasoning model. Ideal for general purpose use requiring longer thought processing and better accuracy than with non-reasoning LLMs. From legal research and financial forecasting to software development and creative storytelling — this model solves multi-step challenges where transparency and precision are critical.",
+688 |     apiVersion: "mistralai/magistral-medium-2506",
+689 |     capabilities: ["Reasoning", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving"],
+690 |     enabled: true,
+691 |     supportsWebSearch: true,
+692 |     premium: true
+693 |   },
+694 |   "openrouter/mistralai/magistral-medium-2506:thinking": {
+695 |     provider: "OpenRouter",
+696 |     name: "Mistral Magistral Medium 2506 (thinking)",
+697 |     description: "Magistral Medium 2506 with enhanced thinking capabilities. Mistral's first reasoning model optimized for longer thought processing and better accuracy. Excels at legal research, financial forecasting, software development, and creative storytelling with transparent reasoning.",
+698 |     apiVersion: "mistralai/magistral-medium-2506:thinking",
 [TRUNCATED]
 ```
 
@@ -2431,90 +2548,62 @@ app/globals.css
 606 |     color: inherit;
 607 |   }
 608 | 
-609 |   /* iOS Homescreen Shortcut Enhancements */
-610 | 
-611 |   /* Safe area handling for iOS devices */
-612 |   @supports (padding: env(safe-area-inset-left)) {
-613 |     .safe-area-inset {
-614 |       padding-top: env(safe-area-inset-top);
-615 |       padding-right: env(safe-area-inset-right);
-616 |       padding-bottom: env(safe-area-inset-bottom);
-617 |       padding-left: env(safe-area-inset-left);
-618 |     }
-619 |   }
-620 | 
-621 |   /* Prevent zoom on input focus (iOS) */
-622 |   @media screen and (max-width: 768px) {
+609 |   /* Handle KaTeX overflow to prevent layout breaking */
+610 |   .katex-display {
+611 |     overflow-x: auto;
+612 |     overflow-y: hidden;
+613 |     max-width: 100%;
+614 |     padding: 0.5em 0;
+615 |     /* Add subtle scrollbar styling */
+616 |     scrollbar-width: thin;
+617 |     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+618 |   }
+619 | 
+620 |   .katex-display::-webkit-scrollbar {
+621 |     height: 6px;
+622 |   }
 623 | 
-624 |     input[type="text"],
-625 |     input[type="email"],
-626 |     input[type="password"],
-627 |     input[type="search"],
-628 |     textarea,
-629 |     select {
-630 |       font-size: 16px !important;
-631 |     }
-632 |   }
-633 | 
-634 |   /* Smooth scrolling behavior */
-635 |   html {
-636 |     scroll-behavior: smooth;
-637 |     -webkit-text-size-adjust: 100%;
-638 |   }
-639 | 
-640 |   /* Optimize touch targets for mobile */
-641 |   @media (pointer: coarse) {
-642 | 
-643 |     button,
-644 |     [role="button"],
-645 |     input[type="submit"],
-646 |     input[type="button"] {
-647 |       min-height: 44px;
-648 |       min-width: 44px;
-649 |     }
+624 |   .katex-display::-webkit-scrollbar-track {
+625 |     background: transparent;
+626 |   }
+627 | 
+628 |   .katex-display::-webkit-scrollbar-thumb {
+629 |     background-color: rgba(0, 0, 0, 0.2);
+630 |     border-radius: 3px;
+631 |   }
+632 | 
+633 |   .dark .katex-display::-webkit-scrollbar-thumb,
+634 |   .black .katex-display::-webkit-scrollbar-thumb {
+635 |     background-color: rgba(255, 255, 255, 0.3);
+636 |   }
+637 | 
+638 |   /* Handle inline math overflow */
+639 |   .katex {
+640 |     max-width: 100%;
+641 |     overflow-x: auto;
+642 |     overflow-y: hidden;
+643 |     display: inline-block;
+644 |     white-space: nowrap;
+645 |   }
+646 | 
+647 |   /* Ensure the parent container respects the overflow */
+648 |   .katex-html {
+649 |     overflow: visible;
 650 |   }
 651 | 
-652 |   /* PWA/Standalone mode detection */
-653 |   @media (display-mode: standalone) {
-654 | 
-655 |     /* Hide elements when running as PWA */
-656 |     .hide-in-pwa {
-657 |       display: none !important;
-658 |     }
-659 | 
-660 |     /* Adjust spacing for standalone mode */
-661 |     body {
-662 |       padding-top: env(safe-area-inset-top);
-663 |     }
-664 |   }
-665 | 
-666 |   /* iOS-specific webkit optimizations */
-667 |   @supports (-webkit-touch-callout: none) {
-668 | 
-669 |     /* Disable callout menu on long press */
-670 |     * {
-671 |       -webkit-touch-callout: none;
-672 |     }
-673 | 
-674 |     /* Allow callout for specific elements where needed */
-675 |     input,
-676 |     textarea,
-677 |     [contenteditable] {
-678 |       -webkit-touch-callout: default;
-679 |     }
-680 | 
-681 |     /* Prevent highlighting */
-682 |     .no-select {
-683 |       -webkit-user-select: none;
-684 |       user-select: none;
-685 |     }
-686 | 
-687 |     /* Smooth momentum scrolling */
-688 |     .scroll-smooth {
-689 |       -webkit-overflow-scrolling: touch;
-690 |     }
-691 |   }
-692 | }
+652 |   /* Prevent math expressions from breaking container bounds */
+653 |   p:has(.katex-display),
+654 |   div:has(.katex-display) {
+655 |     overflow-x: auto;
+656 |     max-width: 100%;
+657 |   }
+658 | 
+659 |   /* Ensure message containers handle math overflow properly */
+660 |   .group\/message .katex-display {
+661 |     margin: 0.5em 0;
+662 |   }
+663 | 
+[TRUNCATED]
 ```
 
 app/layout.tsx
@@ -2522,118 +2611,98 @@ app/layout.tsx
 1 | import type { Metadata } from "next";
 2 | import { Inter } from "next/font/google";
 3 | import { ChatSidebar } from "@/components/chat-sidebar";
-4 | import { SidebarTrigger } from "@/components/ui/sidebar";
-5 | import { PlusCircle } from "lucide-react";
-6 | import { Providers } from "./providers";
-7 | import "./globals.css";
-8 | import Script from "next/script";
-9 | import { Button } from "@/components/ui/button";
-10 | import Link from "next/link";
-11 | import { WebSearchProvider } from "@/lib/context/web-search-context";
-12 | import { cn } from "@/lib/utils";
-13 | import BuildInfo from "@/components/ui/BuildInfo";
-14 | import Image from "next/image";
-15 | import { IOSInstallPrompt } from "@/components/ios-install-prompt";
-16 | 
-17 | const inter = Inter({ subsets: ["latin"] });
-18 | 
-19 | export const metadata: Metadata = {
-20 |   metadataBase: new URL("https://www.chatlima.com/"),
-21 |   title: "ChatLima",
-22 |   description: "ChatLima is a minimalistic MCP client with a good feature set.",
-23 |   icons: {
-24 |     icon: "/logo.png",
-25 |     apple: [
-26 |       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-27 |       { url: "/apple-touch-icon-120x120.png", sizes: "120x120", type: "image/png" },
-28 |       { url: "/apple-touch-icon-152x152.png", sizes: "152x152", type: "image/png" },
-29 |       { url: "/apple-touch-icon-167x167.png", sizes: "167x167", type: "image/png" },
-30 |       { url: "/apple-touch-icon-180x180.png", sizes: "180x180", type: "image/png" },
-31 |     ],
-32 |   },
-33 |   manifest: "/manifest.json",
-34 |   appleWebApp: {
-35 |     capable: true,
-36 |     statusBarStyle: "default",
-37 |     title: "ChatLima",
-38 |   },
-39 |   formatDetection: {
-40 |     telephone: false,
-41 |   },
-42 |   openGraph: {
-43 |     siteName: "ChatLima",
-44 |     url: "https://www.chatlima.com/",
-45 |     images: [
-46 |       {
-47 |         url: "https://www.chatlima.com/opengraph-image.png",
-48 |         width: 1200,
-49 |         height: 630,
-50 |       },
-51 |     ],
-52 |   },
-53 |   twitter: {
-54 |     card: "summary_large_image",
-55 |     title: "ChatLima",
-56 |     description: "ChatLima is a minimalistic MCP client with a good feature set.",
-57 |     images: ["https://www.chatlima.com/twitter-image.png"],
-58 |   },
-59 |   other: {
-60 |     "mobile-web-app-capable": "yes",
-61 |     "apple-mobile-web-app-capable": "yes",
-62 |     "apple-mobile-web-app-status-bar-style": "default",
-63 |     "apple-mobile-web-app-title": "ChatLima",
-64 |   },
-65 | };
-66 | 
-67 | export default function RootLayout({
-68 |   children,
-69 | }: Readonly<{
-70 |   children: React.ReactNode;
-71 | }>) {
-72 |   return (
-73 |     <html lang="en" suppressHydrationWarning>
-74 |       <head>
-75 |         <meta 
-76 |           name="viewport" 
-77 |           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" 
-78 |         />
-79 |       </head>
-80 |       <body className={`${inter.className}`}>
-81 |         <Providers>
-82 |           <WebSearchProvider>
-83 |             <div className="flex h-dvh w-full">
-84 |               <ChatSidebar />
-85 |               <main className="flex-1 flex flex-col relative">
-86 |                 <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
-87 |                   <SidebarTrigger>
-88 |                     <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
-89 |                       <Image src="/logo.png" alt="ChatLima logo" width={16} height={16} />
-90 |                     </button>
-91 |                   </SidebarTrigger>
-92 |                   <Button
-93 |                     variant="ghost"
-94 |                     size="icon"
-95 |                     className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors"
-96 |                     asChild
-97 |                   >
-98 |                     <Link href="/" title="New Chat">
-99 |                       <PlusCircle className="h-4 w-4" />
-100 |                     </Link>
-101 |                   </Button>
-102 |                 </div>
-103 |                 <div className="flex-1 flex justify-center">
-104 |                   {children}
-105 |                 </div>
-106 |               </main>
-107 |             </div>
-108 |             <IOSInstallPrompt />
-109 |           </WebSearchProvider>
-110 |         </Providers>
-111 |         <Script defer src="https://cloud.umami.is/script.js" data-website-id="bd3f8736-1562-47e0-917c-c10fde7ef0d2" />
-112 |       </body>
-113 |     </html>
-114 |   );
-115 | }
+4 | import { TopNav } from "@/components/top-nav";
+5 | import { Providers } from "./providers";
+6 | import "./globals.css";
+7 | import Script from "next/script";
+8 | import { WebSearchProvider } from "@/lib/context/web-search-context";
+9 | import { cn } from "@/lib/utils";
+10 | import BuildInfo from "@/components/ui/BuildInfo";
+11 | import { IOSInstallPrompt } from "@/components/ios-install-prompt";
+12 | 
+13 | const inter = Inter({ subsets: ["latin"] });
+14 | 
+15 | export const metadata: Metadata = {
+16 |   metadataBase: new URL("https://www.chatlima.com/"),
+17 |   title: "ChatLima",
+18 |   description: "ChatLima is a minimalistic MCP client with a good feature set.",
+19 |   icons: {
+20 |     icon: "/logo.png",
+21 |     apple: [
+22 |       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+23 |       { url: "/apple-touch-icon-120x120.png", sizes: "120x120", type: "image/png" },
+24 |       { url: "/apple-touch-icon-152x152.png", sizes: "152x152", type: "image/png" },
+25 |       { url: "/apple-touch-icon-167x167.png", sizes: "167x167", type: "image/png" },
+26 |       { url: "/apple-touch-icon-180x180.png", sizes: "180x180", type: "image/png" },
+27 |     ],
+28 |   },
+29 |   manifest: "/manifest.json",
+30 |   appleWebApp: {
+31 |     capable: true,
+32 |     statusBarStyle: "default",
+33 |     title: "ChatLima",
+34 |   },
+35 |   formatDetection: {
+36 |     telephone: false,
+37 |   },
+38 |   openGraph: {
+39 |     siteName: "ChatLima",
+40 |     url: "https://www.chatlima.com/",
+41 |     images: [
+42 |       {
+43 |         url: "https://www.chatlima.com/opengraph-image.png",
+44 |         width: 1200,
+45 |         height: 630,
+46 |       },
+47 |     ],
+48 |   },
+49 |   twitter: {
+50 |     card: "summary_large_image",
+51 |     title: "ChatLima",
+52 |     description: "ChatLima is a minimalistic MCP client with a good feature set.",
+53 |     images: ["https://www.chatlima.com/twitter-image.png"],
+54 |   },
+55 |   other: {
+56 |     "mobile-web-app-capable": "yes",
+57 |     "apple-mobile-web-app-capable": "yes",
+58 |     "apple-mobile-web-app-status-bar-style": "default",
+59 |     "apple-mobile-web-app-title": "ChatLima",
+60 |   },
+61 | };
+62 | 
+63 | export default function RootLayout({
+64 |   children,
+65 | }: Readonly<{
+66 |   children: React.ReactNode;
+67 | }>) {
+68 |   return (
+69 |     <html lang="en" suppressHydrationWarning>
+70 |       <head>
+71 |         <meta 
+72 |           name="viewport" 
+73 |           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" 
+74 |         />
+75 |       </head>
+76 |       <body className={`${inter.className}`}>
+77 |         <Providers>
+78 |           <WebSearchProvider>
+79 |             <div className="flex h-dvh w-full">
+80 |               <ChatSidebar />
+81 |               <main className="flex-1 flex flex-col">
+82 |                 <TopNav />
+83 |                 <div className="flex-1 flex justify-center overflow-hidden">
+84 |                   {children}
+85 |                 </div>
+86 |               </main>
+87 |             </div>
+88 |             <IOSInstallPrompt />
+89 |           </WebSearchProvider>
+90 |         </Providers>
+91 |         <Script defer src="https://cloud.umami.is/script.js" data-website-id="bd3f8736-1562-47e0-917c-c10fde7ef0d2" />
+92 |       </body>
+93 |     </html>
+94 |   );
+95 | }
 ```
 
 app/page.tsx
@@ -2699,221 +2768,6 @@ app/providers.tsx
 50 |     </QueryClientProvider>
 51 |   );
 52 | } 
-```
-
-drizzle/0000_supreme_rocket_raccoon.sql
-```
-1 | CREATE TABLE "chats" (
-2 | 	"id" text PRIMARY KEY NOT NULL,
-3 | 	"title" text DEFAULT 'New Chat' NOT NULL,
-4 | 	"created_at" timestamp DEFAULT now() NOT NULL,
-5 | 	"updated_at" timestamp DEFAULT now() NOT NULL
-6 | );
-7 | --> statement-breakpoint
-8 | CREATE TABLE "messages" (
-9 | 	"id" text PRIMARY KEY NOT NULL,
-10 | 	"chat_id" text NOT NULL,
-11 | 	"content" text NOT NULL,
-12 | 	"role" text NOT NULL,
-13 | 	"created_at" timestamp DEFAULT now() NOT NULL
-14 | );
-15 | --> statement-breakpoint
-16 | ALTER TABLE "messages" ADD CONSTRAINT "messages_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;
-```
-
-drizzle/0001_curious_paper_doll.sql
-```
-1 | CREATE TABLE "users" (
-2 | 	"id" text PRIMARY KEY NOT NULL,
-3 | 	"client_id" text NOT NULL,
-4 | 	"created_at" timestamp DEFAULT now() NOT NULL,
-5 | 	"updated_at" timestamp DEFAULT now() NOT NULL,
-6 | 	CONSTRAINT "users_client_id_unique" UNIQUE("client_id")
-7 | );
-8 | --> statement-breakpoint
-9 | ALTER TABLE "chats" ADD COLUMN "user_id" text;--> statement-breakpoint
-10 | ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
-```
-
-drizzle/0002_free_cobalt_man.sql
-```
-1 | CREATE TABLE "steps" (
-2 | 	"id" text PRIMARY KEY NOT NULL,
-3 | 	"message_id" text NOT NULL,
-4 | 	"step_type" text NOT NULL,
-5 | 	"text" text,
-6 | 	"reasoning" text,
-7 | 	"finish_reason" text,
-8 | 	"created_at" timestamp DEFAULT now() NOT NULL,
-9 | 	"tool_calls" json,
-10 | 	"tool_results" json
-11 | );
-12 | --> statement-breakpoint
-13 | ALTER TABLE "users" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-14 | DROP TABLE "users" CASCADE;--> statement-breakpoint
-15 | ALTER TABLE "chats" DROP CONSTRAINT "chats_user_id_users_id_fk";
-16 | --> statement-breakpoint
-17 | ALTER TABLE "chats" ALTER COLUMN "user_id" SET NOT NULL;--> statement-breakpoint
-18 | ALTER TABLE "messages" ADD COLUMN "reasoning" text;--> statement-breakpoint
-19 | ALTER TABLE "messages" ADD COLUMN "tool_calls" json;--> statement-breakpoint
-20 | ALTER TABLE "messages" ADD COLUMN "tool_results" json;--> statement-breakpoint
-21 | ALTER TABLE "messages" ADD COLUMN "has_tool_use" boolean DEFAULT false;--> statement-breakpoint
-22 | ALTER TABLE "steps" ADD CONSTRAINT "steps_message_id_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."messages"("id") ON DELETE cascade ON UPDATE no action;
-```
-
-drizzle/0003_oval_energizer.sql
-```
-1 | ALTER TABLE "steps" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-2 | DROP TABLE "steps" CASCADE;--> statement-breakpoint
-3 | ALTER TABLE "messages" ALTER COLUMN "tool_calls" SET DATA TYPE jsonb;--> statement-breakpoint
-4 | ALTER TABLE "messages" ALTER COLUMN "tool_results" SET DATA TYPE jsonb;--> statement-breakpoint
-5 | ALTER TABLE "messages" ADD COLUMN "step_type" text;--> statement-breakpoint
-6 | ALTER TABLE "messages" ADD COLUMN "finish_reason" text;--> statement-breakpoint
-7 | ALTER TABLE "messages" DROP COLUMN "has_tool_use";
-```
-
-drizzle/0004_tense_ricochet.sql
-```
-1 | ALTER TABLE "messages" DROP COLUMN "reasoning";--> statement-breakpoint
-2 | ALTER TABLE "messages" DROP COLUMN "tool_calls";--> statement-breakpoint
-3 | ALTER TABLE "messages" DROP COLUMN "tool_results";--> statement-breakpoint
-4 | ALTER TABLE "messages" DROP COLUMN "step_type";--> statement-breakpoint
-5 | ALTER TABLE "messages" DROP COLUMN "finish_reason";
-```
-
-drizzle/0005_early_payback.sql
-```
-1 | ALTER TABLE "messages" ADD COLUMN "parts" json NOT NULL;--> statement-breakpoint
-2 | ALTER TABLE "messages" DROP COLUMN "content";
-```
-
-drizzle/0007_update_verification_table.sql
-```
-1 | ALTER TABLE "verificationToken" RENAME TO "verification";--> statement-breakpoint
-2 | ALTER TABLE "verification" RENAME COLUMN "expires" TO "expiresAt";--> statement-breakpoint
-3 | ALTER TABLE "verification" DROP CONSTRAINT "verificationToken_token_unique";--> statement-breakpoint
-4 | ALTER TABLE "verification" DROP CONSTRAINT "verificationToken_identifier_token_pk";--> statement-breakpoint
-5 | ALTER TABLE "verification" ADD COLUMN "id" text PRIMARY KEY NOT NULL;--> statement-breakpoint
-6 | ALTER TABLE "verification" ADD COLUMN "value" text NOT NULL;--> statement-breakpoint
-7 | ALTER TABLE "verification" DROP COLUMN "token";
-```
-
-drizzle/0008_alter_accounts_expiresat_type.sql
-```
-1 | ALTER TABLE "account" ALTER COLUMN "expires_at" SET DATA TYPE timestamp USING to_timestamp(expires_at);
-```
-
-drizzle/0009_alter_users_emailverified_type.sql
-```
-1 | ALTER TABLE "user" ALTER COLUMN "emailVerified" SET DATA TYPE boolean USING ("emailVerified" IS NOT NULL);
-```
-
-drizzle/0010_optimal_jane_foster.sql
-```
-1 | -- ALTER TABLE "account" RENAME COLUMN "expires_at" TO "access_token_expires_at"; -- Already applied by previous push
-2 | ALTER TABLE "account" ALTER COLUMN "access_token_expires_at" SET DATA TYPE integer USING EXTRACT(epoch FROM "access_token_expires_at")::integer;
-```
-
-drizzle/0011_fixed_cerebro.sql
-```
-1 | -- ALTER TABLE "account" DROP CONSTRAINT "account_providerId_accountId_pk"; --> statement-breakpoint -- Already dropped by previous push
-2 | ALTER TABLE "account" ADD COLUMN "id" text PRIMARY KEY NOT NULL;
-```
-
-drizzle/0012_tearful_misty_knight.sql
-```
-1 | ALTER TABLE "account" ALTER COLUMN "access_token_expires_at" SET DATA TYPE timestamp USING to_timestamp("access_token_expires_at");
-```
-
-drizzle/0013_special_whirlwind.sql
-```
-1 | ALTER TABLE "account" ALTER COLUMN "providerType" DROP NOT NULL;
-```
-
-drizzle/0014_fair_praxagora.sql
-```
-1 | ALTER TABLE "session" RENAME COLUMN "expires" TO "expiresAt";
-```
-
-drizzle/0015_remarkable_owl.sql
-```
-1 | -- First add the column as nullable
-2 | ALTER TABLE "session" ADD COLUMN IF NOT EXISTS "token" text;
-3 | -- Then update existing records to use the sessionToken value
-4 | UPDATE "session" SET "token" = "sessionToken" WHERE "token" IS NULL;
-5 | -- Finally make the column NOT NULL if needed
-6 | ALTER TABLE "session" ALTER COLUMN "token" SET NOT NULL;
-```
-
-drizzle/0016_cooing_lester.sql
-```
-1 | ALTER TABLE "session" DROP COLUMN "token";
-```
-
-drizzle/0017_past_bromley.sql
-```
-1 | DO $ 
-2 | BEGIN
-3 |     IF NOT EXISTS (
-4 |         SELECT 1
-5 |         FROM information_schema.columns
-6 |         WHERE table_name = 'messages' AND column_name = 'has_web_search'
-7 |     ) THEN
-8 |         ALTER TABLE "messages" ADD COLUMN "has_web_search" boolean DEFAULT false;
-9 |     END IF;
-10 | END $;--> statement-breakpoint
-11 | 
-12 | DO $ 
-13 | BEGIN
-14 |     IF NOT EXISTS (
-15 |         SELECT 1
-16 |         FROM information_schema.columns
-17 |         WHERE table_name = 'messages' AND column_name = 'web_search_context_size'
-18 |     ) THEN
-19 |         ALTER TABLE "messages" ADD COLUMN "web_search_context_size" text DEFAULT 'medium';
-20 |     END IF;
-21 | END $;
-```
-
-drizzle/0018_conscious_dragon_man.sql
-```
-1 | DO $ 
-2 | BEGIN
-3 |     IF NOT EXISTS (
-4 |         SELECT 1
-5 |         FROM information_schema.tables
-6 |         WHERE table_name = 'polar_usage_events'
-7 |     ) THEN
-8 |         CREATE TABLE "polar_usage_events" (
-9 |             "id" text PRIMARY KEY NOT NULL,
-10 |             "user_id" text NOT NULL,
-11 |             "polar_customer_id" text,
-12 |             "event_name" text NOT NULL,
-13 |             "event_payload" json NOT NULL,
-14 |             "created_at" timestamp DEFAULT now() NOT NULL
-15 |         );
-16 |         
-17 |         ALTER TABLE "polar_usage_events" ADD CONSTRAINT "polar_usage_events_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
-18 |     END IF;
-19 | END $;
-```
-
-drizzle/0018_manual_polar_events.sql
-```
-1 | -- Migration manually applied via Neon MCP
-2 | -- This file is a placeholder to track that the polarUsageEvents table was created
-3 | 
-4 | -- CREATE TABLE was executed directly via Neon API
-```
-
-drizzle/0020_rainy_rockslide.sql
-```
-1 | ALTER TABLE "user" ADD COLUMN "isAnonymous" boolean DEFAULT false;
-```
-
-drizzle/0021_aberrant_baron_zemo.sql
-```
-1 | ALTER TABLE "user" ADD COLUMN "metadata" json;
 ```
 
 components/api-key-manager.tsx
@@ -3372,7 +3226,7 @@ components/chat-list.tsx
 271 |                                                     </TooltipProvider>
 272 |                                                 )}
 273 |                                                 {!isCollapsed && (
-274 |                                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
+274 |                                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover/menu-item:opacity-100 sm:group-focus-within/menu-item:opacity-100 opacity-100">
 275 |                                                         <Button
 276 |                                                             variant="ghost"
 277 |                                                             size="icon"
@@ -4256,7 +4110,7 @@ components/chat.tsx
 304 |   }, [messages, webSearchEnabled, isOpenRouterModel]);
 305 | 
 306 |   return (
-307 |     <div className="h-dvh flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
+307 |     <div className="h-full flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
 308 |       {/* Main content area: Either ProjectOverview or Messages */}
 309 |       <div className="flex-1 overflow-y-auto min-h-0 pb-2">
 310 |         {messages.length === 0 && !isLoadingChat ? (
@@ -4426,25 +4280,27 @@ components/copy-button.tsx
 17 |       size="sm"
 18 |       className={cn(
 19 |         "transition-opacity opacity-0 group-hover/message:opacity-100 gap-1.5",
-20 |         className
-21 |       )}
-22 |       onClick={() => copy(text)}
-23 |       title="Copy to clipboard"
-24 |     >
-25 |       {copied ? (
-26 |         <>
-27 |           <CheckIcon className="h-4 w-4" />
-28 |           <span className="text-xs">Copied!</span>
-29 |         </>
-30 |       ) : (
-31 |         <>
-32 |           <CopyIcon className="h-4 w-4" />
-33 |           <span className="text-xs">Copy</span>
-34 |         </>
-35 |       )}
-36 |     </Button>
-37 |   );
-38 | } 
+20 |         // Always visible on touch devices (mobile) where hover doesn't work
+21 |         "sm:opacity-0 sm:group-hover/message:opacity-100 opacity-100",
+22 |         className
+23 |       )}
+24 |       onClick={() => copy(text)}
+25 |       title="Copy to clipboard"
+26 |     >
+27 |       {copied ? (
+28 |         <>
+29 |           <CheckIcon className="h-4 w-4" />
+30 |           <span className="text-xs">Copied!</span>
+31 |         </>
+32 |       ) : (
+33 |         <>
+34 |           <CopyIcon className="h-4 w-4" />
+35 |           <span className="text-xs">Copy</span>
+36 |         </>
+37 |       )}
+38 |     </Button>
+39 |   );
+40 | } 
 ```
 
 components/deploy-button.tsx
@@ -5046,20 +4902,22 @@ My current codebase:
 195 | const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 196 |   const processed = preprocessMathDelimiters(children);
 197 |   return (
-198 |     <ReactMarkdown 
-199 |       remarkPlugins={remarkPlugins} 
-200 |       rehypePlugins={rehypePlugins}
-201 |       components={components}
-202 |     >
-203 |       {processed}
-204 |     </ReactMarkdown>
-205 |   );
-206 | };
-207 | 
-208 | export const Markdown = memo(
-209 |   NonMemoizedMarkdown,
-210 |   (prevProps, nextProps) => prevProps.children === nextProps.children,
-211 | );
+198 |     <div className="overflow-x-auto max-w-full">
+199 |       <ReactMarkdown 
+200 |         remarkPlugins={remarkPlugins} 
+201 |         rehypePlugins={rehypePlugins}
+202 |         components={components}
+203 |       >
+204 |         {processed}
+205 |       </ReactMarkdown>
+206 |     </div>
+207 |   );
+208 | };
+209 | 
+210 | export const Markdown = memo(
+211 |   NonMemoizedMarkdown,
+212 |   (prevProps, nextProps) => prevProps.children === nextProps.children,
+213 | );
 ```
 
 components/mcp-server-manager.tsx
@@ -5104,892 +4962,889 @@ components/mcp-server-manager.tsx
 38 | // Default template for a new MCP server
 39 | const INITIAL_NEW_SERVER: Omit<MCPServer, 'id'> = {
 40 |     name: '',
-41 |     url: '',
-42 |     type: 'sse',
-43 |     command: 'node',
-44 |     args: [],
-45 |     env: [],
-46 |     headers: []
-47 | };
-48 | 
-49 | interface MCPServerManagerProps {
-50 |     servers: MCPServer[];
-51 |     onServersChange: (servers: MCPServer[]) => void;
-52 |     selectedServers: string[];
-53 |     onSelectedServersChange: (serverIds: string[]) => void;
-54 |     open: boolean;
-55 |     onOpenChange: (open: boolean) => void;
-56 | }
-57 | 
-58 | // Check if a key name might contain sensitive information
-59 | const isSensitiveKey = (key: string): boolean => {
-60 |     const sensitivePatterns = [
-61 |         /key/i, 
-62 |         /token/i, 
-63 |         /secret/i, 
-64 |         /password/i, 
-65 |         /pass/i,
-66 |         /auth/i,
-67 |         /credential/i
-68 |     ];
-69 |     return sensitivePatterns.some(pattern => pattern.test(key));
-70 | };
-71 | 
-72 | // Mask a sensitive value
-73 | const maskValue = (value: string): string => {
-74 |     if (!value) return '';
-75 |     if (value.length < 8) return '••••••';
-76 |     return value.substring(0, 3) + '•'.repeat(Math.min(10, value.length - 4)) + value.substring(value.length - 1);
-77 | };
-78 | 
-79 | export const MCPServerManager = ({
-80 |     servers,
-81 |     onServersChange,
-82 |     selectedServers,
-83 |     onSelectedServersChange,
-84 |     open,
-85 |     onOpenChange
-86 | }: MCPServerManagerProps) => {
-87 |     const [newServer, setNewServer] = useState<Omit<MCPServer, 'id'>>(INITIAL_NEW_SERVER);
-88 |     const [view, setView] = useState<'list' | 'add'>('list');
-89 |     const [newEnvVar, setNewEnvVar] = useState<KeyValuePair>({ key: '', value: '' });
-90 |     const [newHeader, setNewHeader] = useState<KeyValuePair>({ key: '', value: '' });
-91 |     const [editingServerId, setEditingServerId] = useState<string | null>(null);
-92 |     const [showSensitiveEnvValues, setShowSensitiveEnvValues] = useState<Record<number, boolean>>({});
-93 |     const [showSensitiveHeaderValues, setShowSensitiveHeaderValues] = useState<Record<number, boolean>>({});
-94 |     const [editingEnvIndex, setEditingEnvIndex] = useState<number | null>(null);
-95 |     const [editingHeaderIndex, setEditingHeaderIndex] = useState<number | null>(null);
-96 |     const [editedEnvValue, setEditedEnvValue] = useState<string>('');
-97 |     const [editedHeaderValue, setEditedHeaderValue] = useState<string>('');
-98 | 
-99 |     const resetAndClose = () => {
-100 |         setView('list');
-101 |         setNewServer(INITIAL_NEW_SERVER);
-102 |         setNewEnvVar({ key: '', value: '' });
-103 |         setNewHeader({ key: '', value: '' });
-104 |         setShowSensitiveEnvValues({});
-105 |         setShowSensitiveHeaderValues({});
-106 |         setEditingEnvIndex(null);
-107 |         setEditingHeaderIndex(null);
-108 |         onOpenChange(false);
-109 |     };
-110 | 
-111 |     const addServer = () => {
-112 |         if (!newServer.name) {
-113 |             toast.error("Server name is required");
-114 |             return;
-115 |         }
-116 | 
-117 |         if (newServer.type === 'sse' && !newServer.url) {
-118 |             toast.error("Server URL is required for SSE transport");
-119 |             return;
-120 |         }
-121 | 
-122 |         if (newServer.type === 'streamable-http' && !newServer.url) {
-123 |             toast.error("Server URL is required for Streamable HTTP transport");
-124 |             return;
-125 |         }
-126 | 
-127 |         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
-128 |             toast.error("Command and at least one argument are required for stdio transport");
-129 |             return;
-130 |         }
-131 | 
-132 |         const id = crypto.randomUUID();
-133 |         const updatedServers = [...servers, { ...newServer, id }];
-134 |         onServersChange(updatedServers);
-135 | 
-136 |         toast.success(`Added MCP server: ${newServer.name}`);
-137 |         setView('list');
-138 |         setNewServer(INITIAL_NEW_SERVER);
-139 |         setNewEnvVar({ key: '', value: '' });
-140 |         setNewHeader({ key: '', value: '' });
-141 |         setShowSensitiveEnvValues({});
-142 |         setShowSensitiveHeaderValues({});
-143 |     };
-144 | 
-145 |     const removeServer = (id: string, e: React.MouseEvent) => {
-146 |         e.stopPropagation();
-147 |         const updatedServers = servers.filter(server => server.id !== id);
-148 |         onServersChange(updatedServers);
-149 | 
-150 |         // If the removed server was selected, remove it from selected servers
-151 |         if (selectedServers.includes(id)) {
-152 |             onSelectedServersChange(selectedServers.filter(serverId => serverId !== id));
-153 |         }
-154 | 
-155 |         toast.success("Server removed");
-156 |     };
-157 | 
-158 |     const toggleServer = (id: string) => {
-159 |         if (selectedServers.includes(id)) {
-160 |             // Remove from selected servers
-161 |             onSelectedServersChange(selectedServers.filter(serverId => serverId !== id));
-162 |             const server = servers.find(s => s.id === id);
-163 |             if (server) {
-164 |                 toast.success(`Disabled MCP server: ${server.name}`);
-165 |             }
-166 |         } else {
-167 |             // Add to selected servers
-168 |             onSelectedServersChange([...selectedServers, id]);
-169 |             const server = servers.find(s => s.id === id);
-170 |             if (server) {
-171 |                 toast.success(`Enabled MCP server: ${server.name}`);
-172 |             }
-173 |         }
-174 |     };
-175 | 
-176 |     const clearAllServers = () => {
-177 |         if (selectedServers.length > 0) {
-178 |             onSelectedServersChange([]);
-179 |             toast.success("All MCP servers disabled");
-180 |             resetAndClose();
-181 |         }
-182 |     };
-183 | 
-184 |     const handleArgsChange = (value: string) => {
-185 |         try {
-186 |             // Try to parse as JSON if it starts with [ (array)
-187 |             const argsArray = value.trim().startsWith('[')
-188 |                 ? JSON.parse(value)
-189 |                 : value.split(' ').filter(Boolean);
-190 | 
-191 |             setNewServer({ ...newServer, args: argsArray });
-192 |         } catch (error) {
-193 |             // If parsing fails, just split by spaces
-194 |             setNewServer({ ...newServer, args: value.split(' ').filter(Boolean) });
-195 |         }
-196 |     };
-197 | 
-198 |     const addEnvVar = () => {
-199 |         if (!newEnvVar.key) return;
-200 | 
-201 |         setNewServer({
-202 |             ...newServer,
-203 |             env: [...(newServer.env || []), { ...newEnvVar }]
-204 |         });
-205 | 
-206 |         setNewEnvVar({ key: '', value: '' });
-207 |     };
-208 | 
-209 |     const removeEnvVar = (index: number) => {
-210 |         const updatedEnv = [...(newServer.env || [])];
-211 |         updatedEnv.splice(index, 1);
-212 |         setNewServer({ ...newServer, env: updatedEnv });
-213 |         
-214 |         // Clean up visibility state for this index
-215 |         const updatedVisibility = { ...showSensitiveEnvValues };
-216 |         delete updatedVisibility[index];
-217 |         setShowSensitiveEnvValues(updatedVisibility);
-218 |         
-219 |         // If currently editing this value, cancel editing
-220 |         if (editingEnvIndex === index) {
-221 |             setEditingEnvIndex(null);
-222 |         }
-223 |     };
-224 | 
-225 |     const startEditEnvValue = (index: number, value: string) => {
-226 |         setEditingEnvIndex(index);
-227 |         setEditedEnvValue(value);
-228 |     };
-229 | 
-230 |     const saveEditedEnvValue = () => {
-231 |         if (editingEnvIndex !== null) {
-232 |             const updatedEnv = [...(newServer.env || [])];
-233 |             updatedEnv[editingEnvIndex] = {
-234 |                 ...updatedEnv[editingEnvIndex],
-235 |                 value: editedEnvValue
-236 |             };
-237 |             setNewServer({ ...newServer, env: updatedEnv });
-238 |             setEditingEnvIndex(null);
-239 |         }
-240 |     };
-241 | 
-242 |     const addHeader = () => {
-243 |         if (!newHeader.key) return;
-244 | 
-245 |         setNewServer({
-246 |             ...newServer,
-247 |             headers: [...(newServer.headers || []), { ...newHeader }]
-248 |         });
-249 | 
-250 |         setNewHeader({ key: '', value: '' });
-251 |     };
-252 | 
-253 |     const removeHeader = (index: number) => {
-254 |         const updatedHeaders = [...(newServer.headers || [])];
-255 |         updatedHeaders.splice(index, 1);
-256 |         setNewServer({ ...newServer, headers: updatedHeaders });
-257 |         
-258 |         // Clean up visibility state for this index
-259 |         const updatedVisibility = { ...showSensitiveHeaderValues };
-260 |         delete updatedVisibility[index];
-261 |         setShowSensitiveHeaderValues(updatedVisibility);
-262 |         
-263 |         // If currently editing this value, cancel editing
-264 |         if (editingHeaderIndex === index) {
-265 |             setEditingHeaderIndex(null);
-266 |         }
-267 |     };
-268 | 
-269 |     const startEditHeaderValue = (index: number, value: string) => {
-270 |         setEditingHeaderIndex(index);
-271 |         setEditedHeaderValue(value);
-272 |     };
-273 | 
-274 |     const saveEditedHeaderValue = () => {
-275 |         if (editingHeaderIndex !== null) {
-276 |             const updatedHeaders = [...(newServer.headers || [])];
-277 |             updatedHeaders[editingHeaderIndex] = {
-278 |                 ...updatedHeaders[editingHeaderIndex],
-279 |                 value: editedHeaderValue
-280 |             };
-281 |             setNewServer({ ...newServer, headers: updatedHeaders });
-282 |             setEditingHeaderIndex(null);
-283 |         }
-284 |     };
-285 | 
-286 |     const toggleSensitiveEnvValue = (index: number) => {
-287 |         setShowSensitiveEnvValues(prev => ({
-288 |             ...prev,
-289 |             [index]: !prev[index]
-290 |         }));
-291 |     };
-292 | 
-293 |     const toggleSensitiveHeaderValue = (index: number) => {
-294 |         setShowSensitiveHeaderValues(prev => ({
-295 |             ...prev,
-296 |             [index]: !prev[index]
-297 |         }));
-298 |     };
-299 | 
-300 |     const hasAdvancedConfig = (server: MCPServer) => {
-301 |         return (server.env && server.env.length > 0) ||
-302 |             (server.headers && server.headers.length > 0);
-303 |     };
-304 | 
-305 |     // Editing support
-306 |     const startEditing = (server: MCPServer) => {
-307 |         setEditingServerId(server.id);
-308 |         setNewServer({
-309 |             name: server.name,
-310 |             url: server.url,
-311 |             type: server.type,
-312 |             command: server.command,
-313 |             args: server.args,
-314 |             env: server.env,
-315 |             headers: server.headers
-316 |         });
-317 |         setView('add');
-318 |         // Reset sensitive value visibility states
-319 |         setShowSensitiveEnvValues({});
-320 |         setShowSensitiveHeaderValues({});
-321 |         setEditingEnvIndex(null);
-322 |         setEditingHeaderIndex(null);
-323 |     };
-324 | 
-325 |     const handleFormCancel = () => {
-326 |         if (view === 'add') {
-327 |             setView('list');
-328 |             setEditingServerId(null);
-329 |             setNewServer(INITIAL_NEW_SERVER);
-330 |             setShowSensitiveEnvValues({});
-331 |             setShowSensitiveHeaderValues({});
-332 |             setEditingEnvIndex(null);
-333 |             setEditingHeaderIndex(null);
-334 |         } else {
-335 |             resetAndClose();
-336 |         }
-337 |     };
-338 | 
-339 |     const updateServer = () => {
-340 |         if (!newServer.name) {
-341 |             toast.error("Server name is required");
-342 |             return;
-343 |         }
-344 |         if (newServer.type === 'sse' && !newServer.url) {
-345 |             toast.error("Server URL is required for SSE transport");
-346 |             return;
-347 |         }
-348 |         if (newServer.type === 'streamable-http' && !newServer.url) {
-349 |             toast.error("Server URL is required for Streamable HTTP transport");
-350 |             return;
-351 |         }
-352 |         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
-353 |             toast.error("Command and at least one argument are required for stdio transport");
-354 |             return;
-355 |         }
-356 |         const updated = servers.map(s =>
-357 |             s.id === editingServerId ? { ...newServer, id: editingServerId! } : s
-358 |         );
-359 |         onServersChange(updated);
-360 |         toast.success(`Updated MCP server: ${newServer.name}`);
-361 |         setView('list');
-362 |         setEditingServerId(null);
-363 |         setNewServer(INITIAL_NEW_SERVER);
-364 |         setShowSensitiveEnvValues({});
-365 |         setShowSensitiveHeaderValues({});
-366 |     };
-367 | 
-368 |     return (
-369 |         <Dialog open={open} onOpenChange={onOpenChange}>
-370 |             <DialogContent className="sm:max-w-[480px] max-h-[85vh] overflow-hidden flex flex-col">
-371 |                 <DialogHeader>
-372 |                     <DialogTitle className="flex items-center gap-2">
-373 |                         <ServerIcon className="h-5 w-5 text-primary" />
-374 |                         MCP Server Configuration
-375 |                     </DialogTitle>
-376 |                     <DialogDescription>
-377 |                         Connect to Model Context Protocol servers to access additional AI tools.
-378 |                         {selectedServers.length > 0 && (
-379 |                             <span className="block mt-1 text-xs font-medium text-primary">
-380 |                                 {selectedServers.length} server{selectedServers.length !== 1 ? 's' : ''} currently active
-381 |                             </span>
-382 |                         )}
-383 |                     </DialogDescription>
-384 |                 </DialogHeader>
-385 | 
-386 |                 {view === 'list' ? (
-387 |                     <div className="flex-1 overflow-hidden flex flex-col">
-388 |                         {servers.length > 0 ? (
-389 |                             <div className="flex-1 overflow-hidden flex flex-col">
-390 |                                 <div className="flex-1 overflow-hidden flex flex-col">
-391 |                                     <div className="flex items-center justify-between mb-3">
-392 |                                         <h3 className="text-sm font-medium">Available Servers</h3>
-393 |                                         <span className="text-xs text-muted-foreground">
-394 |                                             Select multiple servers to combine their tools
-395 |                                         </span>
-396 |                                     </div>
-397 |                                     <div className="overflow-y-auto pr-1 flex-1 gap-2.5 flex flex-col pb-16">
-398 |                                         {servers
-399 |                                             .sort((a, b) => {
-400 |                                                 const aActive = selectedServers.includes(a.id);
-401 |                                                 const bActive = selectedServers.includes(b.id);
-402 |                                                 if (aActive && !bActive) return -1;
-403 |                                                 if (!aActive && bActive) return 1;
-404 |                                                 return 0;
-405 |                                             })
-406 |                                             .map((server) => {
-407 |                                             const isActive = selectedServers.includes(server.id);
-408 |                                             return (
-409 |                                                 <div
-410 |                                                     key={server.id}
-411 |                                                     className={`
-412 |                             relative flex flex-col p-3.5 rounded-xl transition-colors
-413 |                             border ${isActive
-414 |                                                             ? 'border-primary bg-primary/10'
-415 |                                                             : 'border-border hover:border-primary/30 hover:bg-primary/5'}
-416 |                           `}
-417 |                                                 >
-418 |                                                     {/* Server Header with Type Badge and Delete Button */}
-419 |                                                     <div className="flex items-center justify-between mb-2">
-420 |                                                         <div className="flex items-center gap-2">
-421 |                                                             {server.type === 'sse' ? (
-422 |                                                                 <Globe className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
-423 |                                                             ) : (
-424 |                                                                 <Terminal className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
-425 |                                                             )}
-426 |                                                             <h4 className="text-sm font-medium truncate max-w-[220px]">{server.name}</h4>
-427 |                                                             {hasAdvancedConfig(server) && (
-428 |                                                                 <span className="flex-shrink-0">
-429 |                                                                     <Cog className="h-3 w-3 text-muted-foreground" />
-430 |                                                                 </span>
-431 |                                                             )}
-432 |                                                         </div>
-433 |                                                         <div className="flex items-center gap-2">
-434 |                                                             <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-435 |                                                                 {server.type.toUpperCase()}
-436 |                                                             </span>
-437 |                                                             <button
-438 |                                                                 onClick={(e) => removeServer(server.id, e)}
-439 |                                                                 className="p-1 rounded-full hover:bg-muted/70"
-440 |                                                                 aria-label="Remove server"
-441 |                                                             >
-442 |                                                                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-443 |                                                             </button>
-444 |                                                             <button
-445 |                                                                 onClick={() => startEditing(server)}
-446 |                                                                 className="p-1 rounded-full hover:bg-muted/50"
-447 |                                                                 aria-label="Edit server"
-448 |                                                             >
-449 |                                                                 <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-450 |                                                             </button>
-451 |                                                         </div>
-452 |                                                     </div>
-453 | 
-454 |                                                     {/* Server Details */}
-455 |                                                     <p className="text-xs text-muted-foreground mb-2.5 truncate">
-456 |                                                         {server.type === 'sse' || server.type === 'streamable-http'
-457 |                                                             ? server.url
-458 |                                                             : `${server.command} ${server.args?.join(' ')}`
-459 |                                                         }
-460 |                                                     </p>
-461 | 
-462 |                                                     {/* Action Button */}
-463 |                                                     <Button
-464 |                                                         size="sm"
-465 |                                                         className="w-full gap-1.5 hover:text-black hover:dark:text-white rounded-lg"
-466 |                                                         variant={isActive ? "default" : "outline"}
-467 |                                                         onClick={() => toggleServer(server.id)}
-468 |                                                     >
-469 |                                                         {isActive && <CheckCircle className="h-3.5 w-3.5" />}
-470 |                                                         {isActive ? "Active" : "Enable Server"}
-471 |                                                     </Button>
-472 |                                                 </div>
-473 |                                             );
-474 |                                         })}
-475 |                                     </div>
-476 |                                 </div>
-477 |                             </div>
-478 |                         ) : (
-479 |                             <div className="flex-1 py-8 pb-16 flex flex-col items-center justify-center space-y-4">
-480 |                                 <div className="rounded-full p-3 bg-primary/10">
-481 |                                     <ServerIcon className="h-7 w-7 text-primary" />
-482 |                                 </div>
-483 |                                 <div className="text-center space-y-1">
-484 |                                     <h3 className="text-base font-medium">No MCP Servers Added</h3>
-485 |                                     <p className="text-sm text-muted-foreground max-w-[300px]">
-486 |                                         Add your first MCP server to access additional AI tools
-487 |                                     </p>
-488 |                                 </div>
-489 |                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4">
-490 |                                     <a
-491 |                                         href="https://modelcontextprotocol.io"
-492 |                                         target="_blank"
-493 |                                         rel="noopener noreferrer"
-494 |                                         className="flex items-center gap-1 hover:text-primary transition-colors"
-495 |                                     >
-496 |                                         Learn about MCP
-497 |                                         <ExternalLink className="h-3 w-3" />
-498 |                                     </a>
-499 |                                 </div>
-500 |                             </div>
-501 |                         )}
-502 |                     </div>
-503 |                 ) : (
-504 |                     <div className="space-y-4 overflow-y-auto px-1 py-0.5 mb-14 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-505 |                         <h3 className="text-sm font-medium">{editingServerId ? "Edit MCP Server" : "Add New MCP Server"}</h3>
-506 |                         <div className="space-y-4">
-507 |                             <div className="grid gap-1.5">
-508 |                                 <Label htmlFor="name">
-509 |                                     Server Name
-510 |                                 </Label>
-511 |                                 <Input
-512 |                                     id="name"
-513 |                                     value={newServer.name}
-514 |                                     onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-515 |                                     placeholder="My MCP Server"
-516 |                                     className="relative z-0"
-517 |                                 />
-518 |                             </div>
-519 | 
-520 |                             <div className="grid gap-1.5">
-521 |                                 <Label htmlFor="transport-type">
-522 |                                     Transport Type
-523 |                                 </Label>
-524 |                                 <div className="space-y-2">
-525 |                                     <p className="text-xs text-muted-foreground">Choose how to connect to your MCP server:</p>
-526 |                                     <div className="grid gap-2 grid-cols-2">
-527 |                                         <button
-528 |                                             type="button"
-529 |                                             onClick={() => setNewServer({ ...newServer, type: 'sse' })}
-530 |                                             className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
-531 |                                                 newServer.type === 'sse' 
-532 |                                                     ? 'border-primary bg-primary/10 ring-1 ring-primary' 
-533 |                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
-534 |                                             }`}
-535 |                                         >
-536 |                                             <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'sse' ? 'text-primary' : ''}`} />
-537 |                                             <div>
-538 |                                                 <p className="font-medium">SSE</p>
-539 |                                                 <p className="text-xs text-muted-foreground">Server-Sent Events</p>
-540 |                                             </div>
-541 |                                         </button>
-542 |                                         
-543 |                                         <button
-544 |                                             type="button"
-545 |                                             onClick={() => setNewServer({ ...newServer, type: 'stdio' })}
-546 |                                             className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
-547 |                                                 newServer.type === 'stdio' 
-548 |                                                     ? 'border-primary bg-primary/10 ring-1 ring-primary' 
-549 |                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
-550 |                                             }`}
-551 |                                         >
-552 |                                             <Terminal className={`h-5 w-5 shrink-0 ${newServer.type === 'stdio' ? 'text-primary' : ''}`} />
-553 |                                             <div>
-554 |                                                 <p className="font-medium">stdio</p>
-555 |                                                 <p className="text-xs text-muted-foreground">Standard I/O</p>
-556 |                                             </div>
-557 |                                         </button>
-558 |                                     </div>
-559 |                                     <button
-560 |                                         type="button"
-561 |                                         onClick={() => setNewServer({ ...newServer, type: 'streamable-http' })}
-562 |                                         className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all col-span-2 ${
-563 |                                             newServer.type === 'streamable-http' 
-564 |                                                 ? 'border-primary bg-primary/10 ring-1 ring-primary' 
-565 |                                                 : 'border-border hover:border-border/80 hover:bg-muted/50'
-566 |                                         }`}
-567 |                                     >
-568 |                                         <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'streamable-http' ? 'text-primary' : ''}`} />
-569 |                                         <div>
-570 |                                             <p className="font-medium">Streamable HTTP</p>
-571 |                                             <p className="text-xs text-muted-foreground">Streamable HTTP Server</p>
-572 |                                         </div>
-573 |                                     </button>
-574 |                                 </div>
-575 |                             </div>
-576 | 
-577 |                             {newServer.type === 'sse' || newServer.type === 'streamable-http' ? (
-578 |                                 <div className="grid gap-1.5">
-579 |                                     <Label htmlFor="url">
-580 |                                         Server URL
-581 |                                     </Label>
-582 |                                     <Input
-583 |                                         id="url"
-584 |                                         value={newServer.url}
-585 |                                         onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
-586 |                                         placeholder={newServer.type === 'streamable-http' ? "https://mcp.example.com/token/mcp" : "https://mcp.example.com/token/sse"}
-587 |                                         className="relative z-0"
-588 |                                     />
-589 |                                     <p className="text-xs text-muted-foreground">
-590 |                                         Full URL to the {newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint of the MCP server
-591 |                                     </p>
-592 |                                 </div>
-593 |                             ) : (
-594 |                                 <>
-595 |                                     <div className="grid gap-1.5">
-596 |                                         <Label htmlFor="command">
-597 |                                             Command
-598 |                                         </Label>
-599 |                                         <Input
-600 |                                             id="command"
-601 |                                             value={newServer.command}
-602 |                                             onChange={(e) => setNewServer({ ...newServer, command: e.target.value })}
-603 |                                             placeholder="node"
-604 |                                             className="relative z-0"
-605 |                                         />
-606 |                                         <p className="text-xs text-muted-foreground">
-607 |                                             Executable to run (e.g., node, python)
-608 |                                         </p>
-609 |                                     </div>
-610 |                                     <div className="grid gap-1.5">
-611 |                                         <Label htmlFor="args">
-612 |                                             Arguments
-613 |                                         </Label>
-614 |                                         <Input
-615 |                                             id="args"
-616 |                                             value={newServer.args?.join(' ') || ''}
-617 |                                             onChange={(e) => handleArgsChange(e.target.value)}
-618 |                                             placeholder="src/mcp-server.js --port 3001"
-619 |                                             className="relative z-0"
-620 |                                         />
-621 |                                         <p className="text-xs text-muted-foreground">
-622 |                                             Space-separated arguments or JSON array
-623 |                                         </p>
-624 |                                     </div>
-625 |                                 </>
-626 |                             )}
-627 | 
-628 |                             {/* Advanced Configuration */}
-629 |                             <Accordion type="single" collapsible className="w-full">
-630 |                                 <AccordionItem value="env-vars">
-631 |                                     <AccordionTrigger className="text-sm py-2">
-632 |                                         Environment Variables
-633 |                                     </AccordionTrigger>
-634 |                                     <AccordionContent>
-635 |                                         <div className="space-y-3">
-636 |                                             <div className="flex items-end gap-2">
-637 |                                                 <div className="flex-1">
-638 |                                                     <Label htmlFor="env-key" className="text-xs mb-1 block">
-639 |                                                         Key
-640 |                                                     </Label>
-641 |                                                     <Input
-642 |                                                         id="env-key"
-643 |                                                         value={newEnvVar.key}
-644 |                                                         onChange={(e) => setNewEnvVar({ ...newEnvVar, key: e.target.value })}
-645 |                                                         placeholder="API_KEY"
-646 |                                                         className="h-8 relative z-0"
-647 |                                                     />
-648 |                                                 </div>
-649 |                                                 <div className="flex-1">
-650 |                                                     <Label htmlFor="env-value" className="text-xs mb-1 block">
-651 |                                                         Value
-652 |                                                     </Label>
-653 |                                                     <Input
-654 |                                                         id="env-value"
-655 |                                                         value={newEnvVar.value}
-656 |                                                         onChange={(e) => setNewEnvVar({ ...newEnvVar, value: e.target.value })}
-657 |                                                         placeholder="your-secret-key"
-658 |                                                         className="h-8 relative z-0"
-659 |                                                         type="text"
-660 |                                                     />
-661 |                                                 </div>
-662 |                                                 <Button
-663 |                                                     type="button"
-664 |                                                     variant="outline"
-665 |                                                     size="sm"
-666 |                                                     onClick={addEnvVar}
-667 |                                                     disabled={!newEnvVar.key}
-668 |                                                     className="h-8 mt-1"
-669 |                                                 >
-670 |                                                     <Plus className="h-3.5 w-3.5" />
-671 |                                                 </Button>
-672 |                                             </div>
-673 | 
-674 |                                             {newServer.env && newServer.env.length > 0 ? (
-675 |                                                 <div className="border rounded-md divide-y">
-676 |                                                     {newServer.env.map((env, index) => (
-677 |                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
-678 |                                                             <div className="flex-1 flex items-center gap-1 truncate">
-679 |                                                                 <span className="font-mono text-xs">{env.key}</span>
-680 |                                                                 <span className="mx-2 text-muted-foreground">=</span>
-681 |                                                                 
-682 |                                                                 {editingEnvIndex === index ? (
-683 |                                                                     <div className="flex gap-1 flex-1">
-684 |                                                                         <Input
-685 |                                                                             className="h-6 text-xs py-1 px-2"
-686 |                                                                             value={editedEnvValue}
-687 |                                                                             onChange={(e) => setEditedEnvValue(e.target.value)}
-688 |                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedEnvValue()}
-689 |                                                                             autoFocus
-690 |                                                                         />
-691 |                                                                         <Button 
-692 |                                                                             size="sm" 
-693 |                                                                             className="h-6 px-2"
-694 |                                                                             onClick={saveEditedEnvValue}
-695 |                                                                         >
-696 |                                                                             Save
-697 |                                                                         </Button>
-698 |                                                                     </div>
-699 |                                                                 ) : (
-700 |                                                                     <>
-701 |                                                                         <span className="text-xs text-muted-foreground truncate">
-702 |                                                                             {isSensitiveKey(env.key) && !showSensitiveEnvValues[index] 
-703 |                                                                                 ? maskValue(env.value) 
-704 |                                                                                 : env.value}
-705 |                                                                         </span>
-706 |                                                                         <span className="flex ml-1 gap-1">
-707 |                                                                             {isSensitiveKey(env.key) && (
-708 |                                                                                 <button
-709 |                                                                                     onClick={() => toggleSensitiveEnvValue(index)}
-710 |                                                                                     className="p-1 hover:bg-muted/50 rounded-full"
-711 |                                                                                 >
-712 |                                                                                     {showSensitiveEnvValues[index] ? (
-713 |                                                                                         <EyeOff className="h-3 w-3 text-muted-foreground" />
-714 |                                                                                     ) : (
-715 |                                                                                         <Eye className="h-3 w-3 text-muted-foreground" />
-716 |                                                                                     )}
-717 |                                                                                 </button>
-718 |                                                                             )}
-719 |                                                                             <button
-720 |                                                                                 onClick={() => startEditEnvValue(index, env.value)}
-721 |                                                                                 className="p-1 hover:bg-muted/50 rounded-full"
-722 |                                                                             >
-723 |                                                                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
-724 |                                                                             </button>
-725 |                                                                         </span>
-726 |                                                                     </>
-727 |                                                                 )}
-728 |                                                             </div>
-729 |                                                             <Button
-730 |                                                                 type="button"
-731 |                                                                 variant="ghost"
-732 |                                                                 size="sm"
-733 |                                                                 onClick={() => removeEnvVar(index)}
-734 |                                                                 className="h-6 w-6 p-0 ml-2"
-735 |                                                             >
-736 |                                                                 <X className="h-3 w-3" />
-737 |                                                             </Button>
-738 |                                                         </div>
-739 |                                                     ))}
-740 |                                                 </div>
-741 |                                             ) : (
-742 |                                                 <p className="text-xs text-muted-foreground text-center py-2">
-743 |                                                     No environment variables added
-744 |                                                 </p>
-745 |                                             )}
-746 |                                             <p className="text-xs text-muted-foreground">
-747 |                                                 Environment variables will be passed to the MCP server process.
-748 |                                             </p>
-749 |                                         </div>
-750 |                                     </AccordionContent>
-751 |                                 </AccordionItem>
-752 | 
-753 |                                 <AccordionItem value="headers">
-754 |                                     <AccordionTrigger className="text-sm py-2">
-755 |                                         {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'HTTP Headers' : 'Additional Configuration'}
-756 |                                     </AccordionTrigger>
-757 |                                     <AccordionContent>
-758 |                                         <div className="space-y-3">
-759 |                                             <div className="flex items-end gap-2">
-760 |                                                 <div className="flex-1">
-761 |                                                     <Label htmlFor="header-key" className="text-xs mb-1 block">
-762 |                                                         Key
-763 |                                                     </Label>
-764 |                                                     <Input
-765 |                                                         id="header-key"
-766 |                                                         value={newHeader.key}
-767 |                                                         onChange={(e) => setNewHeader({ ...newHeader, key: e.target.value })}
-768 |                                                         placeholder="Authorization"
-769 |                                                         className="h-8 relative z-0"
-770 |                                                     />
-771 |                                                 </div>
-772 |                                                 <div className="flex-1">
-773 |                                                     <Label htmlFor="header-value" className="text-xs mb-1 block">
-774 |                                                         Value
-775 |                                                     </Label>
-776 |                                                     <Input
-777 |                                                         id="header-value"
-778 |                                                         value={newHeader.value}
-779 |                                                         onChange={(e) => setNewHeader({ ...newHeader, value: e.target.value })}
-780 |                                                         placeholder="Bearer token123"
-781 |                                                         className="h-8 relative z-0"
-782 |                                                     />
-783 |                                                 </div>
-784 |                                                 <Button
-785 |                                                     type="button"
-786 |                                                     variant="outline"
-787 |                                                     size="sm"
-788 |                                                     onClick={addHeader}
-789 |                                                     disabled={!newHeader.key}
-790 |                                                     className="h-8 mt-1"
-791 |                                                 >
-792 |                                                     <Plus className="h-3.5 w-3.5" />
-793 |                                                 </Button>
-794 |                                             </div>
-795 | 
-796 |                                             {newServer.headers && newServer.headers.length > 0 ? (
-797 |                                                 <div className="border rounded-md divide-y">
-798 |                                                     {newServer.headers.map((header, index) => (
-799 |                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
-800 |                                                             <div className="flex-1 flex items-center gap-1 truncate">
-801 |                                                                 <span className="font-mono text-xs">{header.key}</span>
-802 |                                                                 <span className="mx-2 text-muted-foreground">:</span>
-803 |                                                                 
-804 |                                                                 {editingHeaderIndex === index ? (
-805 |                                                                     <div className="flex gap-1 flex-1">
-806 |                                                                         <Input
-807 |                                                                             className="h-6 text-xs py-1 px-2"
-808 |                                                                             value={editedHeaderValue}
-809 |                                                                             onChange={(e) => setEditedHeaderValue(e.target.value)}
-810 |                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedHeaderValue()}
-811 |                                                                             autoFocus
-812 |                                                                         />
-813 |                                                                         <Button 
-814 |                                                                             size="sm" 
-815 |                                                                             className="h-6 px-2"
-816 |                                                                             onClick={saveEditedHeaderValue}
-817 |                                                                         >
-818 |                                                                             Save
-819 |                                                                         </Button>
-820 |                                                                     </div>
-821 |                                                                 ) : (
-822 |                                                                     <>
-823 |                                                                         <span className="text-xs text-muted-foreground truncate">
-824 |                                                                             {isSensitiveKey(header.key) && !showSensitiveHeaderValues[index] 
-825 |                                                                                 ? maskValue(header.value) 
-826 |                                                                                 : header.value}
-827 |                                                                         </span>
-828 |                                                                         <span className="flex ml-1 gap-1">
-829 |                                                                             {isSensitiveKey(header.key) && (
-830 |                                                                                 <button
-831 |                                                                                     onClick={() => toggleSensitiveHeaderValue(index)}
-832 |                                                                                     className="p-1 hover:bg-muted/50 rounded-full"
-833 |                                                                                 >
-834 |                                                                                     {showSensitiveHeaderValues[index] ? (
-835 |                                                                                         <EyeOff className="h-3 w-3 text-muted-foreground" />
-836 |                                                                                     ) : (
-837 |                                                                                         <Eye className="h-3 w-3 text-muted-foreground" />
-838 |                                                                                     )}
-839 |                                                                                 </button>
-840 |                                                                             )}
-841 |                                                                             <button
-842 |                                                                                 onClick={() => startEditHeaderValue(index, header.value)}
-843 |                                                                                 className="p-1 hover:bg-muted/50 rounded-full"
-844 |                                                                             >
-845 |                                                                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
-846 |                                                                             </button>
-847 |                                                                         </span>
-848 |                                                                     </>
-849 |                                                                 )}
-850 |                                                             </div>
-851 |                                                             <Button
-852 |                                                                 type="button"
-853 |                                                                 variant="ghost"
-854 |                                                                 size="sm"
-855 |                                                                 onClick={() => removeHeader(index)}
-856 |                                                                 className="h-6 w-6 p-0 ml-2"
-857 |                                                             >
-858 |                                                                 <X className="h-3 w-3" />
-859 |                                                             </Button>
-860 |                                                         </div>
-861 |                                                     ))}
-862 |                                                 </div>
-863 |                                             ) : (
-864 |                                                 <p className="text-xs text-muted-foreground text-center py-2">
-865 |                                                     No {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'headers' : 'additional configuration'} added
-866 |                                                 </p>
-867 |                                             )}
-868 |                                             <p className="text-xs text-muted-foreground">
-869 |                                                 {newServer.type === 'sse' || newServer.type === 'streamable-http'
-870 |                                                     ? `HTTP headers will be sent with requests to the ${newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint.`
-871 |                                                     : 'Additional configuration parameters for the stdio transport.'}
-872 |                                             </p>
-873 |                                         </div>
-874 |                                     </AccordionContent>
-875 |                                 </AccordionItem>
-876 |                             </Accordion>
-877 |                         </div>
-878 |                     </div>
-879 |                 )}
-880 | 
-881 |                 {/* Persistent fixed footer with buttons */}
-882 |                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex justify-between z-10">
-883 |                     {view === 'list' ? (
-884 |                         <>
-885 |                             <Button
-886 |                                 variant="outline"
-887 |                                 onClick={clearAllServers}
-888 |                                 size="sm"
-889 |                                 className="gap-1.5 hover:text-black hover:dark:text-white"
-890 |                                 disabled={selectedServers.length === 0}
-891 |                             >
-892 |                                 <X className="h-3.5 w-3.5" />
-893 |                                 Disable All
-894 |                             </Button>
-895 |                             <Button
-896 |                                 onClick={() => setView('add')}
-897 |                                 size="sm"
-898 |                                 className="gap-1.5"
-899 |                             >
-900 |                                 <PlusCircle className="h-3.5 w-3.5" />
-901 |                                 Add Server
-902 |                             </Button>
-903 |                         </>
-904 |                     ) : (
+41 |     title: '',
+42 |     url: '',
+43 |     type: 'sse',
+44 |     command: 'node',
+45 |     args: [],
+46 |     env: [],
+47 |     headers: []
+48 | };
+49 | 
+50 | interface MCPServerManagerProps {
+51 |     servers: MCPServer[];
+52 |     onServersChange: (servers: MCPServer[]) => void;
+53 |     selectedServers: string[];
+54 |     onSelectedServersChange: (serverIds: string[]) => void;
+55 |     open: boolean;
+56 |     onOpenChange: (open: boolean) => void;
+57 | }
+58 | 
+59 | // Check if a key name might contain sensitive information
+60 | const isSensitiveKey = (key: string): boolean => {
+61 |     const sensitivePatterns = [
+62 |         /key/i, 
+63 |         /token/i, 
+64 |         /secret/i, 
+65 |         /password/i, 
+66 |         /pass/i,
+67 |         /auth/i,
+68 |         /credential/i
+69 |     ];
+70 |     return sensitivePatterns.some(pattern => pattern.test(key));
+71 | };
+72 | 
+73 | // Mask a sensitive value
+74 | const maskValue = (value: string): string => {
+75 |     if (!value) return '';
+76 |     if (value.length < 8) return '••••••';
+77 |     return value.substring(0, 3) + '•'.repeat(Math.min(10, value.length - 4)) + value.substring(value.length - 1);
+78 | };
+79 | 
+80 | export const MCPServerManager = ({
+81 |     servers,
+82 |     onServersChange,
+83 |     selectedServers,
+84 |     onSelectedServersChange,
+85 |     open,
+86 |     onOpenChange
+87 | }: MCPServerManagerProps) => {
+88 |     const [newServer, setNewServer] = useState<Omit<MCPServer, 'id'>>(INITIAL_NEW_SERVER);
+89 |     const [view, setView] = useState<'list' | 'add'>('list');
+90 |     const [newEnvVar, setNewEnvVar] = useState<KeyValuePair>({ key: '', value: '' });
+91 |     const [newHeader, setNewHeader] = useState<KeyValuePair>({ key: '', value: '' });
+92 |     const [editingServerId, setEditingServerId] = useState<string | null>(null);
+93 |     const [showSensitiveEnvValues, setShowSensitiveEnvValues] = useState<Record<number, boolean>>({});
+94 |     const [showSensitiveHeaderValues, setShowSensitiveHeaderValues] = useState<Record<number, boolean>>({});
+95 |     const [editingEnvIndex, setEditingEnvIndex] = useState<number | null>(null);
+96 |     const [editingHeaderIndex, setEditingHeaderIndex] = useState<number | null>(null);
+97 |     const [editedEnvValue, setEditedEnvValue] = useState<string>('');
+98 |     const [editedHeaderValue, setEditedHeaderValue] = useState<string>('');
+99 | 
+100 |     const resetAndClose = () => {
+101 |         setView('list');
+102 |         setNewServer(INITIAL_NEW_SERVER);
+103 |         setNewEnvVar({ key: '', value: '' });
+104 |         setNewHeader({ key: '', value: '' });
+105 |         setShowSensitiveEnvValues({});
+106 |         setShowSensitiveHeaderValues({});
+107 |         setEditingEnvIndex(null);
+108 |         setEditingHeaderIndex(null);
+109 |         onOpenChange(false);
+110 |     };
+111 | 
+112 |     const addServer = () => {
+113 |         if (!newServer.name) {
+114 |             toast.error("Server name is required");
+115 |             return;
+116 |         }
+117 | 
+118 |         if (newServer.type === 'sse' && !newServer.url) {
+119 |             toast.error("Server URL is required for SSE transport");
+120 |             return;
+121 |         }
+122 | 
+123 |         if (newServer.type === 'streamable-http' && !newServer.url) {
+124 |             toast.error("Server URL is required for Streamable HTTP transport");
+125 |             return;
+126 |         }
+127 | 
+128 |         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
+129 |             toast.error("Command and at least one argument are required for stdio transport");
+130 |             return;
+131 |         }
+132 | 
+133 |         const id = crypto.randomUUID();
+134 |         const updatedServers = [...servers, { ...newServer, id }];
+135 |         onServersChange(updatedServers);
+136 | 
+137 |         toast.success(`Added MCP server: ${newServer.name}`);
+138 |         setView('list');
+139 |         setNewServer(INITIAL_NEW_SERVER);
+140 |         setNewEnvVar({ key: '', value: '' });
+141 |         setNewHeader({ key: '', value: '' });
+142 |         setShowSensitiveEnvValues({});
+143 |         setShowSensitiveHeaderValues({});
+144 |     };
+145 | 
+146 |     const removeServer = (id: string, e: React.MouseEvent) => {
+147 |         e.stopPropagation();
+148 |         const updatedServers = servers.filter(server => server.id !== id);
+149 |         onServersChange(updatedServers);
+150 | 
+151 |         // If the removed server was selected, remove it from selected servers
+152 |         if (selectedServers.includes(id)) {
+153 |             onSelectedServersChange(selectedServers.filter(serverId => serverId !== id));
+154 |         }
+155 | 
+156 |         toast.success("Server removed");
+157 |     };
+158 | 
+159 |     const toggleServer = (id: string) => {
+160 |         if (selectedServers.includes(id)) {
+161 |             // Remove from selected servers
+162 |             onSelectedServersChange(selectedServers.filter(serverId => serverId !== id));
+163 |             const server = servers.find(s => s.id === id);
+164 |             if (server) {
+165 |                 toast.success(`Disabled MCP server: ${server.name}`);
+166 |             }
+167 |         } else {
+168 |             // Add to selected servers
+169 |             onSelectedServersChange([...selectedServers, id]);
+170 |             const server = servers.find(s => s.id === id);
+171 |             if (server) {
+172 |                 toast.success(`Enabled MCP server: ${server.name}`);
+173 |             }
+174 |         }
+175 |     };
+176 | 
+177 |     const clearAllServers = () => {
+178 |         if (selectedServers.length > 0) {
+179 |             onSelectedServersChange([]);
+180 |             toast.success("All MCP servers disabled");
+181 |             resetAndClose();
+182 |         }
+183 |     };
+184 | 
+185 |     const handleArgsChange = (value: string) => {
+186 |         try {
+187 |             // Try to parse as JSON if it starts with [ (array)
+188 |             const argsArray = value.trim().startsWith('[')
+189 |                 ? JSON.parse(value)
+190 |                 : value.split(' ').filter(Boolean);
+191 | 
+192 |             setNewServer({ ...newServer, args: argsArray });
+193 |         } catch (error) {
+194 |             // If parsing fails, just split by spaces
+195 |             setNewServer({ ...newServer, args: value.split(' ').filter(Boolean) });
+196 |         }
+197 |     };
+198 | 
+199 |     const addEnvVar = () => {
+200 |         if (!newEnvVar.key) return;
+201 | 
+202 |         setNewServer({
+203 |             ...newServer,
+204 |             env: [...(newServer.env || []), { ...newEnvVar }]
+205 |         });
+206 | 
+207 |         setNewEnvVar({ key: '', value: '' });
+208 |     };
+209 | 
+210 |     const removeEnvVar = (index: number) => {
+211 |         const updatedEnv = [...(newServer.env || [])];
+212 |         updatedEnv.splice(index, 1);
+213 |         setNewServer({ ...newServer, env: updatedEnv });
+214 |         
+215 |         // Clean up visibility state for this index
+216 |         const updatedVisibility = { ...showSensitiveEnvValues };
+217 |         delete updatedVisibility[index];
+218 |         setShowSensitiveEnvValues(updatedVisibility);
+219 |         
+220 |         // If currently editing this value, cancel editing
+221 |         if (editingEnvIndex === index) {
+222 |             setEditingEnvIndex(null);
+223 |         }
+224 |     };
+225 | 
+226 |     const startEditEnvValue = (index: number, value: string) => {
+227 |         setEditingEnvIndex(index);
+228 |         setEditedEnvValue(value);
+229 |     };
+230 | 
+231 |     const saveEditedEnvValue = () => {
+232 |         if (editingEnvIndex !== null) {
+233 |             const updatedEnv = [...(newServer.env || [])];
+234 |             updatedEnv[editingEnvIndex] = {
+235 |                 ...updatedEnv[editingEnvIndex],
+236 |                 value: editedEnvValue
+237 |             };
+238 |             setNewServer({ ...newServer, env: updatedEnv });
+239 |             setEditingEnvIndex(null);
+240 |         }
+241 |     };
+242 | 
+243 |     const addHeader = () => {
+244 |         if (!newHeader.key) return;
+245 | 
+246 |         setNewServer({
+247 |             ...newServer,
+248 |             headers: [...(newServer.headers || []), { ...newHeader }]
+249 |         });
+250 | 
+251 |         setNewHeader({ key: '', value: '' });
+252 |     };
+253 | 
+254 |     const removeHeader = (index: number) => {
+255 |         const updatedHeaders = [...(newServer.headers || [])];
+256 |         updatedHeaders.splice(index, 1);
+257 |         setNewServer({ ...newServer, headers: updatedHeaders });
+258 |         
+259 |         // Clean up visibility state for this index
+260 |         const updatedVisibility = { ...showSensitiveHeaderValues };
+261 |         delete updatedVisibility[index];
+262 |         setShowSensitiveHeaderValues(updatedVisibility);
+263 |         
+264 |         // If currently editing this value, cancel editing
+265 |         if (editingHeaderIndex === index) {
+266 |             setEditingHeaderIndex(null);
+267 |         }
+268 |     };
+269 | 
+270 |     const startEditHeaderValue = (index: number, value: string) => {
+271 |         setEditingHeaderIndex(index);
+272 |         setEditedHeaderValue(value);
+273 |     };
+274 | 
+275 |     const saveEditedHeaderValue = () => {
+276 |         if (editingHeaderIndex !== null) {
+277 |             const updatedHeaders = [...(newServer.headers || [])];
+278 |             updatedHeaders[editingHeaderIndex] = {
+279 |                 ...updatedHeaders[editingHeaderIndex],
+280 |                 value: editedHeaderValue
+281 |             };
+282 |             setNewServer({ ...newServer, headers: updatedHeaders });
+283 |             setEditingHeaderIndex(null);
+284 |         }
+285 |     };
+286 | 
+287 |     const toggleSensitiveEnvValue = (index: number) => {
+288 |         setShowSensitiveEnvValues(prev => ({
+289 |             ...prev,
+290 |             [index]: !prev[index]
+291 |         }));
+292 |     };
+293 | 
+294 |     const toggleSensitiveHeaderValue = (index: number) => {
+295 |         setShowSensitiveHeaderValues(prev => ({
+296 |             ...prev,
+297 |             [index]: !prev[index]
+298 |         }));
+299 |     };
+300 | 
+301 |     const hasAdvancedConfig = (server: MCPServer) => {
+302 |         return (server.env && server.env.length > 0) ||
+303 |             (server.headers && server.headers.length > 0);
+304 |     };
+305 | 
+306 |     // Editing support
+307 |     const startEditing = (server: MCPServer) => {
+308 |         setEditingServerId(server.id);
+309 |         setNewServer({
+310 |             name: server.name,
+311 |             title: server.title,
+312 |             url: server.url,
+313 |             type: server.type,
+314 |             command: server.command,
+315 |             args: server.args,
+316 |             env: server.env,
+317 |             headers: server.headers
+318 |         });
+319 |         setView('add');
+320 |         // Reset sensitive value visibility states
+321 |         setShowSensitiveEnvValues({});
+322 |         setShowSensitiveHeaderValues({});
+323 |         setEditingEnvIndex(null);
+324 |         setEditingHeaderIndex(null);
+325 |     };
+326 | 
+327 |     const handleFormCancel = () => {
+328 |         if (view === 'add') {
+329 |             setView('list');
+330 |             setEditingServerId(null);
+331 |             setNewServer(INITIAL_NEW_SERVER);
+332 |             setShowSensitiveEnvValues({});
+333 |             setShowSensitiveHeaderValues({});
+334 |             setEditingEnvIndex(null);
+335 |             setEditingHeaderIndex(null);
+336 |         } else {
+337 |             resetAndClose();
+338 |         }
+339 |     };
+340 | 
+341 |     const updateServer = () => {
+342 |         if (!newServer.name) {
+343 |             toast.error("Server name is required");
+344 |             return;
+345 |         }
+346 |         if (newServer.type === 'sse' && !newServer.url) {
+347 |             toast.error("Server URL is required for SSE transport");
+348 |             return;
+349 |         }
+350 |         if (newServer.type === 'streamable-http' && !newServer.url) {
+351 |             toast.error("Server URL is required for Streamable HTTP transport");
+352 |             return;
+353 |         }
+354 |         if (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) {
+355 |             toast.error("Command and at least one argument are required for stdio transport");
+356 |             return;
+357 |         }
+358 |         const updated = servers.map(s =>
+359 |             s.id === editingServerId ? { ...newServer, id: editingServerId! } : s
+360 |         );
+361 |         onServersChange(updated);
+362 |         toast.success(`Updated MCP server: ${newServer.name}`);
+363 |         setView('list');
+364 |         setEditingServerId(null);
+365 |         setNewServer(INITIAL_NEW_SERVER);
+366 |         setShowSensitiveEnvValues({});
+367 |         setShowSensitiveHeaderValues({});
+368 |     };
+369 | 
+370 |     return (
+371 |         <Dialog open={open} onOpenChange={onOpenChange}>
+372 |             <DialogContent className="sm:max-w-[480px] max-h-[85vh] overflow-hidden flex flex-col">
+373 |                 <DialogHeader>
+374 |                     <DialogTitle className="flex items-center gap-2">
+375 |                         <ServerIcon className="h-5 w-5 text-primary" />
+376 |                         MCP Server Configuration
+377 |                     </DialogTitle>
+378 |                     <DialogDescription>
+379 |                         Connect to Model Context Protocol servers to access additional AI tools.
+380 |                         {selectedServers.length > 0 && (
+381 |                             <span className="block mt-1 text-xs font-medium text-primary">
+382 |                                 {selectedServers.length} server{selectedServers.length !== 1 ? 's' : ''} currently active
+383 |                             </span>
+384 |                         )}
+385 |                     </DialogDescription>
+386 |                 </DialogHeader>
+387 | 
+388 |                 {view === 'list' ? (
+389 |                     <div className="flex-1 overflow-hidden flex flex-col">
+390 |                         {servers.length > 0 ? (
+391 |                             <div className="flex-1 overflow-hidden flex flex-col">
+392 |                                 <div className="flex-1 overflow-hidden flex flex-col">
+393 |                                     <div className="flex items-center justify-between mb-3">
+394 |                                         <h3 className="text-sm font-medium">Available Servers</h3>
+395 |                                         <span className="text-xs text-muted-foreground">
+396 |                                             Select multiple servers to combine their tools
+397 |                                         </span>
+398 |                                     </div>
+399 |                                     <div className="overflow-y-auto pr-1 flex-1 gap-2.5 flex flex-col pb-16">
+400 |                                         {servers
+401 |                                             .sort((a, b) => {
+402 |                                                 const aActive = selectedServers.includes(a.id);
+403 |                                                 const bActive = selectedServers.includes(b.id);
+404 |                                                 if (aActive && !bActive) return -1;
+405 |                                                 if (!aActive && bActive) return 1;
+406 |                                                 return 0;
+407 |                                             })
+408 |                                             .map((server) => {
+409 |                                             const isActive = selectedServers.includes(server.id);
+410 |                                             return (
+411 |                                                 <div
+412 |                                                     key={server.id}
+413 |                                                     className={`
+414 |                             relative flex flex-col p-3.5 rounded-xl transition-colors
+415 |                             border ${isActive
+416 |                                                             ? 'border-primary bg-primary/10'
+417 |                                                             : 'border-border hover:border-primary/30 hover:bg-primary/5'}
+418 |                           `}
+419 |                                                 >
+420 |                                                     {/* Server Header with Type Badge and Delete Button */}
+421 |                                                     <div className="flex items-center justify-between mb-2">
+422 |                                                         <div className="flex items-center gap-2">
+423 |                                                             {server.type === 'sse' ? (
+424 |                                                                 <Globe className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
+425 |                                                             ) : (
+426 |                                                                 <Terminal className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
+427 |                                                             )}
+428 |                                                             <h4 className="text-sm font-medium truncate max-w-[220px]">{server.name}</h4>
+429 |                                                             {hasAdvancedConfig(server) && (
+430 |                                                                 <span className="flex-shrink-0">
+431 |                                                                     <Cog className="h-3 w-3 text-muted-foreground" />
+432 |                                                                 </span>
+433 |                                                             )}
+434 |                                                         </div>
+435 |                                                         <div className="flex items-center gap-2">
+436 |                                                             <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+437 |                                                                 {server.type.toUpperCase()}
+438 |                                                             </span>
+439 |                                                             <button
+440 |                                                                 onClick={(e) => removeServer(server.id, e)}
+441 |                                                                 className="p-1 rounded-full hover:bg-muted/70"
+442 |                                                                 aria-label="Remove server"
+443 |                                                             >
+444 |                                                                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+445 |                                                             </button>
+446 |                                                             <button
+447 |                                                                 onClick={() => startEditing(server)}
+448 |                                                                 className="p-1 rounded-full hover:bg-muted/50"
+449 |                                                                 aria-label="Edit server"
+450 |                                                             >
+451 |                                                                 <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+452 |                                                             </button>
+453 |                                                         </div>
+454 |                                                     </div>
+455 | 
+456 |                                                     {/* Server Details */}
+457 |                                                     <p className="text-xs text-muted-foreground mb-2.5 truncate">
+458 |                                                         {server.type === 'sse' || server.type === 'streamable-http'
+459 |                                                             ? server.url
+460 |                                                             : `${server.command} ${server.args?.join(' ')}`
+461 |                                                         }
+462 |                                                     </p>
+463 | 
+464 |                                                     {/* Action Button */}
+465 |                                                     <Button
+466 |                                                         size="sm"
+467 |                                                         className="w-full gap-1.5 hover:text-black hover:dark:text-white rounded-lg"
+468 |                                                         variant={isActive ? "default" : "outline"}
+469 |                                                         onClick={() => toggleServer(server.id)}
+470 |                                                     >
+471 |                                                         {isActive && <CheckCircle className="h-3.5 w-3.5" />}
+472 |                                                         {isActive ? "Active" : "Enable Server"}
+473 |                                                     </Button>
+474 |                                                 </div>
+475 |                                             );
+476 |                                         })}
+477 |                                     </div>
+478 |                                 </div>
+479 |                             </div>
+480 |                         ) : (
+481 |                             <div className="flex-1 py-8 pb-16 flex flex-col items-center justify-center space-y-4">
+482 |                                 <div className="rounded-full p-3 bg-primary/10">
+483 |                                     <ServerIcon className="h-7 w-7 text-primary" />
+484 |                                 </div>
+485 |                                 <div className="text-center space-y-1">
+486 |                                     <h3 className="text-base font-medium">No MCP Servers Added</h3>
+487 |                                     <p className="text-sm text-muted-foreground max-w-[300px]">
+488 |                                         Add your first MCP server to access additional AI tools
+489 |                                     </p>
+490 |                                 </div>
+491 |                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4">
+492 |                                     <a
+493 |                                         href="https://modelcontextprotocol.io"
+494 |                                         target="_blank"
+495 |                                         rel="noopener noreferrer"
+496 |                                         className="flex items-center gap-1 hover:text-primary transition-colors"
+497 |                                     >
+498 |                                         Learn about MCP
+499 |                                         <ExternalLink className="h-3 w-3" />
+500 |                                     </a>
+501 |                                 </div>
+502 |                             </div>
+503 |                         )}
+504 |                     </div>
+505 |                 ) : (
+506 |                     <div className="space-y-4 overflow-y-auto px-1 py-0.5 mb-14 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+507 |                         <h3 className="text-sm font-medium">{editingServerId ? "Edit MCP Server" : "Add New MCP Server"}</h3>
+508 |                         <div className="space-y-4">
+509 |                             <div className="grid gap-1.5">
+510 |                                 <Label htmlFor="name">
+511 |                                     Server Name
+512 |                                 </Label>
+513 |                                 <Input
+514 |                                     id="name"
+515 |                                     value={newServer.name}
+516 |                                     onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
+517 |                                     placeholder="My MCP Server"
+518 |                                     className="relative z-0"
+519 |                                 />
+520 |                                 <p className="text-xs text-muted-foreground">
+521 |                                     Unique identifier for this server
+522 |                                 </p>
+523 |                             </div>
+524 | 
+525 |                             <div className="grid gap-1.5">
+526 |                                 <Label htmlFor="title">
+527 |                                     Display Title (Optional)
+528 |                                 </Label>
+529 |                                 <Input
+530 |                                     id="title"
+531 |                                     value={newServer.title || ''}
+532 |                                     onChange={(e) => setNewServer({ ...newServer, title: e.target.value })}
+533 |                                     placeholder="File System Access"
+534 |                                     className="relative z-0"
+535 |                                 />
+536 |                                 <p className="text-xs text-muted-foreground">
+537 |                                     Human-friendly name for UI display
+538 |                                 </p>
+539 |                             </div>
+540 | 
+541 |                             <div className="grid gap-1.5">
+542 |                                 <Label htmlFor="transport-type">
+543 |                                     Transport Type
+544 |                                 </Label>
+545 |                                 <div className="space-y-2">
+546 |                                     <p className="text-xs text-muted-foreground">Choose how to connect to your MCP server:</p>
+547 |                                     <div className="grid gap-2 grid-cols-2">
+548 |                                         <button
+549 |                                             type="button"
+550 |                                             onClick={() => setNewServer({ ...newServer, type: 'sse' })}
+551 |                                             className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
+552 |                                                 newServer.type === 'sse' 
+553 |                                                     ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+554 |                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
+555 |                                             }`}
+556 |                                         >
+557 |                                             <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'sse' ? 'text-primary' : ''}`} />
+558 |                                             <div>
+559 |                                                 <p className="font-medium">SSE</p>
+560 |                                                 <p className="text-xs text-muted-foreground">Server-Sent Events</p>
+561 |                                             </div>
+562 |                                         </button>
+563 |                                         
+564 |                                         <button
+565 |                                             type="button"
+566 |                                             onClick={() => setNewServer({ ...newServer, type: 'stdio' })}
+567 |                                             className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
+568 |                                                 newServer.type === 'stdio' 
+569 |                                                     ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+570 |                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
+571 |                                             }`}
+572 |                                         >
+573 |                                             <Terminal className={`h-5 w-5 shrink-0 ${newServer.type === 'stdio' ? 'text-primary' : ''}`} />
+574 |                                             <div>
+575 |                                                 <p className="font-medium">stdio</p>
+576 |                                                 <p className="text-xs text-muted-foreground">Standard I/O</p>
+577 |                                             </div>
+578 |                                         </button>
+579 |                                     </div>
+580 |                                     <button
+581 |                                         type="button"
+582 |                                         onClick={() => setNewServer({ ...newServer, type: 'streamable-http' })}
+583 |                                         className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all col-span-2 ${
+584 |                                             newServer.type === 'streamable-http' 
+585 |                                                 ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+586 |                                                 : 'border-border hover:border-border/80 hover:bg-muted/50'
+587 |                                         }`}
+588 |                                     >
+589 |                                         <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'streamable-http' ? 'text-primary' : ''}`} />
+590 |                                         <div>
+591 |                                             <p className="font-medium">Streamable HTTP</p>
+592 |                                             <p className="text-xs text-muted-foreground">Streamable HTTP Server</p>
+593 |                                         </div>
+594 |                                     </button>
+595 |                                 </div>
+596 |                             </div>
+597 | 
+598 |                             {newServer.type === 'sse' || newServer.type === 'streamable-http' ? (
+599 |                                 <div className="grid gap-1.5">
+600 |                                     <Label htmlFor="url">
+601 |                                         Server URL
+602 |                                     </Label>
+603 |                                     <Input
+604 |                                         id="url"
+605 |                                         value={newServer.url}
+606 |                                         onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
+607 |                                         placeholder={newServer.type === 'streamable-http' ? "https://mcp.example.com/token/mcp" : "https://mcp.example.com/token/sse"}
+608 |                                         className="relative z-0"
+609 |                                     />
+610 |                                     <p className="text-xs text-muted-foreground">
+611 |                                         Full URL to the {newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint of the MCP server
+612 |                                     </p>
+613 |                                 </div>
+614 |                             ) : (
+615 |                                 <>
+616 |                                     <div className="grid gap-1.5">
+617 |                                         <Label htmlFor="command">
+618 |                                             Command
+619 |                                         </Label>
+620 |                                         <Input
+621 |                                             id="command"
+622 |                                             value={newServer.command}
+623 |                                             onChange={(e) => setNewServer({ ...newServer, command: e.target.value })}
+624 |                                             placeholder="node"
+625 |                                             className="relative z-0"
+626 |                                         />
+627 |                                         <p className="text-xs text-muted-foreground">
+628 |                                             Executable to run (e.g., node, python)
+629 |                                         </p>
+630 |                                     </div>
+631 |                                     <div className="grid gap-1.5">
+632 |                                         <Label htmlFor="args">
+633 |                                             Arguments
+634 |                                         </Label>
+635 |                                         <Input
+636 |                                             id="args"
+637 |                                             value={newServer.args?.join(' ') || ''}
+638 |                                             onChange={(e) => handleArgsChange(e.target.value)}
+639 |                                             placeholder="src/mcp-server.js --port 3001"
+640 |                                             className="relative z-0"
+641 |                                         />
+642 |                                         <p className="text-xs text-muted-foreground">
+643 |                                             Space-separated arguments or JSON array
+644 |                                         </p>
+645 |                                     </div>
+646 |                                 </>
+647 |                             )}
+648 | 
+649 |                             {/* Advanced Configuration */}
+650 |                             <Accordion type="single" collapsible className="w-full">
+651 |                                 <AccordionItem value="env-vars">
+652 |                                     <AccordionTrigger className="text-sm py-2">
+653 |                                         Environment Variables
+654 |                                     </AccordionTrigger>
+655 |                                     <AccordionContent>
+656 |                                         <div className="space-y-3">
+657 |                                             <div className="flex items-end gap-2">
+658 |                                                 <div className="flex-1">
+659 |                                                     <Label htmlFor="env-key" className="text-xs mb-1 block">
+660 |                                                         Key
+661 |                                                     </Label>
+662 |                                                     <Input
+663 |                                                         id="env-key"
+664 |                                                         value={newEnvVar.key}
+665 |                                                         onChange={(e) => setNewEnvVar({ ...newEnvVar, key: e.target.value })}
+666 |                                                         placeholder="API_KEY"
+667 |                                                         className="h-8 relative z-0"
+668 |                                                     />
+669 |                                                 </div>
+670 |                                                 <div className="flex-1">
+671 |                                                     <Label htmlFor="env-value" className="text-xs mb-1 block">
+672 |                                                         Value
+673 |                                                     </Label>
+674 |                                                     <Input
+675 |                                                         id="env-value"
+676 |                                                         value={newEnvVar.value}
+677 |                                                         onChange={(e) => setNewEnvVar({ ...newEnvVar, value: e.target.value })}
+678 |                                                         placeholder="your-secret-key"
+679 |                                                         className="h-8 relative z-0"
+680 |                                                         type="text"
+681 |                                                     />
+682 |                                                 </div>
+683 |                                                 <Button
+684 |                                                     type="button"
+685 |                                                     variant="outline"
+686 |                                                     size="sm"
+687 |                                                     onClick={addEnvVar}
+688 |                                                     disabled={!newEnvVar.key}
+689 |                                                     className="h-8 mt-1"
+690 |                                                 >
+691 |                                                     <Plus className="h-3.5 w-3.5" />
+692 |                                                 </Button>
+693 |                                             </div>
+694 | 
+695 |                                             {newServer.env && newServer.env.length > 0 ? (
+696 |                                                 <div className="border rounded-md divide-y">
+697 |                                                     {newServer.env.map((env, index) => (
+698 |                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
+699 |                                                             <div className="flex-1 flex items-center gap-1 truncate">
+700 |                                                                 <span className="font-mono text-xs">{env.key}</span>
+701 |                                                                 <span className="mx-2 text-muted-foreground">=</span>
+702 |                                                                 
+703 |                                                                 {editingEnvIndex === index ? (
+704 |                                                                     <div className="flex gap-1 flex-1">
+705 |                                                                         <Input
+706 |                                                                             className="h-6 text-xs py-1 px-2"
+707 |                                                                             value={editedEnvValue}
+708 |                                                                             onChange={(e) => setEditedEnvValue(e.target.value)}
+709 |                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedEnvValue()}
+710 |                                                                             autoFocus
+711 |                                                                         />
+712 |                                                                         <Button 
+713 |                                                                             size="sm" 
+714 |                                                                             className="h-6 px-2"
+715 |                                                                             onClick={saveEditedEnvValue}
+716 |                                                                         >
+717 |                                                                             Save
+718 |                                                                         </Button>
+719 |                                                                     </div>
+720 |                                                                 ) : (
+721 |                                                                     <>
+722 |                                                                         <span className="text-xs text-muted-foreground truncate">
+723 |                                                                             {isSensitiveKey(env.key) && !showSensitiveEnvValues[index] 
+724 |                                                                                 ? maskValue(env.value) 
+725 |                                                                                 : env.value}
+726 |                                                                         </span>
+727 |                                                                         <span className="flex ml-1 gap-1">
+728 |                                                                             {isSensitiveKey(env.key) && (
+729 |                                                                                 <button
+730 |                                                                                     onClick={() => toggleSensitiveEnvValue(index)}
+731 |                                                                                     className="p-1 hover:bg-muted/50 rounded-full"
+732 |                                                                                 >
+733 |                                                                                     {showSensitiveEnvValues[index] ? (
+734 |                                                                                         <EyeOff className="h-3 w-3 text-muted-foreground" />
+735 |                                                                                     ) : (
+736 |                                                                                         <Eye className="h-3 w-3 text-muted-foreground" />
+737 |                                                                                     )}
+738 |                                                                                 </button>
+739 |                                                                             )}
+740 |                                                                             <button
+741 |                                                                                 onClick={() => startEditEnvValue(index, env.value)}
+742 |                                                                                 className="p-1 hover:bg-muted/50 rounded-full"
+743 |                                                                             >
+744 |                                                                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
+745 |                                                                             </button>
+746 |                                                                         </span>
+747 |                                                                     </>
+748 |                                                                 )}
+749 |                                                             </div>
+750 |                                                             <Button
+751 |                                                                 type="button"
+752 |                                                                 variant="ghost"
+753 |                                                                 size="sm"
+754 |                                                                 onClick={() => removeEnvVar(index)}
+755 |                                                                 className="h-6 w-6 p-0 ml-2"
+756 |                                                             >
+757 |                                                                 <X className="h-3 w-3" />
+758 |                                                             </Button>
+759 |                                                         </div>
+760 |                                                     ))}
+761 |                                                 </div>
+762 |                                             ) : (
+763 |                                                 <p className="text-xs text-muted-foreground text-center py-2">
+764 |                                                     No environment variables added
+765 |                                                 </p>
+766 |                                             )}
+767 |                                             <p className="text-xs text-muted-foreground">
+768 |                                                 Environment variables will be passed to the MCP server process.
+769 |                                             </p>
+770 |                                         </div>
+771 |                                     </AccordionContent>
+772 |                                 </AccordionItem>
+773 | 
+774 |                                 <AccordionItem value="headers">
+775 |                                     <AccordionTrigger className="text-sm py-2">
+776 |                                         {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'HTTP Headers' : 'Additional Configuration'}
+777 |                                     </AccordionTrigger>
+778 |                                     <AccordionContent>
+779 |                                         <div className="space-y-3">
+780 |                                             <div className="flex items-end gap-2">
+781 |                                                 <div className="flex-1">
+782 |                                                     <Label htmlFor="header-key" className="text-xs mb-1 block">
+783 |                                                         Key
+784 |                                                     </Label>
+785 |                                                     <Input
+786 |                                                         id="header-key"
+787 |                                                         value={newHeader.key}
+788 |                                                         onChange={(e) => setNewHeader({ ...newHeader, key: e.target.value })}
+789 |                                                         placeholder="Authorization"
+790 |                                                         className="h-8 relative z-0"
+791 |                                                     />
+792 |                                                 </div>
+793 |                                                 <div className="flex-1">
+794 |                                                     <Label htmlFor="header-value" className="text-xs mb-1 block">
+795 |                                                         Value
+796 |                                                     </Label>
+797 |                                                     <Input
+798 |                                                         id="header-value"
+799 |                                                         value={newHeader.value}
+800 |                                                         onChange={(e) => setNewHeader({ ...newHeader, value: e.target.value })}
+801 |                                                         placeholder="Bearer token123"
+802 |                                                         className="h-8 relative z-0"
+803 |                                                     />
+804 |                                                 </div>
+805 |                                                 <Button
+806 |                                                     type="button"
+807 |                                                     variant="outline"
+808 |                                                     size="sm"
+809 |                                                     onClick={addHeader}
+810 |                                                     disabled={!newHeader.key}
+811 |                                                     className="h-8 mt-1"
+812 |                                                 >
+813 |                                                     <Plus className="h-3.5 w-3.5" />
+814 |                                                 </Button>
+815 |                                             </div>
+816 | 
+817 |                                             {newServer.headers && newServer.headers.length > 0 ? (
+818 |                                                 <div className="border rounded-md divide-y">
+819 |                                                     {newServer.headers.map((header, index) => (
+820 |                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
+821 |                                                             <div className="flex-1 flex items-center gap-1 truncate">
+822 |                                                                 <span className="font-mono text-xs">{header.key}</span>
+823 |                                                                 <span className="mx-2 text-muted-foreground">:</span>
+824 |                                                                 
+825 |                                                                 {editingHeaderIndex === index ? (
+826 |                                                                     <div className="flex gap-1 flex-1">
+827 |                                                                         <Input
+828 |                                                                             className="h-6 text-xs py-1 px-2"
+829 |                                                                             value={editedHeaderValue}
+830 |                                                                             onChange={(e) => setEditedHeaderValue(e.target.value)}
+831 |                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedHeaderValue()}
+832 |                                                                             autoFocus
+833 |                                                                         />
+834 |                                                                         <Button 
+835 |                                                                             size="sm" 
+836 |                                                                             className="h-6 px-2"
+837 |                                                                             onClick={saveEditedHeaderValue}
+838 |                                                                         >
+839 |                                                                             Save
+840 |                                                                         </Button>
+841 |                                                                     </div>
+842 |                                                                 ) : (
+843 |                                                                     <>
+844 |                                                                         <span className="text-xs text-muted-foreground truncate">
+845 |                                                                             {isSensitiveKey(header.key) && !showSensitiveHeaderValues[index] 
+846 |                                                                                 ? maskValue(header.value) 
+847 |                                                                                 : header.value}
+848 |                                                                         </span>
+849 |                                                                         <span className="flex ml-1 gap-1">
+850 |                                                                             {isSensitiveKey(header.key) && (
+851 |                                                                                 <button
+852 |                                                                                     onClick={() => toggleSensitiveHeaderValue(index)}
+853 |                                                                                     className="p-1 hover:bg-muted/50 rounded-full"
+854 |                                                                                 >
+855 |                                                                                     {showSensitiveHeaderValues[index] ? (
+856 |                                                                                         <EyeOff className="h-3 w-3 text-muted-foreground" />
+857 |                                                                                     ) : (
+858 |                                                                                         <Eye className="h-3 w-3 text-muted-foreground" />
+859 |                                                                                     )}
+860 |                                                                                 </button>
+861 |                                                                             )}
+862 |                                                                             <button
+863 |                                                                                 onClick={() => startEditHeaderValue(index, header.value)}
+864 |                                                                                 className="p-1 hover:bg-muted/50 rounded-full"
+865 |                                                                             >
+866 |                                                                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
+867 |                                                                             </button>
+868 |                                                                         </span>
+869 |                                                                     </>
+870 |                                                                 )}
+871 |                                                             </div>
+872 |                                                             <Button
+873 |                                                                 type="button"
+874 |                                                                 variant="ghost"
+875 |                                                                 size="sm"
+876 |                                                                 onClick={() => removeHeader(index)}
+877 |                                                                 className="h-6 w-6 p-0 ml-2"
+878 |                                                             >
+879 |                                                                 <X className="h-3 w-3" />
+880 |                                                             </Button>
+881 |                                                         </div>
+882 |                                                     ))}
+883 |                                                 </div>
+884 |                                             ) : (
+885 |                                                 <p className="text-xs text-muted-foreground text-center py-2">
+886 |                                                     No {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'headers' : 'additional configuration'} added
+887 |                                                 </p>
+888 |                                             )}
+889 |                                             <p className="text-xs text-muted-foreground">
+890 |                                                 {newServer.type === 'sse' || newServer.type === 'streamable-http'
+891 |                                                     ? `HTTP headers will be sent with requests to the ${newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint.`
+892 |                                                     : 'Additional configuration parameters for the stdio transport.'}
+893 |                                             </p>
+894 |                                         </div>
+895 |                                     </AccordionContent>
+896 |                                 </AccordionItem>
+897 |                             </Accordion>
+898 |                         </div>
+899 |                     </div>
+900 |                 )}
+901 | 
+902 |                 {/* Persistent fixed footer with buttons */}
+903 |                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex justify-between z-10">
+904 |                     {view === 'list' ? (
 905 |                         <>
-906 |                             <Button variant="outline" onClick={handleFormCancel}>
-907 |                                 Cancel
-908 |                             </Button>
-909 |                             <Button
-910 |                                 onClick={editingServerId ? updateServer : addServer}
-911 |                                 disabled={
-912 |                                     !newServer.name ||
-913 |                                     (newServer.type === 'sse' && !newServer.url) ||
-914 |                                     (newServer.type === 'streamable-http' && !newServer.url) ||
-915 |                                     (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length))
-916 |                                 }
-917 |                             >
-918 |                                 {editingServerId ? "Save Changes" : "Add Server"}
-919 |                             </Button>
-920 |                         </>
-921 |                     )}
-922 |                 </div>
-923 |             </DialogContent>
-924 |         </Dialog>
-925 |     );
-926 | }; 
+906 |                             <Button
+907 |                                 variant="outline"
+908 |                                 onClick={clearAllServers}
+909 |                                 size="sm"
+910 |                                 className="gap-1.5 hover:text-black hover:dark:text-white"
+911 |                                 disabled={selectedServers.length === 0}
+912 |                             >
+913 |                                 <X className="h-3.5 w-3.5" />
+914 |                                 Disable All
+915 |                             </Button>
+916 |                             <Button
+917 |                                 onClick={() => setView('add')}
+918 |                                 size="sm"
+919 |                                 className="gap-1.5"
+920 |                             >
+921 |                                 <PlusCircle className="h-3.5 w-3.5" />
+922 |                                 Add Server
+[TRUNCATED]
 ```
 
 components/message.tsx
@@ -6315,274 +6170,432 @@ components/model-picker.tsx
 1 | "use client";
 2 | import { MODELS, modelDetails, type modelID, defaultModel } from "@/ai/providers";
 3 | import {
-4 |   Select,
-5 |   SelectContent,
-6 |   SelectGroup,
-7 |   SelectItem,
-8 |   SelectTrigger,
-9 |   SelectValue,
-10 | } from "./ui/select";
-11 | import { cn } from "@/lib/utils";
-12 | import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot } from "lucide-react";
-13 | import { useState } from "react";
-14 | import { useCredits } from "@/hooks/useCredits";
-15 | import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-16 | import { useAuth } from "@/hooks/useAuth";
-17 | 
-18 | interface ModelPickerProps {
-19 |   selectedModel: modelID;
-20 |   setSelectedModel: (model: modelID) => void;
+4 |   Popover,
+5 |   PopoverContent,
+6 |   PopoverTrigger,
+7 | } from "./ui/popover";
+8 | import { cn } from "@/lib/utils";
+9 | import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check } from "lucide-react";
+10 | import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+11 | import { useCredits } from "@/hooks/useCredits";
+12 | import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+13 | import { useAuth } from "@/hooks/useAuth";
+14 | import { Input } from "./ui/input";
+15 | import { Button } from "./ui/button";
+16 | 
+17 | interface ModelPickerProps {
+18 |   selectedModel: modelID;
+19 |   setSelectedModel: (model: modelID) => void;
+20 |   onModelSelected?: () => void;
 21 | }
 22 | 
-23 | export const ModelPicker = ({ selectedModel, setSelectedModel }: ModelPickerProps) => {
+23 | export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }: ModelPickerProps) => {
 24 |   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
-25 |   const { user } = useAuth();
-26 |   const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
-27 |   
-28 |   // Ensure we always have a valid model ID immediately for stable rendering
-29 |   // const stableModelId = MODELS.includes(selectedModel) ? selectedModel : defaultModel; // Replaced by direct use of selectedModel
-30 |   
-31 |   // Function to get the appropriate icon for each provider
-32 |   const getProviderIcon = (provider: string) => {
-33 |     switch (provider.toLowerCase()) {
-34 |       case 'anthropic':
-35 |         return <Zap className="h-3 w-3 text-orange-600" />;
-36 |       case 'openai':
-37 |         return <Zap className="h-3 w-3 text-green-500" />;
-38 |       case 'google':
-39 |         return <Zap className="h-3 w-3 text-red-500" />;
-40 |       case 'groq':
-41 |         return <Zap className="h-3 w-3 text-blue-500" />;
-42 |       case 'xai':
-43 |         return <Zap className="h-3 w-3 text-yellow-500" />;
-44 |       case 'openrouter':
-45 |         return <Zap className="h-3 w-3 text-purple-500" />;
-46 |       default:
-47 |         return <Zap className="h-3 w-3 text-blue-500" />;
-48 |     }
-49 |   };
-50 |   
-51 |   // Function to get capability icon
-52 |   const getCapabilityIcon = (capability: string) => {
-53 |     switch (capability.toLowerCase()) {
-54 |       case 'code':
-55 |         return <Code className="h-2.5 w-2.5" />;
-56 |       case 'reasoning':
-57 |         return <Brain className="h-2.5 w-2.5" />;
-58 |       case 'research':
-59 |         return <Lightbulb className="h-2.5 w-2.5" />;
-60 |       case 'vision':
-61 |         // eslint-disable-next-line jsx-a11y/alt-text
-62 |         return <Image className="h-2.5 w-2.5" />;
-63 |       case 'fast':
-64 |       case 'rapid':
-65 |         return <Bolt className="h-2.5 w-2.5" />;
-66 |       case 'efficient':
-67 |       case 'compact':
-68 |         return <Gauge className="h-2.5 w-2.5" />;
-69 |       case 'creative':
-70 |       case 'balance':
-71 |         return <Rocket className="h-2.5 w-2.5" />;
-72 |       case 'agentic':
-73 |         return <Bot className="h-2.5 w-2.5" />;
-74 |       default:
-75 |         return <Info className="h-2.5 w-2.5" />;
-76 |     }
-77 |   };
-78 |   
-79 |   // Get capability badge color
-80 |   const getCapabilityColor = (capability: string) => {
-81 |     switch (capability.toLowerCase()) {
-82 |       case 'code':
-83 |         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-84 |       case 'reasoning':
-85 |       case 'research':
-86 |         return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
-87 |       case 'vision':
-88 |         return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300";
-89 |       case 'fast':
-90 |       case 'rapid':
-91 |         return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
-92 |       case 'efficient':
-93 |       case 'compact':
-94 |         return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
-95 |       case 'creative':
-96 |       case 'balance':
-97 |         return "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300";
-98 |       case 'agentic':
-99 |         return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300";
-100 |       default:
-101 |         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-102 |     }
-103 |   };
-104 |   
-105 |   // Get current model details to display
-106 |   const displayModelId = hoveredModel || selectedModel; // Use selectedModel
-107 |   const currentModelDetails = modelDetails[displayModelId];
-108 | 
-109 |   // Sort models alphabetically by name
-110 |   const sortedModels = [...MODELS].sort((idA, idB) => {
-111 |     const nameA = modelDetails[idA].name;
-112 |     const nameB = modelDetails[idB].name;
-113 |     return nameA.localeCompare(nameB);
-114 |   });
-115 | 
-116 |   // Handle model change
-117 |   const handleModelChange = (modelId: string) => {
-118 |     if ((MODELS as string[]).includes(modelId)) {
-119 |       const typedModelId = modelId as modelID;
-120 |       setSelectedModel(typedModelId);
-121 |     }
-122 |   };
-123 | 
-124 |   return (
-125 |     <div>
-126 |       <Select 
-127 |         value={selectedModel} // Use selectedModel directly
-128 |         onValueChange={handleModelChange} 
-129 |       >
-130 |         <SelectTrigger 
-131 |           className="max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full group border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
-132 |         >
-133 |           <SelectValue 
-134 |             placeholder="Select model" 
-135 |             className="text-xs font-medium flex items-center gap-1 sm:gap-2 text-primary dark:text-primary-foreground"
-136 |           >
-137 |             <div className="flex items-center gap-1 sm:gap-2">
-138 |               {getProviderIcon(modelDetails[selectedModel].provider)} {/* Use selectedModel */}
-139 |               <span className="font-medium truncate">{modelDetails[selectedModel].name}</span> {/* Use selectedModel */}
-140 |             </div>
-141 |           </SelectValue>
-142 |         </SelectTrigger>
-143 |         <SelectContent
-144 |           align="start"
-145 |           className="bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 rounded-lg overflow-hidden p-0 w-[320px] sm:w-[480px] md:w-[680px]"
-146 |         >
-147 |           <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start">
-148 |             {/* Model selector column */}
-149 |             <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1">
-150 |               <SelectGroup className="space-y-1">
-151 |                 {sortedModels.map((id) => {
-152 |                   const modelId = id as modelID;
-153 |                   const item = (
-154 |                     <SelectItem 
-155 |                       key={id} 
-156 |                       value={id}
-157 |                       onMouseEnter={() => setHoveredModel(modelId)}
-158 |                       onMouseLeave={() => setHoveredModel(null)}
-159 |                       className={cn(
-160 |                         "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
-161 |                         "hover:bg-primary/5 hover:text-primary-foreground",
-162 |                         "focus:bg-primary/10 focus:text-primary focus:outline-none",
-163 |                         "data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
-164 |                         selectedModel === id && "!bg-primary/15 !text-primary font-medium",
-165 |                         modelDetails[modelId].premium && !canAccessPremiumModels() && "opacity-50 cursor-not-allowed"
-166 |                       )}
-167 |                       disabled={creditsLoading || (modelDetails[modelId].premium && !canAccessPremiumModels())}
-168 |                     >
-169 |                       <div className="flex flex-col gap-0.5">
-170 |                         <div className="flex items-center gap-1.5">
-171 |                           {getProviderIcon(modelDetails[modelId].provider)}
-172 |                           <span className="font-medium truncate">{modelDetails[modelId].name}</span>
-173 |                           {modelDetails[modelId].premium && (
-174 |                             <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
-175 |                           )}
-176 |                         </div>
-177 |                         <span className="text-[10px] sm:text-xs text-muted-foreground">
-178 |                           {modelDetails[modelId].provider}
-179 |                         </span>
-180 |                       </div>
-181 |                     </SelectItem>
-182 |                   );
-183 | 
-184 |                   if (modelDetails[modelId].premium && !canAccessPremiumModels() && !creditsLoading) {
-185 |                     return (
-186 |                       <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
-187 |                         <Tooltip>
-188 |                           <TooltipTrigger asChild>{item}</TooltipTrigger>
-189 |                           <TooltipContent className="max-w-xs">
-190 |                             <p className="text-xs">This is a premium model. Credits are required to use it.</p>
-191 |                           </TooltipContent>
-192 |                         </Tooltip>
-193 |                       </TooltipProvider>
-194 |                     );
-195 |                   }
-196 |                   return item;
-197 |                 })}
-198 |               </SelectGroup>
-199 |             </div>
-200 |             
-201 |             {/* Model details column - hidden on smallest screens, visible on sm+ */}
-202 |             <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col sticky top-0">
-203 |               <div>
-204 |                 <div className="flex items-center gap-2 mb-1">
-205 |                   {getProviderIcon(currentModelDetails.provider)}
-206 |                   <h3 className="text-sm font-semibold">{currentModelDetails.name}</h3>
-207 |                   {currentModelDetails.premium && (
-208 |                     <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
-209 |                   )}
-210 |                 </div>
-211 |                 <div className="text-xs text-muted-foreground mb-1">
-212 |                   Provider: <span className="font-medium">{currentModelDetails.provider}</span>
-213 |                 </div>
-214 |                 
-215 |                 {/* Capability badges */}
-216 |                 <div className="flex flex-wrap gap-1 mt-2 mb-3">
-217 |                   {currentModelDetails.capabilities.map((capability) => (
-218 |                     <span 
-219 |                       key={capability}
-220 |                       className={cn(
-221 |                         "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
-222 |                         getCapabilityColor(capability)
-223 |                       )}
-224 |                     >
-225 |                       {getCapabilityIcon(capability)}
-226 |                       <span>{capability}</span>
-227 |                     </span>
-228 |                   ))}
-229 |                 </div>
-230 |                 
-231 |                 <div className="text-xs text-foreground/90 leading-relaxed mb-3 hidden md:block">
-232 |                   {currentModelDetails.description}
-233 |                 </div>
-234 |               </div>
-235 |               
-236 |               <div className="bg-muted/40 rounded-md p-2 hidden md:block">
-237 |                 <div className="text-[10px] text-muted-foreground flex justify-between items-center">
-238 |                   <span>API Version:</span>
-239 |                   <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
-240 |                     {currentModelDetails.apiVersion}
-241 |                   </code>
-242 |                 </div>
-243 |               </div>
-244 |             </div>
-245 |             
-246 |             {/* Condensed model details for mobile only */}
-247 |             <div className="p-3 sm:hidden border-t border-border/30">
-248 |               <div className="flex flex-wrap gap-1 mb-2">
-249 |                 {currentModelDetails.capabilities.slice(0, 4).map((capability) => (
-250 |                   <span 
-251 |                     key={capability}
-252 |                     className={cn(
-253 |                       "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
-254 |                       getCapabilityColor(capability)
-255 |                     )}
-256 |                   >
-257 |                     {getCapabilityIcon(capability)}
-258 |                     <span>{capability}</span>
-259 |                   </span>
-260 |                 ))}
-261 |                 {currentModelDetails.capabilities.length > 4 && (
-262 |                   <span className="text-[10px] text-muted-foreground">+{currentModelDetails.capabilities.length - 4} more</span>
-263 |                 )}
-264 |               </div>
-265 |             </div>
-266 |           </div>
-267 |         </SelectContent>
-268 |       </Select>
-269 |     </div>
-270 |   );
-271 | };
+25 |   const [searchTerm, setSearchTerm] = useState("");
+26 |   const [isOpen, setIsOpen] = useState(false);
+27 |   const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number>(-1);
+28 |   const searchInputRef = useRef<HTMLInputElement>(null);
+29 |   const modelListRef = useRef<HTMLDivElement>(null);
+30 |   const { user } = useAuth();
+31 |   const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
+32 |   
+33 |   // Function to get the appropriate icon for each provider
+34 |   const getProviderIcon = (provider: string) => {
+35 |     switch (provider.toLowerCase()) {
+36 |       case 'anthropic':
+37 |         return <Zap className="h-3 w-3 text-orange-600" />;
+38 |       case 'openai':
+39 |         return <Zap className="h-3 w-3 text-green-500" />;
+40 |       case 'google':
+41 |         return <Zap className="h-3 w-3 text-red-500" />;
+42 |       case 'groq':
+43 |         return <Zap className="h-3 w-3 text-blue-500" />;
+44 |       case 'xai':
+45 |         return <Zap className="h-3 w-3 text-yellow-500" />;
+46 |       case 'openrouter':
+47 |         return <Zap className="h-3 w-3 text-purple-500" />;
+48 |       default:
+49 |         return <Zap className="h-3 w-3 text-blue-500" />;
+50 |     }
+51 |   };
+52 |   
+53 |   // Function to get capability icon
+54 |   const getCapabilityIcon = (capability: string) => {
+55 |     switch (capability.toLowerCase()) {
+56 |       case 'code':
+57 |         return <Code className="h-2.5 w-2.5" />;
+58 |       case 'reasoning':
+59 |         return <Brain className="h-2.5 w-2.5" />;
+60 |       case 'research':
+61 |         return <Lightbulb className="h-2.5 w-2.5" />;
+62 |       case 'vision':
+63 |         return <Image className="h-2.5 w-2.5" />;
+64 |       case 'fast':
+65 |       case 'rapid':
+66 |         return <Bolt className="h-2.5 w-2.5" />;
+67 |       case 'efficient':
+68 |       case 'compact':
+69 |         return <Gauge className="h-2.5 w-2.5" />;
+70 |       case 'creative':
+71 |       case 'balance':
+72 |         return <Rocket className="h-2.5 w-2.5" />;
+73 |       case 'agentic':
+74 |         return <Bot className="h-2.5 w-2.5" />;
+75 |       default:
+76 |         return <Info className="h-2.5 w-2.5" />;
+77 |     }
+78 |   };
+79 |   
+80 |   // Get capability badge color
+81 |   const getCapabilityColor = (capability: string) => {
+82 |     switch (capability.toLowerCase()) {
+83 |       case 'code':
+84 |         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
+85 |       case 'reasoning':
+86 |       case 'research':
+87 |         return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
+88 |       case 'vision':
+89 |         return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300";
+90 |       case 'fast':
+91 |       case 'rapid':
+92 |         return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
+93 |       case 'efficient':
+94 |       case 'compact':
+95 |         return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300";
+96 |       case 'creative':
+97 |       case 'balance':
+98 |         return "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300";
+99 |       case 'agentic':
+100 |         return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300";
+101 |       default:
+102 |         return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
+103 |     }
+104 |   };
+105 |   
+106 |   // Filter and sort models based on search term - memoized to prevent re-renders
+107 |   const filteredAndSortedModels = useMemo(() => {
+108 |     return [...MODELS]
+109 |       .filter((id) => {
+110 |         const modelId = id as modelID;
+111 |         const model = modelDetails[modelId];
+112 |         const searchLower = searchTerm.toLowerCase();
+113 |         return (
+114 |           model.name.toLowerCase().includes(searchLower) ||
+115 |           model.provider.toLowerCase().includes(searchLower) ||
+116 |           model.capabilities.some(cap => cap.toLowerCase().includes(searchLower))
+117 |         );
+118 |       })
+119 |       .sort((idA, idB) => {
+120 |         const nameA = modelDetails[idA].name;
+121 |         const nameB = modelDetails[idB].name;
+122 |         return nameA.localeCompare(nameB);
+123 |       });
+124 |   }, [searchTerm]);
+125 | 
+126 |   // Reset keyboard focus when search term changes
+127 |   useEffect(() => {
+128 |     setKeyboardFocusedIndex(-1);
+129 |   }, [searchTerm]);
+130 | 
+131 |   // Set initial keyboard focus when picker opens
+132 |   useEffect(() => {
+133 |     if (isOpen && filteredAndSortedModels.length > 0) {
+134 |       const selectedIndex = filteredAndSortedModels.findIndex(id => id === selectedModel);
+135 |       setKeyboardFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+136 |     }
+137 |   }, [isOpen, filteredAndSortedModels, selectedModel]);
+138 | 
+139 |   // Get current model details to display
+140 |   const keyboardFocusedModel = keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length 
+141 |     ? filteredAndSortedModels[keyboardFocusedIndex] as modelID 
+142 |     : null;
+143 |   
+144 |   // Separate display logic: button always shows selected model, details panel shows hovered/focused model
+145 |   const detailsPanelModelId = keyboardFocusedModel || hoveredModel || selectedModel;
+146 |   const detailsPanelModelDetails = modelDetails[detailsPanelModelId];
+147 |   
+148 |   // Main button always shows the selected model (no layout flipping)
+149 |   const selectedModelDetails = modelDetails[selectedModel];
+150 |   const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelDetails.premium);
+151 | 
+152 |   // Handle model change - memoized to prevent re-renders
+153 |   const handleModelChange = useCallback((modelId: string) => {
+154 |     if ((MODELS as string[]).includes(modelId)) {
+155 |       const typedModelId = modelId as modelID;
+156 |       setSelectedModel(typedModelId);
+157 |       setIsOpen(false);
+158 |       setSearchTerm("");
+159 |       setKeyboardFocusedIndex(-1);
+160 |       onModelSelected?.();
+161 |     }
+162 |   }, [setSelectedModel, onModelSelected]);
+163 | 
+164 |   // Handle opening the popover - memoized to prevent re-renders
+165 |   const handleOpenChange = useCallback((open: boolean) => {
+166 |     setIsOpen(open);
+167 |     if (!open) {
+168 |       setSearchTerm("");
+169 |       setKeyboardFocusedIndex(-1);
+170 |     } else {
+171 |       // Focus search input when opening
+172 |       setTimeout(() => {
+173 |         searchInputRef.current?.focus();
+174 |       }, 100);
+175 |     }
+176 |   }, []);
+177 | 
+178 |   // Handle search input change - memoized to prevent re-renders
+179 |   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+180 |     setSearchTerm(e.target.value);
+181 |   }, []);
+182 | 
+183 |   // Handle keyboard navigation
+184 |   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+185 |     if (!isOpen) return;
+186 | 
+187 |     switch (e.key) {
+188 |       case 'ArrowDown':
+189 |         e.preventDefault();
+190 |         setKeyboardFocusedIndex(prev => {
+191 |           const newIndex = prev < filteredAndSortedModels.length - 1 ? prev + 1 : 0;
+192 |           // Scroll to keep focused item visible
+193 |           setTimeout(() => {
+194 |             const focusedElement = modelListRef.current?.children[newIndex] as HTMLElement;
+195 |             if (focusedElement) {
+196 |               focusedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+197 |             }
+198 |           }, 0);
+199 |           return newIndex;
+200 |         });
+201 |         break;
+202 |       case 'ArrowUp':
+203 |         e.preventDefault();
+204 |         setKeyboardFocusedIndex(prev => {
+205 |           const newIndex = prev > 0 ? prev - 1 : filteredAndSortedModels.length - 1;
+206 |           // Scroll to keep focused item visible
+207 |           setTimeout(() => {
+208 |             const focusedElement = modelListRef.current?.children[newIndex] as HTMLElement;
+209 |             if (focusedElement) {
+210 |               focusedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+211 |             }
+212 |           }, 0);
+213 |           return newIndex;
+214 |         });
+215 |         break;
+216 |       case 'Enter':
+217 |         e.preventDefault();
+218 |         if (keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length) {
+219 |           const selectedModelId = filteredAndSortedModels[keyboardFocusedIndex];
+220 |           const model = modelDetails[selectedModelId as modelID];
+221 |           const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
+222 |           if (!isUnavailable) {
+223 |             handleModelChange(selectedModelId);
+224 |           }
+225 |         }
+226 |         break;
+227 |       case 'Escape':
+228 |         setSearchTerm('');
+229 |         setIsOpen(false);
+230 |         break;
+231 |     }
+232 |   }, [isOpen, filteredAndSortedModels, keyboardFocusedIndex, creditsLoading, canAccessPremiumModels, handleModelChange]);
+233 | 
+234 |   return (
+235 |     <TooltipProvider>
+236 |       <Popover open={isOpen} onOpenChange={handleOpenChange}>
+237 |         <Tooltip>
+238 |           <TooltipTrigger asChild>
+239 |             <PopoverTrigger asChild>
+240 |               <Button
+241 |                 variant="outline"
+242 |                 role="combobox"
+243 |                 aria-expanded={isOpen}
+244 |                 className={cn(
+245 |                   "max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+246 |                   "border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20",
+247 |                   "transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2",
+248 |                   "text-foreground hover:text-foreground font-normal",
+249 |                   isModelUnavailable && "opacity-50"
+250 |                 )}
+251 |               >
+252 |                 <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+253 |                   {getProviderIcon(selectedModelDetails.provider)}
+254 |                   <span className="text-xs font-medium truncate">{selectedModelDetails.name}</span>
+255 |                 </div>
+256 |                 <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+257 |               </Button>
+258 |             </PopoverTrigger>
+259 |           </TooltipTrigger>
+260 |           <TooltipContent side="bottom" className="max-w-xs">
+261 |             {isModelUnavailable ? (
+262 |               <p>This model requires premium access. Please check your credits.</p>
+263 |             ) : (
+264 |               <p>Select an AI model for this conversation. Each model has different capabilities and costs.</p>
+265 |             )}
+266 |           </TooltipContent>
+267 |         </Tooltip>
+268 |         
+269 |         <PopoverContent 
+270 |           className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[400px] overflow-hidden" 
+271 |           align="start"
+272 |         >
+273 |           {/* Search input */}
+274 |           <div className="px-3 pt-3 pb-2 border-b border-border/40">
+275 |             <Input
+276 |               ref={searchInputRef}
+277 |               type="search"
+278 |               placeholder="Search models... (Use ↑↓ arrow keys to navigate, Enter to select)"
+279 |               aria-label="Search models by name, provider, or capability"
+280 |               value={searchTerm}
+281 |               onChange={handleSearchChange}
+282 |               onKeyDown={handleKeyDown}
+283 |               className="w-full h-8"
+284 |             />
+285 |           </div>
+286 | 
+287 |           <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start max-h-[340px] overflow-hidden">
+288 |             {/* Model selector column */}
+289 |             <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1 overflow-y-auto max-h-[340px]">
+290 |               <div ref={modelListRef} className="space-y-1 p-1">
+291 |                 {filteredAndSortedModels.length > 0 ? (
+292 |                   filteredAndSortedModels.map((id, index) => {
+293 |                     const modelId = id as modelID;
+294 |                     const model = modelDetails[modelId];
+295 |                     const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
+296 |                     const isSelected = selectedModel === id;
+297 |                     const isKeyboardFocused = keyboardFocusedIndex === index;
+298 |                     
+299 |                     const modelItem = (
+300 |                       <div
+301 |                         key={id}
+302 |                         className={cn(
+303 |                           "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
+304 |                           "hover:bg-accent hover:text-accent-foreground",
+305 |                           "focus:bg-accent focus:text-accent-foreground focus:outline-none",
+306 |                           isSelected && "!bg-primary/15 !text-foreground font-medium",
+307 |                           isKeyboardFocused && "!bg-accent !text-accent-foreground ring-2 ring-primary/30",
+308 |                           isUnavailable && "opacity-50 cursor-not-allowed"
+309 |                         )}
+310 |                         onClick={() => {
+311 |                           if (!isUnavailable) {
+312 |                             handleModelChange(id);
+313 |                           }
+314 |                         }}
+315 |                         onMouseEnter={() => {
+316 |                           setHoveredModel(modelId);
+317 |                           setKeyboardFocusedIndex(-1); // Clear keyboard focus when using mouse
+318 |                         }}
+319 |                         onMouseLeave={() => setHoveredModel(null)}
+320 |                       >
+321 |                         <div className="flex flex-col gap-0.5">
+322 |                           <div className="flex items-center gap-1.5">
+323 |                             {getProviderIcon(model.provider)}
+324 |                             <span className="font-medium truncate">{model.name}</span>
+325 |                             {model.premium && (
+326 |                               <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
+327 |                             )}
+328 |                             {isSelected && <Check className="h-3 w-3 ml-auto text-primary" />}
+329 |                           </div>
+330 |                           <span className="text-[10px] sm:text-xs text-muted-foreground">
+331 |                             {model.provider}
+332 |                           </span>
+333 |                         </div>
+334 |                       </div>
+335 |                     );
+336 | 
+337 |                     if (isUnavailable && !creditsLoading) {
+338 |                       return (
+339 |                         <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
+340 |                           <Tooltip>
+341 |                             <TooltipTrigger asChild>{modelItem}</TooltipTrigger>
+342 |                             <TooltipContent className="max-w-xs">
+343 |                               <p className="text-xs">This is a premium model. Credits are required to use it.</p>
+344 |                             </TooltipContent>
+345 |                           </Tooltip>
+346 |                         </TooltipProvider>
+347 |                       );
+348 |                     }
+349 |                     return modelItem;
+350 |                   })
+351 |                 ) : (
+352 |                   <div className="px-2 sm:px-3 py-2 text-xs text-muted-foreground">
+353 |                     No models found.
+354 |                   </div>
+355 |                 )}
+356 |               </div>
+357 |             </div>
+358 |             
+359 |             {/* Model details column - hidden on smallest screens, visible on sm+ */}
+360 |             <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[340px] min-h-[340px]">
+361 |               <div>
+362 |                 <div className="flex items-center gap-2 mb-1">
+363 |                   {getProviderIcon(detailsPanelModelDetails.provider)}
+364 |                   <h3 className="text-sm font-semibold">{detailsPanelModelDetails.name}</h3>
+365 |                   {detailsPanelModelDetails.premium && (
+366 |                     <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
+367 |                   )}
+368 |                 </div>
+369 |                 <div className="text-xs text-muted-foreground mb-1">
+370 |                   Provider: <span className="font-medium">{detailsPanelModelDetails.provider}</span>
+371 |                 </div>
+372 |                 
+373 |                 {/* Capability badges */}
+374 |                 <div className="flex flex-wrap gap-1 mt-2 mb-3">
+375 |                   {detailsPanelModelDetails.capabilities.map((capability) => (
+376 |                     <span 
+377 |                       key={capability}
+378 |                       className={cn(
+379 |                         "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
+380 |                         getCapabilityColor(capability)
+381 |                       )}
+382 |                     >
+383 |                       {getCapabilityIcon(capability)}
+384 |                       <span>{capability}</span>
+385 |                     </span>
+386 |                   ))}
+387 |                 </div>
+388 |                 
+389 |                 <div className="text-xs text-foreground/90 leading-relaxed mb-3 hidden md:block">
+390 |                   {detailsPanelModelDetails.description}
+391 |                 </div>
+392 |               </div>
+393 |               
+394 |               <div className="bg-muted/40 rounded-md p-2 hidden md:block">
+395 |                 <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+396 |                   <span>API Version:</span>
+397 |                   <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
+398 |                     {detailsPanelModelDetails.apiVersion}
+399 |                   </code>
+400 |                 </div>
+401 |               </div>
+402 |             </div>
+403 |             
+404 |             {/* Condensed model details for mobile only */}
+405 |             <div className="p-3 sm:hidden border-t border-border/30">
+406 |               <div className="flex flex-wrap gap-1 mb-2">
+407 |                 {detailsPanelModelDetails.capabilities.slice(0, 4).map((capability) => (
+408 |                   <span 
+409 |                     key={capability}
+410 |                     className={cn(
+411 |                       "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
+412 |                       getCapabilityColor(capability)
+413 |                     )}
+414 |                   >
+415 |                     {getCapabilityIcon(capability)}
+416 |                     <span>{capability}</span>
+417 |                   </span>
+418 |                 ))}
+419 |                 {detailsPanelModelDetails.capabilities.length > 4 && (
+420 |                   <span className="text-[10px] text-muted-foreground">+{detailsPanelModelDetails.capabilities.length - 4} more</span>
+421 |                 )}
+422 |               </div>
+423 |             </div>
+424 |           </div>
+425 |         </PopoverContent>
+426 |       </Popover>
+427 |     </TooltipProvider>
+428 |   );
+429 | };
 ```
 
 components/project-overview.tsx
@@ -6709,129 +6722,143 @@ components/textarea.tsx
 29 | }: InputProps) => {
 30 |   const isStreaming = status === "streaming" || status === "submitted";
 31 |   const iconButtonRef = useRef<HTMLButtonElement>(null);
-32 | 
-33 |   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
-34 |   const { user } = useAuth();
-35 | 
-36 |   const handleWebSearchToggle = () => {
-37 |     setWebSearchEnabled(!webSearchEnabled);
-38 |   };
-39 | 
-40 |   // Check if user has enough credits for web search (5 credits minimum)
-41 |   // Use a more resilient check that handles temporary null values during hot reload
-42 |   const userCredits = user?.credits ?? 0;
-43 |   const hasEnoughCreditsForWebSearch = user?.hasCredits !== false && userCredits >= WEB_SEARCH_COST;
-44 |   const isAnonymousUser = !user || user?.isAnonymous;
-45 |   // Only allow web search if user has sufficient credits and is not anonymous
-46 |   const canUseWebSearch = !isAnonymousUser && hasEnoughCreditsForWebSearch;
-47 | 
-48 |   // Calculate estimated cost
-49 |   const getEstimatedCost = () => {
-50 |     const baseCost = 1; // Base cost for any message
-51 |     const webSearchCost = webSearchEnabled ? WEB_SEARCH_COST : 0;
-52 |     return baseCost + webSearchCost;
-53 |   };
-54 | 
-55 |   const estimatedCost = getEstimatedCost();
-56 |   const shouldShowCostWarning = webSearchEnabled && canUseWebSearch && input.trim();
-57 | 
-58 |   // Determine tooltip message based on credit status
-59 |   const getWebSearchTooltipMessage = () => {
-60 |     if (isAnonymousUser) {
-61 |       return "Sign in and purchase credits to enable Web Search";
-62 |     }
-63 |     if (!hasEnoughCreditsForWebSearch) {
-64 |       return "Purchase credits to enable Web Search";
-65 |     }
-66 |     return webSearchEnabled ? 'Disable web search' : 'Enable web search';
-67 |   };
-68 | 
-69 |   return (
-70 |     <div className="relative w-full">
-71 |       <ShadcnTextarea
-72 |         className="resize-none bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl pr-12 pt-4 pb-16 border-input focus-visible:ring-ring placeholder:text-muted-foreground"
-73 |         value={input}
-74 |         autoFocus
-75 |         placeholder="Send a message..."
-76 |         onChange={handleInputChange}
-77 |         onKeyDown={(e) => {
-78 |           if (e.key === "Enter" && !e.shiftKey && !isLoading && input.trim()) {
-79 |             e.preventDefault();
-80 |             e.currentTarget.form?.requestSubmit();
-81 |           }
-82 |         }}
-83 |       />
-84 |       
-85 |       {/* Cost visibility warning */}
-86 |       {shouldShowCostWarning && (
-87 |         <div className="absolute top-2 right-14 z-10">
-88 |           <Tooltip>
-89 |             <TooltipTrigger asChild>
-90 |               <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full border border-amber-200 dark:border-amber-700/30">
-91 |                 <AlertCircle className="h-3 w-3" />
-92 |                 <span className="font-medium">{estimatedCost} credits</span>
-93 |               </div>
-94 |             </TooltipTrigger>
-95 |             <TooltipContent side="top" sideOffset={8}>
-96 |               <div className="text-xs">
-97 |                 <div>Estimated cost: {estimatedCost} credits</div>
-98 |                 <div className="text-muted-foreground">Base: 1 credit + Web Search: {WEB_SEARCH_COST} credits</div>
-99 |               </div>
-100 |             </TooltipContent>
-101 |           </Tooltip>
-102 |         </div>
-103 |       )}
-104 | 
-105 |       <div className="absolute left-2 bottom-2 z-10">
-106 |         <div className="flex items-center gap-2">
-107 |           <ModelPicker
-108 |             setSelectedModel={setSelectedModel}
-109 |             selectedModel={selectedModel}
-110 |           />
-111 |           {selectedModel.startsWith("openrouter/") && (
-112 |             <div className="relative flex items-center">
-113 |               <Tooltip>
-114 |                 <TooltipTrigger asChild>
-115 |                   <button
-116 |                     type="button"
-117 |                     ref={iconButtonRef}
-118 |                     aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
-119 |                     onClick={handleWebSearchToggle}
-120 |                     disabled={!canUseWebSearch}
-121 |                     className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
-122 |                       !canUseWebSearch 
-123 |                         ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50' 
-124 |                         : webSearchEnabled 
-125 |                           ? 'bg-primary text-primary-foreground border-primary shadow' 
-126 |                           : 'bg-background border-border text-muted-foreground hover:bg-accent'
-127 |                     } focus:outline-none focus:ring-2 focus:ring-primary/30`}
-128 |                   >
-129 |                     <Globe className="h-5 w-5" />
-130 |                   </button>
-131 |                 </TooltipTrigger>
-132 |                 <TooltipContent sideOffset={8}>
-133 |                   {getWebSearchTooltipMessage()}
-134 |                 </TooltipContent>
-135 |               </Tooltip>
-136 |             </div>
-137 |           )}
-138 |         </div>
-139 |       </div>
-140 |       <button
-141 |         type={isStreaming ? "button" : "submit"}
-142 |         onClick={isStreaming ? stop : undefined}
-143 |         disabled={(!isStreaming && !input.trim()) || (isStreaming && status === "submitted")}
-144 |         className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
-145 |       >
-146 |         {isStreaming ? (
-147 |           <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
-148 |         ) : (
-149 |           <ArrowUp className="h-4 w-4 text-primary-foreground" />
-150 |         )}
-151 |       </button>
-152 |     </div>
-153 |   );
-154 | };
+32 |   const textareaRef = useRef<HTMLTextAreaElement>(null);
+33 | 
+34 |   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
+35 |   const { user } = useAuth();
+36 | 
+37 |   const handleWebSearchToggle = () => {
+38 |     setWebSearchEnabled(!webSearchEnabled);
+39 |   };
+40 | 
+41 |   // Check if user has enough credits for web search (5 credits minimum)
+42 |   // Use a more resilient check that handles temporary null values during hot reload
+43 |   const userCredits = user?.credits ?? 0;
+44 |   const hasEnoughCreditsForWebSearch = user?.hasCredits !== false && userCredits >= WEB_SEARCH_COST;
+45 |   const isAnonymousUser = !user || user?.isAnonymous;
+46 |   // Only allow web search if user has sufficient credits and is not anonymous
+47 |   const canUseWebSearch = !isAnonymousUser && hasEnoughCreditsForWebSearch;
+48 | 
+49 |   // Calculate estimated cost
+50 |   const getEstimatedCost = () => {
+51 |     const baseCost = 1; // Base cost for any message
+52 |     const webSearchCost = webSearchEnabled ? WEB_SEARCH_COST : 0;
+53 |     return baseCost + webSearchCost;
+54 |   };
+55 | 
+56 |   const estimatedCost = getEstimatedCost();
+57 |   const shouldShowCostWarning = webSearchEnabled && canUseWebSearch && input.trim();
+58 | 
+59 |   // Focus textarea after model selection
+60 |   const handleModelSelected = () => {
+61 |     setTimeout(() => {
+62 |       textareaRef.current?.focus();
+63 |     }, 100);
+64 |   };
+65 | 
+66 |   // Determine tooltip message based on credit status
+67 |   const getWebSearchTooltipMessage = () => {
+68 |     if (isAnonymousUser) {
+69 |       return "Sign in and purchase credits to enable Web Search";
+70 |     }
+71 |     if (!hasEnoughCreditsForWebSearch) {
+72 |       return "Purchase credits to enable Web Search";
+73 |     }
+74 |     return webSearchEnabled ? 'Disable web search' : 'Enable web search';
+75 |   };
+76 | 
+77 |   return (
+78 |     <div className="relative w-full">
+79 |       <ShadcnTextarea
+80 |         ref={textareaRef}
+81 |         className="resize-y bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl pr-12 pt-4 pb-16 border-input focus-visible:ring-ring placeholder:text-muted-foreground"
+82 |         value={input}
+83 |         autoFocus
+84 |         placeholder="Send a message..."
+85 |         onChange={handleInputChange}
+86 |         onKeyDown={(e) => {
+87 |           if (e.key === "Enter" && !e.shiftKey && !isLoading && input.trim()) {
+88 |             e.preventDefault();
+89 |             e.currentTarget.form?.requestSubmit();
+90 |           }
+91 |         }}
+92 |         style={{
+93 |           maxHeight: '200px',
+94 |           overflowY: 'auto'
+95 |         }}
+96 |       />
+97 |       
+98 |       {/* Cost visibility warning */}
+99 |       {shouldShowCostWarning && (
+100 |         <div className="absolute top-2 right-14 z-10">
+101 |           <Tooltip>
+102 |             <TooltipTrigger asChild>
+103 |               <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full border border-amber-200 dark:border-amber-700/30">
+104 |                 <AlertCircle className="h-3 w-3" />
+105 |                 <span className="font-medium">{estimatedCost} credits</span>
+106 |               </div>
+107 |             </TooltipTrigger>
+108 |             <TooltipContent side="top" sideOffset={8}>
+109 |               <div className="text-xs">
+110 |                 <div>Estimated cost: {estimatedCost} credits</div>
+111 |                 <div className="text-muted-foreground">Base: 1 credit + Web Search: {WEB_SEARCH_COST} credits</div>
+112 |               </div>
+113 |             </TooltipContent>
+114 |           </Tooltip>
+115 |         </div>
+116 |       )}
+117 | 
+118 |       <div className="absolute left-2 bottom-2 z-10">
+119 |         <div className="flex items-center gap-2">
+120 |           <ModelPicker
+121 |             setSelectedModel={setSelectedModel}
+122 |             selectedModel={selectedModel}
+123 |             onModelSelected={handleModelSelected}
+124 |           />
+125 |           {selectedModel.startsWith("openrouter/") && (
+126 |             <div className="relative flex items-center">
+127 |               <Tooltip>
+128 |                 <TooltipTrigger asChild>
+129 |                   <button
+130 |                     type="button"
+131 |                     ref={iconButtonRef}
+132 |                     aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+133 |                     onClick={handleWebSearchToggle}
+134 |                     disabled={!canUseWebSearch}
+135 |                     className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+136 |                       !canUseWebSearch 
+137 |                         ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50' 
+138 |                         : webSearchEnabled 
+139 |                           ? 'bg-primary text-primary-foreground border-primary shadow' 
+140 |                           : 'bg-background border-border text-muted-foreground hover:bg-accent'
+141 |                     } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+142 |                   >
+143 |                     <Globe className="h-5 w-5" />
+144 |                   </button>
+145 |                 </TooltipTrigger>
+146 |                 <TooltipContent sideOffset={8}>
+147 |                   {getWebSearchTooltipMessage()}
+148 |                 </TooltipContent>
+149 |               </Tooltip>
+150 |             </div>
+151 |           )}
+152 |         </div>
+153 |       </div>
+154 |       <button
+155 |         type={isStreaming ? "button" : "submit"}
+156 |         onClick={isStreaming ? stop : undefined}
+157 |         disabled={(!isStreaming && !input.trim()) || (isStreaming && status === "submitted")}
+158 |         className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+159 |       >
+160 |         {isStreaming ? (
+161 |           <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
+162 |         ) : (
+163 |           <ArrowUp className={`h-4 w-4 ${(!isStreaming && !input.trim()) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+164 |         )}
+165 |       </button>
+166 |     </div>
+167 |   );
+168 | };
 ```
 
 components/theme-provider.tsx
@@ -7076,7 +7103,7 @@ components/tool-invocation.tsx
 103 |             {state === "call" ? (isLatestMessage && status !== "ready" ? "Running" : "Waiting") : "Completed"}
 104 |           </span>
 105 |         </div>
-106 |         <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+106 |         <div className="flex items-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity sm:opacity-70 sm:group-hover:opacity-100 opacity-100">
 107 |           {getStatusIcon()}
 108 |           <div className="bg-muted/30 rounded-full p-0.5 border border-border/30">
 109 |             {isExpanded ? (
@@ -7133,6 +7160,44 @@ components/tool-invocation.tsx
 160 |     </div>
 161 |   );
 162 | } 
+```
+
+components/top-nav.tsx
+```
+1 | "use client";
+2 | 
+3 | import { useRouter } from "next/navigation";
+4 | import { PlusCircle } from "lucide-react";
+5 | import { Button } from "@/components/ui/button";
+6 | import { SidebarTrigger } from "@/components/ui/sidebar";
+7 | import Image from "next/image";
+8 | 
+9 | export function TopNav() {
+10 |   const router = useRouter();
+11 | 
+12 |   const handleNewChat = () => {
+13 |     router.push('/');
+14 |   };
+15 | 
+16 |   return (
+17 |     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-2 flex items-center gap-2">
+18 |       <SidebarTrigger>
+19 |         <button className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors">
+20 |           <Image src="/logo.png" alt="ChatLima logo" width={16} height={16} />
+21 |         </button>
+22 |       </SidebarTrigger>
+23 |       <Button
+24 |         variant="ghost"
+25 |         size="icon"
+26 |         className="flex items-center justify-center h-8 w-8 bg-muted hover:bg-accent rounded-md transition-colors"
+27 |         onClick={handleNewChat}
+28 |         title="New Chat"
+29 |       >
+30 |         <PlusCircle className="h-4 w-4" />
+31 |       </Button>
+32 |     </nav>
+33 |   );
+34 | } 
 ```
 
 components/web-search-suggestion.tsx
@@ -7242,27 +7307,275 @@ components/web-search-suggestion.tsx
 103 | } 
 ```
 
+drizzle/0000_supreme_rocket_raccoon.sql
+```
+1 | CREATE TABLE "chats" (
+2 | 	"id" text PRIMARY KEY NOT NULL,
+3 | 	"title" text DEFAULT 'New Chat' NOT NULL,
+4 | 	"created_at" timestamp DEFAULT now() NOT NULL,
+5 | 	"updated_at" timestamp DEFAULT now() NOT NULL
+6 | );
+7 | --> statement-breakpoint
+8 | CREATE TABLE "messages" (
+9 | 	"id" text PRIMARY KEY NOT NULL,
+10 | 	"chat_id" text NOT NULL,
+11 | 	"content" text NOT NULL,
+12 | 	"role" text NOT NULL,
+13 | 	"created_at" timestamp DEFAULT now() NOT NULL
+14 | );
+15 | --> statement-breakpoint
+16 | ALTER TABLE "messages" ADD CONSTRAINT "messages_chat_id_chats_id_fk" FOREIGN KEY ("chat_id") REFERENCES "public"."chats"("id") ON DELETE cascade ON UPDATE no action;
+```
+
+drizzle/0001_curious_paper_doll.sql
+```
+1 | CREATE TABLE "users" (
+2 | 	"id" text PRIMARY KEY NOT NULL,
+3 | 	"client_id" text NOT NULL,
+4 | 	"created_at" timestamp DEFAULT now() NOT NULL,
+5 | 	"updated_at" timestamp DEFAULT now() NOT NULL,
+6 | 	CONSTRAINT "users_client_id_unique" UNIQUE("client_id")
+7 | );
+8 | --> statement-breakpoint
+9 | ALTER TABLE "chats" ADD COLUMN "user_id" text;--> statement-breakpoint
+10 | ALTER TABLE "chats" ADD CONSTRAINT "chats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+```
+
+drizzle/0002_free_cobalt_man.sql
+```
+1 | CREATE TABLE "steps" (
+2 | 	"id" text PRIMARY KEY NOT NULL,
+3 | 	"message_id" text NOT NULL,
+4 | 	"step_type" text NOT NULL,
+5 | 	"text" text,
+6 | 	"reasoning" text,
+7 | 	"finish_reason" text,
+8 | 	"created_at" timestamp DEFAULT now() NOT NULL,
+9 | 	"tool_calls" json,
+10 | 	"tool_results" json
+11 | );
+12 | --> statement-breakpoint
+13 | ALTER TABLE "users" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
+14 | DROP TABLE "users" CASCADE;--> statement-breakpoint
+15 | ALTER TABLE "chats" DROP CONSTRAINT "chats_user_id_users_id_fk";
+16 | --> statement-breakpoint
+17 | ALTER TABLE "chats" ALTER COLUMN "user_id" SET NOT NULL;--> statement-breakpoint
+18 | ALTER TABLE "messages" ADD COLUMN "reasoning" text;--> statement-breakpoint
+19 | ALTER TABLE "messages" ADD COLUMN "tool_calls" json;--> statement-breakpoint
+20 | ALTER TABLE "messages" ADD COLUMN "tool_results" json;--> statement-breakpoint
+21 | ALTER TABLE "messages" ADD COLUMN "has_tool_use" boolean DEFAULT false;--> statement-breakpoint
+22 | ALTER TABLE "steps" ADD CONSTRAINT "steps_message_id_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."messages"("id") ON DELETE cascade ON UPDATE no action;
+```
+
+drizzle/0003_oval_energizer.sql
+```
+1 | ALTER TABLE "steps" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
+2 | DROP TABLE "steps" CASCADE;--> statement-breakpoint
+3 | ALTER TABLE "messages" ALTER COLUMN "tool_calls" SET DATA TYPE jsonb;--> statement-breakpoint
+4 | ALTER TABLE "messages" ALTER COLUMN "tool_results" SET DATA TYPE jsonb;--> statement-breakpoint
+5 | ALTER TABLE "messages" ADD COLUMN "step_type" text;--> statement-breakpoint
+6 | ALTER TABLE "messages" ADD COLUMN "finish_reason" text;--> statement-breakpoint
+7 | ALTER TABLE "messages" DROP COLUMN "has_tool_use";
+```
+
+drizzle/0004_tense_ricochet.sql
+```
+1 | ALTER TABLE "messages" DROP COLUMN "reasoning";--> statement-breakpoint
+2 | ALTER TABLE "messages" DROP COLUMN "tool_calls";--> statement-breakpoint
+3 | ALTER TABLE "messages" DROP COLUMN "tool_results";--> statement-breakpoint
+4 | ALTER TABLE "messages" DROP COLUMN "step_type";--> statement-breakpoint
+5 | ALTER TABLE "messages" DROP COLUMN "finish_reason";
+```
+
+drizzle/0005_early_payback.sql
+```
+1 | ALTER TABLE "messages" ADD COLUMN "parts" json NOT NULL;--> statement-breakpoint
+2 | ALTER TABLE "messages" DROP COLUMN "content";
+```
+
+drizzle/0007_update_verification_table.sql
+```
+1 | ALTER TABLE "verificationToken" RENAME TO "verification";--> statement-breakpoint
+2 | ALTER TABLE "verification" RENAME COLUMN "expires" TO "expiresAt";--> statement-breakpoint
+3 | ALTER TABLE "verification" DROP CONSTRAINT "verificationToken_token_unique";--> statement-breakpoint
+4 | ALTER TABLE "verification" DROP CONSTRAINT "verificationToken_identifier_token_pk";--> statement-breakpoint
+5 | ALTER TABLE "verification" ADD COLUMN "id" text PRIMARY KEY NOT NULL;--> statement-breakpoint
+6 | ALTER TABLE "verification" ADD COLUMN "value" text NOT NULL;--> statement-breakpoint
+7 | ALTER TABLE "verification" DROP COLUMN "token";
+```
+
+drizzle/0008_alter_accounts_expiresat_type.sql
+```
+1 | ALTER TABLE "account" ALTER COLUMN "expires_at" SET DATA TYPE timestamp USING to_timestamp(expires_at);
+```
+
+drizzle/0009_alter_users_emailverified_type.sql
+```
+1 | ALTER TABLE "user" ALTER COLUMN "emailVerified" SET DATA TYPE boolean USING ("emailVerified" IS NOT NULL);
+```
+
+drizzle/0010_optimal_jane_foster.sql
+```
+1 | -- ALTER TABLE "account" RENAME COLUMN "expires_at" TO "access_token_expires_at"; -- Already applied by previous push
+2 | ALTER TABLE "account" ALTER COLUMN "access_token_expires_at" SET DATA TYPE integer USING EXTRACT(epoch FROM "access_token_expires_at")::integer;
+```
+
+drizzle/0011_fixed_cerebro.sql
+```
+1 | -- ALTER TABLE "account" DROP CONSTRAINT "account_providerId_accountId_pk"; --> statement-breakpoint -- Already dropped by previous push
+2 | ALTER TABLE "account" ADD COLUMN "id" text PRIMARY KEY NOT NULL;
+```
+
+drizzle/0012_tearful_misty_knight.sql
+```
+1 | ALTER TABLE "account" ALTER COLUMN "access_token_expires_at" SET DATA TYPE timestamp USING to_timestamp("access_token_expires_at");
+```
+
+drizzle/0013_special_whirlwind.sql
+```
+1 | ALTER TABLE "account" ALTER COLUMN "providerType" DROP NOT NULL;
+```
+
+drizzle/0014_fair_praxagora.sql
+```
+1 | ALTER TABLE "session" RENAME COLUMN "expires" TO "expiresAt";
+```
+
+drizzle/0015_remarkable_owl.sql
+```
+1 | -- First add the column as nullable
+2 | ALTER TABLE "session" ADD COLUMN IF NOT EXISTS "token" text;
+3 | -- Then update existing records to use the sessionToken value
+4 | UPDATE "session" SET "token" = "sessionToken" WHERE "token" IS NULL;
+5 | -- Finally make the column NOT NULL if needed
+6 | ALTER TABLE "session" ALTER COLUMN "token" SET NOT NULL;
+```
+
+drizzle/0016_cooing_lester.sql
+```
+1 | ALTER TABLE "session" DROP COLUMN "token";
+```
+
+drizzle/0017_past_bromley.sql
+```
+1 | DO $ 
+2 | BEGIN
+3 |     IF NOT EXISTS (
+4 |         SELECT 1
+5 |         FROM information_schema.columns
+6 |         WHERE table_name = 'messages' AND column_name = 'has_web_search'
+7 |     ) THEN
+8 |         ALTER TABLE "messages" ADD COLUMN "has_web_search" boolean DEFAULT false;
+9 |     END IF;
+10 | END $;--> statement-breakpoint
+11 | 
+12 | DO $ 
+13 | BEGIN
+14 |     IF NOT EXISTS (
+15 |         SELECT 1
+16 |         FROM information_schema.columns
+17 |         WHERE table_name = 'messages' AND column_name = 'web_search_context_size'
+18 |     ) THEN
+19 |         ALTER TABLE "messages" ADD COLUMN "web_search_context_size" text DEFAULT 'medium';
+20 |     END IF;
+21 | END $;
+```
+
+drizzle/0018_conscious_dragon_man.sql
+```
+1 | DO $ 
+2 | BEGIN
+3 |     IF NOT EXISTS (
+4 |         SELECT 1
+5 |         FROM information_schema.tables
+6 |         WHERE table_name = 'polar_usage_events'
+7 |     ) THEN
+8 |         CREATE TABLE "polar_usage_events" (
+9 |             "id" text PRIMARY KEY NOT NULL,
+10 |             "user_id" text NOT NULL,
+11 |             "polar_customer_id" text,
+12 |             "event_name" text NOT NULL,
+13 |             "event_payload" json NOT NULL,
+14 |             "created_at" timestamp DEFAULT now() NOT NULL
+15 |         );
+16 |         
+17 |         ALTER TABLE "polar_usage_events" ADD CONSTRAINT "polar_usage_events_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+18 |     END IF;
+19 | END $;
+```
+
+drizzle/0018_manual_polar_events.sql
+```
+1 | -- Migration manually applied via Neon MCP
+2 | -- This file is a placeholder to track that the polarUsageEvents table was created
+3 | 
+4 | -- CREATE TABLE was executed directly via Neon API
+```
+
+drizzle/0020_rainy_rockslide.sql
+```
+1 | ALTER TABLE "user" ADD COLUMN "isAnonymous" boolean DEFAULT false;
+```
+
+drizzle/0021_aberrant_baron_zemo.sql
+```
+1 | ALTER TABLE "user" ADD COLUMN "metadata" json;
+```
+
 hooks/use-mobile.ts
 ```
-1 | import * as React from "react"
+1 | import { useEffect, useState } from "react";
 2 | 
-3 | const MOBILE_BREAKPOINT = 768
+3 | const MOBILE_BREAKPOINT = 768;
 4 | 
-5 | export function useIsMobile() {
-6 |   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+5 | export const useIsMobile = () => {
+6 |   const [isMobile, setIsMobile] = useState(false);
 7 | 
-8 |   React.useEffect(() => {
-9 |     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-10 |     const onChange = () => {
-11 |       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-12 |     }
-13 |     mql.addEventListener("change", onChange)
-14 |     setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-15 |     return () => mql.removeEventListener("change", onChange)
-16 |   }, [])
-17 | 
-18 |   return !!isMobile
-19 | }
+8 |   useEffect(() => {
+9 |     const checkDevice = () => {
+10 |       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+11 |     };
+12 | 
+13 |     checkDevice();
+14 |     window.addEventListener("resize", checkDevice);
+15 | 
+16 |     return () => {
+17 |       window.removeEventListener("resize", checkDevice);
+18 |     };
+19 |   }, []);
+20 | 
+21 |   return isMobile;
+22 | };
+23 | 
+24 | export const useIsTouchDevice = () => {
+25 |   const [isTouchDevice, setIsTouchDevice] = useState(false);
+26 | 
+27 |   useEffect(() => {
+28 |     const checkTouchDevice = () => {
+29 |       // Check if device supports touch and doesn't support hover (typical mobile/tablet)
+30 |       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+31 |       const hasHover = window.matchMedia('(hover: hover)').matches;
+32 |       setIsTouchDevice(hasTouch && !hasHover);
+33 |     };
+34 | 
+35 |     checkTouchDevice();
+36 | 
+37 |     // Listen for media query changes
+38 |     const hoverQuery = window.matchMedia('(hover: hover)');
+39 |     const pointerQuery = window.matchMedia('(pointer: coarse)');
+40 | 
+41 |     const handleChange = () => checkTouchDevice();
+42 |     hoverQuery.addEventListener('change', handleChange);
+43 |     pointerQuery.addEventListener('change', handleChange);
+44 | 
+45 |     return () => {
+46 |       hoverQuery.removeEventListener('change', handleChange);
+47 |       pointerQuery.removeEventListener('change', handleChange);
+48 |     };
+49 |   }, []);
+50 | 
+51 |   return isTouchDevice;
+52 | };
 ```
 
 hooks/useAuth.ts
@@ -8691,6 +9004,1747 @@ public/manifest.json
 44 | }
 ```
 
+releases/RELEASE_NOTES_v0.10.0.md
+```
+1 | # 🚀 ChatLima v0.10.0 - Enhanced Model Support & Navigation
+2 | 
+3 | ## 🎯 What's New
+4 | - **New Mistral Models**: Added support for the latest Mistral Magistral Small and Medium 2506 models
+5 | - **Enhanced Model Descriptions**: Detailed capabilities and use-case information for better model selection
+6 | - **Improved Post-Checkout Navigation**: Better user flow after successful checkout completion
+7 | - **Enhanced Mathematical Rendering**: Improved KaTeX styling for consistent mathematical expressions across themes
+8 | 
+9 | ## 🤖 AI Model Enhancements
+10 | - **Mistral Magistral Small 2506**: Fast and efficient model for everyday tasks with cost-effective performance
+11 | - **Mistral Magistral Medium 2506**: Balanced model offering enhanced capabilities for complex reasoning tasks
+12 | - Comprehensive model descriptions help users choose the right model for their specific needs
+13 | - Updated model selection interface with clear capability indicators
+14 | 
+15 | ## 🎨 User Experience Improvements
+16 | - **Better Checkout Flow**: Post-purchase navigation now redirects to home page for improved user orientation
+17 | - **Enhanced Mathematical Display**: Upgraded KaTeX styling ensures consistent mathematical notation rendering
+18 | - **Theme Consistency**: Mathematical expressions now display properly across light and dark themes
+19 | - **Improved Visual Hierarchy**: Better styling consistency throughout the application
+20 | 
+21 | ## 🔧 Technical Improvements
+22 | - Added new model configurations with proper metadata and pricing information
+23 | - Enhanced CSS styling for mathematical content rendering
+24 | - Improved navigation logic for better user flow management
+25 | - Updated model selection components with expanded capability descriptions
+26 | 
+27 | ## 📈 Benefits
+28 | - **More Model Choices**: Access to latest Mistral models for diverse use cases
+29 | - **Better Decision Making**: Comprehensive model descriptions help users select optimal models
+30 | - **Smoother User Journey**: Improved post-checkout experience reduces confusion
+31 | - **Enhanced Readability**: Better mathematical content display improves technical discussions
+32 | - **Consistent Theming**: Unified visual experience across all interface elements
+33 | 
+34 | ## 🔄 Migration Notes
+35 | - New models are immediately available in the model selection interface
+36 | - No breaking changes to existing functionality
+37 | - Enhanced styling is automatically applied to all mathematical content
+38 | - Existing model preferences remain unchanged and fully functional
+39 | 
+40 | ## 🚀 Deployment
+41 | - Standard deployment process with automatic model availability
+42 | - No additional configuration required for new models
+43 | - Enhanced styling takes effect immediately after deployment
+44 | - All existing user data and preferences remain intact
+45 | 
+46 | ---
+47 | 
+48 | **Full Changelog**: [v0.9.1...v0.10.0](https://github.com/brooksy4503/chatlima/compare/v0.9.1...v0.10.0) 
+```
+
+releases/RELEASE_NOTES_v0.11.0.md
+```
+1 | # 🚀 ChatLima v0.11.0 - Polar Integration & Enhanced Features
+2 | 
+3 | ## 🎯 What's New
+4 | - **Polar Integration**: Complete integration with Polar billing platform for customer management and payments
+5 | - **Paid Web Search**: New premium web search feature with credit-based billing and usage tracking
+6 | - **Dynamic Environment Configuration**: Environment-based Polar server configuration for seamless production deployment
+7 | - **Customer Portal Access**: Direct access to Polar customer portal for subscription and billing management
+8 | - **Enhanced Testing Infrastructure**: Comprehensive Playwright testing suite with multiple configuration options
+9 | - **Smart Title Generation**: Dynamic model selection for AI-powered conversation title generation
+10 | - **Improved Credit Management**: Enhanced credit validation with better user experience and error handling
+11 | 
+12 | ## 🔧 Technical Implementation
+13 | - **Polar SDK Integration**: Full integration with Polar billing platform using environment-based configuration
+14 | - **Web Search Billing**: Backend credit validation and surcharge system for paid web search functionality
+15 | - **Enhanced OAuth Configuration**: Dynamic Google OAuth setup with improved logging and error handling
+16 | - **Customer Management**: Advanced customer retrieval and creation logic with fallback mechanisms
+17 | - **Credit Exposure**: Frontend access to user credit balance for better UX and transparency
+18 | - **Testing Suite**: Added comprehensive Playwright testing scripts with local and CI configurations
+19 | - **API Route Enhancements**: New customer portal API route and improved existing endpoints
+20 | 
+21 | ## 🛡️ Security & Privacy
+22 | - **Environment-Based Configuration**: Secure Polar server environment selection based on deployment context
+23 | - **Enhanced OAuth Security**: Improved Google OAuth client configuration with detailed logging
+24 | - **Credit Validation**: Robust credit checking with proper error handling and user feedback
+25 | - **Customer Data Protection**: Secure customer management with proper API integration patterns
+26 | 
+27 | ## 📈 Benefits
+28 | - **Streamlined Billing**: Direct integration with Polar for seamless payment and subscription management
+29 | - **Premium Features**: Monetized web search capabilities with transparent credit-based pricing
+30 | - **Better User Experience**: Clear credit balance visibility and improved error messaging
+31 | - **Development Quality**: Comprehensive testing infrastructure for better code reliability
+32 | - **Operational Excellence**: Environment-aware configuration for smooth production deployments
+33 | - **Customer Self-Service**: Direct portal access for users to manage their billing and subscriptions
+34 | 
+35 | ## 🔄 Migration Notes
+36 | - **Polar Configuration**: New environment variables required for Polar integration
+37 |   - Configure Polar environment settings based on deployment context
+38 |   - Update customer management workflows to use new Polar API integration
+39 | - **Web Search Credits**: New credit deduction system for web search features
+40 |   - Existing users will see new web search billing in their account
+41 |   - Credit validation now includes web search cost calculations
+42 | - **Testing Infrastructure**: New Playwright configuration files added
+43 |   - Development teams should update their testing workflows
+44 |   - New test scripts available for comprehensive UI testing
+45 | - **API Changes**: Enhanced API routes with improved error handling
+46 |   - Existing integrations remain compatible
+47 |   - New customer portal functionality available immediately
+48 | 
+49 | ## 🚀 Deployment
+50 | - **Environment Variables**: Ensure Polar configuration environment variables are set
+51 | - **Database Updates**: No schema changes required for this release
+52 | - **Testing**: Run new Playwright test suite to validate deployment
+53 | - **Customer Portal**: New portal access will be available immediately after deployment
+54 | - **Web Search**: Paid web search features activate automatically with credit system
+55 | 
+56 | ## 🆕 New Features Detail
+57 | - **Polar Customer Portal**: Users can access billing portal directly from account menu
+58 | - **Web Search Billing**: Transparent credit usage for premium web search functionality
+59 | - **Dynamic Title Generation**: Improved conversation titles using advanced AI models
+60 | - **Enhanced Credit UI**: Real-time credit balance display and usage tracking
+61 | - **Testing Scripts**: Multiple Playwright configurations for different testing scenarios
+62 | - **Environment Awareness**: Automatic Polar environment selection for production/development
+63 | 
+64 | ---
+65 | 
+66 | **Full Changelog**: [v0.10.0...v0.11.0](https://github.com/brooksy4503/chatlima/compare/v0.10.0...v0.11.0) 
+```
+
+releases/RELEASE_NOTES_v0.12.0.md
+```
+1 | # 🚀 ChatLima v0.12.0 - Polar Production Checkout Integration
+2 | 
+3 | ## 🎯 What's New
+4 | - **Production Checkout System**: Complete Polar checkout integration with user-friendly purchase flow
+5 | - **Smart User Flow Handling**: Seamless experience for both anonymous and authenticated users
+6 | - **Integrated Purchase Interface**: Checkout button directly accessible from user account menu
+7 | - **Comprehensive Error Handling**: Dedicated error pages for failed, canceled, and problematic transactions
+8 | - **Credit Purchase Workflow**: Streamlined process for users to purchase AI usage credits
+9 | - **Enhanced User Experience**: Context-aware messaging and intuitive purchase flow
+10 | 
+11 | ## 🔧 Technical Implementation
+12 | - **CheckoutButton Component**: Reusable React component with intelligent user state detection
+13 | - **Dual User Flow Logic**: Automatic handling of anonymous users (redirect to sign-in) vs authenticated users (direct checkout)
+14 | - **Error Page Framework**: Complete error handling with detailed error states and recovery options
+15 | - **User Menu Integration**: Seamless integration of purchase functionality into existing user interface
+16 | - **Production Environment**: Full migration to Polar production environment with proper security configurations
+17 | - **Webhook Integration**: Backend webhook handling for real-time credit updates after successful purchases
+18 | 
+19 | ## 🛡️ Security & Privacy
+20 | - **Production Environment**: Secure Polar production environment configuration
+21 | - **Authenticated Checkout**: Proper user authentication verification before checkout access
+22 | - **Secure Payment Processing**: All payment processing handled securely through Polar platform
+23 | - **Error Information Protection**: Safe error handling that doesn't expose sensitive checkout data
+24 | - **Environment Variable Security**: Production keys and secrets properly configured in deployment environment
+25 | 
+26 | ## 📈 Benefits
+27 | - **Simplified Credit Purchase**: Users can purchase credits directly from the application interface
+28 | - **Improved User Onboarding**: Anonymous users guided through sign-up process for credit purchases
+29 | - **Better Error Recovery**: Clear error messages with actionable recovery options
+30 | - **Seamless Integration**: Native checkout experience without external redirects
+31 | - **Real-time Updates**: Immediate credit balance updates after successful purchases
+32 | - **Enhanced Accessibility**: Intuitive interface accessible to users of all technical levels
+33 | 
+34 | ## 🔄 Migration Notes
+35 | - **Environment Configuration**: Production Polar environment variables now active
+36 |   - All checkout functionality now uses production Polar endpoints
+37 |   - Webhook endpoints configured for production credit updates
+38 | - **User Interface Updates**: New checkout button integrated into user account menu
+39 |   - Existing users will see new "Purchase More Credits" option in account menu
+40 |   - Anonymous users will see "Sign In to Purchase Credits" with guided flow
+41 | - **Error Handling**: New error pages for checkout failures
+42 |   - Users experiencing checkout issues will be directed to helpful error pages
+43 |   - Recovery options provided for failed or canceled transactions
+44 | 
+45 | ## 🚀 Deployment
+46 | - **Environment Variables**: Production Polar configuration active
+47 | - **Component Integration**: New checkout components deployed and integrated
+48 | - **Error Pages**: Checkout error handling pages now available at `/checkout/error`
+49 | - **User Menu Updates**: Enhanced account menu with integrated purchase functionality
+50 | - **Webhook Verification**: Production webhook endpoints for credit updates confirmed active
+51 | 
+52 | ## 🆕 New Features Detail
+53 | - **Smart Checkout Button**: Context-aware button that adapts to user authentication state
+54 |   - Anonymous users: "Sign In to Purchase Credits" with Google OAuth flow
+55 |   - Authenticated users: "Purchase More Credits" with direct checkout access
+56 | - **Comprehensive Error Handling**: Dedicated error page with specific error state handling
+57 |   - Canceled transactions: User-friendly messaging with retry options
+58 |   - Failed payments: Clear error explanation with troubleshooting guidance
+59 |   - General errors: Helpful recovery options and support contact information
+60 | - **Seamless User Flow**: Integrated purchase experience within the application
+61 |   - No external redirects or confusing navigation
+62 |   - Clear calls-to-action and intuitive user interface
+63 |   - Immediate access to purchased credits after successful payment
+64 | 
+65 | ## 🐛 Bug Fixes
+66 | - **Checkout Flow Reliability**: Improved error handling and user feedback
+67 | - **Authentication State Management**: Better handling of anonymous vs authenticated user scenarios
+68 | - **UI Consistency**: Consistent styling and messaging across checkout flow
+69 | 
+70 | ---
+71 | 
+72 | **Full Changelog**: [v0.11.0...v0.12.0](https://github.com/brooksy4503/chatlima/compare/v0.11.0...v0.12.0) 
+```
+
+releases/RELEASE_NOTES_v0.12.1.md
+```
+1 | # 🔐 ChatLima v0.12.1 - Web Search Security & Credit Validation Fix
+2 | 
+3 | ## 🎯 What's Fixed
+4 | - **Enhanced Web Search Security**: Implemented robust server-side validation for web search feature access
+5 | - **Credit Validation Improvements**: Strengthened credit checking to prevent unauthorized feature usage
+6 | - **Anonymous User Protection**: Added proper blocking for anonymous users attempting to access premium features
+7 | - **Security Logging**: Enhanced monitoring and logging for unauthorized access attempts
+8 | 
+9 | ## 🔧 Technical Fixes
+10 | - **Server-Side Validation**: Complete overhaul of web search authorization logic
+11 |   - Server now determines web search eligibility instead of relying on client requests
+12 |   - Prevents potential security bypasses through client-side manipulation
+13 | - **Anonymous User Blocking**: Explicit prevention of web search access for non-authenticated users
+14 | - **Credit Verification**: Enhanced credit checking before allowing premium feature access
+15 | - **Security Incident Logging**: Improved logging for tracking unauthorized access attempts
+16 | - **Authorization Flow**: Streamlined permission checking with proper error responses
+17 | 
+18 | ## 🛡️ Security Improvements
+19 | - **Access Control**: Strict server-side enforcement of web search feature permissions
+20 | - **Credit Protection**: Prevents users with insufficient credits from accessing premium features
+21 | - **Anonymous User Safety**: Clear boundaries preventing anonymous users from accessing paid features
+22 | - **Audit Trail**: Enhanced logging for security monitoring and incident response
+23 | - **Input Validation**: Improved validation of user requests to prevent unauthorized actions
+24 | 
+25 | ## 🐛 Critical Bug Fixes
+26 | - **Web Search Authorization**: Fixed potential security vulnerability where unauthorized users could access web search
+27 | - **Credit Validation**: Resolved issue where credit checks could be bypassed
+28 | - **User State Verification**: Enhanced user authentication state validation
+29 | - **Request Processing**: Improved handling of unauthorized feature access attempts
+30 | 
+31 | ## 📈 Impact
+32 | - **Improved Security**: Significantly enhanced protection against unauthorized feature access
+33 | - **Better Credit Management**: More accurate and secure credit usage tracking
+34 | - **Enhanced User Experience**: Clear error messages for users attempting unauthorized actions
+35 | - **Reduced Security Risk**: Eliminated potential vectors for premium feature bypass
+36 | - **Better Monitoring**: Improved visibility into security-related events
+37 | 
+38 | ## 🔄 Changes
+39 | - **API Route Updates**: Modified `/api/chat/route.ts` with enhanced security checks
+40 | - **Authorization Logic**: Completely rewritten web search permission validation
+41 | - **Error Handling**: Improved error responses for unauthorized access attempts
+42 | - **Logging Infrastructure**: Enhanced security event logging and monitoring
+43 | 
+44 | ---
+45 | 
+46 | **Full Changelog**: [v0.12.0...v0.12.1](https://github.com/brooksy4503/chatlima/compare/v0.12.0...v0.12.1) 
+```
+
+releases/RELEASE_NOTES_v0.13.0.md
+```
+1 | # 📱 ChatLima v0.13.0 - iOS Homescreen Shortcut Support
+2 | 
+3 | ## 🎯 What's New
+4 | - **iOS Homescreen Integration**: Complete iOS homescreen shortcut functionality with native app-like experience
+5 | - **Apple Touch Icons**: High-quality branded icons optimized for all iOS device sizes and configurations
+6 | - **Smart Installation Prompt**: Intelligent iOS detection with contextual "Add to Home Screen" suggestions
+7 | - **Enhanced Mobile Experience**: Comprehensive iOS-specific styling and touch optimizations
+8 | - **Progressive Web Enhancement**: Web app manifest and meta tags for standalone display mode
+9 | - **Mobile UI Improvements**: Enhanced chat interface and typography optimized for mobile devices
+10 | 
+11 | ## 🔧 Technical Implementation
+12 | - **Apple Touch Icon Assets**: Complete icon set for all iOS devices and screen densities
+13 |   - 180x180px for iPhone 6 Plus and newer devices
+14 |   - 167x167px for iPad Pro with Retina display
+15 |   - 152x152px for standard iPad Retina display
+16 |   - 120x120px for iPhone Retina display
+17 |   - Optimized PNG format with no transparency for perfect iOS integration
+18 | - **Web App Manifest**: Comprehensive `manifest.json` with proper metadata and standalone display configuration
+19 | - **iOS Detection Component**: Smart `ios-install-prompt.tsx` component with user preference memory and installation status detection
+20 | - **Meta Tag Enhancements**: Complete iOS-specific meta tag implementation for optimal homescreen experience
+21 | - **CSS Mobile Optimization**: Enhanced styling for iOS Safari and homescreen app mode with safe area support
+22 | 
+23 | ## 🛡️ Mobile Experience & UX
+24 | - **Native App Feel**: When launched from home screen, ChatLima opens without browser chrome for seamless experience
+25 | - **Safe Area Support**: Proper handling for notched devices (iPhone X and newer) with appropriate padding and layout
+26 | - **Touch Optimization**: Improved touch targets and interactions specifically designed for mobile use
+27 | - **Enhanced Typography**: Better mobile typography and spacing for improved readability on smaller screens
+28 | - **Smooth Scrolling**: Optimized scrolling behavior and performance for mobile devices
+29 | - **Installation Memory**: User dismissal preferences saved to avoid annoying repeated prompts
+30 | 
+31 | ## 📈 Benefits
+32 | - **Quick Access**: Users can launch ChatLima directly from iOS home screen like a native app
+33 | - **Improved Engagement**: Easier access encourages more frequent usage on mobile devices
+34 | - **Better Mobile UX**: Comprehensive mobile optimizations improve overall user experience
+35 | - **Reduced Friction**: No need to open Safari and navigate to website each time
+36 | - **Native Integration**: Proper iOS integration with branded icons and standalone display
+37 | - **Future-Proof Foundation**: Groundwork laid for potential PWA features and offline functionality
+38 | 
+39 | ## 🔄 Migration Notes
+40 | - **Automatic Availability**: iOS homescreen functionality is automatically available to all users on compatible devices
+41 | - **No Configuration Required**: All necessary assets and configurations deployed automatically
+42 | - **Backward Compatibility**: All existing functionality remains unchanged for non-iOS users
+43 | - **Progressive Enhancement**: iOS users get enhanced experience while maintaining compatibility
+44 | - **Asset Optimization**: New icon assets added without affecting site performance
+45 | - **Component Integration**: iOS install prompt integrated seamlessly into existing UI
+46 | 
+47 | ## 🚀 Deployment
+48 | - **Icon Assets**: All Apple touch icon variants deployed to public directory
+49 | - **Manifest Configuration**: Web app manifest active with proper metadata
+50 | - **Meta Tag Integration**: iOS-specific meta tags added to application layout
+51 | - **Component Activation**: iOS installation prompt component deployed and active
+52 | - **CSS Enhancements**: Mobile-optimized styling deployed across all components
+53 | - **Documentation**: Implementation plan and guidelines added to project documentation
+54 | 
+55 | ## 🆕 New Features Detail
+56 | - **Smart iOS Detection**: Automatic detection of iOS Safari users with contextual prompting
+57 |   - Detects device type and browser for targeted user experience
+58 |   - Checks if already added to home screen to avoid duplicate prompts
+59 |   - Respects user dismissal preferences with localStorage persistence
+60 | - **Progressive Installation Prompt**: Non-intrusive "Add to Home Screen" suggestions
+61 |   - Appears only for eligible iOS users at appropriate moments
+62 |   - Clear instructions and value proposition for homescreen installation
+63 |   - Easy dismissal with memory to avoid repeated interruptions
+64 | - **Standalone App Mode**: Complete standalone display experience when launched from home screen
+65 |   - No browser address bar or navigation controls
+66 |   - Proper status bar styling and safe area handling
+67 |   - Native app-like navigation and interaction patterns
+68 | - **Enhanced Mobile Interface**: Comprehensive mobile UI improvements
+69 |   - Better chat component responsiveness and touch handling
+70 |   - Improved textarea component styling for mobile input
+71 |   - Enhanced markdown rendering optimized for mobile screens
+72 | 
+73 | ## 🐛 Bug Fixes & Improvements
+74 | - **Mobile Responsiveness**: Improved layout handling across all mobile screen sizes
+75 | - **Touch Interaction**: Better touch target sizing and interaction feedback
+76 | - **Typography Enhancement**: Optimized text rendering and spacing for mobile devices
+77 | - **Asset Loading**: Efficient loading of mobile-specific assets and configurations
+78 | - **Component Styling**: Enhanced styling consistency across chat and input components
+79 | 
+80 | ---
+81 | 
+82 | **Full Changelog**: [v0.12.1...v0.13.0](https://github.com/brooksy4503/chatlima/compare/v0.12.1...v0.13.0) 
+```
+
+releases/RELEASE_NOTES_v0.14.0.md
+```
+1 | # 🚀 ChatLima v0.14.0 - Enhanced AI Model Portfolio
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | - **Google Gemini 2.5 Pro & Flash Models**: Access to Google's latest state-of-the-art AI models with superior reasoning, coding, and multimodal capabilities
+6 | - **MiniMax M1 Model Family**: New large-scale reasoning models with extended context support (up to 1 million tokens) and high-efficiency inference
+7 | - **Enhanced Model Selection**: Four new premium AI models expanding ChatLima's capabilities across different use cases and performance requirements
+8 | - **Advanced Reasoning Features**: Built-in thinking capabilities in Gemini 2.5 Flash for improved accuracy and nuanced context handling
+9 | 
+10 | ## 🔧 Technical Implementation
+11 | 
+12 | - Added Google Gemini 2.5 Pro and Flash model integrations via OpenRouter
+13 | - Implemented MiniMax M1 and M1 Extended models with hybrid Mixture-of-Experts (MoE) architecture
+14 | - Enhanced `ai/providers.ts` with comprehensive model configurations and capability mappings
+15 | - Added detailed model descriptions showcasing advanced reasoning, coding, mathematics, and scientific task capabilities
+16 | - Updated model selection interface with proper provider attribution following naming conventions
+17 | 
+18 | ### New Models Added:
+19 | 
+20 | #### Google Models (via OpenRouter)
+21 | - **Google Gemini 2.5 Pro**: Premium model for advanced reasoning, coding, mathematics, and scientific tasks
+22 | - **Google Gemini 2.5 Flash**: Workhorse model with built-in thinking capabilities for balanced performance and cost
+23 | 
+24 | #### MiniMax Models (via OpenRouter)  
+25 | - **MiniMax M1**: Large-scale reasoning model with 456B total parameters and 45.9B active per token
+26 | - **MiniMax M1 Extended**: Extended context variant processing up to 128,000 tokens
+27 | 
+28 | ## 🛡️ Security & Privacy
+29 | 
+30 | - All new models inherit existing API key management and user authentication protections
+31 | - Maintained secure provider integration patterns with proper headers and referrer policies
+32 | - No changes to existing security or privacy implementations
+33 | 
+34 | ## 📈 Benefits
+35 | 
+36 | - **Expanded Choice**: Users now have access to 4 additional cutting-edge AI models
+37 | - **Performance Optimization**: Different models optimized for various tasks (speed vs. quality vs. context length)
+38 | - **Cost Flexibility**: Mix of premium and standard pricing tiers to match user needs and budgets
+39 | - **Advanced Capabilities**: Enhanced reasoning, longer context windows, and specialized task performance
+40 | 
+41 | ### Model Capabilities Overview:
+42 | - **Advanced Reasoning**: All new models excel at complex logical tasks
+43 | - **Long Context Support**: Gemini 2.5 Pro/Flash and MiniMax M1 support up to 1 million tokens
+44 | - **Multimodal Processing**: Gemini models support text, image, and mixed content
+45 | - **Software Engineering**: Optimized for coding and technical documentation tasks
+46 | - **Mathematical Reasoning**: Enhanced capabilities for mathematical and scientific problem-solving
+47 | 
+48 | ## 🔄 Migration Notes
+49 | 
+50 | - **No Breaking Changes**: All existing functionality remains unchanged
+51 | - **Automatic Availability**: New models are immediately available in the model selection interface
+52 | - **Backward Compatibility**: Existing chats and configurations continue to work seamlessly
+53 | 
+54 | ## 🚀 Deployment
+55 | 
+56 | ### Environment Considerations:
+57 | - No new environment variables required
+58 | - Existing OpenRouter API key provides access to all new models
+59 | - Models are enabled by default for users with appropriate access levels
+60 | 
+61 | ### Model Access:
+62 | - **Gemini 2.5 Flash**: Available to all users (premium: false)
+63 | - **Gemini 2.5 Pro**: Premium model requiring credits or subscription
+64 | - **MiniMax M1 Models**: Premium models requiring credits or subscription
+65 | 
+66 | ## 📊 Model Comparison
+67 | 
+68 | | Model | Context Length | Strengths | Pricing Tier |
+69 | |-------|---------------|-----------|--------------|
+70 | | Gemini 2.5 Pro | 1M tokens | Top-tier reasoning, scientific tasks | Premium |
+71 | | Gemini 2.5 Flash | 1M tokens | Built-in thinking, balanced performance | Standard |
+72 | | MiniMax M1 | 1M tokens | Extended context, high efficiency | Premium |
+73 | | MiniMax M1 Extended | 128K tokens | Long context, reasoning | Premium |
+74 | 
+75 | ## 🔍 Technical Details
+76 | 
+77 | ### Architecture Improvements:
+78 | - Enhanced model metadata system with comprehensive capability tracking
+79 | - Improved provider integration with consistent naming patterns
+80 | - Advanced model configuration supporting specialized features like thinking modes
+81 | 
+82 | ### Performance Considerations:
+83 | - Models are loaded on-demand to maintain application responsiveness
+84 | - Optimized API integration patterns for efficient model switching
+85 | - Maintained compatibility with existing rate limiting and usage tracking
+86 | 
+87 | ---
+88 | 
+89 | **Repository**: [https://github.com/brooksy4503/chatlima](https://github.com/brooksy4503/chatlima)
+90 | **Full Changelog**: [v0.13.0...v0.14.0](https://github.com/brooksy4503/chatlima/compare/v0.13.0...v0.14.0) 
+```
+
+releases/RELEASE_NOTES_v0.16.0.md
+```
+1 | # 🚀 ChatLima v0.16.0 - Enhanced Model Selection & Mobile Experience
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | - **Advanced Model Picker Search**: Intelligent search functionality across all AI models with real-time filtering by name, provider, and capabilities
+6 | - **Enhanced Mobile Experience**: Comprehensive mobile UI improvements with touch-optimized interactions and responsive design
+7 | - **Intelligent Keyboard Navigation**: Full keyboard support for model selection with arrow key navigation and auto-scroll
+8 | - **Touch-Friendly Interface**: Optimized touch targets and mobile-first design patterns throughout the application
+9 | 
+10 | ## 🔧 Technical Implementation
+11 | 
+12 | ### Model Picker Search System
+13 | - **Real-time Filtering**: Instant search across model names, providers, and capabilities
+14 | - **Smart Keyboard Navigation**: Arrow key navigation with visual focus indicators and auto-scroll
+15 | - **Performance Optimization**: Memoized filtering and sorting to prevent unnecessary re-renders
+16 | - **Accessibility**: Full keyboard support with Enter to select and Escape to cancel
+17 | 
+18 | ### Mobile Experience Enhancements
+19 | - **Enhanced Mobile Detection**: Improved `useIsMobile` hook with better breakpoint handling
+20 | - **Touch Device Detection**: New `useIsTouchDevice` hook for precise touch interaction handling
+21 | - **Safe Area Support**: Proper iOS safe area handling for notched devices
+22 | - **Mobile-First Responsive Design**: Comprehensive mobile-first CSS with proper touch targets
+23 | 
+24 | ### Key Features Added:
+25 | - **Search Input**: Dedicated search field with placeholder guidance
+26 | - **Visual Focus Indicators**: Clear keyboard focus highlighting with ring indicators
+27 | - **Provider Icons**: Color-coded provider icons for better visual organization
+28 | - **Capability Badges**: Interactive capability tags with icons and colors
+29 | - **Touch Optimization**: Minimum 44px touch targets for mobile accessibility
+30 | 
+31 | ## 🛡️ Mobile UX & Accessibility
+32 | 
+33 | - **Safe Area Handling**: Proper support for iPhone notches and Android navigation
+34 | - **Touch Target Optimization**: All interactive elements meet 44px minimum size requirements
+35 | - **Improved Touch Interactions**: Enhanced hover states for touch devices
+36 | - **Keyboard Accessibility**: Full keyboard navigation support for all interactive elements
+37 | - **Screen Reader Support**: Proper ARIA labels and semantic HTML structure
+38 | 
+39 | ## 📈 Benefits
+40 | 
+41 | ### Enhanced User Experience
+42 | - **Faster Model Discovery**: Search through 30+ AI models instantly by name or capability
+43 | - **Improved Mobile Usability**: Native-like mobile experience with proper touch handling
+44 | - **Better Accessibility**: Full keyboard navigation and screen reader support
+45 | - **Visual Clarity**: Clear visual hierarchy with provider icons and capability badges
+46 | 
+47 | ### Performance Improvements
+48 | - **Optimized Rendering**: Memoized components prevent unnecessary re-renders
+49 | - **Smart Filtering**: Efficient search algorithms with case-insensitive matching
+50 | - **Responsive Design**: Mobile-first approach reduces layout shift and improves load times
+51 | 
+52 | ### Developer Experience
+53 | - **Cleaner Code**: Improved component architecture with better separation of concerns
+54 | - **Enhanced Hooks**: More robust mobile detection and touch device handling
+55 | - **Better CSS Organization**: Mobile-first CSS with proper responsive patterns
+56 | 
+57 | ## 🔄 Migration Notes
+58 | 
+59 | - **No Breaking Changes**: All existing functionality remains unchanged
+60 | - **Automatic Availability**: New search and mobile improvements are immediately available
+61 | - **Backward Compatibility**: Existing keyboard shortcuts and interactions continue to work
+62 | - **Progressive Enhancement**: Mobile improvements gracefully degrade on older devices
+63 | 
+64 | ## 🚀 Mobile-First Enhancements
+65 | 
+66 | ### iOS Optimizations
+67 | - **Safe Area Support**: Proper handling of notched devices (iPhone X and newer)
+68 | - **Touch Callout Control**: Disabled unwanted touch callouts while preserving input functionality
+69 | - **Momentum Scrolling**: Smooth scrolling behavior optimized for iOS Safari
+70 | - **Homescreen App Support**: Enhanced PWA capabilities for iOS homescreen shortcuts
+71 | 
+72 | ### Android Optimizations
+73 | - **Touch Target Compliance**: All buttons meet Android accessibility guidelines
+74 | - **Material Design Patterns**: Consistent with Android design language
+75 | - **Gesture Support**: Improved touch and swipe interactions
+76 | 
+77 | ### Cross-Platform Mobile Features
+78 | - **Responsive Typography**: Better text scaling and readability on small screens
+79 | - **Adaptive Layouts**: Components automatically adjust for mobile constraints
+80 | - **Touch-Friendly Spacing**: Increased padding and margins for easier interaction
+81 | 
+82 | ## 📊 Technical Specifications
+83 | 
+84 | | Feature | Implementation | Benefits |
+85 | |---------|---------------|----------|
+86 | | Model Search | Real-time filtering with memoization | Instant results, no performance impact |
+87 | | Keyboard Navigation | Arrow keys + Enter/Escape | Full accessibility compliance |
+88 | | Mobile Detection | Multi-criteria device detection | Accurate mobile/desktop differentiation |
+89 | | Touch Targets | Minimum 44px size enforcement | Meets WCAG 2.1 AA standards |
+90 | | Safe Areas | CSS env() variables | Proper iPhone notch handling |
+91 | 
+92 | ## 🎨 UI/UX Improvements
+93 | 
+94 | ### Visual Enhancements
+95 | - **Provider Color Coding**: Each AI provider has distinct color identity
+96 | - **Capability Icons**: Visual indicators for model capabilities (Code, Reasoning, Vision, etc.)
+97 | - **Focus Indicators**: Clear visual feedback for keyboard navigation
+98 | - **Responsive Spacing**: Adaptive margins and padding for different screen sizes
+99 | 
+100 | ### Interaction Improvements
+101 | - **Smart Search**: Search by provider name, model name, or capability
+102 | - **Auto-scroll**: Keyboard navigation keeps focused items visible
+103 | - **Touch Feedback**: Immediate visual response to touch interactions
+104 | - **Gesture Support**: Swipe and touch gestures for mobile navigation
+105 | 
+106 | ## 🔍 Search Capabilities
+107 | 
+108 | The new model picker search supports:
+109 | - **Model Names**: "GPT-4", "Claude", "Gemini", etc.
+110 | - **Provider Names**: "OpenAI", "Anthropic", "Google", etc.
+111 | - **Capabilities**: "coding", "reasoning", "vision", "fast", etc.
+112 | - **Partial Matches**: Type "reason" to find all reasoning-capable models
+113 | - **Case Insensitive**: Search works regardless of capitalization
+114 | 
+115 | ## 🚀 Performance Metrics
+116 | 
+117 | - **Search Response Time**: <50ms for real-time filtering
+118 | - **Mobile Load Time**: 15% improvement on mobile devices
+119 | - **Touch Response**: <100ms for all touch interactions
+120 | - **Keyboard Navigation**: Instant focus changes with smooth scrolling
+121 | 
+122 | ---
+123 | 
+124 | **Repository**: [https://github.com/brooksy4503/chatlima](https://github.com/brooksy4503/chatlima)
+125 | **Full Changelog**: [v0.14.0...v0.16.0](https://github.com/brooksy4503/chatlima/compare/v0.14.0...v0.16.0) 
+```
+
+releases/RELEASE_NOTES_v0.16.1.md
+```
+1 | # 🚀 ChatLima v0.16.1 - Enhanced Accessibility & Visual Polish
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | - **Improved ModelPicker Accessibility**: Enhanced text color and contrast for better visibility across all themes
+6 | - **Refined Visual Consistency**: Updated hover and focus states for consistent user interaction feedback
+7 | - **Better Foreground Visibility**: Optimized text colors to ensure maximum readability in both light and dark modes
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | 
+11 | ### ModelPicker Component Enhancements
+12 | - **Text Color Optimization**: Changed from `text-primary dark:text-primary-foreground` to `text-foreground hover:text-foreground` for better theme consistency
+13 | - **Improved Hover States**: Updated from `hover:text-primary` to `hover:text-accent-foreground` for better visual feedback
+14 | - **Enhanced Focus Indicators**: Refined focus states to use `focus:text-accent-foreground` for consistent accessibility
+15 | - **Selection State Polish**: Updated selected item styling to use `text-foreground` for optimal contrast
+16 | 
+17 | ### Accessibility Improvements
+18 | - **Better Color Contrast**: Enhanced text visibility across all theme variants
+19 | - **Consistent Focus States**: Unified focus indication patterns throughout the component
+20 | - **Theme-Aware Colors**: Improved color selection that works seamlessly in light and dark modes
+21 | - **Visual Feedback**: Enhanced hover and focus states for better user interaction clarity
+22 | 
+23 | ## 🛡️ Accessibility & Visual Consistency
+24 | 
+25 | - **WCAG Compliance**: Improved color contrast ratios for better accessibility standards
+26 | - **Theme Consistency**: Colors now properly adapt to both light and dark theme variants
+27 | - **Focus Visibility**: Enhanced keyboard navigation with clearer visual indicators
+28 | - **Hover Feedback**: More intuitive hover states that provide immediate visual response
+29 | 
+30 | ## 📈 Benefits
+31 | 
+32 | ### Enhanced User Experience
+33 | - **Better Readability**: Improved text visibility reduces eye strain and enhances usability
+34 | - **Consistent Interactions**: Unified hover and focus states create predictable user interactions
+35 | - **Theme Harmony**: Colors that work seamlessly across all theme variants
+36 | - **Accessibility Compliance**: Better support for users with visual impairments
+37 | 
+38 | ### Visual Polish
+39 | - **Professional Appearance**: Refined color choices create a more polished interface
+40 | - **Reduced Visual Noise**: Consistent color usage eliminates distracting inconsistencies
+41 | - **Better Focus Management**: Clear visual indicators help users understand their current selection
+42 | - **Enhanced Usability**: Improved visual feedback makes the interface more intuitive
+43 | 
+44 | ## 🔄 Migration Notes
+45 | 
+46 | - **No Breaking Changes**: All existing functionality remains unchanged
+47 | - **Automatic Improvements**: Visual enhancements are immediately available to all users
+48 | - **Backward Compatibility**: No configuration changes required
+49 | - **Theme Compatibility**: Improvements work across all existing theme configurations
+50 | 
+51 | ## 🎨 Visual Improvements
+52 | 
+53 | ### Color System Enhancements
+54 | - **Foreground Text**: Consistent use of `text-foreground` for optimal readability
+55 | - **Accent Colors**: Proper use of `text-accent-foreground` for interactive states
+56 | - **Hover States**: Unified hover styling with `hover:text-accent-foreground`
+57 | - **Focus Indicators**: Clear focus states using consistent accent colors
+58 | 
+59 | ### Theme Adaptability
+60 | - **Light Mode**: Enhanced contrast and readability in light theme
+61 | - **Dark Mode**: Improved visibility and consistency in dark theme
+62 | - **High Contrast**: Better support for high contrast accessibility modes
+63 | - **Custom Themes**: Improved compatibility with custom theme configurations
+64 | 
+65 | ## 🚀 Technical Details
+66 | 
+67 | ### Component Updates
+68 | - **File Modified**: [`components/model-picker.tsx`](mdc:chatlima/components/model-picker.tsx)
+69 | - **Lines Changed**: Updated text color classes for trigger and option elements
+70 | - **Impact**: Improved accessibility and visual consistency across the component
+71 | - **Testing**: Verified across all theme variants and accessibility modes
+72 | 
+73 | ### CSS Class Changes
+74 | ```diff
+75 | - "text-primary dark:text-primary-foreground font-normal"
+76 | + "text-foreground hover:text-foreground font-normal"
+77 | 
+78 | - "hover:bg-primary/10 hover:text-primary"
+79 | + "hover:bg-accent hover:text-accent-foreground"
+80 | 
+81 | - "focus:bg-primary/10 focus:text-primary focus:outline-none"
+82 | + "focus:bg-accent focus:text-accent-foreground focus:outline-none"
+83 | 
+84 | - isSelected && "!bg-primary/15 !text-primary font-medium"
+85 | + isSelected && "!bg-primary/15 !text-foreground font-medium"
+86 | 
+87 | - isKeyboardFocused && "!bg-primary/20 !text-primary ring-2 ring-primary/30"
+88 | + isKeyboardFocused && "!bg-accent !text-accent-foreground ring-2 ring-primary/30"
+89 | ```
+90 | 
+91 | ## 📊 Accessibility Improvements
+92 | 
+93 | | Aspect | Before | After | Benefit |
+94 | |--------|--------|-------|---------|
+95 | | Text Contrast | Variable across themes | Consistent foreground colors | Better readability |
+96 | | Hover States | Primary color focus | Accent color system | Unified interaction patterns |
+97 | | Focus Indicators | Mixed color usage | Consistent accent colors | Clearer navigation feedback |
+98 | | Theme Adaptation | Manual color overrides | Semantic color tokens | Automatic theme compatibility |
+99 | 
+100 | ## 🎯 User Impact
+101 | 
+102 | ### Immediate Benefits
+103 | - **Better Visibility**: Text is more readable across all theme configurations
+104 | - **Consistent Experience**: Unified interaction patterns throughout the model picker
+105 | - **Accessibility**: Improved support for users with visual accessibility needs
+106 | - **Professional Polish**: More refined and consistent visual appearance
+107 | 
+108 | ### Long-term Value
+109 | - **Maintainability**: Semantic color usage makes future theme updates easier
+110 | - **Scalability**: Consistent patterns can be applied to other components
+111 | - **Accessibility Compliance**: Better foundation for meeting accessibility standards
+112 | - **User Satisfaction**: Improved visual consistency enhances overall user experience
+113 | 
+114 | ---
+115 | 
+116 | **Repository**: [https://github.com/brooksy4503/chatlima](https://github.com/brooksy4503/chatlima)
+117 | **Full Changelog**: [v0.16.0...v0.16.1](https://github.com/brooksy4503/chatlima/compare/v0.16.0...v0.16.1) 
+```
+
+releases/RELEASE_NOTES_v0.17.0.md
+```
+1 | # 🚀 ChatLima v0.17.0 - Latest MCP Spec Implementation
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | - **MCP 1.13.0 Support**: Upgraded to the latest Model Context Protocol specification with full compatibility
+6 | - **Enhanced Protocol Headers**: Implemented required `MCP-Protocol-Version` header for HTTP transport
+7 | - **Server Metadata Support**: Added `title` and `_meta` fields for better MCP server organization and display
+8 | - **Improved Server Management**: Enhanced MCP Server Manager UI with display titles and better user experience
+9 | - **New AI Model**: Added **Google Gemini 2.5 Flash Lite Preview 06-17** - a lightweight reasoning model optimized for ultra-low latency and cost efficiency
+10 | - **Future-Ready Architecture**: Prepared foundation for advanced MCP features like resource links and elicitation
+11 | 
+12 | ## 🔧 Technical Implementation
+13 | 
+14 | ### Core MCP Upgrades
+15 | - **SDK Upgrade**: Updated `@modelcontextprotocol/sdk` from 1.12.0 to 1.13.0
+16 | - **Protocol Compliance**: Added mandatory `MCP-Protocol-Version: 2025-06-18` header for HTTP transport
+17 | - **Breaking Change Handling**: Implemented proper header spreading to maintain backward compatibility
+18 | - **Enhanced Interfaces**: Extended `MCPServer` interface with optional `title` and `_meta` fields
+19 | 
+20 | ### API Route Enhancements
+21 | - **StreamableHTTP Transport**: Updated `app/api/chat/route.ts` with proper protocol version headers
+22 | - **Header Management**: Improved header handling to ensure existing custom headers are preserved
+23 | - **Error Resilience**: Maintained compatibility with existing MCP server configurations
+24 | 
+25 | ### UI/UX Improvements
+26 | - **Server Manager**: Added display title field in `components/mcp-server-manager.tsx`
+27 | - **Better Labeling**: Clear distinction between server ID (name) and display title
+28 | - **User Guidance**: Added helpful placeholder text and descriptions for server configuration
+29 | 
+30 | ### Context & State Management
+31 | - **MCP Context**: Enhanced `lib/context/mcp-context.tsx` with new metadata fields
+32 | - **API Processing**: Updated server processing logic to handle title and metadata
+33 | - **Type Safety**: Maintained full TypeScript support with proper interface extensions
+34 | 
+35 | ### AI Model Expansion
+36 | - **Google Gemini 2.5 Flash Lite Preview**: Added latest lightweight reasoning model from Google
+37 | - **Ultra-Low Latency**: Optimized for speed with improved throughput and faster token generation
+38 | - **Cost Efficiency**: Premium performance at reduced computational cost
+39 | - **Reasoning Capabilities**: Supports both speed-optimized and reasoning-enabled modes
+40 | 
+41 | ## 🛡️ Security & Compliance
+42 | 
+43 | - **Protocol Compliance**: Full adherence to MCP 1.13.0 specification requirements
+44 | - **Header Security**: Proper header handling prevents injection vulnerabilities
+45 | - **Backward Compatibility**: Existing MCP server configurations continue to work seamlessly
+46 | - **Future-Proofing**: Ready for upcoming MCP security features like Resource Indicators (RFC 8707)
+47 | 
+48 | ## 📈 Benefits
+49 | 
+50 | ### For Users
+51 | - **Better Organization**: Server titles make it easier to identify and manage MCP servers
+52 | - **Improved Reliability**: Enhanced protocol compliance reduces connection issues
+53 | - **New AI Model Choice**: Access to Google's latest Gemini 2.5 Flash Lite Preview with ultra-fast response times
+54 | - **Cost-Effective AI**: High-quality reasoning capabilities at reduced computational cost
+55 | - **Future Features**: Foundation laid for advanced MCP capabilities like interactive workflows
+56 | 
+57 | ### For Developers
+58 | - **Latest Standards**: Access to cutting-edge MCP protocol features
+59 | - **Enhanced Debugging**: Better server identification and metadata for troubleshooting
+60 | - **Extensibility**: Prepared for implementing resource links, elicitation, and context-aware completions
+61 | 
+62 | ### For System Administrators
+63 | - **Easier Management**: Clear server titles and descriptions for better organization
+64 | - **Monitoring Ready**: Metadata fields enable better monitoring and analytics
+65 | - **Scalability**: Improved architecture supports larger MCP server deployments
+66 | 
+67 | ## 🔄 Migration Notes
+68 | 
+69 | ### Automatic Upgrades
+70 | - **Seamless Transition**: Existing MCP server configurations work without changes
+71 | - **No Breaking Changes**: All current functionality preserved
+72 | - **Backward Compatibility**: Older MCP servers continue to function normally
+73 | 
+74 | ### Optional Enhancements
+75 | - **Server Titles**: Users can now add display titles to their MCP servers for better organization
+76 | - **Metadata Support**: Optional `_meta` fields available for advanced server configurations
+77 | - **Enhanced UI**: New server manager interface provides better configuration experience
+78 | 
+79 | ### For Advanced Users
+80 | - **Protocol Headers**: HTTP-based MCP servers now include proper protocol version headers
+81 | - **Future Features**: Codebase prepared for implementing resource links and elicitation capabilities
+82 | - **Development Ready**: Full MCP 1.13.0 specification support for custom server development
+83 | 
+84 | ## 🚀 Deployment
+85 | 
+86 | ### Production Deployment
+87 | ```bash
+88 | # Verify build
+89 | pnpm run build
+90 | 
+91 | # Deploy to production
+92 | vercel deploy --prod
+93 | ```
+94 | 
+95 | ### Environment Considerations
+96 | - **No New Variables**: No additional environment variables required
+97 | - **Existing Configs**: All current MCP server configurations remain valid
+98 | - **Performance**: No performance impact from the upgrade
+99 | 
+100 | ### Verification Steps
+101 | 1. **Test MCP Connections**: Verify existing MCP servers still connect properly
+102 | 2. **UI Functionality**: Check MCP Server Manager displays correctly
+103 | 3. **Protocol Compliance**: Confirm HTTP MCP servers receive proper headers
+104 | 4. **Error Handling**: Ensure graceful handling of any connection issues
+105 | 
+106 | ## 📚 Documentation
+107 | 
+108 | - **Comprehensive Upgrade Guide**: Added detailed `MCP_UPGRADE_GUIDE.md` with step-by-step instructions
+109 | - **Technical Details**: Complete documentation of all changes and breaking changes
+110 | - **Migration Checklist**: Easy-to-follow checklist for developers implementing MCP features
+111 | - **Future Roadmap**: Outlined upcoming MCP features and implementation plans
+112 | 
+113 | ## 🔧 Developer Experience
+114 | 
+115 | ### New Features Available
+116 | - **Enhanced Server Configuration**: Better server management with titles and metadata
+117 | - **Protocol Compliance**: Full MCP 1.13.0 specification support
+118 | - **Future-Ready**: Prepared for implementing advanced MCP features
+119 | 
+120 | ### Technical Improvements
+121 | - **Type Safety**: Enhanced TypeScript interfaces for better development experience
+122 | - **Error Handling**: Improved error messages and debugging capabilities
+123 | - **Code Organization**: Better separation of concerns in MCP-related code
+124 | 
+125 | ## 🎉 Looking Forward
+126 | 
+127 | This release establishes ChatLima as a cutting-edge MCP-compatible platform, ready for the next generation of AI tool integration. The foundation is now in place for implementing advanced features like:
+128 | 
+129 | - **Resource Links**: Direct linking to files and resources from tool outputs
+130 | - **Interactive Workflows**: User confirmation and input collection via elicitation
+131 | - **Context-Aware Completions**: Smarter auto-completion based on conversation context
+132 | - **Enhanced Security**: Resource Indicators and advanced authentication
+133 | 
+134 | ---
+135 | 
+136 | **Full Changelog**: [v0.16.1...v0.17.0](https://github.com/brooksy4503/chatlima/compare/v0.16.1...v0.17.0)
+137 | 
+138 | **🔗 Links**
+139 | - [GitHub Release](https://github.com/brooksy4503/chatlima/releases/tag/v0.17.0)
+140 | - [MCP 1.13.0 Specification](https://modelcontextprotocol.io/specification/2025-06-18/changelog)
+141 | - [MCP Upgrade Guide](https://github.com/brooksy4503/chatlima/blob/main/MCP_UPGRADE_GUIDE.md)
+142 | 
+143 | **🙏 Acknowledgments**
+144 | Special thanks to the Model Context Protocol team for the excellent specification and SDK updates that make this integration possible. 
+```
+
+releases/RELEASE_NOTES_v0.17.1.md
+```
+1 | # 🚀 ChatLima v0.17.1 - Model Picker Premium Access Fix
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | - **🔧 Critical Bug Fix**: Fixed premium model access checking in the Model Picker component
+6 | - **✅ Improved Reliability**: Premium models now correctly respect user subscription status
+7 | - **🎯 Enhanced UX**: Users can now properly access premium models when they have valid subscriptions
+8 | 
+9 | ## 🐛 Bug Fix Details
+10 | 
+11 | ### Issue Resolved
+12 | Fixed a critical bug in the Model Picker component where premium model access was incorrectly evaluated. The `canAccessPremiumModels` function was being referenced as a variable instead of being called as a function, causing inconsistent behavior in premium model availability.
+13 | 
+14 | ### Technical Fix
+15 | - **File**: `components/model-picker.tsx`
+16 | - **Change**: Updated three instances where `canAccessPremiumModels` was used as a variable to properly call it as `canAccessPremiumModels()`
+17 | - **Impact**: Premium models now correctly show as available or unavailable based on actual user subscription status
+18 | 
+19 | ### Affected Areas
+20 | 1. **Model Unavailability Check**: Fixed main display logic that determines if a model should be shown as unavailable
+21 | 2. **Keyboard Navigation**: Fixed Enter key handling to properly check premium access before model selection
+22 | 3. **Model List Rendering**: Fixed visual state rendering for premium models in the dropdown list
+23 | 
+24 | ## 🔧 Technical Implementation
+25 | 
+26 | ### Code Changes
+27 | ```typescript
+28 | // Before (incorrect)
+29 | const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels && currentModelDetails.premium);
+30 | 
+31 | // After (fixed)
+32 | const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && currentModelDetails.premium);
+33 | ```
+34 | 
+35 | ### Function Call Corrections
+36 | - **Line 145**: Fixed model unavailability calculation for display
+37 | - **Line 216**: Fixed keyboard navigation premium access check
+38 | - **Line 290**: Fixed model list item rendering premium access check
+39 | 
+40 | ## 🛡️ Security & Privacy
+41 | 
+42 | - **Access Control**: Ensures premium models are only accessible to authorized users
+43 | - **Subscription Validation**: Proper function calls now correctly validate user subscription status
+44 | - **Data Protection**: Prevents unauthorized access to premium AI models and capabilities
+45 | 
+46 | ## 📈 Benefits
+47 | 
+48 | ### For Users
+49 | - **Reliable Access**: Premium subscribers can now consistently access all premium models
+50 | - **Clear Feedback**: Model availability status now accurately reflects subscription status
+51 | - **Seamless Experience**: No more confusing model availability states
+52 | 
+53 | ### For Free Users
+54 | - **Consistent Blocking**: Free users see consistent messaging about premium model access
+55 | - **Clear Upgrade Path**: Better understanding of which models require premium subscription
+56 | - **No False Positives**: Eliminates cases where premium models appeared available but weren't
+57 | 
+58 | ### For Premium Subscribers
+59 | - **Full Access**: Complete and reliable access to all premium AI models
+60 | - **Expected Behavior**: Model picker now works as intended for premium features
+61 | - **Value Realization**: Can fully utilize their premium subscription benefits
+62 | 
+63 | ## 🔄 Migration Notes
+64 | 
+65 | ### Automatic Fix
+66 | - **No User Action Required**: This is a code-level fix that applies automatically
+67 | - **No Configuration Changes**: Existing user settings and preferences remain unchanged
+68 | - **Immediate Effect**: Fix takes effect immediately upon deployment
+69 | 
+70 | ### Impact Assessment
+71 | - **Breaking Changes**: None - this is a pure bug fix
+72 | - **Data Migration**: Not required
+73 | - **User Experience**: Only positive improvements to model access reliability
+74 | 
+75 | ## 🚀 Deployment
+76 | 
+77 | ### Safe Production Deployment
+78 | ```bash
+79 | # Verify current state
+80 | git status
+81 | 
+82 | # Confirm version bump
+83 | git log --oneline -3
+84 | 
+85 | # Deploy to production
+86 | vercel deploy --prod
+87 | ```
+88 | 
+89 | ### Verification Checklist
+90 | - [ ] Premium users can access all premium models
+91 | - [ ] Free users see consistent premium model blocking
+92 | - [ ] Model picker displays correct availability states
+93 | - [ ] Keyboard navigation respects premium access rules
+94 | - [ ] No console errors related to model access
+95 | 
+96 | ## 🧪 Testing Scenarios
+97 | 
+98 | ### For Premium Users
+99 | 1. Open model picker
+100 | 2. Verify all premium models are available and selectable
+101 | 3. Confirm no "upgrade required" messaging for premium models
+102 | 4. Test keyboard navigation through premium models
+103 | 
+104 | ### For Free Users
+105 | 1. Open model picker
+106 | 2. Verify premium models show as requiring upgrade
+107 | 3. Confirm premium models cannot be selected
+108 | 4. Test that upgrade prompts appear correctly
+109 | 
+110 | ## 📊 Impact Analysis
+111 | 
+112 | ### Before Fix
+113 | - Premium model access was inconsistent
+114 | - Function reference instead of function call caused logic errors
+115 | - Users experienced unpredictable model availability
+116 | 
+117 | ### After Fix
+118 | - Reliable premium model access based on actual subscription status
+119 | - Consistent user experience across all model selection methods
+120 | - Proper enforcement of subscription-based feature access
+121 | 
+122 | ## 🎯 Quality Assurance
+123 | 
+124 | ### Code Quality
+125 | - **Function Calls**: Proper function invocation ensures correct logic execution
+126 | - **Consistency**: All three instances of the access check now use the same pattern
+127 | - **Type Safety**: Maintained TypeScript compatibility and type checking
+128 | 
+129 | ### User Experience
+130 | - **Predictability**: Model availability now matches user expectations
+131 | - **Reliability**: Consistent behavior across different interaction methods
+132 | - **Clarity**: Clear distinction between available and premium-only models
+133 | 
+134 | ---
+135 | 
+136 | **Full Changelog**: [v0.17.0...v0.17.1](https://github.com/brooksy4503/chatlima/compare/v0.17.0...v0.17.1)
+137 | 
+138 | **🔗 Links**
+139 | - [GitHub Release](https://github.com/brooksy4503/chatlima/releases/tag/v0.17.1)
+140 | - [Model Picker Component](https://github.com/brooksy4503/chatlima/blob/main/components/model-picker.tsx)
+141 | 
+142 | **🙏 Acknowledgments**
+143 | Thank you to users who reported inconsistent premium model access behavior, helping us identify and resolve this critical issue. 
+```
+
+releases/RELEASE_NOTES_v0.17.2.md
+```
+1 | # 🚀 ChatLima v0.17.2 - Model Picker UI Fix
+2 | 
+3 | ## 🎯 What's New
+4 | - **Fixed Model Picker UI Glitch**: Resolved an annoying layout issue where the model picker button would visually "flip" or change content when hovering over different models in the dropdown
+5 | - **Improved User Experience**: The model picker now maintains a stable, consistent display while still showing detailed information about hovered models
+6 | 
+7 | ## 🔧 Technical Implementation
+8 | - **Separated Display Logic**: Split the display logic to ensure the main button always shows the selected model, while the details panel shows the hovered/focused model
+9 | - **Prevented Layout Flipping**: Updated [components/model-picker.tsx](mdc:chatlima/components/model-picker.tsx) to use separate state variables for button display vs. details panel content
+10 | - **Enhanced Stability**: The main button now consistently shows `selectedModelDetails` instead of switching between different model states during user interaction
+11 | 
+12 | ## 🛡️ Security & Privacy
+13 | - No security or privacy changes in this release
+14 | 
+15 | ## 📈 Benefits
+16 | - **Better UX**: Users no longer experience confusing visual changes when browsing available models
+17 | - **Improved Accessibility**: More predictable interface behavior for users navigating with keyboard or mouse
+18 | - **Reduced Cognitive Load**: Stable button display reduces visual distraction during model selection
+19 | 
+20 | ## 🔄 Migration Notes
+21 | - No breaking changes or migration required
+22 | - Existing model selections and preferences remain unchanged
+23 | 
+24 | ## 🚀 Deployment
+25 | - Standard deployment process
+26 | - No environment changes required
+27 | - No database migrations needed
+28 | 
+29 | ## 📋 Technical Details
+30 | The fix involved updating the component's display logic:
+31 | - **Before**: Single `displayModelId` variable caused button content to change during hover
+32 | - **After**: Separate `selectedModelDetails` (for button) and `detailsPanelModelDetails` (for info panel)
+33 | 
+34 | This ensures the button always shows the currently selected model while the details panel can independently show information about hovered models.
+35 | 
+36 | ---
+37 | 
+38 | **Full Changelog**: [v0.17.1...v0.17.2](https://github.com/brooksy4503/chatlima/compare/v0.17.1...v0.17.2) 
+```
+
+releases/RELEASE_NOTES_v0.18.0.md
+```
+1 | # 🚀 ChatLima v0.18.0 - MASSIVE Model Library Expansion
+2 | 
+3 | ## 🎯 What's New
+4 | - **🚀 MASSIVE MODEL EXPANSION**: Added **53 total enabled models** - The largest model library expansion in ChatLima history!
+5 | - **🏢 Multi-Provider Coverage**: Models available through OpenRouter, Requesty, OpenAI, Anthropic, Groq, and X AI
+6 | - **🤖 Leading AI Companies**: Now featuring models from OpenAI, Anthropic, Google, Meta, Mistral, DeepSeek, X AI, Qwen, MiniMax, and more
+7 | - **⚡ Advanced Client Instantiation**: Completely rebuilt dynamic client creation with optimized helper functions
+8 | - **📚 Complete Model Details**: All models include comprehensive descriptions, capabilities, and usage guidelines
+9 | 
+10 | ### 🎯 Model Expansion by Provider:
+11 | 
+12 | #### **OpenAI Models** (9 total)
+13 | - **GPT-4.1 Series**: Full, Mini, Nano (OpenRouter & Requesty)
+14 | - **GPT-4O Series**: Full & Mini (Requesty)  
+15 | - **O4 Mini High** (OpenRouter)
+16 | 
+17 | #### **Anthropic Claude Models** (6 total)
+18 | - **Claude 3.5 Sonnet** (OpenRouter & Requesty)
+19 | - **Claude 3.7 Sonnet** (OpenRouter & Requesty, plus thinking variant)
+20 | - **Claude 4 Series**: Sonnet & Opus (OpenRouter), Sonnet 20250514 (Requesty)
+21 | 
+22 | #### **Google Gemini Models** (13 total)  
+23 | - **Gemini 2.5 Flash Series**: Preview, Preview with thinking, 05-20 variants, Lite Preview
+24 | - **Gemini 2.5 Pro Series**: Preview 03-25, Preview 06-05, Full Pro
+25 | - Available through both OpenRouter and Requesty
+26 | 
+27 | #### **DeepSeek Models** (8 total)
+28 | - **DeepSeek R1 Series**: Original, 0528, Qwen3-8B variants
+29 | - **DeepSeek V3 & Chat**: Latest versions with reasoning capabilities
+30 | - **DeepSeek Reasoner**: Advanced reasoning model
+31 | 
+32 | #### **X AI Grok Models** (4 total)
+33 | - **Grok 3 Beta**: Cutting-edge reasoning model
+34 | - **Grok 3 Mini Beta**: Compact version with high reasoning variant
+35 | 
+36 | #### **Meta Llama Models** (3 total)
+37 | - **Llama 4 Maverick**: Latest flagship
+38 | - **Llama 3.1 70B & 3.3 70B Instruct**: Instruction-tuned variants
+39 | 
+40 | #### **Mistral Models** (5 total)
+41 | - **Magistral Series**: Small & Medium 2506 (with thinking variant)
+42 | - **Mistral Medium 3 & Small 3.1**: Latest versions
+43 | 
+44 | #### **Specialized Models** (5 total)
+45 | - **Qwen QWQ Series**: 32B reasoning models
+46 | - **MiniMax M1**: Extended context reasoning models  
+47 | - **SentientAGI Dobby**: Crypto-focused fine-tuned model
+48 | 
+49 | ## 🔧 Technical Implementation
+50 | - **Enhanced Provider System**: Updated [ai/providers.ts](mdc:chatlima/ai/providers.ts) with new model definitions and client routing
+51 | - **Dynamic Client Creation**: Implemented optimized helper functions for better performance and maintainability
+52 | - **Model Details Registry**: Extended `modelDetails` configuration with comprehensive information for all new models
+53 | - **Provider Consistency**: Following [established naming convention][[memory:5531379627541588756]] with provider prefixes (OpenAI GPT-4.1, etc.)
+54 | - **Improved Error Handling**: Enhanced fallback logic for unsupported model scenarios
+55 | 
+56 | ### Technical Highlights:
+57 | - **GPT-4.1**: Flagship model excelling in instruction following, software engineering, and long-context reasoning with 1M token context
+58 | - **GPT-4.1 Mini**: Balanced performance and speed for various tasks with coding and instruction following capabilities  
+59 | - **GPT-4.1 Nano**: Fastest and cheapest in the series, designed for classification and autocompletion with exceptional performance
+60 | 
+61 | ## 🛡️ Security & Privacy
+62 | - **Multi-Provider Access**: Enhanced redundancy through multiple provider options reduces single points of failure
+63 | - **Secure Client Instantiation**: Improved client creation logic maintains secure API handling practices
+64 | - **Model Capability Transparency**: Clear documentation of each model's capabilities helps users make informed security decisions
+65 | 
+66 | ## 📈 Benefits
+67 | - **🎯 Unprecedented Choice**: Users now have access to **53 total AI models** from 9+ leading AI companies
+68 | - **💰 Cost Optimization**: Models ranging from ultra-fast/cheap (GPT-4.1 Nano) to premium flagship models
+69 | - **⚡ Performance Scaling**: From lightweight reasoning to massive context windows (up to 1M tokens)
+70 | - **🛡️ Provider Redundancy**: Multiple provider access (6 providers) ensures exceptional availability and reliability  
+71 | - **🧠 Specialized Capabilities**: Models optimized for coding, reasoning, multimodal tasks, creativity, crypto, and more
+72 | - **🌍 Global Coverage**: Multilingual models supporting 20+ languages including English, German, French, Spanish, Hindi, Thai
+73 | - **🔧 Developer-Focused**: Models specifically tuned for IDE integration, agents, and enterprise knowledge retrieval
+74 | 
+75 | ## 🎯 Model Capabilities Overview
+76 | 
+77 | ### 🚀 **Flagship Models**
+78 | - **OpenAI GPT-4.1**: 1M token context, enterprise-grade reasoning, software engineering excellence
+79 | - **Anthropic Claude 4 Opus**: Advanced reasoning, agentic tasks, long-context operations
+80 | - **Google Gemini 2.5 Pro**: State-of-the-art performance, complex coding, multimodal understanding
+81 | - **MiniMax M1**: 456B parameters, hybrid MoE architecture, extended context reasoning
+82 | 
+83 | ### ⚡ **Speed & Efficiency Champions**  
+84 | - **GPT-4.1 Nano**: Ultra-fast, 1M context, cost-effective classification/autocompletion
+85 | - **Gemini 2.5 Flash Lite**: Ultra-low latency, improved throughput, lightweight reasoning
+86 | - **DeepSeek Chat V3**: Efficient performance, balanced capabilities
+87 | 
+88 | ### 🧠 **Reasoning Specialists**
+89 | - **DeepSeek R1 Series**: Open-source reasoning on par with o1, transparent thinking tokens  
+90 | - **Mistral Magistral Medium**: Multi-step problem solving, legal research, financial forecasting
+91 | - **Grok 3 Beta**: Cutting-edge reasoning with X AI's latest innovations
+92 | - **Qwen QWQ 32B**: Fast reasoning with efficiency focus
+93 | 
+94 | ### 🎨 **Multimodal & Creative Models**
+95 | - **Gemini 2.5 Flash**: Built-in thinking, audio/video/image processing
+96 | - **Claude 3.7 Sonnet**: Hybrid reasoning, visual processing, creative tasks
+97 | - **GPT-4O**: Advanced multimodal capabilities with reasoning integration
+98 | 
+99 | ### 🌍 **Multilingual & Specialized**
+100 | - **Llama 3.3 70B Instruct**: 8 languages, 128k context, conversational dialogue
+101 | - **SentientAGI Dobby**: Crypto-focused, personal freedom advocacy, 131k context
+102 | - **Magistral Small**: 20+ languages, enhanced instruction following
+103 | 
+104 | ## 🔄 Migration Notes
+105 | - **No Breaking Changes**: All existing models and configurations remain fully functional
+106 | - **Backward Compatible**: Existing user preferences and model selections are preserved
+107 | - **Seamless Upgrade**: New models are immediately available in the model picker without configuration changes
+108 | - **Note**: GPT-4.1 models do not support web search functionality (by design for optimal performance)
+109 | 
+110 | ## 🚀 Deployment
+111 | - **Automatic Deployment**: Changes deploy automatically via GitHub integration
+112 | - **No Environment Changes**: No new environment variables or configuration required
+113 | - **No Database Changes**: No database migrations needed
+114 | - **Immediate Availability**: New models become available immediately after deployment
+115 | 
+116 | ## 📋 Development Improvements
+117 | - **Cleaner Code Structure**: Refactored model retrieval logic for better maintainability
+118 | - **Performance Optimization**: Enhanced client creation reduces initialization overhead  
+119 | - **Better Error Handling**: Improved fallback mechanisms for unsupported scenarios
+120 | - **Documentation**: Comprehensive model descriptions for better user understanding
+121 | 
+122 | ## 🌟 Looking Forward
+123 | This **MASSIVE expansion transforms ChatLima into the most comprehensive AI model platform available**, offering users an unprecedented **53 models from 9+ leading AI companies**. From OpenAI's flagship GPT-4.1 to Anthropic's Claude 4, Google's Gemini 2.5, Meta's Llama 4, and cutting-edge models from DeepSeek, X AI, Mistral, and more - ChatLima now provides unmatched choice, performance, and flexibility.
+124 | 
+125 | **ChatLima v0.18.0 sets a new standard for AI chat applications**, positioning users at the forefront of AI innovation with access to the latest and most advanced models through multiple reliable providers. Whether you need lightning-fast responses, deep reasoning, multimodal capabilities, or specialized tasks - ChatLima has the perfect model for every use case.
+126 | 
+127 | 🎯 **The future of AI is now accessible in one platform - ChatLima v0.18.0!**
+128 | 
+129 | ---
+130 | 
+131 | **Full Changelog**: [v0.17.2...v0.18.0](https://github.com/brooksy4503/chatlima/compare/v0.17.2...v0.18.0) 
+```
+
+releases/RELEASE_NOTES_v0.3.0.md
+```
+1 | # 🚀 ChatLima v0.3.0 - SEO & Sitemap Implementation
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | ### 📍 Dynamic Sitemap Generation
+6 | - **New Feature**: Added `/sitemap.xml` route with intelligent content generation
+7 | - **Production-Only**: Sitemap is only available on production domain (`chatlima.com`) for security
+8 | - **SEO Optimized**: Includes proper XML structure with `lastmod`, `changefreq`, and `priority` attributes
+9 | - **Privacy-First**: Excludes private user content (chats, API endpoints, authentication pages)
+10 | - **Extensible**: Easy-to-maintain structure for adding future public pages
+11 | 
+12 | ### 🤖 Enhanced Robots.txt
+13 | - **Environment-Aware**: Different rules for production vs development environments
+14 | - **Privacy Protection**: Explicitly disallows crawling of user chat content and sensitive endpoints
+15 | - **Production Ready**: Allows search engine crawling of public pages while protecting user privacy
+16 | - **Development Safe**: Completely disallows crawling in non-production environments
+17 | 
+18 | ## 🔧 Technical Implementation
+19 | 
+20 | ### Sitemap Features
+21 | - Dynamic base URL detection using request headers
+22 | - Proper XML formatting following sitemap protocol standards
+23 | - 24-hour caching for optimal performance
+24 | - Structured for easy addition of future pages (docs, pricing, about, etc.)
+25 | 
+26 | ### Robots.txt Features
+27 | - Environment detection based on domain
+28 | - Comprehensive crawl rules protecting user privacy
+29 | - Sitemap reference for search engines
+30 | - 1-hour caching for efficient delivery
+31 | 
+32 | ## 🛡️ Security & Privacy
+33 | 
+34 | - **User Privacy**: Chat content and user-specific pages are completely excluded from search indexing
+35 | - **API Protection**: All API endpoints are disallowed from crawling
+36 | - **Authentication Security**: Auth-related pages are protected from indexing
+37 | - **Development Safety**: Non-production environments block all crawling
+38 | 
+39 | ## 📈 SEO Benefits
+40 | 
+41 | - **Search Engine Discovery**: Proper sitemap helps search engines find and index public content
+42 | - **Crawl Efficiency**: Robots.txt guides search engines to relevant content while avoiding private areas
+43 | - **Performance**: Caching headers ensure efficient delivery of SEO files
+44 | - **Standards Compliance**: Follows official sitemap and robots.txt protocols
+45 | 
+46 | ## 🔄 Migration Notes
+47 | 
+48 | - No breaking changes in this release
+49 | - New routes are automatically available: `/sitemap.xml` and `/robots.txt`
+50 | - No database migrations required
+51 | - No configuration changes needed
+52 | 
+53 | ## 🚀 Deployment
+54 | 
+55 | This release is ready for production deployment with no additional setup required. The sitemap and robots.txt will automatically adapt to your deployment environment.
+56 | 
+57 | ---
+58 | 
+59 | **Full Changelog**: [v0.2.0...v0.3.0](https://github.com/your-username/chatlima/compare/v0.2.0...v0.3.0)
+60 | 
+61 | ## 👥 Contributors
+62 | 
+63 | Thanks to all contributors who made this release possible!
+64 | 
+65 | ---
+66 | 
+67 | *For questions or issues, please open a GitHub issue or reach out to the maintainers.* 
+```
+
+releases/RELEASE_NOTES_v0.3.1.md
+```
+1 | # 🚀 ChatLima v0.3.1 - Documentation Link Update
+2 | 
+3 | ## 🎯 What's New
+4 | - Added a new link to the documentation website.
+5 | 
+6 | ## 🔧 Technical Implementation
+7 | - Updated relevant files to include the new documentation link.
+8 | 
+9 | ## 🛡️ Security & Privacy
+10 | - No security or privacy related changes in this update.
+11 | 
+12 | ## 📈 Benefits
+13 | - Improved access to documentation for users.
+14 | 
+15 | ## 🔄 Migration Notes
+16 | - No breaking changes.
+17 | - No configuration changes required.
+18 | - No database migrations needed.
+19 | 
+20 | ## 🚀 Deployment
+21 | - Standard deployment procedures apply.
+22 | - No special environment considerations.
+23 | - No special setup requirements.
+24 | 
+25 | ---
+26 | 
+27 | **Full Changelog**: [v0.3.0...v0.3.1](https://github.com/brooksy4503/chatlima/compare/v0.3.0...v0.3.1) 
+```
+
+releases/RELEASE_NOTES_v0.4.0.md
+```
+1 | # 🚀 ChatLima v0.4.0 - Support for DeepSeek R1 0528
+2 | 
+3 | ## 🎯 What's New
+4 | - Added support for the DeepSeek R1 0528 model.
+5 | - Users can now select DeepSeek R1 0528 for chat interactions.
+6 | - Enhanced model selection capabilities in the UI.
+7 | 
+8 | ## 🔧 Technical Implementation
+9 | - Integrated DeepSeek R1 0528 API.
+10 | - Updated model provider logic to include DeepSeek.
+11 | - Modified chat interface to accommodate new model options.
+12 | - New API route for DeepSeek interactions (if applicable, specify route).
+13 | 
+14 | ## 🛡️ Security & Privacy
+15 | - Ensured secure API key management for DeepSeek.
+16 | - Maintained existing privacy standards with the new model integration.
+17 | - No changes to user data handling.
+18 | 
+19 | ## 📈 Benefits
+20 | - Access to a new, powerful language model.
+21 | - Potentially improved response quality and capabilities.
+22 | - More options for users to tailor their chat experience.
+23 | 
+24 | ## 🔄 Migration Notes
+25 | - No breaking changes.
+26 | - Ensure DeepSeek API key is configured in environment variables if self-hosting.
+27 | - No database migrations needed.
+28 | 
+29 | ## 🚀 Deployment
+30 | - Standard deployment process.
+31 | - Verify DeepSeek API connectivity in the production environment.
+32 | - Ensure `.env` includes `DEEPSEEK_API_KEY` (or similar).
+33 | 
+34 | ---
+35 | 
+36 | **Full Changelog**: [v0.3.1...v0.4.0](https://github.com/brooksy4503/chatlima/compare/v0.3.1...v0.4.0) 
+```
+
+releases/RELEASE_NOTES_v0.4.1.md
+```
+1 | # 🚀 ChatLima v0.4.1 - Model Updates and Refinements
+2 | 
+3 | ## 🎯 What's New
+4 | - Added new DeepSeek R1 0528 model to disabled servers list for specific configurations.
+5 | - Updated DeepSeek R1 0528 model description and capabilities for better user understanding.
+6 | 
+7 | ## 🔧 Technical Implementation
+8 | - Refactored model descriptions for Grok models These models can use Tool Calling (MCP Servers).
+9 | - Enhanced error handling in the chat API for clearer responses and improved debugging.
+10 | 
+11 | ---
+12 | 
+13 | **Full Changelog**: [v0.4.0...v0.4.1](https://github.com/username/chatlima/compare/v0.4.0...v0.4.1) 
+```
+
+releases/RELEASE_NOTES_v0.5.0.md
+```
+1 | # 🚀 ChatLima v0.5.0 - Premium Access Control & Enhanced Model Management
+2 | 
+3 | ## 🎯 What's New
+4 | - **Premium Model Access Control**: Introduced intelligent credit checking system for premium AI models
+5 | - **Enhanced Model Management**: Added new "DeepSeek R1 0528 Qwen3 8B" model with proper access controls
+6 | - **Improved User Experience**: Better feedback and access control throughout the application
+7 | - **Smart Model Picker**: Real-time premium access validation in model selection interface
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | - Added premium flag support to model definitions for fine-grained access control
+11 | - Implemented credit checking logic in chat API (`/api/chat`) for premium model usage
+12 | - Enhanced model picker component with real-time premium access validation
+13 | - Updated chat API to include new DeepSeek R1 model in server-specific disabled lists
+14 | - Improved error handling and user feedback mechanisms across the platform
+15 | 
+16 | ## 🛡️ Security & Privacy
+17 | - Robust access control prevents unauthorized use of premium models
+18 | - Server-side validation ensures credit requirements are properly enforced
+19 | - Enhanced error handling provides clear feedback without exposing sensitive system details
+20 | 
+21 | ## 📈 Benefits
+22 | - **Better User Experience**: Clear feedback when premium models require credits
+23 | - **Resource Management**: Prevents accidental usage of premium models without sufficient credits
+24 | - **Improved Performance**: Optimized model access validation reduces unnecessary API calls
+25 | - **Enhanced Accessibility**: Better model availability management across different server configurations
+26 | 
+27 | ## 🔄 Migration Notes
+28 | - No breaking changes in this release
+29 | - Existing chat sessions and model preferences are preserved
+30 | - Premium model access is now properly validated - users may need sufficient credits to access certain models
+31 | 
+32 | ## 🚀 Deployment
+33 | - Standard deployment process applies
+34 | - No database migrations required
+35 | - Environment variables remain unchanged
+36 | - Ensure credit system is properly configured for premium model access
+37 | 
+38 | ## 🎨 User Interface Enhancements
+39 | - Model picker now shows real-time premium access status
+40 | - Improved error messages for better user guidance
+41 | - Enhanced visual feedback for model availability
+42 | 
+43 | ---
+44 | 
+45 | **Full Changelog**: [v0.4.1...v0.5.0](https://github.com/brooksy4503/chatlima/compare/v0.4.1...v0.5.0) 
+```
+
+releases/RELEASE_NOTES_v0.5.1.md
+```
+1 | # 🚀 ChatLima v0.5.1 - Debugging & Traceability Enhancements
+2 | 
+3 | ## 🎯 What's New
+4 | - Enhanced debugging capabilities in credits API and user credits tracking
+5 | - Improved error traceability across session validation and credit management
+6 | - Better development experience with comprehensive logging for troubleshooting
+7 | - Cleaner repository structure with updated .gitignore configurations
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | - **Enhanced Debugging Logs**: Added comprehensive debug logging to credits API endpoints for better issue diagnosis
+11 | - **useCredits Hook Improvements**: Enhanced the useCredits hook with detailed error tracking and session validation logs
+12 | - **Repository Cleanup**: Added documentation directory to .gitignore to maintain cleaner version control
+13 | - **Error Handling**: Improved error handling and logging in credit fetching operations for better debugging
+14 | 
+15 | ## 🛡️ Security & Privacy
+16 | - Enhanced session validation logging helps identify potential authentication issues
+17 | - Improved credit system monitoring maintains better financial security oversight
+18 | - Debug logs are structured to avoid exposing sensitive user information
+19 | 
+20 | ## 📈 Benefits
+21 | - **Developer Experience**: Faster debugging and issue resolution with detailed logging
+22 | - **System Reliability**: Better monitoring of credit operations reduces financial discrepancies
+23 | - **Troubleshooting**: Enhanced traceability makes it easier to identify and fix issues
+24 | - **Maintenance**: Cleaner repository structure improves long-term maintainability
+25 | 
+26 | ## 🔄 Migration Notes
+27 | - No breaking changes in this patch release
+28 | - Existing functionality remains fully compatible
+29 | - Debug logs are automatically enabled - no configuration changes required
+30 | - .gitignore updates are automatically applied
+31 | 
+32 | ## 🚀 Deployment
+33 | - Standard deployment process applies
+34 | - No additional setup or configuration required
+35 | - Compatible with all existing environments
+36 | - Debug logging works in both development and production environments
+37 | 
+38 | ## 🔍 Technical Details
+39 | - **Files Enhanced**: Credits API routes, useCredits hook implementation
+40 | - **Logging Scope**: Session validation, credit fetching, error handling
+41 | - **Development**: Improved .gitignore for documentation directories
+42 | - **Monitoring**: Better visibility into credit system operations
+43 | 
+44 | ---
+45 | 
+46 | **Full Changelog**: [v0.5.0...v0.5.1](https://github.com/brooksy4503/chatlima/compare/v0.5.0...v0.5.1) 
+```
+
+releases/RELEASE_NOTES_v0.5.2.md
+```
+1 | # 🚀 ChatLima v0.5.2 - Enhanced Credit Management & Error Handling
+2 | 
+3 | ## 🎯 What's New
+4 | - **Improved Credit Balance Checks**: Enhanced validation to prevent negative credit balance issues
+5 | - **Better Error Handling**: More robust error handling in chat API for better user experience
+6 | - **Enhanced Token Usage Tracking**: Refined credit deduction logic for more accurate billing
+7 | - **Cleaner Codebase**: Updated .gitignore for better project management
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | - **Credit Management Overhaul**: Implemented comprehensive checks for negative credit balances in chat API
+11 | - **Enhanced Credit Fetching Logic**: Improved credit retrieval mechanisms with better error handling
+12 | - **Refined Token Usage Tracking**: Updated credit deduction logic to ensure accurate reporting and user feedback
+13 | - **Project Maintenance**: Added Aider-related files to .gitignore for better development workflow management
+14 | 
+15 | ## 🛡️ Security & Privacy
+16 | - **Credit Validation**: Strengthened credit balance validation to prevent unauthorized usage
+17 | - **Error Response Security**: Improved error handling to avoid exposing sensitive information
+18 | - **User Session Protection**: Enhanced session validation for better security
+19 | 
+20 | ## 📈 Benefits
+21 | - **Improved User Experience**: Better error messages and feedback when credit issues occur
+22 | - **More Accurate Billing**: Enhanced token tracking ensures users are charged correctly
+23 | - **Reduced Support Issues**: Better error handling prevents common credit-related problems
+24 | - **Development Efficiency**: Cleaner project structure with improved .gitignore management
+25 | 
+26 | ## 🔄 Migration Notes
+27 | - No breaking changes in this patch release
+28 | - All existing functionality remains compatible
+29 | - Credit management improvements are automatically applied
+30 | 
+31 | ## 🚀 Deployment
+32 | - Standard deployment process applies
+33 | - No special configuration changes required
+34 | - Enhanced error handling will automatically improve user experience
+35 | 
+36 | ---
+37 | 
+38 | **Full Changelog**: [v0.5.1...v0.5.2](https://github.com/brooksy4503/chatlima/compare/v0.5.1...v0.5.2) 
+```
+
+releases/RELEASE_NOTES_v0.6.0.md
+```
+1 | # 🚀 ChatLima v0.6.0 - OpenRouter Pricing Analysis Tool
+2 | 
+3 | ## 🎯 What's New
+4 | 
+5 | - **📊 Real-time Pricing Analysis**: New developer tool to analyze OpenRouter model costs in real-time
+6 | - **💰 Cost Planning Dashboard**: Calculate estimated costs for different user scenarios (anonymous vs Google users)
+7 | - **📈 Data-Driven Insights**: Token estimates based on actual ChatLima usage data from 1,254 real API requests
+8 | - **🎯 Model Comparison**: Side-by-side cost analysis for all ChatLima-configured models
+9 | - **📋 Formatted Reports**: Clean table output with daily/monthly cost projections
+10 | 
+11 | ## 🔧 Technical Implementation
+12 | 
+13 | ### New Scripts Added:
+14 | - **`scripts/openrouter-pricing-analysis.ts`**: Main pricing analysis tool with real-time API integration
+15 | - **`scripts/analyze-openrouter-data.py`**: Python script for analyzing historical usage data
+16 | - **`scripts/README.md`**: Comprehensive documentation for developer tools
+17 | 
+18 | ### Enhanced Package Configuration:
+19 | - Added `tsx` dependency for TypeScript script execution
+20 | - New npm script: `pricing:analysis` for easy tool execution
+21 | - Updated package.json with real-world token estimates
+22 | 
+23 | ### Key Technical Features:
+24 | - Direct OpenRouter API integration for live pricing data
+25 | - TypeScript implementation with proper error handling
+26 | - Configurable token estimates based on actual usage patterns
+27 | - Support for both npm and direct execution methods
+28 | 
+29 | ## 🛡️ Security & Privacy
+30 | 
+31 | - **🔐 API Key Protection**: Secure handling of OpenRouter API credentials via environment variables
+32 | - **🎯 Developer-Only Tool**: Scripts are designed for development/analysis use only, not user-facing
+33 | - **📊 Privacy-First Data Analysis**: Historical usage analysis uses aggregated, anonymized data
+34 | 
+35 | ## 📈 Benefits
+36 | 
+37 | ### For Developers:
+38 | - **💡 Informed Decision Making**: Choose cost-effective models based on real data
+39 | - **📊 Budget Forecasting**: Accurate monthly cost projections for different usage scenarios
+40 | - **🔍 Real-time Monitoring**: Track pricing changes and model performance
+41 | - **⚡ Quick Analysis**: Run pricing analysis in seconds with simple npm command
+42 | 
+43 | ### For Business:
+44 | - **💰 Cost Optimization**: Identify most cost-effective models for different use cases
+45 | - **📈 Scalability Planning**: Understand cost implications of user growth
+46 | - **🎯 Model Strategy**: Data-driven model selection for optimal cost/performance ratio
+47 | 
+48 | ### For Users:
+49 | - **🚀 Better Performance**: Optimized model selection based on cost-effectiveness analysis
+50 | - **💚 Sustainable Service**: Enhanced cost management supports long-term service sustainability
+51 | 
+52 | ## 📊 Data-Driven Accuracy
+53 | 
+54 | ### Real Usage Analysis:
+55 | - Analyzed **1,254 actual ChatLima requests** from OpenRouter API
+56 | - **Input tokens**: 2,701 average (based on real avg: 2,251 + 20% buffer)
+57 | - **Output tokens**: 441 average (based on real avg: 368 + 20% buffer)
+58 | - **More accurate projections**: ~$0.003/request vs previous overestimates
+59 | 
+60 | ### Model Coverage:
+61 | - Analysis covers all ChatLima-configured models
+62 | - Real-time pricing from OpenRouter API
+63 | - Cost comparison across 30+ AI models
+64 | 
+65 | ## 🔄 Migration Notes
+66 | 
+67 | ### For Developers:
+68 | - No breaking changes to existing functionality
+69 | - New optional tool requires OpenRouter API key in `.env` file
+70 | - Scripts are completely separate from main application code
+71 | 
+72 | ### Environment Setup:
+73 | ```bash
+74 | # Add to your .env file (for developers only)
+75 | OPENROUTER_API_KEY=your_api_key_here
+76 | ```
+77 | 
+78 | ### New Commands Available:
+79 | ```bash
+80 | # Run pricing analysis
+81 | pnpm run pricing:analysis
+82 | 
+83 | # Analyze historical data (if you have CSV exports)
+84 | python scripts/analyze-openrouter-data.py /path/to/data.csv
+85 | ```
+86 | 
+87 | ## 🚀 Deployment
+88 | 
+89 | ### Development Environment:
+90 | 1. Ensure OpenRouter API key is configured in `.env`
+91 | 2. Install dependencies: `pnpm install`
+92 | 3. Run analysis: `pnpm run pricing:analysis`
+93 | 
+94 | ### Production Considerations:
+95 | - Scripts are development-only tools
+96 | - No impact on production application
+97 | - No new environment variables required for production deployment
+98 | 
+99 | ## 🎯 Usage Examples
+100 | 
+101 | ### Quick Cost Analysis:
+102 | ```bash
+103 | pnpm run pricing:analysis
+104 | ```
+105 | 
+106 | ### Expected Output:
+107 | - Detailed pricing table for all models
+108 | - Daily/monthly cost estimates
+109 | - Most/least expensive model identification
+110 | - Price comparison ratios
+111 | 
+112 | ### Use Cases:
+113 | - **Pre-deployment**: Cost planning for new features
+114 | - **Model Selection**: Choose optimal models for specific scenarios
+115 | - **Budget Planning**: Monthly cost forecasting
+116 | - **Performance Monitoring**: Track pricing trends over time
+117 | 
+118 | ## 🔮 Future Enhancements
+119 | 
+120 | - Automated pricing alerts for significant changes
+121 | - Historical pricing trend analysis
+122 | - Integration with usage monitoring
+123 | - Cost optimization recommendations
+124 | 
+125 | ---
+126 | 
+127 | **Full Changelog**: [v0.5.2...v0.6.0](https://github.com/brooksy4503/chatlima/compare/v0.5.2...v0.6.0)
+128 | 
+129 | ## 🙏 Acknowledgments
+130 | 
+131 | This release includes pricing analysis based on real ChatLima usage data, providing developers with accurate, data-driven insights for cost optimization and model selection. 
+```
+
+releases/RELEASE_NOTES_v0.8.0.md
+```
+1 | # 🚀 ChatLima v0.8.0 - Requesty Provider & Enhanced Model Selection
+2 | 
+3 | ## 🎯 What's New
+4 | - **New AI Provider**: Introduced Requesty as a new AI provider option alongside OpenRouter, Anthropic, OpenAI, Groq, and X AI
+5 | - **7 New Requesty Models**: Access popular AI models through Requesty's infrastructure:
+6 |   - `requesty/openai/gpt-4o` - OpenAI's advanced GPT-4O model
+7 |   - `requesty/openai/gpt-4o-mini` - Efficient GPT-4O Mini variant  
+8 |   - `requesty/anthropic/claude-3.5-sonnet` - Anthropic's Claude 3.5 Sonnet
+9 |   - `requesty/anthropic/claude-3.7-sonnet` - Latest Claude 3.7 Sonnet
+10 |   - `requesty/google/gemini-2.5-flash-preview` - Google's Gemini 2.5 Flash
+11 |   - `requesty/meta-llama/llama-3.1-70b-instruct` - Meta's Llama 3.1 70B
+12 |   - `requesty/anthropic/claude-sonnet-4-20250514` - Claude Sonnet 4 (May 2025)
+13 | - **New OpenRouter Model**: Added `google/gemini-2.5-pro-preview` - Google's state-of-the-art AI model for advanced reasoning, coding, mathematics, and scientific tasks
+14 | - **Enhanced Model Diversity**: Users now have access to 8 additional high-quality AI models across multiple providers
+15 | 
+16 | ## 🔧 Technical Implementation
+17 | - Integrated `@requesty/ai-sdk` package (version ^0.0.7) for Requesty provider support
+18 | - Added Requesty client configuration with proper API key management and headers
+19 | - Updated `ai/providers.ts` with comprehensive Requesty model definitions
+20 | - Enhanced model metadata with detailed capabilities, pricing tiers, and web search support
+21 | - Maintained consistent provider architecture for seamless integration
+22 | - Added proper error handling and API key fallback mechanisms
+23 | 
+24 | ## 🛡️ Security & Privacy
+25 | - Implemented secure API key management for Requesty provider through environment variables
+26 | - Added proper request headers including HTTP-Referer and X-Title for provider identification
+27 | - Maintained existing security protocols across all provider integrations
+28 | - Ensured consistent authentication flow for new provider
+29 | 
+30 | ## 📈 Benefits
+31 | - **Expanded Choice**: Users can now choose from 8 additional AI models based on their specific needs
+32 | - **Provider Redundancy**: Multiple providers offer increased reliability and availability
+33 | - **Cost Options**: Mix of premium and standard models provides flexibility for different use cases
+34 | - **Performance Variety**: Access to models optimized for different tasks (reasoning, coding, efficiency)
+35 | - **Future-Proofing**: Establishes foundation for easy addition of more Requesty models
+36 | 
+37 | ## 🔄 Migration Notes
+38 | - **No Breaking Changes**: Existing users continue to use their current models without any changes
+39 | - **Automatic Detection**: New Requesty models are automatically available in the model picker
+40 | - **API Key Setup**: Users wanting to use Requesty models need to add `REQUESTY_API_KEY` to their environment variables
+41 | - **Backward Compatibility**: All existing OpenRouter, Anthropic, OpenAI, Groq, and X AI models remain fully functional
+42 | 
+43 | ## 🚀 Deployment
+44 | - No special deployment requirements - changes are backward compatible
+45 | - New models become available immediately after deployment
+46 | - Users can start using Requesty models by adding their API key to environment variables
+47 | - All existing functionality remains unchanged
+48 | 
+49 | ## 🎯 Model Highlights
+50 | 
+51 | ### Requesty Provider Models:
+52 | - **GPT-4O Series**: Advanced OpenAI models with reasoning and multimodal capabilities
+53 | - **Claude Series**: Anthropic's latest models including Claude 3.5, 3.7, and Sonnet 4
+54 | - **Gemini 2.5 Flash**: Google's fast and efficient model optimized for speed
+55 | - **Llama 3.1 70B**: Meta's open-source model for instruction following
+56 | 
+57 | ### OpenRouter Addition:
+58 | - **Gemini 2.5 Pro Preview**: Google's flagship model for advanced reasoning and scientific tasks
+59 | 
+60 | ---
+61 | 
+62 | **Full Changelog**: [v0.7.0...v0.8.0](https://github.com/brooksy4503/chatlima/compare/v0.7.0...v0.8.0) 
+```
+
+releases/RELEASE_NOTES_v0.9.0.md
+```
+1 | # 🚀 ChatLima v0.9.0 - Enhanced API Key Management
+2 | 
+3 | ## 🎯 What's New
+4 | - **Dynamic API Key Management**: Runtime API key overrides for all AI providers
+5 | - **Enhanced Client Creation**: New helper functions for creating clients with custom API keys
+6 | - **Improved UI Experience**: Better API key settings interface in the chat and sidebar components
+7 | - **Flexible Provider Configuration**: Support for per-request API key customization
+8 | 
+9 | ## 🔧 Technical Implementation
+10 | - Added new provider helper functions supporting runtime API key overrides
+11 | - Introduced dynamic client creation utilities for flexible API key management
+12 | - Enhanced chat and sidebar components with new API key management features
+13 | - Improved user interface for API key configuration and settings
+14 | - Streamlined provider initialization with dynamic configuration support
+15 | 
+16 | ## 🛡️ Security & Privacy
+17 | - Enhanced API key handling with secure runtime management
+18 | - Improved isolation of API key configurations per request
+19 | - Better protection of user-provided API keys through dynamic handling
+20 | - Secure client creation patterns for API key management
+21 | 
+22 | ## 📈 Benefits
+23 | - **User Flexibility**: Users can now provide their own API keys for any supported provider
+24 | - **Cost Control**: Better control over API usage and costs with custom keys
+25 | - **Provider Independence**: Reduced dependency on system-wide API key configurations
+26 | - **Enhanced UX**: Streamlined interface for managing API keys across different providers
+27 | 
+28 | ## 🔄 Migration Notes
+29 | - No breaking changes in this release
+30 | - Existing API key configurations remain fully compatible
+31 | - New dynamic features are additive and optional
+32 | - All existing provider integrations continue to work unchanged
+33 | 
+34 | ## 🚀 Deployment
+35 | - Standard deployment process applies
+36 | - No additional configuration required
+37 | - New features are automatically available after deployment
+38 | - Backward compatibility maintained for all existing functionality
+39 | 
+40 | ---
+41 | 
+42 | **Full Changelog**: [v0.8.0...v0.9.0](https://github.com/brooksy4503/chatlima/compare/v0.8.0...v0.9.0) 
+```
+
+releases/RELEASE_NOTES_v0.9.1.md
+```
+1 | # 🚀 ChatLima v0.9.1 - Smart Credit Validation
+2 | 
+3 | ## 🎯 What's New
+4 | - **Smart Credit Validation**: Intelligent credit checking that bypasses validation when users provide their own API keys
+5 | - **Enhanced User Experience**: Users with personal API keys now get seamless access without credit deductions
+6 | - **Flexible Payment Model**: Automatic detection of user-provided API keys to optimize credit usage
+7 | 
+8 | ## 🔧 Technical Implementation
+9 | - Added `isUsingOwnApiKey()` helper function to detect when users are using personal API keys
+10 | - Enhanced credit validation logic in chat route to conditionally bypass credit checks
+11 | - Improved request handling with intelligent API key detection
+12 | - Streamlined credit deduction process for better user experience
+13 | - Updated chat route logic with 72 insertions and 36 deletions for robust implementation
+14 | 
+15 | ## 🛡️ Security & Privacy
+16 | - Secure API key detection without exposing sensitive information
+17 | - Improved credit validation logic that maintains security while enhancing flexibility
+18 | - Safe handling of user-provided API keys during validation process
+19 | 
+20 | ## 📈 Benefits
+21 | - **Cost Efficiency**: Users with personal API keys avoid unnecessary credit deductions
+22 | - **Better UX**: Seamless experience for users who provide their own API keys
+23 | - **Smart Resource Management**: Automatic optimization of credit usage based on API key source
+24 | - **Enhanced Flexibility**: System adapts to different user configurations automatically
+25 | 
+26 | ## 🔄 Migration Notes
+27 | - No breaking changes in this patch release
+28 | - Existing credit validation continues to work for users without personal API keys
+29 | - New logic is additive and automatically detects the optimal validation path
+30 | - All existing functionality remains fully compatible
+31 | 
+32 | ## 🚀 Deployment
+33 | - Standard deployment process applies
+34 | - No additional configuration required
+35 | - Changes are automatically active after deployment
+36 | - Backward compatibility maintained for all user scenarios
+37 | 
+38 | ---
+39 | 
+40 | **Full Changelog**: [v0.9.0...v0.9.1](https://github.com/brooksy4503/chatlima/compare/v0.9.0...v0.9.1) 
+```
+
 scripts/analyze-openrouter-data.py
 ```
 1 | #!/usr/bin/env python3
@@ -8892,6 +10946,306 @@ scripts/analyze-openrouter-data.py
 197 |     except Exception as e:
 198 |         print(f"❌ Error: {e}")
 199 |         sys.exit(1) 
+```
+
+scripts/debug-polar-api.ts
+```
+1 | #!/usr/bin/env tsx
+2 | 
+3 | /**
+4 |  * Polar API Debug Tool (TypeScript version)
+5 |  * 
+6 |  * This script helps debug Polar API connection issues by testing:
+7 |  * - Environment variables
+8 |  * - API connectivity
+9 |  * - Customer lookup
+10 |  * - Credits retrieval
+11 |  * - Token validation
+12 |  */
+13 | 
+14 | import 'dotenv/config';
+15 | import { Polar } from '@polar-sh/sdk';
+16 | 
+17 | // Colors for console output
+18 | const colors = {
+19 |     red: '\x1b[31m',
+20 |     green: '\x1b[32m',
+21 |     yellow: '\x1b[33m',
+22 |     blue: '\x1b[34m',
+23 |     magenta: '\x1b[35m',
+24 |     cyan: '\x1b[36m',
+25 |     reset: '\x1b[0m',
+26 |     bold: '\x1b[1m'
+27 | };
+28 | 
+29 | function log(color: string, message: string) {
+30 |     console.log(`${color}${message}${colors.reset}`);
+31 | }
+32 | 
+33 | function section(title: string) {
+34 |     console.log(`\n${colors.bold}${colors.cyan}=== ${title} ===${colors.reset}`);
+35 | }
+36 | 
+37 | async function main() {
+38 |     log(colors.bold, '🔍 Polar API Debug Tool (TypeScript)');
+39 |     log(colors.blue, 'Testing your local Polar API configuration...\n');
+40 | 
+41 |     // 1. Load environment variables from .env.local
+42 |     const dotenv = await import('dotenv');
+43 |     dotenv.config({ path: '.env.local' });
+44 | 
+45 |     // 2. Check Environment Variables
+46 |     section('Environment Variables');
+47 | 
+48 |     const polarAccessToken = process.env.POLAR_ACCESS_TOKEN;
+49 |     const polarServerEnv = process.env.POLAR_SERVER_ENV;
+50 |     const polarProductId = process.env.POLAR_PRODUCT_ID;
+51 | 
+52 |     log(colors.yellow, `POLAR_ACCESS_TOKEN: ${polarAccessToken ? '✓ Set' : '✗ Not set'}`);
+53 |     if (polarAccessToken) {
+54 |         log(colors.blue, `  Length: ${polarAccessToken.length} characters`);
+55 |         log(colors.blue, `  Starts with: ${polarAccessToken.substring(0, 10)}...`);
+56 |         log(colors.blue, `  Ends with: ...${polarAccessToken.substring(polarAccessToken.length - 10)}`);
+57 |     }
+58 | 
+59 |     log(colors.yellow, `POLAR_SERVER_ENV: ${polarServerEnv || 'Not set (defaults to sandbox)'}`);
+60 |     log(colors.yellow, `POLAR_PRODUCT_ID: ${polarProductId ? '✓ Set' : '✗ Not set'}`);
+61 | 
+62 |     const actualEnv = polarServerEnv === "production" ? "production" : "sandbox";
+63 |     log(colors.magenta, `Computed environment: ${actualEnv}`);
+64 | 
+65 |     if (!polarAccessToken) {
+66 |         log(colors.red, '❌ POLAR_ACCESS_TOKEN is required. Please set it in .env.local');
+67 |         return;
+68 |     }
+69 | 
+70 |     // 3. Initialize Polar Client
+71 |     section('Polar Client Initialization');
+72 | 
+73 |     let polarClient: Polar;
+74 |     try {
+75 |         polarClient = new Polar({
+76 |             accessToken: polarAccessToken,
+77 |             server: actualEnv as "production" | "sandbox",
+78 |         });
+79 |         log(colors.green, `✓ Polar client initialized for ${actualEnv} environment`);
+80 |     } catch (error: any) {
+81 |         log(colors.red, `❌ Failed to initialize Polar client: ${error.message}`);
+82 |         return;
+83 |     }
+84 | 
+85 |     // 4. Test Basic API Connectivity
+86 |     section('API Connectivity Test');
+87 | 
+88 |     try {
+89 |         // Try to list products (this should work with any valid token)
+90 |         const products = await polarClient.products.list({ limit: 1 });
+91 |         log(colors.green, '✓ Basic API connectivity successful');
+92 | 
+93 |         // Check if we can iterate (test pagination)
+94 |         let productCount = 0;
+95 |         for await (const product of products) {
+96 |             productCount++;
+97 |             if (productCount >= 1) break; // Just test first product
+98 |         }
+99 |         log(colors.green, `✓ API pagination working (found ${productCount} products)`);
+100 | 
+101 |     } catch (error: any) {
+102 |         log(colors.red, `❌ Basic API connectivity failed:`);
+103 |         log(colors.red, `   Status: ${error.statusCode || 'Unknown'}`);
+104 |         log(colors.red, `   Message: ${error.message}`);
+105 |         log(colors.red, `   Body: ${error.body || 'No body'}`);
+106 | 
+107 |         if (error.statusCode === 401) {
+108 |             log(colors.yellow, '⚠️  401 Unauthorized - Your token may be:');
+109 |             log(colors.yellow, '   • Expired');
+110 |             log(colors.yellow, '   • Invalid');
+111 |             log(colors.yellow, '   • For wrong environment (sandbox token used in production)');
+112 |         }
+113 |         return;
+114 |     }
+115 | 
+116 |     // 5. Test Customer Operations
+117 |     section('Customer Operations Test');
+118 | 
+119 |     // Test user ID (you can replace this with a real user ID for more specific testing)
+120 |     const testUserId = 'test-user-id-' + Date.now();
+121 | 
+122 |     try {
+123 |         // Test customer creation
+124 |         log(colors.blue, `Testing customer creation with external ID: ${testUserId}`);
+125 |         const testCustomer = await polarClient.customers.create({
+126 |             email: `test-${Date.now()}@example.com`,
+127 |             name: 'Test User',
+128 |             externalId: testUserId
+129 |         });
+130 |         log(colors.green, `✓ Customer creation successful: ${testCustomer.id}`);
+131 | 
+132 |         // Test customer lookup by external ID
+133 |         log(colors.blue, 'Testing customer lookup by external ID...');
+134 |         const foundCustomer = await polarClient.customers.getExternal({
+135 |             externalId: testUserId
+136 |         });
+137 |         log(colors.green, `✓ Customer lookup successful: ${foundCustomer.id}`);
+138 | 
+139 |         // Test customer state retrieval
+140 |         log(colors.blue, 'Testing customer state retrieval...');
+141 |         const customerState = await polarClient.customers.getStateExternal({
+142 |             externalId: testUserId
+143 |         });
+144 |         log(colors.green, `✓ Customer state retrieval successful`);
+145 |         log(colors.blue, `   Active meters: ${(customerState as any).activeMeters?.length || 0}`);
+146 |         log(colors.blue, `   Legacy meters: ${(customerState as any).meters?.length || 0}`);
+147 | 
+148 |         // Clean up test customer
+149 |         try {
+150 |             await polarClient.customers.delete({ id: testCustomer.id });
+151 |             log(colors.green, '✓ Test customer cleaned up');
+152 |         } catch (cleanupError: any) {
+153 |             log(colors.yellow, `⚠️  Could not clean up test customer: ${cleanupError.message}`);
+154 |         }
+155 | 
+156 |     } catch (error: any) {
+157 |         log(colors.red, `❌ Customer operations failed:`);
+158 |         log(colors.red, `   Status: ${error.statusCode || 'Unknown'}`);
+159 |         log(colors.red, `   Message: ${error.message}`);
+160 |         log(colors.red, `   Body: ${error.body || 'No body'}`);
+161 | 
+162 |         if (error.statusCode === 401) {
+163 |             log(colors.yellow, '⚠️  This confirms the 401 error you\'re seeing in your app');
+164 |         }
+165 |     }
+166 | 
+167 |     // 6. Test with Real User (if provided)
+168 |     const realUserId = process.argv[2];
+169 |     if (realUserId) {
+170 |         section(`Real User Test (ID: ${realUserId})`);
+171 | 
+172 |         try {
+173 |             log(colors.blue, `Looking up customer with external ID: ${realUserId}`);
+174 |             const customer = await polarClient.customers.getExternal({
+175 |                 externalId: realUserId
+176 |             });
+177 |             log(colors.green, `✓ Found customer: ${customer.id} (${customer.email})`);
+178 | 
+179 |             log(colors.blue, 'Getting customer state...');
+180 |             const customerState = await polarClient.customers.getStateExternal({
+181 |                 externalId: realUserId
+182 |             });
+183 | 
+184 |             log(colors.green, '✓ Customer state retrieved successfully');
+185 |             log(colors.blue, `   Active meters: ${(customerState as any).activeMeters?.length || 0}`);
+186 | 
+187 |             // Look for credits
+188 |             const activeMeters = (customerState as any).activeMeters || [];
+189 |             let creditsFound = false;
+190 | 
+191 |             for (const meter of activeMeters) {
+192 |                 if (meter.meterId) {
+193 |                     try {
+194 |                         const meterDetails = await polarClient.meters.get({ id: meter.meterId });
+195 |                         if (meterDetails?.name === 'Message Credits Used') {
+196 |                             log(colors.green, `✓ Found credits meter: ${meter.balance || 0} credits`);
+197 |                             creditsFound = true;
+198 |                         }
+199 |                     } catch (meterError: any) {
+200 |                         log(colors.yellow, `⚠️  Could not get meter details: ${meterError.message}`);
+201 |                     }
+202 |                 }
+203 |             }
+204 | 
+205 |             if (!creditsFound) {
+206 |                 log(colors.yellow, '⚠️  No "Message Credits Used" meter found for this user');
+207 |             }
+208 | 
+209 |         } catch (error: any) {
+210 |             log(colors.red, `❌ Real user test failed:`);
+211 |             log(colors.red, `   Status: ${error.statusCode || 'Unknown'}`);
+212 |             log(colors.red, `   Message: ${error.message}`);
+213 |             log(colors.red, `   Body: ${error.body || 'No body'}`);
+214 |         }
+215 |     }
+216 | 
+217 |     // 7. Replicate Your App's Logic
+218 |     section('App Logic Replication');
+219 | 
+220 |     log(colors.blue, 'Testing the exact same logic as your getRemainingCreditsByExternalId function...');
+221 | 
+222 |     if (realUserId) {
+223 |         try {
+224 |             // This replicates the exact logic in lib/polar.ts
+225 |             console.log(`[DEBUG] Attempting to get credits for external ID: ${realUserId}`);
+226 | 
+227 |             const customerState = await polarClient.customers.getStateExternal({
+228 |                 externalId: realUserId
+229 |             });
+230 | 
+231 |             console.log(`[DEBUG] Customer state response:`, JSON.stringify(customerState, null, 2));
+232 | 
+233 |             if (!customerState) {
+234 |                 console.log(`[DEBUG] No customer state found for external ID: ${realUserId}`);
+235 |                 log(colors.yellow, '⚠️  No customer state found');
+236 |             } else {
+237 |                 const activeMeters = (customerState as any).activeMeters || [];
+238 |                 console.log(`[DEBUG] Found ${activeMeters.length} active meters for user ${realUserId}`);
+239 | 
+240 |                 // Search for the correct "Message Credits Used" meter among active meters
+241 |                 for (const meter of activeMeters) {
+242 |                     console.log(`[DEBUG] Active meter:`, JSON.stringify(meter, null, 2));
+243 | 
+244 |                     // Try to get the full meter details to check the name
+245 |                     if (meter.meterId) {
+246 |                         try {
+247 |                             const meterDetails = await polarClient.meters.get({
+248 |                                 id: meter.meterId
+249 |                             });
+250 |                             console.log(`[DEBUG] Meter details for ${meter.meterId}:`, JSON.stringify(meterDetails, null, 2));
+251 | 
+252 |                             if (meterDetails?.name === 'Message Credits Used') {
+253 |                                 const balance = meter.balance || 0;
+254 |                                 console.log(`[DEBUG] Found 'Message Credits Used' active meter with balance: ${balance}`);
+255 |                                 log(colors.green, `✓ Credits found using app logic: ${balance}`);
+256 |                                 break;
+257 |                             }
+258 |                         } catch (meterError: any) {
+259 |                             console.warn(`[DEBUG] Failed to get meter details for ${meter.meterId}:`, meterError);
+260 |                         }
+261 |                     }
+262 |                 }
+263 |             }
+264 |         } catch (error: any) {
+265 |             log(colors.red, `❌ App logic replication failed:`);
+266 |             log(colors.red, `   This is the EXACT same error as in your app!`);
+267 |             log(colors.red, `   Status: ${error.statusCode || 'Unknown'}`);
+268 |             log(colors.red, `   Message: ${error.message}`);
+269 |             log(colors.red, `   Body: ${error.body || 'No body'}`);
+270 |         }
+271 |     }
+272 | 
+273 |     // 8. Environment Comparison
+274 |     section('Environment Analysis');
+275 | 
+276 |     log(colors.blue, 'Current configuration:');
+277 |     log(colors.blue, `  • Environment: ${actualEnv}`);
+278 |     log(colors.blue, `  • Token length: ${polarAccessToken.length}`);
+279 |     log(colors.blue, `  • Node.js version: ${process.version}`);
+280 |     log(colors.blue, `  • Platform: ${process.platform}`);
+281 |     log(colors.blue, `  • Working directory: ${process.cwd()}`);
+282 | 
+283 |     log(colors.yellow, '\nNext steps:');
+284 |     log(colors.yellow, '1. Compare this output with your production logs');
+285 |     log(colors.yellow, '2. If basic API connectivity fails, check your token in Polar dashboard');
+286 |     log(colors.yellow, '3. If customer operations fail, verify token permissions');
+287 |     log(colors.yellow, '4. Run with a real user ID: npx tsx scripts/debug-polar-api.ts YOUR_USER_ID');
+288 | 
+289 |     log(colors.green, '\n✅ Debug script completed');
+290 | }
+291 | 
+292 | main().catch(error => {
+293 |     log(colors.red, `\n💥 Script failed with error: ${error.message}`);
+294 |     console.error(error);
+295 |     process.exit(1);
+296 | }); 
 ```
 
 scripts/openrouter-pricing-analysis.ts
@@ -9541,931 +11895,6 @@ tests/chatlima-deepseek-test.spec.ts
 102 | }); 
 ```
 
-releases/RELEASE_NOTES_v0.10.0.md
-```
-1 | # 🚀 ChatLima v0.10.0 - Enhanced Model Support & Navigation
-2 | 
-3 | ## 🎯 What's New
-4 | - **New Mistral Models**: Added support for the latest Mistral Magistral Small and Medium 2506 models
-5 | - **Enhanced Model Descriptions**: Detailed capabilities and use-case information for better model selection
-6 | - **Improved Post-Checkout Navigation**: Better user flow after successful checkout completion
-7 | - **Enhanced Mathematical Rendering**: Improved KaTeX styling for consistent mathematical expressions across themes
-8 | 
-9 | ## 🤖 AI Model Enhancements
-10 | - **Mistral Magistral Small 2506**: Fast and efficient model for everyday tasks with cost-effective performance
-11 | - **Mistral Magistral Medium 2506**: Balanced model offering enhanced capabilities for complex reasoning tasks
-12 | - Comprehensive model descriptions help users choose the right model for their specific needs
-13 | - Updated model selection interface with clear capability indicators
-14 | 
-15 | ## 🎨 User Experience Improvements
-16 | - **Better Checkout Flow**: Post-purchase navigation now redirects to home page for improved user orientation
-17 | - **Enhanced Mathematical Display**: Upgraded KaTeX styling ensures consistent mathematical notation rendering
-18 | - **Theme Consistency**: Mathematical expressions now display properly across light and dark themes
-19 | - **Improved Visual Hierarchy**: Better styling consistency throughout the application
-20 | 
-21 | ## 🔧 Technical Improvements
-22 | - Added new model configurations with proper metadata and pricing information
-23 | - Enhanced CSS styling for mathematical content rendering
-24 | - Improved navigation logic for better user flow management
-25 | - Updated model selection components with expanded capability descriptions
-26 | 
-27 | ## 📈 Benefits
-28 | - **More Model Choices**: Access to latest Mistral models for diverse use cases
-29 | - **Better Decision Making**: Comprehensive model descriptions help users select optimal models
-30 | - **Smoother User Journey**: Improved post-checkout experience reduces confusion
-31 | - **Enhanced Readability**: Better mathematical content display improves technical discussions
-32 | - **Consistent Theming**: Unified visual experience across all interface elements
-33 | 
-34 | ## 🔄 Migration Notes
-35 | - New models are immediately available in the model selection interface
-36 | - No breaking changes to existing functionality
-37 | - Enhanced styling is automatically applied to all mathematical content
-38 | - Existing model preferences remain unchanged and fully functional
-39 | 
-40 | ## 🚀 Deployment
-41 | - Standard deployment process with automatic model availability
-42 | - No additional configuration required for new models
-43 | - Enhanced styling takes effect immediately after deployment
-44 | - All existing user data and preferences remain intact
-45 | 
-46 | ---
-47 | 
-48 | **Full Changelog**: [v0.9.1...v0.10.0](https://github.com/brooksy4503/chatlima/compare/v0.9.1...v0.10.0) 
-```
-
-releases/RELEASE_NOTES_v0.11.0.md
-```
-1 | # 🚀 ChatLima v0.11.0 - Polar Integration & Enhanced Features
-2 | 
-3 | ## 🎯 What's New
-4 | - **Polar Integration**: Complete integration with Polar billing platform for customer management and payments
-5 | - **Paid Web Search**: New premium web search feature with credit-based billing and usage tracking
-6 | - **Dynamic Environment Configuration**: Environment-based Polar server configuration for seamless production deployment
-7 | - **Customer Portal Access**: Direct access to Polar customer portal for subscription and billing management
-8 | - **Enhanced Testing Infrastructure**: Comprehensive Playwright testing suite with multiple configuration options
-9 | - **Smart Title Generation**: Dynamic model selection for AI-powered conversation title generation
-10 | - **Improved Credit Management**: Enhanced credit validation with better user experience and error handling
-11 | 
-12 | ## 🔧 Technical Implementation
-13 | - **Polar SDK Integration**: Full integration with Polar billing platform using environment-based configuration
-14 | - **Web Search Billing**: Backend credit validation and surcharge system for paid web search functionality
-15 | - **Enhanced OAuth Configuration**: Dynamic Google OAuth setup with improved logging and error handling
-16 | - **Customer Management**: Advanced customer retrieval and creation logic with fallback mechanisms
-17 | - **Credit Exposure**: Frontend access to user credit balance for better UX and transparency
-18 | - **Testing Suite**: Added comprehensive Playwright testing scripts with local and CI configurations
-19 | - **API Route Enhancements**: New customer portal API route and improved existing endpoints
-20 | 
-21 | ## 🛡️ Security & Privacy
-22 | - **Environment-Based Configuration**: Secure Polar server environment selection based on deployment context
-23 | - **Enhanced OAuth Security**: Improved Google OAuth client configuration with detailed logging
-24 | - **Credit Validation**: Robust credit checking with proper error handling and user feedback
-25 | - **Customer Data Protection**: Secure customer management with proper API integration patterns
-26 | 
-27 | ## 📈 Benefits
-28 | - **Streamlined Billing**: Direct integration with Polar for seamless payment and subscription management
-29 | - **Premium Features**: Monetized web search capabilities with transparent credit-based pricing
-30 | - **Better User Experience**: Clear credit balance visibility and improved error messaging
-31 | - **Development Quality**: Comprehensive testing infrastructure for better code reliability
-32 | - **Operational Excellence**: Environment-aware configuration for smooth production deployments
-33 | - **Customer Self-Service**: Direct portal access for users to manage their billing and subscriptions
-34 | 
-35 | ## 🔄 Migration Notes
-36 | - **Polar Configuration**: New environment variables required for Polar integration
-37 |   - Configure Polar environment settings based on deployment context
-38 |   - Update customer management workflows to use new Polar API integration
-39 | - **Web Search Credits**: New credit deduction system for web search features
-40 |   - Existing users will see new web search billing in their account
-41 |   - Credit validation now includes web search cost calculations
-42 | - **Testing Infrastructure**: New Playwright configuration files added
-43 |   - Development teams should update their testing workflows
-44 |   - New test scripts available for comprehensive UI testing
-45 | - **API Changes**: Enhanced API routes with improved error handling
-46 |   - Existing integrations remain compatible
-47 |   - New customer portal functionality available immediately
-48 | 
-49 | ## 🚀 Deployment
-50 | - **Environment Variables**: Ensure Polar configuration environment variables are set
-51 | - **Database Updates**: No schema changes required for this release
-52 | - **Testing**: Run new Playwright test suite to validate deployment
-53 | - **Customer Portal**: New portal access will be available immediately after deployment
-54 | - **Web Search**: Paid web search features activate automatically with credit system
-55 | 
-56 | ## 🆕 New Features Detail
-57 | - **Polar Customer Portal**: Users can access billing portal directly from account menu
-58 | - **Web Search Billing**: Transparent credit usage for premium web search functionality
-59 | - **Dynamic Title Generation**: Improved conversation titles using advanced AI models
-60 | - **Enhanced Credit UI**: Real-time credit balance display and usage tracking
-61 | - **Testing Scripts**: Multiple Playwright configurations for different testing scenarios
-62 | - **Environment Awareness**: Automatic Polar environment selection for production/development
-63 | 
-64 | ---
-65 | 
-66 | **Full Changelog**: [v0.10.0...v0.11.0](https://github.com/brooksy4503/chatlima/compare/v0.10.0...v0.11.0) 
-```
-
-releases/RELEASE_NOTES_v0.12.0.md
-```
-1 | # 🚀 ChatLima v0.12.0 - Polar Production Checkout Integration
-2 | 
-3 | ## 🎯 What's New
-4 | - **Production Checkout System**: Complete Polar checkout integration with user-friendly purchase flow
-5 | - **Smart User Flow Handling**: Seamless experience for both anonymous and authenticated users
-6 | - **Integrated Purchase Interface**: Checkout button directly accessible from user account menu
-7 | - **Comprehensive Error Handling**: Dedicated error pages for failed, canceled, and problematic transactions
-8 | - **Credit Purchase Workflow**: Streamlined process for users to purchase AI usage credits
-9 | - **Enhanced User Experience**: Context-aware messaging and intuitive purchase flow
-10 | 
-11 | ## 🔧 Technical Implementation
-12 | - **CheckoutButton Component**: Reusable React component with intelligent user state detection
-13 | - **Dual User Flow Logic**: Automatic handling of anonymous users (redirect to sign-in) vs authenticated users (direct checkout)
-14 | - **Error Page Framework**: Complete error handling with detailed error states and recovery options
-15 | - **User Menu Integration**: Seamless integration of purchase functionality into existing user interface
-16 | - **Production Environment**: Full migration to Polar production environment with proper security configurations
-17 | - **Webhook Integration**: Backend webhook handling for real-time credit updates after successful purchases
-18 | 
-19 | ## 🛡️ Security & Privacy
-20 | - **Production Environment**: Secure Polar production environment configuration
-21 | - **Authenticated Checkout**: Proper user authentication verification before checkout access
-22 | - **Secure Payment Processing**: All payment processing handled securely through Polar platform
-23 | - **Error Information Protection**: Safe error handling that doesn't expose sensitive checkout data
-24 | - **Environment Variable Security**: Production keys and secrets properly configured in deployment environment
-25 | 
-26 | ## 📈 Benefits
-27 | - **Simplified Credit Purchase**: Users can purchase credits directly from the application interface
-28 | - **Improved User Onboarding**: Anonymous users guided through sign-up process for credit purchases
-29 | - **Better Error Recovery**: Clear error messages with actionable recovery options
-30 | - **Seamless Integration**: Native checkout experience without external redirects
-31 | - **Real-time Updates**: Immediate credit balance updates after successful purchases
-32 | - **Enhanced Accessibility**: Intuitive interface accessible to users of all technical levels
-33 | 
-34 | ## 🔄 Migration Notes
-35 | - **Environment Configuration**: Production Polar environment variables now active
-36 |   - All checkout functionality now uses production Polar endpoints
-37 |   - Webhook endpoints configured for production credit updates
-38 | - **User Interface Updates**: New checkout button integrated into user account menu
-39 |   - Existing users will see new "Purchase More Credits" option in account menu
-40 |   - Anonymous users will see "Sign In to Purchase Credits" with guided flow
-41 | - **Error Handling**: New error pages for checkout failures
-42 |   - Users experiencing checkout issues will be directed to helpful error pages
-43 |   - Recovery options provided for failed or canceled transactions
-44 | 
-45 | ## 🚀 Deployment
-46 | - **Environment Variables**: Production Polar configuration active
-47 | - **Component Integration**: New checkout components deployed and integrated
-48 | - **Error Pages**: Checkout error handling pages now available at `/checkout/error`
-49 | - **User Menu Updates**: Enhanced account menu with integrated purchase functionality
-50 | - **Webhook Verification**: Production webhook endpoints for credit updates confirmed active
-51 | 
-52 | ## 🆕 New Features Detail
-53 | - **Smart Checkout Button**: Context-aware button that adapts to user authentication state
-54 |   - Anonymous users: "Sign In to Purchase Credits" with Google OAuth flow
-55 |   - Authenticated users: "Purchase More Credits" with direct checkout access
-56 | - **Comprehensive Error Handling**: Dedicated error page with specific error state handling
-57 |   - Canceled transactions: User-friendly messaging with retry options
-58 |   - Failed payments: Clear error explanation with troubleshooting guidance
-59 |   - General errors: Helpful recovery options and support contact information
-60 | - **Seamless User Flow**: Integrated purchase experience within the application
-61 |   - No external redirects or confusing navigation
-62 |   - Clear calls-to-action and intuitive user interface
-63 |   - Immediate access to purchased credits after successful payment
-64 | 
-65 | ## 🐛 Bug Fixes
-66 | - **Checkout Flow Reliability**: Improved error handling and user feedback
-67 | - **Authentication State Management**: Better handling of anonymous vs authenticated user scenarios
-68 | - **UI Consistency**: Consistent styling and messaging across checkout flow
-69 | 
-70 | ---
-71 | 
-72 | **Full Changelog**: [v0.11.0...v0.12.0](https://github.com/brooksy4503/chatlima/compare/v0.11.0...v0.12.0) 
-```
-
-releases/RELEASE_NOTES_v0.12.1.md
-```
-1 | # 🔐 ChatLima v0.12.1 - Web Search Security & Credit Validation Fix
-2 | 
-3 | ## 🎯 What's Fixed
-4 | - **Enhanced Web Search Security**: Implemented robust server-side validation for web search feature access
-5 | - **Credit Validation Improvements**: Strengthened credit checking to prevent unauthorized feature usage
-6 | - **Anonymous User Protection**: Added proper blocking for anonymous users attempting to access premium features
-7 | - **Security Logging**: Enhanced monitoring and logging for unauthorized access attempts
-8 | 
-9 | ## 🔧 Technical Fixes
-10 | - **Server-Side Validation**: Complete overhaul of web search authorization logic
-11 |   - Server now determines web search eligibility instead of relying on client requests
-12 |   - Prevents potential security bypasses through client-side manipulation
-13 | - **Anonymous User Blocking**: Explicit prevention of web search access for non-authenticated users
-14 | - **Credit Verification**: Enhanced credit checking before allowing premium feature access
-15 | - **Security Incident Logging**: Improved logging for tracking unauthorized access attempts
-16 | - **Authorization Flow**: Streamlined permission checking with proper error responses
-17 | 
-18 | ## 🛡️ Security Improvements
-19 | - **Access Control**: Strict server-side enforcement of web search feature permissions
-20 | - **Credit Protection**: Prevents users with insufficient credits from accessing premium features
-21 | - **Anonymous User Safety**: Clear boundaries preventing anonymous users from accessing paid features
-22 | - **Audit Trail**: Enhanced logging for security monitoring and incident response
-23 | - **Input Validation**: Improved validation of user requests to prevent unauthorized actions
-24 | 
-25 | ## 🐛 Critical Bug Fixes
-26 | - **Web Search Authorization**: Fixed potential security vulnerability where unauthorized users could access web search
-27 | - **Credit Validation**: Resolved issue where credit checks could be bypassed
-28 | - **User State Verification**: Enhanced user authentication state validation
-29 | - **Request Processing**: Improved handling of unauthorized feature access attempts
-30 | 
-31 | ## 📈 Impact
-32 | - **Improved Security**: Significantly enhanced protection against unauthorized feature access
-33 | - **Better Credit Management**: More accurate and secure credit usage tracking
-34 | - **Enhanced User Experience**: Clear error messages for users attempting unauthorized actions
-35 | - **Reduced Security Risk**: Eliminated potential vectors for premium feature bypass
-36 | - **Better Monitoring**: Improved visibility into security-related events
-37 | 
-38 | ## 🔄 Changes
-39 | - **API Route Updates**: Modified `/api/chat/route.ts` with enhanced security checks
-40 | - **Authorization Logic**: Completely rewritten web search permission validation
-41 | - **Error Handling**: Improved error responses for unauthorized access attempts
-42 | - **Logging Infrastructure**: Enhanced security event logging and monitoring
-43 | 
-44 | ---
-45 | 
-46 | **Full Changelog**: [v0.12.0...v0.12.1](https://github.com/brooksy4503/chatlima/compare/v0.12.0...v0.12.1) 
-```
-
-releases/RELEASE_NOTES_v0.13.0.md
-```
-1 | # 📱 ChatLima v0.13.0 - iOS Homescreen Shortcut Support
-2 | 
-3 | ## 🎯 What's New
-4 | - **iOS Homescreen Integration**: Complete iOS homescreen shortcut functionality with native app-like experience
-5 | - **Apple Touch Icons**: High-quality branded icons optimized for all iOS device sizes and configurations
-6 | - **Smart Installation Prompt**: Intelligent iOS detection with contextual "Add to Home Screen" suggestions
-7 | - **Enhanced Mobile Experience**: Comprehensive iOS-specific styling and touch optimizations
-8 | - **Progressive Web Enhancement**: Web app manifest and meta tags for standalone display mode
-9 | - **Mobile UI Improvements**: Enhanced chat interface and typography optimized for mobile devices
-10 | 
-11 | ## 🔧 Technical Implementation
-12 | - **Apple Touch Icon Assets**: Complete icon set for all iOS devices and screen densities
-13 |   - 180x180px for iPhone 6 Plus and newer devices
-14 |   - 167x167px for iPad Pro with Retina display
-15 |   - 152x152px for standard iPad Retina display
-16 |   - 120x120px for iPhone Retina display
-17 |   - Optimized PNG format with no transparency for perfect iOS integration
-18 | - **Web App Manifest**: Comprehensive `manifest.json` with proper metadata and standalone display configuration
-19 | - **iOS Detection Component**: Smart `ios-install-prompt.tsx` component with user preference memory and installation status detection
-20 | - **Meta Tag Enhancements**: Complete iOS-specific meta tag implementation for optimal homescreen experience
-21 | - **CSS Mobile Optimization**: Enhanced styling for iOS Safari and homescreen app mode with safe area support
-22 | 
-23 | ## 🛡️ Mobile Experience & UX
-24 | - **Native App Feel**: When launched from home screen, ChatLima opens without browser chrome for seamless experience
-25 | - **Safe Area Support**: Proper handling for notched devices (iPhone X and newer) with appropriate padding and layout
-26 | - **Touch Optimization**: Improved touch targets and interactions specifically designed for mobile use
-27 | - **Enhanced Typography**: Better mobile typography and spacing for improved readability on smaller screens
-28 | - **Smooth Scrolling**: Optimized scrolling behavior and performance for mobile devices
-29 | - **Installation Memory**: User dismissal preferences saved to avoid annoying repeated prompts
-30 | 
-31 | ## 📈 Benefits
-32 | - **Quick Access**: Users can launch ChatLima directly from iOS home screen like a native app
-33 | - **Improved Engagement**: Easier access encourages more frequent usage on mobile devices
-34 | - **Better Mobile UX**: Comprehensive mobile optimizations improve overall user experience
-35 | - **Reduced Friction**: No need to open Safari and navigate to website each time
-36 | - **Native Integration**: Proper iOS integration with branded icons and standalone display
-37 | - **Future-Proof Foundation**: Groundwork laid for potential PWA features and offline functionality
-38 | 
-39 | ## 🔄 Migration Notes
-40 | - **Automatic Availability**: iOS homescreen functionality is automatically available to all users on compatible devices
-41 | - **No Configuration Required**: All necessary assets and configurations deployed automatically
-42 | - **Backward Compatibility**: All existing functionality remains unchanged for non-iOS users
-43 | - **Progressive Enhancement**: iOS users get enhanced experience while maintaining compatibility
-44 | - **Asset Optimization**: New icon assets added without affecting site performance
-45 | - **Component Integration**: iOS install prompt integrated seamlessly into existing UI
-46 | 
-47 | ## 🚀 Deployment
-48 | - **Icon Assets**: All Apple touch icon variants deployed to public directory
-49 | - **Manifest Configuration**: Web app manifest active with proper metadata
-50 | - **Meta Tag Integration**: iOS-specific meta tags added to application layout
-51 | - **Component Activation**: iOS installation prompt component deployed and active
-52 | - **CSS Enhancements**: Mobile-optimized styling deployed across all components
-53 | - **Documentation**: Implementation plan and guidelines added to project documentation
-54 | 
-55 | ## 🆕 New Features Detail
-56 | - **Smart iOS Detection**: Automatic detection of iOS Safari users with contextual prompting
-57 |   - Detects device type and browser for targeted user experience
-58 |   - Checks if already added to home screen to avoid duplicate prompts
-59 |   - Respects user dismissal preferences with localStorage persistence
-60 | - **Progressive Installation Prompt**: Non-intrusive "Add to Home Screen" suggestions
-61 |   - Appears only for eligible iOS users at appropriate moments
-62 |   - Clear instructions and value proposition for homescreen installation
-63 |   - Easy dismissal with memory to avoid repeated interruptions
-64 | - **Standalone App Mode**: Complete standalone display experience when launched from home screen
-65 |   - No browser address bar or navigation controls
-66 |   - Proper status bar styling and safe area handling
-67 |   - Native app-like navigation and interaction patterns
-68 | - **Enhanced Mobile Interface**: Comprehensive mobile UI improvements
-69 |   - Better chat component responsiveness and touch handling
-70 |   - Improved textarea component styling for mobile input
-71 |   - Enhanced markdown rendering optimized for mobile screens
-72 | 
-73 | ## 🐛 Bug Fixes & Improvements
-74 | - **Mobile Responsiveness**: Improved layout handling across all mobile screen sizes
-75 | - **Touch Interaction**: Better touch target sizing and interaction feedback
-76 | - **Typography Enhancement**: Optimized text rendering and spacing for mobile devices
-77 | - **Asset Loading**: Efficient loading of mobile-specific assets and configurations
-78 | - **Component Styling**: Enhanced styling consistency across chat and input components
-79 | 
-80 | ---
-81 | 
-82 | **Full Changelog**: [v0.12.1...v0.13.0](https://github.com/brooksy4503/chatlima/compare/v0.12.1...v0.13.0) 
-```
-
-releases/RELEASE_NOTES_v0.3.0.md
-```
-1 | # 🚀 ChatLima v0.3.0 - SEO & Sitemap Implementation
-2 | 
-3 | ## 🎯 What's New
-4 | 
-5 | ### 📍 Dynamic Sitemap Generation
-6 | - **New Feature**: Added `/sitemap.xml` route with intelligent content generation
-7 | - **Production-Only**: Sitemap is only available on production domain (`chatlima.com`) for security
-8 | - **SEO Optimized**: Includes proper XML structure with `lastmod`, `changefreq`, and `priority` attributes
-9 | - **Privacy-First**: Excludes private user content (chats, API endpoints, authentication pages)
-10 | - **Extensible**: Easy-to-maintain structure for adding future public pages
-11 | 
-12 | ### 🤖 Enhanced Robots.txt
-13 | - **Environment-Aware**: Different rules for production vs development environments
-14 | - **Privacy Protection**: Explicitly disallows crawling of user chat content and sensitive endpoints
-15 | - **Production Ready**: Allows search engine crawling of public pages while protecting user privacy
-16 | - **Development Safe**: Completely disallows crawling in non-production environments
-17 | 
-18 | ## 🔧 Technical Implementation
-19 | 
-20 | ### Sitemap Features
-21 | - Dynamic base URL detection using request headers
-22 | - Proper XML formatting following sitemap protocol standards
-23 | - 24-hour caching for optimal performance
-24 | - Structured for easy addition of future pages (docs, pricing, about, etc.)
-25 | 
-26 | ### Robots.txt Features
-27 | - Environment detection based on domain
-28 | - Comprehensive crawl rules protecting user privacy
-29 | - Sitemap reference for search engines
-30 | - 1-hour caching for efficient delivery
-31 | 
-32 | ## 🛡️ Security & Privacy
-33 | 
-34 | - **User Privacy**: Chat content and user-specific pages are completely excluded from search indexing
-35 | - **API Protection**: All API endpoints are disallowed from crawling
-36 | - **Authentication Security**: Auth-related pages are protected from indexing
-37 | - **Development Safety**: Non-production environments block all crawling
-38 | 
-39 | ## 📈 SEO Benefits
-40 | 
-41 | - **Search Engine Discovery**: Proper sitemap helps search engines find and index public content
-42 | - **Crawl Efficiency**: Robots.txt guides search engines to relevant content while avoiding private areas
-43 | - **Performance**: Caching headers ensure efficient delivery of SEO files
-44 | - **Standards Compliance**: Follows official sitemap and robots.txt protocols
-45 | 
-46 | ## 🔄 Migration Notes
-47 | 
-48 | - No breaking changes in this release
-49 | - New routes are automatically available: `/sitemap.xml` and `/robots.txt`
-50 | - No database migrations required
-51 | - No configuration changes needed
-52 | 
-53 | ## 🚀 Deployment
-54 | 
-55 | This release is ready for production deployment with no additional setup required. The sitemap and robots.txt will automatically adapt to your deployment environment.
-56 | 
-57 | ---
-58 | 
-59 | **Full Changelog**: [v0.2.0...v0.3.0](https://github.com/your-username/chatlima/compare/v0.2.0...v0.3.0)
-60 | 
-61 | ## 👥 Contributors
-62 | 
-63 | Thanks to all contributors who made this release possible!
-64 | 
-65 | ---
-66 | 
-67 | *For questions or issues, please open a GitHub issue or reach out to the maintainers.* 
-```
-
-releases/RELEASE_NOTES_v0.3.1.md
-```
-1 | # 🚀 ChatLima v0.3.1 - Documentation Link Update
-2 | 
-3 | ## 🎯 What's New
-4 | - Added a new link to the documentation website.
-5 | 
-6 | ## 🔧 Technical Implementation
-7 | - Updated relevant files to include the new documentation link.
-8 | 
-9 | ## 🛡️ Security & Privacy
-10 | - No security or privacy related changes in this update.
-11 | 
-12 | ## 📈 Benefits
-13 | - Improved access to documentation for users.
-14 | 
-15 | ## 🔄 Migration Notes
-16 | - No breaking changes.
-17 | - No configuration changes required.
-18 | - No database migrations needed.
-19 | 
-20 | ## 🚀 Deployment
-21 | - Standard deployment procedures apply.
-22 | - No special environment considerations.
-23 | - No special setup requirements.
-24 | 
-25 | ---
-26 | 
-27 | **Full Changelog**: [v0.3.0...v0.3.1](https://github.com/brooksy4503/chatlima/compare/v0.3.0...v0.3.1) 
-```
-
-releases/RELEASE_NOTES_v0.4.0.md
-```
-1 | # 🚀 ChatLima v0.4.0 - Support for DeepSeek R1 0528
-2 | 
-3 | ## 🎯 What's New
-4 | - Added support for the DeepSeek R1 0528 model.
-5 | - Users can now select DeepSeek R1 0528 for chat interactions.
-6 | - Enhanced model selection capabilities in the UI.
-7 | 
-8 | ## 🔧 Technical Implementation
-9 | - Integrated DeepSeek R1 0528 API.
-10 | - Updated model provider logic to include DeepSeek.
-11 | - Modified chat interface to accommodate new model options.
-12 | - New API route for DeepSeek interactions (if applicable, specify route).
-13 | 
-14 | ## 🛡️ Security & Privacy
-15 | - Ensured secure API key management for DeepSeek.
-16 | - Maintained existing privacy standards with the new model integration.
-17 | - No changes to user data handling.
-18 | 
-19 | ## 📈 Benefits
-20 | - Access to a new, powerful language model.
-21 | - Potentially improved response quality and capabilities.
-22 | - More options for users to tailor their chat experience.
-23 | 
-24 | ## 🔄 Migration Notes
-25 | - No breaking changes.
-26 | - Ensure DeepSeek API key is configured in environment variables if self-hosting.
-27 | - No database migrations needed.
-28 | 
-29 | ## 🚀 Deployment
-30 | - Standard deployment process.
-31 | - Verify DeepSeek API connectivity in the production environment.
-32 | - Ensure `.env` includes `DEEPSEEK_API_KEY` (or similar).
-33 | 
-34 | ---
-35 | 
-36 | **Full Changelog**: [v0.3.1...v0.4.0](https://github.com/brooksy4503/chatlima/compare/v0.3.1...v0.4.0) 
-```
-
-releases/RELEASE_NOTES_v0.4.1.md
-```
-1 | # 🚀 ChatLima v0.4.1 - Model Updates and Refinements
-2 | 
-3 | ## 🎯 What's New
-4 | - Added new DeepSeek R1 0528 model to disabled servers list for specific configurations.
-5 | - Updated DeepSeek R1 0528 model description and capabilities for better user understanding.
-6 | 
-7 | ## 🔧 Technical Implementation
-8 | - Refactored model descriptions for Grok models These models can use Tool Calling (MCP Servers).
-9 | - Enhanced error handling in the chat API for clearer responses and improved debugging.
-10 | 
-11 | ---
-12 | 
-13 | **Full Changelog**: [v0.4.0...v0.4.1](https://github.com/username/chatlima/compare/v0.4.0...v0.4.1) 
-```
-
-releases/RELEASE_NOTES_v0.5.0.md
-```
-1 | # 🚀 ChatLima v0.5.0 - Premium Access Control & Enhanced Model Management
-2 | 
-3 | ## 🎯 What's New
-4 | - **Premium Model Access Control**: Introduced intelligent credit checking system for premium AI models
-5 | - **Enhanced Model Management**: Added new "DeepSeek R1 0528 Qwen3 8B" model with proper access controls
-6 | - **Improved User Experience**: Better feedback and access control throughout the application
-7 | - **Smart Model Picker**: Real-time premium access validation in model selection interface
-8 | 
-9 | ## 🔧 Technical Implementation
-10 | - Added premium flag support to model definitions for fine-grained access control
-11 | - Implemented credit checking logic in chat API (`/api/chat`) for premium model usage
-12 | - Enhanced model picker component with real-time premium access validation
-13 | - Updated chat API to include new DeepSeek R1 model in server-specific disabled lists
-14 | - Improved error handling and user feedback mechanisms across the platform
-15 | 
-16 | ## 🛡️ Security & Privacy
-17 | - Robust access control prevents unauthorized use of premium models
-18 | - Server-side validation ensures credit requirements are properly enforced
-19 | - Enhanced error handling provides clear feedback without exposing sensitive system details
-20 | 
-21 | ## 📈 Benefits
-22 | - **Better User Experience**: Clear feedback when premium models require credits
-23 | - **Resource Management**: Prevents accidental usage of premium models without sufficient credits
-24 | - **Improved Performance**: Optimized model access validation reduces unnecessary API calls
-25 | - **Enhanced Accessibility**: Better model availability management across different server configurations
-26 | 
-27 | ## 🔄 Migration Notes
-28 | - No breaking changes in this release
-29 | - Existing chat sessions and model preferences are preserved
-30 | - Premium model access is now properly validated - users may need sufficient credits to access certain models
-31 | 
-32 | ## 🚀 Deployment
-33 | - Standard deployment process applies
-34 | - No database migrations required
-35 | - Environment variables remain unchanged
-36 | - Ensure credit system is properly configured for premium model access
-37 | 
-38 | ## 🎨 User Interface Enhancements
-39 | - Model picker now shows real-time premium access status
-40 | - Improved error messages for better user guidance
-41 | - Enhanced visual feedback for model availability
-42 | 
-43 | ---
-44 | 
-45 | **Full Changelog**: [v0.4.1...v0.5.0](https://github.com/brooksy4503/chatlima/compare/v0.4.1...v0.5.0) 
-```
-
-releases/RELEASE_NOTES_v0.5.1.md
-```
-1 | # 🚀 ChatLima v0.5.1 - Debugging & Traceability Enhancements
-2 | 
-3 | ## 🎯 What's New
-4 | - Enhanced debugging capabilities in credits API and user credits tracking
-5 | - Improved error traceability across session validation and credit management
-6 | - Better development experience with comprehensive logging for troubleshooting
-7 | - Cleaner repository structure with updated .gitignore configurations
-8 | 
-9 | ## 🔧 Technical Implementation
-10 | - **Enhanced Debugging Logs**: Added comprehensive debug logging to credits API endpoints for better issue diagnosis
-11 | - **useCredits Hook Improvements**: Enhanced the useCredits hook with detailed error tracking and session validation logs
-12 | - **Repository Cleanup**: Added documentation directory to .gitignore to maintain cleaner version control
-13 | - **Error Handling**: Improved error handling and logging in credit fetching operations for better debugging
-14 | 
-15 | ## 🛡️ Security & Privacy
-16 | - Enhanced session validation logging helps identify potential authentication issues
-17 | - Improved credit system monitoring maintains better financial security oversight
-18 | - Debug logs are structured to avoid exposing sensitive user information
-19 | 
-20 | ## 📈 Benefits
-21 | - **Developer Experience**: Faster debugging and issue resolution with detailed logging
-22 | - **System Reliability**: Better monitoring of credit operations reduces financial discrepancies
-23 | - **Troubleshooting**: Enhanced traceability makes it easier to identify and fix issues
-24 | - **Maintenance**: Cleaner repository structure improves long-term maintainability
-25 | 
-26 | ## 🔄 Migration Notes
-27 | - No breaking changes in this patch release
-28 | - Existing functionality remains fully compatible
-29 | - Debug logs are automatically enabled - no configuration changes required
-30 | - .gitignore updates are automatically applied
-31 | 
-32 | ## 🚀 Deployment
-33 | - Standard deployment process applies
-34 | - No additional setup or configuration required
-35 | - Compatible with all existing environments
-36 | - Debug logging works in both development and production environments
-37 | 
-38 | ## 🔍 Technical Details
-39 | - **Files Enhanced**: Credits API routes, useCredits hook implementation
-40 | - **Logging Scope**: Session validation, credit fetching, error handling
-41 | - **Development**: Improved .gitignore for documentation directories
-42 | - **Monitoring**: Better visibility into credit system operations
-43 | 
-44 | ---
-45 | 
-46 | **Full Changelog**: [v0.5.0...v0.5.1](https://github.com/brooksy4503/chatlima/compare/v0.5.0...v0.5.1) 
-```
-
-releases/RELEASE_NOTES_v0.5.2.md
-```
-1 | # 🚀 ChatLima v0.5.2 - Enhanced Credit Management & Error Handling
-2 | 
-3 | ## 🎯 What's New
-4 | - **Improved Credit Balance Checks**: Enhanced validation to prevent negative credit balance issues
-5 | - **Better Error Handling**: More robust error handling in chat API for better user experience
-6 | - **Enhanced Token Usage Tracking**: Refined credit deduction logic for more accurate billing
-7 | - **Cleaner Codebase**: Updated .gitignore for better project management
-8 | 
-9 | ## 🔧 Technical Implementation
-10 | - **Credit Management Overhaul**: Implemented comprehensive checks for negative credit balances in chat API
-11 | - **Enhanced Credit Fetching Logic**: Improved credit retrieval mechanisms with better error handling
-12 | - **Refined Token Usage Tracking**: Updated credit deduction logic to ensure accurate reporting and user feedback
-13 | - **Project Maintenance**: Added Aider-related files to .gitignore for better development workflow management
-14 | 
-15 | ## 🛡️ Security & Privacy
-16 | - **Credit Validation**: Strengthened credit balance validation to prevent unauthorized usage
-17 | - **Error Response Security**: Improved error handling to avoid exposing sensitive information
-18 | - **User Session Protection**: Enhanced session validation for better security
-19 | 
-20 | ## 📈 Benefits
-21 | - **Improved User Experience**: Better error messages and feedback when credit issues occur
-22 | - **More Accurate Billing**: Enhanced token tracking ensures users are charged correctly
-23 | - **Reduced Support Issues**: Better error handling prevents common credit-related problems
-24 | - **Development Efficiency**: Cleaner project structure with improved .gitignore management
-25 | 
-26 | ## 🔄 Migration Notes
-27 | - No breaking changes in this patch release
-28 | - All existing functionality remains compatible
-29 | - Credit management improvements are automatically applied
-30 | 
-31 | ## 🚀 Deployment
-32 | - Standard deployment process applies
-33 | - No special configuration changes required
-34 | - Enhanced error handling will automatically improve user experience
-35 | 
-36 | ---
-37 | 
-38 | **Full Changelog**: [v0.5.1...v0.5.2](https://github.com/brooksy4503/chatlima/compare/v0.5.1...v0.5.2) 
-```
-
-releases/RELEASE_NOTES_v0.6.0.md
-```
-1 | # 🚀 ChatLima v0.6.0 - OpenRouter Pricing Analysis Tool
-2 | 
-3 | ## 🎯 What's New
-4 | 
-5 | - **📊 Real-time Pricing Analysis**: New developer tool to analyze OpenRouter model costs in real-time
-6 | - **💰 Cost Planning Dashboard**: Calculate estimated costs for different user scenarios (anonymous vs Google users)
-7 | - **📈 Data-Driven Insights**: Token estimates based on actual ChatLima usage data from 1,254 real API requests
-8 | - **🎯 Model Comparison**: Side-by-side cost analysis for all ChatLima-configured models
-9 | - **📋 Formatted Reports**: Clean table output with daily/monthly cost projections
-10 | 
-11 | ## 🔧 Technical Implementation
-12 | 
-13 | ### New Scripts Added:
-14 | - **`scripts/openrouter-pricing-analysis.ts`**: Main pricing analysis tool with real-time API integration
-15 | - **`scripts/analyze-openrouter-data.py`**: Python script for analyzing historical usage data
-16 | - **`scripts/README.md`**: Comprehensive documentation for developer tools
-17 | 
-18 | ### Enhanced Package Configuration:
-19 | - Added `tsx` dependency for TypeScript script execution
-20 | - New npm script: `pricing:analysis` for easy tool execution
-21 | - Updated package.json with real-world token estimates
-22 | 
-23 | ### Key Technical Features:
-24 | - Direct OpenRouter API integration for live pricing data
-25 | - TypeScript implementation with proper error handling
-26 | - Configurable token estimates based on actual usage patterns
-27 | - Support for both npm and direct execution methods
-28 | 
-29 | ## 🛡️ Security & Privacy
-30 | 
-31 | - **🔐 API Key Protection**: Secure handling of OpenRouter API credentials via environment variables
-32 | - **🎯 Developer-Only Tool**: Scripts are designed for development/analysis use only, not user-facing
-33 | - **📊 Privacy-First Data Analysis**: Historical usage analysis uses aggregated, anonymized data
-34 | 
-35 | ## 📈 Benefits
-36 | 
-37 | ### For Developers:
-38 | - **💡 Informed Decision Making**: Choose cost-effective models based on real data
-39 | - **📊 Budget Forecasting**: Accurate monthly cost projections for different usage scenarios
-40 | - **🔍 Real-time Monitoring**: Track pricing changes and model performance
-41 | - **⚡ Quick Analysis**: Run pricing analysis in seconds with simple npm command
-42 | 
-43 | ### For Business:
-44 | - **💰 Cost Optimization**: Identify most cost-effective models for different use cases
-45 | - **📈 Scalability Planning**: Understand cost implications of user growth
-46 | - **🎯 Model Strategy**: Data-driven model selection for optimal cost/performance ratio
-47 | 
-48 | ### For Users:
-49 | - **🚀 Better Performance**: Optimized model selection based on cost-effectiveness analysis
-50 | - **💚 Sustainable Service**: Enhanced cost management supports long-term service sustainability
-51 | 
-52 | ## 📊 Data-Driven Accuracy
-53 | 
-54 | ### Real Usage Analysis:
-55 | - Analyzed **1,254 actual ChatLima requests** from OpenRouter API
-56 | - **Input tokens**: 2,701 average (based on real avg: 2,251 + 20% buffer)
-57 | - **Output tokens**: 441 average (based on real avg: 368 + 20% buffer)
-58 | - **More accurate projections**: ~$0.003/request vs previous overestimates
-59 | 
-60 | ### Model Coverage:
-61 | - Analysis covers all ChatLima-configured models
-62 | - Real-time pricing from OpenRouter API
-63 | - Cost comparison across 30+ AI models
-64 | 
-65 | ## 🔄 Migration Notes
-66 | 
-67 | ### For Developers:
-68 | - No breaking changes to existing functionality
-69 | - New optional tool requires OpenRouter API key in `.env` file
-70 | - Scripts are completely separate from main application code
-71 | 
-72 | ### Environment Setup:
-73 | ```bash
-74 | # Add to your .env file (for developers only)
-75 | OPENROUTER_API_KEY=your_api_key_here
-76 | ```
-77 | 
-78 | ### New Commands Available:
-79 | ```bash
-80 | # Run pricing analysis
-81 | pnpm run pricing:analysis
-82 | 
-83 | # Analyze historical data (if you have CSV exports)
-84 | python scripts/analyze-openrouter-data.py /path/to/data.csv
-85 | ```
-86 | 
-87 | ## 🚀 Deployment
-88 | 
-89 | ### Development Environment:
-90 | 1. Ensure OpenRouter API key is configured in `.env`
-91 | 2. Install dependencies: `pnpm install`
-92 | 3. Run analysis: `pnpm run pricing:analysis`
-93 | 
-94 | ### Production Considerations:
-95 | - Scripts are development-only tools
-96 | - No impact on production application
-97 | - No new environment variables required for production deployment
-98 | 
-99 | ## 🎯 Usage Examples
-100 | 
-101 | ### Quick Cost Analysis:
-102 | ```bash
-103 | pnpm run pricing:analysis
-104 | ```
-105 | 
-106 | ### Expected Output:
-107 | - Detailed pricing table for all models
-108 | - Daily/monthly cost estimates
-109 | - Most/least expensive model identification
-110 | - Price comparison ratios
-111 | 
-112 | ### Use Cases:
-113 | - **Pre-deployment**: Cost planning for new features
-114 | - **Model Selection**: Choose optimal models for specific scenarios
-115 | - **Budget Planning**: Monthly cost forecasting
-116 | - **Performance Monitoring**: Track pricing trends over time
-117 | 
-118 | ## 🔮 Future Enhancements
-119 | 
-120 | - Automated pricing alerts for significant changes
-121 | - Historical pricing trend analysis
-122 | - Integration with usage monitoring
-123 | - Cost optimization recommendations
-124 | 
-125 | ---
-126 | 
-127 | **Full Changelog**: [v0.5.2...v0.6.0](https://github.com/brooksy4503/chatlima/compare/v0.5.2...v0.6.0)
-128 | 
-129 | ## 🙏 Acknowledgments
-130 | 
-131 | This release includes pricing analysis based on real ChatLima usage data, providing developers with accurate, data-driven insights for cost optimization and model selection. 
-```
-
-releases/RELEASE_NOTES_v0.8.0.md
-```
-1 | # 🚀 ChatLima v0.8.0 - Requesty Provider & Enhanced Model Selection
-2 | 
-3 | ## 🎯 What's New
-4 | - **New AI Provider**: Introduced Requesty as a new AI provider option alongside OpenRouter, Anthropic, OpenAI, Groq, and X AI
-5 | - **7 New Requesty Models**: Access popular AI models through Requesty's infrastructure:
-6 |   - `requesty/openai/gpt-4o` - OpenAI's advanced GPT-4O model
-7 |   - `requesty/openai/gpt-4o-mini` - Efficient GPT-4O Mini variant  
-8 |   - `requesty/anthropic/claude-3.5-sonnet` - Anthropic's Claude 3.5 Sonnet
-9 |   - `requesty/anthropic/claude-3.7-sonnet` - Latest Claude 3.7 Sonnet
-10 |   - `requesty/google/gemini-2.5-flash-preview` - Google's Gemini 2.5 Flash
-11 |   - `requesty/meta-llama/llama-3.1-70b-instruct` - Meta's Llama 3.1 70B
-12 |   - `requesty/anthropic/claude-sonnet-4-20250514` - Claude Sonnet 4 (May 2025)
-13 | - **New OpenRouter Model**: Added `google/gemini-2.5-pro-preview` - Google's state-of-the-art AI model for advanced reasoning, coding, mathematics, and scientific tasks
-14 | - **Enhanced Model Diversity**: Users now have access to 8 additional high-quality AI models across multiple providers
-15 | 
-16 | ## 🔧 Technical Implementation
-17 | - Integrated `@requesty/ai-sdk` package (version ^0.0.7) for Requesty provider support
-18 | - Added Requesty client configuration with proper API key management and headers
-19 | - Updated `ai/providers.ts` with comprehensive Requesty model definitions
-20 | - Enhanced model metadata with detailed capabilities, pricing tiers, and web search support
-21 | - Maintained consistent provider architecture for seamless integration
-22 | - Added proper error handling and API key fallback mechanisms
-23 | 
-24 | ## 🛡️ Security & Privacy
-25 | - Implemented secure API key management for Requesty provider through environment variables
-26 | - Added proper request headers including HTTP-Referer and X-Title for provider identification
-27 | - Maintained existing security protocols across all provider integrations
-28 | - Ensured consistent authentication flow for new provider
-29 | 
-30 | ## 📈 Benefits
-31 | - **Expanded Choice**: Users can now choose from 8 additional AI models based on their specific needs
-32 | - **Provider Redundancy**: Multiple providers offer increased reliability and availability
-33 | - **Cost Options**: Mix of premium and standard models provides flexibility for different use cases
-34 | - **Performance Variety**: Access to models optimized for different tasks (reasoning, coding, efficiency)
-35 | - **Future-Proofing**: Establishes foundation for easy addition of more Requesty models
-36 | 
-37 | ## 🔄 Migration Notes
-38 | - **No Breaking Changes**: Existing users continue to use their current models without any changes
-39 | - **Automatic Detection**: New Requesty models are automatically available in the model picker
-40 | - **API Key Setup**: Users wanting to use Requesty models need to add `REQUESTY_API_KEY` to their environment variables
-41 | - **Backward Compatibility**: All existing OpenRouter, Anthropic, OpenAI, Groq, and X AI models remain fully functional
-42 | 
-43 | ## 🚀 Deployment
-44 | - No special deployment requirements - changes are backward compatible
-45 | - New models become available immediately after deployment
-46 | - Users can start using Requesty models by adding their API key to environment variables
-47 | - All existing functionality remains unchanged
-48 | 
-49 | ## 🎯 Model Highlights
-50 | 
-51 | ### Requesty Provider Models:
-52 | - **GPT-4O Series**: Advanced OpenAI models with reasoning and multimodal capabilities
-53 | - **Claude Series**: Anthropic's latest models including Claude 3.5, 3.7, and Sonnet 4
-54 | - **Gemini 2.5 Flash**: Google's fast and efficient model optimized for speed
-55 | - **Llama 3.1 70B**: Meta's open-source model for instruction following
-56 | 
-57 | ### OpenRouter Addition:
-58 | - **Gemini 2.5 Pro Preview**: Google's flagship model for advanced reasoning and scientific tasks
-59 | 
-60 | ---
-61 | 
-62 | **Full Changelog**: [v0.7.0...v0.8.0](https://github.com/brooksy4503/chatlima/compare/v0.7.0...v0.8.0) 
-```
-
-releases/RELEASE_NOTES_v0.9.0.md
-```
-1 | # 🚀 ChatLima v0.9.0 - Enhanced API Key Management
-2 | 
-3 | ## 🎯 What's New
-4 | - **Dynamic API Key Management**: Runtime API key overrides for all AI providers
-5 | - **Enhanced Client Creation**: New helper functions for creating clients with custom API keys
-6 | - **Improved UI Experience**: Better API key settings interface in the chat and sidebar components
-7 | - **Flexible Provider Configuration**: Support for per-request API key customization
-8 | 
-9 | ## 🔧 Technical Implementation
-10 | - Added new provider helper functions supporting runtime API key overrides
-11 | - Introduced dynamic client creation utilities for flexible API key management
-12 | - Enhanced chat and sidebar components with new API key management features
-13 | - Improved user interface for API key configuration and settings
-14 | - Streamlined provider initialization with dynamic configuration support
-15 | 
-16 | ## 🛡️ Security & Privacy
-17 | - Enhanced API key handling with secure runtime management
-18 | - Improved isolation of API key configurations per request
-19 | - Better protection of user-provided API keys through dynamic handling
-20 | - Secure client creation patterns for API key management
-21 | 
-22 | ## 📈 Benefits
-23 | - **User Flexibility**: Users can now provide their own API keys for any supported provider
-24 | - **Cost Control**: Better control over API usage and costs with custom keys
-25 | - **Provider Independence**: Reduced dependency on system-wide API key configurations
-26 | - **Enhanced UX**: Streamlined interface for managing API keys across different providers
-27 | 
-28 | ## 🔄 Migration Notes
-29 | - No breaking changes in this release
-30 | - Existing API key configurations remain fully compatible
-31 | - New dynamic features are additive and optional
-32 | - All existing provider integrations continue to work unchanged
-33 | 
-34 | ## 🚀 Deployment
-35 | - Standard deployment process applies
-36 | - No additional configuration required
-37 | - New features are automatically available after deployment
-38 | - Backward compatibility maintained for all existing functionality
-39 | 
-40 | ---
-41 | 
-42 | **Full Changelog**: [v0.8.0...v0.9.0](https://github.com/brooksy4503/chatlima/compare/v0.8.0...v0.9.0) 
-```
-
-releases/RELEASE_NOTES_v0.9.1.md
-```
-1 | # 🚀 ChatLima v0.9.1 - Smart Credit Validation
-2 | 
-3 | ## 🎯 What's New
-4 | - **Smart Credit Validation**: Intelligent credit checking that bypasses validation when users provide their own API keys
-5 | - **Enhanced User Experience**: Users with personal API keys now get seamless access without credit deductions
-6 | - **Flexible Payment Model**: Automatic detection of user-provided API keys to optimize credit usage
-7 | 
-8 | ## 🔧 Technical Implementation
-9 | - Added `isUsingOwnApiKey()` helper function to detect when users are using personal API keys
-10 | - Enhanced credit validation logic in chat route to conditionally bypass credit checks
-11 | - Improved request handling with intelligent API key detection
-12 | - Streamlined credit deduction process for better user experience
-13 | - Updated chat route logic with 72 insertions and 36 deletions for robust implementation
-14 | 
-15 | ## 🛡️ Security & Privacy
-16 | - Secure API key detection without exposing sensitive information
-17 | - Improved credit validation logic that maintains security while enhancing flexibility
-18 | - Safe handling of user-provided API keys during validation process
-19 | 
-20 | ## 📈 Benefits
-21 | - **Cost Efficiency**: Users with personal API keys avoid unnecessary credit deductions
-22 | - **Better UX**: Seamless experience for users who provide their own API keys
-23 | - **Smart Resource Management**: Automatic optimization of credit usage based on API key source
-24 | - **Enhanced Flexibility**: System adapts to different user configurations automatically
-25 | 
-26 | ## 🔄 Migration Notes
-27 | - No breaking changes in this patch release
-28 | - Existing credit validation continues to work for users without personal API keys
-29 | - New logic is additive and automatically detects the optimal validation path
-30 | - All existing functionality remains fully compatible
-31 | 
-32 | ## 🚀 Deployment
-33 | - Standard deployment process applies
-34 | - No additional configuration required
-35 | - Changes are automatically active after deployment
-36 | - Backward compatibility maintained for all user scenarios
-37 | 
-38 | ---
-39 | 
-40 | **Full Changelog**: [v0.9.0...v0.9.1](https://github.com/brooksy4503/chatlima/compare/v0.9.0...v0.9.1) 
-```
-
 .cursor/rules/feature-branch-creation-workflow.mdc
 ```
 1 | ---
@@ -10811,7 +12240,7 @@ releases/RELEASE_NOTES_v0.9.1.md
 13 | Before starting the release process:
 14 | - Ensure all tests pass
 15 | - Verify the feature branch is up to date with main
-16 | - Check that [package.json](mdc:chatlima/package.json) reflects the current version
+16 | - Check that [package.json](mdc:chatlima/chatlima/chatlima/package.json) reflects the current version
 17 | - Review recent commits with `git log --oneline -10`
 18 | 
 19 | ### 2. Merge Feature Branch
@@ -10833,7 +12262,7 @@ releases/RELEASE_NOTES_v0.9.1.md
 35 | ```
 36 | 
 37 | ### 3. Version Increment
-38 | Use npm version to automatically update [package.json](mdc:chatlima/package.json) and create a git tag:
+38 | Use npm version to automatically update [package.json](mdc:chatlima/chatlima/chatlima/package.json) and create a git tag:
 39 | 
 40 | ```bash
 41 | # For patch releases (0.3.0 -> 0.3.1)
@@ -10847,7 +12276,7 @@ releases/RELEASE_NOTES_v0.9.1.md
 49 | ```
 50 | 
 51 | This command:
-52 | - Updates the version in [package.json](mdc:chatlima/package.json)
+52 | - Updates the version in [package.json](mdc:chatlima/chatlima/chatlima/package.json)
 53 | - Creates a git commit with the version change
 54 | - Creates a git tag (e.g., v0.3.1)
 55 | 
@@ -10902,13 +12331,13 @@ releases/RELEASE_NOTES_v0.9.1.md
 104 | #### Save Release Notes
 105 | Create a file named `RELEASE_NOTES_v[VERSION].md` in the `releases/` folder for reference.
 106 | 
-107 | ### 6. Safe Production Deployment
+107 | ### 6. Production Deployment
 108 | 
-109 | #### ⚠️ CRITICAL: Vercel Production Deployment Safety
-110 | Before deploying to production, ensure you're following safe deployment practices:
+109 | #### 🔄 Automatic Deployment (GitHub Integration)
+110 | With GitHub integration enabled, Vercel automatically handles deployments:
 111 | 
 112 | ```bash
-113 | # ✅ SAFE - Production deployment workflow
+113 | # ✅ AUTOMATIC - Normal deployment workflow
 114 | # 1. Ensure you're on main branch with merged changes
 115 | git checkout main
 116 | git pull origin main
@@ -10917,80 +12346,95 @@ releases/RELEASE_NOTES_v0.9.1.md
 119 | npm run build  # Test build locally
 120 | npm run test   # Run all tests
 121 | 
-122 | # 3. Deploy to production explicitly
-123 | vercel deploy --prod  # Explicit production deployment
+122 | # 3. Push to main triggers automatic production deployment
+123 | git push origin main  # This automatically deploys to production via GitHub integration
 124 | 
-125 | # 4. Verify production deployment
-126 | # Check the production URL and test critical functionality
-127 | ```
-128 | 
-129 | #### Production Deployment Checklist:
-130 | - [ ] All tests passing
-131 | - [ ] Feature thoroughly tested on preview deployments
-132 | - [ ] Environment variables configured for production
-133 | - [ ] Database migrations completed (if applicable)
-134 | - [ ] Monitoring and error tracking enabled
-135 | - [ ] Rollback plan ready
+125 | # 4. Monitor deployment
+126 | # Check Vercel dashboard for deployment status
+127 | # Verify production URL once deployment completes
+128 | ```
+129 | 
+130 | #### 🔧 Manual Deployment (Optional)
+131 | Manual deployment is only needed for special cases:
+132 | 
+133 | ```bash
+134 | # When you need to deploy without pushing to git
+135 | vercel deploy --prod  # Explicit production deployment
 136 | 
-137 | #### Emergency Rollback:
-138 | If issues are discovered after production deployment:
-139 | ```bash
-140 | # Quick rollback to previous version
-141 | git checkout main
-142 | git reset --hard HEAD~1  # Go back one commit
-143 | vercel deploy --prod     # Deploy previous version
-144 | ```
-145 | 
-146 | ### 7. GitHub Release Creation
-147 | 1. Go to GitHub repository → Releases → "Create a new release"
-148 | 2. Select the version tag created by `npm version`
-149 | 3. Copy content from the release notes file
-150 | 4. Set release title: "v[VERSION] - [FEATURE_NAME]"
-151 | 5. Mark as "Latest release" if it's the newest version
-152 | 6. Publish the release
-153 | 
-154 | ## 📋 Quick Reference Commands
-155 | 
-156 | ```bash
-157 | # Complete release workflow
-158 | git checkout main
-159 | git pull origin main
-160 | git merge feature/[branch-name]
-161 | npm version [patch|minor|major]
-162 | git push origin main --tags
-163 | git branch -d feature/[branch-name]
-164 | git push origin --delete feature/[branch-name]
-165 | ```
-166 | 
-167 | ## 🎯 Best Practices
+137 | # Or for testing local changes before commit
+138 | vercel deploy  # Preview deployment
+139 | ```
+140 | 
+141 | #### Production Deployment Checklist:
+142 | - [ ] All tests passing
+143 | - [ ] Feature thoroughly tested on preview deployments
+144 | - [ ] Environment variables configured for production
+145 | - [ ] Database migrations completed (if applicable)
+146 | - [ ] Monitoring and error tracking enabled
+147 | - [ ] GitHub integration properly configured
+148 | 
+149 | #### Emergency Rollback:
+150 | If issues are discovered after production deployment:
+151 | ```bash
+152 | # Option 1: Rollback via git (triggers auto-deployment)
+153 | git checkout main
+154 | git reset --hard HEAD~1  # Go back one commit
+155 | git push origin main --force  # Auto-deploys previous version
+156 | 
+157 | # Option 2: Manual rollback (if needed)
+158 | vercel deploy --prod  # Deploy specific version manually
+159 | ```
+160 | 
+161 | ### 7. GitHub Release Creation
+162 | 1. Go to GitHub repository → Releases → "Create a new release"
+163 | 2. Select the version tag created by `npm version`
+164 | 3. Copy content from the release notes file
+165 | 4. Set release title: "v[VERSION] - [FEATURE_NAME]"
+166 | 5. Mark as "Latest release" if it's the newest version
+167 | 6. Publish the release
 168 | 
-169 | ### Version Selection Guidelines:
-170 | - **Patch** (0.3.0 → 0.3.1): Bug fixes, small improvements, security patches
-171 | - **Minor** (0.3.0 → 0.4.0): New features, significant improvements, new capabilities
-172 | - **Major** (0.3.0 → 1.0.0): Breaking changes, major rewrites, API changes
-173 | 
-174 | ### Release Notes Guidelines:
-175 | - Use emojis for visual appeal and categorization
-176 | - Focus on user benefits, not just technical details
-177 | - Include migration instructions for any breaking changes
-178 | - Highlight security and privacy improvements
-179 | - Keep technical details accessible to non-developers
-180 | - Reference relevant files using [filename](mdc:chatlima/filename) format
+169 | ## 📋 Quick Reference Commands
+170 | 
+171 | ```bash
+172 | # Complete release workflow
+173 | git checkout main
+174 | git pull origin main
+175 | git merge feature/[branch-name]
+176 | npm version [patch|minor|major]
+177 | git push origin main --tags
+178 | git branch -d feature/[branch-name]
+179 | git push origin --delete feature/[branch-name]
+180 | ```
 181 | 
-182 | ### File References:
-183 | - Version information: [package.json](mdc:chatlima/package.json)
-184 | - Previous release notes: Look for existing `RELEASE_NOTES_v*.md` files in the `releases/` folder
-185 | - Implementation details: Check [app/](mdc:chatlima/app) directory for new routes
-186 | - Configuration: [next.config.ts](mdc:chatlima/next.config.ts), [tsconfig.json](mdc:chatlima/tsconfig.json)
-187 | 
-188 | ## 🚨 Important Notes
-189 | 
-190 | - Always test the feature thoroughly before merging
-191 | - Ensure the production environment can handle new features
-192 | - Keep release notes user-focused while including technical details
-193 | - Tag releases consistently for easy tracking
-194 | - Delete feature branches after successful merge to keep repository clean
-195 | - Use descriptive commit messages for the version bump commits
+182 | ## 🎯 Best Practices
+183 | 
+184 | ### Version Selection Guidelines:
+185 | - **Patch** (0.3.0 → 0.3.1): Bug fixes, small improvements, security patches
+186 | - **Minor** (0.3.0 → 0.4.0): New features, significant improvements, new capabilities
+187 | - **Major** (0.3.0 → 1.0.0): Breaking changes, major rewrites, API changes
+188 | 
+189 | ### Release Notes Guidelines:
+190 | - Use emojis for visual appeal and categorization
+191 | - Focus on user benefits, not just technical details
+192 | - Include migration instructions for any breaking changes
+193 | - Highlight security and privacy improvements
+194 | - Keep technical details accessible to non-developers
+195 | - Reference relevant files using [filename](mdc:chatlima/chatlima/chatlima/filename) format
+196 | 
+197 | ### File References:
+198 | - Version information: [package.json](mdc:chatlima/chatlima/chatlima/package.json)
+199 | - Previous release notes: Look for existing `RELEASE_NOTES_v*.md` files in the `releases/` folder
+200 | - Implementation details: Check [app/](mdc:chatlima/chatlima/chatlima/app) directory for new routes
+201 | - Configuration: [next.config.ts](mdc:chatlima/chatlima/chatlima/next.config.ts), [tsconfig.json](mdc:chatlima/chatlima/chatlima/tsconfig.json)
+202 | 
+203 | ## 🚨 Important Notes
+204 | 
+205 | - Always test the feature thoroughly before merging
+206 | - Ensure the production environment can handle new features
+207 | - Keep release notes user-focused while including technical details
+208 | - Tag releases consistently for easy tracking
+209 | - Delete feature branches after successful merge to keep repository clean
+210 | - Use descriptive commit messages for the version bump commits
 ```
 
 .cursor/rules/quick-branch-commands.mdc
@@ -11183,6 +12627,2503 @@ app/robots.txt/route.ts
 45 |         },
 46 |     })
 47 | } 
+```
+
+app/sitemap.xml/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server'
+2 | 
+3 | export async function GET(request: NextRequest) {
+4 |     const host = request.headers.get('host')
+5 |     const protocol = request.headers.get('x-forwarded-proto') || 'https'
+6 |     const baseUrl = `${protocol}://${host}`
+7 | 
+8 |     // Only generate sitemap for production
+9 |     const isProduction = host?.includes('chatlima.com')
+10 | 
+11 |     if (!isProduction) {
+12 |         return new NextResponse('Sitemap not available in development', {
+13 |             status: 404,
+14 |             headers: { 'Content-Type': 'text/plain' }
+15 |         })
+16 |     }
+17 | 
+18 |     const currentDate = new Date().toISOString()
+19 | 
+20 |     // Define static pages to include in sitemap
+21 |     const staticPages = [
+22 |         {
+23 |             url: '/',
+24 |             lastmod: currentDate,
+25 |             changefreq: 'daily',
+26 |             priority: '1.0'
+27 |         }
+28 |         // Future pages can be added here:
+29 |         // {
+30 |         //     url: '/about',
+31 |         //     lastmod: currentDate,
+32 |         //     changefreq: 'monthly',
+33 |         //     priority: '0.8'
+34 |         // },
+35 |         // {
+36 |         //     url: '/pricing',
+37 |         //     lastmod: currentDate,
+38 |         //     changefreq: 'weekly',
+39 |         //     priority: '0.9'
+40 |         // }
+41 |     ]
+42 | 
+43 |     const urlEntries = staticPages.map(page => `    <url>
+44 |         <loc>${baseUrl}${page.url}</loc>
+45 |         <lastmod>${page.lastmod}</lastmod>
+46 |         <changefreq>${page.changefreq}</changefreq>
+47 |         <priority>${page.priority}</priority>
+48 |     </url>`).join('\n')
+49 | 
+50 |     const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+51 | <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+52 | ${urlEntries}
+53 | </urlset>`
+54 | 
+55 |     return new NextResponse(sitemapXml, {
+56 |         headers: {
+57 |             'Content-Type': 'application/xml',
+58 |             'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+59 |         },
+60 |     })
+61 | } 
+```
+
+components/auth/AnonymousAuth.tsx
+```
+1 | "use client";
+2 | 
+3 | import { useEffect, useState } from 'react';
+4 | import { signIn, useSession } from '@/lib/auth-client';
+5 | 
+6 | export function AnonymousAuth() {
+7 |   const { data: session, isPending } = useSession();
+8 |   const [error, setError] = useState<string | null>(null);
+9 | 
+10 |   useEffect(() => {
+11 |     // Only try to sign in anonymously if:
+12 |     // 1. We're not already signing in
+13 |     // 2. Session is not pending (loading)
+14 |     // 3. There's no active session
+15 |     if (!isPending && !session) {
+16 |       const attemptSignIn = async () => {
+17 |         console.log("Attempting anonymous sign-in (simplified logic)...");
+18 |         try {
+19 |           // Try the standard way first
+20 |           const { data, error } = await signIn.anonymous();
+21 |           console.log("Standard anonymous sign-in initiated/checked.");
+22 |           if (error) {
+23 |             setError("Failed to sign in anonymously. Please try again.");
+24 |           } else if (data?.user) {
+25 |             // @ts-expect-error TODO: Fix this type error
+26 |             if (window.rudderanalytics) {
+27 |               // @ts-expect-error TODO: Fix this type error
+28 |               window.rudderanalytics.identify(data.user.id, { // Use optional chaining
+29 |                 isAnonymous: true,
+30 |               });
+31 |             }
+32 |           }
+33 |         } catch (error: any) {
+34 |           // Ignore the specific error for already being signed in anonymously
+35 |           if (error?.message?.includes('ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN') || error?.message?.includes('already signed in anonymously')) {
+36 |             console.log("Already signed in anonymously or attempt blocked by backend.");
+37 |           } else {
+38 |             console.error("Standard anonymous sign-in failed:", error);
+39 |             // No fallback - rely solely on the standard method
+40 |           }
+41 |         }
+42 |       };
+43 | 
+44 |       attemptSignIn();
+45 |     }
+46 |   }, [session, isPending]);
+47 | 
+48 |   // This component doesn't render anything - it just handles the authentication logic
+49 |   return null;
+50 | } 
+```
+
+components/auth/SignInButton.tsx
+```
+1 | "use client";
+2 | 
+3 | import { signIn } from "@/lib/auth-client";
+4 | import { Button } from "@/components/ui/button";
+5 | import { LogIn } from "lucide-react";
+6 | import { cn } from "@/lib/utils";
+7 | 
+8 | interface SignInButtonProps {
+9 |   isCollapsed?: boolean;
+10 | }
+11 | 
+12 | export function SignInButton({ isCollapsed }: SignInButtonProps) {
+13 |   const handleSignIn = async () => {
+14 |     try {
+15 |       await signIn.social({
+16 |         provider: "google",
+17 |       });
+18 |     } catch (error) {
+19 |       console.error("Sign-in error:", error);
+20 |     }
+21 |   };
+22 | 
+23 |   return (
+24 |     <Button 
+25 |       onClick={handleSignIn}
+26 |       className={cn(
+27 |         "bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center justify-center gap-2 transition-colors duration-200 ease-in-out shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50",
+28 |         isCollapsed ? "w-auto h-auto p-2 aspect-square rounded-lg" : "w-full py-2 px-4 rounded-lg"
+29 |       )}
+30 |       title={isCollapsed ? "Sign in with Google" : undefined}
+31 |     >
+32 |       <LogIn className={cn("shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
+33 |       {!isCollapsed && <span>Sign in with Google</span>}
+34 |     </Button>
+35 |   );
+36 | } 
+```
+
+components/auth/UserAccountMenu.tsx
+```
+1 | "use client";
+2 | 
+3 | import { signOut, useSession } from "@/lib/auth-client";
+4 | import { Button } from "@/components/ui/button";
+5 | import { 
+6 |   DropdownMenu, 
+7 |   DropdownMenuContent, 
+8 |   DropdownMenuItem, 
+9 |   DropdownMenuLabel, 
+10 |   DropdownMenuSeparator, 
+11 |   DropdownMenuTrigger 
+12 | } from "@/components/ui/dropdown-menu";
+13 | import { LogOut, User, Settings, LayoutDashboard } from "lucide-react";
+14 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+15 | import { CheckoutButton } from "@/components/checkout-button";
+16 | 
+17 | export function UserAccountMenu() {
+18 |   const { data: session } = useSession();
+19 | 
+20 |   if (!session?.user) return null;
+21 | 
+22 |   const handleSignOut = async () => {
+23 |     try {
+24 |       await signOut({});
+25 |     } catch (error) {
+26 |       console.error("Sign-out error:", error);
+27 |     }
+28 |   };
+29 | 
+30 |   const userInitials = session.user.name
+31 |     ? session.user.name
+32 |         .split(' ')
+33 |         .map(name => name[0])
+34 |         .join('')
+35 |         .toUpperCase()
+36 |     : session.user.email?.[0]?.toUpperCase() || 'U';
+37 | 
+38 |   return (
+39 |     <DropdownMenu>
+40 |       <DropdownMenuTrigger asChild>
+41 |         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+42 |           <Avatar className="h-8 w-8">
+43 |             <AvatarImage 
+44 |               src={session.user.image || ''} 
+45 |               alt={session.user.name || 'User'} 
+46 |             />
+47 |             <AvatarFallback>{userInitials}</AvatarFallback>
+48 |           </Avatar>
+49 |         </Button>
+50 |       </DropdownMenuTrigger>
+51 |       <DropdownMenuContent className="w-56" align="end" forceMount>
+52 |         <DropdownMenuLabel className="font-normal">
+53 |           <div className="flex flex-col space-y-1">
+54 |             <p className="text-sm font-medium leading-none">{session.user.name}</p>
+55 |             <p className="text-xs leading-none text-muted-foreground">
+56 |               {session.user.email}
+57 |             </p>
+58 |           </div>
+59 |         </DropdownMenuLabel>
+60 |         <DropdownMenuSeparator />
+61 |         
+62 |         <div className="p-2">
+63 |           <CheckoutButton />
+64 |         </div>
+65 |         
+66 |         <DropdownMenuSeparator />
+67 |         <DropdownMenuItem asChild>
+68 |           <a href="/api/portal" target="_blank" rel="noopener noreferrer">
+69 |             <LayoutDashboard className="mr-2 h-4 w-4" />
+70 |             <span>Customer Portal</span>
+71 |           </a>
+72 |         </DropdownMenuItem>
+73 |         <DropdownMenuSeparator />
+74 |         <DropdownMenuItem onClick={handleSignOut}>
+75 |           <LogOut className="mr-2 h-4 w-4" />
+76 |           <span>Log out</span>
+77 |         </DropdownMenuItem>
+78 |       </DropdownMenuContent>
+79 |     </DropdownMenu>
+80 |   );
+81 | } 
+```
+
+components/ui/BuildInfo.tsx
+```
+1 | export default function BuildInfo() {
+2 |   const commit = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'unknown';
+3 |     const url = process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL || 'unknown';
+4 | 
+5 |   return (
+6 |     <div style={{ fontSize: 12, color: '#888', textAlign: 'center', padding: '8px 0' }}>
+7 |       <span>Commit: {commit} | URL: {url}</span>
+8 |     </div>
+9 |   );
+10 | } 
+```
+
+components/ui/accordion.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as AccordionPrimitive from "@radix-ui/react-accordion"
+5 | import { ChevronDownIcon } from "lucide-react"
+6 | 
+7 | import { cn } from "@/lib/utils"
+8 | 
+9 | function Accordion({
+10 |   ...props
+11 | }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
+12 |   return <AccordionPrimitive.Root data-slot="accordion" {...props} />
+13 | }
+14 | 
+15 | function AccordionItem({
+16 |   className,
+17 |   ...props
+18 | }: React.ComponentProps<typeof AccordionPrimitive.Item>) {
+19 |   return (
+20 |     <AccordionPrimitive.Item
+21 |       data-slot="accordion-item"
+22 |       className={cn("mb-1", className)}
+23 |       {...props}
+24 |     />
+25 |   )
+26 | }
+27 | 
+28 | function AccordionTrigger({
+29 |   className,
+30 |   children,
+31 |   ...props
+32 | }: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
+33 |   return (
+34 |     <AccordionPrimitive.Header className="flex">
+35 |       <AccordionPrimitive.Trigger
+36 |         data-slot="accordion-trigger"
+37 |         className={cn(
+38 |           "focus-visible:ring-ring/30 flex flex-1 items-center justify-between py-3 text-left text-sm font-medium transition-all outline-none focus-visible:ring-2 rounded-md disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
+39 |           className
+40 |         )}
+41 |         {...props}
+42 |       >
+43 |         {children}
+44 |         <ChevronDownIcon className="text-muted-foreground/70 size-3.5 shrink-0 transition-transform duration-200" />
+45 |       </AccordionPrimitive.Trigger>
+46 |     </AccordionPrimitive.Header>
+47 |   )
+48 | }
+49 | 
+50 | function AccordionContent({
+51 |   className,
+52 |   children,
+53 |   ...props
+54 | }: React.ComponentProps<typeof AccordionPrimitive.Content>) {
+55 |   return (
+56 |     <AccordionPrimitive.Content
+57 |       data-slot="accordion-content"
+58 |       className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+59 |       {...props}
+60 |     >
+61 |       <div className={cn("py-2 pl-1", className)}>{children}</div>
+62 |     </AccordionPrimitive.Content>
+63 |   )
+64 | }
+65 | 
+66 | export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }
+```
+
+components/ui/avatar.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as AvatarPrimitive from "@radix-ui/react-avatar"
+5 | 
+6 | import { cn } from "@/lib/utils"
+7 | 
+8 | function Avatar({
+9 |   className,
+10 |   ...props
+11 | }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+12 |   return (
+13 |     <AvatarPrimitive.Root
+14 |       data-slot="avatar"
+15 |       className={cn(
+16 |         "relative flex size-8 shrink-0 overflow-hidden rounded-full",
+17 |         className
+18 |       )}
+19 |       {...props}
+20 |     />
+21 |   )
+22 | }
+23 | 
+24 | function AvatarImage({
+25 |   className,
+26 |   ...props
+27 | }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+28 |   return (
+29 |     <AvatarPrimitive.Image
+30 |       data-slot="avatar-image"
+31 |       className={cn("aspect-square size-full", className)}
+32 |       {...props}
+33 |     />
+34 |   )
+35 | }
+36 | 
+37 | function AvatarFallback({
+38 |   className,
+39 |   ...props
+40 | }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+41 |   return (
+42 |     <AvatarPrimitive.Fallback
+43 |       data-slot="avatar-fallback"
+44 |       className={cn(
+45 |         "bg-muted flex size-full items-center justify-center rounded-full",
+46 |         className
+47 |       )}
+48 |       {...props}
+49 |     />
+50 |   )
+51 | }
+52 | 
+53 | export { Avatar, AvatarImage, AvatarFallback }
+```
+
+components/ui/badge.tsx
+```
+1 | import * as React from "react"
+2 | import { Slot } from "@radix-ui/react-slot"
+3 | import { cva, type VariantProps } from "class-variance-authority"
+4 | 
+5 | import { cn } from "@/lib/utils"
+6 | 
+7 | const badgeVariants = cva(
+8 |   "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+9 |   {
+10 |     variants: {
+11 |       variant: {
+12 |         default:
+13 |           "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+14 |         secondary:
+15 |           "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+16 |         destructive:
+17 |           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+18 |         outline:
+19 |           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+20 |       },
+21 |     },
+22 |     defaultVariants: {
+23 |       variant: "default",
+24 |     },
+25 |   }
+26 | )
+27 | 
+28 | function Badge({
+29 |   className,
+30 |   variant,
+31 |   asChild = false,
+32 |   ...props
+33 | }: React.ComponentProps<"span"> &
+34 |   VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+35 |   const Comp = asChild ? Slot : "span"
+36 | 
+37 |   return (
+38 |     <Comp
+39 |       data-slot="badge"
+40 |       className={cn(badgeVariants({ variant }), className)}
+41 |       {...props}
+42 |     />
+43 |   )
+44 | }
+45 | 
+46 | export { Badge, badgeVariants }
+```
+
+components/ui/button.tsx
+```
+1 | import * as React from "react"
+2 | import { Slot } from "@radix-ui/react-slot"
+3 | import { cva, type VariantProps } from "class-variance-authority"
+4 | 
+5 | import { cn } from "@/lib/utils"
+6 | 
+7 | const buttonVariants = cva(
+8 |   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+9 |   {
+10 |     variants: {
+11 |       variant: {
+12 |         default:
+13 |           "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+14 |         destructive:
+15 |           "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+16 |         outline:
+17 |           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+18 |         secondary:
+19 |           "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+20 |         ghost:
+21 |           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+22 |         link: "text-primary underline-offset-4 hover:underline",
+23 |       },
+24 |       size: {
+25 |         default: "h-9 px-4 py-2 has-[>svg]:px-3",
+26 |         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
+27 |         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+28 |         icon: "size-9",
+29 |       },
+30 |     },
+31 |     defaultVariants: {
+32 |       variant: "default",
+33 |       size: "default",
+34 |     },
+35 |   }
+36 | )
+37 | 
+38 | function Button({
+39 |   className,
+40 |   variant,
+41 |   size,
+42 |   asChild = false,
+43 |   ...props
+44 | }: React.ComponentProps<"button"> &
+45 |   VariantProps<typeof buttonVariants> & {
+46 |     asChild?: boolean
+47 |   }) {
+48 |   const Comp = asChild ? Slot : "button"
+49 | 
+50 |   return (
+51 |     <Comp
+52 |       data-slot="button"
+53 |       className={cn(buttonVariants({ variant, size, className }))}
+54 |       {...props}
+55 |     />
+56 |   )
+57 | }
+58 | 
+59 | export { Button, buttonVariants }
+```
+
+components/ui/card.tsx
+```
+1 | import * as React from "react"
+2 | 
+3 | import { cn } from "@/lib/utils"
+4 | 
+5 | const Card = React.forwardRef<
+6 |   HTMLDivElement,
+7 |   React.HTMLAttributes<HTMLDivElement>
+8 | >(({ className, ...props }, ref) => (
+9 |   <div
+10 |     ref={ref}
+11 |     className={cn(
+12 |       "rounded-lg border bg-card text-card-foreground shadow-sm",
+13 |       className
+14 |     )}
+15 |     {...props}
+16 |   />
+17 | ))
+18 | Card.displayName = "Card"
+19 | 
+20 | const CardHeader = React.forwardRef<
+21 |   HTMLDivElement,
+22 |   React.HTMLAttributes<HTMLDivElement>
+23 | >(({ className, ...props }, ref) => (
+24 |   <div
+25 |     ref={ref}
+26 |     className={cn("flex flex-col space-y-1.5 p-6", className)}
+27 |     {...props}
+28 |   />
+29 | ))
+30 | CardHeader.displayName = "CardHeader"
+31 | 
+32 | const CardTitle = React.forwardRef<
+33 |   HTMLParagraphElement,
+34 |   React.HTMLAttributes<HTMLHeadingElement>
+35 | >(({ className, ...props }, ref) => (
+36 |   <h3
+37 |     ref={ref}
+38 |     className={cn(
+39 |       "text-2xl font-semibold leading-none tracking-tight",
+40 |       className
+41 |     )}
+42 |     {...props}
+43 |   />
+44 | ))
+45 | CardTitle.displayName = "CardTitle"
+46 | 
+47 | const CardDescription = React.forwardRef<
+48 |   HTMLParagraphElement,
+49 |   React.HTMLAttributes<HTMLParagraphElement>
+50 | >(({ className, ...props }, ref) => (
+51 |   <p
+52 |     ref={ref}
+53 |     className={cn("text-sm text-muted-foreground", className)}
+54 |     {...props}
+55 |   />
+56 | ))
+57 | CardDescription.displayName = "CardDescription"
+58 | 
+59 | const CardContent = React.forwardRef<
+60 |   HTMLDivElement,
+61 |   React.HTMLAttributes<HTMLDivElement>
+62 | >(({ className, ...props }, ref) => (
+63 |   <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+64 | ))
+65 | CardContent.displayName = "CardContent"
+66 | 
+67 | const CardFooter = React.forwardRef<
+68 |   HTMLDivElement,
+69 |   React.HTMLAttributes<HTMLDivElement>
+70 | >(({ className, ...props }, ref) => (
+71 |   <div
+72 |     ref={ref}
+73 |     className={cn("flex items-center p-6 pt-0", className)}
+74 |     {...props}
+75 |   />
+76 | ))
+77 | CardFooter.displayName = "CardFooter"
+78 | 
+79 | export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } 
+```
+
+components/ui/dialog.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as DialogPrimitive from "@radix-ui/react-dialog"
+5 | import { XIcon } from "lucide-react"
+6 | 
+7 | import { cn } from "@/lib/utils"
+8 | 
+9 | function Dialog({
+10 |   ...props
+11 | }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+12 |   return <DialogPrimitive.Root data-slot="dialog" {...props} />
+13 | }
+14 | 
+15 | function DialogTrigger({
+16 |   ...props
+17 | }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+18 |   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+19 | }
+20 | 
+21 | function DialogPortal({
+22 |   ...props
+23 | }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+24 |   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+25 | }
+26 | 
+27 | function DialogClose({
+28 |   ...props
+29 | }: React.ComponentProps<typeof DialogPrimitive.Close>) {
+30 |   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
+31 | }
+32 | 
+33 | function DialogOverlay({
+34 |   className,
+35 |   ...props
+36 | }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+37 |   return (
+38 |     <DialogPrimitive.Overlay
+39 |       data-slot="dialog-overlay"
+40 |       className={cn(
+41 |         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+42 |         className
+43 |       )}
+44 |       {...props}
+45 |     />
+46 |   )
+47 | }
+48 | 
+49 | function DialogContent({
+50 |   className,
+51 |   children,
+52 |   ...props
+53 | }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+54 |   return (
+55 |     <DialogPortal data-slot="dialog-portal">
+56 |       <DialogOverlay />
+57 |       <DialogPrimitive.Content
+58 |         data-slot="dialog-content"
+59 |         className={cn(
+60 |           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+61 |           className
+62 |         )}
+63 |         {...props}
+64 |       >
+65 |         {children}
+66 |         <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+67 |           <XIcon />
+68 |           <span className="sr-only">Close</span>
+69 |         </DialogPrimitive.Close>
+70 |       </DialogPrimitive.Content>
+71 |     </DialogPortal>
+72 |   )
+73 | }
+74 | 
+75 | function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+76 |   return (
+77 |     <div
+78 |       data-slot="dialog-header"
+79 |       className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+80 |       {...props}
+81 |     />
+82 |   )
+83 | }
+84 | 
+85 | function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+86 |   return (
+87 |     <div
+88 |       data-slot="dialog-footer"
+89 |       className={cn(
+90 |         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+91 |         className
+92 |       )}
+93 |       {...props}
+94 |     />
+95 |   )
+96 | }
+97 | 
+98 | function DialogTitle({
+99 |   className,
+100 |   ...props
+101 | }: React.ComponentProps<typeof DialogPrimitive.Title>) {
+102 |   return (
+103 |     <DialogPrimitive.Title
+104 |       data-slot="dialog-title"
+105 |       className={cn("text-lg leading-none font-semibold", className)}
+106 |       {...props}
+107 |     />
+108 |   )
+109 | }
+110 | 
+111 | function DialogDescription({
+112 |   className,
+113 |   ...props
+114 | }: React.ComponentProps<typeof DialogPrimitive.Description>) {
+115 |   return (
+116 |     <DialogPrimitive.Description
+117 |       data-slot="dialog-description"
+118 |       className={cn("text-muted-foreground text-sm", className)}
+119 |       {...props}
+120 |     />
+121 |   )
+122 | }
+123 | 
+124 | export {
+125 |   Dialog,
+126 |   DialogClose,
+127 |   DialogContent,
+128 |   DialogDescription,
+129 |   DialogFooter,
+130 |   DialogHeader,
+131 |   DialogOverlay,
+132 |   DialogPortal,
+133 |   DialogTitle,
+134 |   DialogTrigger,
+135 | }
+```
+
+components/ui/dropdown-menu.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
+5 | import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
+6 | 
+7 | import { cn } from "@/lib/utils"
+8 | 
+9 | function DropdownMenu({
+10 |   ...props
+11 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+12 |   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+13 | }
+14 | 
+15 | function DropdownMenuPortal({
+16 |   ...props
+17 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
+18 |   return (
+19 |     <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
+20 |   )
+21 | }
+22 | 
+23 | function DropdownMenuTrigger({
+24 |   ...props
+25 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+26 |   return (
+27 |     <DropdownMenuPrimitive.Trigger
+28 |       data-slot="dropdown-menu-trigger"
+29 |       {...props}
+30 |     />
+31 |   )
+32 | }
+33 | 
+34 | function DropdownMenuContent({
+35 |   className,
+36 |   sideOffset = 4,
+37 |   ...props
+38 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+39 |   return (
+40 |     <DropdownMenuPrimitive.Portal>
+41 |       <DropdownMenuPrimitive.Content
+42 |         data-slot="dropdown-menu-content"
+43 |         sideOffset={sideOffset}
+44 |         className={cn(
+45 |           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
+46 |           className
+47 |         )}
+48 |         {...props}
+49 |       />
+50 |     </DropdownMenuPrimitive.Portal>
+51 |   )
+52 | }
+53 | 
+54 | function DropdownMenuGroup({
+55 |   ...props
+56 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
+57 |   return (
+58 |     <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+59 |   )
+60 | }
+61 | 
+62 | function DropdownMenuItem({
+63 |   className,
+64 |   inset,
+65 |   variant = "default",
+66 |   ...props
+67 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
+68 |   inset?: boolean
+69 |   variant?: "default" | "destructive"
+70 | }) {
+71 |   return (
+72 |     <DropdownMenuPrimitive.Item
+73 |       data-slot="dropdown-menu-item"
+74 |       data-inset={inset}
+75 |       data-variant={variant}
+76 |       className={cn(
+77 |         "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+78 |         className
+79 |       )}
+80 |       {...props}
+81 |     />
+82 |   )
+83 | }
+84 | 
+85 | function DropdownMenuCheckboxItem({
+86 |   className,
+87 |   children,
+88 |   checked,
+89 |   ...props
+90 | }: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
+91 |   return (
+92 |     <DropdownMenuPrimitive.CheckboxItem
+93 |       data-slot="dropdown-menu-checkbox-item"
+94 |       className={cn(
+95 |         "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+96 |         className
+97 |       )}
+98 |       checked={checked}
+99 |       {...props}
+100 |     >
+101 |       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+102 |         <DropdownMenuPrimitive.ItemIndicator>
+103 |           <CheckIcon className="size-4" />
+104 |         </DropdownMenuPrimitive.ItemIndicator>
+105 |       </span>
+106 |       {children}
+107 |     </DropdownMenuPrimitive.CheckboxItem>
+108 |   )
+109 | }
+110 | 
+111 | function DropdownMenuRadioGroup({
+112 |   ...props
+113 | }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
+114 |   return (
+115 |     <DropdownMenuPrimitive.RadioGroup
+116 |       data-slot="dropdown-menu-radio-group"
+117 |       {...props}
+118 |     />
+119 |   )
+120 | }
+121 | 
+122 | function DropdownMenuRadioItem({
+123 |   className,
+124 |   children,
+125 |   ...props
+126 | }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+127 |   return (
+128 |     <DropdownMenuPrimitive.RadioItem
+129 |       data-slot="dropdown-menu-radio-item"
+130 |       className={cn(
+131 |         "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+132 |         className
+133 |       )}
+134 |       {...props}
+135 |     >
+136 |       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+137 |         <DropdownMenuPrimitive.ItemIndicator>
+138 |           <CircleIcon className="size-2 fill-current" />
+139 |         </DropdownMenuPrimitive.ItemIndicator>
+140 |       </span>
+141 |       {children}
+142 |     </DropdownMenuPrimitive.RadioItem>
+143 |   )
+144 | }
+145 | 
+146 | function DropdownMenuLabel({
+147 |   className,
+148 |   inset,
+149 |   ...props
+150 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
+151 |   inset?: boolean
+152 | }) {
+153 |   return (
+154 |     <DropdownMenuPrimitive.Label
+155 |       data-slot="dropdown-menu-label"
+156 |       data-inset={inset}
+157 |       className={cn(
+158 |         "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
+159 |         className
+160 |       )}
+161 |       {...props}
+162 |     />
+163 |   )
+164 | }
+165 | 
+166 | function DropdownMenuSeparator({
+167 |   className,
+168 |   ...props
+169 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
+170 |   return (
+171 |     <DropdownMenuPrimitive.Separator
+172 |       data-slot="dropdown-menu-separator"
+173 |       className={cn("bg-border -mx-1 my-1 h-px", className)}
+174 |       {...props}
+175 |     />
+176 |   )
+177 | }
+178 | 
+179 | function DropdownMenuShortcut({
+180 |   className,
+181 |   ...props
+182 | }: React.ComponentProps<"span">) {
+183 |   return (
+184 |     <span
+185 |       data-slot="dropdown-menu-shortcut"
+186 |       className={cn(
+187 |         "text-muted-foreground ml-auto text-xs tracking-widest",
+188 |         className
+189 |       )}
+190 |       {...props}
+191 |     />
+192 |   )
+193 | }
+194 | 
+195 | function DropdownMenuSub({
+196 |   ...props
+197 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
+198 |   return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />
+199 | }
+200 | 
+201 | function DropdownMenuSubTrigger({
+202 |   className,
+203 |   inset,
+204 |   children,
+205 |   ...props
+206 | }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
+207 |   inset?: boolean
+208 | }) {
+209 |   return (
+210 |     <DropdownMenuPrimitive.SubTrigger
+211 |       data-slot="dropdown-menu-sub-trigger"
+212 |       data-inset={inset}
+213 |       className={cn(
+214 |         "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
+215 |         className
+216 |       )}
+217 |       {...props}
+218 |     >
+219 |       {children}
+220 |       <ChevronRightIcon className="ml-auto size-4" />
+221 |     </DropdownMenuPrimitive.SubTrigger>
+222 |   )
+223 | }
+224 | 
+225 | function DropdownMenuSubContent({
+226 |   className,
+227 |   ...props
+228 | }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+229 |   return (
+230 |     <DropdownMenuPrimitive.SubContent
+231 |       data-slot="dropdown-menu-sub-content"
+232 |       className={cn(
+233 |         "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg",
+234 |         className
+235 |       )}
+236 |       {...props}
+237 |     />
+238 |   )
+239 | }
+240 | 
+241 | export {
+242 |   DropdownMenu,
+243 |   DropdownMenuPortal,
+244 |   DropdownMenuTrigger,
+245 |   DropdownMenuContent,
+246 |   DropdownMenuGroup,
+247 |   DropdownMenuLabel,
+248 |   DropdownMenuItem,
+249 |   DropdownMenuCheckboxItem,
+250 |   DropdownMenuRadioGroup,
+251 |   DropdownMenuRadioItem,
+252 |   DropdownMenuSeparator,
+253 |   DropdownMenuShortcut,
+254 |   DropdownMenuSub,
+255 |   DropdownMenuSubTrigger,
+256 |   DropdownMenuSubContent,
+257 | }
+```
+
+components/ui/input.tsx
+```
+1 | import * as React from "react"
+2 | 
+3 | import { cn } from "@/lib/utils"
+4 | 
+5 | function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+6 |   return (
+7 |     <input
+8 |       type={type}
+9 |       data-slot="input"
+10 |       className={cn(
+11 |         "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+12 |         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+13 |         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+14 |         className
+15 |       )}
+16 |       {...props}
+17 |     />
+18 |   )
+19 | }
+20 | 
+21 | export { Input }
+```
+
+components/ui/label.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as LabelPrimitive from "@radix-ui/react-label"
+5 | 
+6 | import { cn } from "@/lib/utils"
+7 | 
+8 | function Label({
+9 |   className,
+10 |   ...props
+11 | }: React.ComponentProps<typeof LabelPrimitive.Root>) {
+12 |   return (
+13 |     <LabelPrimitive.Root
+14 |       data-slot="label"
+15 |       className={cn(
+16 |         "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+17 |         className
+18 |       )}
+19 |       {...props}
+20 |     />
+21 |   )
+22 | }
+23 | 
+24 | export { Label }
+```
+
+components/ui/popover.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as PopoverPrimitive from "@radix-ui/react-popover"
+5 | 
+6 | import { cn } from "@/lib/utils"
+7 | 
+8 | function Popover({
+9 |   ...props
+10 | }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+11 |   return <PopoverPrimitive.Root data-slot="popover" {...props} />
+12 | }
+13 | 
+14 | function PopoverTrigger({
+15 |   ...props
+16 | }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+17 |   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+18 | }
+19 | 
+20 | function PopoverContent({
+21 |   className,
+22 |   align = "center",
+23 |   sideOffset = 4,
+24 |   ...props
+25 | }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+26 |   return (
+27 |     <PopoverPrimitive.Portal>
+28 |       <PopoverPrimitive.Content
+29 |         data-slot="popover-content"
+30 |         align={align}
+31 |         sideOffset={sideOffset}
+32 |         className={cn(
+33 |           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border p-4 shadow-md outline-hidden",
+34 |           className
+35 |         )}
+36 |         {...props}
+37 |       />
+38 |     </PopoverPrimitive.Portal>
+39 |   )
+40 | }
+41 | 
+42 | function PopoverAnchor({
+43 |   ...props
+44 | }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
+45 |   return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />
+46 | }
+47 | 
+48 | export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor }
+```
+
+components/ui/scroll-area.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
+5 | 
+6 | import { cn } from "@/lib/utils"
+7 | 
+8 | function ScrollArea({
+9 |   className,
+10 |   children,
+11 |   ...props
+12 | }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+13 |   return (
+14 |     <ScrollAreaPrimitive.Root
+15 |       data-slot="scroll-area"
+16 |       className={cn("relative", className)}
+17 |       {...props}
+18 |     >
+19 |       <ScrollAreaPrimitive.Viewport
+20 |         data-slot="scroll-area-viewport"
+21 |         className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
+22 |       >
+23 |         {children}
+24 |       </ScrollAreaPrimitive.Viewport>
+25 |       <ScrollBar />
+26 |       <ScrollAreaPrimitive.Corner />
+27 |     </ScrollAreaPrimitive.Root>
+28 |   )
+29 | }
+30 | 
+31 | function ScrollBar({
+32 |   className,
+33 |   orientation = "vertical",
+34 |   ...props
+35 | }: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
+36 |   return (
+37 |     <ScrollAreaPrimitive.ScrollAreaScrollbar
+38 |       data-slot="scroll-area-scrollbar"
+39 |       orientation={orientation}
+40 |       className={cn(
+41 |         "flex touch-none p-px transition-colors select-none",
+42 |         orientation === "vertical" &&
+43 |           "h-full w-2.5 border-l border-l-transparent",
+44 |         orientation === "horizontal" &&
+45 |           "h-2.5 flex-col border-t border-t-transparent",
+46 |         className
+47 |       )}
+48 |       {...props}
+49 |     >
+50 |       <ScrollAreaPrimitive.ScrollAreaThumb
+51 |         data-slot="scroll-area-thumb"
+52 |         className="bg-border relative flex-1 rounded-full"
+53 |       />
+54 |     </ScrollAreaPrimitive.ScrollAreaScrollbar>
+55 |   )
+56 | }
+57 | 
+58 | export { ScrollArea, ScrollBar }
+```
+
+components/ui/select.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as SelectPrimitive from "@radix-ui/react-select"
+5 | import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
+6 | 
+7 | import { cn } from "@/lib/utils"
+8 | 
+9 | function Select({
+10 |   ...props
+11 | }: React.ComponentProps<typeof SelectPrimitive.Root>) {
+12 |   return <SelectPrimitive.Root data-slot="select" {...props} />
+13 | }
+14 | 
+15 | function SelectGroup({
+16 |   ...props
+17 | }: React.ComponentProps<typeof SelectPrimitive.Group>) {
+18 |   return <SelectPrimitive.Group data-slot="select-group" {...props} />
+19 | }
+20 | 
+21 | function SelectValue({
+22 |   ...props
+23 | }: React.ComponentProps<typeof SelectPrimitive.Value>) {
+24 |   return <SelectPrimitive.Value data-slot="select-value" {...props} />
+25 | }
+26 | 
+27 | function SelectTrigger({
+28 |   className,
+29 |   children,
+30 |   ...props
+31 | }: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
+32 |   return (
+33 |     <SelectPrimitive.Trigger
+34 |       data-slot="select-trigger"
+35 |       className={cn(
+36 |         "text-muted-foreground data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex h-9 w-fit items-center justify-between gap-2 rounded-md bg-transparent px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none hover:bg-secondary data-[state=open]:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+37 |         className
+38 |       )}
+39 |       {...props}
+40 |     >
+41 |       {children}
+42 |       <SelectPrimitive.Icon asChild>
+43 |         <ChevronDownIcon className="size-4 opacity-50" />
+44 |       </SelectPrimitive.Icon>
+45 |     </SelectPrimitive.Trigger>
+46 |   )
+47 | }
+48 | 
+49 | function SelectContent({
+50 |   className,
+51 |   children,
+52 |   position = "popper",
+53 |   ...props
+54 | }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+55 |   return (
+56 |     <SelectPrimitive.Portal>
+57 |       <SelectPrimitive.Content
+58 |         data-slot="select-content"
+59 |         className={cn(
+60 |           "bg-secondary text-secondary-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
+61 |           position === "popper" &&
+62 |             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+63 |           className
+64 |         )}
+65 |         position={position}
+66 |         {...props}
+67 |       >
+68 |         <SelectScrollUpButton />
+69 |         <SelectPrimitive.Viewport
+70 |           className={cn(
+71 |             "p-1",
+72 |             position === "popper" &&
+73 |               "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
+74 |           )}
+75 |         >
+76 |           {children}
+77 |         </SelectPrimitive.Viewport>
+78 |         <SelectScrollDownButton />
+79 |       </SelectPrimitive.Content>
+80 |     </SelectPrimitive.Portal>
+81 |   )
+82 | }
+83 | 
+84 | function SelectLabel({
+85 |   className,
+86 |   ...props
+87 | }: React.ComponentProps<typeof SelectPrimitive.Label>) {
+88 |   return (
+89 |     <SelectPrimitive.Label
+90 |       data-slot="select-label"
+91 |       className={cn("px-2 py-1.5 text-sm font-medium", className)}
+92 |       {...props}
+93 |     />
+94 |   )
+95 | }
+96 | 
+97 | function SelectItem({
+98 |   className,
+99 |   children,
+100 |   ...props
+101 | }: React.ComponentProps<typeof SelectPrimitive.Item>) {
+102 |   return (
+103 |     <SelectPrimitive.Item
+104 |       data-slot="select-item"
+105 |       className={cn(
+106 |         "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+107 |         className
+108 |       )}
+109 |       {...props}
+110 |     >
+111 |       <span className="absolute right-2 flex size-3.5 items-center justify-center">
+112 |         <SelectPrimitive.ItemIndicator>
+113 |           <CheckIcon className="size-4" />
+114 |         </SelectPrimitive.ItemIndicator>
+115 |       </span>
+116 |       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+117 |     </SelectPrimitive.Item>
+118 |   )
+119 | }
+120 | 
+121 | function SelectSeparator({
+122 |   className,
+123 |   ...props
+124 | }: React.ComponentProps<typeof SelectPrimitive.Separator>) {
+125 |   return (
+126 |     <SelectPrimitive.Separator
+127 |       data-slot="select-separator"
+128 |       className={cn("bg-border pointer-events-none -mx-1 my-1 h-px", className)}
+129 |       {...props}
+130 |     />
+131 |   )
+132 | }
+133 | 
+134 | function SelectScrollUpButton({
+135 |   className,
+136 |   ...props
+137 | }: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
+138 |   return (
+139 |     <SelectPrimitive.ScrollUpButton
+140 |       data-slot="select-scroll-up-button"
+141 |       className={cn(
+142 |         "flex cursor-default items-center justify-center py-1",
+143 |         className
+144 |       )}
+145 |       {...props}
+146 |     >
+147 |       <ChevronUpIcon className="size-4" />
+148 |     </SelectPrimitive.ScrollUpButton>
+149 |   )
+150 | }
+151 | 
+152 | function SelectScrollDownButton({
+153 |   className,
+154 |   ...props
+155 | }: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
+156 |   return (
+157 |     <SelectPrimitive.ScrollDownButton
+158 |       data-slot="select-scroll-down-button"
+159 |       className={cn(
+160 |         "flex cursor-default items-center justify-center py-1",
+161 |         className
+162 |       )}
+163 |       {...props}
+164 |     >
+165 |       <ChevronDownIcon className="size-4" />
+166 |     </SelectPrimitive.ScrollDownButton>
+167 |   )
+168 | }
+169 | 
+170 | export {
+171 |   Select,
+172 |   SelectContent,
+173 |   SelectGroup,
+174 |   SelectItem,
+175 |   SelectLabel,
+176 |   SelectScrollDownButton,
+177 |   SelectScrollUpButton,
+178 |   SelectSeparator,
+179 |   SelectTrigger,
+180 |   SelectValue,
+181 | }
+```
+
+components/ui/separator.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as SeparatorPrimitive from "@radix-ui/react-separator"
+5 | 
+6 | import { cn } from "@/lib/utils"
+7 | 
+8 | function Separator({
+9 |   className,
+10 |   orientation = "horizontal",
+11 |   decorative = true,
+12 |   ...props
+13 | }: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
+14 |   return (
+15 |     <SeparatorPrimitive.Root
+16 |       data-slot="separator-root"
+17 |       decorative={decorative}
+18 |       orientation={orientation}
+19 |       className={cn(
+20 |         "bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
+21 |         className
+22 |       )}
+23 |       {...props}
+24 |     />
+25 |   )
+26 | }
+27 | 
+28 | export { Separator }
+```
+
+components/ui/sheet.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as SheetPrimitive from "@radix-ui/react-dialog"
+5 | import { XIcon } from "lucide-react"
+6 | 
+7 | import { cn } from "@/lib/utils"
+8 | 
+9 | function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
+10 |   return <SheetPrimitive.Root data-slot="sheet" {...props} />
+11 | }
+12 | 
+13 | function SheetTrigger({
+14 |   ...props
+15 | }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
+16 |   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
+17 | }
+18 | 
+19 | function SheetClose({
+20 |   ...props
+21 | }: React.ComponentProps<typeof SheetPrimitive.Close>) {
+22 |   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
+23 | }
+24 | 
+25 | function SheetPortal({
+26 |   ...props
+27 | }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
+28 |   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+29 | }
+30 | 
+31 | function SheetOverlay({
+32 |   className,
+33 |   ...props
+34 | }: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+35 |   return (
+36 |     <SheetPrimitive.Overlay
+37 |       data-slot="sheet-overlay"
+38 |       className={cn(
+39 |         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+40 |         className
+41 |       )}
+42 |       {...props}
+43 |     />
+44 |   )
+45 | }
+46 | 
+47 | function SheetContent({
+48 |   className,
+49 |   children,
+50 |   side = "right",
+51 |   ...props
+52 | }: React.ComponentProps<typeof SheetPrimitive.Content> & {
+53 |   side?: "top" | "right" | "bottom" | "left"
+54 | }) {
+55 |   return (
+56 |     <SheetPortal>
+57 |       <SheetOverlay />
+58 |       <SheetPrimitive.Content
+59 |         data-slot="sheet-content"
+60 |         className={cn(
+61 |           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+62 |           side === "right" &&
+63 |             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
+64 |           side === "left" &&
+65 |             "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
+66 |           side === "top" &&
+67 |             "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
+68 |           side === "bottom" &&
+69 |             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
+70 |           className
+71 |         )}
+72 |         {...props}
+73 |       >
+74 |         {children}
+75 |         <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+76 |           <XIcon className="size-4" />
+77 |           <span className="sr-only">Close</span>
+78 |         </SheetPrimitive.Close>
+79 |       </SheetPrimitive.Content>
+80 |     </SheetPortal>
+81 |   )
+82 | }
+83 | 
+84 | function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+85 |   return (
+86 |     <div
+87 |       data-slot="sheet-header"
+88 |       className={cn("flex flex-col gap-1.5 p-4", className)}
+89 |       {...props}
+90 |     />
+91 |   )
+92 | }
+93 | 
+94 | function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
+95 |   return (
+96 |     <div
+97 |       data-slot="sheet-footer"
+98 |       className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+99 |       {...props}
+100 |     />
+101 |   )
+102 | }
+103 | 
+104 | function SheetTitle({
+105 |   className,
+106 |   ...props
+107 | }: React.ComponentProps<typeof SheetPrimitive.Title>) {
+108 |   return (
+109 |     <SheetPrimitive.Title
+110 |       data-slot="sheet-title"
+111 |       className={cn("text-foreground font-semibold", className)}
+112 |       {...props}
+113 |     />
+114 |   )
+115 | }
+116 | 
+117 | function SheetDescription({
+118 |   className,
+119 |   ...props
+120 | }: React.ComponentProps<typeof SheetPrimitive.Description>) {
+121 |   return (
+122 |     <SheetPrimitive.Description
+123 |       data-slot="sheet-description"
+124 |       className={cn("text-muted-foreground text-sm", className)}
+125 |       {...props}
+126 |     />
+127 |   )
+128 | }
+129 | 
+130 | export {
+131 |   Sheet,
+132 |   SheetTrigger,
+133 |   SheetClose,
+134 |   SheetContent,
+135 |   SheetHeader,
+136 |   SheetFooter,
+137 |   SheetTitle,
+138 |   SheetDescription,
+139 | }
+```
+
+components/ui/sidebar.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import { Slot } from "@radix-ui/react-slot"
+5 | import { VariantProps, cva } from "class-variance-authority"
+6 | import { PanelLeftIcon } from "lucide-react"
+7 | 
+8 | import { useIsMobile } from "@/hooks/use-mobile"
+9 | import { cn } from "@/lib/utils"
+10 | import { Button } from "@/components/ui/button"
+11 | import { Input } from "@/components/ui/input"
+12 | import { Separator } from "@/components/ui/separator"
+13 | import {
+14 |   Sheet,
+15 |   SheetContent,
+16 |   SheetDescription,
+17 |   SheetHeader,
+18 |   SheetTitle,
+19 | } from "@/components/ui/sheet"
+20 | import { Skeleton } from "@/components/ui/skeleton"
+21 | import {
+22 |   Tooltip,
+23 |   TooltipContent,
+24 |   TooltipProvider,
+25 |   TooltipTrigger,
+26 | } from "@/components/ui/tooltip"
+27 | 
+28 | const SIDEBAR_COOKIE_NAME = "sidebar_state"
+29 | const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+30 | const SIDEBAR_WIDTH = "16rem"
+31 | const SIDEBAR_WIDTH_MOBILE = "18rem"
+32 | const SIDEBAR_WIDTH_ICON = "3rem"
+33 | const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+34 | 
+35 | type SidebarContextProps = {
+36 |   state: "expanded" | "collapsed"
+37 |   open: boolean
+38 |   setOpen: (open: boolean) => void
+39 |   openMobile: boolean
+40 |   setOpenMobile: (open: boolean) => void
+41 |   isMobile: boolean
+42 |   toggleSidebar: () => void
+43 | }
+44 | 
+45 | const SidebarContext = React.createContext<SidebarContextProps | null>(null)
+46 | 
+47 | function useSidebar() {
+48 |   const context = React.useContext(SidebarContext)
+49 |   if (!context) {
+50 |     throw new Error("useSidebar must be used within a SidebarProvider.")
+51 |   }
+52 | 
+53 |   return context
+54 | }
+55 | 
+56 | function SidebarProvider({
+57 |   defaultOpen = true,
+58 |   open: openProp,
+59 |   onOpenChange: setOpenProp,
+60 |   className,
+61 |   style,
+62 |   children,
+63 |   ...props
+64 | }: React.ComponentProps<"div"> & {
+65 |   defaultOpen?: boolean
+66 |   open?: boolean
+67 |   onOpenChange?: (open: boolean) => void
+68 | }) {
+69 |   const isMobile = useIsMobile()
+70 |   const [openMobile, setOpenMobile] = React.useState(false)
+71 | 
+72 |   // This is the internal state of the sidebar.
+73 |   // We use openProp and setOpenProp for control from outside the component.
+74 |   const [_open, _setOpen] = React.useState(defaultOpen)
+75 |   const open = openProp ?? _open
+76 |   const setOpen = React.useCallback(
+77 |     (value: boolean | ((value: boolean) => boolean)) => {
+78 |       const openState = typeof value === "function" ? value(open) : value
+79 |       if (setOpenProp) {
+80 |         setOpenProp(openState)
+81 |       } else {
+82 |         _setOpen(openState)
+83 |       }
+84 | 
+85 |       // This sets the cookie to keep the sidebar state.
+86 |       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+87 |     },
+88 |     [setOpenProp, open]
+89 |   )
+90 | 
+91 |   // Helper to toggle the sidebar.
+92 |   const toggleSidebar = React.useCallback(() => {
+93 |     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
+94 |   }, [isMobile, setOpen, setOpenMobile])
+95 | 
+96 |   // Adds a keyboard shortcut to toggle the sidebar.
+97 |   React.useEffect(() => {
+98 |     const handleKeyDown = (event: KeyboardEvent) => {
+99 |       if (
+100 |         event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
+101 |         (event.metaKey || event.ctrlKey)
+102 |       ) {
+103 |         event.preventDefault()
+104 |         toggleSidebar()
+105 |       }
+106 |     }
+107 | 
+108 |     window.addEventListener("keydown", handleKeyDown)
+109 |     return () => window.removeEventListener("keydown", handleKeyDown)
+110 |   }, [toggleSidebar])
+111 | 
+112 |   // We add a state so that we can do data-state="expanded" or "collapsed".
+113 |   // This makes it easier to style the sidebar with Tailwind classes.
+114 |   const state = open ? "expanded" : "collapsed"
+115 | 
+116 |   const contextValue = React.useMemo<SidebarContextProps>(
+117 |     () => ({
+118 |       state,
+119 |       open,
+120 |       setOpen,
+121 |       isMobile,
+122 |       openMobile,
+123 |       setOpenMobile,
+124 |       toggleSidebar,
+125 |     }),
+126 |     [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+127 |   )
+128 | 
+129 |   return (
+130 |     <SidebarContext.Provider value={contextValue}>
+131 |       <TooltipProvider delayDuration={0}>
+132 |         <div
+133 |           data-slot="sidebar-wrapper"
+134 |           style={
+135 |             {
+136 |               "--sidebar-width": SIDEBAR_WIDTH,
+137 |               "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+138 |               ...style,
+139 |             } as React.CSSProperties
+140 |           }
+141 |           className={cn(
+142 |             "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+143 |             className
+144 |           )}
+145 |           {...props}
+146 |         >
+147 |           {children}
+148 |         </div>
+149 |       </TooltipProvider>
+150 |     </SidebarContext.Provider>
+151 |   )
+152 | }
+153 | 
+154 | function Sidebar({
+155 |   side = "left",
+156 |   variant = "sidebar",
+157 |   collapsible = "offcanvas",
+158 |   className,
+159 |   children,
+160 |   ...props
+161 | }: React.ComponentProps<"div"> & {
+162 |   side?: "left" | "right"
+163 |   variant?: "sidebar" | "floating" | "inset"
+164 |   collapsible?: "offcanvas" | "icon" | "none"
+165 | }) {
+166 |   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+167 | 
+168 |   if (collapsible === "none") {
+169 |     return (
+170 |       <div
+171 |         data-slot="sidebar"
+172 |         className={cn(
+173 |           "bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col",
+174 |           className
+175 |         )}
+176 |         {...props}
+177 |       >
+178 |         {children}
+179 |       </div>
+180 |     )
+181 |   }
+182 | 
+183 |   if (isMobile) {
+184 |     return (
+185 |       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+186 |         <SheetContent
+187 |           data-sidebar="sidebar"
+188 |           data-slot="sidebar"
+189 |           data-mobile="true"
+190 |           className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+191 |           style={
+192 |             {
+193 |               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+194 |             } as React.CSSProperties
+195 |           }
+196 |           side={side}
+197 |         >
+198 |           <SheetHeader className="sr-only">
+199 |             <SheetTitle>Sidebar</SheetTitle>
+200 |             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+201 |           </SheetHeader>
+202 |           <div className="flex h-full w-full flex-col">{children}</div>
+203 |         </SheetContent>
+204 |       </Sheet>
+205 |     )
+206 |   }
+207 | 
+208 |   return (
+209 |     <div
+210 |       className="group peer text-sidebar-foreground hidden md:block"
+211 |       data-state={state}
+212 |       data-collapsible={state === "collapsed" ? collapsible : ""}
+213 |       data-variant={variant}
+214 |       data-side={side}
+215 |       data-slot="sidebar"
+216 |     >
+217 |       {/* This is what handles the sidebar gap on desktop */}
+218 |       <div
+219 |         data-slot="sidebar-gap"
+220 |         className={cn(
+221 |           "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+222 |           "group-data-[collapsible=offcanvas]:w-0",
+223 |           "group-data-[side=right]:rotate-180",
+224 |           variant === "floating" || variant === "inset"
+225 |             ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+226 |             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+227 |         )}
+228 |       />
+229 |       <div
+230 |         data-slot="sidebar-container"
+231 |         className={cn(
+232 |           "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+233 |           side === "left"
+234 |             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
+235 |             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+236 |           // Adjust the padding for floating and inset variants.
+237 |           variant === "floating" || variant === "inset"
+238 |             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+239 |             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+240 |           className
+241 |         )}
+242 |         {...props}
+243 |       >
+244 |         <div
+245 |           data-sidebar="sidebar"
+246 |           data-slot="sidebar-inner"
+247 |           className="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+248 |         >
+249 |           {children}
+250 |         </div>
+251 |       </div>
+252 |     </div>
+253 |   )
+254 | }
+255 | 
+256 | function SidebarTrigger({
+257 |   className,
+258 |   onClick,
+259 |   ...props
+260 | }: React.ComponentProps<typeof Button>) {
+261 |   const { toggleSidebar } = useSidebar()
+262 | 
+263 |   return (
+264 |     <Button
+265 |       data-sidebar="trigger"
+266 |       data-slot="sidebar-trigger"
+267 |       variant="ghost"
+268 |       size="icon"
+269 |       className={cn("size-7", className)}
+270 |       onClick={(event) => {
+271 |         onClick?.(event)
+272 |         toggleSidebar()
+273 |       }}
+274 |       {...props}
+275 |     >
+276 |       <PanelLeftIcon />
+277 |       <span className="sr-only">Toggle Sidebar</span>
+278 |     </Button>
+279 |   )
+280 | }
+281 | 
+282 | function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
+283 |   const { toggleSidebar } = useSidebar()
+284 | 
+285 |   return (
+286 |     <button
+287 |       data-sidebar="rail"
+288 |       data-slot="sidebar-rail"
+289 |       aria-label="Toggle Sidebar"
+290 |       tabIndex={-1}
+291 |       onClick={toggleSidebar}
+292 |       title="Toggle Sidebar"
+293 |       className={cn(
+294 |         "hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex",
+295 |         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
+296 |         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
+297 |         "hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full",
+298 |         "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
+299 |         "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
+300 |         className
+301 |       )}
+302 |       {...props}
+303 |     />
+304 |   )
+305 | }
+306 | 
+307 | function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+308 |   return (
+309 |     <main
+310 |       data-slot="sidebar-inset"
+311 |       className={cn(
+312 |         "bg-background relative flex w-full flex-1 flex-col",
+313 |         "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+314 |         className
+315 |       )}
+316 |       {...props}
+317 |     />
+318 |   )
+319 | }
+320 | 
+321 | function SidebarInput({
+322 |   className,
+323 |   ...props
+324 | }: React.ComponentProps<typeof Input>) {
+325 |   return (
+326 |     <Input
+327 |       data-slot="sidebar-input"
+328 |       data-sidebar="input"
+329 |       className={cn("bg-background h-8 w-full shadow-none", className)}
+330 |       {...props}
+331 |     />
+332 |   )
+333 | }
+334 | 
+335 | function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
+336 |   return (
+337 |     <div
+338 |       data-slot="sidebar-header"
+339 |       data-sidebar="header"
+340 |       className={cn("flex flex-col gap-2 p-2", className)}
+341 |       {...props}
+342 |     />
+343 |   )
+344 | }
+345 | 
+346 | function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
+347 |   return (
+348 |     <div
+349 |       data-slot="sidebar-footer"
+350 |       data-sidebar="footer"
+351 |       className={cn("flex flex-col gap-2 p-2", className)}
+352 |       {...props}
+353 |     />
+354 |   )
+355 | }
+356 | 
+357 | function SidebarSeparator({
+358 |   className,
+359 |   ...props
+360 | }: React.ComponentProps<typeof Separator>) {
+361 |   return (
+362 |     <Separator
+363 |       data-slot="sidebar-separator"
+364 |       data-sidebar="separator"
+365 |       className={cn("bg-sidebar-border mx-2 w-auto", className)}
+366 |       {...props}
+367 |     />
+368 |   )
+369 | }
+370 | 
+371 | function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
+372 |   return (
+373 |     <div
+374 |       data-slot="sidebar-content"
+375 |       data-sidebar="content"
+376 |       className={cn(
+377 |         "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+378 |         className
+379 |       )}
+380 |       {...props}
+381 |     />
+382 |   )
+383 | }
+384 | 
+385 | function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
+386 |   return (
+387 |     <div
+388 |       data-slot="sidebar-group"
+389 |       data-sidebar="group"
+390 |       className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+391 |       {...props}
+392 |     />
+393 |   )
+394 | }
+395 | 
+396 | function SidebarGroupLabel({
+397 |   className,
+398 |   asChild = false,
+399 |   ...props
+400 | }: React.ComponentProps<"div"> & { asChild?: boolean }) {
+401 |   const Comp = asChild ? Slot : "div"
+402 | 
+403 |   return (
+404 |     <Comp
+405 |       data-slot="sidebar-group-label"
+406 |       data-sidebar="group-label"
+407 |       className={cn(
+408 |         "text-sidebar-foreground/70 ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+409 |         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+410 |         className
+411 |       )}
+412 |       {...props}
+413 |     />
+414 |   )
+415 | }
+416 | 
+417 | function SidebarGroupAction({
+418 |   className,
+419 |   asChild = false,
+420 |   ...props
+421 | }: React.ComponentProps<"button"> & { asChild?: boolean }) {
+422 |   const Comp = asChild ? Slot : "button"
+423 | 
+424 |   return (
+425 |     <Comp
+426 |       data-slot="sidebar-group-action"
+427 |       data-sidebar="group-action"
+428 |       className={cn(
+429 |         "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+430 |         // Increases the hit area of the button on mobile.
+431 |         "after:absolute after:-inset-2 md:after:hidden",
+432 |         "group-data-[collapsible=icon]:hidden",
+433 |         className
+434 |       )}
+435 |       {...props}
+436 |     />
+437 |   )
+438 | }
+439 | 
+440 | function SidebarGroupContent({
+441 |   className,
+442 |   ...props
+443 | }: React.ComponentProps<"div">) {
+444 |   return (
+445 |     <div
+446 |       data-slot="sidebar-group-content"
+447 |       data-sidebar="group-content"
+448 |       className={cn("w-full text-sm", className)}
+449 |       {...props}
+450 |     />
+451 |   )
+452 | }
+453 | 
+454 | function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
+455 |   return (
+456 |     <ul
+457 |       data-slot="sidebar-menu"
+458 |       data-sidebar="menu"
+459 |       className={cn("flex w-full min-w-0 flex-col gap-1", className)}
+460 |       {...props}
+461 |     />
+462 |   )
+463 | }
+464 | 
+465 | function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
+466 |   return (
+467 |     <li
+468 |       data-slot="sidebar-menu-item"
+469 |       data-sidebar="menu-item"
+470 |       className={cn("group/menu-item relative", className)}
+471 |       {...props}
+472 |     />
+473 |   )
+474 | }
+475 | 
+476 | const sidebarMenuButtonVariants = cva(
+477 |   "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+478 |   {
+479 |     variants: {
+480 |       variant: {
+481 |         default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+482 |         outline:
+483 |           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+484 |       },
+485 |       size: {
+486 |         default: "h-8 text-sm",
+487 |         sm: "h-7 text-xs",
+488 |         lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
+489 |       },
+490 |     },
+491 |     defaultVariants: {
+492 |       variant: "default",
+493 |       size: "default",
+494 |     },
+495 |   }
+496 | )
+497 | 
+498 | function SidebarMenuButton({
+499 |   asChild = false,
+500 |   isActive = false,
+501 |   variant = "default",
+502 |   size = "default",
+503 |   tooltip,
+504 |   className,
+505 |   ...props
+506 | }: React.ComponentProps<"button"> & {
+507 |   asChild?: boolean
+508 |   isActive?: boolean
+509 |   tooltip?: string | React.ComponentProps<typeof TooltipContent>
+510 | } & VariantProps<typeof sidebarMenuButtonVariants>) {
+511 |   const Comp = asChild ? Slot : "button"
+512 |   const { isMobile, state } = useSidebar()
+513 | 
+514 |   const button = (
+515 |     <Comp
+516 |       data-slot="sidebar-menu-button"
+517 |       data-sidebar="menu-button"
+518 |       data-size={size}
+519 |       data-active={isActive}
+520 |       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+521 |       {...props}
+522 |     />
+523 |   )
+524 | 
+525 |   if (!tooltip) {
+526 |     return button
+527 |   }
+528 | 
+529 |   if (typeof tooltip === "string") {
+530 |     tooltip = {
+531 |       children: tooltip,
+532 |     }
+533 |   }
+534 | 
+535 |   return (
+536 |     <Tooltip>
+537 |       <TooltipTrigger asChild>{button}</TooltipTrigger>
+538 |       <TooltipContent
+539 |         side="right"
+540 |         align="center"
+541 |         hidden={state !== "collapsed" || isMobile}
+542 |         {...tooltip}
+543 |       />
+544 |     </Tooltip>
+545 |   )
+546 | }
+547 | 
+548 | function SidebarMenuAction({
+549 |   className,
+550 |   asChild = false,
+551 |   showOnHover = false,
+552 |   ...props
+553 | }: React.ComponentProps<"button"> & {
+554 |   asChild?: boolean
+555 |   showOnHover?: boolean
+556 | }) {
+557 |   const Comp = asChild ? Slot : "button"
+558 | 
+559 |   return (
+560 |     <Comp
+561 |       data-slot="sidebar-menu-action"
+562 |       data-sidebar="menu-action"
+563 |       className={cn(
+564 |         "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+565 |         // Increases the hit area of the button on mobile.
+566 |         "after:absolute after:-inset-2 md:after:hidden",
+567 |         "peer-data-[size=sm]/menu-button:top-1",
+568 |         "peer-data-[size=default]/menu-button:top-1.5",
+569 |         "peer-data-[size=lg]/menu-button:top-2.5",
+570 |         "group-data-[collapsible=icon]:hidden",
+571 |         showOnHover &&
+572 |           "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+573 |         className
+574 |       )}
+575 |       {...props}
+576 |     />
+577 |   )
+578 | }
+579 | 
+580 | function SidebarMenuBadge({
+581 |   className,
+582 |   ...props
+583 | }: React.ComponentProps<"div">) {
+584 |   return (
+585 |     <div
+586 |       data-slot="sidebar-menu-badge"
+587 |       data-sidebar="menu-badge"
+588 |       className={cn(
+589 |         "text-sidebar-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none",
+590 |         "peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
+591 |         "peer-data-[size=sm]/menu-button:top-1",
+592 |         "peer-data-[size=default]/menu-button:top-1.5",
+593 |         "peer-data-[size=lg]/menu-button:top-2.5",
+594 |         "group-data-[collapsible=icon]:hidden",
+595 |         className
+596 |       )}
+597 |       {...props}
+598 |     />
+599 |   )
+600 | }
+601 | 
+602 | function SidebarMenuSkeleton({
+603 |   className,
+604 |   showIcon = false,
+605 |   ...props
+606 | }: React.ComponentProps<"div"> & {
+607 |   showIcon?: boolean
+608 | }) {
+609 |   // Random width between 50 to 90%.
+610 |   const width = React.useMemo(() => {
+611 |     return `${Math.floor(Math.random() * 40) + 50}%`
+612 |   }, [])
+613 | 
+614 |   return (
+615 |     <div
+616 |       data-slot="sidebar-menu-skeleton"
+617 |       data-sidebar="menu-skeleton"
+618 |       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
+619 |       {...props}
+620 |     >
+621 |       {showIcon && (
+622 |         <Skeleton
+623 |           className="size-4 rounded-md"
+624 |           data-sidebar="menu-skeleton-icon"
+625 |         />
+626 |       )}
+627 |       <Skeleton
+628 |         className="h-4 max-w-(--skeleton-width) flex-1"
+629 |         data-sidebar="menu-skeleton-text"
+630 |         style={
+631 |           {
+632 |             "--skeleton-width": width,
+633 |           } as React.CSSProperties
+634 |         }
+635 |       />
+636 |     </div>
+637 |   )
+638 | }
+639 | 
+640 | function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
+641 |   return (
+642 |     <ul
+643 |       data-slot="sidebar-menu-sub"
+644 |       data-sidebar="menu-sub"
+645 |       className={cn(
+646 |         "border-sidebar-border mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l px-2.5 py-0.5",
+647 |         "group-data-[collapsible=icon]:hidden",
+648 |         className
+649 |       )}
+650 |       {...props}
+651 |     />
+652 |   )
+653 | }
+654 | 
+655 | function SidebarMenuSubItem({
+656 |   className,
+657 |   ...props
+658 | }: React.ComponentProps<"li">) {
+659 |   return (
+660 |     <li
+661 |       data-slot="sidebar-menu-sub-item"
+662 |       data-sidebar="menu-sub-item"
+663 |       className={cn("group/menu-sub-item relative", className)}
+664 |       {...props}
+665 |     />
+666 |   )
+667 | }
+668 | 
+669 | function SidebarMenuSubButton({
+670 |   asChild = false,
+671 |   size = "md",
+672 |   isActive = false,
+673 |   className,
+674 |   ...props
+675 | }: React.ComponentProps<"a"> & {
+676 |   asChild?: boolean
+677 |   size?: "sm" | "md"
+678 |   isActive?: boolean
+679 | }) {
+680 |   const Comp = asChild ? Slot : "a"
+681 | 
+682 |   return (
+683 |     <Comp
+684 |       data-slot="sidebar-menu-sub-button"
+685 |       data-sidebar="menu-sub-button"
+686 |       data-size={size}
+687 |       data-active={isActive}
+688 |       className={cn(
+689 |         "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+690 |         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
+691 |         size === "sm" && "text-xs",
+692 |         size === "md" && "text-sm",
+693 |         "group-data-[collapsible=icon]:hidden",
+694 |         className
+695 |       )}
+696 |       {...props}
+697 |     />
+698 |   )
+699 | }
+700 | 
+701 | export {
+702 |   Sidebar,
+703 |   SidebarContent,
+704 |   SidebarFooter,
+705 |   SidebarGroup,
+706 |   SidebarGroupAction,
+707 |   SidebarGroupContent,
+708 |   SidebarGroupLabel,
+709 |   SidebarHeader,
+710 |   SidebarInput,
+711 |   SidebarInset,
+712 |   SidebarMenu,
+713 |   SidebarMenuAction,
+714 |   SidebarMenuBadge,
+715 |   SidebarMenuButton,
+716 |   SidebarMenuItem,
+717 |   SidebarMenuSkeleton,
+718 |   SidebarMenuSub,
+719 |   SidebarMenuSubButton,
+720 |   SidebarMenuSubItem,
+721 |   SidebarProvider,
+722 |   SidebarRail,
+723 |   SidebarSeparator,
+724 |   SidebarTrigger,
+725 |   useSidebar,
+726 | }
+```
+
+components/ui/skeleton.tsx
+```
+1 | import { cn } from "@/lib/utils"
+2 | 
+3 | function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+4 |   return (
+5 |     <div
+6 |       data-slot="skeleton"
+7 |       className={cn("bg-accent animate-pulse rounded-md", className)}
+8 |       {...props}
+9 |     />
+10 |   )
+11 | }
+12 | 
+13 | export { Skeleton }
+```
+
+components/ui/sonner.tsx
+```
+1 | "use client"
+2 | 
+3 | import { useTheme } from "next-themes"
+4 | import { Toaster as Sonner, ToasterProps } from "sonner"
+5 | 
+6 | const Toaster = ({ ...props }: ToasterProps) => {
+7 |   const { theme = "system" } = useTheme()
+8 | 
+9 |   return (
+10 |     <Sonner
+11 |       theme={theme as ToasterProps["theme"]}
+12 |       className="toaster group"
+13 |       style={
+14 |         {
+15 |           "--normal-bg": "var(--popover)",
+16 |           "--normal-text": "var(--popover-foreground)",
+17 |           "--normal-border": "var(--border)",
+18 |         } as React.CSSProperties
+19 |       }
+20 |       {...props}
+21 |     />
+22 |   )
+23 | }
+24 | 
+25 | export { Toaster }
+```
+
+components/ui/switch.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as SwitchPrimitive from "@radix-ui/react-switch"
+5 | 
+6 | import { cn } from "@/lib/utils"
+7 | 
+8 | function Switch({
+9 |   className,
+10 |   ...props
+11 | }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+12 |   return (
+13 |     <SwitchPrimitive.Root
+14 |       data-slot="switch"
+15 |       className={cn(
+16 |         "peer data-[state=checked]:bg-primary data-[state=unchecked]:bg-input focus-visible:border-ring focus-visible:ring-ring/50 dark:data-[state=unchecked]:bg-input/80 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+17 |         className
+18 |       )}
+19 |       {...props}
+20 |     >
+21 |       <SwitchPrimitive.Thumb
+22 |         data-slot="switch-thumb"
+23 |         className={cn(
+24 |           "bg-background dark:data-[state=unchecked]:bg-foreground dark:data-[state=checked]:bg-primary-foreground pointer-events-none block size-4 rounded-full ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0"
+25 |         )}
+26 |       />
+27 |     </SwitchPrimitive.Root>
+28 |   )
+29 | }
+30 | 
+31 | export { Switch }
+```
+
+components/ui/text-morph.tsx
+```
+1 | 'use client';
+2 | import { cn } from '@/lib/utils';
+3 | import { AnimatePresence, motion, Transition, Variants } from 'motion/react';
+4 | import { useMemo, useId } from 'react';
+5 | 
+6 | export type TextMorphProps = {
+7 |   children: string;
+8 |   as?: React.ElementType;
+9 |   className?: string;
+10 |   style?: React.CSSProperties;
+11 |   variants?: Variants;
+12 |   transition?: Transition;
+13 | };
+14 | 
+15 | export function TextMorph({
+16 |   children,
+17 |   as: Component = 'p',
+18 |   className,
+19 |   style,
+20 |   variants,
+21 |   transition,
+22 | }: TextMorphProps) {
+23 |   const uniqueId = useId();
+24 | 
+25 |   const characters = useMemo(() => {
+26 |     const charCounts: Record<string, number> = {};
+27 | 
+28 |     return children.split('').map((char) => {
+29 |       const lowerChar = char.toLowerCase();
+30 |       charCounts[lowerChar] = (charCounts[lowerChar] || 0) + 1;
+31 | 
+32 |       return {
+33 |         id: `${uniqueId}-${lowerChar}${charCounts[lowerChar]}`,
+34 |         label: char === ' ' ? '\u00A0' : char,
+35 |       };
+36 |     });
+37 |   }, [children, uniqueId]);
+38 | 
+39 |   const defaultVariants: Variants = {
+40 |     initial: { opacity: 0 },
+41 |     animate: { opacity: 1 },
+42 |     exit: { opacity: 0 },
+43 |   };
+44 | 
+45 |   const defaultTransition: Transition = {
+46 |     type: 'spring',
+47 |     stiffness: 280,
+48 |     damping: 18,
+49 |     mass: 0.3,
+50 |   };
+51 | 
+52 |   return (
+53 |     <Component className={cn(className)} aria-label={children} style={style}>
+54 |       <AnimatePresence mode='popLayout' initial={false}>
+55 |         {characters.map((character) => (
+56 |           <motion.span
+57 |             key={character.id}
+58 |             layoutId={character.id}
+59 |             className='inline-block'
+60 |             aria-hidden='true'
+61 |             initial='initial'
+62 |             animate='animate'
+63 |             exit='exit'
+64 |             variants={variants || defaultVariants}
+65 |             transition={transition || defaultTransition}
+66 |           >
+67 |             {character.label}
+68 |           </motion.span>
+69 |         ))}
+70 |       </AnimatePresence>
+71 |     </Component>
+72 |   );
+73 | }
+```
+
+components/ui/textarea.tsx
+```
+1 | import * as React from "react"
+2 | 
+3 | import { cn } from "@/lib/utils"
+4 | 
+5 | function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+6 |   return (
+7 |     <textarea
+8 |       data-slot="textarea"
+9 |       className={cn(
+10 |         "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+11 |         className
+12 |       )}
+13 |       {...props}
+14 |     />
+15 |   )
+16 | }
+17 | 
+18 | export { Textarea }
+```
+
+components/ui/tooltip.tsx
+```
+1 | "use client"
+2 | 
+3 | import * as React from "react"
+4 | import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+5 | 
+6 | import { cn } from "@/lib/utils"
+7 | 
+8 | function TooltipProvider({
+9 |   delayDuration = 0,
+10 |   ...props
+11 | }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+12 |   return (
+13 |     <TooltipPrimitive.Provider
+14 |       data-slot="tooltip-provider"
+15 |       delayDuration={delayDuration}
+16 |       {...props}
+17 |     />
+18 |   )
+19 | }
+20 | 
+21 | function Tooltip({
+22 |   ...props
+23 | }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+24 |   return (
+25 |     <TooltipProvider>
+26 |       <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+27 |     </TooltipProvider>
+28 |   )
+29 | }
+30 | 
+31 | function TooltipTrigger({
+32 |   ...props
+33 | }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
+34 |   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+35 | }
+36 | 
+37 | function TooltipContent({
+38 |   className,
+39 |   sideOffset = 0,
+40 |   children,
+41 |   ...props
+42 | }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+43 |   return (
+44 |     <TooltipPrimitive.Portal>
+45 |       <TooltipPrimitive.Content
+46 |         data-slot="tooltip-content"
+47 |         sideOffset={sideOffset}
+48 |         className={cn(
+49 |           "bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance",
+50 |           className
+51 |         )}
+52 |         {...props}
+53 |       >
+54 |         {children}
+55 |         <TooltipPrimitive.Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+56 |       </TooltipPrimitive.Content>
+57 |     </TooltipPrimitive.Portal>
+58 |   )
+59 | }
+60 | 
+61 | export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+```
+
+drizzle/migrations/0003_add_web_search.sql
+```
+1 | -- Add web search columns to messages table
+2 | ALTER TABLE messages
+3 | ADD COLUMN has_web_search boolean DEFAULT false,
+4 | ADD COLUMN web_search_context_size text DEFAULT 'medium';
+5 | 
+6 | -- Update existing messages to have default values
+7 | UPDATE messages 
+8 | SET has_web_search = false,
+9 |     web_search_context_size = 'medium'
+10 | WHERE has_web_search IS NULL; 
 ```
 
 drizzle/meta/0001_snapshot.json
@@ -18631,250 +22572,6 @@ drizzle/meta/_journal.json
 153 | }
 ```
 
-app/sitemap.xml/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server'
-2 | 
-3 | export async function GET(request: NextRequest) {
-4 |     const host = request.headers.get('host')
-5 |     const protocol = request.headers.get('x-forwarded-proto') || 'https'
-6 |     const baseUrl = `${protocol}://${host}`
-7 | 
-8 |     // Only generate sitemap for production
-9 |     const isProduction = host?.includes('chatlima.com')
-10 | 
-11 |     if (!isProduction) {
-12 |         return new NextResponse('Sitemap not available in development', {
-13 |             status: 404,
-14 |             headers: { 'Content-Type': 'text/plain' }
-15 |         })
-16 |     }
-17 | 
-18 |     const currentDate = new Date().toISOString()
-19 | 
-20 |     // Define static pages to include in sitemap
-21 |     const staticPages = [
-22 |         {
-23 |             url: '/',
-24 |             lastmod: currentDate,
-25 |             changefreq: 'daily',
-26 |             priority: '1.0'
-27 |         }
-28 |         // Future pages can be added here:
-29 |         // {
-30 |         //     url: '/about',
-31 |         //     lastmod: currentDate,
-32 |         //     changefreq: 'monthly',
-33 |         //     priority: '0.8'
-34 |         // },
-35 |         // {
-36 |         //     url: '/pricing',
-37 |         //     lastmod: currentDate,
-38 |         //     changefreq: 'weekly',
-39 |         //     priority: '0.9'
-40 |         // }
-41 |     ]
-42 | 
-43 |     const urlEntries = staticPages.map(page => `    <url>
-44 |         <loc>${baseUrl}${page.url}</loc>
-45 |         <lastmod>${page.lastmod}</lastmod>
-46 |         <changefreq>${page.changefreq}</changefreq>
-47 |         <priority>${page.priority}</priority>
-48 |     </url>`).join('\n')
-49 | 
-50 |     const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
-51 | <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-52 | ${urlEntries}
-53 | </urlset>`
-54 | 
-55 |     return new NextResponse(sitemapXml, {
-56 |         headers: {
-57 |             'Content-Type': 'application/xml',
-58 |             'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
-59 |         },
-60 |     })
-61 | } 
-```
-
-components/auth/AnonymousAuth.tsx
-```
-1 | "use client";
-2 | 
-3 | import { useEffect, useState } from 'react';
-4 | import { signIn, useSession } from '@/lib/auth-client';
-5 | 
-6 | export function AnonymousAuth() {
-7 |   const { data: session, isPending } = useSession();
-8 |   const [error, setError] = useState<string | null>(null);
-9 | 
-10 |   useEffect(() => {
-11 |     // Only try to sign in anonymously if:
-12 |     // 1. We're not already signing in
-13 |     // 2. Session is not pending (loading)
-14 |     // 3. There's no active session
-15 |     if (!isPending && !session) {
-16 |       const attemptSignIn = async () => {
-17 |         console.log("Attempting anonymous sign-in (simplified logic)...");
-18 |         try {
-19 |           // Try the standard way first
-20 |           const { data, error } = await signIn.anonymous();
-21 |           console.log("Standard anonymous sign-in initiated/checked.");
-22 |           if (error) {
-23 |             setError("Failed to sign in anonymously. Please try again.");
-24 |           } else if (data?.user) {
-25 |             // @ts-expect-error TODO: Fix this type error
-26 |             if (window.rudderanalytics) {
-27 |               // @ts-expect-error TODO: Fix this type error
-28 |               window.rudderanalytics.identify(data.user.id, { // Use optional chaining
-29 |                 isAnonymous: true,
-30 |               });
-31 |             }
-32 |           }
-33 |         } catch (error: any) {
-34 |           // Ignore the specific error for already being signed in anonymously
-35 |           if (error?.message?.includes('ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN') || error?.message?.includes('already signed in anonymously')) {
-36 |             console.log("Already signed in anonymously or attempt blocked by backend.");
-37 |           } else {
-38 |             console.error("Standard anonymous sign-in failed:", error);
-39 |             // No fallback - rely solely on the standard method
-40 |           }
-41 |         }
-42 |       };
-43 | 
-44 |       attemptSignIn();
-45 |     }
-46 |   }, [session, isPending]);
-47 | 
-48 |   // This component doesn't render anything - it just handles the authentication logic
-49 |   return null;
-50 | } 
-```
-
-components/auth/SignInButton.tsx
-```
-1 | "use client";
-2 | 
-3 | import { signIn } from "@/lib/auth-client";
-4 | import { Button } from "@/components/ui/button";
-5 | import { LogIn } from "lucide-react";
-6 | import { cn } from "@/lib/utils";
-7 | 
-8 | interface SignInButtonProps {
-9 |   isCollapsed?: boolean;
-10 | }
-11 | 
-12 | export function SignInButton({ isCollapsed }: SignInButtonProps) {
-13 |   const handleSignIn = async () => {
-14 |     try {
-15 |       await signIn.social({
-16 |         provider: "google",
-17 |       });
-18 |     } catch (error) {
-19 |       console.error("Sign-in error:", error);
-20 |     }
-21 |   };
-22 | 
-23 |   return (
-24 |     <Button 
-25 |       onClick={handleSignIn}
-26 |       className={cn(
-27 |         "bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center justify-center gap-2 transition-colors duration-200 ease-in-out shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50",
-28 |         isCollapsed ? "w-auto h-auto p-2 aspect-square rounded-lg" : "w-full py-2 px-4 rounded-lg"
-29 |       )}
-30 |       title={isCollapsed ? "Sign in with Google" : undefined}
-31 |     >
-32 |       <LogIn className={cn("shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
-33 |       {!isCollapsed && <span>Sign in with Google</span>}
-34 |     </Button>
-35 |   );
-36 | } 
-```
-
-components/auth/UserAccountMenu.tsx
-```
-1 | "use client";
-2 | 
-3 | import { signOut, useSession } from "@/lib/auth-client";
-4 | import { Button } from "@/components/ui/button";
-5 | import { 
-6 |   DropdownMenu, 
-7 |   DropdownMenuContent, 
-8 |   DropdownMenuItem, 
-9 |   DropdownMenuLabel, 
-10 |   DropdownMenuSeparator, 
-11 |   DropdownMenuTrigger 
-12 | } from "@/components/ui/dropdown-menu";
-13 | import { LogOut, User, Settings, LayoutDashboard } from "lucide-react";
-14 | import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-15 | import { CheckoutButton } from "@/components/checkout-button";
-16 | 
-17 | export function UserAccountMenu() {
-18 |   const { data: session } = useSession();
-19 | 
-20 |   if (!session?.user) return null;
-21 | 
-22 |   const handleSignOut = async () => {
-23 |     try {
-24 |       await signOut({});
-25 |     } catch (error) {
-26 |       console.error("Sign-out error:", error);
-27 |     }
-28 |   };
-29 | 
-30 |   const userInitials = session.user.name
-31 |     ? session.user.name
-32 |         .split(' ')
-33 |         .map(name => name[0])
-34 |         .join('')
-35 |         .toUpperCase()
-36 |     : session.user.email?.[0]?.toUpperCase() || 'U';
-37 | 
-38 |   return (
-39 |     <DropdownMenu>
-40 |       <DropdownMenuTrigger asChild>
-41 |         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-42 |           <Avatar className="h-8 w-8">
-43 |             <AvatarImage 
-44 |               src={session.user.image || ''} 
-45 |               alt={session.user.name || 'User'} 
-46 |             />
-47 |             <AvatarFallback>{userInitials}</AvatarFallback>
-48 |           </Avatar>
-49 |         </Button>
-50 |       </DropdownMenuTrigger>
-51 |       <DropdownMenuContent className="w-56" align="end" forceMount>
-52 |         <DropdownMenuLabel className="font-normal">
-53 |           <div className="flex flex-col space-y-1">
-54 |             <p className="text-sm font-medium leading-none">{session.user.name}</p>
-55 |             <p className="text-xs leading-none text-muted-foreground">
-56 |               {session.user.email}
-57 |             </p>
-58 |           </div>
-59 |         </DropdownMenuLabel>
-60 |         <DropdownMenuSeparator />
-61 |         
-62 |         <div className="p-2">
-63 |           <CheckoutButton />
-64 |         </div>
-65 |         
-66 |         <DropdownMenuSeparator />
-67 |         <DropdownMenuItem asChild>
-68 |           <a href="/api/portal" target="_blank" rel="noopener noreferrer">
-69 |             <LayoutDashboard className="mr-2 h-4 w-4" />
-70 |             <span>Customer Portal</span>
-71 |           </a>
-72 |         </DropdownMenuItem>
-73 |         <DropdownMenuSeparator />
-74 |         <DropdownMenuItem onClick={handleSignOut}>
-75 |           <LogOut className="mr-2 h-4 w-4" />
-76 |           <span>Log out</span>
-77 |         </DropdownMenuItem>
-78 |       </DropdownMenuContent>
-79 |     </DropdownMenu>
-80 |   );
-81 | } 
-```
-
 lib/context/mcp-context.tsx
 ```
 1 | "use client";
@@ -18892,91 +22589,97 @@ lib/context/mcp-context.tsx
 13 | export interface MCPServer {
 14 |   id: string;
 15 |   name: string;
-16 |   url: string;
-17 |   type: 'sse' | 'stdio' | 'streamable-http';
-18 |   command?: string;
-19 |   args?: string[];
-20 |   env?: KeyValuePair[];
-21 |   headers?: KeyValuePair[];
-22 |   description?: string;
-23 | }
-24 | 
-25 | // Type for processed MCP server config for API
-26 | export interface MCPServerApi {
-27 |   type: 'sse' | 'stdio' | 'streamable-http';
-28 |   url: string;
-29 |   command?: string;
-30 |   args?: string[];
-31 |   env?: KeyValuePair[];
-32 |   headers?: KeyValuePair[];
-33 | }
-34 | 
-35 | interface MCPContextType {
-36 |   mcpServers: MCPServer[];
-37 |   setMcpServers: (servers: MCPServer[]) => void;
-38 |   selectedMcpServers: string[];
-39 |   setSelectedMcpServers: (serverIds: string[]) => void;
-40 |   mcpServersForApi: MCPServerApi[];
-41 | }
-42 | 
-43 | const MCPContext = createContext<MCPContextType | undefined>(undefined);
-44 | 
-45 | export function MCPProvider(props: { children: React.ReactNode }) {
-46 |   const { children } = props;
-47 |   const [mcpServers, setMcpServers] = useLocalStorage<MCPServer[]>(
-48 |     STORAGE_KEYS.MCP_SERVERS, 
-49 |     []
-50 |   );
-51 |   const [selectedMcpServers, setSelectedMcpServers] = useLocalStorage<string[]>(
-52 |     STORAGE_KEYS.SELECTED_MCP_SERVERS, 
+16 |   title?: string;
+17 |   url: string;
+18 |   type: 'sse' | 'stdio' | 'streamable-http';
+19 |   command?: string;
+20 |   args?: string[];
+21 |   env?: KeyValuePair[];
+22 |   headers?: KeyValuePair[];
+23 |   description?: string;
+24 |   _meta?: Record<string, any>;
+25 | }
+26 | 
+27 | // Type for processed MCP server config for API
+28 | export interface MCPServerApi {
+29 |   type: 'sse' | 'stdio' | 'streamable-http';
+30 |   url: string;
+31 |   command?: string;
+32 |   args?: string[];
+33 |   env?: KeyValuePair[];
+34 |   headers?: KeyValuePair[];
+35 |   title?: string;
+36 |   _meta?: Record<string, any>;
+37 | }
+38 | 
+39 | interface MCPContextType {
+40 |   mcpServers: MCPServer[];
+41 |   setMcpServers: (servers: MCPServer[]) => void;
+42 |   selectedMcpServers: string[];
+43 |   setSelectedMcpServers: (serverIds: string[]) => void;
+44 |   mcpServersForApi: MCPServerApi[];
+45 | }
+46 | 
+47 | const MCPContext = createContext<MCPContextType | undefined>(undefined);
+48 | 
+49 | export function MCPProvider(props: { children: React.ReactNode }) {
+50 |   const { children } = props;
+51 |   const [mcpServers, setMcpServers] = useLocalStorage<MCPServer[]>(
+52 |     STORAGE_KEYS.MCP_SERVERS, 
 53 |     []
 54 |   );
-55 |   const [mcpServersForApi, setMcpServersForApi] = useState<MCPServerApi[]>([]);
-56 | 
-57 |   // Process MCP servers for API consumption whenever server data changes
-58 |   useEffect(() => {
-59 |     if (!selectedMcpServers.length) {
-60 |       setMcpServersForApi([]);
-61 |       return;
-62 |     }
-63 |     
-64 |     const processedServers: MCPServerApi[] = selectedMcpServers
-65 |       .map(id => mcpServers.find(server => server.id === id))
-66 |       .filter((server): server is MCPServer => Boolean(server))
-67 |       .map(server => ({
-68 |         type: server.type,
-69 |         url: server.url,
-70 |         command: server.command,
-71 |         args: server.args,
-72 |         env: server.env,
-73 |         headers: server.headers
-74 |       }));
-75 |     
-76 |     setMcpServersForApi(processedServers);
-77 |   }, [mcpServers, selectedMcpServers]);
-78 | 
-79 |   return (
-80 |     <MCPContext.Provider 
-81 |       value={{ 
-82 |         mcpServers, 
-83 |         setMcpServers, 
-84 |         selectedMcpServers, 
-85 |         setSelectedMcpServers,
-86 |         mcpServersForApi 
-87 |       }}
-88 |     >
-89 |       {children}
-90 |     </MCPContext.Provider>
-91 |   );
-92 | }
-93 | 
-94 | export function useMCP() {
-95 |   const context = useContext(MCPContext);
-96 |   if (context === undefined) {
-97 |     throw new Error("useMCP must be used within an MCPProvider");
-98 |   }
-99 |   return context;
-100 | } 
+55 |   const [selectedMcpServers, setSelectedMcpServers] = useLocalStorage<string[]>(
+56 |     STORAGE_KEYS.SELECTED_MCP_SERVERS, 
+57 |     []
+58 |   );
+59 |   const [mcpServersForApi, setMcpServersForApi] = useState<MCPServerApi[]>([]);
+60 | 
+61 |   // Process MCP servers for API consumption whenever server data changes
+62 |   useEffect(() => {
+63 |     if (!selectedMcpServers.length) {
+64 |       setMcpServersForApi([]);
+65 |       return;
+66 |     }
+67 |     
+68 |     const processedServers: MCPServerApi[] = selectedMcpServers
+69 |       .map(id => mcpServers.find(server => server.id === id))
+70 |       .filter((server): server is MCPServer => Boolean(server))
+71 |       .map(server => ({
+72 |         type: server.type,
+73 |         url: server.url,
+74 |         command: server.command,
+75 |         args: server.args,
+76 |         env: server.env,
+77 |         headers: server.headers,
+78 |         title: server.title,
+79 |         _meta: server._meta
+80 |       }));
+81 |     
+82 |     setMcpServersForApi(processedServers);
+83 |   }, [mcpServers, selectedMcpServers]);
+84 | 
+85 |   return (
+86 |     <MCPContext.Provider 
+87 |       value={{ 
+88 |         mcpServers, 
+89 |         setMcpServers, 
+90 |         selectedMcpServers, 
+91 |         setSelectedMcpServers,
+92 |         mcpServersForApi 
+93 |       }}
+94 |     >
+95 |       {children}
+96 |     </MCPContext.Provider>
+97 |   );
+98 | }
+99 | 
+100 | export function useMCP() {
+101 |   const context = useContext(MCPContext);
+102 |   if (context === undefined) {
+103 |     throw new Error("useMCP must be used within an MCPProvider");
+104 |   }
+105 |   return context;
+106 | } 
 ```
 
 lib/context/model-context.tsx
@@ -19125,2415 +22828,6 @@ lib/context/web-search-context.tsx
 53 |   }
 54 |   return context;
 55 | }; 
-```
-
-lib/db/index.ts
-```
-1 | import { drizzle } from "drizzle-orm/neon-serverless";
-2 | import { Pool } from "@neondatabase/serverless";
-3 | import * as schema from "./schema";
-4 | 
-5 | // Initialize the connection pool
-6 | const pool = new Pool({
-7 |   connectionString: process.env.DATABASE_URL,
-8 | });
-9 | 
-10 | // Initialize Drizzle with the connection pool and schema
-11 | export const db = drizzle(pool, { schema }); 
-```
-
-lib/db/schema.ts
-```
-1 | import { timestamp, pgTable, text, primaryKey, json, boolean, integer } from "drizzle-orm/pg-core";
-2 | import { nanoid } from "nanoid";
-3 | 
-4 | // Message role enum type
-5 | export enum MessageRole {
-6 |   USER = "user",
-7 |   ASSISTANT = "assistant",
-8 |   TOOL = "tool"
-9 | }
-10 | 
-11 | export const chats = pgTable('chats', {
-12 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
-13 |   userId: text('user_id').notNull(),
-14 |   title: text('title').notNull().default('New Chat'),
-15 |   createdAt: timestamp('created_at').defaultNow().notNull(),
-16 |   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-17 | });
-18 | 
-19 | export const messages = pgTable('messages', {
-20 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
-21 |   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
-22 |   role: text('role').notNull(), // user, assistant, or tool
-23 |   parts: json('parts').notNull(), // Store parts as JSON in the database
-24 |   hasWebSearch: boolean('has_web_search').default(false),
-25 |   webSearchContextSize: text('web_search_context_size').default('medium'), // 'low', 'medium', 'high'
-26 |   createdAt: timestamp('created_at').defaultNow().notNull(),
-27 | });
-28 | 
-29 | // Types for structured message content
-30 | export type MessagePart = {
-31 |   type: string;
-32 |   text?: string;
-33 |   toolCallId?: string;
-34 |   toolName?: string;
-35 |   args?: any;
-36 |   result?: any;
-37 |   citations?: WebSearchCitation[];
-38 |   [key: string]: any;
-39 | };
-40 | 
-41 | export type Attachment = {
-42 |   type: string;
-43 |   [key: string]: any;
-44 | };
-45 | 
-46 | export type Chat = typeof chats.$inferSelect;
-47 | export type Message = typeof messages.$inferSelect;
-48 | export type DBMessage = {
-49 |   id: string;
-50 |   chatId: string;
-51 |   role: string;
-52 |   parts: MessagePart[];
-53 |   createdAt: Date;
-54 | };
-55 | 
-56 | // --- Better Auth Core Schema ---
-57 | 
-58 | export const users = pgTable("user", {
-59 |   id: text("id").primaryKey().$defaultFn(() => nanoid()),
-60 |   name: text("name"),
-61 |   email: text("email").unique().notNull(),
-62 |   emailVerified: boolean("emailVerified"),
-63 |   image: text("image"),
-64 |   isAnonymous: boolean("isAnonymous").default(false),
-65 |   metadata: json("metadata"),
-66 |   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-67 |   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
-68 | });
-69 | 
-70 | export const accounts = pgTable(
-71 |   "account",
-72 |   {
-73 |     id: text("id").primaryKey().$defaultFn(() => nanoid()),
-74 |     userId: text("userId")
-75 |       .notNull()
-76 |       .references(() => users.id, { onDelete: "cascade" }),
-77 |     providerId: text("providerId").notNull(), // e.g., "google", "github", "email"
-78 |     accountId: text("accountId").notNull(), // The user's ID with the provider or email/password hash
-79 |     providerType: text("providerType"), // "oauth", "email", etc. REMOVED .notNull()
-80 |     accessToken: text("access_token"),
-81 |     refreshToken: text("refresh_token"),
-82 |     accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
-83 |     tokenType: text("token_type"), // e.g., "bearer"
-84 |     scope: text("scope"),
-85 |     idToken: text("id_token"), // For OIDC providers like Google
-86 |     sessionState: text("session_state"), // For OIDC providers
-87 | 
-88 |     // Fields specific to email/password - not needed for Google-only
-89 |     // password: text("password"),
-90 | 
-91 |     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-92 |     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
-93 |   }
-94 | );
-95 | 
-96 | export const sessions = pgTable("session", {
-97 |   id: text("id").primaryKey().$defaultFn(() => nanoid()),
-98 |   sessionToken: text("sessionToken").unique().notNull(),
-99 |   userId: text("userId")
-100 |     .notNull()
-101 |     .references(() => users.id, { onDelete: "cascade" }),
-102 |   expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
-103 |   ipAddress: text("ipAddress"),
-104 |   userAgent: text("userAgent"),
-105 |   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-106 |   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
-107 | });
-108 | 
-109 | // Corrected Verification Token Schema -> Renamed Verification Schema
-110 | export const verification = pgTable( // Renamed from verificationTokens
-111 |   "verification", // Renamed from verificationToken
-112 |   {
-113 |     id: text("id").primaryKey().$defaultFn(() => nanoid()),
-114 |     identifier: text("identifier").notNull(),
-115 |     // token: text("token").unique().notNull(), // Removed this line
-116 |     value: text("value").notNull(), // Ensure this exists as per docs (though error wasn't about this)
-117 |     expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
-118 |     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
-119 |     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
-120 |   }
-121 | );
-122 | 
-123 | // --- End Better Auth Core Schema ---
-124 | 
-125 | // Infer types for Better Auth tables
-126 | export type AuthUser = typeof users.$inferSelect;
-127 | export type AuthAccount = typeof accounts.$inferSelect;
-128 | export type AuthSession = typeof sessions.$inferSelect;
-129 | // export type AuthVerificationToken = typeof verificationTokens.$inferSelect; // Removed old type export
-130 | export type AuthVerification = typeof verification.$inferSelect; // Added new type export
-131 | 
-132 | export type WebSearchCitation = {
-133 |   url: string;
-134 |   title: string;
-135 |   content?: string;
-136 |   startIndex: number;
-137 |   endIndex: number;
-138 | };
-139 | 
-140 | // --- Polar Usage Events Schema ---
-141 | 
-142 | export const polarUsageEvents = pgTable('polar_usage_events', {
-143 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()), // Unique ID for the log entry
-144 |   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }), // Links to your existing users table
-145 |   polarCustomerId: text('polar_customer_id'), // The customer ID from Polar
-146 |   eventName: text('event_name').notNull(), // The name of the event (e.g., "ai-usage")
-147 |   eventPayload: json('event_payload').notNull(), // The full payload sent to Polar's ingest API (e.g., { "completionTokens": 100 })
-148 |   createdAt: timestamp('created_at').defaultNow().notNull(), // When this log entry was created
-149 | });
-150 | 
-151 | export type PolarUsageEvent = typeof polarUsageEvents.$inferSelect; 
-```
-
-components/ui/BuildInfo.tsx
-```
-1 | export default function BuildInfo() {
-2 |   const commit = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'unknown';
-3 |     const url = process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL || 'unknown';
-4 | 
-5 |   return (
-6 |     <div style={{ fontSize: 12, color: '#888', textAlign: 'center', padding: '8px 0' }}>
-7 |       <span>Commit: {commit} | URL: {url}</span>
-8 |     </div>
-9 |   );
-10 | } 
-```
-
-components/ui/accordion.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as AccordionPrimitive from "@radix-ui/react-accordion"
-5 | import { ChevronDownIcon } from "lucide-react"
-6 | 
-7 | import { cn } from "@/lib/utils"
-8 | 
-9 | function Accordion({
-10 |   ...props
-11 | }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
-12 |   return <AccordionPrimitive.Root data-slot="accordion" {...props} />
-13 | }
-14 | 
-15 | function AccordionItem({
-16 |   className,
-17 |   ...props
-18 | }: React.ComponentProps<typeof AccordionPrimitive.Item>) {
-19 |   return (
-20 |     <AccordionPrimitive.Item
-21 |       data-slot="accordion-item"
-22 |       className={cn("mb-1", className)}
-23 |       {...props}
-24 |     />
-25 |   )
-26 | }
-27 | 
-28 | function AccordionTrigger({
-29 |   className,
-30 |   children,
-31 |   ...props
-32 | }: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
-33 |   return (
-34 |     <AccordionPrimitive.Header className="flex">
-35 |       <AccordionPrimitive.Trigger
-36 |         data-slot="accordion-trigger"
-37 |         className={cn(
-38 |           "focus-visible:ring-ring/30 flex flex-1 items-center justify-between py-3 text-left text-sm font-medium transition-all outline-none focus-visible:ring-2 rounded-md disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
-39 |           className
-40 |         )}
-41 |         {...props}
-42 |       >
-43 |         {children}
-44 |         <ChevronDownIcon className="text-muted-foreground/70 size-3.5 shrink-0 transition-transform duration-200" />
-45 |       </AccordionPrimitive.Trigger>
-46 |     </AccordionPrimitive.Header>
-47 |   )
-48 | }
-49 | 
-50 | function AccordionContent({
-51 |   className,
-52 |   children,
-53 |   ...props
-54 | }: React.ComponentProps<typeof AccordionPrimitive.Content>) {
-55 |   return (
-56 |     <AccordionPrimitive.Content
-57 |       data-slot="accordion-content"
-58 |       className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
-59 |       {...props}
-60 |     >
-61 |       <div className={cn("py-2 pl-1", className)}>{children}</div>
-62 |     </AccordionPrimitive.Content>
-63 |   )
-64 | }
-65 | 
-66 | export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }
-```
-
-components/ui/avatar.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as AvatarPrimitive from "@radix-ui/react-avatar"
-5 | 
-6 | import { cn } from "@/lib/utils"
-7 | 
-8 | function Avatar({
-9 |   className,
-10 |   ...props
-11 | }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
-12 |   return (
-13 |     <AvatarPrimitive.Root
-14 |       data-slot="avatar"
-15 |       className={cn(
-16 |         "relative flex size-8 shrink-0 overflow-hidden rounded-full",
-17 |         className
-18 |       )}
-19 |       {...props}
-20 |     />
-21 |   )
-22 | }
-23 | 
-24 | function AvatarImage({
-25 |   className,
-26 |   ...props
-27 | }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
-28 |   return (
-29 |     <AvatarPrimitive.Image
-30 |       data-slot="avatar-image"
-31 |       className={cn("aspect-square size-full", className)}
-32 |       {...props}
-33 |     />
-34 |   )
-35 | }
-36 | 
-37 | function AvatarFallback({
-38 |   className,
-39 |   ...props
-40 | }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
-41 |   return (
-42 |     <AvatarPrimitive.Fallback
-43 |       data-slot="avatar-fallback"
-44 |       className={cn(
-45 |         "bg-muted flex size-full items-center justify-center rounded-full",
-46 |         className
-47 |       )}
-48 |       {...props}
-49 |     />
-50 |   )
-51 | }
-52 | 
-53 | export { Avatar, AvatarImage, AvatarFallback }
-```
-
-components/ui/badge.tsx
-```
-1 | import * as React from "react"
-2 | import { Slot } from "@radix-ui/react-slot"
-3 | import { cva, type VariantProps } from "class-variance-authority"
-4 | 
-5 | import { cn } from "@/lib/utils"
-6 | 
-7 | const badgeVariants = cva(
-8 |   "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
-9 |   {
-10 |     variants: {
-11 |       variant: {
-12 |         default:
-13 |           "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
-14 |         secondary:
-15 |           "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
-16 |         destructive:
-17 |           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-18 |         outline:
-19 |           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
-20 |       },
-21 |     },
-22 |     defaultVariants: {
-23 |       variant: "default",
-24 |     },
-25 |   }
-26 | )
-27 | 
-28 | function Badge({
-29 |   className,
-30 |   variant,
-31 |   asChild = false,
-32 |   ...props
-33 | }: React.ComponentProps<"span"> &
-34 |   VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
-35 |   const Comp = asChild ? Slot : "span"
-36 | 
-37 |   return (
-38 |     <Comp
-39 |       data-slot="badge"
-40 |       className={cn(badgeVariants({ variant }), className)}
-41 |       {...props}
-42 |     />
-43 |   )
-44 | }
-45 | 
-46 | export { Badge, badgeVariants }
-```
-
-components/ui/button.tsx
-```
-1 | import * as React from "react"
-2 | import { Slot } from "@radix-ui/react-slot"
-3 | import { cva, type VariantProps } from "class-variance-authority"
-4 | 
-5 | import { cn } from "@/lib/utils"
-6 | 
-7 | const buttonVariants = cva(
-8 |   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-9 |   {
-10 |     variants: {
-11 |       variant: {
-12 |         default:
-13 |           "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
-14 |         destructive:
-15 |           "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
-16 |         outline:
-17 |           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
-18 |         secondary:
-19 |           "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
-20 |         ghost:
-21 |           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-22 |         link: "text-primary underline-offset-4 hover:underline",
-23 |       },
-24 |       size: {
-25 |         default: "h-9 px-4 py-2 has-[>svg]:px-3",
-26 |         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-27 |         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-28 |         icon: "size-9",
-29 |       },
-30 |     },
-31 |     defaultVariants: {
-32 |       variant: "default",
-33 |       size: "default",
-34 |     },
-35 |   }
-36 | )
-37 | 
-38 | function Button({
-39 |   className,
-40 |   variant,
-41 |   size,
-42 |   asChild = false,
-43 |   ...props
-44 | }: React.ComponentProps<"button"> &
-45 |   VariantProps<typeof buttonVariants> & {
-46 |     asChild?: boolean
-47 |   }) {
-48 |   const Comp = asChild ? Slot : "button"
-49 | 
-50 |   return (
-51 |     <Comp
-52 |       data-slot="button"
-53 |       className={cn(buttonVariants({ variant, size, className }))}
-54 |       {...props}
-55 |     />
-56 |   )
-57 | }
-58 | 
-59 | export { Button, buttonVariants }
-```
-
-components/ui/card.tsx
-```
-1 | import * as React from "react"
-2 | 
-3 | import { cn } from "@/lib/utils"
-4 | 
-5 | const Card = React.forwardRef<
-6 |   HTMLDivElement,
-7 |   React.HTMLAttributes<HTMLDivElement>
-8 | >(({ className, ...props }, ref) => (
-9 |   <div
-10 |     ref={ref}
-11 |     className={cn(
-12 |       "rounded-lg border bg-card text-card-foreground shadow-sm",
-13 |       className
-14 |     )}
-15 |     {...props}
-16 |   />
-17 | ))
-18 | Card.displayName = "Card"
-19 | 
-20 | const CardHeader = React.forwardRef<
-21 |   HTMLDivElement,
-22 |   React.HTMLAttributes<HTMLDivElement>
-23 | >(({ className, ...props }, ref) => (
-24 |   <div
-25 |     ref={ref}
-26 |     className={cn("flex flex-col space-y-1.5 p-6", className)}
-27 |     {...props}
-28 |   />
-29 | ))
-30 | CardHeader.displayName = "CardHeader"
-31 | 
-32 | const CardTitle = React.forwardRef<
-33 |   HTMLParagraphElement,
-34 |   React.HTMLAttributes<HTMLHeadingElement>
-35 | >(({ className, ...props }, ref) => (
-36 |   <h3
-37 |     ref={ref}
-38 |     className={cn(
-39 |       "text-2xl font-semibold leading-none tracking-tight",
-40 |       className
-41 |     )}
-42 |     {...props}
-43 |   />
-44 | ))
-45 | CardTitle.displayName = "CardTitle"
-46 | 
-47 | const CardDescription = React.forwardRef<
-48 |   HTMLParagraphElement,
-49 |   React.HTMLAttributes<HTMLParagraphElement>
-50 | >(({ className, ...props }, ref) => (
-51 |   <p
-52 |     ref={ref}
-53 |     className={cn("text-sm text-muted-foreground", className)}
-54 |     {...props}
-55 |   />
-56 | ))
-57 | CardDescription.displayName = "CardDescription"
-58 | 
-59 | const CardContent = React.forwardRef<
-60 |   HTMLDivElement,
-61 |   React.HTMLAttributes<HTMLDivElement>
-62 | >(({ className, ...props }, ref) => (
-63 |   <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
-64 | ))
-65 | CardContent.displayName = "CardContent"
-66 | 
-67 | const CardFooter = React.forwardRef<
-68 |   HTMLDivElement,
-69 |   React.HTMLAttributes<HTMLDivElement>
-70 | >(({ className, ...props }, ref) => (
-71 |   <div
-72 |     ref={ref}
-73 |     className={cn("flex items-center p-6 pt-0", className)}
-74 |     {...props}
-75 |   />
-76 | ))
-77 | CardFooter.displayName = "CardFooter"
-78 | 
-79 | export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } 
-```
-
-components/ui/dialog.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as DialogPrimitive from "@radix-ui/react-dialog"
-5 | import { XIcon } from "lucide-react"
-6 | 
-7 | import { cn } from "@/lib/utils"
-8 | 
-9 | function Dialog({
-10 |   ...props
-11 | }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-12 |   return <DialogPrimitive.Root data-slot="dialog" {...props} />
-13 | }
-14 | 
-15 | function DialogTrigger({
-16 |   ...props
-17 | }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
-18 |   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
-19 | }
-20 | 
-21 | function DialogPortal({
-22 |   ...props
-23 | }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-24 |   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
-25 | }
-26 | 
-27 | function DialogClose({
-28 |   ...props
-29 | }: React.ComponentProps<typeof DialogPrimitive.Close>) {
-30 |   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
-31 | }
-32 | 
-33 | function DialogOverlay({
-34 |   className,
-35 |   ...props
-36 | }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
-37 |   return (
-38 |     <DialogPrimitive.Overlay
-39 |       data-slot="dialog-overlay"
-40 |       className={cn(
-41 |         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
-42 |         className
-43 |       )}
-44 |       {...props}
-45 |     />
-46 |   )
-47 | }
-48 | 
-49 | function DialogContent({
-50 |   className,
-51 |   children,
-52 |   ...props
-53 | }: React.ComponentProps<typeof DialogPrimitive.Content>) {
-54 |   return (
-55 |     <DialogPortal data-slot="dialog-portal">
-56 |       <DialogOverlay />
-57 |       <DialogPrimitive.Content
-58 |         data-slot="dialog-content"
-59 |         className={cn(
-60 |           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
-61 |           className
-62 |         )}
-63 |         {...props}
-64 |       >
-65 |         {children}
-66 |         <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
-67 |           <XIcon />
-68 |           <span className="sr-only">Close</span>
-69 |         </DialogPrimitive.Close>
-70 |       </DialogPrimitive.Content>
-71 |     </DialogPortal>
-72 |   )
-73 | }
-74 | 
-75 | function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-76 |   return (
-77 |     <div
-78 |       data-slot="dialog-header"
-79 |       className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
-80 |       {...props}
-81 |     />
-82 |   )
-83 | }
-84 | 
-85 | function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
-86 |   return (
-87 |     <div
-88 |       data-slot="dialog-footer"
-89 |       className={cn(
-90 |         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-91 |         className
-92 |       )}
-93 |       {...props}
-94 |     />
-95 |   )
-96 | }
-97 | 
-98 | function DialogTitle({
-99 |   className,
-100 |   ...props
-101 | }: React.ComponentProps<typeof DialogPrimitive.Title>) {
-102 |   return (
-103 |     <DialogPrimitive.Title
-104 |       data-slot="dialog-title"
-105 |       className={cn("text-lg leading-none font-semibold", className)}
-106 |       {...props}
-107 |     />
-108 |   )
-109 | }
-110 | 
-111 | function DialogDescription({
-112 |   className,
-113 |   ...props
-114 | }: React.ComponentProps<typeof DialogPrimitive.Description>) {
-115 |   return (
-116 |     <DialogPrimitive.Description
-117 |       data-slot="dialog-description"
-118 |       className={cn("text-muted-foreground text-sm", className)}
-119 |       {...props}
-120 |     />
-121 |   )
-122 | }
-123 | 
-124 | export {
-125 |   Dialog,
-126 |   DialogClose,
-127 |   DialogContent,
-128 |   DialogDescription,
-129 |   DialogFooter,
-130 |   DialogHeader,
-131 |   DialogOverlay,
-132 |   DialogPortal,
-133 |   DialogTitle,
-134 |   DialogTrigger,
-135 | }
-```
-
-components/ui/dropdown-menu.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
-5 | import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
-6 | 
-7 | import { cn } from "@/lib/utils"
-8 | 
-9 | function DropdownMenu({
-10 |   ...props
-11 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-12 |   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
-13 | }
-14 | 
-15 | function DropdownMenuPortal({
-16 |   ...props
-17 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
-18 |   return (
-19 |     <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
-20 |   )
-21 | }
-22 | 
-23 | function DropdownMenuTrigger({
-24 |   ...props
-25 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-26 |   return (
-27 |     <DropdownMenuPrimitive.Trigger
-28 |       data-slot="dropdown-menu-trigger"
-29 |       {...props}
-30 |     />
-31 |   )
-32 | }
-33 | 
-34 | function DropdownMenuContent({
-35 |   className,
-36 |   sideOffset = 4,
-37 |   ...props
-38 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
-39 |   return (
-40 |     <DropdownMenuPrimitive.Portal>
-41 |       <DropdownMenuPrimitive.Content
-42 |         data-slot="dropdown-menu-content"
-43 |         sideOffset={sideOffset}
-44 |         className={cn(
-45 |           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
-46 |           className
-47 |         )}
-48 |         {...props}
-49 |       />
-50 |     </DropdownMenuPrimitive.Portal>
-51 |   )
-52 | }
-53 | 
-54 | function DropdownMenuGroup({
-55 |   ...props
-56 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
-57 |   return (
-58 |     <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
-59 |   )
-60 | }
-61 | 
-62 | function DropdownMenuItem({
-63 |   className,
-64 |   inset,
-65 |   variant = "default",
-66 |   ...props
-67 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
-68 |   inset?: boolean
-69 |   variant?: "default" | "destructive"
-70 | }) {
-71 |   return (
-72 |     <DropdownMenuPrimitive.Item
-73 |       data-slot="dropdown-menu-item"
-74 |       data-inset={inset}
-75 |       data-variant={variant}
-76 |       className={cn(
-77 |         "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-78 |         className
-79 |       )}
-80 |       {...props}
-81 |     />
-82 |   )
-83 | }
-84 | 
-85 | function DropdownMenuCheckboxItem({
-86 |   className,
-87 |   children,
-88 |   checked,
-89 |   ...props
-90 | }: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
-91 |   return (
-92 |     <DropdownMenuPrimitive.CheckboxItem
-93 |       data-slot="dropdown-menu-checkbox-item"
-94 |       className={cn(
-95 |         "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-96 |         className
-97 |       )}
-98 |       checked={checked}
-99 |       {...props}
-100 |     >
-101 |       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-102 |         <DropdownMenuPrimitive.ItemIndicator>
-103 |           <CheckIcon className="size-4" />
-104 |         </DropdownMenuPrimitive.ItemIndicator>
-105 |       </span>
-106 |       {children}
-107 |     </DropdownMenuPrimitive.CheckboxItem>
-108 |   )
-109 | }
-110 | 
-111 | function DropdownMenuRadioGroup({
-112 |   ...props
-113 | }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
-114 |   return (
-115 |     <DropdownMenuPrimitive.RadioGroup
-116 |       data-slot="dropdown-menu-radio-group"
-117 |       {...props}
-118 |     />
-119 |   )
-120 | }
-121 | 
-122 | function DropdownMenuRadioItem({
-123 |   className,
-124 |   children,
-125 |   ...props
-126 | }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
-127 |   return (
-128 |     <DropdownMenuPrimitive.RadioItem
-129 |       data-slot="dropdown-menu-radio-item"
-130 |       className={cn(
-131 |         "focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-132 |         className
-133 |       )}
-134 |       {...props}
-135 |     >
-136 |       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-137 |         <DropdownMenuPrimitive.ItemIndicator>
-138 |           <CircleIcon className="size-2 fill-current" />
-139 |         </DropdownMenuPrimitive.ItemIndicator>
-140 |       </span>
-141 |       {children}
-142 |     </DropdownMenuPrimitive.RadioItem>
-143 |   )
-144 | }
-145 | 
-146 | function DropdownMenuLabel({
-147 |   className,
-148 |   inset,
-149 |   ...props
-150 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
-151 |   inset?: boolean
-152 | }) {
-153 |   return (
-154 |     <DropdownMenuPrimitive.Label
-155 |       data-slot="dropdown-menu-label"
-156 |       data-inset={inset}
-157 |       className={cn(
-158 |         "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
-159 |         className
-160 |       )}
-161 |       {...props}
-162 |     />
-163 |   )
-164 | }
-165 | 
-166 | function DropdownMenuSeparator({
-167 |   className,
-168 |   ...props
-169 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
-170 |   return (
-171 |     <DropdownMenuPrimitive.Separator
-172 |       data-slot="dropdown-menu-separator"
-173 |       className={cn("bg-border -mx-1 my-1 h-px", className)}
-174 |       {...props}
-175 |     />
-176 |   )
-177 | }
-178 | 
-179 | function DropdownMenuShortcut({
-180 |   className,
-181 |   ...props
-182 | }: React.ComponentProps<"span">) {
-183 |   return (
-184 |     <span
-185 |       data-slot="dropdown-menu-shortcut"
-186 |       className={cn(
-187 |         "text-muted-foreground ml-auto text-xs tracking-widest",
-188 |         className
-189 |       )}
-190 |       {...props}
-191 |     />
-192 |   )
-193 | }
-194 | 
-195 | function DropdownMenuSub({
-196 |   ...props
-197 | }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
-198 |   return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />
-199 | }
-200 | 
-201 | function DropdownMenuSubTrigger({
-202 |   className,
-203 |   inset,
-204 |   children,
-205 |   ...props
-206 | }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
-207 |   inset?: boolean
-208 | }) {
-209 |   return (
-210 |     <DropdownMenuPrimitive.SubTrigger
-211 |       data-slot="dropdown-menu-sub-trigger"
-212 |       data-inset={inset}
-213 |       className={cn(
-214 |         "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
-215 |         className
-216 |       )}
-217 |       {...props}
-218 |     >
-219 |       {children}
-220 |       <ChevronRightIcon className="ml-auto size-4" />
-221 |     </DropdownMenuPrimitive.SubTrigger>
-222 |   )
-223 | }
-224 | 
-225 | function DropdownMenuSubContent({
-226 |   className,
-227 |   ...props
-228 | }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
-229 |   return (
-230 |     <DropdownMenuPrimitive.SubContent
-231 |       data-slot="dropdown-menu-sub-content"
-232 |       className={cn(
-233 |         "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border p-1 shadow-lg",
-234 |         className
-235 |       )}
-236 |       {...props}
-237 |     />
-238 |   )
-239 | }
-240 | 
-241 | export {
-242 |   DropdownMenu,
-243 |   DropdownMenuPortal,
-244 |   DropdownMenuTrigger,
-245 |   DropdownMenuContent,
-246 |   DropdownMenuGroup,
-247 |   DropdownMenuLabel,
-248 |   DropdownMenuItem,
-249 |   DropdownMenuCheckboxItem,
-250 |   DropdownMenuRadioGroup,
-251 |   DropdownMenuRadioItem,
-252 |   DropdownMenuSeparator,
-253 |   DropdownMenuShortcut,
-254 |   DropdownMenuSub,
-255 |   DropdownMenuSubTrigger,
-256 |   DropdownMenuSubContent,
-257 | }
-```
-
-components/ui/input.tsx
-```
-1 | import * as React from "react"
-2 | 
-3 | import { cn } from "@/lib/utils"
-4 | 
-5 | function Input({ className, type, ...props }: React.ComponentProps<"input">) {
-6 |   return (
-7 |     <input
-8 |       type={type}
-9 |       data-slot="input"
-10 |       className={cn(
-11 |         "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-12 |         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-13 |         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-14 |         className
-15 |       )}
-16 |       {...props}
-17 |     />
-18 |   )
-19 | }
-20 | 
-21 | export { Input }
-```
-
-components/ui/label.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as LabelPrimitive from "@radix-ui/react-label"
-5 | 
-6 | import { cn } from "@/lib/utils"
-7 | 
-8 | function Label({
-9 |   className,
-10 |   ...props
-11 | }: React.ComponentProps<typeof LabelPrimitive.Root>) {
-12 |   return (
-13 |     <LabelPrimitive.Root
-14 |       data-slot="label"
-15 |       className={cn(
-16 |         "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-17 |         className
-18 |       )}
-19 |       {...props}
-20 |     />
-21 |   )
-22 | }
-23 | 
-24 | export { Label }
-```
-
-components/ui/popover.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as PopoverPrimitive from "@radix-ui/react-popover"
-5 | 
-6 | import { cn } from "@/lib/utils"
-7 | 
-8 | function Popover({
-9 |   ...props
-10 | }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-11 |   return <PopoverPrimitive.Root data-slot="popover" {...props} />
-12 | }
-13 | 
-14 | function PopoverTrigger({
-15 |   ...props
-16 | }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-17 |   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
-18 | }
-19 | 
-20 | function PopoverContent({
-21 |   className,
-22 |   align = "center",
-23 |   sideOffset = 4,
-24 |   ...props
-25 | }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
-26 |   return (
-27 |     <PopoverPrimitive.Portal>
-28 |       <PopoverPrimitive.Content
-29 |         data-slot="popover-content"
-30 |         align={align}
-31 |         sideOffset={sideOffset}
-32 |         className={cn(
-33 |           "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border p-4 shadow-md outline-hidden",
-34 |           className
-35 |         )}
-36 |         {...props}
-37 |       />
-38 |     </PopoverPrimitive.Portal>
-39 |   )
-40 | }
-41 | 
-42 | function PopoverAnchor({
-43 |   ...props
-44 | }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-45 |   return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />
-46 | }
-47 | 
-48 | export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor }
-```
-
-components/ui/scroll-area.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
-5 | 
-6 | import { cn } from "@/lib/utils"
-7 | 
-8 | function ScrollArea({
-9 |   className,
-10 |   children,
-11 |   ...props
-12 | }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
-13 |   return (
-14 |     <ScrollAreaPrimitive.Root
-15 |       data-slot="scroll-area"
-16 |       className={cn("relative", className)}
-17 |       {...props}
-18 |     >
-19 |       <ScrollAreaPrimitive.Viewport
-20 |         data-slot="scroll-area-viewport"
-21 |         className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
-22 |       >
-23 |         {children}
-24 |       </ScrollAreaPrimitive.Viewport>
-25 |       <ScrollBar />
-26 |       <ScrollAreaPrimitive.Corner />
-27 |     </ScrollAreaPrimitive.Root>
-28 |   )
-29 | }
-30 | 
-31 | function ScrollBar({
-32 |   className,
-33 |   orientation = "vertical",
-34 |   ...props
-35 | }: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
-36 |   return (
-37 |     <ScrollAreaPrimitive.ScrollAreaScrollbar
-38 |       data-slot="scroll-area-scrollbar"
-39 |       orientation={orientation}
-40 |       className={cn(
-41 |         "flex touch-none p-px transition-colors select-none",
-42 |         orientation === "vertical" &&
-43 |           "h-full w-2.5 border-l border-l-transparent",
-44 |         orientation === "horizontal" &&
-45 |           "h-2.5 flex-col border-t border-t-transparent",
-46 |         className
-47 |       )}
-48 |       {...props}
-49 |     >
-50 |       <ScrollAreaPrimitive.ScrollAreaThumb
-51 |         data-slot="scroll-area-thumb"
-52 |         className="bg-border relative flex-1 rounded-full"
-53 |       />
-54 |     </ScrollAreaPrimitive.ScrollAreaScrollbar>
-55 |   )
-56 | }
-57 | 
-58 | export { ScrollArea, ScrollBar }
-```
-
-components/ui/select.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as SelectPrimitive from "@radix-ui/react-select"
-5 | import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
-6 | 
-7 | import { cn } from "@/lib/utils"
-8 | 
-9 | function Select({
-10 |   ...props
-11 | }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-12 |   return <SelectPrimitive.Root data-slot="select" {...props} />
-13 | }
-14 | 
-15 | function SelectGroup({
-16 |   ...props
-17 | }: React.ComponentProps<typeof SelectPrimitive.Group>) {
-18 |   return <SelectPrimitive.Group data-slot="select-group" {...props} />
-19 | }
-20 | 
-21 | function SelectValue({
-22 |   ...props
-23 | }: React.ComponentProps<typeof SelectPrimitive.Value>) {
-24 |   return <SelectPrimitive.Value data-slot="select-value" {...props} />
-25 | }
-26 | 
-27 | function SelectTrigger({
-28 |   className,
-29 |   children,
-30 |   ...props
-31 | }: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
-32 |   return (
-33 |     <SelectPrimitive.Trigger
-34 |       data-slot="select-trigger"
-35 |       className={cn(
-36 |         "text-muted-foreground data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex h-9 w-fit items-center justify-between gap-2 rounded-md bg-transparent px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none hover:bg-secondary data-[state=open]:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-37 |         className
-38 |       )}
-39 |       {...props}
-40 |     >
-41 |       {children}
-42 |       <SelectPrimitive.Icon asChild>
-43 |         <ChevronDownIcon className="size-4 opacity-50" />
-44 |       </SelectPrimitive.Icon>
-45 |     </SelectPrimitive.Trigger>
-46 |   )
-47 | }
-48 | 
-49 | function SelectContent({
-50 |   className,
-51 |   children,
-52 |   position = "popper",
-53 |   ...props
-54 | }: React.ComponentProps<typeof SelectPrimitive.Content>) {
-55 |   return (
-56 |     <SelectPrimitive.Portal>
-57 |       <SelectPrimitive.Content
-58 |         data-slot="select-content"
-59 |         className={cn(
-60 |           "bg-secondary text-secondary-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
-61 |           position === "popper" &&
-62 |             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-63 |           className
-64 |         )}
-65 |         position={position}
-66 |         {...props}
-67 |       >
-68 |         <SelectScrollUpButton />
-69 |         <SelectPrimitive.Viewport
-70 |           className={cn(
-71 |             "p-1",
-72 |             position === "popper" &&
-73 |               "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
-74 |           )}
-75 |         >
-76 |           {children}
-77 |         </SelectPrimitive.Viewport>
-78 |         <SelectScrollDownButton />
-79 |       </SelectPrimitive.Content>
-80 |     </SelectPrimitive.Portal>
-81 |   )
-82 | }
-83 | 
-84 | function SelectLabel({
-85 |   className,
-86 |   ...props
-87 | }: React.ComponentProps<typeof SelectPrimitive.Label>) {
-88 |   return (
-89 |     <SelectPrimitive.Label
-90 |       data-slot="select-label"
-91 |       className={cn("px-2 py-1.5 text-sm font-medium", className)}
-92 |       {...props}
-93 |     />
-94 |   )
-95 | }
-96 | 
-97 | function SelectItem({
-98 |   className,
-99 |   children,
-100 |   ...props
-101 | }: React.ComponentProps<typeof SelectPrimitive.Item>) {
-102 |   return (
-103 |     <SelectPrimitive.Item
-104 |       data-slot="select-item"
-105 |       className={cn(
-106 |         "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
-107 |         className
-108 |       )}
-109 |       {...props}
-110 |     >
-111 |       <span className="absolute right-2 flex size-3.5 items-center justify-center">
-112 |         <SelectPrimitive.ItemIndicator>
-113 |           <CheckIcon className="size-4" />
-114 |         </SelectPrimitive.ItemIndicator>
-115 |       </span>
-116 |       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-117 |     </SelectPrimitive.Item>
-118 |   )
-119 | }
-120 | 
-121 | function SelectSeparator({
-122 |   className,
-123 |   ...props
-124 | }: React.ComponentProps<typeof SelectPrimitive.Separator>) {
-125 |   return (
-126 |     <SelectPrimitive.Separator
-127 |       data-slot="select-separator"
-128 |       className={cn("bg-border pointer-events-none -mx-1 my-1 h-px", className)}
-129 |       {...props}
-130 |     />
-131 |   )
-132 | }
-133 | 
-134 | function SelectScrollUpButton({
-135 |   className,
-136 |   ...props
-137 | }: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
-138 |   return (
-139 |     <SelectPrimitive.ScrollUpButton
-140 |       data-slot="select-scroll-up-button"
-141 |       className={cn(
-142 |         "flex cursor-default items-center justify-center py-1",
-143 |         className
-144 |       )}
-145 |       {...props}
-146 |     >
-147 |       <ChevronUpIcon className="size-4" />
-148 |     </SelectPrimitive.ScrollUpButton>
-149 |   )
-150 | }
-151 | 
-152 | function SelectScrollDownButton({
-153 |   className,
-154 |   ...props
-155 | }: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
-156 |   return (
-157 |     <SelectPrimitive.ScrollDownButton
-158 |       data-slot="select-scroll-down-button"
-159 |       className={cn(
-160 |         "flex cursor-default items-center justify-center py-1",
-161 |         className
-162 |       )}
-163 |       {...props}
-164 |     >
-165 |       <ChevronDownIcon className="size-4" />
-166 |     </SelectPrimitive.ScrollDownButton>
-167 |   )
-168 | }
-169 | 
-170 | export {
-171 |   Select,
-172 |   SelectContent,
-173 |   SelectGroup,
-174 |   SelectItem,
-175 |   SelectLabel,
-176 |   SelectScrollDownButton,
-177 |   SelectScrollUpButton,
-178 |   SelectSeparator,
-179 |   SelectTrigger,
-180 |   SelectValue,
-181 | }
-```
-
-components/ui/separator.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as SeparatorPrimitive from "@radix-ui/react-separator"
-5 | 
-6 | import { cn } from "@/lib/utils"
-7 | 
-8 | function Separator({
-9 |   className,
-10 |   orientation = "horizontal",
-11 |   decorative = true,
-12 |   ...props
-13 | }: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
-14 |   return (
-15 |     <SeparatorPrimitive.Root
-16 |       data-slot="separator-root"
-17 |       decorative={decorative}
-18 |       orientation={orientation}
-19 |       className={cn(
-20 |         "bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
-21 |         className
-22 |       )}
-23 |       {...props}
-24 |     />
-25 |   )
-26 | }
-27 | 
-28 | export { Separator }
-```
-
-components/ui/sheet.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as SheetPrimitive from "@radix-ui/react-dialog"
-5 | import { XIcon } from "lucide-react"
-6 | 
-7 | import { cn } from "@/lib/utils"
-8 | 
-9 | function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-10 |   return <SheetPrimitive.Root data-slot="sheet" {...props} />
-11 | }
-12 | 
-13 | function SheetTrigger({
-14 |   ...props
-15 | }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
-16 |   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
-17 | }
-18 | 
-19 | function SheetClose({
-20 |   ...props
-21 | }: React.ComponentProps<typeof SheetPrimitive.Close>) {
-22 |   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
-23 | }
-24 | 
-25 | function SheetPortal({
-26 |   ...props
-27 | }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
-28 |   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
-29 | }
-30 | 
-31 | function SheetOverlay({
-32 |   className,
-33 |   ...props
-34 | }: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
-35 |   return (
-36 |     <SheetPrimitive.Overlay
-37 |       data-slot="sheet-overlay"
-38 |       className={cn(
-39 |         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
-40 |         className
-41 |       )}
-42 |       {...props}
-43 |     />
-44 |   )
-45 | }
-46 | 
-47 | function SheetContent({
-48 |   className,
-49 |   children,
-50 |   side = "right",
-51 |   ...props
-52 | }: React.ComponentProps<typeof SheetPrimitive.Content> & {
-53 |   side?: "top" | "right" | "bottom" | "left"
-54 | }) {
-55 |   return (
-56 |     <SheetPortal>
-57 |       <SheetOverlay />
-58 |       <SheetPrimitive.Content
-59 |         data-slot="sheet-content"
-60 |         className={cn(
-61 |           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
-62 |           side === "right" &&
-63 |             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
-64 |           side === "left" &&
-65 |             "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
-66 |           side === "top" &&
-67 |             "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
-68 |           side === "bottom" &&
-69 |             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
-70 |           className
-71 |         )}
-72 |         {...props}
-73 |       >
-74 |         {children}
-75 |         <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-76 |           <XIcon className="size-4" />
-77 |           <span className="sr-only">Close</span>
-78 |         </SheetPrimitive.Close>
-79 |       </SheetPrimitive.Content>
-80 |     </SheetPortal>
-81 |   )
-82 | }
-83 | 
-84 | function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
-85 |   return (
-86 |     <div
-87 |       data-slot="sheet-header"
-88 |       className={cn("flex flex-col gap-1.5 p-4", className)}
-89 |       {...props}
-90 |     />
-91 |   )
-92 | }
-93 | 
-94 | function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
-95 |   return (
-96 |     <div
-97 |       data-slot="sheet-footer"
-98 |       className={cn("mt-auto flex flex-col gap-2 p-4", className)}
-99 |       {...props}
-100 |     />
-101 |   )
-102 | }
-103 | 
-104 | function SheetTitle({
-105 |   className,
-106 |   ...props
-107 | }: React.ComponentProps<typeof SheetPrimitive.Title>) {
-108 |   return (
-109 |     <SheetPrimitive.Title
-110 |       data-slot="sheet-title"
-111 |       className={cn("text-foreground font-semibold", className)}
-112 |       {...props}
-113 |     />
-114 |   )
-115 | }
-116 | 
-117 | function SheetDescription({
-118 |   className,
-119 |   ...props
-120 | }: React.ComponentProps<typeof SheetPrimitive.Description>) {
-121 |   return (
-122 |     <SheetPrimitive.Description
-123 |       data-slot="sheet-description"
-124 |       className={cn("text-muted-foreground text-sm", className)}
-125 |       {...props}
-126 |     />
-127 |   )
-128 | }
-129 | 
-130 | export {
-131 |   Sheet,
-132 |   SheetTrigger,
-133 |   SheetClose,
-134 |   SheetContent,
-135 |   SheetHeader,
-136 |   SheetFooter,
-137 |   SheetTitle,
-138 |   SheetDescription,
-139 | }
-```
-
-components/ui/sidebar.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import { Slot } from "@radix-ui/react-slot"
-5 | import { VariantProps, cva } from "class-variance-authority"
-6 | import { PanelLeftIcon } from "lucide-react"
-7 | 
-8 | import { useIsMobile } from "@/hooks/use-mobile"
-9 | import { cn } from "@/lib/utils"
-10 | import { Button } from "@/components/ui/button"
-11 | import { Input } from "@/components/ui/input"
-12 | import { Separator } from "@/components/ui/separator"
-13 | import {
-14 |   Sheet,
-15 |   SheetContent,
-16 |   SheetDescription,
-17 |   SheetHeader,
-18 |   SheetTitle,
-19 | } from "@/components/ui/sheet"
-20 | import { Skeleton } from "@/components/ui/skeleton"
-21 | import {
-22 |   Tooltip,
-23 |   TooltipContent,
-24 |   TooltipProvider,
-25 |   TooltipTrigger,
-26 | } from "@/components/ui/tooltip"
-27 | 
-28 | const SIDEBAR_COOKIE_NAME = "sidebar_state"
-29 | const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-30 | const SIDEBAR_WIDTH = "16rem"
-31 | const SIDEBAR_WIDTH_MOBILE = "18rem"
-32 | const SIDEBAR_WIDTH_ICON = "3rem"
-33 | const SIDEBAR_KEYBOARD_SHORTCUT = "b"
-34 | 
-35 | type SidebarContextProps = {
-36 |   state: "expanded" | "collapsed"
-37 |   open: boolean
-38 |   setOpen: (open: boolean) => void
-39 |   openMobile: boolean
-40 |   setOpenMobile: (open: boolean) => void
-41 |   isMobile: boolean
-42 |   toggleSidebar: () => void
-43 | }
-44 | 
-45 | const SidebarContext = React.createContext<SidebarContextProps | null>(null)
-46 | 
-47 | function useSidebar() {
-48 |   const context = React.useContext(SidebarContext)
-49 |   if (!context) {
-50 |     throw new Error("useSidebar must be used within a SidebarProvider.")
-51 |   }
-52 | 
-53 |   return context
-54 | }
-55 | 
-56 | function SidebarProvider({
-57 |   defaultOpen = true,
-58 |   open: openProp,
-59 |   onOpenChange: setOpenProp,
-60 |   className,
-61 |   style,
-62 |   children,
-63 |   ...props
-64 | }: React.ComponentProps<"div"> & {
-65 |   defaultOpen?: boolean
-66 |   open?: boolean
-67 |   onOpenChange?: (open: boolean) => void
-68 | }) {
-69 |   const isMobile = useIsMobile()
-70 |   const [openMobile, setOpenMobile] = React.useState(false)
-71 | 
-72 |   // This is the internal state of the sidebar.
-73 |   // We use openProp and setOpenProp for control from outside the component.
-74 |   const [_open, _setOpen] = React.useState(defaultOpen)
-75 |   const open = openProp ?? _open
-76 |   const setOpen = React.useCallback(
-77 |     (value: boolean | ((value: boolean) => boolean)) => {
-78 |       const openState = typeof value === "function" ? value(open) : value
-79 |       if (setOpenProp) {
-80 |         setOpenProp(openState)
-81 |       } else {
-82 |         _setOpen(openState)
-83 |       }
-84 | 
-85 |       // This sets the cookie to keep the sidebar state.
-86 |       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
-87 |     },
-88 |     [setOpenProp, open]
-89 |   )
-90 | 
-91 |   // Helper to toggle the sidebar.
-92 |   const toggleSidebar = React.useCallback(() => {
-93 |     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-94 |   }, [isMobile, setOpen, setOpenMobile])
-95 | 
-96 |   // Adds a keyboard shortcut to toggle the sidebar.
-97 |   React.useEffect(() => {
-98 |     const handleKeyDown = (event: KeyboardEvent) => {
-99 |       if (
-100 |         event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-101 |         (event.metaKey || event.ctrlKey)
-102 |       ) {
-103 |         event.preventDefault()
-104 |         toggleSidebar()
-105 |       }
-106 |     }
-107 | 
-108 |     window.addEventListener("keydown", handleKeyDown)
-109 |     return () => window.removeEventListener("keydown", handleKeyDown)
-110 |   }, [toggleSidebar])
-111 | 
-112 |   // We add a state so that we can do data-state="expanded" or "collapsed".
-113 |   // This makes it easier to style the sidebar with Tailwind classes.
-114 |   const state = open ? "expanded" : "collapsed"
-115 | 
-116 |   const contextValue = React.useMemo<SidebarContextProps>(
-117 |     () => ({
-118 |       state,
-119 |       open,
-120 |       setOpen,
-121 |       isMobile,
-122 |       openMobile,
-123 |       setOpenMobile,
-124 |       toggleSidebar,
-125 |     }),
-126 |     [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
-127 |   )
-128 | 
-129 |   return (
-130 |     <SidebarContext.Provider value={contextValue}>
-131 |       <TooltipProvider delayDuration={0}>
-132 |         <div
-133 |           data-slot="sidebar-wrapper"
-134 |           style={
-135 |             {
-136 |               "--sidebar-width": SIDEBAR_WIDTH,
-137 |               "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-138 |               ...style,
-139 |             } as React.CSSProperties
-140 |           }
-141 |           className={cn(
-142 |             "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
-143 |             className
-144 |           )}
-145 |           {...props}
-146 |         >
-147 |           {children}
-148 |         </div>
-149 |       </TooltipProvider>
-150 |     </SidebarContext.Provider>
-151 |   )
-152 | }
-153 | 
-154 | function Sidebar({
-155 |   side = "left",
-156 |   variant = "sidebar",
-157 |   collapsible = "offcanvas",
-158 |   className,
-159 |   children,
-160 |   ...props
-161 | }: React.ComponentProps<"div"> & {
-162 |   side?: "left" | "right"
-163 |   variant?: "sidebar" | "floating" | "inset"
-164 |   collapsible?: "offcanvas" | "icon" | "none"
-165 | }) {
-166 |   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-167 | 
-168 |   if (collapsible === "none") {
-169 |     return (
-170 |       <div
-171 |         data-slot="sidebar"
-172 |         className={cn(
-173 |           "bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col",
-174 |           className
-175 |         )}
-176 |         {...props}
-177 |       >
-178 |         {children}
-179 |       </div>
-180 |     )
-181 |   }
-182 | 
-183 |   if (isMobile) {
-184 |     return (
-185 |       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-186 |         <SheetContent
-187 |           data-sidebar="sidebar"
-188 |           data-slot="sidebar"
-189 |           data-mobile="true"
-190 |           className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-191 |           style={
-192 |             {
-193 |               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-194 |             } as React.CSSProperties
-195 |           }
-196 |           side={side}
-197 |         >
-198 |           <SheetHeader className="sr-only">
-199 |             <SheetTitle>Sidebar</SheetTitle>
-200 |             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-201 |           </SheetHeader>
-202 |           <div className="flex h-full w-full flex-col">{children}</div>
-203 |         </SheetContent>
-204 |       </Sheet>
-205 |     )
-206 |   }
-207 | 
-208 |   return (
-209 |     <div
-210 |       className="group peer text-sidebar-foreground hidden md:block"
-211 |       data-state={state}
-212 |       data-collapsible={state === "collapsed" ? collapsible : ""}
-213 |       data-variant={variant}
-214 |       data-side={side}
-215 |       data-slot="sidebar"
-216 |     >
-217 |       {/* This is what handles the sidebar gap on desktop */}
-218 |       <div
-219 |         data-slot="sidebar-gap"
-220 |         className={cn(
-221 |           "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
-222 |           "group-data-[collapsible=offcanvas]:w-0",
-223 |           "group-data-[side=right]:rotate-180",
-224 |           variant === "floating" || variant === "inset"
-225 |             ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
-226 |             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
-227 |         )}
-228 |       />
-229 |       <div
-230 |         data-slot="sidebar-container"
-231 |         className={cn(
-232 |           "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
-233 |           side === "left"
-234 |             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-235 |             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-236 |           // Adjust the padding for floating and inset variants.
-237 |           variant === "floating" || variant === "inset"
-238 |             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-239 |             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
-240 |           className
-241 |         )}
-242 |         {...props}
-243 |       >
-244 |         <div
-245 |           data-sidebar="sidebar"
-246 |           data-slot="sidebar-inner"
-247 |           className="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
-248 |         >
-249 |           {children}
-250 |         </div>
-251 |       </div>
-252 |     </div>
-253 |   )
-254 | }
-255 | 
-256 | function SidebarTrigger({
-257 |   className,
-258 |   onClick,
-259 |   ...props
-260 | }: React.ComponentProps<typeof Button>) {
-261 |   const { toggleSidebar } = useSidebar()
-262 | 
-263 |   return (
-264 |     <Button
-265 |       data-sidebar="trigger"
-266 |       data-slot="sidebar-trigger"
-267 |       variant="ghost"
-268 |       size="icon"
-269 |       className={cn("size-7", className)}
-270 |       onClick={(event) => {
-271 |         onClick?.(event)
-272 |         toggleSidebar()
-273 |       }}
-274 |       {...props}
-275 |     >
-276 |       <PanelLeftIcon />
-277 |       <span className="sr-only">Toggle Sidebar</span>
-278 |     </Button>
-279 |   )
-280 | }
-281 | 
-282 | function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
-283 |   const { toggleSidebar } = useSidebar()
-284 | 
-285 |   return (
-286 |     <button
-287 |       data-sidebar="rail"
-288 |       data-slot="sidebar-rail"
-289 |       aria-label="Toggle Sidebar"
-290 |       tabIndex={-1}
-291 |       onClick={toggleSidebar}
-292 |       title="Toggle Sidebar"
-293 |       className={cn(
-294 |         "hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex",
-295 |         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
-296 |         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
-297 |         "hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full",
-298 |         "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
-299 |         "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
-300 |         className
-301 |       )}
-302 |       {...props}
-303 |     />
-304 |   )
-305 | }
-306 | 
-307 | function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
-308 |   return (
-309 |     <main
-310 |       data-slot="sidebar-inset"
-311 |       className={cn(
-312 |         "bg-background relative flex w-full flex-1 flex-col",
-313 |         "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
-314 |         className
-315 |       )}
-316 |       {...props}
-317 |     />
-318 |   )
-319 | }
-320 | 
-321 | function SidebarInput({
-322 |   className,
-323 |   ...props
-324 | }: React.ComponentProps<typeof Input>) {
-325 |   return (
-326 |     <Input
-327 |       data-slot="sidebar-input"
-328 |       data-sidebar="input"
-329 |       className={cn("bg-background h-8 w-full shadow-none", className)}
-330 |       {...props}
-331 |     />
-332 |   )
-333 | }
-334 | 
-335 | function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
-336 |   return (
-337 |     <div
-338 |       data-slot="sidebar-header"
-339 |       data-sidebar="header"
-340 |       className={cn("flex flex-col gap-2 p-2", className)}
-341 |       {...props}
-342 |     />
-343 |   )
-344 | }
-345 | 
-346 | function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
-347 |   return (
-348 |     <div
-349 |       data-slot="sidebar-footer"
-350 |       data-sidebar="footer"
-351 |       className={cn("flex flex-col gap-2 p-2", className)}
-352 |       {...props}
-353 |     />
-354 |   )
-355 | }
-356 | 
-357 | function SidebarSeparator({
-358 |   className,
-359 |   ...props
-360 | }: React.ComponentProps<typeof Separator>) {
-361 |   return (
-362 |     <Separator
-363 |       data-slot="sidebar-separator"
-364 |       data-sidebar="separator"
-365 |       className={cn("bg-sidebar-border mx-2 w-auto", className)}
-366 |       {...props}
-367 |     />
-368 |   )
-369 | }
-370 | 
-371 | function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
-372 |   return (
-373 |     <div
-374 |       data-slot="sidebar-content"
-375 |       data-sidebar="content"
-376 |       className={cn(
-377 |         "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
-378 |         className
-379 |       )}
-380 |       {...props}
-381 |     />
-382 |   )
-383 | }
-384 | 
-385 | function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
-386 |   return (
-387 |     <div
-388 |       data-slot="sidebar-group"
-389 |       data-sidebar="group"
-390 |       className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
-391 |       {...props}
-392 |     />
-393 |   )
-394 | }
-395 | 
-396 | function SidebarGroupLabel({
-397 |   className,
-398 |   asChild = false,
-399 |   ...props
-400 | }: React.ComponentProps<"div"> & { asChild?: boolean }) {
-401 |   const Comp = asChild ? Slot : "div"
-402 | 
-403 |   return (
-404 |     <Comp
-405 |       data-slot="sidebar-group-label"
-406 |       data-sidebar="group-label"
-407 |       className={cn(
-408 |         "text-sidebar-foreground/70 ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-409 |         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
-410 |         className
-411 |       )}
-412 |       {...props}
-413 |     />
-414 |   )
-415 | }
-416 | 
-417 | function SidebarGroupAction({
-418 |   className,
-419 |   asChild = false,
-420 |   ...props
-421 | }: React.ComponentProps<"button"> & { asChild?: boolean }) {
-422 |   const Comp = asChild ? Slot : "button"
-423 | 
-424 |   return (
-425 |     <Comp
-426 |       data-slot="sidebar-group-action"
-427 |       data-sidebar="group-action"
-428 |       className={cn(
-429 |         "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-430 |         // Increases the hit area of the button on mobile.
-431 |         "after:absolute after:-inset-2 md:after:hidden",
-432 |         "group-data-[collapsible=icon]:hidden",
-433 |         className
-434 |       )}
-435 |       {...props}
-436 |     />
-437 |   )
-438 | }
-439 | 
-440 | function SidebarGroupContent({
-441 |   className,
-442 |   ...props
-443 | }: React.ComponentProps<"div">) {
-444 |   return (
-445 |     <div
-446 |       data-slot="sidebar-group-content"
-447 |       data-sidebar="group-content"
-448 |       className={cn("w-full text-sm", className)}
-449 |       {...props}
-450 |     />
-451 |   )
-452 | }
-453 | 
-454 | function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
-455 |   return (
-456 |     <ul
-457 |       data-slot="sidebar-menu"
-458 |       data-sidebar="menu"
-459 |       className={cn("flex w-full min-w-0 flex-col gap-1", className)}
-460 |       {...props}
-461 |     />
-462 |   )
-463 | }
-464 | 
-465 | function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
-466 |   return (
-467 |     <li
-468 |       data-slot="sidebar-menu-item"
-469 |       data-sidebar="menu-item"
-470 |       className={cn("group/menu-item relative", className)}
-471 |       {...props}
-472 |     />
-473 |   )
-474 | }
-475 | 
-476 | const sidebarMenuButtonVariants = cva(
-477 |   "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
-478 |   {
-479 |     variants: {
-480 |       variant: {
-481 |         default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-482 |         outline:
-483 |           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
-484 |       },
-485 |       size: {
-486 |         default: "h-8 text-sm",
-487 |         sm: "h-7 text-xs",
-488 |         lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
-489 |       },
-490 |     },
-491 |     defaultVariants: {
-492 |       variant: "default",
-493 |       size: "default",
-494 |     },
-495 |   }
-496 | )
-497 | 
-498 | function SidebarMenuButton({
-499 |   asChild = false,
-500 |   isActive = false,
-501 |   variant = "default",
-502 |   size = "default",
-503 |   tooltip,
-504 |   className,
-505 |   ...props
-506 | }: React.ComponentProps<"button"> & {
-507 |   asChild?: boolean
-508 |   isActive?: boolean
-509 |   tooltip?: string | React.ComponentProps<typeof TooltipContent>
-510 | } & VariantProps<typeof sidebarMenuButtonVariants>) {
-511 |   const Comp = asChild ? Slot : "button"
-512 |   const { isMobile, state } = useSidebar()
-513 | 
-514 |   const button = (
-515 |     <Comp
-516 |       data-slot="sidebar-menu-button"
-517 |       data-sidebar="menu-button"
-518 |       data-size={size}
-519 |       data-active={isActive}
-520 |       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-521 |       {...props}
-522 |     />
-523 |   )
-524 | 
-525 |   if (!tooltip) {
-526 |     return button
-527 |   }
-528 | 
-529 |   if (typeof tooltip === "string") {
-530 |     tooltip = {
-531 |       children: tooltip,
-532 |     }
-533 |   }
-534 | 
-535 |   return (
-536 |     <Tooltip>
-537 |       <TooltipTrigger asChild>{button}</TooltipTrigger>
-538 |       <TooltipContent
-539 |         side="right"
-540 |         align="center"
-541 |         hidden={state !== "collapsed" || isMobile}
-542 |         {...tooltip}
-543 |       />
-544 |     </Tooltip>
-545 |   )
-546 | }
-547 | 
-548 | function SidebarMenuAction({
-549 |   className,
-550 |   asChild = false,
-551 |   showOnHover = false,
-552 |   ...props
-553 | }: React.ComponentProps<"button"> & {
-554 |   asChild?: boolean
-555 |   showOnHover?: boolean
-556 | }) {
-557 |   const Comp = asChild ? Slot : "button"
-558 | 
-559 |   return (
-560 |     <Comp
-561 |       data-slot="sidebar-menu-action"
-562 |       data-sidebar="menu-action"
-563 |       className={cn(
-564 |         "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-565 |         // Increases the hit area of the button on mobile.
-566 |         "after:absolute after:-inset-2 md:after:hidden",
-567 |         "peer-data-[size=sm]/menu-button:top-1",
-568 |         "peer-data-[size=default]/menu-button:top-1.5",
-569 |         "peer-data-[size=lg]/menu-button:top-2.5",
-570 |         "group-data-[collapsible=icon]:hidden",
-571 |         showOnHover &&
-572 |           "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
-573 |         className
-574 |       )}
-575 |       {...props}
-576 |     />
-577 |   )
-578 | }
-579 | 
-580 | function SidebarMenuBadge({
-581 |   className,
-582 |   ...props
-583 | }: React.ComponentProps<"div">) {
-584 |   return (
-585 |     <div
-586 |       data-slot="sidebar-menu-badge"
-587 |       data-sidebar="menu-badge"
-588 |       className={cn(
-589 |         "text-sidebar-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none",
-590 |         "peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
-591 |         "peer-data-[size=sm]/menu-button:top-1",
-592 |         "peer-data-[size=default]/menu-button:top-1.5",
-593 |         "peer-data-[size=lg]/menu-button:top-2.5",
-594 |         "group-data-[collapsible=icon]:hidden",
-595 |         className
-596 |       )}
-597 |       {...props}
-598 |     />
-599 |   )
-600 | }
-601 | 
-602 | function SidebarMenuSkeleton({
-603 |   className,
-604 |   showIcon = false,
-605 |   ...props
-606 | }: React.ComponentProps<"div"> & {
-607 |   showIcon?: boolean
-608 | }) {
-609 |   // Random width between 50 to 90%.
-610 |   const width = React.useMemo(() => {
-611 |     return `${Math.floor(Math.random() * 40) + 50}%`
-612 |   }, [])
-613 | 
-614 |   return (
-615 |     <div
-616 |       data-slot="sidebar-menu-skeleton"
-617 |       data-sidebar="menu-skeleton"
-618 |       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
-619 |       {...props}
-620 |     >
-621 |       {showIcon && (
-622 |         <Skeleton
-623 |           className="size-4 rounded-md"
-624 |           data-sidebar="menu-skeleton-icon"
-625 |         />
-626 |       )}
-627 |       <Skeleton
-628 |         className="h-4 max-w-(--skeleton-width) flex-1"
-629 |         data-sidebar="menu-skeleton-text"
-630 |         style={
-631 |           {
-632 |             "--skeleton-width": width,
-633 |           } as React.CSSProperties
-634 |         }
-635 |       />
-636 |     </div>
-637 |   )
-638 | }
-639 | 
-640 | function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
-641 |   return (
-642 |     <ul
-643 |       data-slot="sidebar-menu-sub"
-644 |       data-sidebar="menu-sub"
-645 |       className={cn(
-646 |         "border-sidebar-border mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l px-2.5 py-0.5",
-647 |         "group-data-[collapsible=icon]:hidden",
-648 |         className
-649 |       )}
-650 |       {...props}
-651 |     />
-652 |   )
-653 | }
-654 | 
-655 | function SidebarMenuSubItem({
-656 |   className,
-657 |   ...props
-658 | }: React.ComponentProps<"li">) {
-659 |   return (
-660 |     <li
-661 |       data-slot="sidebar-menu-sub-item"
-662 |       data-sidebar="menu-sub-item"
-663 |       className={cn("group/menu-sub-item relative", className)}
-664 |       {...props}
-665 |     />
-666 |   )
-667 | }
-668 | 
-669 | function SidebarMenuSubButton({
-670 |   asChild = false,
-671 |   size = "md",
-672 |   isActive = false,
-673 |   className,
-674 |   ...props
-675 | }: React.ComponentProps<"a"> & {
-676 |   asChild?: boolean
-677 |   size?: "sm" | "md"
-678 |   isActive?: boolean
-679 | }) {
-680 |   const Comp = asChild ? Slot : "a"
-681 | 
-682 |   return (
-683 |     <Comp
-684 |       data-slot="sidebar-menu-sub-button"
-685 |       data-sidebar="menu-sub-button"
-686 |       data-size={size}
-687 |       data-active={isActive}
-688 |       className={cn(
-689 |         "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
-690 |         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
-691 |         size === "sm" && "text-xs",
-692 |         size === "md" && "text-sm",
-693 |         "group-data-[collapsible=icon]:hidden",
-694 |         className
-695 |       )}
-696 |       {...props}
-697 |     />
-698 |   )
-699 | }
-700 | 
-701 | export {
-702 |   Sidebar,
-703 |   SidebarContent,
-704 |   SidebarFooter,
-705 |   SidebarGroup,
-706 |   SidebarGroupAction,
-707 |   SidebarGroupContent,
-708 |   SidebarGroupLabel,
-709 |   SidebarHeader,
-710 |   SidebarInput,
-711 |   SidebarInset,
-712 |   SidebarMenu,
-713 |   SidebarMenuAction,
-714 |   SidebarMenuBadge,
-715 |   SidebarMenuButton,
-716 |   SidebarMenuItem,
-717 |   SidebarMenuSkeleton,
-718 |   SidebarMenuSub,
-719 |   SidebarMenuSubButton,
-720 |   SidebarMenuSubItem,
-721 |   SidebarProvider,
-722 |   SidebarRail,
-723 |   SidebarSeparator,
-724 |   SidebarTrigger,
-725 |   useSidebar,
-726 | }
-```
-
-components/ui/skeleton.tsx
-```
-1 | import { cn } from "@/lib/utils"
-2 | 
-3 | function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
-4 |   return (
-5 |     <div
-6 |       data-slot="skeleton"
-7 |       className={cn("bg-accent animate-pulse rounded-md", className)}
-8 |       {...props}
-9 |     />
-10 |   )
-11 | }
-12 | 
-13 | export { Skeleton }
-```
-
-components/ui/sonner.tsx
-```
-1 | "use client"
-2 | 
-3 | import { useTheme } from "next-themes"
-4 | import { Toaster as Sonner, ToasterProps } from "sonner"
-5 | 
-6 | const Toaster = ({ ...props }: ToasterProps) => {
-7 |   const { theme = "system" } = useTheme()
-8 | 
-9 |   return (
-10 |     <Sonner
-11 |       theme={theme as ToasterProps["theme"]}
-12 |       className="toaster group"
-13 |       style={
-14 |         {
-15 |           "--normal-bg": "var(--popover)",
-16 |           "--normal-text": "var(--popover-foreground)",
-17 |           "--normal-border": "var(--border)",
-18 |         } as React.CSSProperties
-19 |       }
-20 |       {...props}
-21 |     />
-22 |   )
-23 | }
-24 | 
-25 | export { Toaster }
-```
-
-components/ui/switch.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as SwitchPrimitive from "@radix-ui/react-switch"
-5 | 
-6 | import { cn } from "@/lib/utils"
-7 | 
-8 | function Switch({
-9 |   className,
-10 |   ...props
-11 | }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
-12 |   return (
-13 |     <SwitchPrimitive.Root
-14 |       data-slot="switch"
-15 |       className={cn(
-16 |         "peer data-[state=checked]:bg-primary data-[state=unchecked]:bg-input focus-visible:border-ring focus-visible:ring-ring/50 dark:data-[state=unchecked]:bg-input/80 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
-17 |         className
-18 |       )}
-19 |       {...props}
-20 |     >
-21 |       <SwitchPrimitive.Thumb
-22 |         data-slot="switch-thumb"
-23 |         className={cn(
-24 |           "bg-background dark:data-[state=unchecked]:bg-foreground dark:data-[state=checked]:bg-primary-foreground pointer-events-none block size-4 rounded-full ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0"
-25 |         )}
-26 |       />
-27 |     </SwitchPrimitive.Root>
-28 |   )
-29 | }
-30 | 
-31 | export { Switch }
-```
-
-components/ui/text-morph.tsx
-```
-1 | 'use client';
-2 | import { cn } from '@/lib/utils';
-3 | import { AnimatePresence, motion, Transition, Variants } from 'motion/react';
-4 | import { useMemo, useId } from 'react';
-5 | 
-6 | export type TextMorphProps = {
-7 |   children: string;
-8 |   as?: React.ElementType;
-9 |   className?: string;
-10 |   style?: React.CSSProperties;
-11 |   variants?: Variants;
-12 |   transition?: Transition;
-13 | };
-14 | 
-15 | export function TextMorph({
-16 |   children,
-17 |   as: Component = 'p',
-18 |   className,
-19 |   style,
-20 |   variants,
-21 |   transition,
-22 | }: TextMorphProps) {
-23 |   const uniqueId = useId();
-24 | 
-25 |   const characters = useMemo(() => {
-26 |     const charCounts: Record<string, number> = {};
-27 | 
-28 |     return children.split('').map((char) => {
-29 |       const lowerChar = char.toLowerCase();
-30 |       charCounts[lowerChar] = (charCounts[lowerChar] || 0) + 1;
-31 | 
-32 |       return {
-33 |         id: `${uniqueId}-${lowerChar}${charCounts[lowerChar]}`,
-34 |         label: char === ' ' ? '\u00A0' : char,
-35 |       };
-36 |     });
-37 |   }, [children, uniqueId]);
-38 | 
-39 |   const defaultVariants: Variants = {
-40 |     initial: { opacity: 0 },
-41 |     animate: { opacity: 1 },
-42 |     exit: { opacity: 0 },
-43 |   };
-44 | 
-45 |   const defaultTransition: Transition = {
-46 |     type: 'spring',
-47 |     stiffness: 280,
-48 |     damping: 18,
-49 |     mass: 0.3,
-50 |   };
-51 | 
-52 |   return (
-53 |     <Component className={cn(className)} aria-label={children} style={style}>
-54 |       <AnimatePresence mode='popLayout' initial={false}>
-55 |         {characters.map((character) => (
-56 |           <motion.span
-57 |             key={character.id}
-58 |             layoutId={character.id}
-59 |             className='inline-block'
-60 |             aria-hidden='true'
-61 |             initial='initial'
-62 |             animate='animate'
-63 |             exit='exit'
-64 |             variants={variants || defaultVariants}
-65 |             transition={transition || defaultTransition}
-66 |           >
-67 |             {character.label}
-68 |           </motion.span>
-69 |         ))}
-70 |       </AnimatePresence>
-71 |     </Component>
-72 |   );
-73 | }
-```
-
-components/ui/textarea.tsx
-```
-1 | import * as React from "react"
-2 | 
-3 | import { cn } from "@/lib/utils"
-4 | 
-5 | function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
-6 |   return (
-7 |     <textarea
-8 |       data-slot="textarea"
-9 |       className={cn(
-10 |         "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-11 |         className
-12 |       )}
-13 |       {...props}
-14 |     />
-15 |   )
-16 | }
-17 | 
-18 | export { Textarea }
-```
-
-components/ui/tooltip.tsx
-```
-1 | "use client"
-2 | 
-3 | import * as React from "react"
-4 | import * as TooltipPrimitive from "@radix-ui/react-tooltip"
-5 | 
-6 | import { cn } from "@/lib/utils"
-7 | 
-8 | function TooltipProvider({
-9 |   delayDuration = 0,
-10 |   ...props
-11 | }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
-12 |   return (
-13 |     <TooltipPrimitive.Provider
-14 |       data-slot="tooltip-provider"
-15 |       delayDuration={delayDuration}
-16 |       {...props}
-17 |     />
-18 |   )
-19 | }
-20 | 
-21 | function Tooltip({
-22 |   ...props
-23 | }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-24 |   return (
-25 |     <TooltipProvider>
-26 |       <TooltipPrimitive.Root data-slot="tooltip" {...props} />
-27 |     </TooltipProvider>
-28 |   )
-29 | }
-30 | 
-31 | function TooltipTrigger({
-32 |   ...props
-33 | }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-34 |   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
-35 | }
-36 | 
-37 | function TooltipContent({
-38 |   className,
-39 |   sideOffset = 0,
-40 |   children,
-41 |   ...props
-42 | }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
-43 |   return (
-44 |     <TooltipPrimitive.Portal>
-45 |       <TooltipPrimitive.Content
-46 |         data-slot="tooltip-content"
-47 |         sideOffset={sideOffset}
-48 |         className={cn(
-49 |           "bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance",
-50 |           className
-51 |         )}
-52 |         {...props}
-53 |       >
-54 |         {children}
-55 |         <TooltipPrimitive.Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
-56 |       </TooltipPrimitive.Content>
-57 |     </TooltipPrimitive.Portal>
-58 |   )
-59 | }
-60 | 
-61 | export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
 ```
 
 lib/hooks/use-chats.ts
@@ -21864,18 +23158,174 @@ lib/hooks/use-scroll-to-bottom.tsx
 78 | }
 ```
 
-drizzle/migrations/0003_add_web_search.sql
+lib/db/index.ts
 ```
-1 | -- Add web search columns to messages table
-2 | ALTER TABLE messages
-3 | ADD COLUMN has_web_search boolean DEFAULT false,
-4 | ADD COLUMN web_search_context_size text DEFAULT 'medium';
-5 | 
-6 | -- Update existing messages to have default values
-7 | UPDATE messages 
-8 | SET has_web_search = false,
-9 |     web_search_context_size = 'medium'
-10 | WHERE has_web_search IS NULL; 
+1 | import { drizzle } from "drizzle-orm/neon-serverless";
+2 | import { Pool } from "@neondatabase/serverless";
+3 | import * as schema from "./schema";
+4 | 
+5 | // Initialize the connection pool
+6 | const pool = new Pool({
+7 |   connectionString: process.env.DATABASE_URL,
+8 | });
+9 | 
+10 | // Initialize Drizzle with the connection pool and schema
+11 | export const db = drizzle(pool, { schema }); 
+```
+
+lib/db/schema.ts
+```
+1 | import { timestamp, pgTable, text, primaryKey, json, boolean, integer } from "drizzle-orm/pg-core";
+2 | import { nanoid } from "nanoid";
+3 | 
+4 | // Message role enum type
+5 | export enum MessageRole {
+6 |   USER = "user",
+7 |   ASSISTANT = "assistant",
+8 |   TOOL = "tool"
+9 | }
+10 | 
+11 | export const chats = pgTable('chats', {
+12 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+13 |   userId: text('user_id').notNull(),
+14 |   title: text('title').notNull().default('New Chat'),
+15 |   createdAt: timestamp('created_at').defaultNow().notNull(),
+16 |   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+17 | });
+18 | 
+19 | export const messages = pgTable('messages', {
+20 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+21 |   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+22 |   role: text('role').notNull(), // user, assistant, or tool
+23 |   parts: json('parts').notNull(), // Store parts as JSON in the database
+24 |   hasWebSearch: boolean('has_web_search').default(false),
+25 |   webSearchContextSize: text('web_search_context_size').default('medium'), // 'low', 'medium', 'high'
+26 |   createdAt: timestamp('created_at').defaultNow().notNull(),
+27 | });
+28 | 
+29 | // Types for structured message content
+30 | export type MessagePart = {
+31 |   type: string;
+32 |   text?: string;
+33 |   toolCallId?: string;
+34 |   toolName?: string;
+35 |   args?: any;
+36 |   result?: any;
+37 |   citations?: WebSearchCitation[];
+38 |   [key: string]: any;
+39 | };
+40 | 
+41 | export type Attachment = {
+42 |   type: string;
+43 |   [key: string]: any;
+44 | };
+45 | 
+46 | export type Chat = typeof chats.$inferSelect;
+47 | export type Message = typeof messages.$inferSelect;
+48 | export type DBMessage = {
+49 |   id: string;
+50 |   chatId: string;
+51 |   role: string;
+52 |   parts: MessagePart[];
+53 |   createdAt: Date;
+54 | };
+55 | 
+56 | // --- Better Auth Core Schema ---
+57 | 
+58 | export const users = pgTable("user", {
+59 |   id: text("id").primaryKey().$defaultFn(() => nanoid()),
+60 |   name: text("name"),
+61 |   email: text("email").unique().notNull(),
+62 |   emailVerified: boolean("emailVerified"),
+63 |   image: text("image"),
+64 |   isAnonymous: boolean("isAnonymous").default(false),
+65 |   metadata: json("metadata"),
+66 |   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+67 |   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+68 | });
+69 | 
+70 | export const accounts = pgTable(
+71 |   "account",
+72 |   {
+73 |     id: text("id").primaryKey().$defaultFn(() => nanoid()),
+74 |     userId: text("userId")
+75 |       .notNull()
+76 |       .references(() => users.id, { onDelete: "cascade" }),
+77 |     providerId: text("providerId").notNull(), // e.g., "google", "github", "email"
+78 |     accountId: text("accountId").notNull(), // The user's ID with the provider or email/password hash
+79 |     providerType: text("providerType"), // "oauth", "email", etc. REMOVED .notNull()
+80 |     accessToken: text("access_token"),
+81 |     refreshToken: text("refresh_token"),
+82 |     accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
+83 |     tokenType: text("token_type"), // e.g., "bearer"
+84 |     scope: text("scope"),
+85 |     idToken: text("id_token"), // For OIDC providers like Google
+86 |     sessionState: text("session_state"), // For OIDC providers
+87 | 
+88 |     // Fields specific to email/password - not needed for Google-only
+89 |     // password: text("password"),
+90 | 
+91 |     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+92 |     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+93 |   }
+94 | );
+95 | 
+96 | export const sessions = pgTable("session", {
+97 |   id: text("id").primaryKey().$defaultFn(() => nanoid()),
+98 |   sessionToken: text("sessionToken").unique().notNull(),
+99 |   userId: text("userId")
+100 |     .notNull()
+101 |     .references(() => users.id, { onDelete: "cascade" }),
+102 |   expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+103 |   ipAddress: text("ipAddress"),
+104 |   userAgent: text("userAgent"),
+105 |   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+106 |   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+107 | });
+108 | 
+109 | // Corrected Verification Token Schema -> Renamed Verification Schema
+110 | export const verification = pgTable( // Renamed from verificationTokens
+111 |   "verification", // Renamed from verificationToken
+112 |   {
+113 |     id: text("id").primaryKey().$defaultFn(() => nanoid()),
+114 |     identifier: text("identifier").notNull(),
+115 |     // token: text("token").unique().notNull(), // Removed this line
+116 |     value: text("value").notNull(), // Ensure this exists as per docs (though error wasn't about this)
+117 |     expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+118 |     createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+119 |     updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
+120 |   }
+121 | );
+122 | 
+123 | // --- End Better Auth Core Schema ---
+124 | 
+125 | // Infer types for Better Auth tables
+126 | export type AuthUser = typeof users.$inferSelect;
+127 | export type AuthAccount = typeof accounts.$inferSelect;
+128 | export type AuthSession = typeof sessions.$inferSelect;
+129 | // export type AuthVerificationToken = typeof verificationTokens.$inferSelect; // Removed old type export
+130 | export type AuthVerification = typeof verification.$inferSelect; // Added new type export
+131 | 
+132 | export type WebSearchCitation = {
+133 |   url: string;
+134 |   title: string;
+135 |   content?: string;
+136 |   startIndex: number;
+137 |   endIndex: number;
+138 | };
+139 | 
+140 | // --- Polar Usage Events Schema ---
+141 | 
+142 | export const polarUsageEvents = pgTable('polar_usage_events', {
+143 |   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()), // Unique ID for the log entry
+144 |   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }), // Links to your existing users table
+145 |   polarCustomerId: text('polar_customer_id'), // The customer ID from Polar
+146 |   eventName: text('event_name').notNull(), // The name of the event (e.g., "ai-usage")
+147 |   eventPayload: json('event_payload').notNull(), // The full payload sent to Polar's ingest API (e.g., { "completionTokens": 100 })
+148 |   createdAt: timestamp('created_at').defaultNow().notNull(), // When this log entry was created
+149 | });
+150 | 
+151 | export type PolarUsageEvent = typeof polarUsageEvents.$inferSelect; 
 ```
 
 app/api/chat/route.ts
@@ -22263,436 +23713,401 @@ app/api/chat/route.ts
 381 |         finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
 382 |           // sessionId: nanoid(), // Optionally, provide a session ID if your server uses it
 383 |           requestInit: {
-384 |             headers: Object.keys(headers).length > 0 ? headers : undefined
-385 |           }
-386 |         });
-387 |       } else if (mcpServer.type === 'stdio') {
-388 |         if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
-389 |           console.warn("Skipping stdio MCP server due to missing command or args");
-390 |           continue;
-391 |         }
-392 |         const env: Record<string, string> = {};
-393 |         if (mcpServer.env && mcpServer.env.length > 0) {
-394 |           mcpServer.env.forEach(envVar => {
-395 |             if (envVar.key) env[envVar.key] = envVar.value || '';
-396 |           });
-397 |         }
-398 |         // Check for uvx pattern
-399 |         if (mcpServer.command === 'uvx') {
-400 |           // Ensure uv is installed, which provides uvx
-401 |           console.log("Ensuring uv (for uvx) is installed...");
-402 |           let uvInstalled = false;
-403 |           const installUvSubprocess = spawn('pip3', ['install', 'uv']);
-404 |           // Capture output for debugging
-405 |           let uvInstallStdout = '';
-406 |           let uvInstallStderr = '';
-407 |           installUvSubprocess.stdout.on('data', (data) => { uvInstallStdout += data.toString(); });
-408 |           installUvSubprocess.stderr.on('data', (data) => { uvInstallStderr += data.toString(); });
-409 | 
-410 |           await new Promise<void>((resolve) => {
-411 |             installUvSubprocess.on('close', (code: number) => {
-412 |               if (code !== 0) {
-413 |                 console.error(`Failed to install uv using pip3: exit code ${code}`);
-414 |                 console.error('pip3 stdout:', uvInstallStdout);
-415 |                 console.error('pip3 stderr:', uvInstallStderr);
-416 |               } else {
-417 |                 console.log("uv installed or already present.");
-418 |                 if (uvInstallStdout) console.log('pip3 stdout:', uvInstallStdout);
-419 |                 if (uvInstallStderr) console.log('pip3 stderr:', uvInstallStderr);
-420 |                 uvInstalled = true;
-421 |               }
-422 |               resolve();
-423 |             });
-424 |             installUvSubprocess.on('error', (err) => {
-425 |               console.error("Error spawning pip3 to install uv:", err);
-426 |               resolve(); // Resolve anyway
-427 |             });
-428 |           });
-429 | 
-430 |           if (!uvInstalled) {
-431 |             console.warn("Skipping uvx command: Failed to ensure uv installation.");
-432 |             continue;
-433 |           }
-434 | 
-435 |           // Do NOT modify the command or args. Let StdioMCPTransport run uvx directly.
-436 |           console.log(`Proceeding to spawn uvx command directly.`);
-437 |         }
-438 |         // If python is passed in the command, install the python package mentioned in args after -m
-439 |         else if (mcpServer.command.includes('python3')) {
-440 |           const packageName = mcpServer.args[mcpServer.args.indexOf('-m') + 1];
-441 |           console.log("Attempting to install python package using uv:", packageName);
-442 |           // Use uv to install the package
-443 |           const subprocess = spawn('uv', ['pip', 'install', packageName]);
-444 |           subprocess.on('close', (code: number) => {
-445 |             if (code !== 0) {
-446 |               console.error(`Failed to install python package ${packageName} using uv: ${code}`);
-447 |             } else {
-448 |               console.log(`Successfully installed python package ${packageName} using uv.`);
-449 |             }
-450 |           });
-451 |           // wait for the subprocess to finish
-452 |           await new Promise<void>((resolve) => {
-453 |             subprocess.on('close', () => resolve());
-454 |             subprocess.on('error', (err) => {
-455 |               console.error(`Error spawning uv command for package ${packageName}:`, err);
-456 |               resolve(); // Resolve anyway to avoid hanging
-457 |             });
-458 |           });
-459 |         }
-460 | 
-461 |         // Log the final command and args before spawning for stdio
-462 |         console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
+384 |             headers: {
+385 |               'MCP-Protocol-Version': '2025-06-18', // Required for MCP 1.13.0+
+386 |               ...headers // Spread existing headers after protocol version
+387 |             }
+388 |           }
+389 |         });
+390 |       } else if (mcpServer.type === 'stdio') {
+391 |         if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
+392 |           console.warn("Skipping stdio MCP server due to missing command or args");
+393 |           continue;
+394 |         }
+395 |         const env: Record<string, string> = {};
+396 |         if (mcpServer.env && mcpServer.env.length > 0) {
+397 |           mcpServer.env.forEach(envVar => {
+398 |             if (envVar.key) env[envVar.key] = envVar.value || '';
+399 |           });
+400 |         }
+401 |         // Check for uvx pattern
+402 |         if (mcpServer.command === 'uvx') {
+403 |           // Ensure uv is installed, which provides uvx
+404 |           console.log("Ensuring uv (for uvx) is installed...");
+405 |           let uvInstalled = false;
+406 |           const installUvSubprocess = spawn('pip3', ['install', 'uv']);
+407 |           // Capture output for debugging
+408 |           let uvInstallStdout = '';
+409 |           let uvInstallStderr = '';
+410 |           installUvSubprocess.stdout.on('data', (data) => { uvInstallStdout += data.toString(); });
+411 |           installUvSubprocess.stderr.on('data', (data) => { uvInstallStderr += data.toString(); });
+412 | 
+413 |           await new Promise<void>((resolve) => {
+414 |             installUvSubprocess.on('close', (code: number) => {
+415 |               if (code !== 0) {
+416 |                 console.error(`Failed to install uv using pip3: exit code ${code}`);
+417 |                 console.error('pip3 stdout:', uvInstallStdout);
+418 |                 console.error('pip3 stderr:', uvInstallStderr);
+419 |               } else {
+420 |                 console.log("uv installed or already present.");
+421 |                 if (uvInstallStdout) console.log('pip3 stdout:', uvInstallStdout);
+422 |                 if (uvInstallStderr) console.log('pip3 stderr:', uvInstallStderr);
+423 |                 uvInstalled = true;
+424 |               }
+425 |               resolve();
+426 |             });
+427 |             installUvSubprocess.on('error', (err) => {
+428 |               console.error("Error spawning pip3 to install uv:", err);
+429 |               resolve(); // Resolve anyway
+430 |             });
+431 |           });
+432 | 
+433 |           if (!uvInstalled) {
+434 |             console.warn("Skipping uvx command: Failed to ensure uv installation.");
+435 |             continue;
+436 |           }
+437 | 
+438 |           // Do NOT modify the command or args. Let StdioMCPTransport run uvx directly.
+439 |           console.log(`Proceeding to spawn uvx command directly.`);
+440 |         }
+441 |         // If python is passed in the command, install the python package mentioned in args after -m
+442 |         else if (mcpServer.command.includes('python3')) {
+443 |           const packageName = mcpServer.args[mcpServer.args.indexOf('-m') + 1];
+444 |           console.log("Attempting to install python package using uv:", packageName);
+445 |           // Use uv to install the package
+446 |           const subprocess = spawn('uv', ['pip', 'install', packageName]);
+447 |           subprocess.on('close', (code: number) => {
+448 |             if (code !== 0) {
+449 |               console.error(`Failed to install python package ${packageName} using uv: ${code}`);
+450 |             } else {
+451 |               console.log(`Successfully installed python package ${packageName} using uv.`);
+452 |             }
+453 |           });
+454 |           // wait for the subprocess to finish
+455 |           await new Promise<void>((resolve) => {
+456 |             subprocess.on('close', () => resolve());
+457 |             subprocess.on('error', (err) => {
+458 |               console.error(`Error spawning uv command for package ${packageName}:`, err);
+459 |               resolve(); // Resolve anyway to avoid hanging
+460 |             });
+461 |           });
+462 |         }
 463 | 
-464 |         finalTransportForClient = new StdioMCPTransport({
-465 |           command: mcpServer.command!,
-466 |           args: mcpServer.args!,
-467 |           env: Object.keys(env).length > 0 ? env : undefined
-468 |         });
-469 |       } else {
-470 |         console.warn(`Skipping MCP server with unsupported transport type: ${(mcpServer as any).type}`);
-471 |         continue;
-472 |       }
-473 | 
-474 |       const mcpClient = await createMCPClient({ transport: finalTransportForClient });
-475 |       mcpClients.push(mcpClient);
+464 |         // Log the final command and args before spawning for stdio
+465 |         console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
+466 | 
+467 |         finalTransportForClient = new StdioMCPTransport({
+468 |           command: mcpServer.command!,
+469 |           args: mcpServer.args!,
+470 |           env: Object.keys(env).length > 0 ? env : undefined
+471 |         });
+472 |       } else {
+473 |         console.warn(`Skipping MCP server with unsupported transport type: ${(mcpServer as any).type}`);
+474 |         continue;
+475 |       }
 476 | 
-477 |       const mcptools = await mcpClient.tools();
-478 | 
-479 |       console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(mcptools));
-480 | 
-481 |       // Add MCP tools to tools object
-482 |       tools = { ...tools, ...mcptools };
-483 |     } catch (error) {
-484 |       console.error("Failed to initialize MCP client:", error);
-485 |       // Continue with other servers instead of failing the entire request
-486 |       // If any MCP client is essential, we might return an error here:
-487 |       // return createErrorResponse("MCP_CLIENT_ERROR", "Failed to initialize a required external tool.", 500, error.message);
-488 |     }
-489 |   }
-490 | 
-491 |   // Register cleanup for all clients
-492 |   if (mcpClients.length > 0) {
-493 |     req.signal.addEventListener('abort', async () => {
-494 |       for (const client of mcpClients) {
-495 |         try {
-496 |           await client.close();
-497 |         } catch (error) {
-498 |           console.error("Error closing MCP client:", error);
-499 |         }
-500 |       }
-501 |     });
-502 |   }
-503 | 
-504 |   console.log("messages", messages);
-505 |   console.log("parts", messages.map(m => m.parts.map(p => p)));
+477 |       const mcpClient = await createMCPClient({ transport: finalTransportForClient });
+478 |       mcpClients.push(mcpClient);
+479 | 
+480 |       const mcptools = await mcpClient.tools();
+481 | 
+482 |       console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(mcptools));
+483 | 
+484 |       // Add MCP tools to tools object
+485 |       tools = { ...tools, ...mcptools };
+486 |     } catch (error) {
+487 |       console.error("Failed to initialize MCP client:", error);
+488 |       // Continue with other servers instead of failing the entire request
+489 |       // If any MCP client is essential, we might return an error here:
+490 |       // return createErrorResponse("MCP_CLIENT_ERROR", "Failed to initialize a required external tool.", 500, error.message);
+491 |     }
+492 |   }
+493 | 
+494 |   // Register cleanup for all clients
+495 |   if (mcpClients.length > 0) {
+496 |     req.signal.addEventListener('abort', async () => {
+497 |       for (const client of mcpClients) {
+498 |         try {
+499 |           await client.close();
+500 |         } catch (error) {
+501 |           console.error("Error closing MCP client:", error);
+502 |         }
+503 |       }
+504 |     });
+505 |   }
 506 | 
-507 |   // Log web search status
-508 |   if (secureWebSearch.enabled) {
-509 |     console.log(`[Web Search] ENABLED with context size: ${secureWebSearch.contextSize}`);
-510 |   } else {
-511 |     console.log(`[Web Search] DISABLED`);
-512 |   }
-513 | 
-514 |   let modelInstance;
-515 |   let effectiveWebSearchEnabled = secureWebSearch.enabled; // Initialize with requested value
+507 |   console.log("messages", messages);
+508 |   console.log("parts", messages.map(m => m.parts.map(p => p)));
+509 | 
+510 |   // Log web search status
+511 |   if (secureWebSearch.enabled) {
+512 |     console.log(`[Web Search] ENABLED with context size: ${secureWebSearch.contextSize}`);
+513 |   } else {
+514 |     console.log(`[Web Search] DISABLED`);
+515 |   }
 516 | 
-517 |   // Check if the selected model supports web search
-518 |   const currentModelDetails = modelDetails[selectedModel];
-519 |   if (secureWebSearch.enabled && selectedModel.startsWith("openrouter/")) {
-520 |     if (currentModelDetails?.supportsWebSearch === true) {
-521 |       // Model supports web search, use :online variant
-522 |       const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
-523 |       const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
-524 |       // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
-525 |       if (
-526 |         selectedModel === "openrouter/deepseek/deepseek-r1" ||
-527 |         selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
-528 |         selectedModel === "openrouter/x-ai/grok-3-beta" ||
-529 |         selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-530 |         selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-531 |         selectedModel === "openrouter/qwen/qwq-32b"
-532 |       ) {
-533 |         modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
-534 |       } else {
-535 |         modelInstance = openrouterClient(openrouterModelId);
-536 |       }
-537 |       console.log(`[Web Search] Enabled for ${selectedModel} using ${openrouterModelId}`);
-538 |     } else {
-539 |       // Model does not support web search, or flag is not explicitly true
-540 |       effectiveWebSearchEnabled = false;
-541 |       modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
-542 |       console.log(`[Web Search] Requested for ${selectedModel}, but not supported or not enabled for this model. Using standard model.`);
-543 |     }
-544 |   } else {
-545 |     // Web search not enabled in request or model is not an OpenRouter model
-546 |     if (secureWebSearch.enabled) {
-547 |       console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
-548 |     }
-549 |     effectiveWebSearchEnabled = false;
-550 |     modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
-551 |   }
-552 | 
-553 |   const modelOptions: { // Add type for clarity and to allow logprobs
-554 |     web_search_options?: { search_context_size: 'low' | 'medium' | 'high' };
-555 |     logprobs?: boolean;
-556 |   } = {};
-557 | 
-558 |   if (effectiveWebSearchEnabled) {
-559 |     modelOptions.web_search_options = {
-560 |       search_context_size: secureWebSearch.contextSize
-561 |     };
-562 |   }
-563 | 
-564 |   // Always set logprobs: false for these models at the providerOptions level for streamText
-565 |   if (
-566 |     selectedModel === "openrouter/deepseek/deepseek-r1" ||
-567 |     selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
-568 |     selectedModel === "openrouter/x-ai/grok-3-beta" ||
-569 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-570 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-571 |     selectedModel === "openrouter/qwen/qwq-32b"
-572 |   ) {
-573 |     modelOptions.logprobs = false;
-574 |   }
-575 | 
-576 |   // Enhanced security logging
-577 |   if (webSearch.enabled && !serverSideWebSearchEnabled) {
-578 |     console.error(`[SECURITY ALERT] User ${userId} attempted to bypass Web Search payment:`, {
-579 |       userId,
-580 |       isAnonymous,
-581 |       actualCredits,
-582 |       isUsingOwnApiKeys,
-583 |       userAgent: req.headers.get('user-agent'),
-584 |       requestTime: new Date().toISOString(),
-585 |       sessionInfo: {
-586 |         email: session.user.email,
-587 |         name: session.user.name
-588 |       }
-589 |     });
-590 |   }
-591 | 
-592 |   // Construct the payload for OpenRouter
-593 |   const openRouterPayload = {
-594 |     model: modelInstance,
-595 |     system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
-596 | 
-597 |     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
-598 | 
-599 |     ${effectiveWebSearchEnabled ? `
-600 |     ## Web Search Enabled:
-601 |     You have web search capabilities enabled. When you use web search:
-602 |     1. Cite your sources using markdown links
-603 |     2. Use the format [domain.com](full-url) for citations
-604 |     3. Only cite reliable and relevant sources
-605 |     4. Integrate the information naturally into your responses
-606 |     ` : ''}
-607 | 
-608 |     ## How to Respond:
-609 |     1.  **Analyze the Request:** Understand what the user is asking.
-610 |     2.  **Use Tools When Necessary:** If an external tool provides the best way to answer (e.g., fetching specific data, performing calculations, interacting with services), select the most relevant tool(s) and use them. You can use multiple tools in sequence. Clearly indicate when you are using a tool and what it's doing.
-611 |     3.  **Use Your Own Abilities:** For requests involving brainstorming, explanation, writing, summarization, analysis, or general knowledge, rely on your own reasoning and knowledge base. You don't need to force the use of an external tool if it's not suitable or required for these tasks.
-612 |     4.  **Respond Clearly:** Provide your answer directly when using your own abilities. If using tools, explain the steps taken and present the results clearly.
-613 |     5.  **Handle Limitations:** If you cannot answer fully (due to lack of information, missing tools, or capability limits), explain the limitation clearly. Don't just say "I don't know" if you can provide partial information or explain *why* you can't answer. If relevant tools seem to be missing, you can mention that the user could potentially add them via the server configuration.
-614 | 
-615 |     ## Response Format:
-616 |     - Use Markdown for formatting.
-617 |     - Base your response on the results from any tools used, or on your own reasoning and knowledge.
-618 |     `,
-619 |     messages: modelMessages,
-620 |     tools,
-621 |     maxSteps: 20,
-622 |     providerOptions: {
-623 |       google: {
-624 |         thinkingConfig: {
-625 |           thinkingBudget: 2048,
-626 |         },
-627 |       },
-628 |       anthropic: {
-629 |         thinking: {
-630 |           type: 'enabled',
-631 |           budgetTokens: 12000
-632 |         },
-633 |       },
-634 |       openrouter: modelOptions
-635 |     },
-636 |     onError: (error: any) => {
-637 |       console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));
+517 |   let modelInstance;
+518 |   let effectiveWebSearchEnabled = secureWebSearch.enabled; // Initialize with requested value
+519 | 
+520 |   // Check if the selected model supports web search
+521 |   const currentModelDetails = modelDetails[selectedModel];
+522 |   if (secureWebSearch.enabled && selectedModel.startsWith("openrouter/")) {
+523 |     if (currentModelDetails?.supportsWebSearch === true) {
+524 |       // Model supports web search, use :online variant
+525 |       const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
+526 |       const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+527 |       // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
+528 |       if (
+529 |         selectedModel === "openrouter/deepseek/deepseek-r1" ||
+530 |         selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
+531 |         selectedModel === "openrouter/x-ai/grok-3-beta" ||
+532 |         selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+533 |         selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+534 |         selectedModel === "openrouter/qwen/qwq-32b"
+535 |       ) {
+536 |         modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
+537 |       } else {
+538 |         modelInstance = openrouterClient(openrouterModelId);
+539 |       }
+540 |       console.log(`[Web Search] Enabled for ${selectedModel} using ${openrouterModelId}`);
+541 |     } else {
+542 |       // Model does not support web search, or flag is not explicitly true
+543 |       effectiveWebSearchEnabled = false;
+544 |       modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
+545 |       console.log(`[Web Search] Requested for ${selectedModel}, but not supported or not enabled for this model. Using standard model.`);
+546 |     }
+547 |   } else {
+548 |     // Web search not enabled in request or model is not an OpenRouter model
+549 |     if (secureWebSearch.enabled) {
+550 |       console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
+551 |     }
+552 |     effectiveWebSearchEnabled = false;
+553 |     modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
+554 |   }
+555 | 
+556 |   const modelOptions: { // Add type for clarity and to allow logprobs
+557 |     web_search_options?: { search_context_size: 'low' | 'medium' | 'high' };
+558 |     logprobs?: boolean;
+559 |   } = {};
+560 | 
+561 |   if (effectiveWebSearchEnabled) {
+562 |     modelOptions.web_search_options = {
+563 |       search_context_size: secureWebSearch.contextSize
+564 |     };
+565 |   }
+566 | 
+567 |   // Always set logprobs: false for these models at the providerOptions level for streamText
+568 |   if (
+569 |     selectedModel === "openrouter/deepseek/deepseek-r1" ||
+570 |     selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
+571 |     selectedModel === "openrouter/x-ai/grok-3-beta" ||
+572 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+573 |     selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+574 |     selectedModel === "openrouter/qwen/qwq-32b"
+575 |   ) {
+576 |     modelOptions.logprobs = false;
+577 |   }
+578 | 
+579 |   // Enhanced security logging
+580 |   if (webSearch.enabled && !serverSideWebSearchEnabled) {
+581 |     console.error(`[SECURITY ALERT] User ${userId} attempted to bypass Web Search payment:`, {
+582 |       userId,
+583 |       isAnonymous,
+584 |       actualCredits,
+585 |       isUsingOwnApiKeys,
+586 |       userAgent: req.headers.get('user-agent'),
+587 |       requestTime: new Date().toISOString(),
+588 |       sessionInfo: {
+589 |         email: session.user.email,
+590 |         name: session.user.name
+591 |       }
+592 |     });
+593 |   }
+594 | 
+595 |   // Construct the payload for OpenRouter
+596 |   const openRouterPayload = {
+597 |     model: modelInstance,
+598 |     system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
+599 | 
+600 |     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
+601 | 
+602 |     ${effectiveWebSearchEnabled ? `
+603 |     ## Web Search Enabled:
+604 |     You have web search capabilities enabled. When you use web search:
+605 |     1. Cite your sources using markdown links
+606 |     2. Use the format [domain.com](full-url) for citations
+607 |     3. Only cite reliable and relevant sources
+608 |     4. Integrate the information naturally into your responses
+609 |     ` : ''}
+610 | 
+611 |     ## How to Respond:
+612 |     1.  **Analyze the Request:** Understand what the user is asking.
+613 |     2.  **Use Tools When Necessary:** If an external tool provides the best way to answer (e.g., fetching specific data, performing calculations, interacting with services), select the most relevant tool(s) and use them. You can use multiple tools in sequence. Clearly indicate when you are using a tool and what it's doing.
+614 |     3.  **Use Your Own Abilities:** For requests involving brainstorming, explanation, writing, summarization, analysis, or general knowledge, rely on your own reasoning and knowledge base. You don't need to force the use of an external tool if it's not suitable or required for these tasks.
+615 |     4.  **Respond Clearly:** Provide your answer directly when using your own abilities. If using tools, explain the steps taken and present the results clearly.
+616 |     5.  **Handle Limitations:** If you cannot answer fully (due to lack of information, missing tools, or capability limits), explain the limitation clearly. Don't just say "I don't know" if you can provide partial information or explain *why* you can't answer. If relevant tools seem to be missing, you can mention that the user could potentially add them via the server configuration.
+617 | 
+618 |     ## Response Format:
+619 |     - Use Markdown for formatting.
+620 |     - Base your response on the results from any tools used, or on your own reasoning and knowledge.
+621 |     `,
+622 |     messages: modelMessages,
+623 |     tools,
+624 |     maxSteps: 20,
+625 |     providerOptions: {
+626 |       google: {
+627 |         thinkingConfig: {
+628 |           thinkingBudget: 2048,
+629 |         },
+630 |       },
+631 |       anthropic: {
+632 |         thinking: {
+633 |           type: 'enabled',
+634 |           budgetTokens: 12000
+635 |         },
+636 |       },
+637 |       openrouter: modelOptions
 638 |     },
-639 |     async onFinish(event: any) {
-640 |       // Minimal fix: cast event.response to OpenRouterResponse
-641 |       const response = event.response as OpenRouterResponse;
-642 |       const allMessages = appendResponseMessages({
-643 |         messages: modelMessages,
-644 |         responseMessages: response.messages as any, // Cast to any to bypass type error
-645 |       });
-646 | 
-647 |       // Extract citations from response messages
-648 |       const processedMessages = allMessages.map(msg => {
-649 |         if (msg.role === 'assistant' && (response.annotations?.length)) {
-650 |           const citations = response.annotations
-651 |             .filter((a: Annotation) => a.type === 'url_citation')
-652 |             .map((c: Annotation) => ({
-653 |               url: c.url_citation.url,
-654 |               title: c.url_citation.title,
-655 |               content: c.url_citation.content,
-656 |               startIndex: c.url_citation.start_index,
-657 |               endIndex: c.url_citation.end_index
-658 |             }));
-659 | 
-660 |           // Add citations to message parts if they exist
-661 |           if (citations.length > 0 && msg.parts) {
-662 |             msg.parts = (msg.parts as any[]).map(part => ({
-663 |               ...part,
-664 |               citations
-665 |             }));
-666 |           }
-667 |         }
-668 |         return msg;
-669 |       });
-670 | 
-671 |       // Update the chat with the full message history
-672 |       // Note: saveChat here acts as an upsert based on how it's likely implemented
-673 |       try {
-674 |         await saveChat({
-675 |           id,
-676 |           userId,
-677 |           messages: processedMessages as any, // Cast to any to bypass type error
-678 |           selectedModel,
-679 |           apiKeys,
-680 |         });
-681 |         console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
-682 |       } catch (dbError: any) {
-683 |         console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving chat:`, dbError);
-684 |         // This error occurs after the stream has finished.
-685 |         // We can't change the HTTP response to the client here.
-686 |         // Robust logging is key.
-687 |       }
-688 | 
-689 |       let dbMessages;
-690 |       try {
-691 |         dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
-692 |           ...msg,
-693 |           hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
-694 |           webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
-695 |         }));
-696 |       } catch (conversionError: any) {
-697 |         console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
-698 |         // If conversion fails, we cannot save messages.
-699 |         // Log and potentially skip saving messages or save raw if possible.
-700 |         return; // Exit onFinish early if messages can't be processed for DB.
-701 |       }
-702 | 
-703 |       try {
-704 |         await saveMessages({ messages: dbMessages });
-705 |         console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
-706 |       } catch (dbMessagesError: any) {
-707 |         console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
-708 |       }
-709 | 
-710 |       // Extract token usage from response - OpenRouter may provide it in different formats
-711 |       let completionTokens = 0;
+639 |     onError: (error: any) => {
+640 |       console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));
+641 |     },
+642 |     async onFinish(event: any) {
+643 |       // Minimal fix: cast event.response to OpenRouterResponse
+644 |       const response = event.response as OpenRouterResponse;
+645 |       const allMessages = appendResponseMessages({
+646 |         messages: modelMessages,
+647 |         responseMessages: response.messages as any, // Cast to any to bypass type error
+648 |       });
+649 | 
+650 |       // Extract citations from response messages
+651 |       const processedMessages = allMessages.map(msg => {
+652 |         if (msg.role === 'assistant' && (response.annotations?.length)) {
+653 |           const citations = response.annotations
+654 |             .filter((a: Annotation) => a.type === 'url_citation')
+655 |             .map((c: Annotation) => ({
+656 |               url: c.url_citation.url,
+657 |               title: c.url_citation.title,
+658 |               content: c.url_citation.content,
+659 |               startIndex: c.url_citation.start_index,
+660 |               endIndex: c.url_citation.end_index
+661 |             }));
+662 | 
+663 |           // Add citations to message parts if they exist
+664 |           if (citations.length > 0 && msg.parts) {
+665 |             msg.parts = (msg.parts as any[]).map(part => ({
+666 |               ...part,
+667 |               citations
+668 |             }));
+669 |           }
+670 |         }
+671 |         return msg;
+672 |       });
+673 | 
+674 |       // Update the chat with the full message history
+675 |       // Note: saveChat here acts as an upsert based on how it's likely implemented
+676 |       try {
+677 |         await saveChat({
+678 |           id,
+679 |           userId,
+680 |           messages: processedMessages as any, // Cast to any to bypass type error
+681 |           selectedModel,
+682 |           apiKeys,
+683 |         });
+684 |         console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
+685 |       } catch (dbError: any) {
+686 |         console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving chat:`, dbError);
+687 |         // This error occurs after the stream has finished.
+688 |         // We can't change the HTTP response to the client here.
+689 |         // Robust logging is key.
+690 |       }
+691 | 
+692 |       let dbMessages;
+693 |       try {
+694 |         dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
+695 |           ...msg,
+696 |           hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
+697 |           webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
+698 |         }));
+699 |       } catch (conversionError: any) {
+700 |         console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
+701 |         // If conversion fails, we cannot save messages.
+702 |         // Log and potentially skip saving messages or save raw if possible.
+703 |         return; // Exit onFinish early if messages can't be processed for DB.
+704 |       }
+705 | 
+706 |       try {
+707 |         await saveMessages({ messages: dbMessages });
+708 |         console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
+709 |       } catch (dbMessagesError: any) {
+710 |         console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
+711 |       }
 712 | 
-713 |       // Access response with type assertion to avoid TypeScript errors
-714 |       // The actual structure may vary by provider
-715 |       const typedResponse = response as any;
-716 | 
-717 |       // Try to extract tokens from different possible response structures
-718 |       if (typedResponse.usage?.completion_tokens) {
-719 |         completionTokens = typedResponse.usage.completion_tokens;
-720 |       } else if (typedResponse.usage?.output_tokens) {
-721 |         completionTokens = typedResponse.usage.output_tokens;
-722 |       } else {
-723 |         // Estimate based on last message content length if available
-724 |         const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
-725 |         if (lastMessage?.content) {
-726 |           // Rough estimate: 1 token ≈ 4 characters
-727 |           completionTokens = Math.ceil(lastMessage.content.length / 4);
-728 |         } else if (typeof typedResponse.content === 'string') {
-729 |           completionTokens = Math.ceil(typedResponse.content.length / 4);
-730 |         } else {
-731 |           // Default minimum to track something
-732 |           completionTokens = 1;
-733 |         }
-734 |       }
-735 | 
-736 |       // Existing code for tracking tokens
-737 |       let polarCustomerId: string | undefined;
+713 |       // Extract token usage from response - OpenRouter may provide it in different formats
+714 |       let completionTokens = 0;
+715 | 
+716 |       // Access response with type assertion to avoid TypeScript errors
+717 |       // The actual structure may vary by provider
+718 |       const typedResponse = response as any;
+719 | 
+720 |       // Try to extract tokens from different possible response structures
+721 |       if (typedResponse.usage?.completion_tokens) {
+722 |         completionTokens = typedResponse.usage.completion_tokens;
+723 |       } else if (typedResponse.usage?.output_tokens) {
+724 |         completionTokens = typedResponse.usage.output_tokens;
+725 |       } else {
+726 |         // Estimate based on last message content length if available
+727 |         const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+728 |         if (lastMessage?.content) {
+729 |           // Rough estimate: 1 token ≈ 4 characters
+730 |           completionTokens = Math.ceil(lastMessage.content.length / 4);
+731 |         } else if (typeof typedResponse.content === 'string') {
+732 |           completionTokens = Math.ceil(typedResponse.content.length / 4);
+733 |         } else {
+734 |           // Default minimum to track something
+735 |           completionTokens = 1;
+736 |         }
+737 |       }
 738 | 
-739 |       // Get from session
-740 |       try {
-741 |         const session = await auth.api.getSession({ headers: req.headers });
-742 | 
-743 |         // Try to get from session first
-744 |         polarCustomerId = (session?.user as any)?.polarCustomerId ||
-745 |           (session?.user as any)?.metadata?.polarCustomerId;
-746 |       } catch (error) {
-747 |         console.warn('Failed to get session for Polar customer ID:', error);
-748 |       }
-749 | 
-750 |       // Track token usage
-751 |       if (completionTokens > 0) {
-752 |         try {
-753 |           // Get isAnonymous status from session if available
-754 |           let isAnonymous = false;
-755 |           try {
-756 |             isAnonymous = (session?.user as any)?.isAnonymous === true;
-757 |           } catch (error) {
-758 |             console.warn('Could not determine if user is anonymous, assuming not anonymous');
-759 |           }
-760 | 
-761 |           // Recalculate isUsingOwnApiKeys in callback scope since it's not accessible here
-762 |           const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+739 |       // Existing code for tracking tokens
+740 |       let polarCustomerId: string | undefined;
+741 | 
+742 |       // Get from session
+743 |       try {
+744 |         const session = await auth.api.getSession({ headers: req.headers });
+745 | 
+746 |         // Try to get from session first
+747 |         polarCustomerId = (session?.user as any)?.polarCustomerId ||
+748 |           (session?.user as any)?.metadata?.polarCustomerId;
+749 |       } catch (error) {
+750 |         console.warn('Failed to get session for Polar customer ID:', error);
+751 |       }
+752 | 
+753 |       // Track token usage
+754 |       if (completionTokens > 0) {
+755 |         try {
+756 |           // Get isAnonymous status from session if available
+757 |           let isAnonymous = false;
+758 |           try {
+759 |             isAnonymous = (session?.user as any)?.isAnonymous === true;
+760 |           } catch (error) {
+761 |             console.warn('Could not determine if user is anonymous, assuming not anonymous');
+762 |           }
 763 | 
-764 |           // Get actual credits in callback scope
-765 |           let callbackActualCredits: number | null = null;
-766 |           if (!isAnonymous && userId) {
-767 |             try {
-768 |               callbackActualCredits = await getRemainingCreditsByExternalId(userId);
-769 |             } catch (error) {
-770 |               console.warn('Error getting actual credits in onFinish callback:', error);
-771 |             }
-772 |           }
-773 | 
-774 |           // Determine if user should have credits deducted or just use daily message tracking
-775 |           // Only deduct credits if user actually has purchased credits (positive balance) AND not using own API keys
-776 |           let shouldDeductCredits = false;
-777 |           if (!isAnonymous && !callbackIsUsingOwnApiKeys && callbackActualCredits !== null && callbackActualCredits > 0) {
-778 |             shouldDeductCredits = true;
-779 |           }
-780 | 
-781 |           // Calculate additional cost for web search - use webSearch from outer scope (it should be accessible)
-782 |           let additionalCost = 0;
-783 |           if (secureWebSearch.enabled && !callbackIsUsingOwnApiKeys && shouldDeductCredits) {
-784 |             additionalCost = WEB_SEARCH_COST;
-785 |           }
-786 | 
-787 |           // Pass flags to control credit deduction vs daily message tracking, including web search surcharge
-788 |           await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
-789 |           const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
-790 |           console.log(`${isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : 'Tracked (daily limit)'} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
-791 |         } catch (error: any) {
-792 |           console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
-793 |           // Don't break the response flow if tracking fails
-794 |         }
-795 |       }
-796 |     }
-797 |   };
-798 | 
-799 |   console.log("OpenRouter API Payload:", JSON.stringify(openRouterPayload, null, 2));
-800 | 
-801 |   // Now call streamText as before
-802 |   // const result = streamText(openRouterPayload); // Will be moved into try-catch
-803 | 
-804 |   // result.consumeStream() // This is likely redundant and will be removed.
-805 |   // return result.toDataStreamResponse({ // Will be moved into try-catch
-806 | 
-807 |   try {
-808 |     const result = streamText(openRouterPayload);
-809 | 
-810 |     return result.toDataStreamResponse({
-811 |       sendReasoning: true,
-812 |       getErrorMessage: (error: any) => {
-813 |         // Log the full error object for server-side debugging
+764 |           // Recalculate isUsingOwnApiKeys in callback scope since it's not accessible here
+765 |           const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+766 | 
+767 |           // Get actual credits in callback scope
+768 |           let callbackActualCredits: number | null = null;
+769 |           if (!isAnonymous && userId) {
+770 |             try {
+771 |               callbackActualCredits = await getRemainingCreditsByExternalId(userId);
+772 |             } catch (error) {
+773 |               console.warn('Error getting actual credits in onFinish callback:', error);
+774 |             }
+775 |           }
+776 | 
+777 |           // Determine if user should have credits deducted or just use daily message tracking
+778 |           // Only deduct credits if user actually has purchased credits (positive balance) AND not using own API keys
 [TRUNCATED]
 ```
 
@@ -23007,6 +24422,73 @@ app/api/debug-credits/route.ts
 116 | } 
 ```
 
+app/api/portal/route.ts
+```
+1 | import { NextRequest, NextResponse } from "next/server";
+2 | import { auth } from "@/lib/auth";
+3 | import { Polar } from "@polar-sh/sdk";
+4 | 
+5 | // Polar server environment configuration
+6 | // Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
+7 | const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
+8 | 
+9 | const polar = new Polar({
+10 |     accessToken: process.env.POLAR_ACCESS_TOKEN!,
+11 |     server: polarServerEnv,
+12 | });
+13 | 
+14 | export async function GET(request: NextRequest) {
+15 |     try {
+16 |         // Get the current session
+17 |         const session = await auth.api.getSession({
+18 |             headers: request.headers,
+19 |         });
+20 | 
+21 |         if (!session?.user) {
+22 |             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+23 |         }
+24 | 
+25 |         const userId = session.user.id;
+26 | 
+27 |         // Get the Polar customer using external ID (the user's app ID)
+28 |         try {
+29 |             const customer = await polar.customers.getExternal({
+30 |                 externalId: userId,
+31 |             });
+32 | 
+33 |             // Create an authenticated customer portal session
+34 |             const customerSession = await polar.customerSessions.create({
+35 |                 customerId: customer.id,
+36 |             });
+37 | 
+38 |             // Redirect to the customer portal
+39 |             return NextResponse.redirect(customerSession.customerPortalUrl);
+40 |         } catch (error) {
+41 |             console.error("Error getting Polar customer or creating portal session:", error);
+42 | 
+43 |             // If customer not found, return error with helpful message
+44 |             if (error instanceof Error && error.message.includes("not found")) {
+45 |                 return NextResponse.json(
+46 |                     { error: "Customer not found. Please contact support." },
+47 |                     { status: 404 }
+48 |                 );
+49 |             }
+50 | 
+51 |             return NextResponse.json(
+52 |                 { error: "Failed to access customer portal" },
+53 |                 { status: 500 }
+54 |             );
+55 |         }
+56 |     } catch (error) {
+57 |         console.error("Portal API error:", error);
+58 |         return NextResponse.json(
+59 |             { error: "Internal server error" },
+60 |             { status: 500 }
+61 |         );
+62 |     }
+63 | } 
+```
+
 app/api/credits/route.ts
 ```
 1 | import { NextResponse } from 'next/server';
@@ -23094,71 +24576,16 @@ app/api/credits/route.ts
 83 | } 
 ```
 
-app/api/portal/route.ts
+app/api/version/route.ts
 ```
-1 | import { NextRequest, NextResponse } from "next/server";
-2 | import { auth } from "@/lib/auth";
-3 | import { Polar } from "@polar-sh/sdk";
-4 | 
-5 | // Polar server environment configuration
-6 | // Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
-7 | const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
-8 | 
-9 | const polar = new Polar({
-10 |     accessToken: process.env.POLAR_ACCESS_TOKEN!,
-11 |     server: polarServerEnv,
-12 | });
-13 | 
-14 | export async function GET(request: NextRequest) {
-15 |     try {
-16 |         // Get the current session
-17 |         const session = await auth.api.getSession({
-18 |             headers: request.headers,
-19 |         });
-20 | 
-21 |         if (!session?.user) {
-22 |             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-23 |         }
-24 | 
-25 |         const userId = session.user.id;
-26 | 
-27 |         // Get the Polar customer using external ID (the user's app ID)
-28 |         try {
-29 |             const customer = await polar.customers.getExternal({
-30 |                 externalId: userId,
-31 |             });
-32 | 
-33 |             // Create an authenticated customer portal session
-34 |             const customerSession = await polar.customerSessions.create({
-35 |                 customerId: customer.id,
-36 |             });
-37 | 
-38 |             // Redirect to the customer portal
-39 |             return NextResponse.redirect(customerSession.customerPortalUrl);
-40 |         } catch (error) {
-41 |             console.error("Error getting Polar customer or creating portal session:", error);
-42 | 
-43 |             // If customer not found, return error with helpful message
-44 |             if (error instanceof Error && error.message.includes("not found")) {
-45 |                 return NextResponse.json(
-46 |                     { error: "Customer not found. Please contact support." },
-47 |                     { status: 404 }
-48 |                 );
-49 |             }
-50 | 
-51 |             return NextResponse.json(
-52 |                 { error: "Failed to access customer portal" },
-53 |                 { status: 500 }
-54 |             );
-55 |         }
-56 |     } catch (error) {
-57 |         console.error("Portal API error:", error);
-58 |         return NextResponse.json(
-59 |             { error: "Internal server error" },
-60 |             { status: 500 }
-61 |         );
-62 |     }
-63 | } 
+1 | import { NextResponse } from 'next/server';
+2 | 
+3 | export async function GET() {
+4 |     return NextResponse.json({
+5 |         commit: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'unknown',
+6 |         url: process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL || 'unknown',
+7 |     });
+8 | } 
 ```
 
 app/chat/[id]/page.tsx
@@ -23350,18 +24777,6 @@ app/checkout/error/page.tsx
 83 | } 
 ```
 
-app/api/version/route.ts
-```
-1 | import { NextResponse } from 'next/server';
-2 | 
-3 | export async function GET() {
-4 |     return NextResponse.json({
-5 |         commit: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'unknown',
-6 |         url: process.env.NEXT_PUBLIC_VERCEL_URL || process.env.VERCEL_URL || 'unknown',
-7 |     });
-8 | } 
-```
-
 app/api/auth/[...betterauth]/route.ts
 ```
 1 | import { auth } from '@/lib/auth';
@@ -23372,6 +24787,101 @@ app/api/auth/[...betterauth]/route.ts
 6 | 
 7 | // Log that Better-Auth routes are registered
 8 | console.log('Better-Auth routes registered successfully'); 
+```
+
+app/api/auth/polar/route.ts
+```
+1 | import { NextRequest, NextResponse } from 'next/server';
+2 | 
+3 | export async function GET(req: NextRequest) {
+4 |     console.log('Polar route GET hit at:', req.url);
+5 |     return NextResponse.json({ status: 'Polar route is active' });
+6 | }
+7 | 
+8 | export async function POST(req: NextRequest) {
+9 |     console.log('Polar route POST hit at:', req.url);
+10 | 
+11 |     try {
+12 |         const body = await req.text();
+13 |         console.log('Received body:', body.substring(0, 100) + '...');
+14 | 
+15 |         // Log all headers
+16 |         console.log('Headers:');
+17 |         req.headers.forEach((value, key) => {
+18 |             console.log(`${key}: ${value}`);
+19 |         });
+20 | 
+21 |         return NextResponse.json({ status: 'success', message: 'Webhook received' });
+22 |     } catch (error) {
+23 |         console.error('Error in Polar route:', error);
+24 |         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+25 |     }
+26 | } 
+```
+
+app/api/chats/migrate/route.ts
+```
+1 | import { NextRequest, NextResponse } from "next/server";
+2 | import { auth } from "@/lib/auth";
+3 | import { db } from "@/lib/db";
+4 | import { chats } from "@/lib/db/schema";
+5 | import { eq } from "drizzle-orm";
+6 | import { z } from "zod";
+7 | 
+8 | const migrateSchema = z.object({
+9 |     localUserId: z.string().min(1, "Local user ID is required"),
+10 | });
+11 | 
+12 | export async function POST(req: NextRequest) {
+13 |     // 1. Check Authentication using headers
+14 |     const session = await auth.api.getSession({ headers: req.headers });
+15 |     if (!session?.user?.id) {
+16 |         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+17 |     }
+18 |     const authenticatedUserId = session.user.id;
+19 | 
+20 |     // 2. Validate Request Body
+21 |     let parsedBody;
+22 |     try {
+23 |         const body = await req.json();
+24 |         parsedBody = migrateSchema.parse(body);
+25 |     } catch (error) {
+26 |         if (error instanceof z.ZodError) {
+27 |             return NextResponse.json({ error: error.errors }, { status: 400 });
+28 |         }
+29 |         return NextResponse.json(
+30 |             { error: "Invalid request body" },
+31 |             { status: 400 },
+32 |         );
+33 |     }
+34 | 
+35 |     const { localUserId } = parsedBody;
+36 | 
+37 |     // 3. Perform Database Update
+38 |     try {
+39 |         console.log(
+40 |             `Migrating chats from local user ${localUserId} to authenticated user ${authenticatedUserId}`,
+41 |         );
+42 |         const result = await db
+43 |             .update(chats)
+44 |             .set({ userId: authenticatedUserId })
+45 |             .where(eq(chats.userId, localUserId))
+46 |             .returning({ updatedId: chats.id }); // Optional: return updated chat IDs
+47 | 
+48 |         console.log(`Migrated ${result.length} chats.`);
+49 | 
+50 |         return NextResponse.json(
+51 |             { success: true, migratedCount: result.length },
+52 |             { status: 200 },
+53 |         );
+54 |     } catch (dbError) {
+55 |         console.error("Database error during chat migration:", dbError);
+56 |         return NextResponse.json(
+57 |             { error: "Failed to migrate chats" },
+58 |             { status: 500 },
+59 |         );
+60 |     }
+61 | } 
 ```
 
 app/api/chats/[id]/route.ts
@@ -23522,36 +25032,6 @@ app/api/chats/[id]/route.ts
 144 | }
 ```
 
-app/api/auth/polar/route.ts
-```
-1 | import { NextRequest, NextResponse } from 'next/server';
-2 | 
-3 | export async function GET(req: NextRequest) {
-4 |     console.log('Polar route GET hit at:', req.url);
-5 |     return NextResponse.json({ status: 'Polar route is active' });
-6 | }
-7 | 
-8 | export async function POST(req: NextRequest) {
-9 |     console.log('Polar route POST hit at:', req.url);
-10 | 
-11 |     try {
-12 |         const body = await req.text();
-13 |         console.log('Received body:', body.substring(0, 100) + '...');
-14 | 
-15 |         // Log all headers
-16 |         console.log('Headers:');
-17 |         req.headers.forEach((value, key) => {
-18 |             console.log(`${key}: ${value}`);
-19 |         });
-20 | 
-21 |         return NextResponse.json({ status: 'success', message: 'Webhook received' });
-22 |     } catch (error) {
-23 |         console.error('Error in Polar route:', error);
-24 |         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-25 |     }
-26 | } 
-```
-
 app/api/usage/messages/route.ts
 ```
 1 | import { NextResponse } from 'next/server';
@@ -23601,69 +25081,25 @@ app/api/usage/messages/route.ts
 45 | } 
 ```
 
-app/api/chats/migrate/route.ts
+app/api/auth/polar/webhooks/route.ts
 ```
-1 | import { NextRequest, NextResponse } from "next/server";
-2 | import { auth } from "@/lib/auth";
-3 | import { db } from "@/lib/db";
-4 | import { chats } from "@/lib/db/schema";
-5 | import { eq } from "drizzle-orm";
-6 | import { z } from "zod";
-7 | 
-8 | const migrateSchema = z.object({
-9 |     localUserId: z.string().min(1, "Local user ID is required"),
-10 | });
-11 | 
+1 | import { auth } from '@/lib/auth';
+2 | import { NextRequest, NextResponse } from 'next/server';
+3 | 
+4 | // GET handler for testing the endpoint
+5 | export async function GET() {
+6 |     console.log('Polar webhooks GET endpoint hit for testing');
+7 |     return NextResponse.json({ status: 'Polar webhooks endpoint is active' });
+8 | }
+9 | 
+10 | // This is the correct path for Polar webhooks according to the documentation
+11 | // The BetterAuth Polar plugin expects webhooks at /polar/webhooks relative to auth mount point
 12 | export async function POST(req: NextRequest) {
-13 |     // 1. Check Authentication using headers
-14 |     const session = await auth.api.getSession({ headers: req.headers });
-15 |     if (!session?.user?.id) {
-16 |         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-17 |     }
-18 |     const authenticatedUserId = session.user.id;
-19 | 
-20 |     // 2. Validate Request Body
-21 |     let parsedBody;
-22 |     try {
-23 |         const body = await req.json();
-24 |         parsedBody = migrateSchema.parse(body);
-25 |     } catch (error) {
-26 |         if (error instanceof z.ZodError) {
-27 |             return NextResponse.json({ error: error.errors }, { status: 400 });
-28 |         }
-29 |         return NextResponse.json(
-30 |             { error: "Invalid request body" },
-31 |             { status: 400 },
-32 |         );
-33 |     }
-34 | 
-35 |     const { localUserId } = parsedBody;
-36 | 
-37 |     // 3. Perform Database Update
-38 |     try {
-39 |         console.log(
-40 |             `Migrating chats from local user ${localUserId} to authenticated user ${authenticatedUserId}`,
-41 |         );
-42 |         const result = await db
-43 |             .update(chats)
-44 |             .set({ userId: authenticatedUserId })
-45 |             .where(eq(chats.userId, localUserId))
-46 |             .returning({ updatedId: chats.id }); // Optional: return updated chat IDs
-47 | 
-48 |         console.log(`Migrated ${result.length} chats.`);
-49 | 
-50 |         return NextResponse.json(
-51 |             { success: true, migratedCount: result.length },
-52 |             { status: 200 },
-53 |         );
-54 |     } catch (dbError) {
-55 |         console.error("Database error during chat migration:", dbError);
-56 |         return NextResponse.json(
-57 |             { error: "Failed to migrate chats" },
-58 |             { status: 500 },
-59 |         );
-60 |     }
-61 | } 
+13 |     console.log('Polar webhook received at correct path: /api/auth/polar/webhooks');
+14 | 
+15 |     // Simply forward the request to the auth handler which will process it
+16 |     return auth.handler(req);
+17 | } 
 ```
 
 app/api/auth/sign-in/anonymous/route.ts
@@ -23722,27 +25158,6 @@ app/api/auth/sign-in/anonymous/route.ts
 52 |         );
 53 |     }
 54 | } 
-```
-
-app/api/auth/polar/webhooks/route.ts
-```
-1 | import { auth } from '@/lib/auth';
-2 | import { NextRequest, NextResponse } from 'next/server';
-3 | 
-4 | // GET handler for testing the endpoint
-5 | export async function GET() {
-6 |     console.log('Polar webhooks GET endpoint hit for testing');
-7 |     return NextResponse.json({ status: 'Polar webhooks endpoint is active' });
-8 | }
-9 | 
-10 | // This is the correct path for Polar webhooks according to the documentation
-11 | // The BetterAuth Polar plugin expects webhooks at /polar/webhooks relative to auth mount point
-12 | export async function POST(req: NextRequest) {
-13 |     console.log('Polar webhook received at correct path: /api/auth/polar/webhooks');
-14 | 
-15 |     // Simply forward the request to the auth handler which will process it
-16 |     return auth.handler(req);
-17 | } 
 ```
 
 </current_codebase>
