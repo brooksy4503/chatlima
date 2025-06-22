@@ -34,12 +34,12 @@ const components: Partial<Components> = {
     );
   },
   ol: ({ node, children, ...props }) => (
-    <ol className="list-decimal list-outside ml-4 space-y-0.5 my-1.5" {...props}>
+    <ol className="list-decimal list-inside ml-4 space-y-0.5 my-1.5" {...props}>
       {children}
     </ol>
   ),
   ul: ({ node, children, ...props }) => (
-    <ul className="list-disc list-outside ml-4 space-y-0.5 my-1.5" {...props}>
+    <ul className="list-disc list-inside ml-4 space-y-0.5 my-1.5" {...props}>
       {children}
     </ul>
   ),
