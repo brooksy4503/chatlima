@@ -39,7 +39,7 @@ const getGoogleOAuthConfig = () => {
             clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET_DEV,
         };
-        console.log('🔐 Using DEVELOPMENT Google OAuth client:', config.clientId);
+        //console.log('🔐 Using DEVELOPMENT Google OAuth client:', config.clientId);
         return config;
     }
 };
@@ -93,7 +93,7 @@ const getTrustedOrigins = () => {
         origins.push(`https://*.${process.env.PREVIEW_DOMAIN}`);
     }
 
-    console.log('🔐 Auth trusted origins configured:', origins);
+    //console.log('🔐 Auth trusted origins configured:', origins);
 
     return origins;
 };

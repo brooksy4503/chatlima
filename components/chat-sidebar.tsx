@@ -146,7 +146,7 @@ export function ChatSidebar() {
         // Log anonymous user ID and email for debugging purposes if the user is flagged as anonymous.
         if (!isSessionLoading && session?.user?.isAnonymous === true) {
             // This log will only appear in the developer console.
-            console.log('Anonymous User (for debugging): ID=', session.user.id, ', Email=', session.user.email);
+            //console.log('Anonymous User (for debugging): ID=', session.user.id, ', Email=', session.user.email);
         }
     }, [session, isSessionLoading]);
 
