@@ -17,8 +17,8 @@ import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdi
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn } from "child_process";
 
-// Allow streaming responses up to 60 seconds on Hobby plan
-export const maxDuration = 60;
+// Allow streaming responses up to 300 seconds on Hobby plan
+export const maxDuration = 300;
 
 // Helper function to check if user is using their own API keys for the selected model
 function checkIfUsingOwnApiKeys(selectedModel: modelID, apiKeys: Record<string, string> = {}): boolean {
@@ -661,6 +661,156 @@ export async function POST(req: Request) {
     },
     onError: (error: any) => {
       console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));
+    },
+    async onStop(event: any) {
+      console.log(`[Chat ${id}][onStop] Stream stopped by user, saving current state...`);
+      console.log(`[Chat ${id}][onStop] Event object:`, JSON.stringify(event, null, 2));
+
+      try {
+        // Try multiple ways to extract the current text content from different event structures
+        let currentText = '';
+
+        // Method 1: Direct text property
+        if (event.text && typeof event.text === 'string') {
+          currentText = event.text;
+        }
+        // Method 2: Response.text property
+        else if (event.response?.text && typeof event.response.text === 'string') {
+          currentText = event.response.text;
+        }
+        // Method 3: Try to extract from response messages
+        else if (event.response?.messages && Array.isArray(event.response.messages)) {
+          const lastMessage = event.response.messages[event.response.messages.length - 1];
+          if (lastMessage && lastMessage.content) {
+            currentText = typeof lastMessage.content === 'string' ? lastMessage.content : JSON.stringify(lastMessage.content);
+          }
+        }
+        // Method 4: Try to extract from event messages
+        else if (event.messages && Array.isArray(event.messages)) {
+          const lastMessage = event.messages[event.messages.length - 1];
+          if (lastMessage && lastMessage.content) {
+            currentText = typeof lastMessage.content === 'string' ? lastMessage.content : JSON.stringify(lastMessage.content);
+          }
+        }
+        // Method 5: Check for experimental properties
+        else if (event.experimental_completionMessage) {
+          currentText = event.experimental_completionMessage;
+        }
+
+        console.log(`[Chat ${id}][onStop] Extracted text length:`, currentText.length);
+        console.log(`[Chat ${id}][onStop] Text preview:`, currentText.substring(0, 100));
+
+        // Only proceed if we have some text content
+        if (currentText.trim().length > 0) {
+          // Create a response message with the current text and proper parts structure
+          const assistantMessage = {
+            role: 'assistant' as const,
+            content: currentText,
+            id: nanoid(),
+            createdAt: new Date(),
+            parts: [{ type: 'text', text: currentText }] // Add parts structure for consistency
+          };
+
+          // Create the full message array
+          const allMessages = [...modelMessages, assistantMessage];
+          console.log(`[Chat ${id}][onStop] Total messages:`, allMessages.length);
+
+          // Save the chat with title generation (don't pass title to trigger generation)
+          await saveChat({
+            id,
+            messages: allMessages,
+            userId,
+            selectedModel,
+            apiKeys,
+            // Don't pass title parameter to trigger generation
+          });
+          console.log(`[Chat ${id}][onStop] Chat saved successfully`);
+
+          // Save individual messages using the same approach as onFinish
+          const dbMessages = (convertToDBMessages(allMessages as any, id) as any[]).map(msg => ({
+            ...msg,
+            hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant',
+            webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined
+          }));
+
+          await saveMessages({ messages: dbMessages });
+          console.log(`[Chat ${id}][onStop] Messages saved successfully`);
+        } else {
+          console.warn(`[Chat ${id}][onStop] No text content found to save. Event may not contain expected properties.`);
+
+          // Save at least the user messages if we have them
+          if (modelMessages.length > 0) {
+            await saveChat({
+              id,
+              messages: modelMessages,
+              userId,
+              selectedModel,
+              apiKeys,
+            });
+            console.log(`[Chat ${id}][onStop] Saved user messages only (no assistant response)`);
+          }
+        }
+
+        // Track token usage even when stopped - estimate based on partial content
+        if (currentText.trim().length > 0) {
+          try {
+            // Estimate completion tokens based on the partial text we have
+            const completionTokens = Math.ceil(currentText.length / 4); // Rough estimate: 1 token ≈ 4 characters
+
+            // Get isAnonymous status from session if available
+            let isAnonymous = false;
+            let polarCustomerId: string | undefined;
+
+            try {
+              const session = await auth.api.getSession({ headers: req.headers });
+              isAnonymous = (session?.user as any)?.isAnonymous === true;
+              polarCustomerId = (session?.user as any)?.polarCustomerId ||
+                (session?.user as any)?.metadata?.polarCustomerId;
+            } catch (error) {
+              console.warn('Could not get session info for token tracking in onStop:', error);
+            }
+
+            // Recalculate isUsingOwnApiKeys in callback scope
+            const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+
+            // Get actual credits in callback scope
+            let callbackActualCredits: number | null = null;
+            if (!isAnonymous && userId) {
+              try {
+                callbackActualCredits = await getRemainingCreditsByExternalId(userId);
+              } catch (error) {
+                console.warn('Error getting actual credits in onStop callback:', error);
+              }
+            }
+
+            // Check if the model is free (ends with :free)
+            const isFreeModel = selectedModel.endsWith(':free');
+
+            // Determine if user should have credits deducted
+            let shouldDeductCredits = false;
+            if (!isAnonymous && !callbackIsUsingOwnApiKeys && !isFreeModel && callbackActualCredits !== null && callbackActualCredits > 0) {
+              shouldDeductCredits = true;
+            }
+
+            // Calculate additional cost for web search
+            let additionalCost = 0;
+            if (secureWebSearch.enabled && !callbackIsUsingOwnApiKeys && shouldDeductCredits) {
+              additionalCost = WEB_SEARCH_COST;
+            }
+
+            // Track token usage for stopped stream
+            await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
+            const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
+            const trackingReason = isAnonymous ? 'Tracked (stopped)' : shouldDeductCredits ? 'Reported to Polar (stopped)' : isFreeModel ? 'Tracked (free model, stopped)' : 'Tracked (daily limit, stopped)';
+            console.log(`${trackingReason} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
+          } catch (tokenError) {
+            console.error(`[Chat ${id}][onStop] Error tracking token usage:`, tokenError);
+          }
+        }
+
+      } catch (error) {
+        console.error(`[Chat ${id}][onStop] Error saving stopped chat:`, error);
+      }
     },
     async onFinish(event: any) {
       // Minimal fix: cast event.response to OpenRouterResponse

@@ -128,23 +128,64 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
   // Generate a new ID if one wasn't provided
   const chatId = id || nanoid();
 
+  // Check if chat already exists first
+  const existingChat = await db.query.chats.findFirst({
+    where: and(
+      eq(chats.id, chatId),
+      eq(chats.userId, userId)
+    ),
+  });
+
   // Check if title is provided, if not generate one
   let chatTitle = title;
 
-  // Generate title if messages are provided and no title is specified
-  if (aiMessages && aiMessages.length > 0) {
-    const hasEnoughMessages = aiMessages.length >= 2 &&
-      aiMessages.some(m => m.role === 'user') &&
-      aiMessages.some(m => m.role === 'assistant');
+  // If chat exists and already has a meaningful title, keep it (unless explicitly overriding with title param)
+  if (existingChat && existingChat.title && existingChat.title !== 'New Chat' && !title) {
+    chatTitle = existingChat.title; // Keep the existing title
+  } else {
+    // Generate title if messages are provided and no title is specified
+    if (aiMessages && aiMessages.length > 0) {
+      const hasEnoughMessages = aiMessages.length >= 2 &&
+        aiMessages.some(m => m.role === 'user') &&
+        aiMessages.some(m => m.role === 'assistant');
 
-    if (!chatTitle || chatTitle === 'New Chat' || chatTitle === undefined) {
-      if (hasEnoughMessages) {
-        try {
-          // Use AI to generate a meaningful title based on conversation
-          chatTitle = await generateTitle(aiMessages, selectedModel, apiKeys);
-        } catch (error) {
-          console.error('Error generating title:', error);
-          // Fallback to basic title extraction if AI title generation fails
+      if (!chatTitle || chatTitle === 'New Chat' || chatTitle === undefined) {
+        if (hasEnoughMessages) {
+          try {
+            // Use AI to generate a meaningful title based on conversation
+            chatTitle = await generateTitle(aiMessages, selectedModel, apiKeys);
+          } catch (error) {
+            console.error('Error generating title:', error);
+            // Fallback to basic title extraction if AI title generation fails
+            const firstUserMessage = aiMessages.find(m => m.role === 'user');
+            if (firstUserMessage) {
+              // Check for parts first (new format)
+              if (firstUserMessage.parts && Array.isArray(firstUserMessage.parts)) {
+                const textParts = firstUserMessage.parts.filter((p: MessagePart) => p.type === 'text' && p.text);
+                if (textParts.length > 0) {
+                  chatTitle = textParts[0].text?.slice(0, 50) || 'New Chat';
+                  if ((textParts[0].text?.length || 0) > 50) {
+                    chatTitle += '...';
+                  }
+                } else {
+                  chatTitle = 'New Chat';
+                }
+              }
+              // Fallback to content (old format)
+              else if (typeof firstUserMessage.content === 'string') {
+                chatTitle = firstUserMessage.content.slice(0, 50);
+                if (firstUserMessage.content.length > 50) {
+                  chatTitle += '...';
+                }
+              } else {
+                chatTitle = 'New Chat';
+              }
+            } else {
+              chatTitle = 'New Chat';
+            }
+          }
+        } else {
+          // Not enough messages for AI title, use first message
           const firstUserMessage = aiMessages.find(m => m.role === 'user');
           if (firstUserMessage) {
             // Check for parts first (new format)
@@ -172,47 +213,11 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
             chatTitle = 'New Chat';
           }
         }
-      } else {
-        // Not enough messages for AI title, use first message
-        const firstUserMessage = aiMessages.find(m => m.role === 'user');
-        if (firstUserMessage) {
-          // Check for parts first (new format)
-          if (firstUserMessage.parts && Array.isArray(firstUserMessage.parts)) {
-            const textParts = firstUserMessage.parts.filter((p: MessagePart) => p.type === 'text' && p.text);
-            if (textParts.length > 0) {
-              chatTitle = textParts[0].text?.slice(0, 50) || 'New Chat';
-              if ((textParts[0].text?.length || 0) > 50) {
-                chatTitle += '...';
-              }
-            } else {
-              chatTitle = 'New Chat';
-            }
-          }
-          // Fallback to content (old format)
-          else if (typeof firstUserMessage.content === 'string') {
-            chatTitle = firstUserMessage.content.slice(0, 50);
-            if (firstUserMessage.content.length > 50) {
-              chatTitle += '...';
-            }
-          } else {
-            chatTitle = 'New Chat';
-          }
-        } else {
-          chatTitle = 'New Chat';
-        }
       }
+    } else {
+      chatTitle = chatTitle || 'New Chat';
     }
-  } else {
-    chatTitle = chatTitle || 'New Chat';
   }
-
-  // Check if chat already exists
-  const existingChat = await db.query.chats.findFirst({
-    where: and(
-      eq(chats.id, chatId),
-      eq(chats.userId, userId)
-    ),
-  });
 
   if (existingChat) {
     // Update existing chat

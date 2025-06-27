@@ -1,6 +1,6 @@
 import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-import { ArrowUp, Loader2, Globe, AlertCircle } from "lucide-react";
+import { ArrowUp, Square, Globe, AlertCircle } from "lucide-react";
 import { ModelPicker } from "./model-picker";
 import { useRef } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -151,18 +151,25 @@ export const Textarea = ({
           )}
         </div>
       </div>
-      <button
-        type={isStreaming ? "button" : "submit"}
-        onClick={isStreaming ? stop : undefined}
-        disabled={(!isStreaming && !input.trim()) || (isStreaming && status === "submitted")}
-        className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
-      >
-        {isStreaming ? (
-          <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
-        ) : (
-          <ArrowUp className={`h-4 w-4 ${(!isStreaming && !input.trim()) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
-        )}
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type={isStreaming ? "button" : "submit"}
+            onClick={isStreaming ? stop : undefined}
+            disabled={(!isStreaming && !input.trim()) || (isStreaming && status === "submitted")}
+            className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+          >
+            {isStreaming ? (
+              <Square className="h-4 w-4 text-primary-foreground" />
+            ) : (
+              <ArrowUp className={`h-4 w-4 ${(!isStreaming && !input.trim()) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={8}>
+          {isStreaming ? "Stop generation" : "Send message"}
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 };
