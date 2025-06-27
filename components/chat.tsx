@@ -142,7 +142,7 @@ export default function Chat() {
     return apiKeys;
   };
 
-  const { messages, input, handleInputChange, handleSubmit, status, stop } =
+  const { messages, input, handleInputChange, handleSubmit, status, stop: originalStop } =
     useChat({
       id: chatId || generatedChatId,
       initialMessages,
@@ -271,6 +271,28 @@ export default function Chat() {
         );
       },
     });
+
+  // Custom stop function that handles both stopping the stream and refreshing data
+  const stop = useCallback(() => {
+    console.log('Stopping stream and refreshing chat data...');
+    
+    // Call the original stop function to abort the stream
+    originalStop();
+    
+    // Give the server a moment to process the onStop callback and save data
+    setTimeout(() => {
+      // Refresh the chat data since the server-side onStop handler saves the current state
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+      
+      // If this is a new chat that was just created, navigate to it
+      if (!chatId && generatedChatId) {
+        if (window.location.pathname !== `/chat/${generatedChatId}`) {
+           router.push(`/chat/${generatedChatId}`, { scroll: false }); 
+        }
+      }
+    }, 100); // Small delay to ensure server-side processing completes
+  }, [originalStop, queryClient, chatId, generatedChatId, router]);
     
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
