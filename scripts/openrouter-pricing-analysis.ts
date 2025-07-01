@@ -80,7 +80,8 @@ const openRouterModels = [
     'qwen/qwq-32b',
     'qwen/qwen3-235b-a22b',
     'anthropic/claude-sonnet-4',
-    'anthropic/claude-opus-4'
+    'anthropic/claude-opus-4',
+    'inception/mercury'
 ];
 
 // Model display names mapping
@@ -108,7 +109,8 @@ const modelDisplayNames: Record<string, string> = {
     'qwen/qwq-32b': 'Qwen QWQ 32B',
     'qwen/qwen3-235b-a22b': 'Qwen3 235B A22B',
     'anthropic/claude-sonnet-4': 'Claude 4 Sonnet',
-    'anthropic/claude-opus-4': 'Claude 4 Opus'
+    'anthropic/claude-opus-4': 'Claude 4 Opus',
+    'inception/mercury': 'Inception Mercury'
 };
 
 async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
