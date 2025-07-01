@@ -228,6 +228,7 @@ const languageModels = {
   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": openrouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
   "openrouter/minimax/minimax-m1": openrouterClient("minimax/minimax-m1"),
   "openrouter/minimax/minimax-m1:extended": openrouterClient("minimax/minimax-m1:extended"),
+  "openrouter/inception/mercury": openrouterClient("inception/mercury"),
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
@@ -384,6 +385,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("minimax/minimax-m1");
     case "openrouter/minimax/minimax-m1:extended":
       return getOpenRouterClient()("minimax/minimax-m1:extended");
+    case "openrouter/inception/mercury":
+      return getOpenRouterClient()("inception/mercury");
 
     // Requesty models
     case "requesty/openai/gpt-4o":
@@ -856,6 +859,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true
+  },
+  "openrouter/inception/mercury": {
+    provider: "OpenRouter",
+    name: "Inception Mercury",
+    description: "Mercury is the first diffusion large language model (dLLM). Applying a breakthrough discrete diffusion approach, the model runs 5-10x faster than even speed optimized models like GPT-4.1 Nano and Claude 3.5 Haiku while matching their performance. Mercury's speed enables developers to provide responsive user experiences, including with voice agents, search interfaces, and chatbots.",
+    apiVersion: "inception/mercury",
+    capabilities: ["Ultra-fast", "Speed Optimized", "Voice Agents", "Search Interfaces", "Chatbots", "Responsive UI"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
   },
   // Requesty model details
   "requesty/openai/gpt-4o": {
