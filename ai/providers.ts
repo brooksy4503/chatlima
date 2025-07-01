@@ -229,6 +229,7 @@ const languageModels = {
   "openrouter/minimax/minimax-m1": openrouterClient("minimax/minimax-m1"),
   "openrouter/minimax/minimax-m1:extended": openrouterClient("minimax/minimax-m1:extended"),
   "openrouter/inception/mercury": openrouterClient("inception/mercury"),
+  "openrouter/thedrummer/anubis-70b-v1.1": openrouterClient("thedrummer/anubis-70b-v1.1"),
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
@@ -387,6 +388,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("minimax/minimax-m1:extended");
     case "openrouter/inception/mercury":
       return getOpenRouterClient()("inception/mercury");
+    case "openrouter/thedrummer/anubis-70b-v1.1":
+      return getOpenRouterClient()("thedrummer/anubis-70b-v1.1");
 
     // Requesty models
     case "requesty/openai/gpt-4o":
@@ -866,6 +869,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Mercury is the first diffusion large language model (dLLM). Applying a breakthrough discrete diffusion approach, the model runs 5-10x faster than even speed optimized models like GPT-4.1 Nano and Claude 3.5 Haiku while matching their performance. Mercury's speed enables developers to provide responsive user experiences, including with voice agents, search interfaces, and chatbots.",
     apiVersion: "inception/mercury",
     capabilities: ["Ultra-fast", "Speed Optimized", "Voice Agents", "Search Interfaces", "Chatbots", "Responsive UI"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "openrouter/thedrummer/anubis-70b-v1.1": {
+    provider: "OpenRouter",
+    name: "TheDrummer Anubis 70B v1.1",
+    description: "TheDrummer's Anubis v1.1 is an unaligned, creative Llama 3.3 70B model focused on providing character-driven roleplay & stories. It excels at gritty, visceral prose, unique character adherence, and coherent narratives, while maintaining the instruction following Llama 3.3 70B is known for. 131,072 context window.",
+    apiVersion: "thedrummer/anubis-70b-v1.1",
+    capabilities: ["Creative Writing", "Character-driven Roleplay", "Storytelling", "Unaligned", "Character Adherence", "Visceral Prose"],
     enabled: true,
     supportsWebSearch: true,
     premium: false
