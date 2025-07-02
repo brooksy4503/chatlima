@@ -228,6 +228,7 @@ const languageModels = {
   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": openrouterClient("sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b"),
   "openrouter/minimax/minimax-m1": openrouterClient("minimax/minimax-m1"),
   "openrouter/minimax/minimax-m1:extended": openrouterClient("minimax/minimax-m1:extended"),
+  "openrouter/baidu/ernie-4.5-300b-a47b": openrouterClient("baidu/ernie-4.5-300b-a47b"),
   "openrouter/inception/mercury": openrouterClient("inception/mercury"),
   "openrouter/thedrummer/anubis-70b-v1.1": openrouterClient("thedrummer/anubis-70b-v1.1"),
   // Requesty models
@@ -386,6 +387,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("minimax/minimax-m1");
     case "openrouter/minimax/minimax-m1:extended":
       return getOpenRouterClient()("minimax/minimax-m1:extended");
+    case "openrouter/baidu/ernie-4.5-300b-a47b":
+      return getOpenRouterClient()("baidu/ernie-4.5-300b-a47b");
     case "openrouter/inception/mercury":
       return getOpenRouterClient()("inception/mercury");
     case "openrouter/thedrummer/anubis-70b-v1.1":
@@ -862,6 +865,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true
+  },
+  "openrouter/baidu/ernie-4.5-300b-a47b": {
+    provider: "OpenRouter",
+    name: "Baidu ERNIE-4.5-300B A47B",
+    description: "ERNIE-4.5-300B-A47B is a 300B parameter Mixture-of-Experts (MoE) language model developed by Baidu. It activates 47B parameters per token and supports text generation in both English and Chinese. Optimized for high-throughput inference with extended context lengths up to 131k tokens. Suitable for reasoning, tool parameters, and general-purpose LLM applications.",
+    apiVersion: "baidu/ernie-4.5-300b-a47b",
+    capabilities: ["Reasoning", "Multilingual", "High-throughput", "Extended Context", "Tool Parameters", "Mixture-of-Experts"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
   },
   "openrouter/inception/mercury": {
     provider: "OpenRouter",
