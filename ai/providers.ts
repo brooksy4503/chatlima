@@ -874,7 +874,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Multilingual", "High-throughput", "Extended Context", "Tool Parameters", "Mixture-of-Experts"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: false
   },
   "openrouter/inception/mercury": {
     provider: "OpenRouter",
