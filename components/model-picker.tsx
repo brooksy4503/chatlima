@@ -1,12 +1,12 @@
 "use client";
-import { MODELS, modelDetails, type modelID, defaultModel } from "@/ai/providers";
+import { MODELS, PRESETS, ALL_MODELS_AND_PRESETS, modelDetails, allModelAndPresetDetails, type modelID, type ModelOrPresetID, defaultModel } from "@/ai/providers";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "./ui/popover";
 import { cn } from "@/lib/utils";
-import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check } from "lucide-react";
+import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check, Layers, Search, Users, PenTool } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useCredits } from "@/hooks/useCredits";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -15,16 +15,18 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 
 interface ModelPickerProps {
-  selectedModel: modelID;
-  setSelectedModel: (model: modelID) => void;
+  selectedModel: ModelOrPresetID;
+  setSelectedModel: (model: ModelOrPresetID) => void;
   onModelSelected?: () => void;
+  showPresets?: boolean; // Toggle to show/hide presets
 }
 
-export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }: ModelPickerProps) => {
-  const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
+export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, showPresets = true }: ModelPickerProps) => {
+  const [hoveredModel, setHoveredModel] = useState<ModelOrPresetID | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number>(-1);
+  const [viewMode, setViewMode] = useState<'models' | 'presets'>('models'); // Toggle between models and presets
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modelListRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -103,25 +105,34 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
     }
   };
   
-  // Filter and sort models based on search term - memoized to prevent re-renders
+  // Filter and sort models and presets based on search term - memoized to prevent re-renders
   const filteredAndSortedModels = useMemo(() => {
-    return [...MODELS]
+    const itemsToFilter = viewMode === 'presets' ? PRESETS : (viewMode === 'models' ? MODELS : ALL_MODELS_AND_PRESETS);
+    return [...itemsToFilter]
       .filter((id) => {
-        const modelId = id as modelID;
-        const model = modelDetails[modelId];
+        const modelOrPresetId = id as ModelOrPresetID;
+        const item = allModelAndPresetDetails[modelOrPresetId];
         const searchLower = searchTerm.toLowerCase();
         return (
-          model.name.toLowerCase().includes(searchLower) ||
-          model.provider.toLowerCase().includes(searchLower) ||
-          model.capabilities.some(cap => cap.toLowerCase().includes(searchLower))
+          item.name.toLowerCase().includes(searchLower) ||
+          ('provider' in item ? item.provider.toLowerCase().includes(searchLower) : false) ||
+          item.capabilities.some((cap: string) => cap.toLowerCase().includes(searchLower))
         );
       })
       .sort((idA, idB) => {
-        const nameA = modelDetails[idA].name;
-        const nameB = modelDetails[idB].name;
-        return nameA.localeCompare(nameB);
+        const itemA = allModelAndPresetDetails[idA];
+        const itemB = allModelAndPresetDetails[idB];
+        
+        // For presets, sort by category first, then by name
+        if (viewMode === 'presets' && 'category' in itemA && 'category' in itemB) {
+          if (itemA.category !== itemB.category) {
+            return (itemA.category || 'general').localeCompare(itemB.category || 'general');
+          }
+        }
+        
+        return itemA.name.localeCompare(itemB.name);
       });
-  }, [searchTerm]);
+  }, [searchTerm, viewMode]);
 
   // Reset keyboard focus when search term changes
   useEffect(() => {
@@ -138,21 +149,21 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
 
   // Get current model details to display
   const keyboardFocusedModel = keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length 
-    ? filteredAndSortedModels[keyboardFocusedIndex] as modelID 
+    ? filteredAndSortedModels[keyboardFocusedIndex] as ModelOrPresetID 
     : null;
   
   // Separate display logic: button always shows selected model, details panel shows hovered/focused model
   const detailsPanelModelId = keyboardFocusedModel || hoveredModel || selectedModel;
-  const detailsPanelModelDetails = modelDetails[detailsPanelModelId];
+  const detailsPanelModelDetails = allModelAndPresetDetails[detailsPanelModelId];
   
   // Main button always shows the selected model (no layout flipping)
-  const selectedModelDetails = modelDetails[selectedModel];
+  const selectedModelDetails = allModelAndPresetDetails[selectedModel];
   const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelDetails.premium);
 
   // Handle model change - memoized to prevent re-renders
   const handleModelChange = useCallback((modelId: string) => {
-    if ((MODELS as string[]).includes(modelId)) {
-      const typedModelId = modelId as modelID;
+    if ((ALL_MODELS_AND_PRESETS as string[]).includes(modelId)) {
+      const typedModelId = modelId as ModelOrPresetID;
       setSelectedModel(typedModelId);
       setIsOpen(false);
       setSearchTerm("");
@@ -179,6 +190,95 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   }, []);
+
+  // Render individual item (model or preset)
+  const renderItem = useCallback((id: ModelOrPresetID, index: number, isInCategory: boolean = false) => {
+    const item = allModelAndPresetDetails[id];
+    const isUnavailable = creditsLoading ? false : (item.premium && !canAccessPremiumModels());
+    const isSelected = selectedModel === id;
+    const isKeyboardFocused = keyboardFocusedIndex === index;
+    
+    const itemElement = (
+      <div
+        key={id}
+        className={cn(
+          "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
+          isInCategory && "ml-4", // Indent if in category
+          "hover:bg-accent hover:text-accent-foreground",
+          "focus:bg-accent focus:text-accent-foreground focus:outline-none",
+          isSelected && "!bg-primary/15 !text-foreground font-medium",
+          isKeyboardFocused && "!bg-accent !text-accent-foreground ring-2 ring-primary/30",
+          isUnavailable && "opacity-50 cursor-not-allowed"
+        )}
+        onClick={() => {
+          if (!isUnavailable) {
+            handleModelChange(id);
+          }
+        }}
+        onMouseEnter={() => {
+          setHoveredModel(id);
+          setKeyboardFocusedIndex(-1); // Clear keyboard focus when using mouse
+        }}
+        onMouseLeave={() => setHoveredModel(null)}
+      >
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
+            {'provider' in item ? getProviderIcon(item.provider) : getCategoryIcon(('category' in item ? item.category : null) || 'general')}
+            <span className="font-medium truncate">{item.name}</span>
+            {item.premium && (
+              <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
+            )}
+            {isSelected && <Check className="h-3 w-3 ml-auto text-primary" />}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {item.capabilities.slice(0, 2).map((capability) => (
+              <span 
+                key={capability}
+                className={cn(
+                  "inline-flex text-[9px] px-1 py-0.5 rounded-full font-medium",
+                  getCapabilityColor(capability)
+                )}
+              >
+                {capability}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+
+    if (isUnavailable && !creditsLoading) {
+      return (
+        <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>{itemElement}</TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="text-xs">This is a premium {viewMode === 'presets' ? 'preset' : 'model'}. Credits are required to use it.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    return itemElement;
+  }, [selectedModel, keyboardFocusedIndex, creditsLoading, canAccessPremiumModels, handleModelChange, viewMode]);
+
+  // Function to get category icon
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'coding':
+        return <Code className="h-3 w-3 text-blue-600" />;
+      case 'content':
+        return <PenTool className="h-3 w-3 text-green-600" />;
+      case 'research':
+        return <Search className="h-3 w-3 text-purple-600" />;
+      case 'support':
+        return <Users className="h-3 w-3 text-orange-600" />;
+      case 'creative':
+        return <Lightbulb className="h-3 w-3 text-yellow-600" />;
+      default:
+        return <Bot className="h-3 w-3 text-gray-600" />;
+    }
+  };
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -217,7 +317,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
         e.preventDefault();
         if (keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length) {
           const selectedModelId = filteredAndSortedModels[keyboardFocusedIndex];
-          const model = modelDetails[selectedModelId as modelID];
+          const model = allModelAndPresetDetails[selectedModelId];
           const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
           if (!isUnavailable) {
             handleModelChange(selectedModelId);
@@ -250,7 +350,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                 )}
               >
                 <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-                  {getProviderIcon(selectedModelDetails.provider)}
+                  {getProviderIcon('provider' in selectedModelDetails ? selectedModelDetails.provider : 'OpenRouter')}
                   <span className="text-xs font-medium truncate">{selectedModelDetails.name}</span>
                 </div>
                 <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
@@ -270,13 +370,35 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
           className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[400px] overflow-hidden" 
           align="start"
         >
-          {/* Search input */}
-          <div className="px-3 pt-3 pb-2 border-b border-border/40">
+          {/* Search input and mode toggle */}
+          <div className="px-3 pt-3 pb-2 border-b border-border/40 space-y-2">
+            {showPresets && (
+              <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-md">
+                <Button
+                  variant={viewMode === 'models' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('models')}
+                  className="flex-1 h-7 text-xs"
+                >
+                  <Zap className="h-3 w-3 mr-1" />
+                  Models
+                </Button>
+                <Button
+                  variant={viewMode === 'presets' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('presets')}
+                  className="flex-1 h-7 text-xs"
+                >
+                  <Layers className="h-3 w-3 mr-1" />
+                  Presets
+                </Button>
+              </div>
+            )}
             <Input
               ref={searchInputRef}
               type="search"
-              placeholder="Search models... (Use ↑↓ arrow keys to navigate, Enter to select)"
-              aria-label="Search models by name, provider, or capability"
+              placeholder={`Search ${viewMode}... (Use ↑↓ arrow keys to navigate, Enter to select)`}
+              aria-label={`Search ${viewMode} by name, ${viewMode === 'models' ? 'provider' : 'category'}, or capability`}
               value={searchTerm}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
@@ -285,72 +407,52 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start max-h-[340px] overflow-hidden">
-            {/* Model selector column */}
+            {/* Model/Preset selector column */}
             <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1 overflow-y-auto max-h-[340px]">
               <div ref={modelListRef} className="space-y-1 p-1">
                 {filteredAndSortedModels.length > 0 ? (
-                  filteredAndSortedModels.map((id, index) => {
-                    const modelId = id as modelID;
-                    const model = modelDetails[modelId];
-                    const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
-                    const isSelected = selectedModel === id;
-                    const isKeyboardFocused = keyboardFocusedIndex === index;
-                    
-                    const modelItem = (
-                      <div
-                        key={id}
-                        className={cn(
-                          "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
-                          "hover:bg-accent hover:text-accent-foreground",
-                          "focus:bg-accent focus:text-accent-foreground focus:outline-none",
-                          isSelected && "!bg-primary/15 !text-foreground font-medium",
-                          isKeyboardFocused && "!bg-accent !text-accent-foreground ring-2 ring-primary/30",
-                          isUnavailable && "opacity-50 cursor-not-allowed"
-                        )}
-                        onClick={() => {
-                          if (!isUnavailable) {
-                            handleModelChange(id);
-                          }
-                        }}
-                        onMouseEnter={() => {
-                          setHoveredModel(modelId);
-                          setKeyboardFocusedIndex(-1); // Clear keyboard focus when using mouse
-                        }}
-                        onMouseLeave={() => setHoveredModel(null)}
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <div className="flex items-center gap-1.5">
-                            {getProviderIcon(model.provider)}
-                            <span className="font-medium truncate">{model.name}</span>
-                            {model.premium && (
-                              <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
-                            )}
-                            {isSelected && <Check className="h-3 w-3 ml-auto text-primary" />}
+                  viewMode === 'presets' ? (
+                    // Group presets by category
+                    (() => {
+                      const grouped: Record<string, ModelOrPresetID[]> = {};
+                      filteredAndSortedModels.forEach((id) => {
+                        const preset = allModelAndPresetDetails[id];
+                        const category = ('category' in preset ? preset.category : null) || 'general';
+                        if (!grouped[category]) {
+                          grouped[category] = [];
+                        }
+                        grouped[category].push(id);
+                      });
+                      
+                      return Object.entries(grouped).map(([category, presets]) => (
+                        <div key={category} className="space-y-1">
+                          <div className="flex items-center gap-2 px-2 py-1 text-xs font-semibold text-foreground/60 capitalize">
+                            {(() => {
+                              switch (category) {
+                                case 'coding': return <Code className="h-3 w-3" />;
+                                case 'content': return <PenTool className="h-3 w-3" />;
+                                case 'research': return <Search className="h-3 w-3" />;
+                                case 'support': return <Users className="h-3 w-3" />;
+                                case 'creative': return <Lightbulb className="h-3 w-3" />;
+                                default: return <Bot className="h-3 w-3" />;
+                              }
+                            })()}
+                            {category}
                           </div>
-                          <span className="text-[10px] sm:text-xs text-muted-foreground">
-                            {model.provider}
-                          </span>
+                          {presets.map((id, presetIndex) => {
+                            const globalIndex = filteredAndSortedModels.indexOf(id);
+                            return renderItem(id, globalIndex, true);
+                          })}
                         </div>
-                      </div>
-                    );
-
-                    if (isUnavailable && !creditsLoading) {
-                      return (
-                        <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>{modelItem}</TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <p className="text-xs">This is a premium model. Credits are required to use it.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    }
-                    return modelItem;
-                  })
+                      ));
+                    })()
+                  ) : (
+                    // Render models normally
+                    filteredAndSortedModels.map((id, index) => renderItem(id, index, false))
+                  )
                 ) : (
                   <div className="px-2 sm:px-3 py-2 text-xs text-muted-foreground">
-                    No models found.
+                    No {viewMode} found.
                   </div>
                 )}
               </div>
@@ -360,14 +462,14 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
             <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[340px] min-h-[340px]">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  {getProviderIcon(detailsPanelModelDetails.provider)}
+                  {getProviderIcon('provider' in detailsPanelModelDetails ? detailsPanelModelDetails.provider : 'OpenRouter')}
                   <h3 className="text-sm font-semibold">{detailsPanelModelDetails.name}</h3>
                   {detailsPanelModelDetails.premium && (
                     <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground mb-1">
-                  Provider: <span className="font-medium">{detailsPanelModelDetails.provider}</span>
+                  Provider: <span className="font-medium">{'provider' in detailsPanelModelDetails ? detailsPanelModelDetails.provider : 'OpenRouter'}</span>
                 </div>
                 
                 {/* Capability badges */}
@@ -391,14 +493,14 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                 </div>
               </div>
               
-              <div className="bg-muted/40 rounded-md p-2 hidden md:block">
-                <div className="text-[10px] text-muted-foreground flex justify-between items-center">
-                  <span>API Version:</span>
-                  <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
-                    {detailsPanelModelDetails.apiVersion}
-                  </code>
+                              <div className="bg-muted/40 rounded-md p-2 hidden md:block">
+                  <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+                    <span>{'apiVersion' in detailsPanelModelDetails ? 'API Version:' : 'Base Model:'}</span>
+                    <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
+                      {'apiVersion' in detailsPanelModelDetails ? detailsPanelModelDetails.apiVersion : detailsPanelModelDetails.baseModel || 'Preset'}
+                    </code>
+                  </div>
                 </div>
-              </div>
             </div>
             
             {/* Condensed model details for mobile only */}
