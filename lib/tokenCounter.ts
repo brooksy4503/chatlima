@@ -3,7 +3,7 @@ import { db } from './db';
 import { users, polarUsageEvents } from './db/schema';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { modelDetails, modelID } from '@/ai/providers';
+import { modelDetails, modelID, ModelOrPresetID, allModelAndPresetDetails } from '@/ai/providers';
 
 /**
  * Cost in credits for enabling Web Search feature
@@ -87,7 +87,7 @@ export async function trackTokenUsage(
  * @param userId The user ID in our application (used as external ID in Polar)
  * @param requiredTokens Estimated number of tokens needed
  * @param isAnonymous Whether the user is anonymous
- * @param selectedModelId Optional selected model ID
+ * @param selectedModelId Optional selected model or preset ID
  * @returns True if the user has enough credits, false otherwise
  */
 export async function hasEnoughCredits(
@@ -95,7 +95,7 @@ export async function hasEnoughCredits(
     userId: string | undefined,
     requiredTokens: number = 1,
     isAnonymous: boolean = false,
-    selectedModelId?: modelID
+    selectedModelId?: ModelOrPresetID
 ): Promise<boolean> {
     // For anonymous users, skip Polar credit checks completely
     // They're already limited by the daily message count
@@ -104,7 +104,7 @@ export async function hasEnoughCredits(
     }
 
     // Check if the selected model is premium
-    const isPremiumModel = selectedModelId ? modelDetails[selectedModelId]?.premium === true : false;
+    const isPremiumModel = selectedModelId ? allModelAndPresetDetails[selectedModelId]?.premium === true : false;
 
     // First, try to get credits via external ID if userId is provided
     if (userId) {

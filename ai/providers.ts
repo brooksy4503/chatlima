@@ -22,6 +22,23 @@ export interface ModelInfo {
   premium?: boolean;
 }
 
+// New preset support types
+export interface PresetInfo {
+  type: 'preset';
+  slug: string;
+  name: string;
+  description: string;
+  baseModel?: string;
+  capabilities: string[];
+  enabled?: boolean;
+  supportsWebSearch?: boolean;
+  premium?: boolean;
+  category?: 'coding' | 'content' | 'research' | 'support' | 'creative' | 'general';
+}
+
+export type PresetID = `@preset/${string}`;
+export type ModelOrPresetID = modelID | PresetID;
+
 const middleware = extractReasoningMiddleware({
   tagName: 'think',
 });
@@ -258,8 +275,82 @@ const languageModels = {
   "requesty/google/gemini-2.5-flash-lite-preview-06-17": requestyClient("google/gemini-2.5-flash-lite-preview-06-17"),
 };
 
-// Helper to get language model with dynamic API keys
-export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>) => {
+// Default presets configuration
+export const defaultPresets: Record<PresetID, PresetInfo> = {
+  "@preset/coding-assistant": {
+    type: 'preset',
+    slug: 'coding-assistant',
+    name: 'Coding Assistant',
+    description: 'Optimized for software development, code generation, and debugging with clean, efficient code focus.',
+    baseModel: 'anthropic/claude-3.5-sonnet',
+    capabilities: ['Coding', 'Debugging', 'Code Review', 'Architecture'],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    category: 'coding'
+  },
+  "@preset/content-writer": {
+    type: 'preset',
+    slug: 'content-writer',
+    name: 'Content Writer',
+    description: 'Professional content creation with SEO optimization and brand voice consistency.',
+    baseModel: 'anthropic/claude-3.7-sonnet',
+    capabilities: ['Writing', 'SEO', 'Marketing', 'Brand Voice'],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    category: 'content'
+  },
+  "@preset/research-analyst": {
+    type: 'preset',
+    slug: 'research-analyst',
+    name: 'Research Analyst',
+    description: 'Comprehensive research and analysis with proper citations and actionable insights.',
+    baseModel: 'google/gemini-2.5-pro',
+    capabilities: ['Research', 'Analysis', 'Citations', 'Insights'],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    category: 'research'
+  },
+  "@preset/customer-support": {
+    type: 'preset',
+    slug: 'customer-support',
+    name: 'Customer Support',
+    description: 'Empathetic and solution-focused customer service with clear step-by-step guidance.',
+    baseModel: 'anthropic/claude-3.5-sonnet',
+    capabilities: ['Support', 'Problem Solving', 'Communication', 'Empathy'],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false,
+    category: 'support'
+  },
+  "@preset/creative-writer": {
+    type: 'preset',
+    slug: 'creative-writer',
+    name: 'Creative Writer',
+    description: 'Enhanced storytelling with character development, plot structure, and vivid descriptions.',
+    baseModel: 'anthropic/claude-3.7-sonnet',
+    capabilities: ['Creative Writing', 'Storytelling', 'Character Development', 'Plot'],
+    enabled: true,
+    supportsWebSearch: false,
+    premium: false,
+    category: 'creative'
+  }
+};
+
+// Helper to get language model with dynamic API keys (now supports presets)
+export const getLanguageModelWithKeys = (modelOrPresetId: ModelOrPresetID, apiKeys?: Record<string, string>) => {
+  // Check if this is a preset reference
+  if (modelOrPresetId.startsWith('@preset/')) {
+    const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+    // OpenRouter handles preset resolution automatically when passed @preset/slug
+    return openrouterClient(modelOrPresetId);
+  }
+
+  // Existing model handling logic
+  const modelId = modelOrPresetId as string;
+  
   // Helper function to create clients on demand
   const getOpenAIClient = () => createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
   const getAnthropicClient = () => createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
@@ -1145,9 +1236,29 @@ export const getTitleGenerationModel = (selectedModelId: modelID, apiKeys?: Reco
 
 export type modelID = keyof typeof languageModels;
 
+// Combine models and presets for unified selection
+export const ALL_MODELS_AND_PRESETS = [
+  ...(Object.keys(languageModels) as modelID[]).filter(
+    (modelId) => modelDetails[modelId].enabled !== false
+  ),
+  ...(Object.keys(defaultPresets) as PresetID[]).filter(
+    (presetId) => defaultPresets[presetId].enabled !== false
+  )
+] as ModelOrPresetID[];
+
 // Filter models based on the enabled flag
 export const MODELS = (Object.keys(languageModels) as modelID[]).filter(
   (modelId) => modelDetails[modelId].enabled !== false
 );
+
+export const PRESETS = (Object.keys(defaultPresets) as PresetID[]).filter(
+  (presetId) => defaultPresets[presetId].enabled !== false
+);
+
+// Combined details including both models and presets
+export const allModelAndPresetDetails: Record<ModelOrPresetID, ModelInfo | PresetInfo> = {
+  ...modelDetails,
+  ...defaultPresets
+};
 
 export const defaultModel: modelID = "openrouter/google/gemini-2.5-flash-preview";

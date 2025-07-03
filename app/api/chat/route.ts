@@ -1,4 +1,4 @@
-import { model, type modelID, modelDetails, getLanguageModelWithKeys, createOpenRouterClientWithKey } from "@/ai/providers";
+import { model, type modelID, type ModelOrPresetID, modelDetails, allModelAndPresetDetails, getLanguageModelWithKeys, createOpenRouterClientWithKey } from "@/ai/providers";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { streamText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
@@ -21,7 +21,7 @@ import { spawn } from "child_process";
 export const maxDuration = 300;
 
 // Helper function to check if user is using their own API keys for the selected model
-function checkIfUsingOwnApiKeys(selectedModel: modelID, apiKeys: Record<string, string> = {}): boolean {
+function checkIfUsingOwnApiKeys(selectedModel: ModelOrPresetID, apiKeys: Record<string, string> = {}): boolean {
   // Map model providers to their API key names
   const providerKeyMap: Record<string, string> = {
     'openai': 'OPENAI_API_KEY',
@@ -31,6 +31,12 @@ function checkIfUsingOwnApiKeys(selectedModel: modelID, apiKeys: Record<string, 
     'openrouter': 'OPENROUTER_API_KEY',
     'requesty': 'REQUESTY_API_KEY'
   };
+
+  // Handle presets - they always require OpenRouter API key
+  if (selectedModel.startsWith('@preset/')) {
+    const hasOpenRouterKey = Boolean(apiKeys['OPENROUTER_API_KEY'] && apiKeys['OPENROUTER_API_KEY'].trim().length > 0);
+    return hasOpenRouterKey;
+  }
 
   // Extract provider from model ID
   const provider = selectedModel.split('/')[0];
@@ -108,7 +114,7 @@ export async function POST(req: Request) {
   }: {
     messages: UIMessage[];
     chatId?: string;
-    selectedModel: modelID;
+    selectedModel: ModelOrPresetID;
     mcpServers?: MCPServerConfig[];
     webSearch?: WebSearchOptions;
     apiKeys?: Record<string, string>;
@@ -541,7 +547,7 @@ export async function POST(req: Request) {
   }
 
   // Check if the selected model supports web search
-  const currentModelDetails = modelDetails[selectedModel];
+  const currentModelDetails = allModelAndPresetDetails[selectedModel];
   if (secureWebSearch.enabled && selectedModel.startsWith("openrouter/")) {
     if (currentModelDetails?.supportsWebSearch === true) {
       // Model supports web search, use :online variant

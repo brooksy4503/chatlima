@@ -1,4 +1,4 @@
-import { modelID } from "@/ai/providers";
+import { modelID, ModelOrPresetID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Globe, AlertCircle } from "lucide-react";
 import { ModelPicker } from "./model-picker";
@@ -14,8 +14,8 @@ interface InputProps {
   isLoading: boolean;
   status: string;
   stop: () => void;
-  selectedModel: modelID;
-  setSelectedModel: (model: modelID) => void;
+  selectedModel: ModelOrPresetID;
+  setSelectedModel: (model: ModelOrPresetID) => void;
 }
 
 export const Textarea = ({

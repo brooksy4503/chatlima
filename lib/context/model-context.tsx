@@ -1,46 +1,46 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { defaultModel, type modelID, MODELS } from "@/ai/providers";
+import { defaultModel, type modelID, type ModelOrPresetID, MODELS, ALL_MODELS_AND_PRESETS } from "@/ai/providers";
 
 interface ModelContextType {
-  selectedModel: modelID;
-  setSelectedModel: (model: modelID) => void;
+  selectedModel: ModelOrPresetID;
+  setSelectedModel: (model: ModelOrPresetID) => void;
 }
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
 
 export function ModelProvider({ children }: { children: ReactNode }) {
-  const [selectedModel, setSelectedModelState] = useState<modelID>(defaultModel); // Always initialize with defaultModel
+  const [selectedModel, setSelectedModelState] = useState<ModelOrPresetID>(defaultModel); // Always initialize with defaultModel
 
   useEffect(() => {
     // This effect runs only on the client, after hydration
     if (typeof window !== 'undefined') {
       try {
         const storedModel = localStorage.getItem('selected_ai_model');
-        if (storedModel && (MODELS as ReadonlyArray<string>).includes(storedModel)) {
-          setSelectedModelState(storedModel as modelID);
+        if (storedModel && (ALL_MODELS_AND_PRESETS as ReadonlyArray<string>).includes(storedModel)) {
+          setSelectedModelState(storedModel as ModelOrPresetID);
         } else {
-          // If no valid model in localStorage, ensure defaultModel is set (or the first from MODELS)
+          // If no valid model in localStorage, ensure defaultModel is set (or the first from ALL_MODELS_AND_PRESETS)
           // This also handles the case where defaultModel might have been updated
-          let initialClientModel = defaultModel;
-          if (!MODELS.includes(defaultModel) && MODELS.length > 0) {
-            initialClientModel = MODELS[0];
+          let initialClientModel: ModelOrPresetID = defaultModel;
+          if (!ALL_MODELS_AND_PRESETS.includes(defaultModel) && ALL_MODELS_AND_PRESETS.length > 0) {
+            initialClientModel = ALL_MODELS_AND_PRESETS[0] as ModelOrPresetID;
           }
           // No need to set if it's already defaultModel, but this ensures consistency
           // and sets localStorage if it was missing or invalid
-          if (MODELS.includes(initialClientModel)) {
+          if (ALL_MODELS_AND_PRESETS.includes(initialClientModel)) {
              setSelectedModelState(initialClientModel); // This will trigger the second useEffect below
           }
         }
       } catch (error) {
         console.error("Error reading selected model from localStorage during effect", error);
         // Fallback logic in case of error during localStorage read
-        let fallbackClientModel = defaultModel;
-        if (!MODELS.includes(defaultModel) && MODELS.length > 0) {
-          fallbackClientModel = MODELS[0];
+        let fallbackClientModel: ModelOrPresetID = defaultModel;
+        if (!ALL_MODELS_AND_PRESETS.includes(defaultModel) && ALL_MODELS_AND_PRESETS.length > 0) {
+          fallbackClientModel = ALL_MODELS_AND_PRESETS[0] as ModelOrPresetID;
         }
-         if (MODELS.includes(fallbackClientModel)) {
+         if (ALL_MODELS_AND_PRESETS.includes(fallbackClientModel)) {
            setSelectedModelState(fallbackClientModel);
          }
       }
@@ -50,7 +50,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        if (MODELS.includes(selectedModel)) {
+        if (ALL_MODELS_AND_PRESETS.includes(selectedModel)) {
           localStorage.setItem('selected_ai_model', selectedModel);
         }
       } catch (error) {
@@ -59,10 +59,10 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     }
   }, [selectedModel]);
 
-  const setSelectedModel = (model: modelID) => {
-    if (MODELS.includes(model) && model !== selectedModel) {
+  const setSelectedModel = (model: ModelOrPresetID) => {
+    if (ALL_MODELS_AND_PRESETS.includes(model) && model !== selectedModel) {
       setSelectedModelState(model);
-    } else if (!MODELS.includes(model)) {
+    } else if (!ALL_MODELS_AND_PRESETS.includes(model)) {
       console.warn(`Attempted to set invalid model: ${model}`);
       // Optionally, set to default or do nothing
       // setSelectedModelState(defaultModel); 
