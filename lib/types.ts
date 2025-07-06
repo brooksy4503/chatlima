@@ -24,4 +24,16 @@ export interface ToolInvocationUIPart {
     };
 }
 
-export type MessagePart = TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart; 
+export interface ImageUIPart {
+    type: 'image';
+    imageUrl: string;
+    detail?: 'low' | 'high' | 'auto';
+}
+
+export interface PDFUIPart {
+    type: 'pdf';
+    filename: string;
+    fileData: string; // base64 encoded
+}
+
+export type MessagePart = TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart | ImageUIPart | PDFUIPart; 

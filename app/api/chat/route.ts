@@ -104,7 +104,8 @@ export async function POST(req: Request) {
     selectedModel,
     mcpServers: initialMcpServers = [],
     webSearch = { enabled: false, contextSize: 'medium' },
-    apiKeys = {}
+    apiKeys = {},
+    attachedFiles = []
   }: {
     messages: UIMessage[];
     chatId?: string;
@@ -112,6 +113,12 @@ export async function POST(req: Request) {
     mcpServers?: MCPServerConfig[];
     webSearch?: WebSearchOptions;
     apiKeys?: Record<string, string>;
+    attachedFiles?: Array<{
+      type: 'image' | 'pdf';
+      data: string;
+      filename: string;
+      size: number;
+    }>;
   } = await req.json();
 
   let mcpServers = initialMcpServers;
@@ -317,6 +324,38 @@ export async function POST(req: Request) {
 
   // Prepare messages for the model
   const modelMessages: UIMessage[] = [...messages];
+
+  // Add attached files to the last user message if any
+  if (attachedFiles.length > 0) {
+    // Find the last user message
+    const lastUserMessageIndex = modelMessages.findLastIndex(msg => msg.role === 'user');
+    if (lastUserMessageIndex !== -1) {
+      const lastUserMessage = modelMessages[lastUserMessageIndex];
+      
+      // Add file parts to the message
+      const fileParts = attachedFiles.map(file => {
+        if (file.type === 'image') {
+          return {
+            type: 'image',
+            imageUrl: file.data,
+            detail: 'auto' as const
+          } as any;
+        } else {
+          return {
+            type: 'pdf',
+            filename: file.filename,
+            fileData: file.data
+          } as any;
+        }
+      });
+      
+      // Add file parts to the message
+      modelMessages[lastUserMessageIndex] = {
+        ...lastUserMessage,
+        parts: [...lastUserMessage.parts, ...fileParts] as any
+      };
+    }
+  }
 
   if (
     selectedModel === "openrouter/deepseek/deepseek-r1" ||

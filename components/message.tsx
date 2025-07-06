@@ -11,9 +11,10 @@ import { SpinnerIcon } from "./icons";
 import { ToolInvocation } from "./tool-invocation";
 import { CopyButton } from "./copy-button";
 import { Citations } from "./citation";
-import type { TextUIPart, ToolInvocationUIPart } from "@/lib/types";
+import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, PDFUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import { WebSearchSuggestion } from "./web-search-suggestion";
+import { FileText, Download } from "lucide-react";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -130,7 +131,7 @@ export function ReasoningMessagePart({
 
 interface MessageProps {
   message: TMessage & {
-    parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+    parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart | ImageUIPart | PDFUIPart>;
     hasWebSearch?: boolean;
   };
   isLoading: boolean;
@@ -239,6 +240,78 @@ const PurePreviewMessage = ({
                     />
                   );
                 default:
+                  // Handle custom part types like image and pdf
+                  if ((part as any).type === "image") {
+                    const imagePart = part as unknown as ImageUIPart;
+                    return (
+                      <motion.div
+                        initial={{ y: 5, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        key={`message-${message.id}-part-${i}`}
+                        className="flex flex-row gap-2 items-start w-full"
+                      >
+                        <div className={cn("flex flex-col gap-3 w-full", {
+                          "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl":
+                            message.role === "user",
+                        })}>
+                          <div className="max-w-md">
+                            <img 
+                              src={imagePart.imageUrl} 
+                              alt="Uploaded image" 
+                              className="rounded-lg max-w-full h-auto border border-border/50"
+                              loading="lazy"
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  }
+                  
+                  if ((part as any).type === "pdf") {
+                    const pdfPart = part as unknown as PDFUIPart;
+                    return (
+                      <motion.div
+                        initial={{ y: 5, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        key={`message-${message.id}-part-${i}`}
+                        className="flex flex-row gap-2 items-start w-full"
+                      >
+                        <div className={cn("flex flex-col gap-3 w-full", {
+                          "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl":
+                            message.role === "user",
+                        })}>
+                          <div className="border rounded-lg p-4 bg-muted/30 max-w-md">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-shrink-0">
+                                <FileText className="h-8 w-8 text-red-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate" title={pdfPart.filename}>
+                                  {pdfPart.filename}
+                                </p>
+                                <p className="text-xs text-muted-foreground">PDF Document</p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = pdfPart.fileData;
+                                  link.download = pdfPart.filename;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                                className="flex-shrink-0 p-2 rounded-md hover:bg-muted transition-colors"
+                                title="Download PDF"
+                              >
+                                <Download className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  }
+                  
                   return null;
               }
             })}

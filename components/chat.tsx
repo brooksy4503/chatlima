@@ -16,6 +16,7 @@ import { useMCP } from "@/lib/context/mcp-context";
 import { useSession } from "@/lib/auth-client";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { useModel } from "@/lib/context/model-context";
+import { type ProcessedFile } from "@/lib/file-processing";
 
 // Type for chat data from DB
 interface ChatData {
@@ -45,6 +46,7 @@ export default function Chat() {
   const [userId, setUserId] = useState<string | null>(null);
   const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<ProcessedFile[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -155,12 +157,15 @@ export default function Chat() {
           enabled: webSearchEnabled,
           contextSize: webSearchContextSize,
         },
-        apiKeys: getClientApiKeys()
+        apiKeys: getClientApiKeys(),
+        attachedFiles
       },
       experimental_throttle: 500,
       onFinish: (message) => {
         queryClient.invalidateQueries({ queryKey: ['chats'] });
         queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+        // Clear attached files after successful send
+        setAttachedFiles([]);
         if (!chatId && generatedChatId) {
           if (window.location.pathname !== `/chat/${generatedChatId}`) {
              router.push(`/chat/${generatedChatId}`, { scroll: false }); 
@@ -300,6 +305,11 @@ export default function Chat() {
     handleSubmit(e);
   }, [handleSubmit]);
 
+  // File handling functions
+  const handleFilesChange = useCallback((files: ProcessedFile[]) => {
+    setAttachedFiles(files);
+  }, []);
+
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
 
   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
@@ -355,6 +365,8 @@ export default function Chat() {
             isLoading={isLoading}
             status={status}
             stop={stop}
+            attachedFiles={attachedFiles}
+            onFilesChange={handleFilesChange}
           />
         </form>
       </div>
