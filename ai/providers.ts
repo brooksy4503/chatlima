@@ -202,6 +202,7 @@ const languageModels = {
     model: openrouterClient("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
     middleware: deepseekR1Middleware,
   }),
+  "openrouter/x-ai/grok-4": openrouterClient("x-ai/grok-4"),
   "openrouter/mistralai/mistral-medium-3": openrouterClient("mistralai/mistral-medium-3"),
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": openrouterClient("mistralai/mistral-small-3.1-24b-instruct"),
   "openrouter/mistralai/mistral-small-3.2-24b-instruct": openrouterClient("mistralai/mistral-small-3.2-24b-instruct"),
@@ -352,6 +353,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
         model: getOpenRouterClient()("x-ai/grok-3-mini-beta", { reasoning: { effort: "high" }, logprobs: false }),
         middleware: deepseekR1Middleware,
       });
+    case "openrouter/x-ai/grok-4":
+      return getOpenRouterClient()("x-ai/grok-4");
     case "openrouter/mistralai/mistral-medium-3":
       return getOpenRouterClient()("mistralai/mistral-medium-3");
     case "openrouter/mistralai/mistral-small-3.1-24b-instruct":
@@ -655,6 +658,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false
+  },
+  "openrouter/x-ai/grok-4": {
+    provider: "OpenRouter",
+    name: "X AI Grok 4",
+    description: "Grok 4 is xAI's latest reasoning model with a 256k context window. Features parallel tool calling, structured outputs, and supports both image and text inputs. Excels at complex reasoning, coding, and multimodal tasks.",
+    apiVersion: "x-ai/grok-4",
+    capabilities: ["Reasoning", "Coding", "Multimodal", "Tool Calling", "Structured Outputs", "Long Context"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true
   },
   "openrouter/meta-llama/llama-4-maverick": {
     provider: "OpenRouter",
