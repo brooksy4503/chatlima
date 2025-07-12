@@ -232,6 +232,7 @@ const languageModels = {
   "openrouter/baidu/ernie-4.5-300b-a47b": openrouterClient("baidu/ernie-4.5-300b-a47b"),
   "openrouter/inception/mercury": openrouterClient("inception/mercury"),
   "openrouter/thedrummer/anubis-70b-v1.1": openrouterClient("thedrummer/anubis-70b-v1.1"),
+  "openrouter/moonshotai/kimi-k2": openrouterClient("moonshotai/kimi-k2"),
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
@@ -396,6 +397,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("inception/mercury");
     case "openrouter/thedrummer/anubis-70b-v1.1":
       return getOpenRouterClient()("thedrummer/anubis-70b-v1.1");
+    case "openrouter/moonshotai/kimi-k2":
+      return getOpenRouterClient()("moonshotai/kimi-k2");
 
     // Requesty models
     case "requesty/openai/gpt-4o":
@@ -905,6 +908,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "TheDrummer's Anubis v1.1 is an unaligned, creative Llama 3.3 70B model focused on providing character-driven roleplay & stories. It excels at gritty, visceral prose, unique character adherence, and coherent narratives, while maintaining the instruction following Llama 3.3 70B is known for. 131,072 context window.",
     apiVersion: "thedrummer/anubis-70b-v1.1",
     capabilities: ["Creative Writing", "Character-driven Roleplay", "Storytelling", "Unaligned", "Character Adherence", "Visceral Prose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "openrouter/moonshotai/kimi-k2": {
+    provider: "OpenRouter",
+    name: "Kimi K2",
+    description: "Kimi K2 is a large-scale Mixture-of-Experts (MoE) language model with 1 trillion total parameters and 32 billion active per forward pass. Optimized for agentic capabilities including advanced tool use, reasoning, and code synthesis. Excels in coding, reasoning, and tool-use tasks with 128K token context length.",
+    apiVersion: "moonshotai/kimi-k2",
+    capabilities: ["Coding", "Reasoning", "Tool Use", "Agentic", "Long Context", "Problem Solving"],
     enabled: true,
     supportsWebSearch: true,
     premium: false
