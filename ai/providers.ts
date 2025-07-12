@@ -232,6 +232,7 @@ const languageModels = {
   "openrouter/baidu/ernie-4.5-300b-a47b": openrouterClient("baidu/ernie-4.5-300b-a47b"),
   "openrouter/inception/mercury": openrouterClient("inception/mercury"),
   "openrouter/thedrummer/anubis-70b-v1.1": openrouterClient("thedrummer/anubis-70b-v1.1"),
+  "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free": openrouterClient("cognitivecomputations/dolphin-mistral-24b-venice-edition:free"),
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
@@ -396,6 +397,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("inception/mercury");
     case "openrouter/thedrummer/anubis-70b-v1.1":
       return getOpenRouterClient()("thedrummer/anubis-70b-v1.1");
+    case "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free":
+      return getOpenRouterClient()("cognitivecomputations/dolphin-mistral-24b-venice-edition:free");
 
     // Requesty models
     case "requesty/openai/gpt-4o":
@@ -905,6 +908,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "TheDrummer's Anubis v1.1 is an unaligned, creative Llama 3.3 70B model focused on providing character-driven roleplay & stories. It excels at gritty, visceral prose, unique character adherence, and coherent narratives, while maintaining the instruction following Llama 3.3 70B is known for. 131,072 context window.",
     apiVersion: "thedrummer/anubis-70b-v1.1",
     capabilities: ["Creative Writing", "Character-driven Roleplay", "Storytelling", "Unaligned", "Character Adherence", "Visceral Prose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
+    provider: "OpenRouter",
+    name: "Dolphin Mistral 24B Venice Edition",
+    description: "Venice Uncensored Dolphin Mistral 24B Venice Edition is a fine-tuned variant of Mistral-Small-24B-Instruct-2501, developed by Cognitive Computations in collaboration with Venice.ai. This model is designed as an 'uncensored' instruct-tuned LLM with exceptional capabilities in coding, math, agentic tasks, function calling, creative writing, and storytelling. Features a 32,768 context window and extremely low censorship refusal rate.",
+    apiVersion: "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+    capabilities: ["Coding", "Math", "Agentic Tasks", "Function Calling", "Creative Writing", "Storytelling", "Uncensored", "General Purpose"],
     enabled: true,
     supportsWebSearch: true,
     premium: false
