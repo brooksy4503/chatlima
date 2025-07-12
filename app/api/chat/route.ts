@@ -11,6 +11,8 @@ import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
 import { auth, checkMessageLimit } from '@/lib/auth';
+import type { ImageUIPart } from '@/lib/types';
+import { convertToOpenRouterFormat } from '@/lib/openrouter-utils';
 
 import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
@@ -98,13 +100,16 @@ const createErrorResponse = (
 };
 
 export async function POST(req: Request) {
+  console.log('[DEBUG] Chat API called');
+
   const {
     messages,
     chatId,
     selectedModel,
     mcpServers: initialMcpServers = [],
     webSearch = { enabled: false, contextSize: 'medium' },
-    apiKeys = {}
+    apiKeys = {},
+    attachments = []
   }: {
     messages: UIMessage[];
     chatId?: string;
@@ -112,7 +117,28 @@ export async function POST(req: Request) {
     mcpServers?: MCPServerConfig[];
     webSearch?: WebSearchOptions;
     apiKeys?: Record<string, string>;
+    attachments?: Array<{
+      name: string;
+      contentType: string;
+      url: string;
+    }>;
   } = await req.json();
+
+  console.log('[DEBUG] Request body parsed:', {
+    messagesCount: messages.length,
+    chatId,
+    selectedModel,
+    attachmentsCount: attachments.length,
+    webSearchEnabled: webSearch.enabled
+  });
+
+  if (attachments.length > 0) {
+    console.log('[DEBUG] Attachments received:', attachments.map(att => ({
+      name: att.name,
+      contentType: att.contentType,
+      urlPrefix: att.url.substring(0, 50) + '...'
+    })));
+  }
 
   let mcpServers = initialMcpServers;
 
@@ -127,6 +153,121 @@ export async function POST(req: Request) {
   ) {
     mcpServers = [];
   }
+
+  // Helper function to check if model supports vision
+  function modelSupportsVision(modelId: modelID): boolean {
+    const visionModels = [
+      'openrouter/openai/gpt-4o',
+      'openrouter/openai/gpt-4o-mini',
+      'openrouter/openai/gpt-4-turbo',
+      'openrouter/anthropic/claude-3-opus',
+      'openrouter/anthropic/claude-3-5-sonnet',
+      'openrouter/anthropic/claude-3-haiku',
+      'openrouter/anthropic/claude-sonnet-4', // Claude 4 Sonnet
+      'openrouter/anthropic/claude-opus-4', // Claude 4 Opus
+      'requesty/anthropic/claude-sonnet-4-20250514', // Claude 4 Sonnet via Requesty
+      'openrouter/google/gemini-pro-vision',
+      'openrouter/google/gemini-2.0-flash-exp'
+    ];
+
+    return visionModels.some(model => modelId.includes(model.split('/').pop() || ''));
+  }
+
+  // Process attachments into message parts
+  function processMessagesWithAttachments(
+    messages: UIMessage[],
+    attachments: Array<{ name: string; contentType: string; url: string }>
+  ): UIMessage[] {
+    console.log('[DEBUG] processMessagesWithAttachments called with:', {
+      messagesCount: messages.length,
+      attachmentsCount: attachments.length
+    });
+
+    if (attachments.length === 0) {
+      console.log('[DEBUG] No attachments, returning original messages');
+      return messages;
+    }
+
+    // Check if model supports vision
+    const supportsVision = modelSupportsVision(selectedModel);
+    console.log('[DEBUG] Model vision support check:', {
+      selectedModel,
+      supportsVision
+    });
+
+    if (!supportsVision) {
+      console.error('[ERROR] Model does not support vision:', selectedModel);
+      throw new Error(`Selected model ${selectedModel} does not support image inputs. Please choose a vision-capable model.`);
+    }
+
+    // Add attachments to the last user message
+    const processedMessages = [...messages];
+    const lastMessageIndex = processedMessages.length - 1;
+
+    console.log('[DEBUG] Processing attachments for message at index:', lastMessageIndex);
+
+    if (lastMessageIndex >= 0 && processedMessages[lastMessageIndex].role === 'user') {
+      const lastMessage = processedMessages[lastMessageIndex];
+      console.log('[DEBUG] Last message:', {
+        role: lastMessage.role,
+        content: lastMessage.content?.substring(0, 100),
+        hasExistingParts: !!lastMessage.parts,
+        existingPartsCount: lastMessage.parts?.length || 0
+      });
+
+      // Convert attachments to image parts
+      const imageParts: ImageUIPart[] = attachments.map((attachment, index) => {
+        console.log('[DEBUG] Converting attachment', index, ':', {
+          name: attachment.name,
+          contentType: attachment.contentType,
+          urlLength: attachment.url.length,
+          isValidDataUrl: attachment.url.startsWith('data:image/')
+        });
+
+        return {
+          type: 'image_url' as const,
+          image_url: {
+            url: attachment.url,
+            detail: 'auto' as const
+          },
+          metadata: {
+            filename: attachment.name,
+            mimeType: attachment.contentType,
+            size: 0, // We don't have size info from the attachment
+            width: 0,
+            height: 0
+          }
+        };
+      });
+
+      console.log('[DEBUG] Created image parts:', imageParts.length);
+
+      // Create new parts array with type assertion
+      const existingParts = lastMessage.parts || [{ type: 'text', text: lastMessage.content }];
+      const newParts = [...existingParts, ...imageParts] as any;
+
+      console.log('[DEBUG] Combined parts:', {
+        existingPartsCount: existingParts.length,
+        newImagePartsCount: imageParts.length,
+        totalPartsCount: newParts.length
+      });
+
+      processedMessages[lastMessageIndex] = {
+        ...lastMessage,
+        parts: newParts
+      };
+
+      console.log('[DEBUG] Updated last message with image parts');
+    } else {
+      console.warn('[WARN] No user message found to attach images to, or last message is not from user');
+    }
+
+    console.log('[DEBUG] Returning processed messages with attachments');
+    return processedMessages;
+  }
+
+  // Process messages with attachments
+  const processedMessages = processMessagesWithAttachments(messages, attachments);
 
   // Get the authenticated session (including anonymous users)
   const session = await auth.api.getSession({ headers: req.headers });
@@ -316,7 +457,7 @@ export async function POST(req: Request) {
   }
 
   // Prepare messages for the model
-  const modelMessages: UIMessage[] = [...messages];
+  const modelMessages: UIMessage[] = [...processedMessages];
 
   if (
     selectedModel === "openrouter/deepseek/deepseek-r1" ||
@@ -615,7 +756,7 @@ export async function POST(req: Request) {
     });
   }
 
-  // Construct the payload for OpenRouter
+  // Construct the payload for streamText (Vercel AI SDK format)
   const openRouterPayload = {
     model: modelInstance,
     system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.

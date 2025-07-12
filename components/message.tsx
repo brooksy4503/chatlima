@@ -11,8 +11,9 @@ import { SpinnerIcon } from "./icons";
 import { ToolInvocation } from "./tool-invocation";
 import { CopyButton } from "./copy-button";
 import { Citations } from "./citation";
-import type { TextUIPart, ToolInvocationUIPart } from "@/lib/types";
+import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
+import { formatFileSize } from "@/lib/image-utils";
 import { WebSearchSuggestion } from "./web-search-suggestion";
 
 interface ReasoningPart {
@@ -130,7 +131,7 @@ export function ReasoningMessagePart({
 
 interface MessageProps {
   message: TMessage & {
-    parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+    parts?: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
     hasWebSearch?: boolean;
   };
   isLoading: boolean;
@@ -184,7 +185,7 @@ const PurePreviewMessage = ({
         >
           <div className="flex flex-col w-full space-y-3">
             {message.parts?.map((part, i) => {
-              switch (part.type) {
+              switch ((part as any).type) {
                 case "text":
                   const textPart = part as TextUIPart;
                   return (
@@ -223,6 +224,46 @@ const PurePreviewMessage = ({
                       isLatestMessage={isLatestMessage}
                       status={status}
                     />
+                  );
+                case "image_url":
+                  const imagePart = part as any as ImageUIPart;
+                  return (
+                    <motion.div
+                      initial={{ y: 5, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      key={`message-${message.id}-part-${i}`}
+                      className="flex flex-row gap-2 items-start w-full"
+                    >
+                      <div className={cn("flex flex-col gap-2", {
+                        "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl":
+                          message.role === "user",
+                      })}>
+                        <img
+                          src={imagePart.image_url.url}
+                          alt={imagePart.metadata?.filename || "Uploaded image"}
+                          className="message-image"
+                          loading="lazy"
+                          onClick={() => {
+                            // Optional: Open image in modal or new tab
+                            window.open(imagePart.image_url.url, '_blank');
+                          }}
+                        />
+                        {imagePart.metadata && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {imagePart.metadata.filename}
+                            {imagePart.metadata.size && (
+                              <> • {formatFileSize(imagePart.metadata.size)}</>
+                            )}
+                            {imagePart.metadata.width && imagePart.metadata.height && (
+                              <> • {imagePart.metadata.width}×{imagePart.metadata.height}</>
+                            )}
+                            {imagePart.image_url.detail && imagePart.image_url.detail !== 'auto' && (
+                              <> • {imagePart.image_url.detail} quality</>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
                   );
                 case "reasoning":
                   const reasoningPart = part as ReasoningUIPart;
