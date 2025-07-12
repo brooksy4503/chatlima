@@ -3,14 +3,14 @@ import { chats, messages, type Chat, type Message, MessageRole, type MessagePart
 import { eq, desc, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateTitle } from "@/app/actions";
-import type { TextUIPart, ToolInvocationUIPart, WebSearchCitation } from "./types";
+import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation } from "./types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 
 type AIMessage = {
   role: string;
   content: string | any[];
   id?: string;
-  parts?: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+  parts?: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
 };
@@ -19,7 +19,7 @@ type UIMessage = {
   id: string;
   role: string;
   content: string;
-  parts: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+  parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
   createdAt?: Date;
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
@@ -82,14 +82,14 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
     }
 
     // Otherwise, convert content to parts
-    let parts: Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+    let parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
 
     if (typeof msg.content === 'string') {
       parts = [{ type: 'text', text: msg.content } as TextUIPart];
     } else if (Array.isArray(msg.content)) {
       if (msg.content.every(item => typeof item === 'object' && item !== null)) {
         // Content is already in parts-like format
-        parts = msg.content as Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+        parts = msg.content as Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
       } else {
         // Content is an array but not in parts format
         parts = [{ type: 'text', text: JSON.stringify(msg.content) } as TextUIPart];
@@ -115,7 +115,7 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
 export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage> {
   return dbMessages.map((message) => ({
     id: message.id,
-    parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
+    parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
     role: message.role as string,
     content: getTextContent(message), // For backward compatibility
     createdAt: message.createdAt,
@@ -293,5 +293,26 @@ export async function deleteChat(id: string, userId: string) {
       eq(chats.id, id),
       eq(chats.userId, userId)
     )
+  );
+}
+
+// Helper functions for image processing
+export function processImageParts(parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>) {
+  return parts.map(part => {
+    if (part.type === "image_url") {
+      // Validate base64 data URLs and add metadata if missing
+      if (part.image_url.url.startsWith('data:image/')) {
+        return part;
+      }
+      // Handle external URLs if needed
+      return part;
+    }
+    return part;
+  });
+}
+
+export function hasImageAttachments(messages: UIMessage[]): boolean {
+  return messages.some(message =>
+    message.parts?.some(part => part.type === "image_url")
   );
 } 

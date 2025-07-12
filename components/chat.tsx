@@ -16,6 +16,7 @@ import { useMCP } from "@/lib/context/mcp-context";
 import { useSession } from "@/lib/auth-client";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { useModel } from "@/lib/context/model-context";
+import type { ImageAttachment } from "@/lib/types";
 
 // Type for chat data from DB
 interface ChatData {
@@ -45,6 +46,7 @@ export default function Chat() {
   const [userId, setUserId] = useState<string | null>(null);
   const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<ImageAttachment[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -142,6 +144,82 @@ export default function Chat() {
     return apiKeys;
   };
 
+  // Check if current model supports vision/images
+  const modelSupportsVision = useMemo(() => {
+    // List of vision-capable models - this should be expanded as more models are added
+    const visionModels = [
+      'openrouter/openai/gpt-4o',
+      'openrouter/openai/gpt-4o-mini', 
+      'openrouter/openai/gpt-4-turbo',
+      'openrouter/anthropic/claude-3-opus',
+      'openrouter/anthropic/claude-3-5-sonnet',
+      'openrouter/anthropic/claude-3-haiku',
+      'openrouter/anthropic/claude-sonnet-4', // Claude 4 Sonnet
+      'openrouter/anthropic/claude-opus-4', // Claude 4 Opus
+      'requesty/anthropic/claude-sonnet-4-20250514', // Claude 4 Sonnet via Requesty
+      'openrouter/google/gemini-pro-vision',
+      'openrouter/google/gemini-2.0-flash-exp'
+    ];
+    
+    return visionModels.includes(selectedModel);
+  }, [selectedModel]);
+
+  // Handle image selection
+  const handleImageSelect = useCallback((newImages: ImageAttachment[]) => {
+    console.log('[DEBUG] handleImageSelect called with:', newImages.length, 'images');
+    console.log('[DEBUG] New images details:', newImages.map(img => ({
+      filename: img.metadata.filename,
+      size: img.metadata.size,
+      mimeType: img.metadata.mimeType,
+      detail: img.detail,
+      dataUrlLength: img.dataUrl.length
+    })));
+    
+    setSelectedImages(prev => {
+      const updated = [...prev, ...newImages];
+      console.log('[DEBUG] Updated selectedImages count:', updated.length);
+      return updated;
+    });
+  }, []);
+
+  // Handle image removal
+  const handleImageRemove = useCallback((index: number) => {
+    console.log('[DEBUG] handleImageRemove called for index:', index);
+    setSelectedImages(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      console.log('[DEBUG] After removal, selectedImages count:', updated.length);
+      return updated;
+    });
+  }, []);
+
+  // Clear images after successful submission
+  const clearImages = useCallback(() => {
+    console.log('[DEBUG] clearImages called');
+    setSelectedImages([]);
+  }, []);
+
+  // Create attachments from selected images
+  const attachments = useMemo(() => {
+    const result = selectedImages.map(img => ({
+      name: img.metadata.filename,
+      contentType: img.metadata.mimeType,
+      url: img.dataUrl
+    }));
+    
+    console.log('[DEBUG] Creating attachments from selectedImages:', {
+      selectedImagesCount: selectedImages.length,
+      attachmentsCreated: result.length,
+      attachmentDetails: result.map(att => ({
+        name: att.name,
+        contentType: att.contentType,
+        urlLength: att.url.length,
+        isValidDataUrl: att.url.startsWith('data:image/')
+      }))
+    });
+    
+    return result;
+  }, [selectedImages]);
+
   const { messages, input, handleInputChange, handleSubmit, status, stop: originalStop } =
     useChat({
       id: chatId || generatedChatId,
@@ -155,10 +233,12 @@ export default function Chat() {
           enabled: webSearchEnabled,
           contextSize: webSearchContextSize,
         },
-        apiKeys: getClientApiKeys()
+        apiKeys: getClientApiKeys(),
+        attachments: attachments
       },
       experimental_throttle: 500,
       onFinish: (message) => {
+        clearImages(); // Clear images after successful submission
         queryClient.invalidateQueries({ queryKey: ['chats'] });
         queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
         if (!chatId && generatedChatId) {
@@ -355,6 +435,9 @@ export default function Chat() {
             isLoading={isLoading}
             status={status}
             stop={stop}
+            images={selectedImages}
+            onImagesChange={setSelectedImages}
+            modelSupportsVision={modelSupportsVision}
           />
         </form>
       </div>
