@@ -233,6 +233,7 @@ const languageModels = {
   "openrouter/inception/mercury": openrouterClient("inception/mercury"),
   "openrouter/thedrummer/anubis-70b-v1.1": openrouterClient("thedrummer/anubis-70b-v1.1"),
   "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free": openrouterClient("cognitivecomputations/dolphin-mistral-24b-venice-edition:free"),
+  "openrouter/moonshotai/kimi-k2": openrouterClient("moonshotai/kimi-k2"),
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
@@ -399,6 +400,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("thedrummer/anubis-70b-v1.1");
     case "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free":
       return getOpenRouterClient()("cognitivecomputations/dolphin-mistral-24b-venice-edition:free");
+    case "openrouter/moonshotai/kimi-k2":
+      return getOpenRouterClient()("moonshotai/kimi-k2");
 
     // Requesty models
     case "requesty/openai/gpt-4o":
@@ -918,6 +921,16 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     description: "Venice Uncensored Dolphin Mistral 24B Venice Edition is a fine-tuned variant of Mistral-Small-24B-Instruct-2501, developed by Cognitive Computations in collaboration with Venice.ai. This model is designed as an 'uncensored' instruct-tuned LLM with exceptional capabilities in coding, math, agentic tasks, function calling, creative writing, and storytelling. Features a 32,768 context window and extremely low censorship refusal rate.",
     apiVersion: "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
     capabilities: ["Coding", "Math", "Agentic Tasks", "Function Calling", "Creative Writing", "Storytelling", "Uncensored", "General Purpose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false
+  },
+  "openrouter/moonshotai/kimi-k2": {
+    provider: "OpenRouter",
+    name: "Kimi K2",
+    description: "Kimi K2 is a large-scale Mixture-of-Experts (MoE) language model with 1 trillion total parameters and 32 billion active per forward pass. Optimized for agentic capabilities including advanced tool use, reasoning, and code synthesis. Excels in coding, reasoning, and tool-use tasks with 128K token context length.",
+    apiVersion: "moonshotai/kimi-k2",
+    capabilities: ["Coding", "Reasoning", "Tool Use", "Agentic", "Long Context", "Problem Solving"],
     enabled: true,
     supportsWebSearch: true,
     premium: false
