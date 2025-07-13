@@ -718,7 +718,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: false
   },
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
     provider: "OpenRouter",
@@ -729,7 +729,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: false
   },
   "openrouter/mistralai/mistral-small-3.2-24b-instruct": {
     provider: "OpenRouter",
@@ -740,7 +740,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: false
   },
   "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": {
     provider: "OpenRouter",
@@ -751,7 +751,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: false
   },
   "openrouter/mistralai/magistral-small-2506": {
     provider: "OpenRouter",
@@ -861,7 +861,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: false
   },
   "openrouter/qwen/qwen3-235b-a22b": {
     provider: "OpenRouter",
@@ -1104,7 +1104,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: false
   },
   "requesty/anthropic/claude-sonnet-4-20250514": {
     provider: "Requesty",
@@ -1170,7 +1170,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: true
+    vision: false
   },
   "requesty/google/gemini-2.5-flash-lite-preview-06-17": {
     provider: "Requesty",
