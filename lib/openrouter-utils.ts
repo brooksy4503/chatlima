@@ -1,15 +1,15 @@
 import type { UIMessage } from "ai";
 import type { ImageUIPart, TextUIPart } from "./types";
 
-interface OpenRouterImageContent {
+interface StandardImageContent {
     type: "image";
     /**
      * The image data or URL. For data URLs, the format should be
      * `data:image/{jpeg|png|webp};base64,<BASE64_DATA>`.
      * This structure matches the AI SDK `ImagePart` definition, which
      * is required for validation before the request is sent to the
-     * provider. The provider (e.g. OpenRouter) will later transform
-     * this into the provider-specific schema (e.g. `image_url`).
+     * provider. The provider (e.g. OpenRouter, Requesty) will later transform
+     * this into the provider-specific schema if needed.
      */
     image: string | URL;
     /**
@@ -18,18 +18,23 @@ interface OpenRouterImageContent {
     mimeType?: string;
 }
 
-interface OpenRouterTextContent {
+interface StandardTextContent {
     type: "text";
     text: string;
 }
 
-type OpenRouterMessageContent = OpenRouterTextContent | OpenRouterImageContent;
+type StandardMessageContent = StandardTextContent | StandardImageContent;
+
+// Legacy type aliases for backward compatibility
+type OpenRouterImageContent = StandardImageContent;
+type OpenRouterTextContent = StandardTextContent;
+type OpenRouterMessageContent = StandardMessageContent;
 
 export function convertToOpenRouterFormat(messages: UIMessage[]): any[] {
     return messages.map(message => {
         if (message.role === "user" && message.parts) {
-            // Convert parts to OpenRouter content format
-            const content: OpenRouterMessageContent[] = [];
+            // Convert parts to AI SDK standard content format (used by OpenRouter and Requesty)
+            const content: StandardMessageContent[] = [];
 
             (message.parts as any[]).forEach(part => {
                 switch (part.type) {
@@ -181,9 +186,9 @@ export function validateAllImages(messages: UIMessage[]): {
     };
 }
 
-// Convert message parts to OpenRouter format
-export function convertMessagePartsToOpenRouter(parts: any[]): OpenRouterMessageContent[] {
-    const content: OpenRouterMessageContent[] = [];
+// Convert message parts to standard AI SDK format (used by OpenRouter and Requesty)
+export function convertMessagePartsToOpenRouter(parts: any[]): StandardMessageContent[] {
+    const content: StandardMessageContent[] = [];
 
     parts.forEach(part => {
         switch (part.type) {

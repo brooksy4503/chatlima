@@ -15,6 +15,7 @@ import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types"
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import { formatFileSize } from "@/lib/image-utils";
 import { WebSearchSuggestion } from "./web-search-suggestion";
+import { ImageModal } from "./image-modal";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -145,6 +146,13 @@ const PurePreviewMessage = ({
   status,
   isLoading,
 }: MessageProps) => {
+  // State for image modal
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    metadata?: ImageUIPart['metadata'];
+    detail?: string;
+  } | null>(null);
+
   // Create a string with all text parts for copy functionality
   const getMessageText = () => {
     if (!message.parts) return "";
@@ -244,8 +252,11 @@ const PurePreviewMessage = ({
                           className="message-image"
                           loading="lazy"
                           onClick={() => {
-                            // Optional: Open image in modal or new tab
-                            window.open(imagePart.image_url.url, '_blank');
+                            setSelectedImage({
+                              url: imagePart.image_url.url,
+                              metadata: imagePart.metadata,
+                              detail: imagePart.image_url.detail
+                            });
                           }}
                         />
                         {imagePart.metadata && (
@@ -300,6 +311,17 @@ const PurePreviewMessage = ({
           </div>
         </div>
       </motion.div>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal
+          isOpen={!!selectedImage}
+          onClose={() => setSelectedImage(null)}
+          imageUrl={selectedImage.url}
+          metadata={selectedImage.metadata}
+          detail={selectedImage.detail}
+        />
+      )}
     </AnimatePresence>
   );
 };

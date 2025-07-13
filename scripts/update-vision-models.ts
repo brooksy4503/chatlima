@@ -44,6 +44,7 @@ interface OpenRouterModel {
         prompt_tokens: string;
         completion_tokens: string;
     } | null;
+    provider: string; // Added for OpenRouter models
 }
 
 interface RequestyModel {
@@ -68,31 +69,6 @@ interface VisionModelInfo {
 }
 
 class VisionDetector {
-    private visionKeywords = [
-        'vision', 'image', 'visual', 'multimodal', 'picture', 'photo',
-        'ocr', 'chart', 'diagram', 'screenshot', 'document'
-    ];
-
-    private knownVisionModels = [
-        // OpenAI models
-        'gpt-4o', 'gpt-4o-mini', 'gpt-4-vision', 'gpt-4-turbo',
-        // Anthropic models
-        'claude-3', 'claude-3.5', 'claude-3.7', 'claude-4',
-        // Google models
-        'gemini', 'gemini-pro', 'gemini-flash',
-        // Others
-        'llava', 'bakllava', 'moondream'
-    ];
-
-    private knownNonVisionModels = [
-        // Text-only models
-        'gpt-3.5-turbo', 'text-davinci', 'text-curie', 'text-babbage',
-        // Most open source text-only models
-        'mixtral', 'mistral', 'llama-2', 'falcon', 'mpt',
-        // DeepSeek models (currently do not support vision)
-        'deepseek'
-    ];
-
     detectVision(model: OpenRouterModel | RequestyModel): VisionModelInfo {
         const id = model.id;
         const name = model.name;
@@ -103,94 +79,41 @@ class VisionDetector {
         let inputModalities: string[] = [];
         let outputModalities: string[] = [];
 
-        // Check architecture modalities if available (OpenRouter)
+        // PRIMARY SOURCE OF TRUTH: OpenRouter API architecture.input_modalities
         if ('architecture' in model) {
             const arch = model.architecture;
 
-            // Check input/output modalities
             if (arch.input_modalities) {
                 inputModalities = arch.input_modalities;
                 hasVision = arch.input_modalities.includes('image');
-                if (hasVision) {
-                    reasoning = `Detected vision from input_modalities: ${arch.input_modalities.join(', ')}`;
-                }
+                reasoning = hasVision
+                    ? `OpenRouter API reports input_modalities: [${arch.input_modalities.join(', ')}]`
+                    : `OpenRouter API input_modalities: [${arch.input_modalities.join(', ')}] - no image support`;
             }
 
             if (arch.output_modalities) {
                 outputModalities = arch.output_modalities;
             }
+        }
 
-            // Check modality field (older API format)
-            if (arch.modality && arch.modality.includes('multimodal')) {
+        // MINIMAL FALLBACK: Only for models where API data is completely missing
+        if (!reasoning) {
+            // Basic fallback based on model name patterns for well-known vision models
+            const visionModelPatterns = [
+                /gpt-4o/i, /gpt-4.*vision/i, /gpt-4.*turbo/i,
+                /claude-3/i, /claude-4/i,
+                /gemini/i,
+                /llava/i, /moondream/i, /bakllava/i
+            ];
+
+            const isKnownVisionModel = visionModelPatterns.some(pattern => pattern.test(id) || pattern.test(name));
+
+            if (isKnownVisionModel) {
                 hasVision = true;
-                reasoning = `Detected vision from modality: ${arch.modality}`;
-            }
-        }
-
-        // Check Requesty-specific fields
-        if ('supports_vision' in model && model.supports_vision !== undefined) {
-            hasVision = model.supports_vision;
-            reasoning = `Explicit vision support flag: ${model.supports_vision}`;
-        }
-
-        // Check for image pricing (indicates vision support)
-        if ('pricing' in model && model.pricing.image) {
-            hasVision = true;
-            reasoning = `Detected vision from image pricing: $${model.pricing.image}`;
-        }
-
-        // Check known vision models
-        if (!hasVision) {
-            const lowerName = name.toLowerCase();
-            const lowerId = id.toLowerCase();
-
-            for (const visionModel of this.knownVisionModels) {
-                if (lowerId.includes(visionModel.toLowerCase()) || lowerName.includes(visionModel.toLowerCase())) {
-                    hasVision = true;
-                    reasoning = `Known vision model pattern: ${visionModel}`;
-                    break;
-                }
-            }
-        }
-
-        // Check known non-vision models
-        if (hasVision) {
-            const lowerName = name.toLowerCase();
-            const lowerId = id.toLowerCase();
-
-            for (const nonVisionModel of this.knownNonVisionModels) {
-                if (lowerId.includes(nonVisionModel.toLowerCase()) || lowerName.includes(nonVisionModel.toLowerCase())) {
-                    hasVision = false;
-                    reasoning = `Known non-vision model pattern: ${nonVisionModel}`;
-                    break;
-                }
-            }
-        }
-
-        // Check description for vision keywords
-        if (!hasVision && description) {
-            const lowerDesc = description.toLowerCase();
-            const foundKeywords = this.visionKeywords.filter(keyword =>
-                lowerDesc.includes(keyword.toLowerCase())
-            );
-
-            if (foundKeywords.length > 0) {
-                hasVision = true;
-                reasoning = `Vision keywords in description: ${foundKeywords.join(', ')}`;
-            }
-        }
-
-        // Default assumption for newer models (2023+)
-        if (!hasVision && !reasoning) {
-            // Most modern models from major providers support vision
-            const majorProviders = ['openai', 'anthropic', 'google'];
-            const provider = id.split('/')[0]?.toLowerCase() || '';
-
-            if (majorProviders.includes(provider)) {
-                hasVision = true;
-                reasoning = `Default assumption for modern ${provider} model`;
+                reasoning = `Fallback: Known vision model pattern matched`;
             } else {
-                reasoning = `No vision indicators found`;
+                hasVision = false;
+                reasoning = `Fallback: No API data available, defaulting to text-only`;
             }
         }
 
@@ -199,9 +122,9 @@ class VisionDetector {
             name,
             provider: 'provider' in model ? model.provider : id.split('/')[0] || 'unknown',
             hasVision,
+            source: 'architecture' in model ? 'openrouter' : 'requesty',
             inputModalities,
             outputModalities,
-            source: 'architecture' in model ? 'openrouter' : 'requesty',
             reasoning
         };
     }

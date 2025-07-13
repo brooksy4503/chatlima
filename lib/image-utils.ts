@@ -20,7 +20,7 @@ export async function processImageFile(file: File): Promise<{
     const metadata = await extractImageMetadata(file);
     console.log('[DEBUG] Metadata extracted:', metadata);
 
-    // Generate base64 data URL in OpenRouter compatible format
+    // Generate base64 data URL in AI SDK compatible format (used by OpenRouter and Requesty)
     console.log('[DEBUG] Converting file to data URL...');
     const dataUrl = await fileToDataUrl(file);
     console.log('[DEBUG] Data URL created, length:', dataUrl.length);
@@ -35,8 +35,8 @@ export async function processImageFile(file: File): Promise<{
 }
 
 export function validateImageFile(file: File, options: ImageProcessingOptions = {
-    maxSize: 20 * 1024 * 1024, // 20MB (OpenRouter max)
-    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'] // OpenRouter supported formats
+    maxSize: 20 * 1024 * 1024, // 20MB (compatible with most AI providers)
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'] // Standard formats supported by most AI providers
 }): { valid: boolean; error?: string } {
     // Check file size
     if (file.size > options.maxSize) {
@@ -149,7 +149,7 @@ export function validateDataUrl(dataUrl: string): { valid: boolean; error?: stri
         return { valid: false, error: 'Invalid data URL format - must start with data:image/' };
     }
 
-    // Check for supported formats (OpenRouter limitation)
+    // Check for supported formats (standard formats supported by most AI providers)
     const validTypes = ['data:image/jpeg', 'data:image/png', 'data:image/webp'];
     if (!validTypes.some(type => dataUrl.startsWith(type))) {
         return { valid: false, error: 'Unsupported image format. Use JPEG, PNG, or WebP' };
@@ -164,7 +164,7 @@ export function validateDataUrl(dataUrl: string): { valid: boolean; error?: stri
     const base64Data = dataUrl.split(',')[1];
     const estimatedSize = (base64Data.length * 3) / 4; // Base64 is ~33% larger than original
 
-    if (estimatedSize > 20 * 1024 * 1024) { // 20MB limit for OpenRouter
+    if (estimatedSize > 20 * 1024 * 1024) { // 20MB limit (compatible with most AI providers)
         return { valid: false, error: 'Image data too large (exceeds 20MB limit)' };
     }
 
