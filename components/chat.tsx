@@ -380,25 +380,58 @@ export default function Chat() {
   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
 
   // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
+  // Also add image parts to user messages if they were just submitted with images
   const enhancedMessages = useMemo(() => {
     return messages.map((message, index) => {
+      let enhancedMessage = { ...message };
+      
       // Check if this is an assistant message and if web search was enabled for the preceding user message
       if (message.role === 'assistant' && index > 0) {
         const previousMessage = messages[index - 1];
         // If the previous message was from user and web search was enabled, mark this assistant message
         if (previousMessage.role === 'user' && webSearchEnabled && isOpenRouterModel) {
-          return {
-            ...message,
-            hasWebSearch: true
-          } as Message & { hasWebSearch?: boolean };
+                  enhancedMessage = {
+          ...enhancedMessage,
+          hasWebSearch: true
+        } as any;
         }
       }
+      
+      // Add image parts to user messages that were just submitted with images
+      if (message.role === 'user' && 
+          index === messages.length - 1 && // This is the latest user message
+          selectedImages.length > 0 && // There are images selected
+          !message.parts && // Message doesn't already have parts
+          (status === 'submitted' || status === 'streaming')) { // Message was just submitted
+        
+        const textPart = { type: 'text' as const, text: message.content };
+        const imageParts = selectedImages.map((img) => ({
+          type: 'image_url' as const,
+          image_url: {
+            url: img.dataUrl,
+            detail: img.detail as 'auto' | 'low' | 'high'
+          },
+          metadata: {
+            filename: img.metadata.filename,
+            mimeType: img.metadata.mimeType,
+            size: img.metadata.size,
+            width: img.metadata.width,
+            height: img.metadata.height
+          }
+        }));
+        
+        enhancedMessage = {
+          ...enhancedMessage,
+          parts: [textPart, ...imageParts] as any
+        };
+      }
+      
       return {
-        ...message,
-        hasWebSearch: (message as any).hasWebSearch || false
+        ...enhancedMessage,
+        hasWebSearch: (enhancedMessage as any).hasWebSearch || false
       } as Message & { hasWebSearch?: boolean };
     });
-  }, [messages, webSearchEnabled, isOpenRouterModel]);
+  }, [messages, webSearchEnabled, isOpenRouterModel, selectedImages, status]);
 
   return (
     <div className="h-full flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
