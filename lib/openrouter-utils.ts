@@ -2,11 +2,20 @@ import type { UIMessage } from "ai";
 import type { ImageUIPart, TextUIPart } from "./types";
 
 interface OpenRouterImageContent {
-    type: "image_url";
-    image_url: {
-        url: string;
-        detail?: "low" | "high" | "auto";
-    };
+    type: "image";
+    /**
+     * The image data or URL. For data URLs, the format should be
+     * `data:image/{jpeg|png|webp};base64,<BASE64_DATA>`.
+     * This structure matches the AI SDK `ImagePart` definition, which
+     * is required for validation before the request is sent to the
+     * provider. The provider (e.g. OpenRouter) will later transform
+     * this into the provider-specific schema (e.g. `image_url`).
+     */
+    image: string | URL;
+    /**
+     * Optional mime type – inferred from the data URL if available.
+     */
+    mimeType?: string;
 }
 
 interface OpenRouterTextContent {
@@ -24,22 +33,33 @@ export function convertToOpenRouterFormat(messages: UIMessage[]): any[] {
 
             (message.parts as any[]).forEach(part => {
                 switch (part.type) {
-                    case "text":
+                    case "text": {
                         const textPart = part as TextUIPart;
                         content.push({
                             type: "text",
-                            text: textPart.text
+                            text: textPart.text,
                         });
                         break;
-                    case "image_url":
+                    }
+                    case "image_url": {
                         const imagePart = part as ImageUIPart;
+
+                        // Attempt to infer MIME type from the data URL – useful for providers that inspect this field.
+                        let mimeType: string | undefined;
+                        const match = imagePart.image_url.url.match(/^data:(image\/[^;]+);base64,/);
+                        if (match) {
+                            mimeType = match[1];
+                        }
+
                         content.push({
-                            type: "image_url",
-                            image_url: {
-                                url: imagePart.image_url.url, // Base64 data URL: data:image/jpeg;base64,{data}
-                                detail: imagePart.image_url.detail || "auto"
-                            }
+                            type: "image",
+                            image: imagePart.image_url.url,
+                            ...(mimeType ? { mimeType } : {}),
                         });
+                        break;
+                    }
+                    default:
+                        // Skip unsupported part types
                         break;
                 }
             });
@@ -50,7 +70,7 @@ export function convertToOpenRouterFormat(messages: UIMessage[]): any[] {
             };
         }
 
-        // Handle non-multimodal messages
+        // Handle non-multimodal messages (plain text)
         return {
             role: message.role,
             content: getTextContent(message)
@@ -170,19 +190,26 @@ export function convertMessagePartsToOpenRouter(parts: any[]): OpenRouterMessage
             case "text":
                 content.push({
                     type: "text",
-                    text: part.text
+                    text: part.text,
                 });
                 break;
-            case "image_url":
+            case "image_url": {
+                // Convert to the AI SDK compatible ImagePart structure
+                let mimeType: string | undefined;
+                const match = part.image_url.url.match(/^data:(image\/[^;]+);base64,/);
+                if (match) {
+                    mimeType = match[1];
+                }
                 content.push({
-                    type: "image_url",
-                    image_url: {
-                        url: part.image_url.url,
-                        detail: part.image_url.detail || "auto"
-                    }
+                    type: "image",
+                    image: part.image_url.url,
+                    ...(mimeType ? { mimeType } : {}),
                 });
                 break;
+            }
             // Skip other part types that OpenRouter doesn't support
+            default:
+                break;
         }
     });
 

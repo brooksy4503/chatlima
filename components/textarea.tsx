@@ -1,4 +1,4 @@
-import { modelID } from "@/ai/providers";
+import { modelID, modelDetails } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Globe, AlertCircle, ImageIcon } from "lucide-react";
 import { ModelPicker } from "./model-picker";
@@ -23,7 +23,6 @@ interface InputProps {
   // Image upload props
   images?: ImageAttachment[];
   onImagesChange?: (images: ImageAttachment[]) => void;
-  modelSupportsVision?: boolean;
 }
 
 export const Textarea = ({
@@ -36,7 +35,6 @@ export const Textarea = ({
   setSelectedModel,
   images = [],
   onImagesChange,
-  modelSupportsVision = false,
 }: InputProps) => {
   const isStreaming = status === "streaming" || status === "submitted";
   const iconButtonRef = useRef<HTMLButtonElement>(null);
@@ -107,7 +105,7 @@ export const Textarea = ({
   return (
     <div className="w-full space-y-3">
       {/* Image Upload Interface */}
-      {modelSupportsVision && showImageUpload && (
+      {modelDetails[selectedModel]?.vision && showImageUpload && (
         <div className="bg-card border border-border rounded-xl p-4">
           <ImageUpload
             onImageSelect={handleImageSelect}
@@ -183,7 +181,7 @@ export const Textarea = ({
               onModelSelected={handleModelSelected}
             />
             {/* Image Upload Button */}
-            {modelSupportsVision && (
+            {modelDetails[selectedModel]?.vision && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -259,7 +257,7 @@ export const Textarea = ({
       </div>
 
       {/* Model Support Message */}
-      {!modelSupportsVision && (
+      {!modelDetails[selectedModel]?.vision && (
         <div className="text-xs text-muted-foreground text-center">
           Current model doesn&apos;t support images. Select a vision-capable model to upload images.
         </div>
