@@ -696,7 +696,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: false
+    vision: true
   },
   "openrouter/meta-llama/llama-4-maverick": {
     provider: "OpenRouter",
@@ -718,7 +718,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: true
   },
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
     provider: "OpenRouter",
@@ -729,7 +729,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: true
   },
   "openrouter/mistralai/mistral-small-3.2-24b-instruct": {
     provider: "OpenRouter",
@@ -740,7 +740,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: true
   },
   "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": {
     provider: "OpenRouter",
@@ -751,7 +751,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: true
   },
   "openrouter/mistralai/magistral-small-2506": {
     provider: "OpenRouter",
@@ -795,7 +795,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: true,
-    vision: true
+    vision: false
   },
   "gpt-4.1-mini": {
     provider: "OpenAI",
@@ -817,7 +817,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: true
+    vision: false
   },
   "openrouter/openai/gpt-4.1-nano": {
     provider: "OpenRouter",
@@ -828,7 +828,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: true
+    vision: false
   },
   "openrouter/openai/o4-mini-high": {
     provider: "OpenRouter",
@@ -1016,7 +1016,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: true,
-    vision: true
+    vision: false
   },
   "requesty/openai/gpt-4.1-nano": {
     provider: "Requesty",
@@ -1027,7 +1027,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: true
+    vision: false
   },
   "requesty/openai/gpt-4.1-mini": {
     provider: "Requesty",
@@ -1038,7 +1038,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: true
+    vision: false
   },
   "requesty/anthropic/claude-3.5-sonnet": {
     provider: "Requesty",
@@ -1115,7 +1115,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: false
   },
   "requesty/deepseek/deepseek-chat": {
     provider: "Requesty",

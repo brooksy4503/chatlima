@@ -22,8 +22,8 @@ interface ImageUploadProps {
 export function ImageUpload({
   onImageSelect,
   maxFiles = 5,
-  maxSizePerFile = 20 * 1024 * 1024, // 20MB (OpenRouter max)
-  acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'], // OpenRouter supported formats
+  maxSizePerFile = 20 * 1024 * 1024, // 20MB (compatible with OpenRouter and most providers)
+  acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'], // Standard formats supported by most AI providers
   disabled = false,
   defaultDetail = "auto",
   showDetailSelector = true,

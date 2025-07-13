@@ -737,12 +737,15 @@ export async function POST(req: Request) {
     });
   }
 
-  // Only convert to OpenRouter format for OpenRouter models
+  // Convert to appropriate format for OpenRouter and Requesty models
   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
-  const formattedMessages = isOpenRouterModel
+  const isRequestyModel = selectedModel.startsWith("requesty/");
+  const needsFormatConversion = isOpenRouterModel || isRequestyModel;
+
+  const formattedMessages = needsFormatConversion
     ? convertToOpenRouterFormat(modelMessages)
     : modelMessages;
-  console.log(`[DEBUG] Using ${isOpenRouterModel ? 'OpenRouter' : 'raw'} message format for model:`, selectedModel);
+  console.log(`[DEBUG] Using ${needsFormatConversion ? 'converted' : 'raw'} message format for model:`, selectedModel);
   console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
   const openRouterPayload = {
     model: modelInstance,
