@@ -1,6 +1,6 @@
 "use client";
 
-import { defaultModel, type modelID, MODELS } from "@/ai/providers";
+import { defaultModel, type modelID, MODELS, modelDetails } from "@/ai/providers";
 import { Message, useChat } from "@ai-sdk/react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Textarea } from "./textarea";
@@ -145,24 +145,7 @@ export default function Chat() {
   };
 
   // Check if current model supports vision/images
-  const modelSupportsVision = useMemo(() => {
-    // List of vision-capable models - this should be expanded as more models are added
-    const visionModels = [
-      'openrouter/openai/gpt-4o',
-      'openrouter/openai/gpt-4o-mini', 
-      'openrouter/openai/gpt-4-turbo',
-      'openrouter/anthropic/claude-3-opus',
-      'openrouter/anthropic/claude-3-5-sonnet',
-      'openrouter/anthropic/claude-3-haiku',
-      'openrouter/anthropic/claude-sonnet-4', // Claude 4 Sonnet
-      'openrouter/anthropic/claude-opus-4', // Claude 4 Opus
-      'requesty/anthropic/claude-sonnet-4-20250514', // Claude 4 Sonnet via Requesty
-      'openrouter/google/gemini-pro-vision',
-      'openrouter/google/gemini-2.0-flash-exp'
-    ];
-    
-    return visionModels.includes(selectedModel);
-  }, [selectedModel]);
+  const modelSupportsVision = modelDetails[selectedModel]?.vision === true;
 
   // Handle image selection
   const handleImageSelect = useCallback((newImages: ImageAttachment[]) => {
@@ -238,7 +221,6 @@ export default function Chat() {
       },
       experimental_throttle: 500,
       onFinish: (message) => {
-        clearImages(); // Clear images after successful submission
         queryClient.invalidateQueries({ queryKey: ['chats'] });
         queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
         if (!chatId && generatedChatId) {
@@ -377,8 +359,14 @@ export default function Chat() {
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
+    // Clear images immediately when form is submitted so they disappear from upload component
+    // and appear in the message preview
+    if (selectedImages.length > 0) {
+      clearImages();
+    }
+    
     handleSubmit(e);
-  }, [handleSubmit]);
+  }, [handleSubmit, selectedImages.length, clearImages]);
 
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
 
@@ -437,7 +425,6 @@ export default function Chat() {
             stop={stop}
             images={selectedImages}
             onImagesChange={setSelectedImages}
-            modelSupportsVision={modelSupportsVision}
           />
         </form>
       </div>
