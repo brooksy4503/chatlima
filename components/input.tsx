@@ -5,6 +5,7 @@ import { ImageUpload } from "./image-upload";
 import { ImagePreview } from "./image-preview";
 import type { ImageAttachment } from "@/lib/types";
 import { useState } from "react";
+import { modelID, modelDetails } from "@/ai/providers";
 
 interface InputProps {
   input: string;
@@ -17,7 +18,7 @@ interface InputProps {
   onImagesChange?: (images: ImageAttachment[]) => void;
   maxImages?: number;
   enableImageUpload?: boolean;
-  modelSupportsVision?: boolean;
+  selectedModel: modelID;
 }
 
 export const Input = ({
@@ -30,7 +31,7 @@ export const Input = ({
   onImagesChange,
   maxImages = 5,
   enableImageUpload = true,
-  modelSupportsVision = false,
+  selectedModel,
 }: InputProps) => {
   const [showImageUpload, setShowImageUpload] = useState(false);
 
@@ -55,7 +56,7 @@ export const Input = ({
   return (
     <div className="w-full space-y-3">
       {/* Image Upload Interface */}
-      {enableImageUpload && modelSupportsVision && showImageUpload && (
+      {enableImageUpload && modelDetails[selectedModel]?.vision && showImageUpload && (
         <div className="bg-card border border-border rounded-xl p-4">
           <ImageUpload
             onImageSelect={handleImageSelect}
@@ -93,7 +94,7 @@ export const Input = ({
         />
         
         {/* Image Upload Button */}
-        {enableImageUpload && modelSupportsVision && (
+        {enableImageUpload && modelDetails[selectedModel]?.vision && (
           <Button
             type="button"
             variant="ghost"
@@ -144,7 +145,7 @@ export const Input = ({
       </div>
 
       {/* Upload Status Messages */}
-      {enableImageUpload && !modelSupportsVision && (
+      {enableImageUpload && !modelDetails[selectedModel]?.vision && (
         <div className="text-xs text-muted-foreground text-center">
           Current model doesn&apos;t support images. Select a vision-capable model to upload images.
         </div>

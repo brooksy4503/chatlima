@@ -154,25 +154,6 @@ export async function POST(req: Request) {
     mcpServers = [];
   }
 
-  // Helper function to check if model supports vision
-  function modelSupportsVision(modelId: modelID): boolean {
-    const visionModels = [
-      'openrouter/openai/gpt-4o',
-      'openrouter/openai/gpt-4o-mini',
-      'openrouter/openai/gpt-4-turbo',
-      'openrouter/anthropic/claude-3-opus',
-      'openrouter/anthropic/claude-3-5-sonnet',
-      'openrouter/anthropic/claude-3-haiku',
-      'openrouter/anthropic/claude-sonnet-4', // Claude 4 Sonnet
-      'openrouter/anthropic/claude-opus-4', // Claude 4 Opus
-      'requesty/anthropic/claude-sonnet-4-20250514', // Claude 4 Sonnet via Requesty
-      'openrouter/google/gemini-pro-vision',
-      'openrouter/google/gemini-2.0-flash-exp'
-    ];
-
-    return visionModels.some(model => modelId.includes(model.split('/').pop() || ''));
-  }
-
   // Process attachments into message parts
   function processMessagesWithAttachments(
     messages: UIMessage[],
@@ -189,7 +170,7 @@ export async function POST(req: Request) {
     }
 
     // Check if model supports vision
-    const supportsVision = modelSupportsVision(selectedModel);
+    const supportsVision = modelDetails[selectedModel]?.vision === true;
     console.log('[DEBUG] Model vision support check:', {
       selectedModel,
       supportsVision
@@ -756,7 +737,13 @@ export async function POST(req: Request) {
     });
   }
 
-  // Construct the payload for streamText (Vercel AI SDK format)
+  // Only convert to OpenRouter format for OpenRouter models
+  const isOpenRouterModel = selectedModel.startsWith("openrouter/");
+  const formattedMessages = isOpenRouterModel
+    ? convertToOpenRouterFormat(modelMessages)
+    : modelMessages;
+  console.log(`[DEBUG] Using ${isOpenRouterModel ? 'OpenRouter' : 'raw'} message format for model:`, selectedModel);
+  console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
   const openRouterPayload = {
     model: modelInstance,
     system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
@@ -783,7 +770,7 @@ export async function POST(req: Request) {
     - Use Markdown for formatting.
     - Base your response on the results from any tools used, or on your own reasoning and knowledge.
     `,
-    messages: modelMessages,
+    messages: formattedMessages,
     tools,
     maxSteps: 20,
     providerOptions: {

@@ -325,6 +325,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                             {model.premium && (
                               <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
                             )}
+                            {model.vision && (
+                              <Image className="h-3 w-3 text-indigo-500 ml-0.5 flex-shrink-0" />
+                            )}
                             {isSelected && <Check className="h-3 w-3 ml-auto text-primary" />}
                           </div>
                           <span className="text-[10px] sm:text-xs text-muted-foreground">
@@ -364,6 +367,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                   <h3 className="text-sm font-semibold">{detailsPanelModelDetails.name}</h3>
                   {detailsPanelModelDetails.premium && (
                     <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
+                  )}
+                  {detailsPanelModelDetails.vision && (
+                    <Image className="h-4 w-4 text-indigo-500 ml-0.5 flex-shrink-0" />
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground mb-1">

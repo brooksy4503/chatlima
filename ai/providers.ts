@@ -20,6 +20,7 @@ export interface ModelInfo {
   enabled?: boolean;
   supportsWebSearch?: boolean;
   premium?: boolean;
+  vision?: boolean; // Added vision field
 }
 
 const middleware = extractReasoningMiddleware({
@@ -464,7 +465,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "claude-3-7-sonnet": {
     provider: "Anthropic",
@@ -473,7 +475,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     apiVersion: "claude-3-7-sonnet-20250219",
     capabilities: ["Reasoning", "Efficient", "Agentic"],
     enabled: false,
-    premium: true
+    premium: true,
+    vision: true
   },
   "openrouter/anthropic/claude-3.7-sonnet": {
     provider: "OpenRouter",
@@ -483,7 +486,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Coding", "Agentic"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
     provider: "OpenRouter",
@@ -493,7 +497,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "openrouter/deepseek/deepseek-chat-v3-0324": {
     provider: "OpenRouter",
@@ -503,7 +508,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Chat", "Efficient"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/deepseek/deepseek-r1": {
     provider: "OpenRouter",
@@ -513,7 +519,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Open Source"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/deepseek/deepseek-r1-0528": {
     provider: "OpenRouter",
@@ -523,7 +530,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Open Source"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": {
     provider: "OpenRouter",
@@ -533,7 +541,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Math", "Programming", "Logic"],
     enabled: false,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/google/gemini-2.5-flash-preview": {
     provider: "OpenRouter",
@@ -543,7 +552,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/google/gemini-2.5-flash-preview:thinking": {
     provider: "OpenRouter",
@@ -553,7 +563,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/google/gemini-2.5-flash-preview-05-20": {
     provider: "OpenRouter",
@@ -563,7 +574,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": {
     provider: "OpenRouter",
@@ -573,7 +585,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient", "Multimodal", "Thinking"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/google/gemini-2.5-pro-preview-03-25": {
     provider: "OpenRouter",
@@ -583,7 +596,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Powerful", "Versatile", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "openrouter/google/gemini-2.5-pro-preview": {
     provider: "OpenRouter",
@@ -593,7 +607,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "openrouter/google/gemini-2.5-pro": {
     provider: "OpenRouter",
@@ -603,7 +618,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "openrouter/google/gemini-2.5-flash": {
     provider: "OpenRouter",
@@ -613,7 +629,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Thinking", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/google/gemini-2.5-flash-lite-preview-06-17": {
     provider: "OpenRouter",
@@ -623,7 +640,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Ultra-low latency", "Cost efficient", "Fast token generation", "Lightweight reasoning", "Improved throughput"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/x-ai/grok-3-beta": {
     provider: "OpenRouter",
@@ -633,7 +651,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Problem-solving", "Cutting-edge"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: false
   },
   "grok-3-mini": {
     provider: "X AI",
@@ -643,7 +662,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Compact", "Efficient", "Versatile"],
     enabled: false,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/x-ai/grok-3-mini-beta": {
     provider: "OpenRouter",
@@ -653,7 +673,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Compact", "Efficient", "Versatile"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
     provider: "OpenRouter",
@@ -663,7 +684,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Compact", "Efficient", "Versatile", "High Reasoning"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/x-ai/grok-4": {
     provider: "OpenRouter",
@@ -673,7 +695,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Coding", "Multimodal", "Tool Calling", "Structured Outputs", "Long Context"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: false
   },
   "openrouter/meta-llama/llama-4-maverick": {
     provider: "OpenRouter",
@@ -683,7 +706,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Cutting-edge", "Versatile"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/mistralai/mistral-medium-3": {
     provider: "OpenRouter",
@@ -693,7 +717,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Powerful", "Versatile"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
     provider: "OpenRouter",
@@ -703,7 +728,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Efficient", "Capable", "Instruct"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/mistralai/mistral-small-3.2-24b-instruct": {
     provider: "OpenRouter",
@@ -713,7 +739,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "STEM", "Vision", "Function Calling", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": {
     provider: "OpenRouter",
@@ -723,7 +750,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "STEM", "Vision", "Function Calling", "Multimodal", "Free"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/mistralai/magistral-small-2506": {
     provider: "OpenRouter",
@@ -733,7 +761,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Multilingual", "Instruction Following", "Enhanced"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/mistralai/magistral-medium-2506": {
     provider: "OpenRouter",
@@ -743,7 +772,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: false
   },
   "openrouter/mistralai/magistral-medium-2506:thinking": {
     provider: "OpenRouter",
@@ -753,7 +783,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Advanced Reasoning", "Thinking", "Legal Research", "Financial Forecasting", "Software Development", "Creative Storytelling", "Multi-step Problem Solving", "Transparent Reasoning"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: false
   },
   "openrouter/openai/gpt-4.1": {
     provider: "OpenRouter",
@@ -763,7 +794,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
     enabled: true,
     supportsWebSearch: false,
-    premium: true
+    premium: true,
+    vision: true
   },
   "gpt-4.1-mini": {
     provider: "OpenAI",
@@ -773,7 +805,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Instruction Following", "Compact"],
     enabled: false,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/openai/gpt-4.1-mini": {
     provider: "OpenRouter",
@@ -783,7 +816,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Instruction Following", "Compact"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/openai/gpt-4.1-nano": {
     provider: "OpenRouter",
@@ -793,7 +827,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Ultra-fast", "Cost-effective", "Classification", "Autocompletion", "Long Context"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/openai/o4-mini-high": {
     provider: "OpenRouter",
@@ -803,7 +838,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Efficient", "High-performing"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
   "qwen-qwq": {
     provider: "Groq",
@@ -813,7 +849,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient"],
     enabled: false,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/qwen/qwq-32b": {
     provider: "OpenRouter",
@@ -823,7 +860,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "openrouter/qwen/qwen3-235b-a22b": {
     provider: "OpenRouter",
@@ -833,7 +871,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Large", "Powerful"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/anthropic/claude-sonnet-4": {
     provider: "OpenRouter",
@@ -843,7 +882,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Balanced", "Fast", "Efficient"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "openrouter/anthropic/claude-opus-4": {
     provider: "OpenRouter",
@@ -853,7 +893,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Advanced Reasoning", "Agentic Tasks", "Long Context", "Sustained Performance"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": {
     provider: "OpenRouter",
@@ -863,7 +904,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Chat", "Crypto-focused", "Personal Freedom", "Decentralization", "Fine-tuned"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/minimax/minimax-m1": {
     provider: "OpenRouter",
@@ -873,7 +915,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Long Context", "Reasoning", "Software Engineering", "Mathematical Reasoning", "Agentic Tool Use", "High Efficiency"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: false
   },
   "openrouter/minimax/minimax-m1:extended": {
     provider: "OpenRouter",
@@ -883,7 +926,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Long Context", "Reasoning", "Software Engineering", "Mathematical Reasoning", "Agentic Tool Use", "High Efficiency"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: false
   },
   "openrouter/baidu/ernie-4.5-300b-a47b": {
     provider: "OpenRouter",
@@ -893,7 +937,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Multilingual", "High-throughput", "Extended Context", "Tool Parameters", "Mixture-of-Experts"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/inception/mercury": {
     provider: "OpenRouter",
@@ -903,7 +948,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Ultra-fast", "Speed Optimized", "Voice Agents", "Search Interfaces", "Chatbots", "Responsive UI"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/thedrummer/anubis-70b-v1.1": {
     provider: "OpenRouter",
@@ -913,7 +959,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Creative Writing", "Character-driven Roleplay", "Storytelling", "Unaligned", "Character Adherence", "Visceral Prose"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
     provider: "OpenRouter",
@@ -923,7 +970,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Math", "Agentic Tasks", "Function Calling", "Creative Writing", "Storytelling", "Uncensored", "General Purpose"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "openrouter/moonshotai/kimi-k2": {
     provider: "OpenRouter",
@@ -933,7 +981,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Reasoning", "Tool Use", "Agentic", "Long Context", "Problem Solving"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   // Requesty model details
   "requesty/openai/gpt-4o": {
@@ -944,7 +993,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Multimodal", "Coding", "Analysis"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "requesty/openai/gpt-4o-mini": {
     provider: "Requesty",
@@ -954,7 +1004,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Efficient", "Coding", "Analysis", "Chat"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "requesty/openai/gpt-4.1": {
     provider: "Requesty",
@@ -964,7 +1015,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Instruction Following", "Long Context", "Multimodal", "Agents", "IDE Tooling", "Knowledge Retrieval"],
     enabled: true,
     supportsWebSearch: false,
-    premium: true
+    premium: true,
+    vision: true
   },
   "requesty/openai/gpt-4.1-nano": {
     provider: "Requesty",
@@ -974,7 +1026,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Ultra-fast", "Cost-effective", "Classification", "Autocompletion", "Long Context"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
   "requesty/openai/gpt-4.1-mini": {
     provider: "Requesty",
@@ -984,7 +1037,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Instruction Following", "Compact", "Efficient"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
   "requesty/anthropic/claude-3.5-sonnet": {
     provider: "Requesty",
@@ -994,7 +1048,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "requesty/anthropic/claude-3.7-sonnet": {
     provider: "Requesty",
@@ -1004,7 +1059,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Coding", "Agentic"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "requesty/google/gemini-2.5-flash-preview": {
     provider: "Requesty",
@@ -1014,7 +1070,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "requesty/google/gemini-2.5-flash": {
     provider: "Requesty",
@@ -1024,7 +1081,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Thinking", "Multimodal", "Low Latency", "Cost-Effective", "High Volume"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
   "requesty/google/gemini-2.5-pro": {
     provider: "Requesty",
@@ -1034,7 +1092,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Advanced Reasoning", "Thinking", "Complex Coding", "Data Analysis", "Multimodal Understanding", "Problem Solving"],
     enabled: true,
     supportsWebSearch: false,
-    premium: true
+    premium: true,
+    vision: true
   },
   "requesty/meta-llama/llama-3.1-70b-instruct": {
     provider: "Requesty",
@@ -1044,7 +1103,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Instruction Following", "Large", "Open Source"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: true
   },
   "requesty/anthropic/claude-sonnet-4-20250514": {
     provider: "Requesty",
@@ -1054,7 +1114,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Balanced", "Fast", "Efficient", "Reasoning"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true
+    premium: true,
+    vision: true
   },
   "requesty/deepseek/deepseek-chat": {
     provider: "Requesty",
@@ -1064,7 +1125,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Efficient"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: false
   },
   "requesty/deepseek/deepseek-reasoner": {
     provider: "Requesty",
@@ -1074,7 +1136,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Problem-solving"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false
+    premium: false,
+    vision: false
   },
   "requesty/deepseek/deepseek-v3": {
     provider: "Requesty",
@@ -1084,7 +1147,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Chat", "Efficient", "Reasoning"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: false
   },
   "requesty/deepseek/deepseek-r1": {
     provider: "Requesty",
@@ -1094,7 +1158,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Reasoning", "Open Source", "Problem-solving"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: false
   },
   "requesty/meta-llama/llama-3.3-70b-instruct": {
     provider: "Requesty",
@@ -1104,7 +1169,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Instruction Following", "Multilingual", "Conversational", "Large Context", "Open Source"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
   "requesty/google/gemini-2.5-flash-lite-preview-06-17": {
     provider: "Requesty",
@@ -1114,7 +1180,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Ultra-low latency", "Cost efficient", "Fast token generation", "Lightweight reasoning", "Improved throughput"],
     enabled: true,
     supportsWebSearch: false,
-    premium: false
+    premium: false,
+    vision: true
   },
 };
 
