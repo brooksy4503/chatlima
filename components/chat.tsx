@@ -382,6 +382,13 @@ export default function Chat() {
   // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
   // Also add image parts to user messages if they were just submitted with images
   const enhancedMessages = useMemo(() => {
+    console.log('[DEBUG] enhancedMessages useMemo running:', {
+      messagesLength: messages.length,
+      selectedImagesLength: selectedImages.length,
+      status,
+      hideImagesInUI
+    });
+    
     return messages.map((message, index) => {
       let enhancedMessage = { ...message };
       
@@ -390,19 +397,35 @@ export default function Chat() {
         const previousMessage = messages[index - 1];
         // If the previous message was from user and web search was enabled, mark this assistant message
         if (previousMessage.role === 'user' && webSearchEnabled && isOpenRouterModel) {
-                  enhancedMessage = {
-          ...enhancedMessage,
-          hasWebSearch: true
-        } as any;
+          enhancedMessage = {
+            ...enhancedMessage,
+            hasWebSearch: true
+          } as any;
         }
       }
       
       // Add image parts to user messages that were just submitted with images
-      if (message.role === 'user' && 
-          index === messages.length - 1 && // This is the latest user message
-          selectedImages.length > 0 && // There are images selected
-          !message.parts && // Message doesn't already have parts
-          (status === 'submitted' || status === 'streaming')) { // Message was just submitted
+      const isLatestUserMessage = message.role === 'user' && index === messages.length - 1;
+      const hasSelectedImages = selectedImages.length > 0;
+      const hasNoParts = !message.parts || message.parts.length === 0;
+      const isSubmittedOrStreaming = status === 'submitted' || status === 'streaming';
+      
+      console.log('[DEBUG] Checking image parts conditions for message:', {
+        messageId: message.id,
+        index,
+        isLatestUserMessage,
+        hasSelectedImages,
+        hasNoParts,
+        isSubmittedOrStreaming,
+        messageRole: message.role,
+        messagesLength: messages.length
+      });
+      
+      if (isLatestUserMessage && hasSelectedImages && hasNoParts && isSubmittedOrStreaming) {
+        console.log('[DEBUG] Adding image parts to user message:', {
+          messageId: message.id,
+          selectedImagesCount: selectedImages.length
+        });
         
         const textPart = { type: 'text' as const, text: message.content };
         const imageParts = selectedImages.map((img) => ({
@@ -424,6 +447,11 @@ export default function Chat() {
           ...enhancedMessage,
           parts: [textPart, ...imageParts] as any
         };
+        
+        console.log('[DEBUG] Enhanced message with image parts:', {
+          messageId: message.id,
+          partsCount: enhancedMessage.parts?.length
+        });
       }
       
       return {
@@ -431,7 +459,7 @@ export default function Chat() {
         hasWebSearch: (enhancedMessage as any).hasWebSearch || false
       } as Message & { hasWebSearch?: boolean };
     });
-  }, [messages, webSearchEnabled, isOpenRouterModel, selectedImages, status]);
+  }, [messages, webSearchEnabled, isOpenRouterModel, selectedImages, status, hideImagesInUI]);
 
   return (
     <div className="h-full flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
