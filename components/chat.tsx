@@ -182,27 +182,7 @@ export default function Chat() {
     setSelectedImages([]);
   }, []);
 
-  // Create attachments from selected images
-  const attachments = useMemo(() => {
-    const result = selectedImages.map(img => ({
-      name: img.metadata.filename,
-      contentType: img.metadata.mimeType,
-      url: img.dataUrl
-    }));
-    
-    console.log('[DEBUG] Creating attachments from selectedImages:', {
-      selectedImagesCount: selectedImages.length,
-      attachmentsCreated: result.length,
-      attachmentDetails: result.map(att => ({
-        name: att.name,
-        contentType: att.contentType,
-        urlLength: att.url.length,
-        isValidDataUrl: att.url.startsWith('data:image/')
-      }))
-    });
-    
-    return result;
-  }, [selectedImages]);
+  // Note: No longer creating attachments array since we use message parts directly
 
   const { messages, input, handleInputChange, handleSubmit, append, status, stop: originalStop } =
     useChat({
@@ -218,7 +198,9 @@ export default function Chat() {
           contextSize: webSearchContextSize,
         },
         apiKeys: getClientApiKeys(),
-        attachments: attachments
+        // Only send attachments for text-only messages (handleSubmit)
+        // Don't send when using append() since images are already in message parts
+        attachments: []
       },
       experimental_throttle: 500,
       onFinish: (message) => {
