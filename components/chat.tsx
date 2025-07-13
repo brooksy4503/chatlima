@@ -204,7 +204,7 @@ export default function Chat() {
     return result;
   }, [selectedImages]);
 
-  const { messages, input, handleInputChange, handleSubmit, status, stop: originalStop } =
+  const { messages, input, handleInputChange, handleSubmit, append, status, stop: originalStop } =
     useChat({
       id: chatId || generatedChatId,
       initialMessages,
@@ -367,28 +367,55 @@ export default function Chat() {
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
+    // Don't submit if no content and no images
+    if (!input.trim() && selectedImages.length === 0) {
+      return;
+    }
+    
     // Hide images from UI immediately when form is submitted
     if (selectedImages.length > 0) {
       setHideImagesInUI(true);
     }
     
-    handleSubmit(e);
-  }, [handleSubmit, selectedImages.length]);
+    // If we have images, use append to create a message with parts
+    if (selectedImages.length > 0) {
+      const textPart = { type: 'text' as const, text: input };
+      const imageParts = selectedImages.map((img) => ({
+        type: 'image_url' as const,
+        image_url: {
+          url: img.dataUrl,
+          detail: img.detail as 'auto' | 'low' | 'high'
+        },
+        metadata: {
+          filename: img.metadata.filename,
+          mimeType: img.metadata.mimeType,
+          size: img.metadata.size,
+          width: img.metadata.width,
+          height: img.metadata.height
+        }
+      }));
+      
+      // Use append to create message with image parts
+      append({
+        role: 'user',
+        content: input,
+        parts: [textPart, ...imageParts] as any
+      });
+      
+      // Clear the input field manually since append doesn't do it automatically
+      handleInputChange({ target: { value: '' } } as any);
+    } else {
+      // No images, use regular handleSubmit
+      handleSubmit(e);
+    }
+  }, [handleSubmit, append, input, selectedImages]);
 
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
 
   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
 
   // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
-  // Also add image parts to user messages if they were just submitted with images
   const enhancedMessages = useMemo(() => {
-    console.log('[DEBUG] enhancedMessages useMemo running:', {
-      messagesLength: messages.length,
-      selectedImagesLength: selectedImages.length,
-      status,
-      hideImagesInUI
-    });
-    
     return messages.map((message, index) => {
       let enhancedMessage = { ...message };
       
@@ -404,62 +431,12 @@ export default function Chat() {
         }
       }
       
-      // Add image parts to user messages that were just submitted with images
-      const isLatestUserMessage = message.role === 'user' && index === messages.length - 1;
-      const hasSelectedImages = selectedImages.length > 0;
-      const hasNoParts = !message.parts || message.parts.length === 0;
-      const isSubmittedOrStreaming = status === 'submitted' || status === 'streaming';
-      
-      console.log('[DEBUG] Checking image parts conditions for message:', {
-        messageId: message.id,
-        index,
-        isLatestUserMessage,
-        hasSelectedImages,
-        hasNoParts,
-        isSubmittedOrStreaming,
-        messageRole: message.role,
-        messagesLength: messages.length
-      });
-      
-      if (isLatestUserMessage && hasSelectedImages && hasNoParts && isSubmittedOrStreaming) {
-        console.log('[DEBUG] Adding image parts to user message:', {
-          messageId: message.id,
-          selectedImagesCount: selectedImages.length
-        });
-        
-        const textPart = { type: 'text' as const, text: message.content };
-        const imageParts = selectedImages.map((img) => ({
-          type: 'image_url' as const,
-          image_url: {
-            url: img.dataUrl,
-            detail: img.detail as 'auto' | 'low' | 'high'
-          },
-          metadata: {
-            filename: img.metadata.filename,
-            mimeType: img.metadata.mimeType,
-            size: img.metadata.size,
-            width: img.metadata.width,
-            height: img.metadata.height
-          }
-        }));
-        
-        enhancedMessage = {
-          ...enhancedMessage,
-          parts: [textPart, ...imageParts] as any
-        };
-        
-        console.log('[DEBUG] Enhanced message with image parts:', {
-          messageId: message.id,
-          partsCount: enhancedMessage.parts?.length
-        });
-      }
-      
       return {
         ...enhancedMessage,
         hasWebSearch: (enhancedMessage as any).hasWebSearch || false
       } as Message & { hasWebSearch?: boolean };
     });
-  }, [messages, webSearchEnabled, isOpenRouterModel, selectedImages, status, hideImagesInUI]);
+  }, [messages, webSearchEnabled, isOpenRouterModel]);
 
   return (
     <div className="h-full flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
