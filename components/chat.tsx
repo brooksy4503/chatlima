@@ -47,6 +47,7 @@ export default function Chat() {
   const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageAttachment[]>([]);
+  const [hideImagesInUI, setHideImagesInUI] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -221,6 +222,10 @@ export default function Chat() {
       },
       experimental_throttle: 500,
       onFinish: (message) => {
+        // Clear images and reset UI state after successful submission
+        clearImages();
+        setHideImagesInUI(false);
+        
         queryClient.invalidateQueries({ queryKey: ['chats'] });
         queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
         if (!chatId && generatedChatId) {
@@ -282,6 +287,9 @@ export default function Chat() {
           }
           console.warn("Failed to parse error message as JSON:", e, "Raw error message:", error.message);
         }
+
+        // Reset UI state on error so images reappear
+        setHideImagesInUI(false);
 
         // Log the detailed error for debugging
         console.error(`Chat Error [Code: ${errorCode}]: ${errorMessage}`, { details: errorDetails, originalError: error });
@@ -359,14 +367,13 @@ export default function Chat() {
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Clear images immediately when form is submitted so they disappear from upload component
-    // and appear in the message preview
+    // Hide images from UI immediately when form is submitted
     if (selectedImages.length > 0) {
-      clearImages();
+      setHideImagesInUI(true);
     }
     
     handleSubmit(e);
-  }, [handleSubmit, selectedImages.length, clearImages]);
+  }, [handleSubmit, selectedImages.length]);
 
   const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
 
@@ -423,7 +430,7 @@ export default function Chat() {
             isLoading={isLoading}
             status={status}
             stop={stop}
-            images={selectedImages}
+            images={hideImagesInUI ? [] : selectedImages}
             onImagesChange={setSelectedImages}
           />
         </form>
