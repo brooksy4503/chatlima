@@ -145,11 +145,6 @@ export const Input = ({
       </div>
 
       {/* Upload Status Messages */}
-      {enableImageUpload && !modelDetails[selectedModel]?.vision && (
-        <div className="text-xs text-muted-foreground text-center">
-          Current model doesn&apos;t support images. Select a vision-capable model to upload images.
-        </div>
-      )}
     </div>
   );
 };

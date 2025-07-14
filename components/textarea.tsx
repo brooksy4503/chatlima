@@ -257,11 +257,7 @@ export const Textarea = ({
       </div>
 
       {/* Model Support Message */}
-      {!modelDetails[selectedModel]?.vision && (
-        <div className="text-xs text-muted-foreground text-center">
-          Current model doesn&apos;t support images. Select a vision-capable model to upload images.
-        </div>
-      )}
+      {/* Removed: Message about model not supporting images */}
     </div>
   );
 };

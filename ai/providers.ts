@@ -235,6 +235,7 @@ const languageModels = {
   "openrouter/thedrummer/anubis-70b-v1.1": openrouterClient("thedrummer/anubis-70b-v1.1"),
   "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free": openrouterClient("cognitivecomputations/dolphin-mistral-24b-venice-edition:free"),
   "openrouter/moonshotai/kimi-k2": openrouterClient("moonshotai/kimi-k2"),
+  "openrouter/moonshotai/kimi-k2:free": openrouterClient("moonshotai/kimi-k2:free"),
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
@@ -260,6 +261,93 @@ const languageModels = {
   }),
   "requesty/meta-llama/llama-3.3-70b-instruct": requestyClient("deepinfra/meta-llama/Llama-3.3-70B-Instruct"),
   "requesty/google/gemini-2.5-flash-lite-preview-06-17": requestyClient("google/gemini-2.5-flash-lite-preview-06-17"),
+  "requesty/moonshotai/kimi-k2-instruct": requestyClient("novita/moonshotai/kimi-k2-instruct"),
+  "requesty/anthropic/claude-opus-4": requestyClient("anthropic/claude-opus-4-20250514"),
+  "requesty/anthropic/claude-3.5-haiku": requestyClient("anthropic/claude-3-5-haiku-20241022"),
+  "requesty/anthropic/claude-3-opus": requestyClient("anthropic/claude-3-opus-20240229"),
+  "requesty/anthropic/claude-3-sonnet": requestyClient("anthropic/claude-3-sonnet-20240229"),
+  "requesty/anthropic/claude-3-haiku": requestyClient("anthropic/claude-3-haiku-20240307"),
+  "requesty/anthropic/claude-3.7-sonnet-thinking": requestyClient("anthropic/claude-3-7-sonnet-20250219-thinking"),
+  "requesty/anthropic/claude-4-opus": requestyClient("anthropic/claude-4-opus-20250514"),
+  "requesty/anthropic/claude-4-sonnet": requestyClient("anthropic/claude-4-sonnet-20250514"),
+  "requesty/anthropic/claude-3.5-sonnet-latest": requestyClient("anthropic/claude-3-5-sonnet-latest"),
+  "requesty/anthropic/claude-3.5-haiku-latest": requestyClient("anthropic/claude-3-5-haiku-latest"),
+  "requesty/anthropic/claude-3.7-sonnet-latest": requestyClient("anthropic/claude-3-7-sonnet-latest"),
+  "requesty/anthropic/claude-3-opus-latest": requestyClient("anthropic/claude-3-opus-latest"),
+  // --- New Requesty DeepSeek models ---
+  "requesty/deepinfra/deepseek-ai/DeepSeek-R1": wrapLanguageModel({
+    model: requestyClient("deepinfra/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/nebius/deepseek-ai/DeepSeek-R1": wrapLanguageModel({
+    model: requestyClient("nebius/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/together/deepseek-ai/DeepSeek-R1": wrapLanguageModel({
+    model: requestyClient("together/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/nebius/deepseek-ai/DeepSeek-R1-0528": wrapLanguageModel({
+    model: requestyClient("nebius/deepseek-ai/DeepSeek-R1-0528", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/netmind/deepseek-ai/DeepSeek-R1-0528": wrapLanguageModel({
+    model: requestyClient("netmind/deepseek-ai/DeepSeek-R1-0528", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/deepinfra/deepseek-ai/DeepSeek-R1-Distill-Llama-70B": wrapLanguageModel({
+    model: requestyClient("deepinfra/deepseek-ai/DeepSeek-R1-Distill-Llama-70B", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/nebius/deepseek-ai/DeepSeek-R1-fast": wrapLanguageModel({
+    model: requestyClient("nebius/deepseek-ai/DeepSeek-R1-fast", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/nebius/deepseek-ai/DeepSeek-V3": requestyClient("nebius/deepseek-ai/DeepSeek-V3"),
+  "requesty/together/deepseek-ai/DeepSeek-V3": requestyClient("together/deepseek-ai/DeepSeek-V3"),
+  "requesty/nebius/deepseek-ai/DeepSeek-V3-0324": requestyClient("nebius/deepseek-ai/DeepSeek-V3-0324"),
+  "requesty/nebius/deepseek-ai/DeepSeek-V3-0324-fast": requestyClient("nebius/deepseek-ai/DeepSeek-V3-0324-fast"),
+  "requesty/together/deepseek-llm-67b-chat": requestyClient("together/deepseek-llm-67b-chat"),
+  "requesty/novita/deepseek/deepseek_v3": requestyClient("novita/deepseek/deepseek_v3"),
+  "requesty/novita/deepseek/deepseek-prover-v2-671b": requestyClient("novita/deepseek/deepseek-prover-v2-671b"),
+  "requesty/novita/deepseek/deepseek-r1": wrapLanguageModel({
+    model: requestyClient("novita/deepseek/deepseek-r1", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/novita/deepseek/deepseek-r1-distill-llama-70b": wrapLanguageModel({
+    model: requestyClient("novita/deepseek/deepseek-r1-distill-llama-70b", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/novita/deepseek/deepseek-r1-distill-qwen-14b": wrapLanguageModel({
+    model: requestyClient("novita/deepseek/deepseek-r1-distill-qwen-14b", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/novita/deepseek/deepseek-r1-distill-qwen-32b": wrapLanguageModel({
+    model: requestyClient("novita/deepseek/deepseek-r1-distill-qwen-32b", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/novita/deepseek/deepseek-r1-turbo": wrapLanguageModel({
+    model: requestyClient("novita/deepseek/deepseek-r1-turbo", { logprobs: false }),
+    middleware: deepseekR1Middleware,
+  }),
+  "requesty/novita/deepseek/deepseek-v3-0324": requestyClient("novita/deepseek/deepseek-v3-0324"),
+  "requesty/novita/deepseek/deepseek-v3-turbo": requestyClient("novita/deepseek/deepseek-v3-turbo"),
+  "requesty/parasail/parasail-deepseek-r1": requestyClient("parasail/parasail-deepseek-r1"),
+  // --- New Requesty Google models ---
+  "requesty/google/gemini-1.5-flash": requestyClient("google/gemini-1.5-flash"),
+  "requesty/google/gemini-1.5-flash-8b": requestyClient("google/gemini-1.5-flash-8b"),
+  "requesty/google/gemini-1.5-flash-8b-latest": requestyClient("google/gemini-1.5-flash-8b-latest"),
+  "requesty/google/gemini-1.5-flash-latest": requestyClient("google/gemini-1.5-flash-latest"),
+  "requesty/google/gemini-1.5-pro": requestyClient("google/gemini-1.5-pro"),
+  "requesty/google/gemini-1.5-pro-latest": requestyClient("google/gemini-1.5-pro-latest"),
+  "requesty/google/gemini-2.0-flash-001": requestyClient("google/gemini-2.0-flash-001"),
+  "requesty/coding/gemini-2.5-flash": requestyClient("coding/gemini-2.5-flash"),
+  "requesty/coding/gemini-2.5-flash-preview-05-20": requestyClient("coding/gemini-2.5-flash-preview-05-20"),
+  "requesty/coding/gemini-2.5-pro": requestyClient("coding/gemini-2.5-pro"),
+  "requesty/coding/gemini-2.5-pro-preview-03-25": requestyClient("coding/gemini-2.5-pro-preview-03-25"),
+  "requesty/coding/gemini-2.5-pro-preview-05-06": requestyClient("coding/gemini-2.5-pro-preview-05-06"),
+  "requesty/vertex/google/gemini-2.5-flash": requestyClient("vertex/google/gemini-2.5-flash"),
+  "requesty/vertex/google/gemini-2.5-pro": requestyClient("vertex/google/gemini-2.5-pro"),
 };
 
 // Helper to get language model with dynamic API keys
@@ -403,6 +491,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("cognitivecomputations/dolphin-mistral-24b-venice-edition:free");
     case "openrouter/moonshotai/kimi-k2":
       return getOpenRouterClient()("moonshotai/kimi-k2");
+    case "openrouter/moonshotai/kimi-k2:free":
+      return getOpenRouterClient()("moonshotai/kimi-k2:free");
 
     // Requesty models
     case "requesty/openai/gpt-4o":
@@ -447,6 +537,151 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getRequestyClient()("deepinfra/meta-llama/Llama-3.3-70B-Instruct");
     case "requesty/google/gemini-2.5-flash-lite-preview-06-17":
       return getRequestyClient()("google/gemini-2.5-flash-lite-preview-06-17");
+    case "requesty/moonshotai/kimi-k2-instruct":
+      return getRequestyClient()("novita/moonshotai/kimi-k2-instruct");
+    case "requesty/anthropic/claude-opus-4":
+      return getRequestyClient()("anthropic/claude-opus-4-20250514");
+    case "requesty/anthropic/claude-3.5-haiku":
+      return getRequestyClient()("anthropic/claude-3-5-haiku-20241022");
+    case "requesty/anthropic/claude-3-opus":
+      return getRequestyClient()("anthropic/claude-3-opus-20240229");
+    case "requesty/anthropic/claude-3-sonnet":
+      return getRequestyClient()("anthropic/claude-3-sonnet-20240229");
+    case "requesty/anthropic/claude-3-haiku":
+      return getRequestyClient()("anthropic/claude-3-haiku-20240307");
+    case "requesty/anthropic/claude-3.7-sonnet-thinking":
+      return wrapLanguageModel({
+        model: getRequestyClient()("anthropic/claude-3-7-sonnet-20250219-thinking", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/anthropic/claude-4-opus":
+      return getRequestyClient()("anthropic/claude-4-opus-20250514");
+    case "requesty/anthropic/claude-4-sonnet":
+      return getRequestyClient()("anthropic/claude-4-sonnet-20250514");
+    case "requesty/anthropic/claude-3.5-sonnet-latest":
+      return getRequestyClient()("anthropic/claude-3-5-sonnet-latest");
+    case "requesty/anthropic/claude-3.5-haiku-latest":
+      return getRequestyClient()("anthropic/claude-3-5-haiku-latest");
+    case "requesty/anthropic/claude-3.7-sonnet-latest":
+      return getRequestyClient()("anthropic/claude-3-7-sonnet-latest");
+    case "requesty/anthropic/claude-3-opus-latest":
+      return getRequestyClient()("anthropic/claude-3-opus-latest");
+    // --- New Requesty DeepSeek models ---
+    case "requesty/deepinfra/deepseek-ai/DeepSeek-R1":
+      return wrapLanguageModel({
+        model: getRequestyClient()("deepinfra/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/nebius/deepseek-ai/DeepSeek-R1":
+      return wrapLanguageModel({
+        model: getRequestyClient()("nebius/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/together/deepseek-ai/DeepSeek-R1":
+      return wrapLanguageModel({
+        model: getRequestyClient()("together/deepseek-ai/DeepSeek-R1", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/nebius/deepseek-ai/DeepSeek-R1-0528":
+      return wrapLanguageModel({
+        model: getRequestyClient()("nebius/deepseek-ai/DeepSeek-R1-0528", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/netmind/deepseek-ai/DeepSeek-R1-0528":
+      return wrapLanguageModel({
+        model: getRequestyClient()("netmind/deepseek-ai/DeepSeek-R1-0528", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/deepinfra/deepseek-ai/DeepSeek-R1-Distill-Llama-70B":
+      return wrapLanguageModel({
+        model: getRequestyClient()("deepinfra/deepseek-ai/DeepSeek-R1-Distill-Llama-70B", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/nebius/deepseek-ai/DeepSeek-R1-fast":
+      return wrapLanguageModel({
+        model: getRequestyClient()("nebius/deepseek-ai/DeepSeek-R1-fast", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/nebius/deepseek-ai/DeepSeek-V3":
+      return getRequestyClient()("nebius/deepseek-ai/DeepSeek-V3");
+    case "requesty/together/deepseek-ai/DeepSeek-V3":
+      return getRequestyClient()("together/deepseek-ai/DeepSeek-V3");
+    case "requesty/nebius/deepseek-ai/DeepSeek-V3-0324":
+      return getRequestyClient()("nebius/deepseek-ai/DeepSeek-V3-0324");
+    case "requesty/nebius/deepseek-ai/DeepSeek-V3-0324-fast":
+      return getRequestyClient()("nebius/deepseek-ai/DeepSeek-V3-0324-fast");
+    case "requesty/together/deepseek-llm-67b-chat":
+      return getRequestyClient()("together/deepseek-llm-67b-chat");
+    case "requesty/novita/deepseek/deepseek_v3":
+      return getRequestyClient()("novita/deepseek/deepseek_v3");
+    case "requesty/novita/deepseek/deepseek-prover-v2-671b":
+      return getRequestyClient()("novita/deepseek/deepseek-prover-v2-671b");
+    case "requesty/novita/deepseek/deepseek-r1":
+      return wrapLanguageModel({
+        model: getRequestyClient()("novita/deepseek/deepseek-r1", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/novita/deepseek/deepseek-r1-distill-llama-70b":
+      return wrapLanguageModel({
+        model: getRequestyClient()("novita/deepseek/deepseek-r1-distill-llama-70b", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/novita/deepseek/deepseek-r1-distill-qwen-14b":
+      return wrapLanguageModel({
+        model: getRequestyClient()("novita/deepseek/deepseek-r1-distill-qwen-14b", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/novita/deepseek/deepseek-r1-distill-qwen-32b":
+      return wrapLanguageModel({
+        model: getRequestyClient()("novita/deepseek/deepseek-r1-distill-qwen-32b", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/novita/deepseek/deepseek-r1-turbo":
+      return wrapLanguageModel({
+        model: getRequestyClient()("novita/deepseek/deepseek-r1-turbo", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    case "requesty/novita/deepseek/deepseek-v3-0324":
+      return getRequestyClient()("novita/deepseek/deepseek-v3-0324");
+    case "requesty/novita/deepseek/deepseek-v3-turbo":
+      return getRequestyClient()("novita/deepseek/deepseek-v3-turbo");
+    case "requesty/parasail/parasail-deepseek-r1":
+      return wrapLanguageModel({
+        model: getRequestyClient()("parasail/parasail-deepseek-r1", { logprobs: false }),
+        middleware: deepseekR1Middleware,
+      });
+    // --- New Requesty Google models ---
+    case "requesty/google/gemini-1.5-flash":
+      return getRequestyClient()("google/gemini-1.5-flash");
+    case "requesty/google/gemini-1.5-flash-8b":
+      return getRequestyClient()("google/gemini-1.5-flash-8b");
+    case "requesty/google/gemini-1.5-flash-8b-latest":
+      return getRequestyClient()("google/gemini-1.5-flash-8b-latest");
+    case "requesty/google/gemini-1.5-flash-latest":
+      return getRequestyClient()("google/gemini-1.5-flash-latest");
+    case "requesty/google/gemini-1.5-pro":
+      return getRequestyClient()("google/gemini-1.5-pro");
+    case "requesty/google/gemini-1.5-pro-latest":
+      return getRequestyClient()("google/gemini-1.5-pro-latest");
+    case "requesty/google/gemini-2.0-flash-001":
+      return getRequestyClient()("google/gemini-2.0-flash-001");
+    case "requesty/coding/gemini-2.5-flash":
+      return getRequestyClient()("coding/gemini-2.5-flash");
+    case "requesty/coding/gemini-2.5-flash-preview-05-20":
+      return getRequestyClient()("coding/gemini-2.5-flash-preview-05-20");
+    case "requesty/coding/gemini-2.5-pro":
+      return getRequestyClient()("coding/gemini-2.5-pro");
+    case "requesty/coding/gemini-2.5-pro-preview-03-25":
+      return getRequestyClient()("coding/gemini-2.5-pro-preview-03-25");
+    case "requesty/coding/gemini-2.5-pro-preview-05-06":
+      return getRequestyClient()("coding/gemini-2.5-pro-preview-05-06");
+    case "requesty/vertex/google/gemini-2.5-flash":
+      return getRequestyClient()("vertex/google/gemini-2.5-flash");
+    case "requesty/vertex/google/gemini-2.5-pro":
+      return getRequestyClient()("vertex/google/gemini-2.5-pro");
+
+
+
 
     default:
       // Fallback to static models if not found (shouldn't happen in normal cases)
@@ -459,7 +694,7 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
 export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   "openrouter/anthropic/claude-3.5-sonnet": {
     provider: "OpenRouter",
-    name: "Claude 3.5 Sonnet",
+    name: "Anthropic Claude 3.5 Sonnet",
     description: "New Claude 3.5 Sonnet delivers better-than-Opus capabilities, faster-than-Sonnet speeds, at the same Sonnet prices. Sonnet is particularly good at: Coding, Data science, Visual processing, Agentic tasks",
     apiVersion: "anthropic/claude-3.5-sonnet",
     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
@@ -480,7 +715,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "openrouter/anthropic/claude-3.7-sonnet": {
     provider: "OpenRouter",
-    name: "Claude 3.7 Sonnet",
+    name: "Anthropic Claude 3.7 Sonnet",
     description: "Latest version of Anthropic\'s Claude 3.7 Sonnet accessed via OpenRouter. Strong reasoning and coding capabilities.",
     apiVersion: "anthropic/claude-3.7-sonnet",
     capabilities: ["Reasoning", "Coding", "Agentic"],
@@ -491,7 +726,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
     provider: "OpenRouter",
-    name: "Claude 3.7 Sonnet (thinking)",
+    name: "Anthropic Claude 3.7 Sonnet (thinking)",
     description: "Advanced LLM with improved reasoning, coding, and problem-solving. Features a hybrid reasoning approach for flexible processing.",
     apiVersion: "anthropic/claude-3.7-sonnet:thinking",
     capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
@@ -876,7 +1111,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "openrouter/anthropic/claude-sonnet-4": {
     provider: "OpenRouter",
-    name: "Claude 4 Sonnet",
+    name: "Anthropic Claude 4 Sonnet",
     description: "Anthropic\'s Claude Sonnet 4 model, offering a balance of performance and speed, accessed via OpenRouter.",
     apiVersion: "anthropic/claude-sonnet-4",
     capabilities: ["Balanced", "Fast", "Efficient"],
@@ -887,7 +1122,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "openrouter/anthropic/claude-opus-4": {
     provider: "OpenRouter",
-    name: "Claude 4 Opus",
+    name: "Anthropic Claude 4 Opus",
     description: "Anthropic\'s most advanced model, excelling at coding, advanced reasoning, agentic tasks, and long-context operations.",
     apiVersion: "anthropic/claude-opus-4",
     capabilities: ["Coding", "Advanced Reasoning", "Agentic Tasks", "Long Context", "Sustained Performance"],
@@ -975,9 +1210,20 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "openrouter/moonshotai/kimi-k2": {
     provider: "OpenRouter",
-    name: "Kimi K2",
+    name: "Moonshot AI Kimi K2",
     description: "Kimi K2 is a large-scale Mixture-of-Experts (MoE) language model with 1 trillion total parameters and 32 billion active per forward pass. Optimized for agentic capabilities including advanced tool use, reasoning, and code synthesis. Excels in coding, reasoning, and tool-use tasks with 128K token context length.",
     apiVersion: "moonshotai/kimi-k2",
+    capabilities: ["Coding", "Reasoning", "Tool Use", "Agentic", "Long Context", "Problem Solving"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: false
+  },
+  "openrouter/moonshotai/kimi-k2:free": {
+    provider: "OpenRouter",
+    name: "Moonshot AI Kimi K2 (Free)",
+    description: "Free tier of Kimi K2, a large-scale Mixture-of-Experts (MoE) language model with 1 trillion total parameters and 32 billion active per forward pass. Optimized for agentic capabilities including advanced tool use, reasoning, and code synthesis. Excels in coding, reasoning, and tool-use tasks with 128K token context length.",
+    apiVersion: "moonshotai/kimi-k2:free",
     capabilities: ["Coding", "Reasoning", "Tool Use", "Agentic", "Long Context", "Problem Solving"],
     enabled: true,
     supportsWebSearch: true,
@@ -1042,7 +1288,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "requesty/anthropic/claude-3.5-sonnet": {
     provider: "Requesty",
-    name: "Claude 3.5 Sonnet",
+    name: "Anthropic Claude 3.5 Sonnet",
     description: "Anthropic's Claude 3.5 Sonnet accessed via Requesty, excelling at coding, data science, and visual processing.",
     apiVersion: "anthropic/claude-3.5-sonnet",
     capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
@@ -1053,7 +1299,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "requesty/anthropic/claude-3.7-sonnet": {
     provider: "Requesty",
-    name: "Claude 3.7 Sonnet",
+    name: "Anthropic Claude 3.7 Sonnet",
     description: "Anthropic's Claude 3.7 Sonnet accessed via Requesty, featuring advanced reasoning and coding capabilities.",
     apiVersion: "anthropic/claude-3-7-sonnet-20250219",
     capabilities: ["Reasoning", "Coding", "Agentic"],
@@ -1108,14 +1354,14 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "requesty/anthropic/claude-sonnet-4-20250514": {
     provider: "Requesty",
-    name: "Claude 4 Sonnet (20250514)",
+    name: "Anthropic Claude 4 Sonnet (20250514)",
     description: "Anthropic's Claude Sonnet 4 model (May 14th, 2025 version) accessed via Requesty, offering a balance of performance and speed.",
     apiVersion: "anthropic/claude-sonnet-4-20250514",
     capabilities: ["Balanced", "Fast", "Efficient", "Reasoning"],
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: false
+    vision: true
   },
   "requesty/deepseek/deepseek-chat": {
     provider: "Requesty",
@@ -1180,6 +1426,481 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Ultra-low latency", "Cost efficient", "Fast token generation", "Lightweight reasoning", "Improved throughput"],
     enabled: true,
     supportsWebSearch: false,
+    premium: false,
+    vision: true
+  },
+  "requesty/moonshotai/kimi-k2-instruct": {
+    provider: "Requesty",
+    name: "Moonshot AI Kimi K2",
+    description: "Kimi K2 is a large-scale Mixture-of-Experts (MoE) language model with 1 trillion total parameters and 32 billion active per forward pass. Optimized for agentic capabilities including advanced tool use, reasoning, and code synthesis. Excels in coding, reasoning, and tool-use tasks with 128K token context length.",
+    apiVersion: "novita/moonshotai/kimi-k2-instruct",
+    capabilities: ["Coding", "Reasoning", "Tool Use", "Agentic", "Long Context", "Problem Solving"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: false
+  },
+  "requesty/anthropic/claude-opus-4": {
+    provider: "Requesty",
+    name: "Anthropic Claude 4 Opus",
+    description: "Anthropic's most advanced model, excelling at coding, advanced reasoning, agentic tasks, and long-context operations.",
+    apiVersion: "anthropic/claude-opus-4-20250514",
+    capabilities: ["Coding", "Advanced Reasoning", "Agentic Tasks", "Long Context", "Sustained Performance"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3.5-haiku": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3.5 Haiku",
+    description: "Anthropic Claude 3.5 Haiku accessed via Requesty.",
+    apiVersion: "anthropic/claude-3-5-haiku-20241022",
+    capabilities: ["General Purpose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3-opus": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3 Opus",
+    description: "Anthropic Claude 3 Opus accessed via Requesty.",
+    apiVersion: "anthropic/claude-3-opus-20240229",
+    capabilities: ["General Purpose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3-sonnet": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3 Sonnet",
+    description: "Anthropic Claude 3 Sonnet accessed via Requesty.",
+    apiVersion: "anthropic/claude-3-sonnet-20240229",
+    capabilities: ["General Purpose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3-haiku": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3 Haiku",
+    description: "Anthropic Claude 3 Haiku accessed via Requesty.",
+    apiVersion: "anthropic/claude-3-haiku-20240307",
+    capabilities: ["General Purpose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3.7-sonnet-thinking": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3.7 Sonnet (thinking)",
+    description: "Advanced LLM with improved reasoning, coding, and problem-solving. Features a hybrid reasoning approach for flexible processing.",
+    apiVersion: "anthropic/claude-3-7-sonnet-20250219-thinking",
+    capabilities: ["Reasoning", "Coding", "Problem-solving", "Agentic"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-4-opus": {
+    provider: "Requesty",
+    name: "Anthropic Claude 4 Opus",
+    description: "Anthropic's most advanced model, excelling at coding, advanced reasoning, agentic tasks, and long-context operations.",
+    apiVersion: "anthropic/claude-4-opus-20250514",
+    capabilities: ["Coding", "Advanced Reasoning", "Agentic Tasks", "Long Context", "Sustained Performance"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-4-sonnet": {
+    provider: "Requesty",
+    name: "Anthropic Claude 4 Sonnet",
+    description: "Anthropic's Claude Sonnet 4 model, offering a balance of performance and speed, accessed via Requesty.",
+    apiVersion: "anthropic/claude-4-sonnet-20250514",
+    capabilities: ["Balanced", "Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3.5-sonnet-latest": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3.5 Sonnet",
+    description: "New Claude 3.5 Sonnet delivers better-than-Opus capabilities, faster-than-Sonnet speeds, at the same Sonnet prices. Sonnet is particularly good at: Coding, Data science, Visual processing, Agentic tasks",
+    apiVersion: "anthropic/claude-3-5-sonnet-latest",
+    capabilities: ["Coding", "Data science", "Visual processing", "Agentic tasks"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3.5-haiku-latest": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3.5 Haiku Latest",
+    description: "Anthropic Claude 3.5 Haiku Latest accessed via Requesty.",
+    apiVersion: "anthropic/claude-3-5-haiku-latest",
+    capabilities: ["General Purpose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3.7-sonnet-latest": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3.7 Sonnet",
+    description: "Latest version of Anthropic's Claude 3.7 Sonnet accessed via Requesty. Strong reasoning and coding capabilities.",
+    apiVersion: "anthropic/claude-3-7-sonnet-latest",
+    capabilities: ["Reasoning", "Coding", "Agentic"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  "requesty/anthropic/claude-3-opus-latest": {
+    provider: "Requesty",
+    name: "Anthropic Claude 3 Opus Latest",
+    description: "Anthropic Claude 3 Opus Latest accessed via Requesty.",
+    apiVersion: "anthropic/claude-3-opus-latest",
+    capabilities: ["General Purpose"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: true,
+    vision: true
+  },
+  // --- New Requesty DeepSeek models ---
+  "requesty/deepinfra/deepseek-ai/DeepSeek-R1": {
+    provider: "Requesty",
+    name: "DeepSeek R1 (deepinfra)",
+    description: "DeepSeek R1 model via deepinfra on Requesty.",
+    apiVersion: "deepinfra/deepseek-ai/DeepSeek-R1",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true
+  },
+  "requesty/nebius/deepseek-ai/DeepSeek-R1": {
+    provider: "Requesty",
+    name: "DeepSeek R1 (nebius)",
+    description: "DeepSeek R1 model via nebius on Requesty.",
+    apiVersion: "nebius/deepseek-ai/DeepSeek-R1",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true
+  },
+  "requesty/together/deepseek-ai/DeepSeek-R1": {
+    provider: "Requesty",
+    name: "DeepSeek R1 (together)",
+    description: "DeepSeek R1 model via together on Requesty.",
+    apiVersion: "together/deepseek-ai/DeepSeek-R1",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true
+  },
+  "requesty/nebius/deepseek-ai/DeepSeek-R1-0528": {
+    provider: "Requesty",
+    name: "DeepSeek R1 0528 (nebius)",
+    description: "DeepSeek R1 0528 model via nebius on Requesty.",
+    apiVersion: "nebius/deepseek-ai/DeepSeek-R1-0528",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true
+  },
+  "requesty/netmind/deepseek-ai/DeepSeek-R1-0528": {
+    provider: "Requesty",
+    name: "DeepSeek R1 0528 (netmind)",
+    description: "DeepSeek R1 0528 model via netmind on Requesty.",
+    apiVersion: "netmind/deepseek-ai/DeepSeek-R1-0528",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true
+  },
+  "requesty/deepinfra/deepseek-ai/DeepSeek-R1-Distill-Llama-70B": {
+    provider: "Requesty",
+    name: "DeepSeek R1 Distill Llama 70B (deepinfra)",
+    description: "DeepSeek R1 Distill Llama 70B model via deepinfra on Requesty.",
+    apiVersion: "deepinfra/deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    capabilities: ["Distilled", "Open Source"],
+    enabled: true
+  },
+  "requesty/nebius/deepseek-ai/DeepSeek-R1-fast": {
+    provider: "Requesty",
+    name: "DeepSeek R1 Fast (nebius)",
+    description: "DeepSeek R1 Fast model via nebius on Requesty.",
+    apiVersion: "nebius/deepseek-ai/DeepSeek-R1-fast",
+    capabilities: ["Fast", "Open Source"],
+    enabled: true
+  },
+  "requesty/nebius/deepseek-ai/DeepSeek-V3": {
+    provider: "Requesty",
+    name: "DeepSeek V3 (nebius)",
+    description: "DeepSeek V3 model via nebius on Requesty.",
+    apiVersion: "nebius/deepseek-ai/DeepSeek-V3",
+    capabilities: ["Chat", "Reasoning"],
+    enabled: true
+  },
+  "requesty/together/deepseek-ai/DeepSeek-V3": {
+    provider: "Requesty",
+    name: "DeepSeek V3 (together)",
+    description: "DeepSeek V3 model via together on Requesty.",
+    apiVersion: "together/deepseek-ai/DeepSeek-V3",
+    capabilities: ["Chat", "Reasoning"],
+    enabled: true
+  },
+  "requesty/nebius/deepseek-ai/DeepSeek-V3-0324": {
+    provider: "Requesty",
+    name: "DeepSeek V3 0324 (nebius)",
+    description: "DeepSeek V3 0324 model via nebius on Requesty.",
+    apiVersion: "nebius/deepseek-ai/DeepSeek-V3-0324",
+    capabilities: ["Chat", "Reasoning"],
+    enabled: true
+  },
+  "requesty/nebius/deepseek-ai/DeepSeek-V3-0324-fast": {
+    provider: "Requesty",
+    name: "DeepSeek V3 0324 Fast (nebius)",
+    description: "DeepSeek V3 0324 Fast model via nebius on Requesty.",
+    apiVersion: "nebius/deepseek-ai/DeepSeek-V3-0324-fast",
+    capabilities: ["Fast", "Chat"],
+    enabled: true
+  },
+  "requesty/together/deepseek-llm-67b-chat": {
+    provider: "Requesty",
+    name: "DeepSeek LLM 67B Chat (together)",
+    description: "DeepSeek LLM 67B Chat model via together on Requesty.",
+    apiVersion: "together/deepseek-llm-67b-chat",
+    capabilities: ["Chat", "Large"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek_v3": {
+    provider: "Requesty",
+    name: "DeepSeek V3 (novita)",
+    description: "DeepSeek V3 model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek_v3",
+    capabilities: ["Chat", "Reasoning"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek-prover-v2-671b": {
+    provider: "Requesty",
+    name: "DeepSeek Prover v2 671B (novita)",
+    description: "DeepSeek Prover v2 671B model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek-prover-v2-671b",
+    capabilities: ["Prover", "Large"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek-r1": {
+    provider: "Requesty",
+    name: "DeepSeek R1 (novita)",
+    description: "DeepSeek R1 model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek-r1",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek-r1-distill-llama-70b": {
+    provider: "Requesty",
+    name: "DeepSeek R1 Distill Llama 70B (novita)",
+    description: "DeepSeek R1 Distill Llama 70B model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek-r1-distill-llama-70b",
+    capabilities: ["Distilled", "Open Source"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek-r1-distill-qwen-14b": {
+    provider: "Requesty",
+    name: "DeepSeek R1 Distill Qwen 14B (novita)",
+    description: "DeepSeek R1 Distill Qwen 14B model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek-r1-distill-qwen-14b",
+    capabilities: ["Distilled", "Open Source"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek-r1-distill-qwen-32b": {
+    provider: "Requesty",
+    name: "DeepSeek R1 Distill Qwen 32B (novita)",
+    description: "DeepSeek R1 Distill Qwen 32B model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek-r1-distill-qwen-32b",
+    capabilities: ["Distilled", "Open Source"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek-r1-turbo": {
+    provider: "Requesty",
+    name: "DeepSeek R1 Turbo (novita)",
+    description: "DeepSeek R1 Turbo model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek-r1-turbo",
+    capabilities: ["Fast", "Open Source"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek-v3-0324": {
+    provider: "Requesty",
+    name: "DeepSeek V3 0324 (novita)",
+    description: "DeepSeek V3 0324 model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek-v3-0324",
+    capabilities: ["Chat", "Reasoning"],
+    enabled: true
+  },
+  "requesty/novita/deepseek/deepseek-v3-turbo": {
+    provider: "Requesty",
+    name: "DeepSeek V3 Turbo (novita)",
+    description: "DeepSeek V3 Turbo model via novita on Requesty.",
+    apiVersion: "novita/deepseek/deepseek-v3-turbo",
+    capabilities: ["Fast", "Chat"],
+    enabled: true
+  },
+  "requesty/parasail/parasail-deepseek-r1": {
+    provider: "Requesty",
+    name: "Parasail DeepSeek R1",
+    description: "Parasail DeepSeek R1 model via parasail on Requesty.",
+    apiVersion: "parasail/parasail-deepseek-r1",
+    capabilities: ["Reasoning", "Open Source"],
+    enabled: true
+  },
+  // --- New Requesty Google models ---
+  "requesty/google/gemini-1.5-flash": {
+    provider: "Requesty",
+    name: "Google Gemini 1.5 Flash",
+    description: "Google's Gemini 1.5 Flash model accessed via Requesty.",
+    apiVersion: "google/gemini-1.5-flash",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/google/gemini-1.5-flash-8b": {
+    provider: "Requesty",
+    name: "Google Gemini 1.5 Flash 8B",
+    description: "Google's Gemini 1.5 Flash 8B model accessed via Requesty.",
+    apiVersion: "google/gemini-1.5-flash-8b",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/google/gemini-1.5-flash-8b-latest": {
+    provider: "Requesty",
+    name: "Google Gemini 1.5 Flash 8B Latest",
+    description: "Google's Gemini 1.5 Flash 8B Latest model accessed via Requesty.",
+    apiVersion: "google/gemini-1.5-flash-8b-latest",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/google/gemini-1.5-flash-latest": {
+    provider: "Requesty",
+    name: "Google Gemini 1.5 Flash Latest",
+    description: "Google's Gemini 1.5 Flash Latest model accessed via Requesty.",
+    apiVersion: "google/gemini-1.5-flash-latest",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/google/gemini-1.5-pro": {
+    provider: "Requesty",
+    name: "Google Gemini 1.5 Pro",
+    description: "Google's Gemini 1.5 Pro model accessed via Requesty.",
+    apiVersion: "google/gemini-1.5-pro",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/google/gemini-1.5-pro-latest": {
+    provider: "Requesty",
+    name: "Google Gemini 1.5 Pro Latest",
+    description: "Google's Gemini 1.5 Pro Latest model accessed via Requesty.",
+    apiVersion: "google/gemini-1.5-pro-latest",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/google/gemini-2.0-flash-001": {
+    provider: "Requesty",
+    name: "Google Gemini 2.0 Flash 001",
+    description: "Google's Gemini 2.0 Flash 001 model accessed via Requesty.",
+    apiVersion: "google/gemini-2.0-flash-001",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/coding/gemini-2.5-flash": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Flash",
+    description: "Google's Gemini 2.5 Flash model accessed via Requesty.",
+    apiVersion: "coding/gemini-2.5-flash",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/coding/gemini-2.5-flash-preview-05-20": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Flash Preview 05-20",
+    description: "Google's Gemini 2.5 Flash Preview 05-20 model accessed via Requesty.",
+    apiVersion: "coding/gemini-2.5-flash-preview-05-20",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/coding/gemini-2.5-pro": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Pro",
+    description: "Google's Gemini 2.5 Pro model accessed via Requesty.",
+    apiVersion: "coding/gemini-2.5-pro",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/coding/gemini-2.5-pro-preview-03-25": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Pro Preview 03-25",
+    description: "Google's Gemini 2.5 Pro Preview 03-25 model accessed via Requesty.",
+    apiVersion: "coding/gemini-2.5-pro-preview-03-25",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/coding/gemini-2.5-pro-preview-05-06": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Pro Preview 05-06",
+    description: "Google's Gemini 2.5 Pro Preview 05-06 model accessed via Requesty.",
+    apiVersion: "coding/gemini-2.5-pro-preview-05-06",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/vertex/google/gemini-2.5-flash": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Flash",
+    description: "Google's Gemini 2.5 Flash model accessed via Requesty.",
+    apiVersion: "vertex/google/gemini-2.5-flash",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: true
+  },
+  "requesty/vertex/google/gemini-2.5-pro": {
+    provider: "Requesty",
+    name: "Google Gemini 2.5 Pro",
+    description: "Google's Gemini 2.5 Pro model accessed via Requesty.",
+    apiVersion: "vertex/google/gemini-2.5-pro",
+    capabilities: ["Fast", "Efficient"],
+    enabled: true,
+    supportsWebSearch: true,
     premium: false,
     vision: true
   },
