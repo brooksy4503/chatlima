@@ -1316,7 +1316,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
-    premium: true,
+    premium: false,
     vision: true
   },
   "requesty/google/gemini-2.5-flash": {
@@ -1327,7 +1327,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Thinking", "Multimodal", "Low Latency", "Cost-Effective", "High Volume"],
     enabled: true,
     supportsWebSearch: false,
-    premium: true,
+    premium: false,
     vision: true
   },
   "requesty/google/gemini-2.5-pro": {
@@ -1879,7 +1879,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false,
+    premium: true,
     vision: true
   },
   "requesty/vertex/google/gemini-2.5-flash": {
@@ -1901,7 +1901,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false,
+    premium: true,
     vision: true
   },
 };
