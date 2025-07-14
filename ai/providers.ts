@@ -1868,7 +1868,7 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     capabilities: ["Fast", "Efficient"],
     enabled: true,
     supportsWebSearch: true,
-    premium: false,
+    premium: true,
     vision: true
   },
   "requesty/coding/gemini-2.5-pro-preview-05-06": {
