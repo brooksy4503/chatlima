@@ -262,6 +262,7 @@ const languageModels = {
   "requesty/meta-llama/llama-3.3-70b-instruct": requestyClient("deepinfra/meta-llama/Llama-3.3-70B-Instruct"),
   "requesty/google/gemini-2.5-flash-lite-preview-06-17": requestyClient("google/gemini-2.5-flash-lite-preview-06-17"),
   "requesty/moonshotai/kimi-k2-instruct": requestyClient("novita/moonshotai/kimi-k2-instruct"),
+  "requesty/groq/moonshotai/kimi-k2-instruct": requestyClient("groq/moonshotai/kimi-k2-instruct"),
   "requesty/anthropic/claude-opus-4": requestyClient("anthropic/claude-opus-4-20250514"),
   "requesty/anthropic/claude-3.5-haiku": requestyClient("anthropic/claude-3-5-haiku-20241022"),
   "requesty/anthropic/claude-3-opus": requestyClient("anthropic/claude-3-opus-20240229"),
@@ -539,6 +540,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getRequestyClient()("google/gemini-2.5-flash-lite-preview-06-17");
     case "requesty/moonshotai/kimi-k2-instruct":
       return getRequestyClient()("novita/moonshotai/kimi-k2-instruct");
+    case "requesty/groq/moonshotai/kimi-k2-instruct":
+      return getRequestyClient()("groq/moonshotai/kimi-k2-instruct");
     case "requesty/anthropic/claude-opus-4":
       return getRequestyClient()("anthropic/claude-opus-4-20250514");
     case "requesty/anthropic/claude-3.5-haiku":
@@ -1431,9 +1434,20 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
   },
   "requesty/moonshotai/kimi-k2-instruct": {
     provider: "Requesty",
-    name: "Moonshot AI Kimi K2",
+    name: "Moonshot AI Kimi K2 (Novita)",
     description: "Kimi K2 is a large-scale Mixture-of-Experts (MoE) language model with 1 trillion total parameters and 32 billion active per forward pass. Optimized for agentic capabilities including advanced tool use, reasoning, and code synthesis. Excels in coding, reasoning, and tool-use tasks with 128K token context length.",
     apiVersion: "novita/moonshotai/kimi-k2-instruct",
+    capabilities: ["Coding", "Reasoning", "Tool Use", "Agentic", "Long Context", "Problem Solving"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: false
+  },
+  "requesty/groq/moonshotai/kimi-k2-instruct": {
+    provider: "Requesty",
+    name: "Moonshot AI Kimi K2 (Groq)",
+    description: "Kimi K2 is a large-scale Mixture-of-Experts (MoE) language model with 1 trillion total parameters and 32 billion active per forward pass. Optimized for agentic capabilities including advanced tool use, reasoning, and code synthesis. Excels in coding, reasoning, and tool-use tasks with 128K token context length. Accessed via Groq infrastructure for enhanced performance.",
+    apiVersion: "groq/moonshotai/kimi-k2-instruct",
     capabilities: ["Coding", "Reasoning", "Tool Use", "Agentic", "Long Context", "Problem Solving"],
     enabled: true,
     supportsWebSearch: true,

@@ -847,38 +847,51 @@ export async function POST(req: Request) {
           console.log(`[Chat ${id}][onStop] Total messages:`, allMessages.length);
 
           // Save the chat with title generation (don't pass title to trigger generation)
-          await saveChat({
-            id,
-            messages: allMessages,
-            userId,
-            selectedModel,
-            apiKeys,
-            // Don't pass title parameter to trigger generation
-          });
-          console.log(`[Chat ${id}][onStop] Chat saved successfully`);
+          try {
+            await saveChat({
+              id,
+              messages: allMessages,
+              userId,
+              selectedModel,
+              apiKeys,
+              // Don't pass title parameter to trigger generation
+            });
+            console.log(`[Chat ${id}][onStop] Chat saved successfully`);
+          } catch (chatSaveError) {
+            console.error(`[Chat ${id}][onStop] Error saving chat:`, chatSaveError);
+            // Continue with message saving even if chat save fails
+          }
 
           // Save individual messages using the same approach as onFinish
-          const dbMessages = (convertToDBMessages(allMessages as any, id) as any[]).map(msg => ({
-            ...msg,
-            hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant',
-            webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined
-          }));
+          try {
+            const dbMessages = (convertToDBMessages(allMessages as any, id) as any[]).map(msg => ({
+              ...msg,
+              hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant',
+              webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined
+            }));
 
-          await saveMessages({ messages: dbMessages });
-          console.log(`[Chat ${id}][onStop] Messages saved successfully`);
+            await saveMessages({ messages: dbMessages });
+            console.log(`[Chat ${id}][onStop] Messages saved successfully`);
+          } catch (messagesSaveError) {
+            console.error(`[Chat ${id}][onStop] Error saving messages:`, messagesSaveError);
+          }
         } else {
           console.warn(`[Chat ${id}][onStop] No text content found to save. Event may not contain expected properties.`);
 
           // Save at least the user messages if we have them
           if (modelMessages.length > 0) {
-            await saveChat({
-              id,
-              messages: modelMessages,
-              userId,
-              selectedModel,
-              apiKeys,
-            });
-            console.log(`[Chat ${id}][onStop] Saved user messages only (no assistant response)`);
+            try {
+              await saveChat({
+                id,
+                messages: modelMessages,
+                userId,
+                selectedModel,
+                apiKeys,
+              });
+              console.log(`[Chat ${id}][onStop] Saved user messages only (no assistant response)`);
+            } catch (userMessagesSaveError) {
+              console.error(`[Chat ${id}][onStop] Error saving user messages:`, userMessagesSaveError);
+            }
           }
         }
 
@@ -944,74 +957,87 @@ export async function POST(req: Request) {
       }
     },
     async onFinish(event: any) {
+      console.log(`[Chat ${id}][onFinish] Stream finished, processing and saving...`);
+
       // Minimal fix: cast event.response to OpenRouterResponse
       const response = event.response as OpenRouterResponse;
-      const allMessages = appendResponseMessages({
-        messages: modelMessages,
-        responseMessages: response.messages as any, // Cast to any to bypass type error
-      });
 
-      // Extract citations from response messages
-      const processedMessages = allMessages.map(msg => {
-        if (msg.role === 'assistant' && (response.annotations?.length)) {
-          const citations = response.annotations
-            .filter((a: Annotation) => a.type === 'url_citation')
-            .map((c: Annotation) => ({
-              url: c.url_citation.url,
-              title: c.url_citation.title,
-              content: c.url_citation.content,
-              startIndex: c.url_citation.start_index,
-              endIndex: c.url_citation.end_index
-            }));
-
-          // Add citations to message parts if they exist
-          if (citations.length > 0 && msg.parts) {
-            msg.parts = (msg.parts as any[]).map(part => ({
-              ...part,
-              citations
-            }));
-          }
+      try {
+        // Validate response structure
+        if (!response || !response.messages) {
+          console.error(`[Chat ${id}][onFinish] Invalid response structure:`, response);
+          return;
         }
-        return msg;
-      });
 
-      // Update the chat with the full message history
-      // Note: saveChat here acts as an upsert based on how it's likely implemented
-      try {
-        await saveChat({
-          id,
-          userId,
-          messages: processedMessages as any, // Cast to any to bypass type error
-          selectedModel,
-          apiKeys,
+        const allMessages = appendResponseMessages({
+          messages: modelMessages,
+          responseMessages: response.messages as any, // Cast to any to bypass type error
         });
-        console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
-      } catch (dbError: any) {
-        console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving chat:`, dbError);
-        // This error occurs after the stream has finished.
-        // We can't change the HTTP response to the client here.
-        // Robust logging is key.
-      }
 
-      let dbMessages;
-      try {
-        dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
-          ...msg,
-          hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
-          webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
-        }));
-      } catch (conversionError: any) {
-        console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
-        // If conversion fails, we cannot save messages.
-        // Log and potentially skip saving messages or save raw if possible.
-        return; // Exit onFinish early if messages can't be processed for DB.
-      }
+        // Extract citations from response messages
+        const processedMessages = allMessages.map(msg => {
+          if (msg.role === 'assistant' && (response.annotations?.length)) {
+            const citations = response.annotations
+              .filter((a: Annotation) => a.type === 'url_citation')
+              .map((c: Annotation) => ({
+                url: c.url_citation.url,
+                title: c.url_citation.title,
+                content: c.url_citation.content,
+                startIndex: c.url_citation.start_index,
+                endIndex: c.url_citation.end_index
+              }));
 
-      try {
-        await saveMessages({ messages: dbMessages });
-        console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
-      } catch (dbMessagesError: any) {
-        console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
+            // Add citations to message parts if they exist
+            if (citations.length > 0 && msg.parts) {
+              msg.parts = (msg.parts as any[]).map(part => ({
+                ...part,
+                citations
+              }));
+            }
+          }
+          return msg;
+        });
+
+        // Update the chat with the full message history
+        // Note: saveChat here acts as an upsert based on how it's likely implemented
+        try {
+          await saveChat({
+            id,
+            userId,
+            messages: processedMessages as any, // Cast to any to bypass type error
+            selectedModel,
+            apiKeys,
+          });
+          console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
+        } catch (dbError: any) {
+          console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving chat:`, dbError);
+          // This error occurs after the stream has finished.
+          // We can't change the HTTP response to the client here.
+          // Robust logging is key.
+        }
+
+        let dbMessages;
+        try {
+          dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
+            ...msg,
+            hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
+            webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
+          }));
+        } catch (conversionError: any) {
+          console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
+          // If conversion fails, we cannot save messages.
+          // Log and potentially skip saving messages or save raw if possible.
+          return; // Exit onFinish early if messages can't be processed for DB.
+        }
+
+        try {
+          await saveMessages({ messages: dbMessages });
+          console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
+        } catch (dbMessagesError: any) {
+          console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
+        }
+      } catch (finishError: any) {
+        console.error(`[Chat ${id}][onFinish] Unexpected error in onFinish:`, finishError);
       }
 
       // Extract token usage from response - OpenRouter may provide it in different formats
@@ -1143,12 +1169,12 @@ export async function POST(req: Request) {
             if (errorValue.message) {
               // Handle specific OpenRouter error messages
               if (errorValue.message === "Internal Server Error" && errorValue.code === 500) {
-                return "The AI provider is temporarily experiencing issues. Please try again in a moment.";
+                return JSON.stringify({ error: { code: "PROVIDER_ERROR", message: "The AI provider is temporarily experiencing issues. Please try again in a moment.", details: "Provider internal server error" } });
               }
-              return `API Error: ${errorValue.message}`;
+              return JSON.stringify({ error: { code: "PROVIDER_ERROR", message: `API Error: ${errorValue.message}`, details: "Provider validation error" } });
             }
             if (errorValue.code) {
-              return `API Error (Code ${errorValue.code}): The AI provider returned an error response.`;
+              return JSON.stringify({ error: { code: "PROVIDER_ERROR", message: `API Error (Code ${errorValue.code}): The AI provider returned an error response.`, details: "Provider error code" } });
             }
           }
 
@@ -1162,10 +1188,10 @@ export async function POST(req: Request) {
                   if (unionError.issues) {
                     for (const innerIssue of unionError.issues) {
                       if (innerIssue.path && innerIssue.path.includes('choices')) {
-                        return "The AI provider is temporarily unavailable. Please try again in a moment.";
+                        return JSON.stringify({ error: { code: "PROVIDER_UNAVAILABLE", message: "The AI provider is temporarily unavailable. Please try again in a moment.", details: "Provider response format error" } });
                       }
                       if (innerIssue.path && innerIssue.path.includes('error')) {
-                        return "The AI provider returned an unexpected error format. Please try again.";
+                        return JSON.stringify({ error: { code: "PROVIDER_ERROR", message: "The AI provider returned an unexpected error format. Please try again.", details: "Provider error format issue" } });
                       }
                     }
                   }
@@ -1174,7 +1200,7 @@ export async function POST(req: Request) {
             }
           }
 
-          return "The AI provider returned an unexpected response format. Please try again.";
+          return JSON.stringify({ error: { code: "PROVIDER_ERROR", message: "The AI provider returned an unexpected response format. Please try again.", details: "Type validation error" } });
         }
 
         let errorCode = "STREAM_ERROR";
@@ -1192,6 +1218,27 @@ export async function POST(req: Request) {
               }
               if (parsedBody.error.metadata) {
                 errorDetails = JSON.stringify(parsedBody.error.metadata);
+
+                // Try to extract more detailed error message from metadata.raw
+                if (parsedBody.error.metadata.raw) {
+                  // Check if metadata.raw is already a string (most common case)
+                  if (typeof parsedBody.error.metadata.raw === 'string') {
+                    errorMessage = parsedBody.error.metadata.raw;
+                  } else {
+                    // Try to parse as JSON if it's not a string
+                    try {
+                      const rawError = JSON.parse(parsedBody.error.metadata.raw);
+                      if (rawError.detail && typeof rawError.detail === 'string') {
+                        // Use the detailed error message instead of the generic one
+                        errorMessage = rawError.detail;
+                      } else if (rawError.message && typeof rawError.message === 'string') {
+                        errorMessage = rawError.message;
+                      }
+                    } catch (rawParseError) {
+                      console.warn(`[API Error][Chat ${id}] Failed to parse metadata.raw:`, rawParseError);
+                    }
+                  }
+                }
               }
             } else if (typeof parsedBody.message === 'string') { // Some errors might have message at top level
               errorMessage = parsedBody.message;
@@ -1228,16 +1275,35 @@ export async function POST(req: Request) {
 
         // 3. Apply specific keyword-based overrides if a more specific message wasn't found or to refine it
         const checkMessage = errorMessage || (error instanceof Error ? error.message : '');
+        const hasSpecificMessage = errorMessage !== "An error occurred while processing your request.";
+
         if (checkMessage) {
           if (checkMessage.includes("Rate limit") || checkMessage.includes("429") || errorCode === "429") {
             errorCode = "RATE_LIMIT_EXCEEDED";
-            errorMessage = "Rate limit exceeded with the AI provider. Please try again later.";
+            // Only use generic message if we don't have a specific one from metadata.raw
+            if (!hasSpecificMessage) {
+              errorMessage = "Rate limit exceeded with the AI provider. Please try again later.";
+            }
           } else if (checkMessage.includes("authentication") || checkMessage.includes("401") || errorCode === "401") {
             errorCode = "AUTHENTICATION_ERROR";
-            errorMessage = "Authentication failed with the AI provider.";
+            if (!hasSpecificMessage) {
+              errorMessage = "Authentication failed with the AI provider.";
+            }
           } else if (checkMessage.includes("insufficient_quota") || checkMessage.includes("credit")) {
             errorCode = "INSUFFICIENT_QUOTA";
-            errorMessage = "Insufficient quota or credits with the AI provider.";
+            if (!hasSpecificMessage) {
+              errorMessage = "Insufficient quota or credits with the AI provider.";
+            }
+          } else if (checkMessage.includes("timeout") || checkMessage.includes("TIMEOUT")) {
+            errorCode = "TIMEOUT_ERROR";
+            if (!hasSpecificMessage) {
+              errorMessage = "Request timed out. Please try again.";
+            }
+          } else if (checkMessage.includes("network") || checkMessage.includes("NETWORK")) {
+            errorCode = "NETWORK_ERROR";
+            if (!hasSpecificMessage) {
+              errorMessage = "Network error occurred. Please check your connection and try again.";
+            }
           }
         }
 
@@ -1251,6 +1317,7 @@ export async function POST(req: Request) {
           errorDetails = JSON.stringify(errorDetails);
         }
 
+        // Always return a properly formatted JSON error response
         return JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } });
       },
     });

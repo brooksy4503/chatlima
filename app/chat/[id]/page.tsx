@@ -1,6 +1,7 @@
 "use client";
 
 import Chat from "@/components/chat";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
@@ -53,5 +54,13 @@ export default function ChatPage() {
   //   prefetchChat();
   // }, [chatId, userId, queryClient]);
 
-  return <Chat />;
+  return (
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('Chat page error:', error, errorInfo);
+      }}
+    >
+      <Chat />
+    </ErrorBoundary>
+  );
 } 
