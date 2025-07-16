@@ -48,6 +48,13 @@ export default function Chat() {
   const [isMounted, setIsMounted] = useState(false);
   const [selectedImages, setSelectedImages] = useState<ImageAttachment[]>([]);
   const [hideImagesInUI, setHideImagesInUI] = useState(false);
+  const [isErrorRecoveryNeeded, setIsErrorRecoveryNeeded] = useState(false);
+  const [lastErrorTime, setLastErrorTime] = useState<number | null>(null);
+  const [lastStreamingActivity, setLastStreamingActivity] = useState<number | null>(null);
+  const [streamingStartTime, setStreamingStartTime] = useState<number | null>(null);
+  const [lastToastId, setLastToastId] = useState<string | null>(null);
+  const [lastErrorMessage, setLastErrorMessage] = useState<string>("");
+  const [lastToastTimestamp, setLastToastTimestamp] = useState<number>(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -76,6 +83,9 @@ export default function Chat() {
       setGeneratedChatId(nanoid());
     }
   }, [chatId]);
+
+  // Error recovery mechanism - reset chat state when errors occur
+  // Note: This will be moved after the useChat hook is defined
   
   const { data: chatData, isLoading: isLoadingChat } = useQuery({
     queryKey: ['chat', chatId],
@@ -273,8 +283,14 @@ export default function Chat() {
         // Reset UI state on error so images reappear
         setHideImagesInUI(false);
 
+        // Force reset the chat state to allow new messages
+        setIsErrorRecoveryNeeded(true);
+        setLastErrorTime(Date.now());
+
         // Log the detailed error for debugging
         console.error(`Chat Error [Code: ${errorCode}]: ${errorMessage}`, { details: errorDetails, originalError: error });
+        console.log(`[Toast Debug] Error handler triggered with message: "${errorMessage}"`);
+        console.log(`[Toast Debug] Previous message: "${lastErrorMessage}", Time since last: ${Date.now() - lastToastTimestamp}ms`);
 
         // Display user-friendly toast messages based on error code
         let toastMessage = errorMessage;
@@ -305,14 +321,36 @@ export default function Chat() {
             break;
           // Add more cases as new error codes are defined in the backend
           default:
-            // For UNKNOWN_ERROR or other unhandled codes, use the errorMessage as is (or a generic one)
-            if (!errorMessage || errorMessage === "An error occurred, please try again later.") {
+            // Check for specific model compatibility errors
+            if (errorMessage.includes("does not currently support") && 
+                (errorMessage.includes("tool_choice") || errorMessage.includes("tools"))) {
+              toastMessage = "This model doesn't support the advanced features required for this request. Please try a different model.";
+            }
+            // For other UNKNOWN_ERROR or unhandled codes, use the errorMessage as is (or a generic one)
+            else if (!errorMessage || errorMessage === "An error occurred, please try again later.") {
                 toastMessage = "An unexpected issue occurred. Please try again.";
             }
             break;
         }
 
-        toast.error(
+        // Debounce error toasts to prevent rapid-fire messages
+        const now = Date.now();
+        const timeSinceLastToast = now - lastToastTimestamp;
+        const isSameMessage = toastMessage === lastErrorMessage;
+        const tooSoon = timeSinceLastToast < (isSameMessage ? 5000 : 2000); // 5s for same message, 2s for different
+
+        if (tooSoon) {
+          console.log(`Suppressing duplicate error toast: "${toastMessage}" (${timeSinceLastToast}ms ago)`);
+          return;
+        }
+
+        // Dismiss any previous error toasts
+        if (lastToastId) {
+          toast.dismiss(lastToastId);
+        }
+
+        // Show the error toast
+        const toastId = toast.error(
           toastMessage,
           { 
             position: "top-center", 
@@ -321,6 +359,11 @@ export default function Chat() {
             duration: 8000 // Longer duration for errors
           }
         );
+        
+        // Update tracking state
+        setLastToastId(String(toastId));
+        setLastErrorMessage(toastMessage);
+        setLastToastTimestamp(now);
       },
     });
 
@@ -345,6 +388,101 @@ export default function Chat() {
       }
     }, 100); // Small delay to ensure server-side processing completes
   }, [originalStop, queryClient, chatId, generatedChatId, router]);
+
+  // Error recovery mechanism - reset chat state when errors occur
+  useEffect(() => {
+    if (isErrorRecoveryNeeded && lastErrorTime) {
+      const resetTimeout = setTimeout(() => {
+        // Force stop the current stream/request to reset useChat internal state
+        originalStop();
+        
+        // Reset error recovery state
+        setIsErrorRecoveryNeeded(false);
+        setLastErrorTime(null);
+        
+        // Clear any lingering toast IDs and tracking state
+        setLastToastId(null);
+        setLastErrorMessage("");
+        setLastToastTimestamp(0);
+        
+        console.log('Chat state reset after error - ready for new messages');
+      }, 500); // Short delay to allow error handling to complete
+
+      return () => clearTimeout(resetTimeout);
+    }
+  }, [isErrorRecoveryNeeded, lastErrorTime, originalStop]);
+
+  // Track streaming start/stop and activity
+  useEffect(() => {
+    if (status === "streaming") {
+      if (!streamingStartTime) {
+        setStreamingStartTime(Date.now());
+      }
+      
+      if (messages.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.role === 'assistant' && lastMessage.content) {
+          setLastStreamingActivity(Date.now());
+        }
+      }
+    } else {
+      setStreamingStartTime(null);
+    }
+  }, [status, messages, streamingStartTime]);
+
+  // Intelligent stuck detection: only trigger if no streaming activity for extended period
+  useEffect(() => {
+    if (status === "streaming" || status === "submitted") {
+      // Set initial activity time when streaming starts
+      if (!lastStreamingActivity) {
+        setLastStreamingActivity(Date.now());
+      }
+
+      const stuckTimeout = setTimeout(() => {
+        const now = Date.now();
+        const timeSinceLastActivity = now - (lastStreamingActivity || now);
+        
+                 // Only consider stuck if no activity for 2 minutes AND status hasn't changed
+         if (timeSinceLastActivity > 120000 && (status === "streaming" || status === "submitted")) {
+           console.warn('Chat appears stuck - no streaming activity for 2 minutes');
+           
+           const stuckMessage = 'Chat appears to be stuck. Attempting to recover...';
+           const now = Date.now();
+           const timeSinceLastToast = now - lastToastTimestamp;
+           const isSameMessage = stuckMessage === lastErrorMessage;
+           const tooSoon = timeSinceLastToast < (isSameMessage ? 5000 : 2000);
+
+           if (tooSoon) {
+             console.log(`Suppressing duplicate stuck toast: "${stuckMessage}" (${timeSinceLastToast}ms ago)`);
+             return;
+           }
+           
+           setIsErrorRecoveryNeeded(true);
+           setLastErrorTime(Date.now());
+           
+           // Dismiss any previous error toasts
+           if (lastToastId) {
+             toast.dismiss(lastToastId);
+           }
+           
+           const toastId = toast.error(stuckMessage, {
+             description: 'No response activity detected for 2 minutes',
+             position: "top-center",
+             duration: 6000
+           });
+           
+           setLastToastId(String(toastId));
+           setLastErrorMessage(stuckMessage);
+           setLastToastTimestamp(now);
+         }
+      }, 120000); // Check every 2 minutes
+
+      return () => clearTimeout(stuckTimeout);
+    } else {
+      // Reset activity tracking when not streaming
+      setLastStreamingActivity(null);
+    }
+  }, [status, lastStreamingActivity]);
     
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -392,7 +530,7 @@ export default function Chat() {
     }
   }, [handleSubmit, append, input, selectedImages]);
 
-  const isLoading = status === "streaming" || status === "submitted" || isLoadingChat;
+  const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat;
 
   const isOpenRouterModel = selectedModel.startsWith("openrouter/");
 
@@ -420,8 +558,92 @@ export default function Chat() {
     });
   }, [messages, webSearchEnabled, isOpenRouterModel]);
 
+  // Manual recovery function
+  const forceRecovery = useCallback(() => {
+    console.log('Manual recovery triggered by user');
+    originalStop();
+    setIsErrorRecoveryNeeded(false);
+    setLastErrorTime(null);
+    setStreamingStartTime(null);
+    setLastStreamingActivity(null);
+    setHideImagesInUI(false);
+    
+    // Dismiss any previous error toasts and clear tracking state
+    if (lastToastId) {
+      toast.dismiss(lastToastId);
+      setLastToastId(null);
+    }
+    setLastErrorMessage("");
+    setLastToastTimestamp(0);
+    
+    toast.success('Chat reset successfully. You can now send new messages.', {
+      position: "top-center",
+      duration: 3000
+    });
+  }, [originalStop, lastToastId]);
+
+  // Streaming status component
+  const StreamingStatus = () => {
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+      if (status === "streaming" && streamingStartTime) {
+        // Set initial elapsed time immediately
+        setElapsed(Date.now() - streamingStartTime);
+        
+        const interval = setInterval(() => {
+          setElapsed(Date.now() - streamingStartTime);
+        }, 1000);
+        return () => clearInterval(interval);
+      } else if (status !== "streaming") {
+        // Only reset to 0 when not streaming
+        setElapsed(0);
+      }
+    }, [status, streamingStartTime]);
+
+    if (status !== "streaming" || !streamingStartTime) return null;
+
+    const seconds = Math.floor(elapsed / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return (
+      <div className="flex items-center justify-center py-2">
+        <div className="flex items-center space-x-2 text-xs text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+          <div className="flex space-x-1">
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+          <span>
+            Generating response... {minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
+      {/* Error Recovery Banner - Only show if no recent error toast to avoid conflicts */}
+      {isErrorRecoveryNeeded && Date.now() - lastToastTimestamp > 1000 && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="text-yellow-800 dark:text-yellow-200 text-sm">
+                Something went wrong. The chat is being reset automatically...
+              </div>
+            </div>
+            <button
+              onClick={forceRecovery}
+              className="px-3 py-1 text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded hover:bg-yellow-300 dark:hover:bg-yellow-700 transition-colors"
+            >
+              Reset Now
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main content area: Either ProjectOverview or Messages */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-2">
         {messages.length === 0 && !isLoadingChat ? (
@@ -432,6 +654,9 @@ export default function Chat() {
           <Messages messages={enhancedMessages} isLoading={isLoading} status={status} />
         )}
       </div>
+
+      {/* Streaming Status */}
+      <StreamingStatus />
 
       {/* Input area: Always rendered at the bottom */}
       <div className="mt-2 w-full max-w-3xl mx-auto mb-4 sm:mb-auto shrink-0">
