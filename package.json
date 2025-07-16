@@ -1,6 +1,6 @@
 {
   "name": "chatlima",
-  "version": "0.22.3",
+  "version": "0.23.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
