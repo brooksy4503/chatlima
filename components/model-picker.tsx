@@ -290,7 +290,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
           </div>
           <div className="px-3 pt-3 pb-2 border-b border-border/40">
             <h4 className="text-sm font-semibold mb-2">Presets</h4>
-            {presets?.map(preset => (
+            {(presets || []).map(preset => (
               <Button key={preset.id} variant="ghost" onClick={() => handlePresetSelect(preset)} className="w-full justify-start mb-1">
                 {preset.name}
               </Button>
@@ -403,7 +403,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                 
                 {/* Capability badges */}
                 <div className="flex flex-wrap gap-1 mt-2 mb-3">
-                  {detailsPanelModelDetails.capabilities.map((capability) => (
+                  {(detailsPanelModelDetails?.capabilities || []).map((capability) => (
                     <span 
                       key={capability}
                       className={cn(
@@ -435,7 +435,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
             {/* Condensed model details for mobile only */}
             <div className="p-3 sm:hidden border-t border-border/30">
               <div className="flex flex-wrap gap-1 mb-2">
-                {detailsPanelModelDetails.capabilities.slice(0, 4).map((capability) => (
+                {(detailsPanelModelDetails?.capabilities || []).slice(0, 4).map((capability) => (
                   <span 
                     key={capability}
                     className={cn(
@@ -447,8 +447,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                     <span>{capability}</span>
                   </span>
                 ))}
-                {detailsPanelModelDetails.capabilities.length > 4 && (
-                  <span className="text-[10px] text-muted-foreground">+{detailsPanelModelDetails.capabilities.length - 4} more</span>
+                {(detailsPanelModelDetails?.capabilities || []).length > 4 && (
+                  <span className="text-[10px] text-muted-foreground">+{(detailsPanelModelDetails?.capabilities || []).length - 4} more</span>
                 )}
               </div>
             </div>
