@@ -35,9 +35,23 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: pnpm/action-setup@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
           version: 8
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./chatlima
+        
       - name: Create Neon Branch
         id: create_neon_branch
         uses: neondatabase/create-branch-action@v5
@@ -48,11 +62,9 @@ jobs:
 
       - name: Run Migrations
         run: pnpm db:migrate
+        working-directory: ./chatlima
         env:
-          # to use pooled connection
           DATABASE_URL: "${{ steps.create_neon_branch.outputs.db_url_with_pooler }}"
-          # OR to use unpooled connection
-          # DATABASE_URL: "${{ steps.create_neon_branch.outputs.db_url }}"
 
       - name: Post Schema Diff Comment to PR
         uses: neondatabase/schema-diff-action@v1
