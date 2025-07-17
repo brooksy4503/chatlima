@@ -102,18 +102,18 @@ const createErrorResponse = (
 export async function POST(req: Request) {
   console.log('[DEBUG] Chat API called');
 
-  let {
+  const {
     messages,
     chatId,
-    selectedModel,
+    selectedModel: initialSelectedModel,
     mcpServers: initialMcpServers = [],
     webSearch = { enabled: false, contextSize: 'medium' },
     apiKeys = {},
     attachments = [],
     presetId,
-    temperature,
-    maxTokens,
-    systemPrompt
+    temperature: initialTemperature,
+    maxTokens: initialMaxTokens,
+    systemPrompt: initialSystemPrompt
   }: {
     messages: UIMessage[];
     chatId?: string;
@@ -131,6 +131,11 @@ export async function POST(req: Request) {
     maxTokens?: number;
     systemPrompt?: string;
   } = await req.json();
+
+  let selectedModel = initialSelectedModel;
+  let temperature = initialTemperature;
+  let maxTokens = initialMaxTokens;
+  let systemPrompt = initialSystemPrompt;
 
   if (presetId) {
     const preset = await db.query.presets.findFirst({
