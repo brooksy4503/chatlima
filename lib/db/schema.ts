@@ -1,4 +1,4 @@
-import { timestamp, pgTable, text, primaryKey, json, boolean, integer } from "drizzle-orm/pg-core";
+import { timestamp, pgTable, text, primaryKey, json, boolean, integer, numeric } from "drizzle-orm/pg-core";
 import { nanoid } from "nanoid";
 
 // Message role enum type
@@ -24,6 +24,16 @@ export const messages = pgTable('messages', {
   hasWebSearch: boolean('has_web_search').default(false),
   webSearchContextSize: text('web_search_context_size').default('medium'), // 'low', 'medium', 'high'
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const presets = pgTable('presets', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  model: text('model').notNull(),
+  temperature: numeric('temperature').default('0.7'),
+  maxTokens: integer('max_tokens'),
+  systemPrompt: text('system_prompt'),
 });
 
 // Types for structured message content

@@ -26,7 +26,7 @@ interface ChatData {
   updatedAt: string;
 }
 
-export default function Chat() {
+export default function Chat({ presetId }: { presetId: string | null }) {
   const router = useRouter();
   const params = useParams();
   const chatId = params?.id as string | undefined;
@@ -208,6 +208,7 @@ export default function Chat() {
           contextSize: webSearchContextSize,
         },
         apiKeys: getClientApiKeys(),
+        presetId,
         // Only send attachments for text-only messages (handleSubmit)
         // Don't send when using append() since images are already in message parts
         attachments: []

@@ -13,6 +13,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { PresetManager } from "./preset-manager";
+import { useQuery } from "@tanstack/react-query";
+import { type Preset } from "@/lib/types";
 
 interface ModelPickerProps {
   selectedModel: modelID;
@@ -21,6 +24,10 @@ interface ModelPickerProps {
 }
 
 export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }: ModelPickerProps) => {
+  const { data: presets } = useQuery<Preset[]>({
+    queryKey: ['presets'],
+    queryFn: () => fetch('/api/presets').then(res => res.json()),
+  });
   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -161,6 +168,13 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
     }
   }, [setSelectedModel, onModelSelected]);
 
+  const handlePresetSelect = (preset: Preset) => {
+    setSelectedModel(preset.model);
+    // Here you could also apply other preset settings like temperature, etc.
+    // For now, it just changes the model.
+    setIsOpen(false);
+  };
+
   // Handle opening the popover - memoized to prevent re-renders
   const handleOpenChange = useCallback((open: boolean) => {
     setIsOpen(open);
@@ -271,6 +285,17 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
           align="start"
         >
           {/* Search input */}
+          <div className="px-3 pt-3 pb-2 border-b border-border/40">
+            <PresetManager />
+          </div>
+          <div className="px-3 pt-3 pb-2 border-b border-border/40">
+            <h4 className="text-sm font-semibold mb-2">Presets</h4>
+            {presets?.map(preset => (
+              <Button key={preset.id} variant="ghost" onClick={() => handlePresetSelect(preset)} className="w-full justify-start mb-1">
+                {preset.name}
+              </Button>
+            ))}
+          </div>
           <div className="px-3 pt-3 pb-2 border-b border-border/40">
             <Input
               ref={searchInputRef}

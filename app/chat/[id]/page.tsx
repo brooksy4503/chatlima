@@ -3,12 +3,14 @@
 import Chat from "@/components/chat";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 export default function ChatPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const chatId = params?.id as string;
+  const presetId = searchParams.get('preset');
   const queryClient = useQueryClient();
 
   // Prefetch chat data
@@ -60,7 +62,7 @@ export default function ChatPage() {
         console.error('Chat page error:', error, errorInfo);
       }}
     >
-      <Chat />
+      <Chat presetId={presetId} />
     </ErrorBoundary>
   );
 } 

@@ -6,7 +6,7 @@ import { appendResponseMessages } from 'ai';
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
-import { chats } from '@/lib/db/schema';
+import { chats, presets } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
@@ -102,14 +102,18 @@ const createErrorResponse = (
 export async function POST(req: Request) {
   console.log('[DEBUG] Chat API called');
 
-  const {
+  let {
     messages,
     chatId,
     selectedModel,
     mcpServers: initialMcpServers = [],
     webSearch = { enabled: false, contextSize: 'medium' },
     apiKeys = {},
-    attachments = []
+    attachments = [],
+    presetId,
+    temperature,
+    maxTokens,
+    systemPrompt
   }: {
     messages: UIMessage[];
     chatId?: string;
@@ -122,7 +126,24 @@ export async function POST(req: Request) {
       contentType: string;
       url: string;
     }>;
+    presetId?: string;
+    temperature?: number;
+    maxTokens?: number;
+    systemPrompt?: string;
   } = await req.json();
+
+  if (presetId) {
+    const preset = await db.query.presets.findFirst({
+      where: eq(presets.id, presetId),
+    });
+
+    if (preset) {
+      selectedModel = preset.model as modelID;
+      temperature = preset.temperature ? parseFloat(preset.temperature) : undefined;
+      maxTokens = preset.maxTokens ?? undefined;
+      systemPrompt = preset.systemPrompt ?? undefined;
+    }
+  }
 
   console.log('[DEBUG] Request body parsed:', {
     messagesCount: messages.length,
