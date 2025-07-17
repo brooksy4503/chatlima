@@ -49,7 +49,7 @@ jobs:
           version: 8
           
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
         
       - name: Create Neon Branch
         id: create_neon_branch
