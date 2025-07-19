@@ -1,4 +1,14 @@
+import type { modelID } from "@/ai/providers";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
+
+export interface Preset {
+    id: string;
+    name: string;
+    model: modelID;
+    temperature: number;
+    maxTokens: number;
+    systemPrompt?: string;
+}
 
 export interface WebSearchCitation {
     url: string;

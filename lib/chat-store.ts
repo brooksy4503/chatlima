@@ -32,6 +32,7 @@ type SaveChatParams = {
   title?: string;
   selectedModel?: string;
   apiKeys?: Record<string, string>;
+  systemPrompt?: string | null;
 };
 
 type ChatWithMessages = Chat & {
@@ -124,7 +125,7 @@ export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage
   }));
 }
 
-export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys }: SaveChatParams) {
+export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys, systemPrompt }: SaveChatParams) {
   // Generate a new ID if one wasn't provided
   const chatId = id || nanoid();
 
@@ -225,7 +226,8 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
       .update(chats)
       .set({
         title: chatTitle,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        systemPrompt: systemPrompt || null
       })
       .where(and(
         eq(chats.id, chatId),
@@ -238,7 +240,8 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
       userId,
       title: chatTitle,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      systemPrompt: systemPrompt || null
     });
   }
 
@@ -262,7 +265,15 @@ export function getTextContent(message: Message): string {
 export async function getChats(userId: string) {
   return await db.query.chats.findMany({
     where: eq(chats.userId, userId),
-    orderBy: [desc(chats.updatedAt)]
+    orderBy: [desc(chats.updatedAt)],
+    columns: {
+      id: true,
+      userId: true,
+      title: true,
+      createdAt: true,
+      updatedAt: true,
+      systemPrompt: true
+    }
   });
 }
 
@@ -272,6 +283,14 @@ export async function getChatById(id: string, userId: string): Promise<ChatWithM
       eq(chats.id, id),
       eq(chats.userId, userId)
     ),
+    columns: {
+      id: true,
+      userId: true,
+      title: true,
+      createdAt: true,
+      updatedAt: true,
+      systemPrompt: true
+    }
   });
 
   if (!chat) return null;

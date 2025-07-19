@@ -13,6 +13,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { PresetManager } from "./preset-manager";
+import { useQuery } from "@tanstack/react-query";
+import { type Preset } from "@/lib/types";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface ModelPickerProps {
   selectedModel: modelID;
@@ -21,6 +25,10 @@ interface ModelPickerProps {
 }
 
 export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }: ModelPickerProps) => {
+  const { data: presets } = useQuery<Preset[]>({
+    queryKey: ['presets'],
+    queryFn: () => fetch('/api/presets').then(res => res.json()),
+  });
   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -29,6 +37,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
   const modelListRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [hoveredPresetId, setHoveredPresetId] = useState<string | null>(null);
   
   // Function to get the appropriate icon for each provider
   const getProviderIcon = (provider: string) => {
@@ -149,6 +160,11 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
   const selectedModelDetails = modelDetails[selectedModel];
   const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelDetails.premium);
 
+  // Get the currently selected presetId from the URL
+  const currentPresetId = searchParams.get('preset');
+  const selectedPreset = (presets || []).find(p => p.id === currentPresetId) || null;
+  const previewPreset = (presets || []).find(p => p.id === hoveredPresetId) || selectedPreset;
+
   // Handle model change - memoized to prevent re-renders
   const handleModelChange = useCallback((modelId: string) => {
     if ((MODELS as string[]).includes(modelId)) {
@@ -160,6 +176,15 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
       onModelSelected?.();
     }
   }, [setSelectedModel, onModelSelected]);
+
+  const handlePresetSelect = (preset: Preset) => {
+    setSelectedModel(preset.model);
+    // Update the URL with the presetId
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    params.set('preset', preset.id);
+    router.replace(`?${params.toString()}`);
+    setIsOpen(false);
+  };
 
   // Handle opening the popover - memoized to prevent re-renders
   const handleOpenChange = useCallback((open: boolean) => {
@@ -267,10 +292,59 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
         </Tooltip>
         
         <PopoverContent 
-          className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[400px] overflow-hidden" 
+          className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[80vh] overflow-y-auto" 
           align="start"
         >
           {/* Search input */}
+          {/* Remove PresetManager and just show the list of presets below */}
+          <div className="border-b border-border/40">
+            <h4 className="text-sm font-semibold mb-2 px-3 pt-3">Presets</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start max-h-[200px] overflow-hidden">
+              {/* Preset list column */}
+              <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1 overflow-y-auto max-h-[200px]">
+                <div className="space-y-1 p-1">
+                  {(presets || []).map(preset => (
+                    <Button
+                      key={preset.id}
+                      variant="ghost"
+                      onClick={() => handlePresetSelect(preset)}
+                      className="w-full justify-start mb-1"
+                      onMouseEnter={() => setHoveredPresetId(preset.id)}
+                      onMouseLeave={() => setHoveredPresetId(null)}
+                    >
+                      {preset.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Preset preview column */}
+              <div className="hidden sm:block p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[200px] min-h-[200px]">
+                {previewPreset ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-sm font-semibold">{previewPreset.name}</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-4 mb-1 text-xs">
+                      <div><span className="font-medium">Model:</span> {previewPreset.model}</div>
+                      <div><span className="font-medium">Temperature:</span> {previewPreset.temperature}</div>
+                      <div><span className="font-medium">Max Tokens:</span> {previewPreset.maxTokens}</div>
+                    </div>
+                    {previewPreset.systemPrompt && (
+                      <div className="mt-1 text-xs text-foreground/90">
+                        <span className="font-medium">System Prompt:</span>
+                        <div className="whitespace-pre-line mt-1">{previewPreset.systemPrompt}</div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground p-4">
+                    Hover over a preset to see details
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="px-3 pt-3 pb-2 border-b border-border/40">
             <Input
               ref={searchInputRef}
@@ -378,7 +452,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                 
                 {/* Capability badges */}
                 <div className="flex flex-wrap gap-1 mt-2 mb-3">
-                  {detailsPanelModelDetails.capabilities.map((capability) => (
+                  {(detailsPanelModelDetails?.capabilities || []).map((capability) => (
                     <span 
                       key={capability}
                       className={cn(
@@ -410,7 +484,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
             {/* Condensed model details for mobile only */}
             <div className="p-3 sm:hidden border-t border-border/30">
               <div className="flex flex-wrap gap-1 mb-2">
-                {detailsPanelModelDetails.capabilities.slice(0, 4).map((capability) => (
+                {(detailsPanelModelDetails?.capabilities || []).slice(0, 4).map((capability) => (
                   <span 
                     key={capability}
                     className={cn(
@@ -422,8 +496,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                     <span>{capability}</span>
                   </span>
                 ))}
-                {detailsPanelModelDetails.capabilities.length > 4 && (
-                  <span className="text-[10px] text-muted-foreground">+{detailsPanelModelDetails.capabilities.length - 4} more</span>
+                {(detailsPanelModelDetails?.capabilities || []).length > 4 && (
+                  <span className="text-[10px] text-muted-foreground">+{(detailsPanelModelDetails?.capabilities || []).length - 4} more</span>
                 )}
               </div>
             </div>
