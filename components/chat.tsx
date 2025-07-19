@@ -17,6 +17,9 @@ import { useSession } from "@/lib/auth-client";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { useModel } from "@/lib/context/model-context";
 import type { ImageAttachment } from "@/lib/types";
+import { type Preset } from "@/lib/types";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
+import { PresetManager } from "./preset-manager";
 
 // Type for chat data from DB
 interface ChatData {
@@ -194,6 +197,19 @@ export default function Chat({ presetId }: { presetId: string | null }) {
 
   // Note: No longer creating attachments array since we use message parts directly
 
+  // Fetch preset details if presetId is provided
+  const { data: presetDetails } = useQuery<Preset | null>({
+    queryKey: ["preset", presetId],
+    queryFn: async () => {
+      if (!presetId) return null;
+      const res = await fetch(`/api/presets/${presetId}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!presetId,
+    staleTime: 1000 * 60 * 10,
+  });
+
   const { messages, input, handleInputChange, handleSubmit, append, status, stop: originalStop } =
     useChat({
       id: chatId || generatedChatId,
@@ -209,6 +225,11 @@ export default function Chat({ presetId }: { presetId: string | null }) {
         },
         apiKeys: getClientApiKeys(),
         presetId,
+        // Always send systemPrompt and temperature if presetDetails are available
+        ...(presetDetails ? {
+          systemPrompt: presetDetails.systemPrompt,
+          temperature: presetDetails.temperature,
+        } : {}),
         // Only send attachments for text-only messages (handleSubmit)
         // Don't send when using append() since images are already in message parts
         attachments: []
@@ -431,7 +452,7 @@ export default function Chat({ presetId }: { presetId: string | null }) {
     }
   }, [status, messages, streamingStartTime]);
 
-  // Intelligent stuck detection: only trigger if no streaming activity for extended period
+  // Intelligent stuck detection: only trigger if no activity for extended period
   useEffect(() => {
     if (status === "streaming" || status === "submitted") {
       // Set initial activity time when streaming starts
@@ -443,47 +464,53 @@ export default function Chat({ presetId }: { presetId: string | null }) {
         const now = Date.now();
         const timeSinceLastActivity = now - (lastStreamingActivity || now);
         
-                 // Only consider stuck if no activity for 2 minutes AND status hasn't changed
-         if (timeSinceLastActivity > 120000 && (status === "streaming" || status === "submitted")) {
-           console.warn('Chat appears stuck - no streaming activity for 2 minutes');
-           
-           const stuckMessage = 'Chat appears to be stuck. Attempting to recover...';
-           const now = Date.now();
-           const timeSinceLastToast = now - lastToastTimestamp;
-           const isSameMessage = stuckMessage === lastErrorMessage;
-           const tooSoon = timeSinceLastToast < (isSameMessage ? 5000 : 2000);
+        // Only consider stuck if no activity for 5 minutes AND status hasn't changed
+        // Also check if there's any recent message activity to avoid false positives
+        const hasRecentMessageActivity = messages.length > 0 && 
+          messages[messages.length - 1].role === 'assistant' && 
+          messages[messages.length - 1].content && 
+          messages[messages.length - 1].content.length > 0;
+        
+        if (timeSinceLastActivity > 300000 && (status === "streaming" || status === "submitted") && !hasRecentMessageActivity) {
+          console.warn('Chat appears stuck - no activity for 5 minutes');
+          
+          const stuckMessage = 'Chat appears to be stuck. Attempting to recover...';
+          const now = Date.now();
+          const timeSinceLastToast = now - lastToastTimestamp;
+          const isSameMessage = stuckMessage === lastErrorMessage;
+          const tooSoon = timeSinceLastToast < (isSameMessage ? 5000 : 2000);
 
-           if (tooSoon) {
-             console.log(`Suppressing duplicate stuck toast: "${stuckMessage}" (${timeSinceLastToast}ms ago)`);
-             return;
-           }
-           
-           setIsErrorRecoveryNeeded(true);
-           setLastErrorTime(Date.now());
-           
-           // Dismiss any previous error toasts
-           if (lastToastId) {
-             toast.dismiss(lastToastId);
-           }
-           
-           const toastId = toast.error(stuckMessage, {
-             description: 'No response activity detected for 2 minutes',
-             position: "top-center",
-             duration: 6000
-           });
-           
-           setLastToastId(String(toastId));
-           setLastErrorMessage(stuckMessage);
-           setLastToastTimestamp(now);
-         }
-      }, 120000); // Check every 2 minutes
+          if (tooSoon) {
+            console.log(`Suppressing duplicate stuck toast: "${stuckMessage}" (${timeSinceLastToast}ms ago)`);
+            return;
+          }
+          
+          setIsErrorRecoveryNeeded(true);
+          setLastErrorTime(Date.now());
+          
+          // Dismiss any previous error toasts
+          if (lastToastId) {
+            toast.dismiss(lastToastId);
+          }
+          
+          const toastId = toast.error(stuckMessage, {
+            description: 'No response activity detected for 5 minutes',
+            position: "top-center",
+            duration: 6000
+          });
+          
+          setLastToastId(String(toastId));
+          setLastErrorMessage(stuckMessage);
+          setLastToastTimestamp(now);
+        }
+      }, 300000); // Check every 5 minutes
 
       return () => clearTimeout(stuckTimeout);
     } else {
       // Reset activity tracking when not streaming
       setLastStreamingActivity(null);
     }
-  }, [status, lastStreamingActivity]);
+  }, [status, lastStreamingActivity, messages]);
     
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -625,62 +652,89 @@ export default function Chat({ presetId }: { presetId: string | null }) {
   };
 
   return (
-    <div className="h-full flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
-      {/* Error Recovery Banner - Only show if no recent error toast to avoid conflicts */}
-      {isErrorRecoveryNeeded && Date.now() - lastToastTimestamp > 1000 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="text-yellow-800 dark:text-yellow-200 text-sm">
-                Something went wrong. The chat is being reset automatically...
+    <div className="h-full flex flex-col w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
+      <Tabs defaultValue="chat" className="w-full h-full flex flex-col">
+        <TabsList className="w-full flex mb-2">
+          <TabsTrigger value="chat" className="flex-1">Chat</TabsTrigger>
+          <TabsTrigger value="presets" className="flex-1">Presets</TabsTrigger>
+        </TabsList>
+        <TabsContent value="chat" className="flex flex-col flex-1 min-h-0">
+          {/* Error Recovery Banner - Only show if no recent error toast to avoid conflicts */}
+          {isErrorRecoveryNeeded && Date.now() - lastToastTimestamp > 1000 && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="text-yellow-800 dark:text-yellow-200 text-sm">
+                    Something went wrong. The chat is being reset automatically...
+                  </div>
+                </div>
+                <button
+                  onClick={forceRecovery}
+                  className="px-3 py-1 text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded hover:bg-yellow-300 dark:hover:bg-yellow-700 transition-colors"
+                >
+                  Reset Now
+                </button>
               </div>
             </div>
-            <button
-              onClick={forceRecovery}
-              className="px-3 py-1 text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded hover:bg-yellow-300 dark:hover:bg-yellow-700 transition-colors"
-            >
-              Reset Now
-            </button>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Main content area: Either ProjectOverview or Messages */}
-      <div className="flex-1 overflow-y-auto min-h-0 pb-2">
-        {messages.length === 0 && !isLoadingChat ? (
-          <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
-            <ProjectOverview />
+          {/* Main content area: Either ProjectOverview or Messages */}
+          <div className="flex-1 min-h-0">
+            <div className="h-full overflow-y-auto pb-2">
+              {messages.length === 0 && !isLoadingChat ? (
+                <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
+                  <ProjectOverview />
+                </div>
+              ) : (
+                <Messages messages={enhancedMessages} isLoading={isLoading} status={status} />
+              )}
+            </div>
           </div>
-        ) : (
-          <Messages messages={enhancedMessages} isLoading={isLoading} status={status} />
-        )}
-      </div>
 
-      {/* Streaming Status */}
-      <StreamingStatus />
+          {/* Streaming Status */}
+          <StreamingStatus />
 
-      {/* Input area: Always rendered at the bottom */}
-      <div className="mt-2 w-full max-w-3xl mx-auto mb-4 sm:mb-auto shrink-0">
-        {/* Conditionally render ProjectOverview above input only when no messages and not loading */}
-        {messages.length === 0 && !isLoadingChat && (
-          <div className="max-w-3xl mx-auto w-full mb-4 sm:hidden"> {/* Hidden on sm+, shown on mobile */}
-            {/* Maybe a condensed overview or nothing here if ProjectOverview is too large */}
+          {/* Input area: Always rendered at the bottom */}
+          <div className="mt-2 w-full max-w-3xl mx-auto mb-4 sm:mb-auto shrink-0 flex flex-col">
+            {/* Conditionally render ProjectOverview above input only when no messages and not loading */}
+            {messages.length === 0 && !isLoadingChat && (
+              <div className="max-w-3xl mx-auto w-full mb-4 sm:hidden"> {/* Hidden on sm+, shown on mobile */}
+                {/* Maybe a condensed overview or nothing here if ProjectOverview is too large */}
+              </div>
+            )}
+            <form onSubmit={handleFormSubmit} className="mt-2">
+              <Textarea
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+                handleInputChange={handleInputChange}
+                input={input}
+                isLoading={isLoading}
+                status={status}
+                stop={stop}
+                images={hideImagesInUI ? [] : selectedImages}
+                onImagesChange={setSelectedImages}
+              />
+            </form>
           </div>
-        )}
-        <form onSubmit={handleFormSubmit} className="mt-2">
-          <Textarea
-            selectedModel={selectedModel}
-            setSelectedModel={setSelectedModel}
-            handleInputChange={handleInputChange}
-            input={input}
-            isLoading={isLoading}
-            status={status}
-            stop={stop}
-            images={hideImagesInUI ? [] : selectedImages}
-            onImagesChange={setSelectedImages}
-          />
-        </form>
-      </div>
+        </TabsContent>
+        <TabsContent value="presets" className="flex-1 min-h-0 p-0 border-0 bg-transparent">
+          {/* Preset summary box and PresetManager in the Presets tab */}
+          {presetDetails && (
+            <div className="mb-4 p-4 rounded-lg border border-primary/20 bg-primary/5 text-xs text-foreground/90">
+              <div className="font-semibold text-sm mb-1">Active Preset: {presetDetails.name}</div>
+              <div className="flex flex-wrap gap-4 mb-1">
+                <div><span className="font-medium">Model:</span> {presetDetails.model}</div>
+                <div><span className="font-medium">Temperature:</span> {presetDetails.temperature}</div>
+                <div><span className="font-medium">Max Tokens:</span> {presetDetails.maxTokens}</div>
+              </div>
+              {presetDetails.systemPrompt && (
+                <div className="mt-1"><span className="font-medium">System Prompt:</span> <span className="whitespace-pre-line">{presetDetails.systemPrompt}</span></div>
+              )}
+            </div>
+          )}
+          <PresetManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

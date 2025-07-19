@@ -441,6 +441,42 @@ export async function POST(req: Request) {
 
   const id = chatId || nanoid();
 
+  // Retrieve existing chat to get persisted system prompt
+  // Always persist the system prompt with the chat
+  let systemPromptToUse = systemPrompt;
+
+  console.log(`[DEBUG] System prompt handling - chatId: ${chatId}, initial systemPrompt: ${systemPrompt}`);
+
+  if (chatId) {
+    try {
+      const existingChat = await db.query.chats.findFirst({
+        where: and(eq(chats.id, chatId), eq(chats.userId, userId)),
+        columns: { systemPrompt: true }
+      });
+
+      console.log(`[DEBUG] Retrieved existing chat system prompt: ${existingChat?.systemPrompt}`);
+
+      // Prioritize persisted system prompt from database over request
+      if (existingChat?.systemPrompt) {
+        systemPromptToUse = existingChat.systemPrompt;
+        console.log(`[DEBUG] Using persisted system prompt: ${systemPromptToUse}`);
+      }
+      // Update chat with new prompt if provided and different from existing
+      else if (systemPromptToUse) {
+        await db.update(chats)
+          .set({ systemPrompt: systemPromptToUse })
+          .where(and(eq(chats.id, chatId), eq(chats.userId, userId)));
+        console.log(`[DEBUG] Updated chat with new system prompt: ${systemPromptToUse}`);
+      }
+    } catch (error) {
+      console.error("Error fetching/updating chat:", error);
+    }
+  } else {
+    console.log(`[DEBUG] No chatId provided, using initial systemPrompt: ${systemPromptToUse}`);
+  }
+
+  console.log(`[DEBUG] Final systemPromptToUse: ${systemPromptToUse}`);
+
   // Check if chat already exists for the given ID
   // If not, we'll create it in onFinish
   let isNewChat = false;
@@ -491,6 +527,7 @@ export async function POST(req: Request) {
         messages: [], // Start with empty messages, will be updated in onFinish
         selectedModel,
         apiKeys,
+        systemPrompt: systemPromptToUse, // Save the system prompt from preset
       });
       console.log(`[Chat ${id}] Pre-emptively created chat record.`);
     } catch (error) {
@@ -773,9 +810,10 @@ export async function POST(req: Request) {
     : modelMessages;
   console.log(`[DEBUG] Using ${needsFormatConversion ? 'converted' : 'raw'} message format for model:`, selectedModel);
   console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
+  console.log(`[DEBUG] Using systemPromptToUse in payload: ${systemPromptToUse}`);
   const openRouterPayload = {
     model: modelInstance,
-    system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
+    system: systemPromptToUse || `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
 
     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
 
@@ -880,6 +918,7 @@ export async function POST(req: Request) {
               userId,
               selectedModel,
               apiKeys,
+              systemPrompt: systemPromptToUse, // Save the system prompt from preset
               // Don't pass title parameter to trigger generation
             });
             console.log(`[Chat ${id}][onStop] Chat saved successfully`);
@@ -913,6 +952,7 @@ export async function POST(req: Request) {
                 userId,
                 selectedModel,
                 apiKeys,
+                systemPrompt: systemPromptToUse, // Save the system prompt from preset
               });
               console.log(`[Chat ${id}][onStop] Saved user messages only (no assistant response)`);
             } catch (userMessagesSaveError) {
@@ -1033,6 +1073,7 @@ export async function POST(req: Request) {
             messages: processedMessages as any, // Cast to any to bypass type error
             selectedModel,
             apiKeys,
+            systemPrompt: systemPromptToUse, // Save the system prompt from preset
           });
           console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
         } catch (dbError: any) {
@@ -1394,6 +1435,7 @@ export async function POST(req: Request) {
         messages: modelMessages as any, // UIMessage[] is compatible enough for JSONB storage here
         selectedModel,
         apiKeys,
+        systemPrompt: systemPromptToUse, // Save the system prompt from preset
       });
       console.log(`[Chat ${id}][Error Handler] Successfully updated 'chats.messages' with current messages after an error.`);
 
