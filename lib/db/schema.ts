@@ -175,7 +175,7 @@ export const presets = pgTable('presets', {
 }, (table) => ({
   // Constraints
   uniqueNamePerUser: unique('unique_name_per_user').on(table.userId, table.name),
-  oneDefaultPerUser: unique('one_default_per_user').on(table.userId, table.isDefault),
+  // oneDefaultPerUser constraint removed - handled in application logic
   checkNameLength: check('check_name_length', sql`char_length(${table.name}) >= 1 AND char_length(${table.name}) <= 100`),
   checkSystemInstructionLength: check('check_system_instruction_length', sql`char_length(${table.systemInstruction}) >= 10 AND char_length(${table.systemInstruction}) <= 4000`),
   checkTemperatureRange: check('check_temperature_range', sql`${table.temperature} >= 0 AND ${table.temperature} <= 2000`), // 0.0 to 2.0 * 1000

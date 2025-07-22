@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     }
 
     const userId = session.user.id;
-    
+
     // Get user's presets (excluding soft deleted)
     const userPresets = await db
       .select()
@@ -117,7 +117,8 @@ export async function POST(req: NextRequest) {
       return createErrorResponse('A preset with this name already exists', 409);
     }
 
-    // If setting as default, unset other defaults
+    // Handle default preset logic - now without database constraints
+    // If setting as default, unset other defaults first
     if (isDefault) {
       await db
         .update(presets)
@@ -129,35 +130,45 @@ export async function POST(req: NextRequest) {
         ));
     }
 
-    // Create new preset
-    const newPreset = await db
-      .insert(presets)
-      .values({
-        id: nanoid(),
-        userId,
-        name,
-        modelId,
-        systemInstruction,
-        temperature: Math.round(temperature * 1000), // Convert to integer
-        maxTokens,
-        webSearchEnabled,
-        webSearchContextSize,
-        apiKeyPreferences,
-        isDefault,
-        visibility: 'private'
-      })
-      .returning();
+    try {
+      // Create new preset
+      const newPreset = await db
+        .insert(presets)
+        .values({
+          id: nanoid(),
+          userId,
+          name,
+          modelId,
+          systemInstruction,
+          temperature: Math.round(temperature * 1000), // Convert to integer
+          maxTokens,
+          webSearchEnabled,
+          webSearchContextSize,
+          apiKeyPreferences,
+          isDefault,
+          visibility: 'private'
+        })
+        .returning();
 
-    // Format response
-    const formattedPreset = {
-      ...newPreset[0],
-      temperature: newPreset[0].temperature / 1000
-    };
+      // Format response
+      const formattedPreset = {
+        ...newPreset[0],
+        temperature: newPreset[0].temperature / 1000
+      };
 
-    return new Response(JSON.stringify(formattedPreset), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+      return new Response(JSON.stringify(formattedPreset), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error: any) {
+      // Handle constraint violations
+      if (error?.code === '23505') { // Unique constraint violation
+        if (error?.constraint === 'unique_name_per_user') {
+          return createErrorResponse('A preset with this name already exists', 409);
+        }
+      }
+      throw error; // Re-throw if not a handled constraint violation
+    }
   } catch (error) {
     console.error('Error creating preset:', error);
     return createErrorResponse('Internal server error', 500);

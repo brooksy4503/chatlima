@@ -3,144 +3,137 @@
 import React, { useState } from 'react';
 import { usePresets } from '@/lib/context/preset-context';
 import { PresetManager } from './preset-manager';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Select, 
+  SelectContent, 
+  SelectGroup, 
+  SelectItem, 
+  SelectLabel,
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Star, Plus } from 'lucide-react';
+import { Settings, Star, Plus, Loader } from 'lucide-react';
 
 interface PresetSelectorProps {
   className?: string;
 }
 
 export function PresetSelector({ className }: PresetSelectorProps) {
-  const { 
-    presets, 
-    activePreset, 
-    defaultPreset, 
-    setActivePreset, 
-    loading 
-  } = usePresets();
-  
+  const { presets, activePreset, setActivePreset, loading } = usePresets();
   const [showManager, setShowManager] = useState(false);
 
   const handlePresetChange = (value: string) => {
-    if (value === 'none') {
-      setActivePreset(null);
-    } else if (value === 'manage') {
+    if (value === 'manage') {
       setShowManager(true);
     } else {
-      const preset = presets.find(p => p.id === value);
-      if (preset) {
-        setActivePreset(preset);
-      }
+      const preset = value === 'none' ? null : presets.find(p => p.id === value) || null;
+      setActivePreset(preset);
     }
   };
 
-  const currentValue = activePreset?.id || 'none';
-
   return (
-    <>
-      <div className={`flex items-center gap-1 ${className}`}>
-        <Tooltip>
+    <div className={`flex items-center gap-2 ${className}`}>
+      <Select 
+        value={activePreset?.id || 'none'} 
+        onValueChange={handlePresetChange}
+        disabled={loading}
+      >
+        <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
-            <div className="relative">
-              <Select 
-                value={currentValue} 
-                onValueChange={handlePresetChange}
-                disabled={loading}
-              >
-                <SelectTrigger className="h-8 w-auto min-w-[120px] text-xs border-border">
-                  <div className="flex items-center gap-1">
-                    <Settings className="w-3 h-3" />
-                    <SelectValue placeholder="No preset">
-                      {activePreset ? (
-                        <span className="flex items-center gap-1">
-                          {activePreset.name}
-                          {activePreset.isDefault && (
-                            <Star className="w-3 h-3 text-yellow-500" />
-                          )}
-                        </span>
-                      ) : (
-                        'Manual'
+            <SelectTrigger className="h-8 w-auto min-w-[140px] text-xs border-border">
+              <div className="flex items-center gap-2">
+                {loading ? (
+                  <Loader className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Settings className="w-3 h-3 shrink-0" />
+                )}
+                <SelectValue>
+                  {activePreset ? (
+                    <span className="flex items-center gap-1 truncate">
+                      {activePreset.name}
+                      {activePreset.isDefault && (
+                        <Star className="w-3 h-3 text-yellow-500 shrink-0" />
                       )}
-                    </SelectValue>
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="w-[200px]">
-                  <SelectItem value="none">
-                    <div className="flex items-center gap-2">
-                      <Settings className="w-3 h-3" />
-                      Manual Mode
-                    </div>
-                  </SelectItem>
-                  
-                  {presets.length > 0 && (
-                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground border-t border-border mt-1 pt-2">
-                      Your Presets
-                    </div>
-                  )}
-                  
-                  {presets.map((preset) => (
-                    <SelectItem key={preset.id} value={preset.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <span className="flex items-center gap-2">
-                          <span>{preset.name}</span>
-                          {preset.isDefault && (
-                            <Star className="w-3 h-3 text-yellow-500" />
-                          )}
-                        </span>
-                        <Badge variant="outline" className="text-xs ml-2">
-                          {preset.modelId.split('/').pop()?.replace('anthropic/', '')?.replace('claude-', 'Claude ')?.replace('openai/', '') || preset.modelId}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                  
-                  <div className="border-t border-border mt-1 pt-1">
-                    <SelectItem value="manage">
-                      <div className="flex items-center gap-2">
-                        <Plus className="w-3 h-3" />
-                        Manage Presets
-                      </div>
-                    </SelectItem>
-                  </div>
-                </SelectContent>
-              </Select>
-            </div>
+                    </span>
+                  ) : 'Manual Mode'}
+                </SelectValue>
+              </div>
+            </SelectTrigger>
           </TooltipTrigger>
-          <TooltipContent sideOffset={8} className="text-xs">
+          
+          <TooltipContent side="top" className="max-w-[240px] text-xs p-2">
             {activePreset ? (
               <div className="space-y-1">
-                <div className="font-medium">{activePreset.name}</div>
+                <div className="font-medium truncate">{activePreset.name}</div>
                 <div className="text-muted-foreground">
-                  {activePreset.modelId} • T: {activePreset.temperature} • Tokens: {activePreset.maxTokens}
+                  {activePreset.modelId} • T: {activePreset.temperature.toFixed(1)}
+                </div>
+                <div className="text-muted-foreground">
+                  Max tokens: {activePreset.maxTokens}
                 </div>
                 {activePreset.webSearchEnabled && (
-                  <Badge variant="secondary" className="text-xs">
-                    Web Search: {activePreset.webSearchContextSize}
+                  <Badge variant="secondary" className="mt-1 text-xs">
+                    Web Search: {activePreset.webSearchContextSize} results
                   </Badge>
                 )}
               </div>
             ) : (
-              'Select a preset or use manual mode'
+              'Configure settings manually without a preset'
             )}
           </TooltipContent>
         </Tooltip>
-        
-        {/* Preset status indicator */}
-        {activePreset && (
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full" title="Preset active" />
-          </div>
-        )}
-      </div>
 
-      {/* Preset Manager Dialog */}
+        <SelectContent className="min-w-[200px]">
+          <SelectItem value="none">
+            <div className="flex items-center gap-2">
+              <Settings className="w-3 h-3" />
+              <span>Manual Mode</span>
+            </div>
+          </SelectItem>
+
+          {presets.length > 0 && (
+            <SelectGroup>
+              <SelectLabel className="px-2 py-1 text-xs text-muted-foreground">
+                Your Presets
+              </SelectLabel>
+              {presets.map(preset => (
+                <SelectItem key={preset.id} value={preset.id}>
+                  <div className="flex items-center gap-2">
+                    <span className="truncate">{preset.name}</span>
+                    {preset.isDefault && (
+                      <Star className="w-3 h-3 text-yellow-500 shrink-0" />
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          )}
+
+          <SelectGroup>
+            <SelectLabel className="px-2 py-1 text-xs text-muted-foreground">
+              Preset Management
+            </SelectLabel>
+            <SelectItem value="manage">
+              <div className="flex items-center gap-2">
+                <Plus className="w-3 h-3" />
+                <span>Manage Presets</span>
+              </div>
+            </SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+
+      {/* Active preset indicator */}
+      {activePreset && !loading && (
+        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+      )}
+
       <PresetManager 
         open={showManager}
         onOpenChange={setShowManager}
       />
-    </>
+    </div>
   );
 }

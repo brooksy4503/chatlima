@@ -19,6 +19,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ModelPicker } from './model-picker';
 import { 
   Settings, 
   Plus, 
@@ -64,6 +66,36 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     setDefaultPreset,
     setActivePreset
   } = usePresets();
+
+  // Helper function to format API route
+  const formatApiRoute = (modelId: string) => {
+    const parts = modelId.split('/');
+    if (parts.length === 1) return 'Direct';
+    const route = parts[0];
+    switch (route) {
+      case 'openrouter': return 'OpenRouter';
+      case 'requesty': return 'Requesty';
+      case 'anthropic': return 'Anthropic';
+      case 'openai': return 'OpenAI';
+      case 'groq': return 'Groq';
+      case 'xai': return 'X.AI';
+      default: return route.charAt(0).toUpperCase() + route.slice(1);
+    }
+  };
+
+  // Helper function to get provider badge color
+  const getProviderBadgeClass = (provider: string) => {
+    switch (provider.toLowerCase()) {
+      case 'openrouter': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+      case 'requesty': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'anthropic': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+      case 'openai': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      case 'groq': return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300';
+      case 'x.ai':
+      case 'xai': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+    }
+  };
 
   // State
   const [activeTab, setActiveTab] = useState<'list' | 'templates' | 'create' | 'edit'>('list');
@@ -249,7 +281,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-5xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
@@ -304,13 +336,27 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                               </Badge>
                             )}
                             {activePreset?.id === preset.id && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="default" className="text-xs">
                                 Active
                               </Badge>
                             )}
                           </CardTitle>
-                          <CardDescription>
-                            {modelDetails[preset.modelId]?.name || preset.modelId}
+                          <CardDescription className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getProviderBadgeClass(modelDetails[preset.modelId]?.provider || 'Unknown')}`}>
+                              {modelDetails[preset.modelId]?.provider || 'Unknown'}
+                            </span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="hover:underline cursor-help">
+                                    {modelDetails[preset.modelId]?.name || preset.modelId}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs font-mono">Model ID: {preset.modelId}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </CardDescription>
                         </div>
                         
@@ -364,6 +410,9 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                     <CardContent className="pt-2">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
+                          <span className="font-medium">API Route:</span> {formatApiRoute(preset.modelId)}
+                        </div>
+                        <div>
                           <span className="font-medium">Temperature:</span> {preset.temperature}
                         </div>
                         <div>
@@ -371,9 +420,6 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                         </div>
                         <div>
                           <span className="font-medium">Web Search:</span> {preset.webSearchEnabled ? 'Enabled' : 'Disabled'}
-                        </div>
-                        <div>
-                          <span className="font-medium">Created:</span> {new Date(preset.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                       
@@ -428,27 +474,43 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                           </CardHeader>
                           
                           <CardContent className="pt-2">
-                            <div className="flex justify-between items-center">
-                              <div className="text-sm text-muted-foreground">
-                                {modelDetails[template.preset.modelId]?.name || template.preset.modelId}
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getProviderBadgeClass(modelDetails[template.preset.modelId]?.provider || 'Unknown')}`}>
+                                  {modelDetails[template.preset.modelId]?.provider || 'Unknown'}
+                                </span>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="hover:underline cursor-help">
+                                        {modelDetails[template.preset.modelId]?.name || template.preset.modelId}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs font-mono">Model ID: {template.preset.modelId}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </div>
-                              <div className="flex gap-2">
+                              <div className="flex gap-1.5 w-full">
                                 <Button 
                                   size="sm" 
                                   variant="outline"
+                                  className="flex-1 text-xs px-2 py-1 h-7"
                                   onClick={() => startCreateFromTemplate(template)}
                                 >
-                                  Customize
+                                  Edit
                                 </Button>
                                 <Button 
                                   size="sm"
+                                  className="flex-1 text-xs px-2 py-1 h-7"
                                   onClick={() => handleCreateFromTemplate(template)}
                                   disabled={submitting}
                                 >
                                   {submitting ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
                                   ) : (
-                                    'Use Template'
+                                    'Use'
                                   )}
                                 </Button>
                               </div>
@@ -482,21 +544,11 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                     
                     <div className="space-y-2">
                       <Label htmlFor="model">Model</Label>
-                      <Select 
-                        value={formData.modelId} 
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, modelId: value as modelID }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MODELS.map((modelId) => (
-                            <SelectItem key={modelId} value={modelId}>
-                              {modelDetails[modelId]?.name || modelId}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <ModelPicker
+                        selectedModel={formData.modelId}
+                        setSelectedModel={(modelId) => setFormData(prev => ({ ...prev, modelId }))}
+                        disabled={false}
+                      />
                     </div>
                   </div>
 
