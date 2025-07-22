@@ -21,11 +21,11 @@ async function userCanAccessPremium(userId: string): Promise<boolean> {
 // GET /api/presets/[id] - Get preset details
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const presetId = params.id;
-    
+    const { id: presetId } = await params;
+
     // Get preset (accessible by owner or if shared)
     const preset = await db
       .select()
@@ -74,7 +74,7 @@ export async function GET(
 // PUT /api/presets/[id] - Update preset
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: req.headers });
@@ -83,7 +83,7 @@ export async function PUT(
     }
 
     const userId = session.user.id;
-    const presetId = params.id;
+    const { id: presetId } = await params;
     const data = await req.json();
 
     // Check if preset exists and user owns it
@@ -197,7 +197,7 @@ export async function PUT(
 // DELETE /api/presets/[id] - Delete preset (soft delete)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: req.headers });
@@ -206,7 +206,7 @@ export async function DELETE(
     }
 
     const userId = session.user.id;
-    const presetId = params.id;
+    const { id: presetId } = await params;
 
     // Check if preset exists and user owns it
     const existingPreset = await db
@@ -226,7 +226,7 @@ export async function DELETE(
     // Soft delete preset
     await db
       .update(presets)
-      .set({ 
+      .set({
         deletedAt: new Date(),
         updatedAt: new Date(),
         isDefault: false // Unset default if this was the default preset

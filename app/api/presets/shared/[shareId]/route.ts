@@ -14,10 +14,10 @@ const createErrorResponse = (message: string, status: number) => {
 // GET /api/presets/shared/[shareId] - Retrieve shared preset by link
 export async function GET(
   req: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
-    const shareId = params.shareId;
+    const { shareId } = await params;
 
     // Validate share ID format
     if (!shareId || shareId.length < 20) {

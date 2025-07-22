@@ -21,7 +21,7 @@ function generateShareId(): string {
 // POST /api/presets/[id]/share - Generate or retrieve shareable link
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: req.headers });
@@ -30,7 +30,7 @@ export async function POST(
     }
 
     const userId = session.user.id;
-    const presetId = params.id;
+    const { id: presetId } = await params;
 
     // Check if preset exists and user owns it
     const existingPreset = await db
@@ -63,7 +63,7 @@ export async function POST(
     const shareId = generateShareId();
     await db
       .update(presets)
-      .set({ 
+      .set({
         shareId,
         visibility: 'shared',
         updatedAt: new Date()
@@ -85,7 +85,7 @@ export async function POST(
 // DELETE /api/presets/[id]/share - Remove share link (make private)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: req.headers });
@@ -94,7 +94,7 @@ export async function DELETE(
     }
 
     const userId = session.user.id;
-    const presetId = params.id;
+    const { id: presetId } = await params;
 
     // Check if preset exists and user owns it
     const existingPreset = await db
@@ -114,7 +114,7 @@ export async function DELETE(
     // Remove share ID and make private
     await db
       .update(presets)
-      .set({ 
+      .set({
         shareId: null,
         visibility: 'private',
         updatedAt: new Date()

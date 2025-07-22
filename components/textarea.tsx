@@ -6,6 +6,7 @@ import { PresetSelector } from "./preset-selector";
 import { useRef, useState } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useWebSearch } from "@/lib/context/web-search-context";
+import { usePresets } from "@/lib/context/preset-context";
 import { useAuth } from "@/hooks/useAuth";
 import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
 import { ImageUpload } from "./image-upload";
@@ -43,6 +44,7 @@ export const Textarea = ({
   const [showImageUpload, setShowImageUpload] = useState(false);
 
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
+  const { activePreset } = usePresets();
   const { user } = useAuth();
 
   const handleWebSearchToggle = () => {
@@ -181,6 +183,8 @@ export const Textarea = ({
               setSelectedModel={setSelectedModel}
               selectedModel={selectedModel}
               onModelSelected={handleModelSelected}
+              disabled={activePreset !== null}
+              activePresetName={activePreset?.name}
             />
             {/* Image Upload Button */}
             {modelDetails[selectedModel]?.vision && (

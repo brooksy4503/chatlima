@@ -15,7 +15,7 @@ const createErrorResponse = (message: string, status: number) => {
 // POST /api/presets/[id]/set-default - Set preset as default
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: req.headers });
@@ -24,7 +24,7 @@ export async function POST(
     }
 
     const userId = session.user.id;
-    const presetId = params.id;
+    const { id: presetId } = await params;
 
     // Check if preset exists and user owns it
     const existingPreset = await db
@@ -43,9 +43,9 @@ export async function POST(
 
     // If already default, return success
     if (existingPreset[0].isDefault) {
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Preset is already the default' 
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Preset is already the default'
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
@@ -72,13 +72,13 @@ export async function POST(
       // Update user's default_preset_id (for quick lookup)
       await db
         .update(users)
-        .set({ 
+        .set({
           defaultPresetId: presetId,
           updatedAt: new Date()
         })
         .where(eq(users.id, userId));
 
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
         success: true,
         message: 'Preset set as default successfully'
       }), {
@@ -97,7 +97,7 @@ export async function POST(
 // DELETE /api/presets/[id]/set-default - Unset as default
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: req.headers });
@@ -106,7 +106,7 @@ export async function DELETE(
     }
 
     const userId = session.user.id;
-    const presetId = params.id;
+    const { id: presetId } = await params;
 
     // Check if preset exists and user owns it
     const existingPreset = await db
@@ -125,9 +125,9 @@ export async function DELETE(
 
     // If not default, return success
     if (!existingPreset[0].isDefault) {
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Preset is not the default' 
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Preset is not the default'
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
@@ -142,13 +142,13 @@ export async function DELETE(
     // Clear user's default_preset_id
     await db
       .update(users)
-      .set({ 
+      .set({
         defaultPresetId: null,
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));
 
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       success: true,
       message: 'Default preset unset successfully'
     }), {
