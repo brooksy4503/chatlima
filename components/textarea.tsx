@@ -2,6 +2,7 @@ import { modelID, modelDetails } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Globe, AlertCircle, ImageIcon } from "lucide-react";
 import { ModelPicker } from "./model-picker";
+import { PresetSelector } from "./preset-selector";
 import { useRef, useState } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useWebSearch } from "@/lib/context/web-search-context";
@@ -175,6 +176,7 @@ export const Textarea = ({
 
         <div className="absolute left-2 bottom-2 z-10">
           <div className="flex items-center gap-2">
+            <PresetSelector />
             <ModelPicker
               setSelectedModel={setSelectedModel}
               selectedModel={selectedModel}

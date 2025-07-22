@@ -21,6 +21,13 @@ export interface ModelInfo {
   supportsWebSearch?: boolean;
   premium?: boolean;
   vision?: boolean; // Added vision field
+  // NEW: Add parameter constraints for presets
+  temperatureRange?: { min: number; max: number; default: number };
+  maxTokensRange?: { min: number; max: number; default: number };
+  supportsTemperature?: boolean;
+  supportsMaxTokens?: boolean;
+  supportsSystemInstruction?: boolean;
+  maxSystemInstructionLength?: number;
 }
 
 const middleware = extractReasoningMiddleware({
@@ -704,7 +711,13 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    temperatureRange: { min: 0, max: 1, default: 1 },
+    maxTokensRange: { min: 1, max: 8192, default: 1024 },
+    supportsTemperature: true,
+    supportsMaxTokens: true,
+    supportsSystemInstruction: true,
+    maxSystemInstructionLength: 4000
   },
   "claude-3-7-sonnet": {
     provider: "Anthropic",

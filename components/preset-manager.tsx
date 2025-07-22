@@ -1,0 +1,623 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { usePresets, type Preset, type CreatePresetData } from '@/lib/context/preset-context';
+import { PRESET_TEMPLATES, getTemplateCategories, getTemplatesByCategory, type PresetTemplate } from '@/lib/preset-templates';
+import { validatePresetParameters, getModelParameterConstraints } from '@/lib/parameter-validation';
+import { modelDetails, type modelID, MODELS } from '@/ai/providers';
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Settings, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Share, 
+  Star, 
+  Copy, 
+  Download, 
+  Loader2,
+  AlertTriangle,
+  Check
+} from 'lucide-react';
+
+interface PresetManagerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+interface PresetFormData {
+  name: string;
+  modelId: modelID;
+  systemInstruction: string;
+  temperature: number;
+  maxTokens: number;
+  webSearchEnabled: boolean;
+  webSearchContextSize: 'low' | 'medium' | 'high';
+  isDefault: boolean;
+}
+
+export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
+  const {
+    presets,
+    activePreset,
+    defaultPreset,
+    loading,
+    error,
+    createPreset,
+    createPresetFromTemplate,
+    updatePreset,
+    deletePreset,
+    sharePreset,
+    setDefaultPreset,
+    setActivePreset
+  } = usePresets();
+
+  // State
+  const [activeTab, setActiveTab] = useState<'list' | 'templates' | 'create' | 'edit'>('list');
+  const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
+  const [formData, setFormData] = useState<PresetFormData>({
+    name: '',
+    modelId: 'openrouter/anthropic/claude-3.5-sonnet',
+    systemInstruction: '',
+    temperature: 1,
+    maxTokens: 1024,
+    webSearchEnabled: false,
+    webSearchContextSize: 'medium',
+    isDefault: false
+  });
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      setActiveTab('list');
+      setEditingPreset(null);
+      setFormErrors([]);
+      resetForm();
+    }
+  }, [open]);
+
+  // Reset form data
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      modelId: 'openrouter/anthropic/claude-3.5-sonnet',
+      systemInstruction: '',
+      temperature: 1,
+      maxTokens: 1024,
+      webSearchEnabled: false,
+      webSearchContextSize: 'medium',
+      isDefault: false
+    });
+  };
+
+  // Populate form for editing
+  const startEdit = (preset: Preset) => {
+    setEditingPreset(preset);
+    setFormData({
+      name: preset.name,
+      modelId: preset.modelId,
+      systemInstruction: preset.systemInstruction,
+      temperature: preset.temperature,
+      maxTokens: preset.maxTokens,
+      webSearchEnabled: preset.webSearchEnabled,
+      webSearchContextSize: preset.webSearchContextSize,
+      isDefault: preset.isDefault
+    });
+    setActiveTab('edit');
+  };
+
+  // Start creating from template
+  const startCreateFromTemplate = (template: PresetTemplate) => {
+    setFormData({
+      name: template.preset.name,
+      modelId: template.preset.modelId,
+      systemInstruction: template.preset.systemInstruction,
+      temperature: template.preset.temperature,
+      maxTokens: template.preset.maxTokens,
+      webSearchEnabled: template.preset.webSearchEnabled,
+      webSearchContextSize: template.preset.webSearchContextSize,
+      isDefault: template.preset.isDefault
+    });
+    setActiveTab('create');
+  };
+
+  // Validate form
+  const validateForm = (): boolean => {
+    const errors: string[] = [];
+
+    if (!formData.name.trim()) {
+      errors.push('Preset name is required');
+    }
+
+    if (!formData.systemInstruction.trim()) {
+      errors.push('System instruction is required');
+    }
+
+    // Validate parameters
+    const validation = validatePresetParameters(
+      formData.modelId,
+      formData.temperature,
+      formData.maxTokens,
+      formData.systemInstruction
+    );
+
+    if (!validation.valid) {
+      errors.push(...validation.errors);
+    }
+
+    setFormErrors(errors);
+    return errors.length === 0;
+  };
+
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    try {
+      setSubmitting(true);
+      setFormErrors([]);
+
+      const submitData: CreatePresetData = {
+        name: formData.name,
+        modelId: formData.modelId,
+        systemInstruction: formData.systemInstruction,
+        temperature: formData.temperature,
+        maxTokens: formData.maxTokens,
+        webSearchEnabled: formData.webSearchEnabled,
+        webSearchContextSize: formData.webSearchContextSize,
+        isDefault: formData.isDefault
+      };
+
+      if (editingPreset) {
+        await updatePreset(editingPreset.id, submitData);
+      } else {
+        await createPreset(submitData);
+      }
+
+      // Reset and close
+      resetForm();
+      setEditingPreset(null);
+      setActiveTab('list');
+    } catch (error) {
+      setFormErrors([error instanceof Error ? error.message : 'Failed to save preset']);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle template creation
+  const handleCreateFromTemplate = async (template: PresetTemplate) => {
+    try {
+      setSubmitting(true);
+      await createPresetFromTemplate(template);
+      setActiveTab('list');
+    } catch (error) {
+      setFormErrors([error instanceof Error ? error.message : 'Failed to create preset from template']);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle preset deletion
+  const handleDelete = async (preset: Preset) => {
+    if (!confirm(`Are you sure you want to delete "${preset.name}"?`)) return;
+
+    try {
+      await deletePreset(preset.id);
+    } catch (error) {
+      setFormErrors([error instanceof Error ? error.message : 'Failed to delete preset']);
+    }
+  };
+
+  // Handle sharing
+  const handleShare = async (preset: Preset) => {
+    try {
+      const shareUrl = await sharePreset(preset.id);
+      navigator.clipboard.writeText(shareUrl);
+      alert('Share link copied to clipboard!');
+    } catch (error) {
+      alert('Failed to generate share link');
+    }
+  };
+
+  // Handle setting as default
+  const handleSetDefault = async (preset: Preset) => {
+    try {
+      await setDefaultPreset(preset.id);
+    } catch (error) {
+      alert('Failed to set as default');
+    }
+  };
+
+  // Get model constraints for current selection
+  const modelConstraints = getModelParameterConstraints(formData.modelId);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Preset Manager
+          </DialogTitle>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="list">My Presets</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="create">Create New</TabsTrigger>
+            <TabsTrigger value="edit" disabled={!editingPreset}>Edit</TabsTrigger>
+          </TabsList>
+
+          {/* Error Display */}
+          {(error || formErrors.length > 0) && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {error || formErrors.join(', ')}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* My Presets Tab */}
+          <TabsContent value="list" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Your Presets ({presets.length})</h3>
+              <Button 
+                onClick={() => setActiveTab('create')}
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Preset
+              </Button>
+            </div>
+
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-3">
+                {presets.map((preset) => (
+                  <Card key={preset.id} className="relative">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            {preset.name}
+                            {preset.isDefault && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Star className="w-3 h-3 mr-1" />
+                                Default
+                              </Badge>
+                            )}
+                            {activePreset?.id === preset.id && (
+                              <Badge variant="outline" className="text-xs">
+                                Active
+                              </Badge>
+                            )}
+                          </CardTitle>
+                          <CardDescription>
+                            {modelDetails[preset.modelId]?.name || preset.modelId}
+                          </CardDescription>
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => setActivePreset(preset)}
+                            title="Use this preset"
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => startEdit(preset)}
+                            title="Edit preset"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleShare(preset)}
+                            title="Share preset"
+                          >
+                            <Share className="w-4 h-4" />
+                          </Button>
+                          {!preset.isDefault && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleSetDefault(preset)}
+                              title="Set as default"
+                            >
+                              <Star className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDelete(preset)}
+                            title="Delete preset"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="pt-2">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Temperature:</span> {preset.temperature}
+                        </div>
+                        <div>
+                          <span className="font-medium">Max Tokens:</span> {preset.maxTokens}
+                        </div>
+                        <div>
+                          <span className="font-medium">Web Search:</span> {preset.webSearchEnabled ? 'Enabled' : 'Disabled'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Created:</span> {new Date(preset.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3">
+                        <span className="font-medium text-sm">System Instruction:</span>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                          {preset.systemInstruction}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {presets.length === 0 && !loading && (
+                  <Card className="text-center py-8">
+                    <CardContent>
+                      <p className="text-muted-foreground">No presets yet.</p>
+                      <Button 
+                        className="mt-4" 
+                        onClick={() => setActiveTab('templates')}
+                        variant="outline"
+                      >
+                        Browse Templates
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* Templates Tab */}
+          <TabsContent value="templates" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Preset Templates</h3>
+            </div>
+
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-6">
+                {getTemplateCategories().map((category) => (
+                  <div key={category}>
+                    <h4 className="font-medium mb-3 capitalize">{category}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {getTemplatesByCategory(category).map((template) => (
+                        <Card key={template.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <span className="text-lg">{template.icon}</span>
+                              {template.name}
+                            </CardTitle>
+                            <CardDescription>{template.description}</CardDescription>
+                          </CardHeader>
+                          
+                          <CardContent className="pt-2">
+                            <div className="flex justify-between items-center">
+                              <div className="text-sm text-muted-foreground">
+                                {modelDetails[template.preset.modelId]?.name || template.preset.modelId}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => startCreateFromTemplate(template)}
+                                >
+                                  Customize
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  onClick={() => handleCreateFromTemplate(template)}
+                                  disabled={submitting}
+                                >
+                                  {submitting ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    'Use Template'
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* Create/Edit Form Tabs */}
+          {(activeTab === 'create' || activeTab === 'edit') && (
+            <TabsContent value={activeTab} className="space-y-4">
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="space-y-4">
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Preset Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="My Custom Preset"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="model">Model</Label>
+                      <Select 
+                        value={formData.modelId} 
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, modelId: value as modelID }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MODELS.map((modelId) => (
+                            <SelectItem key={modelId} value={modelId}>
+                              {modelDetails[modelId]?.name || modelId}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* System Instruction */}
+                  <div className="space-y-2">
+                    <Label htmlFor="systemInstruction">System Instruction</Label>
+                    <Textarea
+                      id="systemInstruction"
+                      value={formData.systemInstruction}
+                      onChange={(e) => setFormData(prev => ({ ...prev, systemInstruction: e.target.value }))}
+                      placeholder="You are a helpful assistant..."
+                      rows={4}
+                      className="resize-none"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {formData.systemInstruction.length} / {modelConstraints.maxSystemInstructionLength} characters
+                    </p>
+                  </div>
+
+                  {/* Parameters */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="temperature">
+                        Temperature ({modelConstraints.temperature.min} - {modelConstraints.temperature.max})
+                      </Label>
+                      <Input
+                        id="temperature"
+                        type="number"
+                        min={modelConstraints.temperature.min}
+                        max={modelConstraints.temperature.max}
+                        step={0.1}
+                        value={formData.temperature}
+                        onChange={(e) => setFormData(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="maxTokens">
+                        Max Tokens ({modelConstraints.maxTokens.min} - {modelConstraints.maxTokens.max})
+                      </Label>
+                      <Input
+                        id="maxTokens"
+                        type="number"
+                        min={modelConstraints.maxTokens.min}
+                        max={modelConstraints.maxTokens.max}
+                        value={formData.maxTokens}
+                        onChange={(e) => setFormData(prev => ({ ...prev, maxTokens: parseInt(e.target.value) }))}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Web Search Settings */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="webSearch"
+                        checked={formData.webSearchEnabled}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, webSearchEnabled: checked }))}
+                      />
+                      <Label htmlFor="webSearch">Enable Web Search</Label>
+                    </div>
+                    
+                    {formData.webSearchEnabled && (
+                      <div className="ml-6 space-y-2">
+                        <Label htmlFor="webSearchContext">Context Size</Label>
+                        <Select 
+                          value={formData.webSearchContextSize} 
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, webSearchContextSize: value as any }))}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Default Setting */}
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="isDefault"
+                      checked={formData.isDefault}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isDefault: checked }))}
+                    />
+                    <Label htmlFor="isDefault">Set as default preset</Label>
+                  </div>
+
+                  {/* Form Actions */}
+                  <Separator />
+                  <div className="flex justify-end gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        resetForm();
+                        setEditingPreset(null);
+                        setActiveTab('list');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSubmit}
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : null}
+                      {editingPreset ? 'Update Preset' : 'Create Preset'}
+                    </Button>
+                  </div>
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          )}
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
