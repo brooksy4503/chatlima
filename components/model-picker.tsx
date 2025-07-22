@@ -62,7 +62,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
       case 'research':
         return <Lightbulb className="h-2.5 w-2.5" />;
       case 'vision':
-        return <Image className="h-2.5 w-2.5" />;
+        return <Image className="h-2.5 w-2.5" aria-hidden="true" />;
       case 'fast':
       case 'rapid':
         return <Bolt className="h-2.5 w-2.5" />;
@@ -267,7 +267,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             {disabled ? (
               <p>
                 Model is controlled by {activePresetName ? `"${activePresetName}" preset` : 'active preset'}. 
-                Switch to "Manual Mode" to change models.
+                Switch to &quot;Manual Mode&quot; to change models.
               </p>
             ) : isModelUnavailable ? (
               <p>This model requires premium access. Please check your credits.</p>
@@ -337,7 +337,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                               <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
                             )}
                             {model.vision && (
-                              <Image className="h-3 w-3 text-indigo-500 ml-0.5 flex-shrink-0" />
+                              <Image className="h-3 w-3 text-indigo-500 ml-0.5 flex-shrink-0" aria-hidden="true" />
                             )}
                             {isSelected && <Check className="h-3 w-3 ml-auto text-primary" />}
                           </div>
@@ -380,7 +380,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                     <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
                   )}
                   {detailsPanelModelDetails.vision && (
-                    <Image className="h-4 w-4 text-indigo-500 ml-0.5 flex-shrink-0" />
+                    <Image className="h-4 w-4 text-indigo-500 ml-0.5 flex-shrink-0" aria-hidden="true" />
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground mb-1">
