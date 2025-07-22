@@ -1,0 +1,67 @@
+name: Neon Branch Management
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+jobs:
+  manage-neon-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or Update Neon Branch
+        if: github.event.action != 'closed'
+        uses: neondatabase/create-branch-action@v6
+        id: create-branch
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch_name: pr-${{ github.event.number }}-${{ github.head_ref }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+          
+      - name: Comment PR with database info
+        if: github.event.action != 'closed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## 🗄️ Database Branch Created
+            
+            A Neon database branch has been created for this PR:
+            - **Branch ID**: \`${{ steps.create-branch.outputs.branch_id }}\`
+            - **Host**: \`${{ steps.create-branch.outputs.db_host }}\`
+            
+            You can use these connection details in your \`.env.local\`:
+            \`\`\`
+            DATABASE_URL=${{ steps.create-branch.outputs.db_url }}
+            \`\`\`
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Delete Neon Branch
+        if: github.event.action == 'closed'
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: pr-${{ github.event.number }}-${{ github.head_ref }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+          
+      - name: Comment PR about branch deletion
+        if: github.event.action == 'closed'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## 🗑️ Database Branch Deleted
+            
+            The Neon database branch for this PR has been automatically deleted.
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            }); 
