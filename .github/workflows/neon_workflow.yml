@@ -1,67 +1,85 @@
-name: Neon Branch Management
+name: Create/Delete Branch for Pull Request
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  manage-neon-branch:
+  setup:
+    name: Setup
+    outputs:
+      branch: ${{ steps.branch_name.outputs.current_branch }}
     runs-on: ubuntu-latest
     steps:
-      - name: Create or Update Neon Branch
-        if: github.event.action != 'closed'
-        uses: neondatabase/create-branch-action@v6
-        id: create-branch
+      - name: Get branch name
+        id: branch_name
+        uses: tj-actions/branch-names@v8
+
+  create_neon_branch:
+    name: Create Neon Branch
+    needs: setup
+    if: |
+      github.event_name == 'pull_request' && (
+      github.event.action == 'synchronize'
+      || github.event.action == 'opened'
+      || github.event.action == 'reopened')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+        
+      - name: Create Neon Branch
+        id: create_neon_branch
+        uses: neondatabase/create-branch-action@v5
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
-          branch_name: pr-${{ github.event.number }}-${{ github.head_ref }}
+          branch_name: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
-          
-      - name: Comment PR with database info
-        if: github.event.action != 'closed'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = `## 🗄️ Database Branch Created
-            
-            A Neon database branch has been created for this PR:
-            - **Branch ID**: \`${{ steps.create-branch.outputs.branch_id }}\`
-            - **Host**: \`${{ steps.create-branch.outputs.db_host }}\`
-            
-            You can use these connection details in your \`.env.local\`:
-            \`\`\`
-            DATABASE_URL=${{ steps.create-branch.outputs.db_url }}
-            \`\`\`
-            `;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
 
+      - name: Push Schema Changes
+        run: pnpm db:push
+        env:
+          DATABASE_URL: "${{ steps.create_neon_branch.outputs.db_url_with_pooler }}"
+
+      - name: Post Schema Diff Comment to PR
+        uses: neondatabase/schema-diff-action@v1
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          compare_branch: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
+  delete_neon_branch:
+    name: Delete Neon Branch
+    needs: setup
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
       - name: Delete Neon Branch
-        if: github.event.action == 'closed'
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
-          branch: pr-${{ github.event.number }}-${{ github.head_ref }}
+          branch: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
-          
-      - name: Comment PR about branch deletion
-        if: github.event.action == 'closed'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = `## 🗑️ Database Branch Deleted
-            
-            The Neon database branch for this PR has been automatically deleted.
-            `;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            }); 
