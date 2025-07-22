@@ -16,6 +16,7 @@ import { useMCP } from "@/lib/context/mcp-context";
 import { useSession } from "@/lib/auth-client";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { useModel } from "@/lib/context/model-context";
+import { usePresets } from "@/lib/context/preset-context";
 import type { ImageAttachment } from "@/lib/types";
 
 // Type for chat data from DB
@@ -43,6 +44,7 @@ export default function Chat() {
   const { mcpServersForApi } = useMCP();
   
   const { selectedModel, setSelectedModel } = useModel();
+  const { activePreset } = usePresets();
   const [userId, setUserId] = useState<string | null>(null);
   const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
@@ -200,17 +202,21 @@ export default function Chat() {
       initialMessages,
       maxSteps: 20,
       body: {
-        selectedModel,
+        selectedModel: activePreset?.modelId || selectedModel,
         mcpServers: mcpServersForApi,
         chatId: chatId || generatedChatId,
         webSearch: {
-          enabled: webSearchEnabled,
-          contextSize: webSearchContextSize,
+          enabled: activePreset?.webSearchEnabled ?? webSearchEnabled,
+          contextSize: activePreset?.webSearchContextSize || webSearchContextSize,
         },
         apiKeys: getClientApiKeys(),
         // Only send attachments for text-only messages (handleSubmit)
         // Don't send when using append() since images are already in message parts
-        attachments: []
+        attachments: [],
+        // Include preset parameters
+        temperature: activePreset?.temperature,
+        maxTokens: activePreset?.maxTokens,
+        systemInstruction: activePreset?.systemInstruction
       },
       experimental_throttle: 500,
       onFinish: (message) => {
