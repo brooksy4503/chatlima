@@ -1,4 +1,5 @@
-import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check, sql } from "drizzle-orm/pg-core";
+import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 // Message role enum type
