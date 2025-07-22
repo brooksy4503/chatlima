@@ -36,7 +36,7 @@ export interface CreatePresetData {
   isDefault?: boolean;
 }
 
-export interface UpdatePresetData extends Partial<CreatePresetData> {}
+export type UpdatePresetData = Partial<CreatePresetData>;
 
 interface PresetContextType {
   // State
