@@ -8,6 +8,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { usePresets } from "@/lib/context/preset-context";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
 import { ImageUpload } from "./image-upload";
 import { ImagePreview } from "./image-preview";
@@ -46,6 +47,7 @@ export const Textarea = ({
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
   const { activePreset } = usePresets();
   const { user } = useAuth();
+  const isMobileScreen = useIsMobile();
 
   const handleWebSearchToggle = () => {
     setWebSearchEnabled(!webSearchEnabled);
@@ -105,6 +107,7 @@ export const Textarea = ({
     return webSearchEnabled ? 'Disable web search' : 'Enable web search';
   };
 
+  
   return (
     <div className="w-full space-y-3">
       {/* Image Upload Interface */}
@@ -176,90 +179,186 @@ export const Textarea = ({
         </div>
       )}
 
-        <div className="absolute left-2 bottom-2 z-10">
-          <div className="flex items-center gap-2">
-            <PresetSelector />
-            <ModelPicker
-              setSelectedModel={setSelectedModel}
-              selectedModel={selectedModel}
-              onModelSelected={handleModelSelected}
-              disabled={activePreset !== null}
-              activePresetName={activePreset?.name}
-            />
-            {/* Image Upload Button */}
-            {modelDetails[selectedModel]?.vision && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowImageUpload(!showImageUpload)}
-                    disabled={isLoading || !canUploadMore}
-                    className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
-                      !canUploadMore 
-                        ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50' 
-                        : showImageUpload 
-                          ? 'bg-primary text-primary-foreground border-primary shadow' 
-                          : 'bg-background border-border text-muted-foreground hover:bg-accent'
-                    } focus:outline-none focus:ring-2 focus:ring-primary/30`}
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent sideOffset={8}>
-                  {showImageUpload ? 'Hide image upload' : 'Upload images'}
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {selectedModel.startsWith("openrouter/") && (
-              <div className="relative flex items-center">
+        {/* Mobile Controls - Stacked below textarea */}
+        {isMobileScreen && (
+          <div className="flex flex-col gap-2 mt-2">
+            <div className="flex gap-2">
+              <PresetSelector className="flex-1" />
+              <ModelPicker
+                setSelectedModel={setSelectedModel}
+                selectedModel={selectedModel}
+                onModelSelected={handleModelSelected}
+                disabled={activePreset !== null}
+                activePresetName={activePreset?.name}
+              />
+            </div>
+            <div className="flex gap-2">
+              {/* Image Upload Button */}
+              {modelDetails[selectedModel]?.vision && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button
+                    <Button
                       type="button"
-                      ref={iconButtonRef}
-                      aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
-                      onClick={handleWebSearchToggle}
-                      disabled={!canUseWebSearch}
-                      className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
-                        !canUseWebSearch 
-                          ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50' 
-                          : webSearchEnabled 
-                            ? 'bg-primary text-primary-foreground border-primary shadow' 
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowImageUpload(!showImageUpload)}
+                      disabled={isLoading || !canUploadMore}
+                      className={`h-10 w-10 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                        !canUploadMore
+                          ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                          : showImageUpload
+                            ? 'bg-primary text-primary-foreground border-primary shadow'
                             : 'bg-background border-border text-muted-foreground hover:bg-accent'
                       } focus:outline-none focus:ring-2 focus:ring-primary/30`}
                     >
-                      <Globe className="h-5 w-5" />
-                    </button>
+                      <ImageIcon className="h-5 w-5" />
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent sideOffset={8}>
-                    {getWebSearchTooltipMessage()}
+                    {showImageUpload ? 'Hide image upload' : 'Upload images'}
                   </TooltipContent>
                 </Tooltip>
-              </div>
-            )}
-          </div>
-        </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type={isStreaming ? "button" : "submit"}
-              onClick={isStreaming ? stop : undefined}
-              disabled={(!isStreaming && !(input.trim() || hasImages)) || (isStreaming && status === "submitted")}
-              className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
-            >
-              {isStreaming ? (
-                <Square className="h-4 w-4 text-primary-foreground" />
-              ) : (
-                <ArrowUp className={`h-4 w-4 ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
               )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8}>
-            {isStreaming ? "Stop generation" : "Send message"}
-          </TooltipContent>
-        </Tooltip>
+              {selectedModel.startsWith("openrouter/") && (
+                <div className="relative flex items-center">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        ref={iconButtonRef}
+                        aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+                        onClick={handleWebSearchToggle}
+                        disabled={!canUseWebSearch}
+                        className={`h-10 w-10 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                          !canUseWebSearch
+                            ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                            : webSearchEnabled
+                              ? 'bg-primary text-primary-foreground border-primary shadow'
+                              : 'bg-background border-border text-muted-foreground hover:bg-accent'
+                        } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                      >
+                        <Globe className="h-5 w-5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent sideOffset={8}>
+                      {getWebSearchTooltipMessage()}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type={isStreaming ? "button" : "submit"}
+                    onClick={isStreaming ? stop : undefined}
+                    disabled={(!isStreaming && !(input.trim() || hasImages)) || (isStreaming && status === "submitted")}
+                    className="flex-1 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                  >
+                    {isStreaming ? (
+                      <Square className="h-5 w-5 text-primary-foreground" />
+                    ) : (
+                      <ArrowUp className={`h-5 w-5 ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                    )}
+                    <span className="ml-2">Send</span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                  {isStreaming ? "Stop generation" : "Send message"}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        )}
+        
+        {/* Desktop Controls - Original layout */}
+        {!isMobileScreen && (
+          <>
+            <div className="absolute left-2 bottom-2 z-10">
+              <div className="flex items-center gap-2">
+                <PresetSelector />
+                <ModelPicker
+                  setSelectedModel={setSelectedModel}
+                  selectedModel={selectedModel}
+                  onModelSelected={handleModelSelected}
+                  disabled={activePreset !== null}
+                  activePresetName={activePreset?.name}
+                />
+                {/* Image Upload Button */}
+                {modelDetails[selectedModel]?.vision && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowImageUpload(!showImageUpload)}
+                        disabled={isLoading || !canUploadMore}
+                        className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                          !canUploadMore
+                            ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                            : showImageUpload
+                              ? 'bg-primary text-primary-foreground border-primary shadow'
+                              : 'bg-background border-border text-muted-foreground hover:bg-accent'
+                        } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent sideOffset={8}>
+                      {showImageUpload ? 'Hide image upload' : 'Upload images'}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {selectedModel.startsWith("openrouter/") && (
+                  <div className="relative flex items-center">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          ref={iconButtonRef}
+                          aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+                          onClick={handleWebSearchToggle}
+                          disabled={!canUseWebSearch}
+                          className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                            !canUseWebSearch
+                              ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                              : webSearchEnabled
+                                ? 'bg-primary text-primary-foreground border-primary shadow'
+                                : 'bg-background border-border text-muted-foreground hover:bg-accent'
+                          } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                        >
+                          <Globe className="h-5 w-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent sideOffset={8}>
+                        {getWebSearchTooltipMessage()}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                )}
+              </div>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type={isStreaming ? "button" : "submit"}
+                  onClick={isStreaming ? stop : undefined}
+                  disabled={(!isStreaming && !(input.trim() || hasImages)) || (isStreaming && status === "submitted")}
+                  className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                >
+                  {isStreaming ? (
+                    <Square className="h-4 w-4 text-primary-foreground" />
+                  ) : (
+                    <ArrowUp className={`h-4 w-4 ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={8}>
+                {isStreaming ? "Stop generation" : "Send message"}
+              </TooltipContent>
+            </Tooltip>
+          </>
+        )}
       </div>
 
       {/* Model Support Message */}
