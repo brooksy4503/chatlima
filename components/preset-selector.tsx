@@ -56,9 +56,7 @@ export function PresetSelector({ className }: PresetSelectorProps) {
                         <Star className="w-3 h-3 text-yellow-500 shrink-0" />
                       )}
                     </span>
-                  ) : (
-                    <span className="text-xs">Manual</span>
-                  )}
+                  ) : null}
                 </SelectValue>
               </div>
             </SelectTrigger>
