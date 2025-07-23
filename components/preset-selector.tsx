@@ -42,8 +42,8 @@ export function PresetSelector({ className }: PresetSelectorProps) {
       >
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
-            <SelectTrigger className="h-8 w-auto min-w-[80px] text-xs border-border md:min-w-[100px] max-w-full w-full sm:w-auto">
-              <div className="flex items-center gap-2">
+            <SelectTrigger className="h-8 w-auto min-w-[40px] text-xs border-border max-w-full">
+              <div className="flex items-center gap-1">
                 {loading ? (
                   <Loader className="w-3 h-3 animate-spin" />
                 ) : (
@@ -51,13 +51,14 @@ export function PresetSelector({ className }: PresetSelectorProps) {
                 )}
                 <SelectValue>
                   {activePreset ? (
-                    <span className="flex items-center gap-1 truncate">
+                    <span className="flex items-center gap-1">
                       {activePreset.isDefault && (
                         <Star className="w-3 h-3 text-yellow-500 shrink-0" />
                       )}
-                      <span className="truncate">{activePreset.name}</span>
                     </span>
-                  ) : 'Manual Mode'}
+                  ) : (
+                    <span className="text-xs">Manual</span>
+                  )}
                 </SelectValue>
               </div>
             </SelectTrigger>
