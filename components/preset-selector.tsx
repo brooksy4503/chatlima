@@ -149,13 +149,13 @@ export function PresetSelector({ className }: PresetSelectorProps) {
         </SelectContent>
       </Select>
 
-      {/* Active preset indicator - Use md:block to match useIsMobile breakpoint (768px) */}
+      {/* Active preset indicator - Now shows on mobile too since we saved space */}
       {activePreset && !loading && (
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <Badge
               variant="secondary"
-              className="h-5 px-2 py-0.5 text-[10px] font-medium cursor-help bg-green-500/10 hover:bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/20 md:h-6 md:px-2.5 md:py-1 md:text-xs max-w-full hidden md:block"
+              className="h-5 px-2 py-0.5 text-[10px] font-medium cursor-help bg-green-500/10 hover:bg-green-500/20 text-green-700 dark:text-green-300 border border-green-500/20 md:h-6 md:px-2.5 md:py-1 md:text-xs max-w-full hidden sm:block"
             >
               <span className="truncate max-w-[80px] md:max-w-[100px]">{activePreset.name}</span>
             </Badge>
