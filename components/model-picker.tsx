@@ -247,7 +247,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                 aria-expanded={isOpen}
                 disabled={disabled}
                 className={cn(
-                  "max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+                  "w-full max-w-[160px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
                   "border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20",
                   "transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2",
                   "text-foreground hover:text-foreground font-normal",
