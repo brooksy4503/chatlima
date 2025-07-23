@@ -181,18 +181,20 @@ export const Textarea = ({
 
         {/* Mobile Controls - Stacked below textarea */}
         {isMobileScreen && (
-          <div className="flex flex-col gap-2 mt-2">
-            <div className="flex gap-2">
-              <PresetSelector className="flex-1" />
-              <ModelPicker
-                setSelectedModel={setSelectedModel}
-                selectedModel={selectedModel}
-                onModelSelected={handleModelSelected}
-                disabled={activePreset !== null}
-                activePresetName={activePreset?.name}
-              />
+          <div className="flex flex-col gap-2 mt-2 w-full">
+            <div className="flex gap-2 w-full min-w-0">
+              <PresetSelector className="flex-1 min-w-0" />
+              <div className="flex-1 min-w-0">
+                <ModelPicker
+                  setSelectedModel={setSelectedModel}
+                  selectedModel={selectedModel}
+                  onModelSelected={handleModelSelected}
+                  disabled={activePreset !== null}
+                  activePresetName={activePreset?.name}
+                />
+              </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full">
               {/* Image Upload Button */}
               {modelDetails[selectedModel]?.vision && (
                 <Tooltip>
@@ -203,7 +205,7 @@ export const Textarea = ({
                       size="sm"
                       onClick={() => setShowImageUpload(!showImageUpload)}
                       disabled={isLoading || !canUploadMore}
-                      className={`h-10 w-10 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                      className={`h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-full border transition-colors duration-150 ${
                         !canUploadMore
                           ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
                           : showImageUpload
@@ -220,7 +222,7 @@ export const Textarea = ({
                 </Tooltip>
               )}
               {selectedModel.startsWith("openrouter/") && (
-                <div className="relative flex items-center">
+                <div className="relative flex items-center flex-shrink-0">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
@@ -252,14 +254,14 @@ export const Textarea = ({
                     type={isStreaming ? "button" : "submit"}
                     onClick={isStreaming ? stop : undefined}
                     disabled={(!isStreaming && !(input.trim() || hasImages)) || (isStreaming && status === "submitted")}
-                    className="flex-1 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                    className="flex-1 min-w-0 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                   >
                     {isStreaming ? (
-                      <Square className="h-5 w-5 text-primary-foreground" />
+                      <Square className="h-5 w-5 text-primary-foreground flex-shrink-0" />
                     ) : (
-                      <ArrowUp className={`h-5 w-5 ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                      <ArrowUp className={`h-5 w-5 flex-shrink-0 ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
                     )}
-                    <span className="ml-2">Send</span>
+                    <span className="ml-2 hidden sm:inline">Send</span>
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={8}>
