@@ -24,7 +24,10 @@ import {
     Cog,
     Edit2,
     Eye,
-    EyeOff
+    EyeOff,
+    Check,
+    AlertCircle,
+    Wifi
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -96,6 +99,8 @@ export const MCPServerManager = ({
     const [editingHeaderIndex, setEditingHeaderIndex] = useState<number | null>(null);
     const [editedEnvValue, setEditedEnvValue] = useState<string>('');
     const [editedHeaderValue, setEditedHeaderValue] = useState<string>('');
+    const [testingServerId, setTestingServerId] = useState<string | null>(null);
+    const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
 
     const resetAndClose = () => {
         setView('list');
@@ -141,6 +146,12 @@ export const MCPServerManager = ({
         setNewHeader({ key: '', value: '' });
         setShowSensitiveEnvValues({});
         setShowSensitiveHeaderValues({});
+        // Clear temporary test results
+        setTestResults(prev => {
+            const newResults = { ...prev };
+            delete newResults['temp'];
+            return newResults;
+        });
     };
 
     const removeServer = (id: string, e: React.MouseEvent) => {
@@ -179,6 +190,70 @@ export const MCPServerManager = ({
             onSelectedServersChange([]);
             toast.success("All MCP servers disabled");
             resetAndClose();
+        }
+    };
+
+    const testConnection = async (server: MCPServer) => {
+        setTestingServerId(server.id);
+        
+        try {
+            // For SSE and Streamable HTTP transports, we test URL validity and basic configuration
+            if (server.type === 'sse' || server.type === 'streamable-http') {
+                if (!server.url) {
+                    throw new Error("Server URL is required");
+                }
+                
+                // Validate URL format
+                try {
+                    new URL(server.url);
+                } catch (urlError) {
+                    throw new Error("Invalid URL format");
+                }
+                
+                // For HTTP-based MCP servers, we validate configuration rather than test actual connection
+                // since MCP has its own protocol handshake that simple HTTP requests can't handle
+                setTestResults(prev => ({
+                    ...prev,
+                    [server.id]: { 
+                        success: true, 
+                        message: "Configuration valid (connection will be tested when tools are used)" 
+                    }
+                }));
+            } 
+            // For stdio transport, we can't test directly from the browser
+            else if (server.type === 'stdio') {
+                // Validate that we have a command and arguments
+                if (!server.command) {
+                    throw new Error("Command is required for stdio transport");
+                }
+                
+                if (!server.args || server.args.length === 0) {
+                    throw new Error("At least one argument is required for stdio transport");
+                }
+                
+                setTestResults(prev => ({
+                    ...prev,
+                    [server.id]: { 
+                        success: true, 
+                        message: "Configuration valid (connection test happens on server)" 
+                    }
+                }));
+            }
+            
+            toast.success(`Configuration test passed for ${server.name}`);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+            setTestResults(prev => ({
+                ...prev,
+                [server.id]: { 
+                    success: false, 
+                    message: errorMessage 
+                }
+            }));
+            
+            toast.error(`Configuration test failed for ${server.name}: ${errorMessage}`);
+        } finally {
+            setTestingServerId(null);
         }
     };
 
@@ -322,6 +397,12 @@ export const MCPServerManager = ({
         setShowSensitiveHeaderValues({});
         setEditingEnvIndex(null);
         setEditingHeaderIndex(null);
+        // Clear test results for this server
+        setTestResults(prev => {
+            const newResults = { ...prev };
+            delete newResults[server.id];
+            return newResults;
+        });
     };
 
     const handleFormCancel = () => {
@@ -333,6 +414,12 @@ export const MCPServerManager = ({
             setShowSensitiveHeaderValues({});
             setEditingEnvIndex(null);
             setEditingHeaderIndex(null);
+            // Clear temporary test results
+            setTestResults(prev => {
+                const newResults = { ...prev };
+                delete newResults['temp'];
+                return newResults;
+            });
         } else {
             resetAndClose();
         }
@@ -365,6 +452,12 @@ export const MCPServerManager = ({
         setNewServer(INITIAL_NEW_SERVER);
         setShowSensitiveEnvValues({});
         setShowSensitiveHeaderValues({});
+        // Clear temporary test results
+        setTestResults(prev => {
+            const newResults = { ...prev };
+            delete newResults['temp'];
+            return newResults;
+        });
     };
 
     return (
@@ -433,24 +526,37 @@ export const MCPServerManager = ({
                                                             )}
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                                                                {server.type.toUpperCase()}
-                                                            </span>
-                                                            <button
-                                                                onClick={(e) => removeServer(server.id, e)}
-                                                                className="p-1 rounded-full hover:bg-muted/70"
-                                                                aria-label="Remove server"
-                                                            >
-                                                                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => startEditing(server)}
-                                                                className="p-1 rounded-full hover:bg-muted/50"
-                                                                aria-label="Edit server"
-                                                            >
-                                                                <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                                            </button>
-                                                        </div>
+                                                             <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                                                                 {server.type.toUpperCase()}
+                                                             </span>
+<button
+                                                                  onClick={(e) => {
+                                                                      e.stopPropagation();
+                                                                      testConnection(server);
+                                                                  }}
+                                                                  className="p-1 rounded-full hover:bg-muted/70"
+                                                                  aria-label="Test connection"
+                                                                  disabled={testingServerId === server.id}
+                                                              >
+                                                                  {testingServerId === server.id ? (
+                                                                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                                  ) : (
+                                                                      <Wifi className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                  )}
+                                                              </button>                                                             <button
+                                                                 onClick={(e) => removeServer(server.id, e)}
+                                                                 className="p-1 rounded-full hover:bg-muted/70"
+                                                                 aria-label="Remove server"
+                                                             >
+                                                                 <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                                             </button>
+                                                             <button
+                                                                 onClick={() => startEditing(server)}
+                                                                 className="p-1 rounded-full hover:bg-muted/50"
+                                                                 aria-label="Edit server"
+                                                             >
+                                                                 <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                                             </button>                                                        </div>
                                                     </div>
 
                                                     {/* Server Details */}
@@ -460,6 +566,24 @@ export const MCPServerManager = ({
                                                             : `${server.command} ${server.args?.join(' ')}`
                                                         }
                                                     </p>
+
+                                                    {/* Test Result */}
+                                                    {testResults[server.id] && (
+                                                        <div className={`text-xs mb-2.5 p-2 rounded-md ${
+                                                            testResults[server.id].success 
+                                                                ? 'bg-green-500/10 text-green-700 dark:text-green-300' 
+                                                                : 'bg-red-500/10 text-red-700 dark:text-red-300'
+                                                        }`}>
+                                                            <div className="flex items-center gap-1.5">
+                                                                {testResults[server.id].success ? (
+                                                                    <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                                                                ) : (
+                                                                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                                                                )}
+                                                                <span className="truncate">{testResults[server.id].message}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
 
                                                     {/* Action Button */}
                                                     <Button
@@ -646,9 +770,43 @@ export const MCPServerManager = ({
                                 </>
                             )}
 
-                            {/* Advanced Configuration */}
-                            <Accordion type="single" collapsible className="w-full">
-                                <AccordionItem value="env-vars">
+{/* Test Connection Button */}
+                             <div className="flex justify-end">
+                                 <Button
+                                     type="button"
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => {
+                                         // Create a temporary server object for testing
+                                         const tempServer: MCPServer = {
+                                             id: 'temp',
+                                             ...newServer
+                                         };
+                                         testConnection(tempServer);
+                                     }}
+                                     disabled={
+                                         !newServer.name ||
+                                         (newServer.type === 'sse' && !newServer.url) ||
+                                         (newServer.type === 'streamable-http' && !newServer.url) ||
+                                         (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) ||
+                                         testingServerId === 'temp'
+                                     }
+                                 >
+                                     {testingServerId === 'temp' ? (
+                                         <>
+                                             <div className="mr-2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                             Testing...
+                                         </>
+                                     ) : (
+<>
+                                              <Wifi className="h-3.5 w-3.5 mr-1.5" />
+                                              Test Connection
+                                          </>                                     )}
+                                 </Button>
+                             </div>
+
+                             {/* Advanced Configuration */}
+                             <Accordion type="single" collapsible className="w-full">                                <AccordionItem value="env-vars">
                                     <AccordionTrigger className="text-sm py-2">
                                         Environment Variables
                                     </AccordionTrigger>
