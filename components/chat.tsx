@@ -572,6 +572,8 @@ export default function Chat() {
 
   // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
   const enhancedMessages = useMemo(() => {
+    const effectiveWebSearchEnabled = activePreset?.webSearchEnabled ?? webSearchEnabled;
+    
     return messages.map((message, index) => {
       let enhancedMessage = { ...message };
       
@@ -579,7 +581,7 @@ export default function Chat() {
       if (message.role === 'assistant' && index > 0) {
         const previousMessage = messages[index - 1];
         // If the previous message was from user and web search was enabled, mark this assistant message
-        if (previousMessage.role === 'user' && webSearchEnabled && isOpenRouterModel) {
+        if (previousMessage.role === 'user' && effectiveWebSearchEnabled && isOpenRouterModel) {
           enhancedMessage = {
             ...enhancedMessage,
             hasWebSearch: true
@@ -592,7 +594,7 @@ export default function Chat() {
         hasWebSearch: (enhancedMessage as any).hasWebSearch || false
       } as Message & { hasWebSearch?: boolean };
     });
-  }, [messages, webSearchEnabled, isOpenRouterModel]);
+  }, [messages, webSearchEnabled, activePreset, isOpenRouterModel]);
 
   // Manual recovery function
   const forceRecovery = useCallback(() => {

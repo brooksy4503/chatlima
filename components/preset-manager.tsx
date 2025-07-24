@@ -32,7 +32,8 @@ import {
   Download, 
   Loader2,
   AlertTriangle,
-  Check
+  Check,
+  Info
 } from 'lucide-react';
 
 interface PresetManagerProps {
@@ -66,6 +67,42 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     setDefaultPreset,
     setActivePreset
   } = usePresets();
+
+  // Helper function to determine if a model supports web search based on provider
+  const modelSupportsWebSearch = (modelId: string): boolean => {
+    // OpenRouter models support web search
+    if (modelId.startsWith('openrouter/')) {
+      return true;
+    }
+    
+    // Requesty models do NOT support web search
+    if (modelId.startsWith('requesty/')) {
+      return false;
+    }
+    
+    // For direct models, check the modelDetails
+    // Most direct models support web search except for some specific ones
+    const details = modelDetails[modelId as modelID];
+    if (details?.supportsWebSearch !== undefined) {
+      return details.supportsWebSearch;
+    }
+    
+    // Default to true for other models
+    return true;
+  };
+
+  // Helper function to get web search restriction message
+  const getWebSearchRestrictionMessage = (modelId: string): string | null => {
+    if (modelId.startsWith('requesty/')) {
+      return 'Web search is not supported for Requesty models';
+    }
+    
+    if (modelId.startsWith('openai/') && (modelId.includes('gpt-4.1') || modelId.includes('o4-mini'))) {
+      return 'Web search is not supported for this OpenAI model';
+    }
+    
+    return null;
+  };
 
   // Helper function to format API route
   const formatApiRoute = (modelId: string) => {
@@ -123,6 +160,13 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     }
   }, [open]);
 
+  // Effect to disable web search when model doesn't support it
+  useEffect(() => {
+    if (!modelSupportsWebSearch(formData.modelId) && formData.webSearchEnabled) {
+      setFormData(prev => ({ ...prev, webSearchEnabled: false }));
+    }
+  }, [formData.modelId]);
+
   // Reset form data
   const resetForm = () => {
     setFormData({
@@ -140,13 +184,15 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   // Populate form for editing
   const startEdit = (preset: Preset) => {
     setEditingPreset(preset);
+    const webSearchEnabled = preset.webSearchEnabled && modelSupportsWebSearch(preset.modelId);
+    
     setFormData({
       name: preset.name,
       modelId: preset.modelId,
       systemInstruction: preset.systemInstruction,
       temperature: preset.temperature,
       maxTokens: preset.maxTokens,
-      webSearchEnabled: preset.webSearchEnabled,
+      webSearchEnabled: webSearchEnabled,
       webSearchContextSize: preset.webSearchContextSize,
       isDefault: preset.isDefault
     });
@@ -155,13 +201,15 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
   // Start creating from template
   const startCreateFromTemplate = (template: PresetTemplate) => {
+    const webSearchEnabled = template.preset.webSearchEnabled && modelSupportsWebSearch(template.preset.modelId);
+    
     setFormData({
       name: template.preset.name,
       modelId: template.preset.modelId,
       systemInstruction: template.preset.systemInstruction,
       temperature: template.preset.temperature,
       maxTokens: template.preset.maxTokens,
-      webSearchEnabled: template.preset.webSearchEnabled,
+      webSearchEnabled: webSearchEnabled,
       webSearchContextSize: template.preset.webSearchContextSize,
       isDefault: template.preset.isDefault
     });
@@ -178,6 +226,11 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
     if (!formData.systemInstruction.trim()) {
       errors.push('System instruction is required');
+    }
+
+    // Validate web search configuration
+    if (formData.webSearchEnabled && !modelSupportsWebSearch(formData.modelId)) {
+      errors.push(`Web search is not supported for ${formatApiRoute(formData.modelId)} models`);
     }
 
     // Validate parameters
@@ -233,16 +286,10 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   };
 
   // Handle template creation
-  const handleCreateFromTemplate = async (template: PresetTemplate) => {
-    try {
-      setSubmitting(true);
-      await createPresetFromTemplate(template);
-      setActiveTab('list');
-    } catch (error) {
-      setFormErrors([error instanceof Error ? error.message : 'Failed to create preset from template']);
-    } finally {
-      setSubmitting(false);
-    }
+  const handleCreateFromTemplate = (template: PresetTemplate) => {
+    // Instead of auto-creating with numbered names, open the create form
+    // pre-filled with template data so user can customize name and settings
+    startCreateFromTemplate(template);
   };
 
   // Handle preset deletion
@@ -418,8 +465,24 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                         <div>
                           <span className="font-medium">Max Tokens:</span> {preset.maxTokens}
                         </div>
-                        <div>
-                          <span className="font-medium">Web Search:</span> {preset.webSearchEnabled ? 'Enabled' : 'Disabled'}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Web Search:</span> 
+                          <span>{preset.webSearchEnabled ? 'Enabled' : 'Disabled'}</span>
+                          {preset.webSearchEnabled && !modelSupportsWebSearch(preset.modelId) && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Issue
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Web search is enabled but not supported by this model</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </div>
                       </div>
                       
@@ -494,24 +557,11 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                               </div>
                               <div className="flex gap-1.5 w-full">
                                 <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="flex-1 text-xs px-2 py-1 h-7"
-                                  onClick={() => startCreateFromTemplate(template)}
-                                >
-                                  Edit
-                                </Button>
-                                <Button 
                                   size="sm"
                                   className="flex-1 text-xs px-2 py-1 h-7"
                                   onClick={() => handleCreateFromTemplate(template)}
-                                  disabled={submitting}
                                 >
-                                  {submitting ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    'Use'
-                                  )}
+                                  Use Template
                                 </Button>
                               </div>
                             </div>
@@ -607,11 +657,37 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                         id="webSearch"
                         checked={formData.webSearchEnabled}
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, webSearchEnabled: checked }))}
+                        disabled={!modelSupportsWebSearch(formData.modelId)}
                       />
-                      <Label htmlFor="webSearch">Enable Web Search</Label>
+                      <Label 
+                        htmlFor="webSearch" 
+                        className={!modelSupportsWebSearch(formData.modelId) ? 'text-muted-foreground' : ''}
+                      >
+                        Enable Web Search
+                      </Label>
+                      {getWebSearchRestrictionMessage(formData.modelId) && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="ml-2 h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">{getWebSearchRestrictionMessage(formData.modelId)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </div>
                     
-                    {formData.webSearchEnabled && (
+                    {/* Show restriction message below the switch */}
+                    {getWebSearchRestrictionMessage(formData.modelId) && (
+                      <div className="ml-6 text-sm text-muted-foreground flex items-center gap-2">
+                        <Info className="h-4 w-4" />
+                        <span>{getWebSearchRestrictionMessage(formData.modelId)}</span>
+                      </div>
+                    )}
+                    
+                    {formData.webSearchEnabled && modelSupportsWebSearch(formData.modelId) && (
                       <div className="ml-6 space-y-2">
                         <Label htmlFor="webSearchContext">Context Size</Label>
                         <Select 

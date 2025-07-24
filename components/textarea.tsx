@@ -54,8 +54,16 @@ export const Textarea = ({
     return activePreset?.modelId || selectedModel;
   };
 
+  // Get the effective web search enabled state - use preset setting if active, otherwise context setting
+  const getEffectiveWebSearchEnabled = (): boolean => {
+    return activePreset?.webSearchEnabled ?? webSearchEnabled;
+  };
+
   const handleWebSearchToggle = () => {
-    setWebSearchEnabled(!webSearchEnabled);
+    // Only allow toggle when no preset is active
+    if (!activePreset) {
+      setWebSearchEnabled(!webSearchEnabled);
+    }
   };
 
   // Check if user has enough credits for web search (5 credits minimum)
@@ -69,12 +77,13 @@ export const Textarea = ({
   // Calculate estimated cost
   const getEstimatedCost = () => {
     const baseCost = 1; // Base cost for any message
-    const webSearchCost = webSearchEnabled ? WEB_SEARCH_COST : 0;
+    const effectiveWebSearchEnabled = getEffectiveWebSearchEnabled();
+    const webSearchCost = effectiveWebSearchEnabled ? WEB_SEARCH_COST : 0;
     return baseCost + webSearchCost;
   };
 
   const estimatedCost = getEstimatedCost();
-  const shouldShowCostWarning = webSearchEnabled && canUseWebSearch && input.trim();
+  const shouldShowCostWarning = getEffectiveWebSearchEnabled() && canUseWebSearch && input.trim();
 
   // Focus textarea after model selection
   const handleModelSelected = () => {
@@ -103,13 +112,19 @@ export const Textarea = ({
 
   // Determine tooltip message based on credit status
   const getWebSearchTooltipMessage = () => {
+    if (activePreset) {
+      return activePreset.webSearchEnabled 
+        ? `Web search is enabled by "${activePreset.name}" preset`
+        : `Web search is disabled by "${activePreset.name}" preset`;
+    }
     if (isAnonymousUser) {
       return "Sign in and purchase credits to enable Web Search";
     }
     if (!hasEnoughCreditsForWebSearch) {
       return "Purchase credits to enable Web Search";
     }
-    return webSearchEnabled ? 'Disable web search' : 'Enable web search';
+    const effectiveWebSearchEnabled = getEffectiveWebSearchEnabled();
+    return effectiveWebSearchEnabled ? 'Disable web search' : 'Enable web search';
   };
 
   
@@ -189,15 +204,17 @@ export const Textarea = ({
           <div className="flex flex-col gap-2 mt-2 w-full">
             <div className="flex gap-2 w-full min-w-0">
               <PresetSelector className="flex-1 min-w-0" />
-              <div className="flex-1 min-w-0">
-                <ModelPicker
-                  setSelectedModel={setSelectedModel}
-                  selectedModel={selectedModel}
-                  onModelSelected={handleModelSelected}
-                  disabled={activePreset !== null}
-                  activePresetName={activePreset?.name}
-                />
-              </div>
+              {/* Only show model picker when no preset is active */}
+              {!activePreset && (
+                <div className="flex-1 min-w-0">
+                  <ModelPicker
+                    setSelectedModel={setSelectedModel}
+                    selectedModel={selectedModel}
+                    onModelSelected={handleModelSelected}
+                    disabled={false}
+                  />
+                </div>
+              )}
             </div>
             <div className="flex gap-2 w-full">
               {/* Image Upload Button */}
@@ -226,20 +243,21 @@ export const Textarea = ({
                   </TooltipContent>
                 </Tooltip>
               )}
-              {getEffectiveModel().startsWith("openrouter/") && (
+              {/* Only show web search button when no preset is active and model supports it */}
+              {!activePreset && getEffectiveModel().startsWith("openrouter/") && (
                 <div className="relative flex items-center flex-shrink-0">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
                         type="button"
                         ref={iconButtonRef}
-                        aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+                        aria-label={getEffectiveWebSearchEnabled() ? "Web search enabled" : "Web search disabled"}
                         onClick={handleWebSearchToggle}
                         disabled={!canUseWebSearch}
                         className={`h-10 w-10 flex items-center justify-center rounded-full border transition-colors duration-150 ${
                           !canUseWebSearch
                             ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
-                            : webSearchEnabled
+                            : getEffectiveWebSearchEnabled()
                               ? 'bg-primary text-primary-foreground border-primary shadow'
                               : 'bg-background border-border text-muted-foreground hover:bg-accent'
                         } focus:outline-none focus:ring-2 focus:ring-primary/30`}
@@ -283,13 +301,15 @@ export const Textarea = ({
             <div className="absolute left-2 bottom-2 z-10">
               <div className="flex items-center gap-2">
                 <PresetSelector />
-                <ModelPicker
-                  setSelectedModel={setSelectedModel}
-                  selectedModel={selectedModel}
-                  onModelSelected={handleModelSelected}
-                  disabled={activePreset !== null}
-                  activePresetName={activePreset?.name}
-                />
+                {/* Only show model picker when no preset is active */}
+                {!activePreset && (
+                  <ModelPicker
+                    setSelectedModel={setSelectedModel}
+                    selectedModel={selectedModel}
+                    onModelSelected={handleModelSelected}
+                    disabled={false}
+                  />
+                )}
                 {/* Image Upload Button */}
                 {modelDetails[getEffectiveModel()]?.vision && (
                   <Tooltip>
@@ -316,20 +336,21 @@ export const Textarea = ({
                     </TooltipContent>
                   </Tooltip>
                 )}
-                {getEffectiveModel().startsWith("openrouter/") && (
+                {/* Only show web search button when no preset is active and model supports it */}
+                {!activePreset && getEffectiveModel().startsWith("openrouter/") && (
                   <div className="relative flex items-center">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
                           ref={iconButtonRef}
-                          aria-label={webSearchEnabled ? "Disable web search" : "Enable web search"}
+                          aria-label={getEffectiveWebSearchEnabled() ? "Web search enabled" : "Web search disabled"}
                           onClick={handleWebSearchToggle}
                           disabled={!canUseWebSearch}
                           className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
                             !canUseWebSearch
                               ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
-                              : webSearchEnabled
+                              : getEffectiveWebSearchEnabled()
                                 ? 'bg-primary text-primary-foreground border-primary shadow'
                                 : 'bg-background border-border text-muted-foreground hover:bg-accent'
                           } focus:outline-none focus:ring-2 focus:ring-primary/30`}

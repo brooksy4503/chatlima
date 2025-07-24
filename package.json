@@ -20,7 +20,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "pricing:analysis": "npx tsx scripts/openrouter-pricing-analysis.ts"
+    "pricing:analysis": "npx tsx scripts/openrouter-pricing-analysis.ts",
+    "update:models": "npx tsx scripts/update-model-parameters.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.10",
