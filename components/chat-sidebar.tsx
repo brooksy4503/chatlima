@@ -71,6 +71,7 @@ export function ChatSidebar() {
     const [userId, setUserId] = useState<string | null>(null);
     const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
     // On mobile, always show expanded layout
@@ -150,10 +151,18 @@ export function ChatSidebar() {
         }
     }, [session, isSessionLoading]);
 
+    // Fix hydration error by ensuring consistent initial state
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle } = useChats();
-    const isLoading = isSessionLoading || (userId === null) || isChatsLoading;
+    const isLoading = !mounted || isSessionLoading || isChatsLoading;
 
     const handleNewChat = () => {
+        // Invalidate chat queries to ensure fresh data
+        queryClient.invalidateQueries({ queryKey: ['chat'] });
+        
         router.push('/');
         // Close mobile sidebar when navigating to new chat
         if (openMobile) {

@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type Chat } from '@/lib/db/schema';
 import { toast } from 'sonner';
+import { useSession } from '@/lib/auth-client';
 
 export function useChats() {
   const queryClient = useQueryClient();
+  const { data: session, isPending: isSessionLoading } = useSession();
 
   // Main query to fetch chats
   const {
@@ -22,6 +24,7 @@ export function useChats() {
 
       return response.json();
     },
+    enabled: !isSessionLoading && !!session?.user?.id, // Only fetch when session is loaded and user exists
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
     refetchOnWindowFocus: true, // Refetch when window regains focus
   });

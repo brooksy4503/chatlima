@@ -49,6 +49,11 @@ export const Textarea = ({
   const { user } = useAuth();
   const isMobileScreen = useIsMobile();
 
+  // Get the effective model ID - use preset model if active, otherwise selected model
+  const getEffectiveModel = (): modelID => {
+    return activePreset?.modelId || selectedModel;
+  };
+
   const handleWebSearchToggle = () => {
     setWebSearchEnabled(!webSearchEnabled);
   };
@@ -111,7 +116,7 @@ export const Textarea = ({
   return (
     <div className="w-full space-y-3">
       {/* Image Upload Interface */}
-      {modelDetails[selectedModel]?.vision && showImageUpload && (
+      {modelDetails[getEffectiveModel()]?.vision && showImageUpload && (
         <div className="bg-card border border-border rounded-xl p-4">
           <ImageUpload
             onImageSelect={handleImageSelect}
@@ -196,7 +201,7 @@ export const Textarea = ({
             </div>
             <div className="flex gap-2 w-full">
               {/* Image Upload Button */}
-              {modelDetails[selectedModel]?.vision && (
+              {modelDetails[getEffectiveModel()]?.vision && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -221,7 +226,7 @@ export const Textarea = ({
                   </TooltipContent>
                 </Tooltip>
               )}
-              {selectedModel.startsWith("openrouter/") && (
+              {getEffectiveModel().startsWith("openrouter/") && (
                 <div className="relative flex items-center flex-shrink-0">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -286,7 +291,7 @@ export const Textarea = ({
                   activePresetName={activePreset?.name}
                 />
                 {/* Image Upload Button */}
-                {modelDetails[selectedModel]?.vision && (
+                {modelDetails[getEffectiveModel()]?.vision && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -311,7 +316,7 @@ export const Textarea = ({
                     </TooltipContent>
                   </Tooltip>
                 )}
-                {selectedModel.startsWith("openrouter/") && (
+                {getEffectiveModel().startsWith("openrouter/") && (
                   <div className="relative flex items-center">
                     <Tooltip>
                       <TooltipTrigger asChild>
