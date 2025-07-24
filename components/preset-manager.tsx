@@ -137,6 +137,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   // State
   const [activeTab, setActiveTab] = useState<'list' | 'templates' | 'create' | 'edit'>('list');
   const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
+  const [templateNameHint, setTemplateNameHint] = useState<string | null>(null);
   const [formData, setFormData] = useState<PresetFormData>({
     name: '',
     modelId: 'openrouter/anthropic/claude-3.5-sonnet',
@@ -155,6 +156,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     if (!open) {
       setActiveTab('list');
       setEditingPreset(null);
+      setTemplateNameHint(null);
       setFormErrors([]);
       resetForm();
     }
@@ -169,6 +171,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
   // Reset form data
   const resetForm = () => {
+    setTemplateNameHint(null);
     setFormData({
       name: '',
       modelId: 'openrouter/anthropic/claude-3.5-sonnet',
@@ -184,6 +187,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   // Populate form for editing
   const startEdit = (preset: Preset) => {
     setEditingPreset(preset);
+    setTemplateNameHint(null); // Clear template hint when editing existing preset
     const webSearchEnabled = preset.webSearchEnabled && modelSupportsWebSearch(preset.modelId);
     
     setFormData({
@@ -203,8 +207,9 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   const startCreateFromTemplate = (template: PresetTemplate) => {
     const webSearchEnabled = template.preset.webSearchEnabled && modelSupportsWebSearch(template.preset.modelId);
     
+    setTemplateNameHint(template.preset.name);
     setFormData({
-      name: template.preset.name,
+      name: '', // Clear the name so user must provide their own
       modelId: template.preset.modelId,
       systemInstruction: template.preset.systemInstruction,
       temperature: template.preset.temperature,
@@ -359,7 +364,10 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Your Presets ({presets.length})</h3>
               <Button 
-                onClick={() => setActiveTab('create')}
+                onClick={() => {
+                  resetForm();
+                  setActiveTab('create');
+                }}
                 size="sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -502,7 +510,10 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                       <p className="text-muted-foreground">No presets yet.</p>
                       <Button 
                         className="mt-4" 
-                        onClick={() => setActiveTab('templates')}
+                        onClick={() => {
+                          resetForm();
+                          setActiveTab('templates');
+                        }}
                         variant="outline"
                       >
                         Browse Templates
@@ -588,7 +599,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                         id="name"
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="My Custom Preset"
+                        placeholder={templateNameHint ? `Based on "${templateNameHint}"` : "My Custom Preset"}
                       />
                     </div>
                     
