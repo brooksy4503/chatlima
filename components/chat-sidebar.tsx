@@ -160,14 +160,13 @@ export function ChatSidebar() {
     const isLoading = !mounted || isSessionLoading || isChatsLoading;
 
     const handleNewChat = () => {
-        // Invalidate chat queries to ensure fresh data
-        queryClient.invalidateQueries({ queryKey: ['chat'] });
-        
-        router.push('/');
         // Close mobile sidebar when navigating to new chat
         if (openMobile) {
             setOpenMobile(false);
         }
+        
+        // Use window.location for more reliable navigation
+        window.location.href = '/';
     };
 
     const handleNavigateToChat = (chatId: string) => {
@@ -184,7 +183,7 @@ export function ChatSidebar() {
         deleteChat(chatId);
         
         if (pathname === `/chat/${chatId}`) {
-            router.push('/');
+            window.location.href = '/';
         }
     };
 

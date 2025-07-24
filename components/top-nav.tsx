@@ -1,20 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { PlusCircle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useQueryClient } from "@tanstack/react-query";
 
 export function TopNav() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
 
   const handleNewChat = () => {
-    // Invalidate chat queries to ensure fresh data
-    queryClient.invalidateQueries({ queryKey: ['chat'] });
-    
-    router.push('/');
+    // Use window.location for more reliable navigation
+    window.location.href = '/';
   };
 
   return (
