@@ -242,6 +242,7 @@ const languageModels = {
   "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free": openrouterClient("cognitivecomputations/dolphin-mistral-24b-venice-edition:free"),
   "openrouter/moonshotai/kimi-k2": openrouterClient("moonshotai/kimi-k2"),
   "openrouter/moonshotai/kimi-k2:free": openrouterClient("moonshotai/kimi-k2:free"),
+  "openrouter/tencent/hunyuan-a13b-instruct": openrouterClient("tencent/hunyuan-a13b-instruct"),
   // Requesty models
   "requesty/openai/gpt-4o": requestyClient("openai/gpt-4o"),
   "requesty/openai/gpt-4o-mini": requestyClient("openai/gpt-4o-mini"),
@@ -500,6 +501,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getOpenRouterClient()("moonshotai/kimi-k2");
     case "openrouter/moonshotai/kimi-k2:free":
       return getOpenRouterClient()("moonshotai/kimi-k2:free");
+    case "openrouter/tencent/hunyuan-a13b-instruct":
+      return getOpenRouterClient()("tencent/hunyuan-a13b-instruct");
 
     // Requesty models
     case "requesty/openai/gpt-4o":
@@ -1268,6 +1271,18 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     premium: false,
     vision: false,
     maxTokensRange: { min: 1, max: 8192, default: 1024 }
+  },
+  "openrouter/tencent/hunyuan-a13b-instruct": {
+    provider: "OpenRouter",
+    name: "Tencent Hunyuan A13B Instruct",
+    description: "Hunyuan-A13B is a 13B active parameter Mixture-of-Experts (MoE) language model developed by Tencent, with a total parameter count of 80B and support for reasoning via Chain-of-Thought. It offers competitive benchmark performance across mathematics, science, coding, and multi-turn reasoning tasks, while maintaining high inference efficiency via Grouped Query Attention (GQA) and quantization support.",
+    apiVersion: "tencent/hunyuan-a13b-instruct",
+    capabilities: ["Mathematics", "Science", "Coding", "Multi-turn Reasoning", "Chain-of-Thought", "High Efficiency", "MoE Architecture"],
+    enabled: true,
+    supportsWebSearch: true,
+    premium: false,
+    vision: false,
+    maxTokensRange: { min: 1, max: 32768, default: 4096 }
   },
   // Requesty model details
   "requesty/openai/gpt-4o": {
