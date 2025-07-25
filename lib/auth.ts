@@ -156,7 +156,34 @@ export const auth = betterAuth({
                     anonymousId: anonymousUser.user?.id,
                     newUserId: newUser.user?.id
                 });
-                // Optional: Migrate any data from anonymousUser to newUser here
+
+                // ***** PRESET MIGRATION LOGIC *****
+                if (anonymousUser.user?.id && newUser.user?.id) {
+                    console.log('[Preset Migration] Starting migration from anonymous user to authenticated user');
+                    try {
+                        // Import database utilities within the callback to avoid circular dependencies
+                        const { db } = await import('./db/index');
+                        const { presets } = await import('./db/schema');
+                        const { eq } = await import('drizzle-orm');
+
+                        // Transfer all presets from anonymous user to authenticated user
+                        const migratedPresets = await db
+                            .update(presets)
+                            .set({ 
+                                userId: newUser.user.id,
+                                updatedAt: new Date()
+                            })
+                            .where(eq(presets.userId, anonymousUser.user.id))
+                            .returning();
+
+                        console.log(`[Preset Migration] Successfully migrated ${migratedPresets.length} presets from anonymous user ${anonymousUser.user.id} to authenticated user ${newUser.user.id}`);
+                    } catch (error) {
+                        console.error('[Preset Migration] Failed to migrate presets:', error);
+                        // Non-critical error - user can recreate presets
+                    }
+                } else {
+                    console.log('[Preset Migration] Skipping migration - missing user IDs');
+                }
 
                 // ***** MOVED POLAR CUSTOMER CREATION LOGIC HERE *****
                 const userForPolar = newUser.user; // Get the actual user object

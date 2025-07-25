@@ -9,6 +9,7 @@ import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { MCPProvider } from "@/lib/context/mcp-context";
 import { ModelProvider } from "@/lib/context/model-context";
+import { PresetProvider } from "@/lib/context/preset-context";
 import { AnonymousAuth } from "@/components/auth/AnonymousAuth";
 
 // Create a client
@@ -39,11 +40,13 @@ export function Providers({ children }: { children: ReactNode }) {
       >
         <MCPProvider>
           <ModelProvider>
-            <SidebarProvider defaultOpen={sidebarOpen} open={sidebarOpen} onOpenChange={setSidebarOpen}>
-              <AnonymousAuth />
-              {children}
-              <Toaster position="top-center" richColors />
-            </SidebarProvider>
+            <PresetProvider>
+              <SidebarProvider defaultOpen={sidebarOpen} open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <AnonymousAuth />
+                {children}
+                <Toaster position="top-center" richColors />
+              </SidebarProvider>
+            </PresetProvider>
           </ModelProvider>
         </MCPProvider>
       </ThemeProvider>

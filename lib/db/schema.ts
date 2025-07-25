@@ -1,4 +1,5 @@
-import { timestamp, pgTable, text, primaryKey, json, boolean, integer } from "drizzle-orm/pg-core";
+import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 // Message role enum type
@@ -63,6 +64,7 @@ export const users = pgTable("user", {
   image: text("image"),
   isAnonymous: boolean("isAnonymous").default(false),
   metadata: json("metadata"),
+  defaultPresetId: text("default_preset_id"), // Will add foreign key constraint in migration
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
 });
@@ -148,4 +150,50 @@ export const polarUsageEvents = pgTable('polar_usage_events', {
   createdAt: timestamp('created_at').defaultNow().notNull(), // When this log entry was created
 });
 
-export type PolarUsageEvent = typeof polarUsageEvents.$inferSelect; 
+export type PolarUsageEvent = typeof polarUsageEvents.$inferSelect;
+
+// --- Presets Schema ---
+
+export const presets = pgTable('presets', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  modelId: text('model_id').notNull(),
+  systemInstruction: text('system_instruction').notNull(),
+  temperature: integer('temperature').notNull(), // Store as integer (temperature * 1000) for precision
+  maxTokens: integer('max_tokens').notNull(),
+  webSearchEnabled: boolean('web_search_enabled').default(false),
+  webSearchContextSize: text('web_search_context_size').default('medium'), // 'low', 'medium', 'high'
+  apiKeyPreferences: json('api_key_preferences').$type<Record<string, { useCustomKey: boolean; keyName?: string }>>().default({}),
+  isDefault: boolean('is_default').default(false),
+  shareId: text('share_id').unique(),
+  visibility: text('visibility').default('private'), // 'private', 'shared'
+  version: integer('version').default(1),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  // Constraints
+  uniqueNamePerUser: unique('unique_name_per_user').on(table.userId, table.name),
+  // oneDefaultPerUser constraint removed - handled in application logic
+  checkNameLength: check('check_name_length', sql`char_length(${table.name}) >= 1 AND char_length(${table.name}) <= 100`),
+  checkSystemInstructionLength: check('check_system_instruction_length', sql`char_length(${table.systemInstruction}) >= 10 AND char_length(${table.systemInstruction}) <= 4000`),
+  checkTemperatureRange: check('check_temperature_range', sql`${table.temperature} >= 0 AND ${table.temperature} <= 2000`), // 0.0 to 2.0 * 1000
+  checkMaxTokensRange: check('check_max_tokens_range', sql`${table.maxTokens} > 0 AND ${table.maxTokens} <= 100000`),
+  checkVisibility: check('check_visibility', sql`${table.visibility} IN ('private', 'shared')`),
+  checkWebSearchContextSize: check('check_web_search_context_size', sql`${table.webSearchContextSize} IN ('low', 'medium', 'high')`),
+  checkShareIdFormat: check('check_share_id_format', sql`${table.shareId} IS NULL OR (char_length(${table.shareId}) >= 20 AND char_length(${table.shareId}) <= 50)`),
+}));
+
+// Preset usage tracking
+export const presetUsage = pgTable('preset_usage', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  presetId: text('preset_id').notNull().references(() => presets.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  chatId: text('chat_id'),
+  usedAt: timestamp('used_at').defaultNow().notNull(),
+});
+
+export type Preset = typeof presets.$inferSelect;
+export type PresetInsert = typeof presets.$inferInsert;
+export type PresetUsage = typeof presetUsage.$inferSelect; 

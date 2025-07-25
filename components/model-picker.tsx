@@ -18,9 +18,11 @@ interface ModelPickerProps {
   selectedModel: modelID;
   setSelectedModel: (model: modelID) => void;
   onModelSelected?: () => void;
+  disabled?: boolean; // New prop to disable the picker when preset is active
+  activePresetName?: string; // Optional preset name for better messaging
 }
 
-export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }: ModelPickerProps) => {
+export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, disabled = false, activePresetName }: ModelPickerProps) => {
   const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +62,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
       case 'research':
         return <Lightbulb className="h-2.5 w-2.5" />;
       case 'vision':
-        return <Image className="h-2.5 w-2.5" />;
+        return <Image className="h-2.5 w-2.5" aria-hidden="true" />;
       case 'fast':
       case 'rapid':
         return <Bolt className="h-2.5 w-2.5" />;
@@ -163,6 +165,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
 
   // Handle opening the popover - memoized to prevent re-renders
   const handleOpenChange = useCallback((open: boolean) => {
+    if (disabled) return; // Prevent opening when disabled
+    
     setIsOpen(open);
     if (!open) {
       setSearchTerm("");
@@ -173,7 +177,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
         searchInputRef.current?.focus();
       }, 100);
     }
-  }, []);
+  }, [disabled]);
 
   // Handle search input change - memoized to prevent re-renders
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -241,24 +245,31 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                 variant="outline"
                 role="combobox"
                 aria-expanded={isOpen}
+                disabled={disabled}
                 className={cn(
-                  "max-w-[200px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+                  "w-full max-w-[160px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
                   "border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20",
                   "transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2",
                   "text-foreground hover:text-foreground font-normal",
-                  isModelUnavailable && "opacity-50"
+                  isModelUnavailable && "opacity-50",
+                  disabled && "opacity-60 cursor-not-allowed hover:bg-primary/5 dark:hover:bg-primary/10"
                 )}
               >
                 <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                   {getProviderIcon(selectedModelDetails.provider)}
                   <span className="text-xs font-medium truncate">{selectedModelDetails.name}</span>
                 </div>
-                <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                <ChevronDown className={cn("ml-2 h-3 w-3 shrink-0 opacity-50", disabled && "opacity-30")} />
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
-            {isModelUnavailable ? (
+            {disabled ? (
+              <p>
+                Model is controlled by {activePresetName ? `"${activePresetName}" preset` : 'active preset'}. 
+                Switch to &quot;Manual Mode&quot; to change models.
+              </p>
+            ) : isModelUnavailable ? (
               <p>This model requires premium access. Please check your credits.</p>
             ) : (
               <p>Select an AI model for this conversation. Each model has different capabilities and costs.</p>
@@ -326,7 +337,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                               <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
                             )}
                             {model.vision && (
-                              <Image className="h-3 w-3 text-indigo-500 ml-0.5 flex-shrink-0" />
+                              <Image className="h-3 w-3 text-indigo-500 ml-0.5 flex-shrink-0" aria-hidden="true" />
                             )}
                             {isSelected && <Check className="h-3 w-3 ml-auto text-primary" />}
                           </div>
@@ -369,7 +380,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected }
                     <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
                   )}
                   {detailsPanelModelDetails.vision && (
-                    <Image className="h-4 w-4 text-indigo-500 ml-0.5 flex-shrink-0" />
+                    <Image className="h-4 w-4 text-indigo-500 ml-0.5 flex-shrink-0" aria-hidden="true" />
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground mb-1">

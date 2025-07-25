@@ -15,7 +15,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.chatlima.com/"),
   title: "ChatLima",
-  description: "ChatLima is a minimalistic MCP client with a good feature set.",
+  description: "Feature-rich MCP-powered AI chatbot with multi-model support and advanced tools.",
   icons: {
     icon: "/logo.png",
     apple: [
@@ -45,11 +45,12 @@ export const metadata: Metadata = {
         height: 630,
       },
     ],
+    description: "Feature-rich MCP-powered AI chatbot with multi-model support and advanced tools.",
   },
   twitter: {
     card: "summary_large_image",
     title: "ChatLima",
-    description: "ChatLima is a minimalistic MCP client with a good feature set.",
+    description: "Feature-rich MCP-powered AI chatbot with multi-model support and advanced tools.",
     images: ["https://www.chatlima.com/twitter-image.png"],
   },
   other: {
