@@ -1,1 +1,1 @@
-ALTER TABLE "user" ADD COLUMN "metadata" json;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "metadata" json;
