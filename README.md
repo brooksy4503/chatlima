@@ -3,7 +3,7 @@
 </a>
 
 <p align="center">
-  An open-source AI chatbot app powered by Model Context Protocol (MCP), built with Next.js and the AI SDK by Vercel.
+  Feature-rich MCP-powered AI chatbot with multi-model support and advanced tools.
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 
 # ChatLima
 
-A minimalistic MCP client with a comprehensive feature set for modern AI interactions.
+Feature-rich MCP-powered AI chatbot with multi-model support and advanced tools.
 
 This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira-mcp-chat) by Zaid Mukaddam, with extensive additional features and modifications by Garth Scaysbrook.
 
