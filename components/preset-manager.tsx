@@ -333,27 +333,27 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh]">
+      <DialogContent className="max-w-[95vw] sm:max-w-3xl lg:max-w-5xl max-h-[90vh] p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
             Preset Manager
           </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="list">My Presets</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-            <TabsTrigger value="create">Create New</TabsTrigger>
-            <TabsTrigger value="edit" disabled={!editingPreset}>Edit</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsTrigger value="list" className="text-xs sm:text-sm px-2 py-2">My Presets</TabsTrigger>
+            <TabsTrigger value="templates" className="text-xs sm:text-sm px-2 py-2">Templates</TabsTrigger>
+            <TabsTrigger value="create" className="text-xs sm:text-sm px-2 py-2">Create New</TabsTrigger>
+            <TabsTrigger value="edit" disabled={!editingPreset} className="text-xs sm:text-sm px-2 py-2">Edit</TabsTrigger>
           </TabsList>
 
           {/* Error Display */}
           {(error || formErrors.length > 0) && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
+              <AlertDescription className="text-sm">
                 {error || formErrors.join(', ')}
               </AlertDescription>
             </Alert>
@@ -361,49 +361,50 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
           {/* My Presets Tab */}
           <TabsContent value="list" className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Your Presets ({presets.length})</h3>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+              <h3 className="text-base sm:text-lg font-semibold">Your Presets ({presets.length})</h3>
               <Button 
                 onClick={() => {
                   resetForm();
                   setActiveTab('create');
                 }}
                 size="sm"
+                className="w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Preset
               </Button>
             </div>
 
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[350px] sm:h-[400px]">
               <div className="space-y-3">
                 {presets.map((preset) => (
                   <Card key={preset.id} className="relative">
                     <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            {preset.name}
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <CardTitle className="text-sm sm:text-base flex items-center gap-2 flex-wrap">
+                            <span className="truncate">{preset.name}</span>
                             {preset.isDefault && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs shrink-0">
                                 <Star className="w-3 h-3 mr-1" />
                                 Default
                               </Badge>
                             )}
                             {activePreset?.id === preset.id && (
-                              <Badge variant="default" className="text-xs">
+                              <Badge variant="default" className="text-xs shrink-0">
                                 Active
                               </Badge>
                             )}
                           </CardTitle>
-                          <CardDescription className="flex items-center gap-2">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getProviderBadgeClass(modelDetails[preset.modelId]?.provider || 'Unknown')}`}>
+                          <CardDescription className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${getProviderBadgeClass(modelDetails[preset.modelId]?.provider || 'Unknown')}`}>
                               {modelDetails[preset.modelId]?.provider || 'Unknown'}
                             </span>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="hover:underline cursor-help">
+                                  <span className="hover:underline cursor-help truncate">
                                     {modelDetails[preset.modelId]?.name || preset.modelId}
                                   </span>
                                 </TooltipTrigger>
@@ -415,12 +416,13 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                           </CardDescription>
                         </div>
                         
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0 overflow-x-auto sm:overflow-visible">
                           <Button 
                             variant="ghost" 
                             size="icon"
                             onClick={() => setActivePreset(preset)}
                             title="Use this preset"
+                            className="h-8 w-8 shrink-0"
                           >
                             <Check className="w-4 h-4" />
                           </Button>
@@ -429,6 +431,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                             size="icon"
                             onClick={() => startEdit(preset)}
                             title="Edit preset"
+                            className="h-8 w-8 shrink-0"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -437,6 +440,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                             size="icon"
                             onClick={() => handleShare(preset)}
                             title="Share preset"
+                            className="h-8 w-8 shrink-0"
                           >
                             <Share className="w-4 h-4" />
                           </Button>
@@ -446,6 +450,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                               size="icon"
                               onClick={() => handleSetDefault(preset)}
                               title="Set as default"
+                              className="h-8 w-8 shrink-0"
                             >
                               <Star className="w-4 h-4" />
                             </Button>
@@ -455,6 +460,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                             size="icon"
                             onClick={() => handleDelete(preset)}
                             title="Delete preset"
+                            className="h-8 w-8 shrink-0"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -463,7 +469,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                     </CardHeader>
                     
                     <CardContent className="pt-2">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
                         <div>
                           <span className="font-medium">API Route:</span> {formatApiRoute(preset.modelId)}
                         </div>
@@ -528,35 +534,35 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
           {/* Templates Tab */}
           <TabsContent value="templates" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Preset Templates</h3>
+              <h3 className="text-base sm:text-lg font-semibold">Preset Templates</h3>
             </div>
 
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[350px] sm:h-[400px]">
               <div className="space-y-6">
                 {getTemplateCategories().map((category) => (
                   <div key={category}>
                     <h4 className="font-medium mb-3 capitalize">{category}</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                       {getTemplatesByCategory(category).map((template) => (
                         <Card key={template.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <span className="text-lg">{template.icon}</span>
-                              {template.name}
+                            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                              <span className="text-lg shrink-0">{template.icon}</span>
+                              <span className="truncate">{template.name}</span>
                             </CardTitle>
-                            <CardDescription>{template.description}</CardDescription>
+                            <CardDescription className="text-sm">{template.description}</CardDescription>
                           </CardHeader>
                           
                           <CardContent className="pt-2">
                             <div className="space-y-3">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getProviderBadgeClass(modelDetails[template.preset.modelId]?.provider || 'Unknown')}`}>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${getProviderBadgeClass(modelDetails[template.preset.modelId]?.provider || 'Unknown')}`}>
                                   {modelDetails[template.preset.modelId]?.provider || 'Unknown'}
                                 </span>
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="hover:underline cursor-help">
+                                      <span className="hover:underline cursor-help truncate">
                                         {modelDetails[template.preset.modelId]?.name || template.preset.modelId}
                                       </span>
                                     </TooltipTrigger>
@@ -589,10 +595,10 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
           {/* Create/Edit Form Tabs */}
           {(activeTab === 'create' || activeTab === 'edit') && (
             <TabsContent value={activeTab} className="space-y-4">
-              <ScrollArea className="h-[400px] pr-4">
+              <ScrollArea className="h-[350px] sm:h-[400px] pr-2 sm:pr-4">
                 <div className="space-y-4">
                   {/* Basic Info */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Preset Name</Label>
                       <Input
@@ -630,7 +636,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                   </div>
 
                   {/* Parameters */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="temperature">
                         Temperature ({modelConstraints.temperature.min} - {modelConstraints.temperature.max})
@@ -680,7 +686,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Info className="ml-2 h-4 w-4 text-muted-foreground cursor-help" />
+                              <Info className="ml-2 h-4 w-4 text-muted-foreground cursor-help shrink-0" />
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-xs">{getWebSearchRestrictionMessage(formData.modelId)}</p>
@@ -693,7 +699,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                     {/* Show restriction message below the switch */}
                     {getWebSearchRestrictionMessage(formData.modelId) && (
                       <div className="ml-6 text-sm text-muted-foreground flex items-center gap-2">
-                        <Info className="h-4 w-4" />
+                        <Info className="h-4 w-4 shrink-0" />
                         <span>{getWebSearchRestrictionMessage(formData.modelId)}</span>
                       </div>
                     )}
@@ -705,7 +711,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                           value={formData.webSearchContextSize} 
                           onValueChange={(value) => setFormData(prev => ({ ...prev, webSearchContextSize: value as any }))}
                         >
-                          <SelectTrigger className="w-40">
+                          <SelectTrigger className="w-full sm:w-40">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -730,7 +736,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
                   {/* Form Actions */}
                   <Separator />
-                  <div className="flex justify-end gap-3">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3">
                     <Button 
                       variant="outline" 
                       onClick={() => {
@@ -738,12 +744,14 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                         setEditingPreset(null);
                         setActiveTab('list');
                       }}
+                      className="w-full sm:w-auto"
                     >
                       Cancel
                     </Button>
                     <Button 
                       onClick={handleSubmit}
                       disabled={submitting}
+                      className="w-full sm:w-auto"
                     >
                       {submitting ? (
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
