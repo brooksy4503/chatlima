@@ -1,15 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { PlusCircle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function TopNav() {
-  const router = useRouter();
 
   const handleNewChat = () => {
-    router.push('/');
+    // Use window.location for more reliable navigation
+    window.location.href = '/';
   };
 
   return (

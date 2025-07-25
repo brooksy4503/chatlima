@@ -16,6 +16,7 @@ import { useMCP } from "@/lib/context/mcp-context";
 import { useSession } from "@/lib/auth-client";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { useModel } from "@/lib/context/model-context";
+import { usePresets } from "@/lib/context/preset-context";
 import type { ImageAttachment } from "@/lib/types";
 
 // Type for chat data from DB
@@ -43,6 +44,7 @@ export default function Chat() {
   const { mcpServersForApi } = useMCP();
   
   const { selectedModel, setSelectedModel } = useModel();
+  const { activePreset } = usePresets();
   const [userId, setUserId] = useState<string | null>(null);
   const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
@@ -83,6 +85,29 @@ export default function Chat() {
       setGeneratedChatId(nanoid());
     }
   }, [chatId]);
+
+  // Reset error state when navigating to a new chat
+  useEffect(() => {
+    if (!chatId) {
+      // Reset any error recovery state when starting fresh
+      setIsErrorRecoveryNeeded(false);
+      setLastErrorTime(null);
+      setHideImagesInUI(false);
+      setSelectedImages([]);
+      
+      // Clear any lingering toast state
+      if (lastToastId) {
+        toast.dismiss(lastToastId);
+        setLastToastId(null);
+      }
+      setLastErrorMessage("");
+      setLastToastTimestamp(0);
+      
+      // Reset streaming state
+      setStreamingStartTime(null);
+      setLastStreamingActivity(null);
+    }
+  }, [chatId, lastToastId]);
 
   // Error recovery mechanism - reset chat state when errors occur
   // Note: This will be moved after the useChat hook is defined
@@ -155,8 +180,9 @@ export default function Chat() {
     return apiKeys;
   };
 
-  // Check if current model supports vision/images
-  const modelSupportsVision = modelDetails[selectedModel]?.vision === true;
+  // Check if current model supports vision/images - use preset model if active
+  const effectiveModel = activePreset?.modelId || selectedModel;
+  const modelSupportsVision = modelDetails[effectiveModel]?.vision === true;
 
   // Handle image selection
   const handleImageSelect = useCallback((newImages: ImageAttachment[]) => {
@@ -200,17 +226,21 @@ export default function Chat() {
       initialMessages,
       maxSteps: 20,
       body: {
-        selectedModel,
+        selectedModel: activePreset?.modelId || selectedModel,
         mcpServers: mcpServersForApi,
         chatId: chatId || generatedChatId,
         webSearch: {
-          enabled: webSearchEnabled,
-          contextSize: webSearchContextSize,
+          enabled: activePreset?.webSearchEnabled ?? webSearchEnabled,
+          contextSize: activePreset?.webSearchContextSize || webSearchContextSize,
         },
         apiKeys: getClientApiKeys(),
         // Only send attachments for text-only messages (handleSubmit)
         // Don't send when using append() since images are already in message parts
-        attachments: []
+        attachments: [],
+        // Include preset parameters
+        temperature: activePreset?.temperature,
+        maxTokens: activePreset?.maxTokens,
+        systemInstruction: activePreset?.systemInstruction
       },
       experimental_throttle: 500,
       onFinish: (message) => {
@@ -396,6 +426,12 @@ export default function Chat() {
         // Force stop the current stream/request to reset useChat internal state
         originalStop();
         
+        // If we're in a new chat (no chatId), regenerate the chatId to force useChat to reset completely
+        if (!chatId) {
+          console.log('Regenerating chat ID to ensure fresh useChat state after error');
+          setGeneratedChatId(nanoid());
+        }
+        
         // Reset error recovery state
         setIsErrorRecoveryNeeded(false);
         setLastErrorTime(null);
@@ -410,7 +446,7 @@ export default function Chat() {
 
       return () => clearTimeout(resetTimeout);
     }
-  }, [isErrorRecoveryNeeded, lastErrorTime, originalStop]);
+  }, [isErrorRecoveryNeeded, lastErrorTime, originalStop, chatId]);
 
   // Track streaming start/stop and activity
   useEffect(() => {
@@ -532,10 +568,12 @@ export default function Chat() {
 
   const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat;
 
-  const isOpenRouterModel = selectedModel.startsWith("openrouter/");
+  const isOpenRouterModel = effectiveModel.startsWith("openrouter/");
 
   // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
   const enhancedMessages = useMemo(() => {
+    const effectiveWebSearchEnabled = activePreset?.webSearchEnabled ?? webSearchEnabled;
+    
     return messages.map((message, index) => {
       let enhancedMessage = { ...message };
       
@@ -543,7 +581,7 @@ export default function Chat() {
       if (message.role === 'assistant' && index > 0) {
         const previousMessage = messages[index - 1];
         // If the previous message was from user and web search was enabled, mark this assistant message
-        if (previousMessage.role === 'user' && webSearchEnabled && isOpenRouterModel) {
+        if (previousMessage.role === 'user' && effectiveWebSearchEnabled && isOpenRouterModel) {
           enhancedMessage = {
             ...enhancedMessage,
             hasWebSearch: true
@@ -556,12 +594,19 @@ export default function Chat() {
         hasWebSearch: (enhancedMessage as any).hasWebSearch || false
       } as Message & { hasWebSearch?: boolean };
     });
-  }, [messages, webSearchEnabled, isOpenRouterModel]);
+  }, [messages, webSearchEnabled, activePreset, isOpenRouterModel]);
 
   // Manual recovery function
   const forceRecovery = useCallback(() => {
     console.log('Manual recovery triggered by user');
     originalStop();
+    
+    // If we're in a new chat (no chatId), regenerate the chatId to force useChat to reset completely
+    if (!chatId) {
+      console.log('Regenerating chat ID to ensure fresh useChat state after manual recovery');
+      setGeneratedChatId(nanoid());
+    }
+    
     setIsErrorRecoveryNeeded(false);
     setLastErrorTime(null);
     setStreamingStartTime(null);
@@ -580,7 +625,7 @@ export default function Chat() {
       position: "top-center",
       duration: 3000
     });
-  }, [originalStop, lastToastId]);
+  }, [originalStop, lastToastId, chatId]);
 
   // Streaming status component
   const StreamingStatus = () => {

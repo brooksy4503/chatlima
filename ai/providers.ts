@@ -21,6 +21,13 @@ export interface ModelInfo {
   supportsWebSearch?: boolean;
   premium?: boolean;
   vision?: boolean; // Added vision field
+  // NEW: Add parameter constraints for presets
+  temperatureRange?: { min: number; max: number; default: number };
+  maxTokensRange?: { min: number; max: number; default: number };
+  supportsTemperature?: boolean;
+  supportsMaxTokens?: boolean;
+  supportsSystemInstruction?: boolean;
+  maxSystemInstructionLength?: number;
 }
 
 const middleware = extractReasoningMiddleware({
@@ -704,7 +711,13 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    temperatureRange: { min: 0, max: 1, default: 1 },
+    maxTokensRange: { min: 1, max: 8192, default: 1024 },
+    supportsTemperature: true,
+    supportsMaxTokens: true,
+    supportsSystemInstruction: true,
+    maxSystemInstructionLength: 4000
   },
   "claude-3-7-sonnet": {
     provider: "Anthropic",
@@ -725,7 +738,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 64000, default: 1024 }
   },
   "openrouter/anthropic/claude-3.7-sonnet:thinking": {
     provider: "OpenRouter",
@@ -736,7 +750,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 64000, default: 1024 }
   },
   "openrouter/deepseek/deepseek-chat-v3-0324": {
     provider: "OpenRouter",
@@ -747,7 +762,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 163840, default: 1024 }
   },
   "openrouter/deepseek/deepseek-r1": {
     provider: "OpenRouter",
@@ -758,7 +774,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 163840, default: 1024 }
   },
   "openrouter/deepseek/deepseek-r1-0528": {
     provider: "OpenRouter",
@@ -769,7 +786,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/deepseek/deepseek-r1-0528-qwen3-8b": {
     provider: "OpenRouter",
@@ -780,7 +798,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: false,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/google/gemini-2.5-flash-preview": {
     provider: "OpenRouter",
@@ -846,7 +865,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 65536, default: 1024 }
   },
   "openrouter/google/gemini-2.5-pro": {
     provider: "OpenRouter",
@@ -857,7 +877,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/google/gemini-2.5-flash": {
     provider: "OpenRouter",
@@ -868,7 +889,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/google/gemini-2.5-flash-lite-preview-06-17": {
     provider: "OpenRouter",
@@ -879,7 +901,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/x-ai/grok-3-beta": {
     provider: "OpenRouter",
@@ -890,7 +913,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "grok-3-mini": {
     provider: "X AI",
@@ -912,7 +936,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/x-ai/grok-3-mini-beta-reasoning-high": {
     provider: "OpenRouter",
@@ -934,7 +959,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/meta-llama/llama-4-maverick": {
     provider: "OpenRouter",
@@ -945,7 +971,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 16384, default: 1024 }
   },
   "openrouter/mistralai/mistral-medium-3": {
     provider: "OpenRouter",
@@ -956,7 +983,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/mistralai/mistral-small-3.1-24b-instruct": {
     provider: "OpenRouter",
@@ -967,7 +995,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 96000, default: 1024 }
   },
   "openrouter/mistralai/mistral-small-3.2-24b-instruct": {
     provider: "OpenRouter",
@@ -978,7 +1007,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": {
     provider: "OpenRouter",
@@ -989,7 +1019,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/mistralai/magistral-small-2506": {
     provider: "OpenRouter",
@@ -1000,7 +1031,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 40000, default: 1024 }
   },
   "openrouter/mistralai/magistral-medium-2506": {
     provider: "OpenRouter",
@@ -1011,7 +1043,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 40000, default: 1024 }
   },
   "openrouter/mistralai/magistral-medium-2506:thinking": {
     provider: "OpenRouter",
@@ -1022,7 +1055,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 40000, default: 1024 }
   },
   "openrouter/openai/gpt-4.1": {
     provider: "OpenRouter",
@@ -1033,7 +1067,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: true,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "gpt-4.1-mini": {
     provider: "OpenAI",
@@ -1055,7 +1090,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/openai/gpt-4.1-nano": {
     provider: "OpenRouter",
@@ -1066,7 +1102,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/openai/o4-mini-high": {
     provider: "OpenRouter",
@@ -1077,7 +1114,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 100000, default: 1024 }
   },
   "qwen-qwq": {
     provider: "Groq",
@@ -1099,7 +1137,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/qwen/qwen3-235b-a22b": {
     provider: "OpenRouter",
@@ -1110,7 +1149,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 40960, default: 1024 }
   },
   "openrouter/anthropic/claude-sonnet-4": {
     provider: "OpenRouter",
@@ -1121,7 +1161,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 64000, default: 1024 }
   },
   "openrouter/anthropic/claude-opus-4": {
     provider: "OpenRouter",
@@ -1132,7 +1173,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 32000, default: 1024 }
   },
   "openrouter/sentientagi/dobby-mini-unhinged-plus-llama-3.1-8b": {
     provider: "OpenRouter",
@@ -1154,7 +1196,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 40000, default: 1024 }
   },
   "openrouter/minimax/minimax-m1:extended": {
     provider: "OpenRouter",
@@ -1176,7 +1219,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 12000, default: 1024 }
   },
   "openrouter/inception/mercury": {
     provider: "OpenRouter",
@@ -1187,7 +1231,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 16000, default: 1024 }
   },
   "openrouter/thedrummer/anubis-70b-v1.1": {
     provider: "OpenRouter",
@@ -1198,7 +1243,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 131072, default: 1024 }
   },
   "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
     provider: "OpenRouter",
@@ -1209,7 +1255,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "openrouter/moonshotai/kimi-k2": {
     provider: "OpenRouter",
@@ -1220,7 +1267,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 63000, default: 1024 }
   },
   "openrouter/moonshotai/kimi-k2:free": {
     provider: "OpenRouter",
@@ -1231,7 +1279,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   // Requesty model details
   "requesty/openai/gpt-4o": {
@@ -1243,7 +1292,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/openai/gpt-4o-mini": {
     provider: "Requesty",
@@ -1254,7 +1304,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/openai/gpt-4.1": {
     provider: "Requesty",
@@ -1265,7 +1316,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: true,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/openai/gpt-4.1-nano": {
     provider: "Requesty",
@@ -1276,7 +1328,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/openai/gpt-4.1-mini": {
     provider: "Requesty",
@@ -1287,7 +1340,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/anthropic/claude-3.5-sonnet": {
     provider: "Requesty",
@@ -1298,7 +1352,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/anthropic/claude-3.7-sonnet": {
     provider: "Requesty",
@@ -1309,7 +1364,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 64000, default: 1024 }
   },
   "requesty/google/gemini-2.5-flash-preview": {
     provider: "Requesty",
@@ -1331,7 +1387,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/google/gemini-2.5-pro": {
     provider: "Requesty",
@@ -1342,7 +1399,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/meta-llama/llama-3.1-70b-instruct": {
     provider: "Requesty",
@@ -1353,7 +1411,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 16384, default: 1024 }
   },
   "requesty/anthropic/claude-sonnet-4-20250514": {
     provider: "Requesty",
@@ -1364,7 +1423,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: false,
+    maxTokensRange: { min: 1, max: 4096, default: 1024 }
   },
   "requesty/deepseek/deepseek-chat": {
     provider: "Requesty",
@@ -1375,7 +1435,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 4096, default: 1024 }
   },
   "requesty/deepseek/deepseek-reasoner": {
     provider: "Requesty",
@@ -1386,7 +1447,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 4096, default: 1024 }
   },
   "requesty/deepseek/deepseek-v3": {
     provider: "Requesty",
@@ -1408,7 +1470,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 163840, default: 1024 }
   },
   "requesty/meta-llama/llama-3.3-70b-instruct": {
     provider: "Requesty",
@@ -1419,7 +1482,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 16384, default: 1024 }
   },
   "requesty/google/gemini-2.5-flash-lite-preview-06-17": {
     provider: "Requesty",
@@ -1430,7 +1494,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: false,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/moonshotai/kimi-k2-instruct": {
     provider: "Requesty",
@@ -1452,7 +1517,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: false
+    vision: false,
+    maxTokensRange: { min: 1, max: 4096, default: 1024 }
   },
   "requesty/anthropic/claude-opus-4": {
     provider: "Requesty",
@@ -1463,7 +1529,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 32000, default: 1024 }
   },
   "requesty/anthropic/claude-3.5-haiku": {
     provider: "Requesty",
@@ -1474,7 +1541,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/anthropic/claude-3-opus": {
     provider: "Requesty",
@@ -1485,7 +1553,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 4096, default: 1024 }
   },
   "requesty/anthropic/claude-3-sonnet": {
     provider: "Requesty",
@@ -1496,7 +1565,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 4096, default: 1024 }
   },
   "requesty/anthropic/claude-3-haiku": {
     provider: "Requesty",
@@ -1507,7 +1577,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 4096, default: 1024 }
   },
   "requesty/anthropic/claude-3.7-sonnet-thinking": {
     provider: "Requesty",
@@ -1584,7 +1655,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   // --- New Requesty DeepSeek models ---
   "requesty/deepinfra/deepseek-ai/DeepSeek-R1": {
@@ -1773,7 +1845,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/google/gemini-1.5-flash-8b": {
     provider: "Requesty",
@@ -1784,7 +1857,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/google/gemini-1.5-flash-8b-latest": {
     provider: "Requesty",
@@ -1795,7 +1869,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/google/gemini-1.5-flash-latest": {
     provider: "Requesty",
@@ -1806,7 +1881,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/google/gemini-1.5-pro": {
     provider: "Requesty",
@@ -1817,7 +1893,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/google/gemini-1.5-pro-latest": {
     provider: "Requesty",
@@ -1828,7 +1905,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/google/gemini-2.0-flash-001": {
     provider: "Requesty",
@@ -1839,7 +1917,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/coding/gemini-2.5-flash": {
     provider: "Requesty",
@@ -1850,7 +1929,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/coding/gemini-2.5-flash-preview-05-20": {
     provider: "Requesty",
@@ -1861,7 +1941,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/coding/gemini-2.5-pro": {
     provider: "Requesty",
@@ -1872,7 +1953,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/coding/gemini-2.5-pro-preview-03-25": {
     provider: "Requesty",
@@ -1883,7 +1965,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/coding/gemini-2.5-pro-preview-05-06": {
     provider: "Requesty",
@@ -1894,7 +1977,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/vertex/google/gemini-2.5-flash": {
     provider: "Requesty",
@@ -1905,7 +1989,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: false,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
   "requesty/vertex/google/gemini-2.5-pro": {
     provider: "Requesty",
@@ -1916,7 +2001,8 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true
+    vision: true,
+    maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
 };
 

@@ -20,7 +20,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "pricing:analysis": "npx tsx scripts/openrouter-pricing-analysis.ts"
+    "pricing:analysis": "npx tsx scripts/openrouter-pricing-analysis.ts",
+    "update:models": "npx tsx scripts/update-model-parameters.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.10",
@@ -48,6 +49,7 @@
     "@radix-ui/react-separator": "^1.1.4",
     "@radix-ui/react-slot": "^1.2.0",
     "@radix-ui/react-switch": "^1.2.2",
+    "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.3",
     "@requesty/ai-sdk": "^0.0.7",
     "@tanstack/react-query": "^5.74.4",

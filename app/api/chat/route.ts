@@ -2,6 +2,7 @@ import { model, type modelID, modelDetails, getLanguageModelWithKeys, createOpen
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { streamText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
+import { validatePresetParameters, getModelDefaults, sanitizeSystemInstruction } from "@/lib/parameter-validation";
 import { appendResponseMessages } from 'ai';
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
 import { nanoid } from 'nanoid';
@@ -109,7 +110,11 @@ export async function POST(req: Request) {
     mcpServers: initialMcpServers = [],
     webSearch = { enabled: false, contextSize: 'medium' },
     apiKeys = {},
-    attachments = []
+    attachments = [],
+    // NEW: Add preset parameter support
+    temperature,
+    maxTokens,
+    systemInstruction
   }: {
     messages: UIMessage[];
     chatId?: string;
@@ -122,6 +127,10 @@ export async function POST(req: Request) {
       contentType: string;
       url: string;
     }>;
+    // NEW: Add preset parameter types
+    temperature?: number;
+    maxTokens?: number;
+    systemInstruction?: string;
   } = await req.json();
 
   console.log('[DEBUG] Request body parsed:', {
@@ -129,8 +138,26 @@ export async function POST(req: Request) {
     chatId,
     selectedModel,
     attachmentsCount: attachments.length,
-    webSearchEnabled: webSearch.enabled
+    webSearchEnabled: webSearch.enabled,
+    hasTemperature: temperature !== undefined,
+    hasMaxTokens: maxTokens !== undefined,
+    hasSystemInstruction: systemInstruction !== undefined
   });
+
+  // NEW: Validate preset parameters
+  if (temperature !== undefined || maxTokens !== undefined || systemInstruction !== undefined) {
+    const validation = validatePresetParameters(selectedModel, temperature, maxTokens, systemInstruction);
+    if (!validation.valid) {
+      console.error('[Parameter Validation] Invalid preset parameters:', validation.errors);
+      return createErrorResponse(
+        "INVALID_PARAMETERS",
+        `Invalid preset parameters: ${validation.errors.join(', ')}`,
+        400,
+        validation.errors.join('; ')
+      );
+    }
+    console.log('[Parameter Validation] Preset parameters validated successfully');
+  }
 
   if (attachments.length > 0) {
     console.log('[DEBUG] Attachments received:', attachments.map(att => ({
@@ -747,9 +774,14 @@ export async function POST(req: Request) {
     : modelMessages;
   console.log(`[DEBUG] Using ${needsFormatConversion ? 'converted' : 'raw'} message format for model:`, selectedModel);
   console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
-  const openRouterPayload = {
-    model: modelInstance,
-    system: `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
+  
+  // NEW: Get default parameters and apply preset overrides
+  const modelDefaults = getModelDefaults(selectedModel);
+  const effectiveTemperature = temperature !== undefined ? temperature : modelDefaults.temperature;
+  const effectiveMaxTokens = maxTokens !== undefined ? maxTokens : modelDefaults.maxTokens;
+  const effectiveSystemInstruction = systemInstruction !== undefined 
+    ? sanitizeSystemInstruction(systemInstruction)
+    : `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
 
     You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
 
@@ -772,7 +804,19 @@ export async function POST(req: Request) {
     ## Response Format:
     - Use Markdown for formatting.
     - Base your response on the results from any tools used, or on your own reasoning and knowledge.
-    `,
+    `;
+
+  console.log('[DEBUG] Effective parameters:', {
+    temperature: effectiveTemperature,
+    maxTokens: effectiveMaxTokens,
+    systemInstructionLength: effectiveSystemInstruction.length
+  });
+
+  const openRouterPayload = {
+    model: modelInstance,
+    system: effectiveSystemInstruction,
+    temperature: effectiveTemperature,
+    maxTokens: effectiveMaxTokens,
     messages: formattedMessages,
     tools,
     maxSteps: 20,

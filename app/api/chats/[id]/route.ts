@@ -6,9 +6,9 @@ import { chats } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // Helper to get user ID from authenticated session only
