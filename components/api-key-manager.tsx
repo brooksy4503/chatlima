@@ -152,7 +152,7 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
             </div>
           </div>
           <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-            Enter your own API keys for different AI providers. Keys are stored securely in your browser's local storage.
+            Enter your own API keys for different AI providers. Keys are stored securely in your browser&apos;s local storage.
           </DialogDescription>
         </DialogHeader>
         
