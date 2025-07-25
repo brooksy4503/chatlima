@@ -184,7 +184,6 @@ const languageModels = {
     model: openrouterClient("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
     middleware: deepseekR1Middleware,
   }),
-  "openrouter/google/gemini-2.5-flash-preview": openrouterClient("google/gemini-2.5-flash-preview"),
   "openrouter/google/gemini-2.5-flash-preview:thinking": openrouterClient("google/gemini-2.5-flash-preview:thinking"),
   "openrouter/google/gemini-2.5-flash-preview-05-20": openrouterClient("google/gemini-2.5-flash-preview-05-20"),
   "openrouter/google/gemini-2.5-flash-preview-05-20:thinking": openrouterClient("google/gemini-2.5-flash-preview-05-20:thinking"),
@@ -413,8 +412,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
         model: getOpenRouterClient()("deepseek/deepseek-r1-0528-qwen3-8b", { logprobs: false }),
         middleware: deepseekR1Middleware,
       });
-    case "openrouter/google/gemini-2.5-flash-preview":
-      return getOpenRouterClient()("google/gemini-2.5-flash-preview");
+    case "openrouter/google/gemini-2.5-flash":
+      return getOpenRouterClient()("google/gemini-2.5-flash");
     case "openrouter/google/gemini-2.5-flash-preview:thinking":
       return getOpenRouterClient()("google/gemini-2.5-flash-preview:thinking");
     case "openrouter/google/gemini-2.5-flash-preview-05-20":
@@ -801,12 +800,12 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     vision: false,
     maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
-  "openrouter/google/gemini-2.5-flash-preview": {
+  "openrouter/google/gemini-2.5-flash": {
     provider: "OpenRouter",
-    name: "Google Gemini 2.5 Flash Preview",
-    description: "Google\'s latest Gemini 2.5 Flash model, optimized for speed and efficiency, accessed via OpenRouter.",
-    apiVersion: "google/gemini-2.5-flash-preview",
-    capabilities: ["Fast", "Efficient", "Multimodal"],
+    name: "Google Gemini 2.5 Flash",
+    description: "Google\'s state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in thinking capabilities, enabling it to provide responses with greater accuracy and nuanced context handling.",
+    apiVersion: "google/gemini-2.5-flash",
+    capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Thinking", "Multimodal"],
     enabled: true,
     supportsWebSearch: true,
     premium: false,
@@ -877,18 +876,6 @@ export const modelDetails: Record<keyof typeof languageModels, ModelInfo> = {
     enabled: true,
     supportsWebSearch: true,
     premium: true,
-    vision: true,
-    maxTokensRange: { min: 1, max: 8192, default: 1024 }
-  },
-  "openrouter/google/gemini-2.5-flash": {
-    provider: "OpenRouter",
-    name: "Google Gemini 2.5 Flash",
-    description: "Google's state-of-the-art workhorse model, specifically designed for advanced reasoning, coding, mathematics, and scientific tasks. It includes built-in thinking capabilities, enabling it to provide responses with greater accuracy and nuanced context handling.",
-    apiVersion: "google/gemini-2.5-flash",
-    capabilities: ["Advanced Reasoning", "Coding", "Mathematics", "Scientific Tasks", "Thinking", "Multimodal"],
-    enabled: true,
-    supportsWebSearch: true,
-    premium: false,
     vision: true,
     maxTokensRange: { min: 1, max: 8192, default: 1024 }
   },
@@ -2077,4 +2064,4 @@ export const MODELS = (Object.keys(languageModels) as modelID[]).filter(
   (modelId) => modelDetails[modelId].enabled !== false
 );
 
-export const defaultModel: modelID = "openrouter/google/gemini-2.5-flash-preview";
+export const defaultModel: modelID = "openrouter/google/gemini-2.5-flash";
