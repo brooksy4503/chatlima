@@ -76,12 +76,27 @@
 ## 🎁 New Features in Detail
 
 ### Preset Templates Available
-- **🎨 Creative Writing**: Optimized for storytelling and creative content
-- **🔍 Code Review**: Focused on code analysis and improvement suggestions
-- **📚 Research Assistant**: Configured for detailed research and fact-finding
-- **📝 Technical Writing**: Tuned for documentation and technical explanations
-- **💡 Brainstorming**: Set up for idea generation and creative problem-solving
-- **🎓 Educational Tutor**: Designed for teaching and learning assistance
+
+#### 🛠️ Coding Templates
+- **🏗️ Advanced Code Architect** (Claude Sonnet 4): Complex software architecture, advanced algorithms, and system design
+- **⚡ Deepseek V3 Code Expert** (Deepseek V3): Efficient coding, debugging, and modern frontend development  
+- **🤖 Kimi K2 Agentic Coder** (Kimi K2): Autonomous coding, complex problem-solving, and tool integration
+- **🚀 GPT-4.1 Mini Rapid Coder** (GPT-4.1 Mini): Fast coding tasks, code completion, and lightweight development
+
+#### 🧠 Analysis Templates
+- **🧠 Deepseek R1 Deep Reasoner** (Deepseek R1): Complex reasoning, mathematical problems, and logical analysis
+- **🔍 Grok 4 Research Analyst** (Grok 4): Comprehensive research, data analysis, and strategic insights
+- **📊 Gemini Pro 2.5 Data Scientist** (Gemini Pro 2.5): Advanced data science, ML model development, and statistical analysis
+
+#### ✍️ Writing Templates
+- **📚 Claude Sonnet 4 Technical Writer** (Claude Sonnet 4): Comprehensive technical documentation and complex writing
+- **✨ Gemini 2.5 Flash Content Creator** (Gemini 2.5 Flash): Rapid content creation, marketing copy, and creative writing
+
+#### 🎯 General Templates
+- **👔 Claude Sonnet 4 Executive Assistant** (Claude Sonnet 4): Comprehensive AI assistant for complex tasks and decision support
+- **🤝 GPT-4.1 Mini Personal Assistant** (GPT-4.1 Mini): Everyday tasks, quick answers, and personal productivity
+- **🧩 Kimi K2 Strategic Problem Solver** (Kimi K2): Complex problem-solving, strategic thinking, and multi-step solutions
+- **🎓 Gemini 2.5 Flash Learning Tutor** (Gemini 2.5 Flash): Interactive learning, education, and skill development
 
 ### Mobile-First Improvements
 - **Optimized Input Areas**: Better text input handling on mobile keyboards
