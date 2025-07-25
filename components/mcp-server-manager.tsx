@@ -462,13 +462,13 @@ export const MCPServerManager = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[480px] max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogContent className="max-w-[95vw] sm:max-w-md lg:max-w-[480px] max-h-[85vh] overflow-hidden flex flex-col p-4 sm:p-6">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <ServerIcon className="h-5 w-5 text-primary" />
+                    <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                        <ServerIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
                         MCP Server Configuration
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="text-sm">
                         Connect to Model Context Protocol servers to access additional AI tools.
                         {selectedServers.length > 0 && (
                             <span className="block mt-1 text-xs font-medium text-primary">
@@ -483,7 +483,7 @@ export const MCPServerManager = ({
                         {servers.length > 0 ? (
                             <div className="flex-1 overflow-hidden flex flex-col">
                                 <div className="flex-1 overflow-hidden flex flex-col">
-                                    <div className="flex items-center justify-between mb-3">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
                                         <h3 className="text-sm font-medium">Available Servers</h3>
                                         <span className="text-xs text-muted-foreground">
                                             Select multiple servers to combine their tools
@@ -512,29 +512,29 @@ export const MCPServerManager = ({
                                                 >
                                                     {/* Server Header with Type Badge and Delete Button */}
                                                     <div className="flex items-center justify-between mb-2">
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-2 flex-1 min-w-0">
                                                             {server.type === 'sse' ? (
                                                                 <Globe className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
                                                             ) : (
                                                                 <Terminal className={`h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground'} flex-shrink-0`} />
                                                             )}
-                                                            <h4 className="text-sm font-medium truncate max-w-[220px]">{server.name}</h4>
+                                                            <h4 className="text-sm font-medium truncate">{server.name}</h4>
                                                             {hasAdvancedConfig(server) && (
                                                                 <span className="flex-shrink-0">
                                                                     <Cog className="h-3 w-3 text-muted-foreground" />
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                             <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                                                                 {server.type.toUpperCase()}
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground shrink-0 font-medium">
+                                                                 {server.type === 'streamable-http' ? 'S-HTTP' : server.type.toUpperCase()}
                                                              </span>
-<button
+                                                             <button
                                                                   onClick={(e) => {
                                                                       e.stopPropagation();
                                                                       testConnection(server);
                                                                   }}
-                                                                  className="p-1 rounded-full hover:bg-muted/70"
+                                                                  className="p-1 rounded-full hover:bg-muted/70 shrink-0"
                                                                   aria-label="Test connection"
                                                                   disabled={testingServerId === server.id}
                                                               >
@@ -543,20 +543,22 @@ export const MCPServerManager = ({
                                                                   ) : (
                                                                       <Wifi className="h-3.5 w-3.5 text-muted-foreground" />
                                                                   )}
-                                                              </button>                                                             <button
+                                                              </button>
+                                                             <button
                                                                  onClick={(e) => removeServer(server.id, e)}
-                                                                 className="p-1 rounded-full hover:bg-muted/70"
+                                                                 className="p-1 rounded-full hover:bg-muted/70 shrink-0"
                                                                  aria-label="Remove server"
                                                              >
                                                                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                                                              </button>
                                                              <button
                                                                  onClick={() => startEditing(server)}
-                                                                 className="p-1 rounded-full hover:bg-muted/50"
+                                                                 className="p-1 rounded-full hover:bg-muted/50 shrink-0"
                                                                  aria-label="Edit server"
                                                              >
                                                                  <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                                             </button>                                                        </div>
+                                                             </button>
+                                                        </div>
                                                     </div>
 
                                                     {/* Server Details */}
@@ -592,7 +594,7 @@ export const MCPServerManager = ({
                                                         variant={isActive ? "default" : "outline"}
                                                         onClick={() => toggleServer(server.id)}
                                                     >
-                                                        {isActive && <CheckCircle className="h-3.5 w-3.5" />}
+                                                        {isActive && <CheckCircle className="h-3.5 w-3.5 shrink-0" />}
                                                         {isActive ? "Active" : "Enable Server"}
                                                     </Button>
                                                 </div>
@@ -604,11 +606,11 @@ export const MCPServerManager = ({
                         ) : (
                             <div className="flex-1 py-8 pb-16 flex flex-col items-center justify-center space-y-4">
                                 <div className="rounded-full p-3 bg-primary/10">
-                                    <ServerIcon className="h-7 w-7 text-primary" />
+                                    <ServerIcon className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
                                 </div>
                                 <div className="text-center space-y-1">
-                                    <h3 className="text-base font-medium">No MCP Servers Added</h3>
-                                    <p className="text-sm text-muted-foreground max-w-[300px]">
+                                    <h3 className="text-sm sm:text-base font-medium">No MCP Servers Added</h3>
+                                    <p className="text-xs sm:text-sm text-muted-foreground max-w-[300px]">
                                         Add your first MCP server to access additional AI tools
                                     </p>
                                 </div>
@@ -620,7 +622,7 @@ export const MCPServerManager = ({
                                         className="flex items-center gap-1 hover:text-primary transition-colors"
                                     >
                                         Learn about MCP
-                                        <ExternalLink className="h-3 w-3" />
+                                        <ExternalLink className="h-3 w-3 shrink-0" />
                                     </a>
                                 </div>
                             </div>
@@ -631,7 +633,7 @@ export const MCPServerManager = ({
                         <h3 className="text-sm font-medium">{editingServerId ? "Edit MCP Server" : "Add New MCP Server"}</h3>
                         <div className="space-y-4">
                             <div className="grid gap-1.5">
-                                <Label htmlFor="name">
+                                <Label htmlFor="name" className="text-sm">
                                     Server Name
                                 </Label>
                                 <Input
@@ -647,7 +649,7 @@ export const MCPServerManager = ({
                             </div>
 
                             <div className="grid gap-1.5">
-                                <Label htmlFor="title">
+                                <Label htmlFor="title" className="text-sm">
                                     Display Title (Optional)
                                 </Label>
                                 <Input
@@ -663,12 +665,12 @@ export const MCPServerManager = ({
                             </div>
 
                             <div className="grid gap-1.5">
-                                <Label htmlFor="transport-type">
+                                <Label htmlFor="transport-type" className="text-sm">
                                     Transport Type
                                 </Label>
                                 <div className="space-y-2">
                                     <p className="text-xs text-muted-foreground">Choose how to connect to your MCP server:</p>
-                                    <div className="grid gap-2 grid-cols-2">
+                                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                                         <button
                                             type="button"
                                             onClick={() => setNewServer({ ...newServer, type: 'sse' })}
@@ -678,10 +680,10 @@ export const MCPServerManager = ({
                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
                                             }`}
                                         >
-                                            <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'sse' ? 'text-primary' : ''}`} />
-                                            <div>
-                                                <p className="font-medium">SSE</p>
-                                                <p className="text-xs text-muted-foreground">Server-Sent Events</p>
+                                            <Globe className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'sse' ? 'text-primary' : ''}`} />
+                                            <div className="min-w-0">
+                                                <p className="font-medium text-sm">SSE</p>
+                                                <p className="text-xs text-muted-foreground truncate">Server-Sent Events</p>
                                             </div>
                                         </button>
                                         
@@ -694,26 +696,26 @@ export const MCPServerManager = ({
                                                     : 'border-border hover:border-border/80 hover:bg-muted/50'
                                             }`}
                                         >
-                                            <Terminal className={`h-5 w-5 shrink-0 ${newServer.type === 'stdio' ? 'text-primary' : ''}`} />
-                                            <div>
-                                                <p className="font-medium">stdio</p>
-                                                <p className="text-xs text-muted-foreground">Standard I/O</p>
+                                            <Terminal className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'stdio' ? 'text-primary' : ''}`} />
+                                            <div className="min-w-0">
+                                                <p className="font-medium text-sm">stdio</p>
+                                                <p className="text-xs text-muted-foreground truncate">Standard I/O</p>
                                             </div>
                                         </button>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setNewServer({ ...newServer, type: 'streamable-http' })}
-                                        className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all col-span-2 ${
+                                        className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all w-full ${
                                             newServer.type === 'streamable-http' 
                                                 ? 'border-primary bg-primary/10 ring-1 ring-primary' 
                                                 : 'border-border hover:border-border/80 hover:bg-muted/50'
                                         }`}
                                     >
-                                        <Globe className={`h-5 w-5 shrink-0 ${newServer.type === 'streamable-http' ? 'text-primary' : ''}`} />
-                                        <div>
-                                            <p className="font-medium">Streamable HTTP</p>
-                                            <p className="text-xs text-muted-foreground">Streamable HTTP Server</p>
+                                        <Globe className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'streamable-http' ? 'text-primary' : ''}`} />
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-sm">Streamable HTTP</p>
+                                            <p className="text-xs text-muted-foreground truncate">Streamable HTTP Server</p>
                                         </div>
                                     </button>
                                 </div>
@@ -721,7 +723,7 @@ export const MCPServerManager = ({
 
                             {newServer.type === 'sse' || newServer.type === 'streamable-http' ? (
                                 <div className="grid gap-1.5">
-                                    <Label htmlFor="url">
+                                    <Label htmlFor="url" className="text-sm">
                                         Server URL
                                     </Label>
                                     <Input
@@ -738,7 +740,7 @@ export const MCPServerManager = ({
                             ) : (
                                 <>
                                     <div className="grid gap-1.5">
-                                        <Label htmlFor="command">
+                                        <Label htmlFor="command" className="text-sm">
                                             Command
                                         </Label>
                                         <Input
@@ -753,7 +755,7 @@ export const MCPServerManager = ({
                                         </p>
                                     </div>
                                     <div className="grid gap-1.5">
-                                        <Label htmlFor="args">
+                                        <Label htmlFor="args" className="text-sm">
                                             Arguments
                                         </Label>
                                         <Input
@@ -770,7 +772,7 @@ export const MCPServerManager = ({
                                 </>
                             )}
 
-{/* Test Connection Button */}
+                             {/* Test Connection Button */}
                              <div className="flex justify-end">
                                  <Button
                                      type="button"
@@ -791,6 +793,7 @@ export const MCPServerManager = ({
                                          (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) ||
                                          testingServerId === 'temp'
                                      }
+                                     className="gap-1.5"
                                  >
                                      {testingServerId === 'temp' ? (
                                          <>
@@ -798,22 +801,24 @@ export const MCPServerManager = ({
                                              Testing...
                                          </>
                                      ) : (
-<>
-                                              <Wifi className="h-3.5 w-3.5 mr-1.5" />
+                                          <>
+                                              <Wifi className="h-3.5 w-3.5 shrink-0" />
                                               Test Connection
-                                          </>                                     )}
+                                          </>
+                                     )}
                                  </Button>
                              </div>
 
                              {/* Advanced Configuration */}
-                             <Accordion type="single" collapsible className="w-full">                                <AccordionItem value="env-vars">
+                             <Accordion type="single" collapsible className="w-full">
+                                <AccordionItem value="env-vars">
                                     <AccordionTrigger className="text-sm py-2">
                                         Environment Variables
                                     </AccordionTrigger>
                                     <AccordionContent>
                                         <div className="space-y-3">
-                                            <div className="flex items-end gap-2">
-                                                <div className="flex-1">
+                                            <div className="flex flex-col sm:flex-row items-end gap-2">
+                                                <div className="flex-1 w-full">
                                                     <Label htmlFor="env-key" className="text-xs mb-1 block">
                                                         Key
                                                     </Label>
@@ -825,7 +830,7 @@ export const MCPServerManager = ({
                                                         className="h-8 relative z-0"
                                                     />
                                                 </div>
-                                                <div className="flex-1">
+                                                <div className="flex-1 w-full">
                                                     <Label htmlFor="env-value" className="text-xs mb-1 block">
                                                         Value
                                                     </Label>
@@ -844,7 +849,7 @@ export const MCPServerManager = ({
                                                     size="sm"
                                                     onClick={addEnvVar}
                                                     disabled={!newEnvVar.key}
-                                                    className="h-8 mt-1"
+                                                    className="h-8 mt-1 w-full sm:w-auto shrink-0"
                                                 >
                                                     <Plus className="h-3.5 w-3.5" />
                                                 </Button>
@@ -854,14 +859,14 @@ export const MCPServerManager = ({
                                                 <div className="border rounded-md divide-y">
                                                     {newServer.env.map((env, index) => (
                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
-                                                            <div className="flex-1 flex items-center gap-1 truncate">
-                                                                <span className="font-mono text-xs">{env.key}</span>
-                                                                <span className="mx-2 text-muted-foreground">=</span>
+                                                            <div className="flex-1 flex items-center gap-1 truncate min-w-0">
+                                                                <span className="font-mono text-xs shrink-0">{env.key}</span>
+                                                                <span className="mx-2 text-muted-foreground shrink-0">=</span>
                                                                 
                                                                 {editingEnvIndex === index ? (
-                                                                    <div className="flex gap-1 flex-1">
+                                                                    <div className="flex gap-1 flex-1 min-w-0">
                                                                         <Input
-                                                                            className="h-6 text-xs py-1 px-2"
+                                                                            className="h-6 text-xs py-1 px-2 flex-1"
                                                                             value={editedEnvValue}
                                                                             onChange={(e) => setEditedEnvValue(e.target.value)}
                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedEnvValue()}
@@ -869,7 +874,7 @@ export const MCPServerManager = ({
                                                                         />
                                                                         <Button 
                                                                             size="sm" 
-                                                                            className="h-6 px-2"
+                                                                            className="h-6 px-2 shrink-0"
                                                                             onClick={saveEditedEnvValue}
                                                                         >
                                                                             Save
@@ -882,7 +887,7 @@ export const MCPServerManager = ({
                                                                                 ? maskValue(env.value) 
                                                                                 : env.value}
                                                                         </span>
-                                                                        <span className="flex ml-1 gap-1">
+                                                                        <span className="flex ml-1 gap-1 shrink-0">
                                                                             {isSensitiveKey(env.key) && (
                                                                                 <button
                                                                                     onClick={() => toggleSensitiveEnvValue(index)}
@@ -910,7 +915,7 @@ export const MCPServerManager = ({
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 onClick={() => removeEnvVar(index)}
-                                                                className="h-6 w-6 p-0 ml-2"
+                                                                className="h-6 w-6 p-0 ml-2 shrink-0"
                                                             >
                                                                 <X className="h-3 w-3" />
                                                             </Button>
@@ -935,8 +940,8 @@ export const MCPServerManager = ({
                                     </AccordionTrigger>
                                     <AccordionContent>
                                         <div className="space-y-3">
-                                            <div className="flex items-end gap-2">
-                                                <div className="flex-1">
+                                            <div className="flex flex-col sm:flex-row items-end gap-2">
+                                                <div className="flex-1 w-full">
                                                     <Label htmlFor="header-key" className="text-xs mb-1 block">
                                                         Key
                                                     </Label>
@@ -948,7 +953,7 @@ export const MCPServerManager = ({
                                                         className="h-8 relative z-0"
                                                     />
                                                 </div>
-                                                <div className="flex-1">
+                                                <div className="flex-1 w-full">
                                                     <Label htmlFor="header-value" className="text-xs mb-1 block">
                                                         Value
                                                     </Label>
@@ -966,7 +971,7 @@ export const MCPServerManager = ({
                                                     size="sm"
                                                     onClick={addHeader}
                                                     disabled={!newHeader.key}
-                                                    className="h-8 mt-1"
+                                                    className="h-8 mt-1 w-full sm:w-auto shrink-0"
                                                 >
                                                     <Plus className="h-3.5 w-3.5" />
                                                 </Button>
@@ -976,14 +981,14 @@ export const MCPServerManager = ({
                                                 <div className="border rounded-md divide-y">
                                                     {newServer.headers.map((header, index) => (
                                                         <div key={index} className="flex items-center justify-between p-2 text-sm">
-                                                            <div className="flex-1 flex items-center gap-1 truncate">
-                                                                <span className="font-mono text-xs">{header.key}</span>
-                                                                <span className="mx-2 text-muted-foreground">:</span>
+                                                            <div className="flex-1 flex items-center gap-1 truncate min-w-0">
+                                                                <span className="font-mono text-xs shrink-0">{header.key}</span>
+                                                                <span className="mx-2 text-muted-foreground shrink-0">:</span>
                                                                 
                                                                 {editingHeaderIndex === index ? (
-                                                                    <div className="flex gap-1 flex-1">
+                                                                    <div className="flex gap-1 flex-1 min-w-0">
                                                                         <Input
-                                                                            className="h-6 text-xs py-1 px-2"
+                                                                            className="h-6 text-xs py-1 px-2 flex-1"
                                                                             value={editedHeaderValue}
                                                                             onChange={(e) => setEditedHeaderValue(e.target.value)}
                                                                             onKeyDown={(e) => e.key === 'Enter' && saveEditedHeaderValue()}
@@ -991,7 +996,7 @@ export const MCPServerManager = ({
                                                                         />
                                                                         <Button 
                                                                             size="sm" 
-                                                                            className="h-6 px-2"
+                                                                            className="h-6 px-2 shrink-0"
                                                                             onClick={saveEditedHeaderValue}
                                                                         >
                                                                             Save
@@ -1004,7 +1009,7 @@ export const MCPServerManager = ({
                                                                                 ? maskValue(header.value) 
                                                                                 : header.value}
                                                                         </span>
-                                                                        <span className="flex ml-1 gap-1">
+                                                                        <span className="flex ml-1 gap-1 shrink-0">
                                                                             {isSensitiveKey(header.key) && (
                                                                                 <button
                                                                                     onClick={() => toggleSensitiveHeaderValue(index)}
@@ -1032,7 +1037,7 @@ export const MCPServerManager = ({
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 onClick={() => removeHeader(index)}
-                                                                className="h-6 w-6 p-0 ml-2"
+                                                                className="h-6 w-6 p-0 ml-2 shrink-0"
                                                             >
                                                                 <X className="h-3 w-3" />
                                                             </Button>
@@ -1058,31 +1063,35 @@ export const MCPServerManager = ({
                 )}
 
                 {/* Persistent fixed footer with buttons */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex justify-between z-10">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex flex-col sm:flex-row justify-between gap-3 z-10">
                     {view === 'list' ? (
                         <>
                             <Button
                                 variant="outline"
                                 onClick={clearAllServers}
                                 size="sm"
-                                className="gap-1.5 hover:text-black hover:dark:text-white"
+                                className="gap-1.5 hover:text-black hover:dark:text-white w-full sm:w-auto"
                                 disabled={selectedServers.length === 0}
                             >
-                                <X className="h-3.5 w-3.5" />
+                                <X className="h-3.5 w-3.5 shrink-0" />
                                 Disable All
                             </Button>
                             <Button
                                 onClick={() => setView('add')}
                                 size="sm"
-                                className="gap-1.5"
+                                className="gap-1.5 w-full sm:w-auto"
                             >
-                                <PlusCircle className="h-3.5 w-3.5" />
+                                <PlusCircle className="h-3.5 w-3.5 shrink-0" />
                                 Add Server
                             </Button>
                         </>
                     ) : (
                         <>
-                            <Button variant="outline" onClick={handleFormCancel}>
+                            <Button 
+                                variant="outline" 
+                                onClick={handleFormCancel}
+                                className="w-full sm:w-auto"
+                            >
                                 Cancel
                             </Button>
                             <Button
@@ -1093,6 +1102,7 @@ export const MCPServerManager = ({
                                     (newServer.type === 'streamable-http' && !newServer.url) ||
                                     (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length))
                                 }
+                                className="w-full sm:w-auto"
                             >
                                 {editingServerId ? "Save Changes" : "Add Server"}
                             </Button>
