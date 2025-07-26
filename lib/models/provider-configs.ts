@@ -21,6 +21,67 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
         // Default capabilities if none detected
         if (capabilities.length === 0) capabilities.push('General Purpose');
 
+        // Determine maxTokensRange based on model capabilities
+        let maxTokensRange: { min: number; max: number; default: number };
+
+        const maxCompletionTokens = model.top_provider?.max_completion_tokens;
+
+        if (maxCompletionTokens && maxCompletionTokens > 0) {
+            // Use the actual max completion tokens from the provider
+            maxTokensRange = {
+                min: 1,
+                max: maxCompletionTokens,
+                default: Math.min(4096, Math.floor(maxCompletionTokens * 0.25))
+            };
+        } else {
+            // Handle specific models with known high token limits
+            if (model.id.includes('gemini')) {
+                // Gemini models support high output token limits
+                maxTokensRange = {
+                    min: 1,
+                    max: 65536,
+                    default: 4096
+                };
+            } else if (model.id.includes('claude') && model.id.includes('opus-4')) {
+                // Claude Opus 4 supports high output
+                maxTokensRange = {
+                    min: 1,
+                    max: 32000,
+                    default: 4096
+                };
+            } else if (model.id.includes('claude') && model.id.includes('sonnet-4')) {
+                // Claude Sonnet 4 supports very high output
+                maxTokensRange = {
+                    min: 1,
+                    max: 64000,
+                    default: 4096
+                };
+            } else if (model.id.includes('gpt-4') || model.id.includes('o1') || model.id.includes('o3') || model.id.includes('o4')) {
+                // OpenAI GPT-4 and reasoning models
+                maxTokensRange = {
+                    min: 1,
+                    max: 32768,
+                    default: 4096
+                };
+            } else if (model.id.includes('llama') && model.context_length && model.context_length > 100000) {
+                // Large context Llama models
+                maxTokensRange = {
+                    min: 1,
+                    max: 16384,
+                    default: 4096
+                };
+            } else {
+                // Default fallback based on context length
+                const contextLength = model.context_length || 8192;
+                const estimatedMaxTokens = Math.min(8192, Math.floor(contextLength * 0.5));
+                maxTokensRange = {
+                    min: 1,
+                    max: estimatedMaxTokens,
+                    default: Math.min(4096, Math.floor(estimatedMaxTokens * 0.5))
+                };
+            }
+        }
+
         return {
             id,
             provider: 'OpenRouter',
@@ -44,6 +105,7 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
             supportsTemperature: true,
             supportsMaxTokens: true,
             supportsSystemInstruction: true,
+            maxTokensRange,
         };
     });
 }
