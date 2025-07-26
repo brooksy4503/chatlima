@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { presets, presetUsage } from '@/lib/db/schema';
+import { presets } from '@/lib/db/schema';
 import { auth } from '@/lib/auth';
 import { eq, and, isNull } from 'drizzle-orm';
 import { validatePresetParameters, validateModelAccess } from '@/lib/parameter-validation';
+import { getModelDetails } from '@/lib/models/fetch-models';
 
 // Helper to create error responses
 const createErrorResponse = (message: string, status: number) => {
@@ -122,7 +123,8 @@ export async function PUT(
 
       // Validate model access
       const canAccessPremium = await userCanAccessPremium(userId);
-      const modelAccessValidation = validateModelAccess(modelId, canAccessPremium);
+      const modelInfo = await getModelDetails(modelId);
+      const modelAccessValidation = validateModelAccess(modelInfo, canAccessPremium);
       if (!modelAccessValidation.valid) {
         return createErrorResponse(`Model access denied: ${modelAccessValidation.errors.join(', ')}`, 403);
       }
