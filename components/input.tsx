@@ -5,7 +5,8 @@ import { ImageUpload } from "./image-upload";
 import { ImagePreview } from "./image-preview";
 import type { ImageAttachment } from "@/lib/types";
 import { useState } from "react";
-import { modelID, modelDetails } from "@/ai/providers";
+import { modelID } from "@/ai/providers";
+import { useModels } from "@/hooks/use-models";
 
 interface InputProps {
   input: string;
@@ -34,6 +35,13 @@ export const Input = ({
   selectedModel,
 }: InputProps) => {
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const { models } = useModels();
+
+  // Helper function to check if the selected model supports vision
+  const modelSupportsVision = () => {
+    const modelInfo = models.find(model => model.id === selectedModel);
+    return modelInfo?.vision === true;
+  };
 
   const handleImageSelect = (newImages: ImageAttachment[]) => {
     if (onImagesChange) {
@@ -56,7 +64,7 @@ export const Input = ({
   return (
     <div className="w-full space-y-3">
       {/* Image Upload Interface */}
-      {enableImageUpload && modelDetails[selectedModel]?.vision && showImageUpload && (
+      {enableImageUpload && modelSupportsVision() && showImageUpload && (
         <div className="bg-card border border-border rounded-xl p-4">
           <ImageUpload
             onImageSelect={handleImageSelect}
@@ -94,7 +102,7 @@ export const Input = ({
         />
         
         {/* Image Upload Button */}
-        {enableImageUpload && modelDetails[selectedModel]?.vision && (
+        {enableImageUpload && modelSupportsVision() && (
           <Button
             type="button"
             variant="ghost"

@@ -1,12 +1,13 @@
 "use client";
-import { MODELS, modelDetails, type modelID, defaultModel } from "@/ai/providers";
+import { useModel } from "@/lib/context/model-context";
+import { ModelInfo } from "@/lib/types/models";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "./ui/popover";
 import { cn } from "@/lib/utils";
-import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check } from "lucide-react";
+import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check, RefreshCw, AlertCircle } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useCredits } from "@/hooks/useCredits";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -15,15 +16,15 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 
 interface ModelPickerProps {
-  selectedModel: modelID;
-  setSelectedModel: (model: modelID) => void;
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
   onModelSelected?: () => void;
   disabled?: boolean; // New prop to disable the picker when preset is active
   activePresetName?: string; // Optional preset name for better messaging
 }
 
 export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, disabled = false, activePresetName }: ModelPickerProps) => {
-  const [hoveredModel, setHoveredModel] = useState<modelID | null>(null);
+  const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number>(-1);
@@ -31,6 +32,15 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const modelListRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
+  
+  // Get dynamic models and state from enhanced context
+  const { 
+    availableModels = [], 
+    isLoading: modelsLoading, 
+    isRefreshing: modelsRefreshing,
+    error: modelsError,
+    refresh: refreshModels
+  } = useModel();
   
   // Function to get the appropriate icon for each provider
   const getProviderIcon = (provider: string) => {
@@ -47,6 +57,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         return <Zap className="h-3 w-3 text-yellow-500" />;
       case 'openrouter':
         return <Zap className="h-3 w-3 text-purple-500" />;
+      case 'requesty':
+        return <Zap className="h-3 w-3 text-cyan-500" />;
       default:
         return <Zap className="h-3 w-3 text-blue-500" />;
     }
@@ -56,6 +68,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const getCapabilityIcon = (capability: string) => {
     switch (capability.toLowerCase()) {
       case 'code':
+      case 'coding':
         return <Code className="h-2.5 w-2.5" />;
       case 'reasoning':
         return <Brain className="h-2.5 w-2.5" />;
@@ -83,6 +96,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const getCapabilityColor = (capability: string) => {
     switch (capability.toLowerCase()) {
       case 'code':
+      case 'coding':
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
       case 'reasoning':
       case 'research':
@@ -107,10 +121,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   
   // Filter and sort models based on search term - memoized to prevent re-renders
   const filteredAndSortedModels = useMemo(() => {
-    return [...MODELS]
-      .filter((id) => {
-        const modelId = id as modelID;
-        const model = modelDetails[modelId];
+    return [...availableModels]
+      .filter((model) => {
         const searchLower = searchTerm.toLowerCase();
         return (
           model.name.toLowerCase().includes(searchLower) ||
@@ -118,12 +130,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
           model.capabilities.some(cap => cap.toLowerCase().includes(searchLower))
         );
       })
-      .sort((idA, idB) => {
-        const nameA = modelDetails[idA].name;
-        const nameB = modelDetails[idB].name;
-        return nameA.localeCompare(nameB);
+      .sort((modelA, modelB) => {
+        return modelA.name.localeCompare(modelB.name);
       });
-  }, [searchTerm]);
+  }, [availableModels, searchTerm]);
 
   // Reset keyboard focus when search term changes
   useEffect(() => {
@@ -133,35 +143,35 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   // Set initial keyboard focus when picker opens
   useEffect(() => {
     if (isOpen && filteredAndSortedModels.length > 0) {
-      const selectedIndex = filteredAndSortedModels.findIndex(id => id === selectedModel);
+      const selectedIndex = filteredAndSortedModels.findIndex(model => model.id === selectedModel);
       setKeyboardFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
     }
   }, [isOpen, filteredAndSortedModels, selectedModel]);
 
   // Get current model details to display
   const keyboardFocusedModel = keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length 
-    ? filteredAndSortedModels[keyboardFocusedIndex] as modelID 
+    ? filteredAndSortedModels[keyboardFocusedIndex] 
     : null;
   
   // Separate display logic: button always shows selected model, details panel shows hovered/focused model
-  const detailsPanelModelId = keyboardFocusedModel || hoveredModel || selectedModel;
-  const detailsPanelModelDetails = modelDetails[detailsPanelModelId];
+  const hoveredModelData = hoveredModel ? availableModels.find(m => m.id === hoveredModel) : null;
+  const detailsPanelModel = keyboardFocusedModel || hoveredModelData || availableModels.find(m => m.id === selectedModel);
   
   // Main button always shows the selected model (no layout flipping)
-  const selectedModelDetails = modelDetails[selectedModel];
-  const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelDetails.premium);
+  const selectedModelData = availableModels.find(m => m.id === selectedModel);
+  const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelData?.premium);
 
   // Handle model change - memoized to prevent re-renders
   const handleModelChange = useCallback((modelId: string) => {
-    if ((MODELS as string[]).includes(modelId)) {
-      const typedModelId = modelId as modelID;
-      setSelectedModel(typedModelId);
+    const model = availableModels.find(m => m.id === modelId);
+    if (model) {
+      setSelectedModel(modelId);
       setIsOpen(false);
       setSearchTerm("");
       setKeyboardFocusedIndex(-1);
       onModelSelected?.();
     }
-  }, [setSelectedModel, onModelSelected]);
+  }, [availableModels, setSelectedModel, onModelSelected]);
 
   // Handle opening the popover - memoized to prevent re-renders
   const handleOpenChange = useCallback((open: boolean) => {
@@ -183,6 +193,17 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   }, []);
+
+  // Handle refresh models
+  const handleRefreshModels = useCallback(async () => {
+    if (refreshModels) {
+      try {
+        await refreshModels();
+      } catch (error) {
+        console.error('Error during refresh:', error);
+      }
+    }
+  }, [refreshModels]);
 
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -220,11 +241,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
       case 'Enter':
         e.preventDefault();
         if (keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length) {
-          const selectedModelId = filteredAndSortedModels[keyboardFocusedIndex];
-          const model = modelDetails[selectedModelId as modelID];
-          const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
+          const selectedModelData = filteredAndSortedModels[keyboardFocusedIndex];
+          const isUnavailable = creditsLoading ? false : (selectedModelData.premium && !canAccessPremiumModels());
           if (!isUnavailable) {
-            handleModelChange(selectedModelId);
+            handleModelChange(selectedModelData.id);
           }
         }
         break;
@@ -234,6 +254,67 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         break;
     }
   }, [isOpen, filteredAndSortedModels, keyboardFocusedIndex, creditsLoading, canAccessPremiumModels, handleModelChange]);
+
+  // Loading state
+  if (modelsLoading) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              disabled
+              className={cn(
+                "w-full max-w-[160px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+                "border-primary/20 bg-primary/5 opacity-60"
+              )}
+            >
+              <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                <span className="text-xs font-medium">Loading models...</span>
+              </div>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Loading available models from providers...</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Error state
+  if (modelsError || !selectedModelData) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              onClick={handleRefreshModels}
+              disabled={modelsRefreshing}
+              className={cn(
+                "w-full max-w-[160px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+                "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+                modelsRefreshing && "opacity-60"
+              )}
+            >
+              <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                <AlertCircle className="h-3 w-3" />
+                <span className="text-xs font-medium">
+                  {modelsRefreshing ? "Refreshing..." : "Error loading models"}
+                </span>
+              </div>
+              <RefreshCw className={cn("ml-2 h-3 w-3 shrink-0", modelsRefreshing && "animate-spin")} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{modelsRefreshing ? "Refreshing models..." : "Failed to load models. Click to retry."}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -256,8 +337,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                 )}
               >
                 <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-                  {getProviderIcon(selectedModelDetails.provider)}
-                  <span className="text-xs font-medium truncate">{selectedModelDetails.name}</span>
+                  {getProviderIcon(selectedModelData.provider)}
+                  <span className="text-xs font-medium truncate">{selectedModelData.name}</span>
                 </div>
                 <ChevronDown className={cn("ml-2 h-3 w-3 shrink-0 opacity-50", disabled && "opacity-30")} />
               </Button>
@@ -281,18 +362,35 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
           className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[400px] overflow-hidden" 
           align="start"
         >
-          {/* Search input */}
-          <div className="px-3 pt-3 pb-2 border-b border-border/40">
-            <Input
-              ref={searchInputRef}
-              type="search"
-              placeholder="Search models... (Use ↑↓ arrow keys to navigate, Enter to select)"
-              aria-label="Search models by name, provider, or capability"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              onKeyDown={handleKeyDown}
-              className="w-full h-8"
-            />
+          {/* Search input with refresh button */}
+          <div className="px-3 pt-3 pb-2 border-b border-border/40 space-y-2">
+            <div className="flex gap-2">
+              <Input
+                ref={searchInputRef}
+                type="search"
+                placeholder="Search models... (Use ↑↓ arrow keys to navigate, Enter to select)"
+                aria-label="Search models by name, provider, or capability"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                onKeyDown={handleKeyDown}
+                className="flex-1 h-8"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshModels}
+                disabled={modelsRefreshing}
+                className="h-8 px-2"
+                title={modelsRefreshing ? "Refreshing models..." : "Refresh models"}
+              >
+                <RefreshCw className={cn("h-3 w-3", modelsRefreshing && "animate-spin")} />
+              </Button>
+            </div>
+            {availableModels.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                {filteredAndSortedModels.length} of {availableModels.length} models
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start max-h-[340px] overflow-hidden">
@@ -300,16 +398,14 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1 overflow-y-auto max-h-[340px]">
               <div ref={modelListRef} className="space-y-1 p-1">
                 {filteredAndSortedModels.length > 0 ? (
-                  filteredAndSortedModels.map((id, index) => {
-                    const modelId = id as modelID;
-                    const model = modelDetails[modelId];
+                  filteredAndSortedModels.map((model, index) => {
                     const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
-                    const isSelected = selectedModel === id;
+                    const isSelected = selectedModel === model.id;
                     const isKeyboardFocused = keyboardFocusedIndex === index;
                     
                     const modelItem = (
                       <div
-                        key={id}
+                        key={model.id}
                         className={cn(
                           "!px-2 sm:!px-3 py-1.5 sm:py-2 cursor-pointer rounded-md text-xs transition-colors duration-150",
                           "hover:bg-accent hover:text-accent-foreground",
@@ -320,11 +416,11 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                         )}
                         onClick={() => {
                           if (!isUnavailable) {
-                            handleModelChange(id);
+                            handleModelChange(model.id);
                           }
                         }}
                         onMouseEnter={() => {
-                          setHoveredModel(modelId);
+                          setHoveredModel(model.id);
                           setKeyboardFocusedIndex(-1); // Clear keyboard focus when using mouse
                         }}
                         onMouseLeave={() => setHoveredModel(null)}
@@ -350,7 +446,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
 
                     if (isUnavailable && !creditsLoading) {
                       return (
-                        <TooltipProvider key={`${id}-tooltip`} delayDuration={300}>
+                        <TooltipProvider key={`${model.id}-tooltip`} delayDuration={300}>
                           <Tooltip>
                             <TooltipTrigger asChild>{modelItem}</TooltipTrigger>
                             <TooltipContent className="max-w-xs">
@@ -371,25 +467,60 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             </div>
             
             {/* Model details column - hidden on smallest screens, visible on sm+ */}
-            <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[340px] min-h-[340px]">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  {getProviderIcon(detailsPanelModelDetails.provider)}
-                  <h3 className="text-sm font-semibold">{detailsPanelModelDetails.name}</h3>
-                  {detailsPanelModelDetails.premium && (
-                    <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
-                  )}
-                  {detailsPanelModelDetails.vision && (
-                    <Image className="h-4 w-4 text-indigo-500 ml-0.5 flex-shrink-0" aria-hidden="true" />
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground mb-1">
-                  Provider: <span className="font-medium">{detailsPanelModelDetails.provider}</span>
+            {detailsPanelModel && (
+              <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[340px] min-h-[340px]">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    {getProviderIcon(detailsPanelModel.provider)}
+                    <h3 className="text-sm font-semibold">{detailsPanelModel.name}</h3>
+                    {detailsPanelModel.premium && (
+                      <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
+                    )}
+                    {detailsPanelModel.vision && (
+                      <Image className="h-4 w-4 text-indigo-500 ml-0.5 flex-shrink-0" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Provider: <span className="font-medium">{detailsPanelModel.provider}</span>
+                  </div>
+                  
+                  {/* Capability badges */}
+                  <div className="flex flex-wrap gap-1 mt-2 mb-3">
+                    {detailsPanelModel.capabilities.map((capability) => (
+                      <span 
+                        key={capability}
+                        className={cn(
+                          "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
+                          getCapabilityColor(capability)
+                        )}
+                      >
+                        {getCapabilityIcon(capability)}
+                        <span>{capability}</span>
+                      </span>
+                    ))}
+                  </div>
+                  
+                  <div className="text-xs text-foreground/90 leading-relaxed mb-3 hidden md:block">
+                    {detailsPanelModel.description}
+                  </div>
                 </div>
                 
-                {/* Capability badges */}
-                <div className="flex flex-wrap gap-1 mt-2 mb-3">
-                  {detailsPanelModelDetails.capabilities.map((capability) => (
+                <div className="bg-muted/40 rounded-md p-2 hidden md:block">
+                  <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+                    <span>API Version:</span>
+                    <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
+                      {detailsPanelModel.apiVersion}
+                    </code>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Condensed model details for mobile only */}
+            {detailsPanelModel && (
+              <div className="p-3 sm:hidden border-t border-border/30">
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {detailsPanelModel.capabilities.slice(0, 4).map((capability) => (
                     <span 
                       key={capability}
                       className={cn(
@@ -401,43 +532,12 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                       <span>{capability}</span>
                     </span>
                   ))}
-                </div>
-                
-                <div className="text-xs text-foreground/90 leading-relaxed mb-3 hidden md:block">
-                  {detailsPanelModelDetails.description}
-                </div>
-              </div>
-              
-              <div className="bg-muted/40 rounded-md p-2 hidden md:block">
-                <div className="text-[10px] text-muted-foreground flex justify-between items-center">
-                  <span>API Version:</span>
-                  <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
-                    {detailsPanelModelDetails.apiVersion}
-                  </code>
+                  {detailsPanelModel.capabilities.length > 4 && (
+                    <span className="text-[10px] text-muted-foreground">+{detailsPanelModel.capabilities.length - 4} more</span>
+                  )}
                 </div>
               </div>
-            </div>
-            
-            {/* Condensed model details for mobile only */}
-            <div className="p-3 sm:hidden border-t border-border/30">
-              <div className="flex flex-wrap gap-1 mb-2">
-                {detailsPanelModelDetails.capabilities.slice(0, 4).map((capability) => (
-                  <span 
-                    key={capability}
-                    className={cn(
-                      "inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium",
-                      getCapabilityColor(capability)
-                    )}
-                  >
-                    {getCapabilityIcon(capability)}
-                    <span>{capability}</span>
-                  </span>
-                ))}
-                {detailsPanelModelDetails.capabilities.length > 4 && (
-                  <span className="text-[10px] text-muted-foreground">+{detailsPanelModelDetails.capabilities.length - 4} more</span>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </PopoverContent>
       </Popover>

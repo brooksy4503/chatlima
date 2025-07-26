@@ -1,76 +1,182 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { defaultModel, type modelID, MODELS } from "@/ai/providers";
+import { useModels } from "@/hooks/use-models";
+import { ModelInfo } from "@/lib/types/models";
+import { MODEL_MIGRATIONS } from "@/lib/models/provider-configs";
 
+// Legacy compatibility - keep the same interface
 interface ModelContextType {
-  selectedModel: modelID;
-  setSelectedModel: (model: modelID) => void;
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
+  // Extended interface for new features
+  isLoading?: boolean;
+  isRefreshing?: boolean;
+  error?: Error | null;
+  availableModels?: ModelInfo[];
+  refresh?: () => Promise<void>;
 }
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
 
+// Migration utilities
+function findMigration(oldModelId: string) {
+  return MODEL_MIGRATIONS.find(m => m.oldId === oldModelId);
+}
+
+function notifyUserOfMigration(migration: any) {
+  console.info(`Model migrated: ${migration.oldId} → ${migration.newId} (${migration.reason})`);
+  // Could show a toast notification here in the future
+}
+
+function notifyUserOfInvalidModel(modelId: string) {
+  console.warn(`Invalid model "${modelId}" replaced with default model`);
+  // Could show a toast notification here in the future
+}
+
+// Fallback models when dynamic loading fails
+const FALLBACK_MODELS = [
+  "openrouter/google/gemini-2.5-flash",
+  "openrouter/anthropic/claude-3.5-sonnet", 
+  "openrouter/openai/gpt-4.1-mini",
+];
+
 export function ModelProvider({ children }: { children: ReactNode }) {
-  const [selectedModel, setSelectedModelState] = useState<modelID>(defaultModel); // Always initialize with defaultModel
-
+  // Dynamic models from the API
+  const { models, isLoading, isValidating, error, refresh, forceRefresh } = useModels();
+  
+  // Selected model state
+  const [selectedModel, setSelectedModelState] = useState<string>(
+    FALLBACK_MODELS[0] // Start with a safe default
+  );
+  
+  // Initialization state
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Manual refresh state for better UX
+  const [isManuallyRefreshing, setIsManuallyRefreshing] = useState(false);
+  
+  // Effect to handle model initialization and migration
   useEffect(() => {
-    // This effect runs only on the client, after hydration
-    if (typeof window !== 'undefined') {
-      try {
-        const storedModel = localStorage.getItem('selected_ai_model');
-        if (storedModel && (MODELS as ReadonlyArray<string>).includes(storedModel)) {
-          setSelectedModelState(storedModel as modelID);
-        } else {
-          // If no valid model in localStorage, ensure defaultModel is set (or the first from MODELS)
-          // This also handles the case where defaultModel might have been updated
-          let initialClientModel = defaultModel;
-          if (!MODELS.includes(defaultModel) && MODELS.length > 0) {
-            initialClientModel = MODELS[0];
-          }
-          // No need to set if it's already defaultModel, but this ensures consistency
-          // and sets localStorage if it was missing or invalid
-          if (MODELS.includes(initialClientModel)) {
-             setSelectedModelState(initialClientModel); // This will trigger the second useEffect below
-          }
+    if (isLoading || isInitialized) return;
+    
+    // Wait until we have models loaded or failed to load
+    if (models.length === 0 && !error) return;
+    
+    const availableModelIds = models.map(m => m.id);
+    
+    // Get stored model from localStorage
+    let storedModel: string | null = null;
+    try {
+      if (typeof window !== 'undefined') {
+        storedModel = localStorage.getItem('selected_ai_model');
+      }
+    } catch (error) {
+      console.error("Error reading selected model from localStorage:", error);
+    }
+    
+    let finalModel = FALLBACK_MODELS[0]; // Safe default
+    
+    if (storedModel && availableModelIds.includes(storedModel)) {
+      // Stored model is valid and available
+      finalModel = storedModel;
+    } else if (storedModel) {
+      // Try migration
+      const migration = findMigration(storedModel);
+      if (migration?.automaticMigration && availableModelIds.includes(migration.newId)) {
+        finalModel = migration.newId;
+        notifyUserOfMigration(migration);
+      } else {
+        // Find best fallback from available models
+        const availableFallback = FALLBACK_MODELS.find(id => availableModelIds.includes(id));
+        if (availableFallback) {
+          finalModel = availableFallback;
+        } else if (availableModelIds.length > 0) {
+          // Use first available model as last resort
+          finalModel = availableModelIds[0];
         }
-      } catch (error) {
-        console.error("Error reading selected model from localStorage during effect", error);
-        // Fallback logic in case of error during localStorage read
-        let fallbackClientModel = defaultModel;
-        if (!MODELS.includes(defaultModel) && MODELS.length > 0) {
-          fallbackClientModel = MODELS[0];
+        
+        if (storedModel !== finalModel) {
+          notifyUserOfInvalidModel(storedModel);
         }
-         if (MODELS.includes(fallbackClientModel)) {
-           setSelectedModelState(fallbackClientModel);
-         }
+      }
+    } else {
+      // No stored model - pick best available fallback
+      const availableFallback = FALLBACK_MODELS.find(id => availableModelIds.includes(id));
+      if (availableFallback) {
+        finalModel = availableFallback;
+      } else if (availableModelIds.length > 0) {
+        // Use first available model as last resort
+        finalModel = availableModelIds[0];
       }
     }
-  }, []); // Empty dependency array ensures this runs once on mount
-
+    
+    setSelectedModelState(finalModel);
+    setIsInitialized(true);
+  }, [models, isLoading, error, isInitialized]);
+  
+  // Effect to persist selected model to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        if (MODELS.includes(selectedModel)) {
-          localStorage.setItem('selected_ai_model', selectedModel);
-        }
-      } catch (error) {
-        console.error("Error saving selected model to localStorage", error);
+    if (!isInitialized) return;
+    
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('selected_ai_model', selectedModel);
       }
+    } catch (error) {
+      console.error("Error saving selected model to localStorage:", error);
     }
-  }, [selectedModel]);
-
-  const setSelectedModel = (model: modelID) => {
-    if (MODELS.includes(model) && model !== selectedModel) {
+  }, [selectedModel, isInitialized]);
+  
+  // Enhanced setSelectedModel with validation
+  const setSelectedModel = (model: string) => {
+    const availableModelIds = models.map(m => m.id);
+    
+    if (availableModelIds.includes(model)) {
       setSelectedModelState(model);
-    } else if (!MODELS.includes(model)) {
+    } else {
       console.warn(`Attempted to set invalid model: ${model}`);
-      // Optionally, set to default or do nothing
-      // setSelectedModelState(defaultModel); 
+      
+      // Try to find a migration
+      const migration = findMigration(model);
+      if (migration?.automaticMigration && availableModelIds.includes(migration.newId)) {
+        setSelectedModelState(migration.newId);
+        notifyUserOfMigration(migration);
+      } else {
+        // Don't change the model if invalid - just warn
+        console.warn(`Model "${model}" is not available. Keeping current model: ${selectedModel}`);
+      }
     }
   };
+  
+  // Refresh function for the context - use forceRefresh to bypass cache
+  const contextRefresh = async () => {
+    if (forceRefresh) {
+      try {
+        setIsManuallyRefreshing(true);
+        await forceRefresh();
+      } catch (error) {
+        console.error('Error during model refresh:', error);
+      } finally {
+        setIsManuallyRefreshing(false);
+      }
+    }
+  };
+  
+  const contextValue = {
+    selectedModel,
+    setSelectedModel,
+    isLoading,
+    isRefreshing: isValidating || isManuallyRefreshing,
+    error,
+    availableModels: models,
+    refresh: contextRefresh,
+  };
+  
+
 
   return (
-    <ModelContext.Provider value={{ selectedModel, setSelectedModel }}>
+    <ModelContext.Provider value={contextValue}>
       {children}
     </ModelContext.Provider>
   );
