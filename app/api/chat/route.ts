@@ -1,4 +1,6 @@
-import { model, type modelID, modelDetails, getLanguageModelWithKeys, createOpenRouterClientWithKey } from "@/ai/providers";
+import { model, type modelID, getLanguageModelWithKeys, createOpenRouterClientWithKey } from "@/ai/providers";
+import { getModelDetails } from "@/lib/models/fetch-models";
+import { type ModelInfo } from "@/lib/types/models";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { streamText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
@@ -144,9 +146,12 @@ export async function POST(req: Request) {
     hasSystemInstruction: systemInstruction !== undefined
   });
 
+  // Get model info for validation and defaults
+  const selectedModelInfo = await getModelDetails(selectedModel);
+
   // NEW: Validate preset parameters
   if (temperature !== undefined || maxTokens !== undefined || systemInstruction !== undefined) {
-    const validation = validatePresetParameters(selectedModel, temperature, maxTokens, systemInstruction);
+    const validation = validatePresetParameters(selectedModelInfo, temperature, maxTokens, systemInstruction);
     if (!validation.valid) {
       console.error('[Parameter Validation] Invalid preset parameters:', validation.errors);
       return createErrorResponse(
@@ -182,10 +187,11 @@ export async function POST(req: Request) {
   }
 
   // Process attachments into message parts
-  function processMessagesWithAttachments(
+  async function processMessagesWithAttachments(
     messages: UIMessage[],
-    attachments: Array<{ name: string; contentType: string; url: string }>
-  ): UIMessage[] {
+    attachments: Array<{ name: string; contentType: string; url: string }>,
+    modelInfo: ModelInfo | null
+  ): Promise<UIMessage[]> {
     console.log('[DEBUG] processMessagesWithAttachments called with:', {
       messagesCount: messages.length,
       attachmentsCount: attachments.length
@@ -197,7 +203,7 @@ export async function POST(req: Request) {
     }
 
     // Check if model supports vision
-    const supportsVision = modelDetails[selectedModel]?.vision === true;
+    const supportsVision = modelInfo?.vision === true;
     console.log('[DEBUG] Model vision support check:', {
       selectedModel,
       supportsVision
@@ -275,7 +281,7 @@ export async function POST(req: Request) {
   }
 
   // Process messages with attachments
-  const processedMessages = processMessagesWithAttachments(messages, attachments);
+  const processedMessages = await processMessagesWithAttachments(messages, attachments, selectedModelInfo);
 
   // Get the authenticated session (including anonymous users)
   const session = await auth.api.getSession({ headers: req.headers });
@@ -321,10 +327,13 @@ export async function POST(req: Request) {
     hasCredits = true; // Allow request to proceed
   } else {
     try {
+      // Get model info for premium model checks
+      const modelInfo = await getModelDetails(selectedModel);
+
       // Check credits using both the external ID (userId) and legacy polarCustomerId
       // Pass isAnonymous flag to skip Polar checks for anonymous users
-      // Pass selectedModel to check for premium model access
-      hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, selectedModel);
+      // Pass model info to check for premium model access
+      hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined);
       console.log(`[Debug] hasEnoughCredits result: ${hasCredits}`);
 
       // Also get the actual credit balance to check for negative balances
@@ -705,7 +714,7 @@ export async function POST(req: Request) {
   }
 
   // Check if the selected model supports web search
-  const currentModelDetails = modelDetails[selectedModel];
+  const currentModelDetails = selectedModelInfo;
   if (secureWebSearch.enabled && selectedModel.startsWith("openrouter/")) {
     if (currentModelDetails?.supportsWebSearch === true) {
       // Model supports web search, use :online variant
@@ -791,7 +800,7 @@ export async function POST(req: Request) {
   console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
 
   // NEW: Get default parameters and apply preset overrides
-  const modelDefaults = getModelDefaults(selectedModel);
+  const modelDefaults = getModelDefaults(selectedModelInfo);
   const effectiveTemperature = temperature !== undefined ? temperature : modelDefaults.temperature;
   const effectiveMaxTokens = maxTokens !== undefined ? maxTokens : modelDefaults.maxTokens;
   const effectiveSystemInstruction = systemInstruction !== undefined
@@ -827,13 +836,49 @@ export async function POST(req: Request) {
     systemInstructionLength: effectiveSystemInstruction.length
   });
 
+  // Helper function to recursively remove $schema fields from any object
+  const removeSchemaRecursively = (obj: any): any => {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj !== 'object') return obj;
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => removeSchemaRecursively(item));
+    }
+
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (key !== '$schema') {
+        cleaned[key] = removeSchemaRecursively(value);
+      }
+    }
+    return cleaned;
+  };
+
+  // Helper function to clean tools for Google Vertex AI (removes all $schema fields)
+  const cleanToolsForVertexAI = (tools: any) => {
+    console.log(`[VERTEX CLEAN] Cleaning ${Object.keys(tools).length} tools for Vertex AI`);
+    const cleanedTools = removeSchemaRecursively(tools);
+    console.log(`[VERTEX CLEAN] Cleaned tools, removed $schema fields recursively`);
+    return cleanedTools;
+  };
+
+  // Determine if we need to clean tools for Google Vertex AI
+  const isVertexAIModel = selectedModel.includes('vertex/google/') ||
+    selectedModel.includes('google/gemini') ||
+    (selectedModel.includes('vertex') && selectedModel.includes('google'));
+
+  // Apply tool cleaning for Vertex AI models
+  const toolsToUse = isVertexAIModel && Object.keys(tools).length > 0
+    ? cleanToolsForVertexAI(tools)
+    : tools;
+
   const openRouterPayload = {
     model: modelInstance,
     system: effectiveSystemInstruction,
     temperature: effectiveTemperature,
     maxTokens: effectiveMaxTokens,
     messages: formattedMessages,
-    tools,
+    tools: toolsToUse,
     maxSteps: 20,
     providerOptions: {
       google: {
@@ -847,7 +892,16 @@ export async function POST(req: Request) {
           budgetTokens: 12000
         },
       },
-      openrouter: modelOptions
+      openrouter: modelOptions,
+      requesty: {
+        // Pass tools via extraBody for Requesty models
+        // For Google Vertex AI models, use cleaned tools without $schema field
+        ...(Object.keys(toolsToUse).length > 0 && {
+          extraBody: {
+            tools: toolsToUse
+          }
+        })
+      }
     },
     onError: (error: any) => {
       console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));

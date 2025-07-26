@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen, Activity } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -25,6 +25,7 @@ import Image from "next/image";
 import { MCPServerManager } from "./mcp-server-manager";
 import { ApiKeyManager } from "./api-key-manager";
 import { ThemeToggle } from "./theme-toggle";
+import { ProviderHealthDashboard } from "./provider-health-dashboard";
 import { useChats } from "@/lib/hooks/use-chats";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -71,6 +72,7 @@ export function ChatSidebar() {
     const [userId, setUserId] = useState<string | null>(null);
     const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
+    const [providerHealthOpen, setProviderHealthOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
@@ -393,6 +395,20 @@ export function ChatSidebar() {
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
+                                    <SidebarMenuButton 
+                                        onClick={() => setProviderHealthOpen(true)}
+                                        className={cn(
+                                            "w-full flex items-center gap-2 transition-all"
+                                        )}
+                                        tooltip={isCollapsed ? "Provider Health" : undefined}
+                                    >
+                                        <Activity className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                        {!isCollapsed && (
+                                            <span className="flex-grow text-sm text-foreground/80 text-left">Provider Health</span>
+                                        )}
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
                                     <SidebarMenuButton asChild>
                                         <ThemeToggle
                                             className={cn(
@@ -554,6 +570,23 @@ export function ChatSidebar() {
                 open={apiKeySettingsOpen}
                 onOpenChange={setApiKeySettingsOpen}
             />
+
+            <Dialog open={providerHealthOpen} onOpenChange={setProviderHealthOpen}>
+                <DialogContent className="max-w-[95vw] sm:max-w-xl lg:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-4 sm:p-6">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                            <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+                            Provider Health Dashboard
+                        </DialogTitle>
+                        <DialogDescription className="text-xs sm:text-sm">
+                            Monitor the status and availability of AI model providers
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-y-auto">
+                        <ProviderHealthDashboard dialogMode={true} compact={false} showRefreshButton={true} />
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

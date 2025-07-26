@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { usePresets, type Preset, type CreatePresetData } from '@/lib/context/preset-context';
 import { PRESET_TEMPLATES, getTemplateCategories, getTemplatesByCategory, type PresetTemplate } from '@/lib/preset-templates';
 import { validatePresetParameters, getModelParameterConstraints } from '@/lib/parameter-validation';
-import { modelDetails, type modelID, MODELS } from '@/ai/providers';
+import { type modelID, MODELS } from '@/ai/providers';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ import {
   Check,
   Info
 } from 'lucide-react';
+import { useModels } from '@/hooks/use-models';
 
 interface PresetManagerProps {
   open: boolean;
@@ -68,10 +69,33 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     setActivePreset
   } = usePresets();
 
-  // Helper function to determine if a model supports web search based on provider
-  const modelSupportsWebSearch = (modelId: string): boolean => {
-    // OpenRouter models support web search
+  const { models } = useModels();
+
+  // Helper function to get model info from dynamic models
+  const getModelInfo = (modelId: string) => {
+    return models.find(model => model.id === modelId);
+  };
+
+  // Helper function to get provider name
+  const getModelProvider = (modelId: string): string => {
+    const modelInfo = getModelInfo(modelId);
+    return modelInfo?.provider || 'Unknown';
+  };
+
+  // Helper function to get model name
+  const getModelName = (modelId: string): string => {
+    const modelInfo = getModelInfo(modelId);
+    return modelInfo?.name || modelId;
+  };
+
+  // Function to check if a model supports web search
+  const supportsWebSearch = (modelId: string): boolean => {
+    // OpenRouter models support web search (except specific exclusions)
     if (modelId.startsWith('openrouter/')) {
+      // Specific exclusions
+      if (modelId.includes('grok-3-beta') || modelId.includes('grok-3-mini-beta')) {
+        return false;
+      }
       return true;
     }
     
@@ -80,11 +104,10 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
       return false;
     }
     
-    // For direct models, check the modelDetails
-    // Most direct models support web search except for some specific ones
-    const details = modelDetails[modelId as modelID];
-    if (details?.supportsWebSearch !== undefined) {
-      return details.supportsWebSearch;
+    // For direct models, check the dynamic model details
+    const modelInfo = getModelInfo(modelId);
+    if (modelInfo?.supportsWebSearch !== undefined) {
+      return modelInfo.supportsWebSearch;
     }
     
     // Default to true for other models
@@ -143,7 +166,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     modelId: 'openrouter/anthropic/claude-3.5-sonnet',
     systemInstruction: '',
     temperature: 1,
-    maxTokens: 1024,
+    maxTokens: 4096,
     webSearchEnabled: false,
     webSearchContextSize: 'medium',
     isDefault: false
@@ -164,7 +187,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
   // Effect to disable web search when model doesn't support it
   useEffect(() => {
-    if (!modelSupportsWebSearch(formData.modelId) && formData.webSearchEnabled) {
+    if (!supportsWebSearch(formData.modelId) && formData.webSearchEnabled) {
       setFormData(prev => ({ ...prev, webSearchEnabled: false }));
     }
   }, [formData.modelId]);
@@ -177,7 +200,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
       modelId: 'openrouter/anthropic/claude-3.5-sonnet',
       systemInstruction: '',
       temperature: 1,
-      maxTokens: 1024,
+      maxTokens: 4096,
       webSearchEnabled: false,
       webSearchContextSize: 'medium',
       isDefault: false
@@ -188,7 +211,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   const startEdit = (preset: Preset) => {
     setEditingPreset(preset);
     setTemplateNameHint(null); // Clear template hint when editing existing preset
-    const webSearchEnabled = preset.webSearchEnabled && modelSupportsWebSearch(preset.modelId);
+    const webSearchEnabled = preset.webSearchEnabled && supportsWebSearch(preset.modelId);
     
     setFormData({
       name: preset.name,
@@ -205,7 +228,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
   // Start creating from template
   const startCreateFromTemplate = (template: PresetTemplate) => {
-    const webSearchEnabled = template.preset.webSearchEnabled && modelSupportsWebSearch(template.preset.modelId);
+    const webSearchEnabled = template.preset.webSearchEnabled && supportsWebSearch(template.preset.modelId);
     
     setTemplateNameHint(template.preset.name);
     setFormData({
@@ -234,13 +257,14 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     }
 
     // Validate web search configuration
-    if (formData.webSearchEnabled && !modelSupportsWebSearch(formData.modelId)) {
+    if (formData.webSearchEnabled && !supportsWebSearch(formData.modelId)) {
       errors.push(`Web search is not supported for ${formatApiRoute(formData.modelId)} models`);
     }
 
     // Validate parameters
+    const modelInfo = getModelInfo(formData.modelId) || null;
     const validation = validatePresetParameters(
-      formData.modelId,
+      modelInfo,
       formData.temperature,
       formData.maxTokens,
       formData.systemInstruction
@@ -329,7 +353,8 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   };
 
   // Get model constraints for current selection
-  const modelConstraints = getModelParameterConstraints(formData.modelId);
+  const selectedModelInfo = getModelInfo(formData.modelId) || null;
+  const modelConstraints = getModelParameterConstraints(selectedModelInfo);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -398,14 +423,14 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                             )}
                           </CardTitle>
                           <CardDescription className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${getProviderBadgeClass(modelDetails[preset.modelId]?.provider || 'Unknown')}`}>
-                              {modelDetails[preset.modelId]?.provider || 'Unknown'}
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${getProviderBadgeClass(getModelProvider(preset.modelId))}`}>
+                              {getModelProvider(preset.modelId)}
                             </span>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="hover:underline cursor-help truncate">
-                                    {modelDetails[preset.modelId]?.name || preset.modelId}
+                                    {getModelName(preset.modelId)}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -482,7 +507,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                         <div className="flex items-center gap-2">
                           <span className="font-medium">Web Search:</span> 
                           <span>{preset.webSearchEnabled ? 'Enabled' : 'Disabled'}</span>
-                          {preset.webSearchEnabled && !modelSupportsWebSearch(preset.modelId) && (
+                          {preset.webSearchEnabled && !supportsWebSearch(preset.modelId) && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -556,14 +581,14 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                           <CardContent className="pt-2">
                             <div className="space-y-3">
                               <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${getProviderBadgeClass(modelDetails[template.preset.modelId]?.provider || 'Unknown')}`}>
-                                  {modelDetails[template.preset.modelId]?.provider || 'Unknown'}
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${getProviderBadgeClass(getModelProvider(template.preset.modelId))}`}>
+                                  {getModelProvider(template.preset.modelId)}
                                 </span>
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="hover:underline cursor-help truncate">
-                                        {modelDetails[template.preset.modelId]?.name || template.preset.modelId}
+                                        {getModelName(template.preset.modelId)}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -674,11 +699,11 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                         id="webSearch"
                         checked={formData.webSearchEnabled}
                         onCheckedChange={(checked) => setFormData(prev => ({ ...prev, webSearchEnabled: checked }))}
-                        disabled={!modelSupportsWebSearch(formData.modelId)}
+                        disabled={!supportsWebSearch(formData.modelId)}
                       />
                       <Label 
                         htmlFor="webSearch" 
-                        className={!modelSupportsWebSearch(formData.modelId) ? 'text-muted-foreground' : ''}
+                        className={!supportsWebSearch(formData.modelId) ? 'text-muted-foreground' : ''}
                       >
                         Enable Web Search
                       </Label>
@@ -704,7 +729,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                       </div>
                     )}
                     
-                    {formData.webSearchEnabled && modelSupportsWebSearch(formData.modelId) && (
+                    {formData.webSearchEnabled && supportsWebSearch(formData.modelId) && (
                       <div className="ml-6 space-y-2">
                         <Label htmlFor="webSearchContext">Context Size</Label>
                         <Select 

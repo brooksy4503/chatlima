@@ -1,6 +1,6 @@
 "use client";
 
-import { defaultModel, type modelID, MODELS, modelDetails } from "@/ai/providers";
+import { type modelID } from "@/ai/providers";
 import { Message, useChat } from "@ai-sdk/react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Textarea } from "./textarea";
@@ -12,12 +12,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat-store";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
+import { useModel } from "@/lib/context/model-context";
+import { useChats } from "@/lib/hooks/use-chats";
+import { Sparkles } from "lucide-react";
+import { usePresets } from "@/lib/context/preset-context";
 import { useMCP } from "@/lib/context/mcp-context";
 import { useSession } from "@/lib/auth-client";
+import { MCPServerManager } from "./mcp-server-manager";
 import { useWebSearch } from "@/lib/context/web-search-context";
-import { useModel } from "@/lib/context/model-context";
-import { usePresets } from "@/lib/context/preset-context";
+import { ErrorBoundary } from "./error-boundary";
+import { useCredits } from "@/hooks/useCredits";
 import type { ImageAttachment } from "@/lib/types";
+import { useModels } from "@/hooks/use-models";
 
 // Type for chat data from DB
 interface ChatData {
@@ -182,7 +188,11 @@ export default function Chat() {
 
   // Check if current model supports vision/images - use preset model if active
   const effectiveModel = activePreset?.modelId || selectedModel;
-  const modelSupportsVision = modelDetails[effectiveModel]?.vision === true;
+  const { models } = useModels();
+  const modelSupportsVision = useMemo(() => {
+    const modelInfo = models.find(model => model.id === effectiveModel);
+    return modelInfo?.vision === true;
+  }, [models, effectiveModel]);
 
   // Handle image selection
   const handleImageSelect = useCallback((newImages: ImageAttachment[]) => {
