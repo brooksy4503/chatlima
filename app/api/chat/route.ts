@@ -366,6 +366,21 @@ export async function POST(req: Request) {
     );
   }
 
+  // SECURITY FIX: Block premium model access for users without credits
+  // This prevents anonymous users and users without credits from accessing expensive models
+  if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits && modelDetails[selectedModel]?.premium) {
+    const userType = isAnonymous ? "Anonymous users" : "Users without credits";
+    const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
+
+    console.log(`[SECURITY] ${userType} attempted to access premium model: ${selectedModel}`);
+    return createErrorResponse(
+      "PREMIUM_MODEL_RESTRICTED",
+      `${userType} cannot access premium models. ${actionRequired} to use ${modelDetails[selectedModel]?.name || selectedModel}.`,
+      403,
+      `Premium model access denied for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
+    );
+  }
+
   // 2.5. Check Web Search credit requirement - ensure user has enough credits for web search (skip if using own API keys)
 
   // SECURITY FIX: Don't trust client's webSearch.enabled, determine server-side
@@ -774,12 +789,12 @@ export async function POST(req: Request) {
     : modelMessages;
   console.log(`[DEBUG] Using ${needsFormatConversion ? 'converted' : 'raw'} message format for model:`, selectedModel);
   console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
-  
+
   // NEW: Get default parameters and apply preset overrides
   const modelDefaults = getModelDefaults(selectedModel);
   const effectiveTemperature = temperature !== undefined ? temperature : modelDefaults.temperature;
   const effectiveMaxTokens = maxTokens !== undefined ? maxTokens : modelDefaults.maxTokens;
-  const effectiveSystemInstruction = systemInstruction !== undefined 
+  const effectiveSystemInstruction = systemInstruction !== undefined
     ? sanitizeSystemInstruction(systemInstruction)
     : `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
 
