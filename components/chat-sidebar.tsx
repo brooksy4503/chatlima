@@ -343,146 +343,86 @@ export function ChatSidebar() {
                     </div>
 
                     <SidebarGroup className="flex-shrink-0">
-                        <SidebarGroupLabel className={cn(
-                            "px-4 pt-2 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-                            isLayoutCollapsed ? "sr-only" : ""
-                        )}>
-                            Settings
-                        </SidebarGroupLabel>
-                        <SidebarGroupContent>
+                        <SidebarGroupContent className="pt-2">
                            <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton 
-                                        onClick={() => setMcpSettingsOpen(true)}
-                                        className={cn(
-                                            "w-full flex items-center gap-2 transition-all"
-                                        )}
-                                        tooltip={isCollapsed ? "MCP Servers" : undefined}
-                                    >
-                                        <ServerIcon className={cn(
-                                            "h-4 w-4 flex-shrink-0",
-                                            activeServersCount > 0 ? "text-primary" : "text-muted-foreground"
-                                        )} />
-                                        {!isCollapsed && (
-                                            <span className="flex-grow text-sm text-foreground/80">MCP Servers</span>
-                                        )}
-                                        {activeServersCount > 0 && !isCollapsed ? (
-                                            <Badge 
-                                                variant="secondary" 
-                                                className="ml-auto text-[10px] px-1.5 py-0 h-5 bg-secondary/80"
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <SidebarMenuButton
+                                                className="w-full flex items-center gap-2 transition-all"
+                                                tooltip={isCollapsed ? "Settings" : undefined}
                                             >
-                                                {activeServersCount}
-                                            </Badge>
-                                        ) : activeServersCount > 0 && isCollapsed ? (
-                                            <SidebarMenuBadge className="bg-secondary/80 text-secondary-foreground">
-                                                {activeServersCount}
-                                            </SidebarMenuBadge>
-                                        ) : null}
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton 
-                                        onClick={() => setApiKeySettingsOpen(true)}
-                                        className={cn(
-                                            "w-full flex items-center gap-2 transition-all"
-                                        )}
-                                        tooltip={isCollapsed ? "API Keys" : undefined}
-                                    >
-                                        <Key className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                                        {!isCollapsed && (
-                                            <span className="flex-grow text-sm text-foreground/80 text-left">API Keys</span>
-                                        )}
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton 
-                                        onClick={() => setProviderHealthOpen(true)}
-                                        className={cn(
-                                            "w-full flex items-center gap-2 transition-all"
-                                        )}
-                                        tooltip={isCollapsed ? "Provider Health" : undefined}
-                                    >
-                                        <Activity className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                                        {!isCollapsed && (
-                                            <span className="flex-grow text-sm text-foreground/80 text-left">Provider Health</span>
-                                        )}
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton asChild>
-                                        <ThemeToggle
-                                            className={cn(
-                                                "w-full flex items-center gap-2 transition-all text-sm text-foreground/80",
-                                                isCollapsed ? "justify-center" : "justify-start"
+                                                <Settings className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                                {!isCollapsed && (
+                                                    <>
+                                                        <span className="flex-grow text-sm text-foreground/80 text-left">Settings</span>
+                                                        <ChevronsUpDown className="h-3 w-3 text-muted-foreground ml-auto" />
+                                                    </>
+                                                )}
+                                            </SidebarMenuButton>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent 
+                                            align="end" 
+                                            side={isCollapsed ? "right" : "bottom"} 
+                                            sideOffset={8} 
+                                            className="min-w-[200px]"
+                                        >
+                                            <DropdownMenuItem onClick={() => setMcpSettingsOpen(true)}>
+                                                <ServerIcon className={cn(
+                                                    "h-4 w-4 mr-2",
+                                                    activeServersCount > 0 ? "text-primary" : "text-muted-foreground"
+                                                )} />
+                                                MCP Servers
+                                                {activeServersCount > 0 && (
+                                                    <Badge 
+                                                        variant="secondary" 
+                                                        className="ml-auto text-[10px] px-1.5 py-0 h-5 bg-secondary/80"
+                                                    >
+                                                        {activeServersCount}
+                                                    </Badge>
+                                                )}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setApiKeySettingsOpen(true)}>
+                                                <Key className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                API Keys
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setProviderHealthOpen(true)}>
+                                                <Activity className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                Provider Health
+                                            </DropdownMenuItem>
+                                            {webSearchEnabled && (
+                                                <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuLabel className="text-xs">Web Search</DropdownMenuLabel>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => setWebSearchContextSize('low')}
+                                                        className={cn(webSearchContextSize === 'low' && "bg-secondary")}
+                                                    >
+                                                        <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                        Context: Low
+                                                        {webSearchContextSize === 'low' && <span className="ml-auto text-xs">✓</span>}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => setWebSearchContextSize('medium')}
+                                                        className={cn(webSearchContextSize === 'medium' && "bg-secondary")}
+                                                    >
+                                                        <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                        Context: Medium
+                                                        {webSearchContextSize === 'medium' && <span className="ml-auto text-xs">✓</span>}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => setWebSearchContextSize('high')}
+                                                        className={cn(webSearchContextSize === 'high' && "bg-secondary")}
+                                                    >
+                                                        <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                        Context: High
+                                                        {webSearchContextSize === 'high' && <span className="ml-auto text-xs">✓</span>}
+                                                    </DropdownMenuItem>
+                                                </>
                                             )}
-                                            showLabel={!isCollapsed}
-                                            labelText={<span className="flex-grow text-left">Theme</span>}
-                                        />
-                                    </SidebarMenuButton>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </SidebarMenuItem>
-                                {webSearchEnabled && (
-                                    <SidebarMenuItem>
-                                        <DropdownMenu>
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <TooltipTrigger asChild>
-                                                            <SidebarMenuButton
-                                                                className={cn(
-                                                                    "w-full flex items-center gap-2 transition-all",
-                                                                    "hover:bg-secondary/50 active:bg-secondary/70",
-                                                                    isCollapsed ? "justify-center" : ""
-                                                                )}
-                                                            >
-                                                                <Globe className={cn(
-                                                                    "h-4 w-4 flex-shrink-0",
-                                                                    webSearchEnabled ? "text-primary" : "text-muted-foreground"
-                                                                )} />
-                                                                {!isCollapsed && (
-                                                                    <span className="text-sm text-foreground/80 flex-grow text-left">
-                                                                        Search Context ({webSearchContextSize.charAt(0).toUpperCase() + webSearchContextSize.slice(1)}) 
-                                                                    </span>
-                                                                )}
-                                                            </SidebarMenuButton>
-                                                        </TooltipTrigger>
-                                                    </DropdownMenuTrigger>
-                                                    {isCollapsed && (
-                                                        <TooltipContent side="right" sideOffset={5}>
-                                                            Web Search Context: {webSearchContextSize.charAt(0).toUpperCase() + webSearchContextSize.slice(1)}
-                                                        </TooltipContent>
-                                                    )}
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                            <DropdownMenuContent 
-                                                align="end" 
-                                                side={isCollapsed ? "right" : "bottom"} 
-                                                sideOffset={8} 
-                                                className="min-w-[120px]"
-                                            >
-                                                <DropdownMenuLabel>Search Context Size</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem 
-                                                    onClick={() => setWebSearchContextSize('low')}
-                                                    className={cn(webSearchContextSize === 'low' && "bg-secondary")}
-                                                >
-                                                    Low
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    onClick={() => setWebSearchContextSize('medium')}
-                                                    className={cn(webSearchContextSize === 'medium' && "bg-secondary")}
-                                                >
-                                                    Medium
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    onClick={() => setWebSearchContextSize('high')}
-                                                    className={cn(webSearchContextSize === 'high' && "bg-secondary")}
-                                                >
-                                                    High
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </SidebarMenuItem>
-                                )}
                            </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
@@ -552,6 +492,10 @@ export function ChatSidebar() {
                             </Tooltip>
                         </TooltipProvider>
 
+                        <ThemeToggle
+                            className="w-8 h-8 flex items-center justify-center text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+                            showLabel={false}
+                        />
 
                     </div>
                 </SidebarFooter>
