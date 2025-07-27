@@ -101,9 +101,9 @@ function calculateModelPricing(models: ModelInfo[]): PricingAnalysis[] {
             continue;
         }
 
-        // Calculate cost per message (pricing is per token, need to convert to per message)
-        const inputCost = (ESTIMATED_INPUT_TOKENS * model.pricing.input) / 1000000; // Convert from per-million to actual
-        const outputCost = (ESTIMATED_OUTPUT_TOKENS * model.pricing.output) / 1000000;
+        // Calculate cost per message (pricing is already per token)
+        const inputCost = ESTIMATED_INPUT_TOKENS * model.pricing.input;
+        const outputCost = ESTIMATED_OUTPUT_TOKENS * model.pricing.output;
         const costPerMessage = inputCost + outputCost;
 
         analyses.push({
@@ -155,14 +155,14 @@ function displayPricingTable(analyses: PricingAnalysis[]): void {
     console.log('Provider'.padEnd(10) +
         'Model'.padEnd(40) +
         'Type'.padEnd(8) +
-        'Input/M'.padEnd(10) +
-        'Output/M'.padEnd(10) +
+        'Input/Token'.padEnd(12) +
+        'Output/Token'.padEnd(13) +
         'Per Msg'.padEnd(10) +
         'Anon Daily'.padEnd(12) +
         'Google Daily'.padEnd(14) +
         'Anon Monthly'.padEnd(14) +
         'Google Monthly');
-    console.log('-'.repeat(10 + 40 + 8 + 10 + 10 + 10 + 12 + 14 + 14 + 14));
+    console.log('-'.repeat(10 + 40 + 8 + 12 + 13 + 10 + 12 + 14 + 14 + 14));
 
     // Display models with valid pricing first
     for (const analysis of validPricingModels) {
@@ -174,8 +174,8 @@ function displayPricingTable(analyses: PricingAnalysis[]): void {
             model.provider.padEnd(10) +
             modelName.padEnd(40) +
             premium.padEnd(8) +
-            formatCurrency(model.pricing!.input!).padEnd(10) +
-            formatCurrency(model.pricing!.output!).padEnd(10) +
+            formatCurrency(model.pricing!.input!).padEnd(12) +
+            formatCurrency(model.pricing!.output!).padEnd(13) +
             formatCurrency(analysis.costPerMessage).padEnd(10) +
             formatCurrency(analysis.costAnonDaily).padEnd(12) +
             formatCurrency(analysis.costGoogleDaily).padEnd(14) +
@@ -356,7 +356,7 @@ async function main(): Promise<void> {
 
         console.log('\n✨ Analysis complete!');
         console.log('\n💡 Notes:');
-        console.log('• Pricing shown is per million tokens (input/output)');
+        console.log('• Pricing shown is per token (input/output)');
         console.log('• Premium models require purchased credits');
         console.log('• Anonymous users limited to standard models only');
         console.log('• Monthly estimates assume full daily usage for 30 days');
