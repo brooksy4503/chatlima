@@ -528,7 +528,7 @@ export default function Chat() {
       // Reset activity tracking when not streaming
       setLastStreamingActivity(null);
     }
-  }, [status, lastStreamingActivity]);
+  }, [status, lastStreamingActivity, lastErrorMessage, lastToastId, lastToastTimestamp]);
     
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -574,7 +574,7 @@ export default function Chat() {
       // No images, use regular handleSubmit
       handleSubmit(e);
     }
-  }, [handleSubmit, append, input, selectedImages]);
+  }, [handleSubmit, append, input, selectedImages, handleInputChange]);
 
   const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat;
 
@@ -654,7 +654,7 @@ export default function Chat() {
         // Only reset to 0 when not streaming
         setElapsed(0);
       }
-    }, [status, streamingStartTime]);
+    }, [elapsed]);
 
     if (status !== "streaming" || !streamingStartTime) return null;
 

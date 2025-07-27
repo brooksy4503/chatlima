@@ -190,7 +190,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     if (!supportsWebSearch(formData.modelId) && formData.webSearchEnabled) {
       setFormData(prev => ({ ...prev, webSearchEnabled: false }));
     }
-  }, [formData.modelId]);
+  }, [formData.modelId, formData.webSearchEnabled, supportsWebSearch]);
 
   // Reset form data
   const resetForm = () => {
