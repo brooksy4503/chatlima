@@ -22,8 +22,8 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 ## Features
 
 ### 🤖 AI Model Support
-- **Multiple AI Providers**: OpenRouter, Anthropic, OpenAI, Groq, X AI, and Requesty
-- **53+ AI Models** including:
+- **Dynamic Model Loading**: Real-time fetching of AI models from OpenRouter and Requesty APIs, eliminating manual model updates
+- **300+ AI Models**: Access to 300+ language models through dynamic provider integration including:
   - OpenAI GPT-4.1 series (Full, Mini, Nano) and GPT-4O series (via OpenRouter and Requesty)
   - Anthropic Claude 4 series (Sonnet, Opus), Claude 3.5, 3.7 Sonnet with thinking variants (via Anthropic and Requesty)
   - Google Gemini 2.5 Pro and Flash variants with built-in thinking capabilities (via OpenRouter and Requesty)
@@ -33,10 +33,14 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
   - X AI Grok 3 and 4 models with advanced reasoning and tool calling support
   - MiniMax M1 models with 456B parameters and extended context
   - Specialized models: TheDrummer Anubis 70B, Inception Mercury, Baidu ERNIE-4.5-300B, Kimi K2
+- **Automatic Model Discovery**: Dynamic model discovery with smart caching and automatic updates
+- **Enhanced Model Metadata**: Rich model information including capabilities, pricing, and performance characteristics
+- **Intelligent Model Filtering**: Automatic filtering of blocked, deprecated, and unavailable models
 - **Dynamic API Key Management**: Use your own API keys for any provider with runtime overrides
 - **Smart Credit Validation**: Bypasses credit checks when using personal API keys
 - **Premium Model Access Control**: Intelligent credit checking for premium models with real-time validation
 - **Model Picker**: Real-time model availability and access validation with comprehensive descriptions and search functionality
+- **Provider Health Monitoring**: Comprehensive provider status tracking and health checks
 
 ### 🖼️ Image Input & Multimodal Support
 - **Complete Image Upload System**: Drag-and-drop interface with support for JPEG, PNG, and WebP formats
@@ -45,6 +49,8 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Image Preview & Management**: Real-time previews, full-screen modal viewing, and metadata display
 - **Vision Model Integration**: Works seamlessly with all vision-capable AI models for image analysis, OCR, and visual question answering
 - **Detail Control**: Configurable image detail levels (low, high, auto) for cost and quality optimization
+- **Download Support**: Direct image download functionality from the modal viewer
+- **Smart UI Integration**: Seamless integration with existing chat interface and message flow
 
 ### 🎨 Comprehensive Presets System
 - **Custom AI Configurations**: Save, manage, and apply personalized AI model configurations
@@ -56,6 +62,8 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
   - **General**: Executive Assistant, Personal Assistant, Strategic Problem Solver, Learning Tutor
 - **Visual Management**: Intuitive preset selection with indicators, tooltips, and responsive design
 - **Default Preset Support**: Smart default handling with proper constraint management
+- **Template-Based Creation**: Quick preset creation using predefined templates
+- **Contextual Hints**: Template name hints during preset creation for better UX
 
 ### 🔐 Authentication & User Management
 - **Google OAuth Integration**: Seamless sign-in with Google accounts
@@ -82,6 +90,8 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Built-in Tool Integration**: Extend AI capabilities with external tools
 - **Dynamic Server Management**: Add/remove MCP servers through the enhanced UI with connection testing
 - **Popular MCP Servers**: Support for Composio, Zapier, and more with improved configuration validation
+- **Connection Testing**: Test MCP server connections with detailed feedback
+- **Enhanced UI**: Improved server management interface with validation
 
 ### 🎨 User Interface & Experience
 - **Modern UI**: Built with shadcn/ui components and Tailwind CSS
@@ -94,6 +104,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Enhanced Post-Checkout Navigation**: Better user flow after successful checkout completion
 - **Enhanced Mathematical Display**: Improved KaTeX styling for consistent mathematical expressions
 - **Advanced Model Picker**: Search functionality across models with keyboard navigation and provider icons
+- **Real-time Streaming Status**: Visual indicators for chat generation progress with timing information
 
 ### 🔍 Advanced Capabilities
 - **Web-Enabled Search**: Enhanced search capabilities via OpenRouter with premium billing
@@ -105,6 +116,9 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Enhanced Streaming**: Improved handling of interrupted conversations with timeout detection
 - **Error Recovery**: Intelligent error detection and recovery mechanisms with automatic chat reset
 - **Advanced Image Analysis**: OCR, visual question answering, and multimodal understanding
+- **Intelligent Error Recovery**: Comprehensive error handling with automatic recovery mechanisms
+- **Enhanced UI Resilience**: Error boundary components with graceful error isolation
+- **Smart Error Detection**: Automatic detection and recovery from stuck or failed requests
 
 ### 🛡️ Security & Privacy
 - **Secure API Key Management**: Environment-based credential storage with runtime flexibility and show/hide toggles
@@ -114,6 +128,8 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Credit Validation**: Robust access control and usage tracking with negative balance prevention
 - **Environment-Aware Security**: Production/development security configurations
 - **Image Privacy**: Client-side image processing with secure transmission to AI providers
+- **API Key Privacy**: Show/hide toggles for sensitive API key management
+- **Input Validation**: Enhanced validation for all preset and configuration inputs
 
 ### 🚀 Developer Tools
 - **Real-time Pricing Analysis**: Cost planning and model comparison tools using actual usage data
@@ -123,6 +139,8 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **TypeScript Support**: Full TypeScript implementation
 - **Testing Infrastructure**: Comprehensive Playwright testing suite with multiple configuration options
 - **Enhanced Error Boundaries**: Comprehensive error handling with graceful error isolation
+- **Provider Health Monitoring**: Comprehensive provider status tracking and health checks
+- **Dynamic Model Architecture**: Extensible provider registry supporting OpenRouter and Requesty with unified interfaces
 
 ### 📊 Business Features
 - **Polar Integration**: Credit purchase and subscription management with production environment
@@ -131,6 +149,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Webhook Support**: Real-time payment and subscription updates
 - **Customer Management**: Automated customer creation and management with advanced retrieval logic
 - **Premium Feature Access**: Intelligent access control for paid features including image processing
+- **Dynamic Pricing Integration**: Real-time pricing information from provider APIs
 
 ### 🔧 Technical Enhancements
 - **Enhanced Error Handling**: Improved error handling across chat API and credit management
@@ -140,6 +159,8 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Mathematical Content**: Enhanced KaTeX styling for technical discussions
 - **Progressive Web App**: iOS homescreen shortcut support with native app-like experience
 - **Advanced Client Instantiation**: Optimized dynamic client creation with helper functions
+- **Model Transformation Pipeline**: Standardized parsing and transformation of external API responses to internal format
+- **Intelligent Caching**: Multi-layer caching with 1-hour model list TTL and 24-hour detail caching
 
 ## Technical Architecture
 
@@ -154,6 +175,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Image Processing**: Client-side image validation and compression with multimodal AI integration
 - **Presets System**: Database-backed configuration management with template support
 - **MCP Integration**: Latest Model Context Protocol 1.13.0 with enhanced server management
+- **Dynamic Model Loading**: Real-time model fetching with intelligent caching and provider health monitoring
 
 ## MCP Server Configuration
 
