@@ -284,8 +284,8 @@ export const model = customProvider({
   languageModels,
 });
 
-// Define a specific model ID for title generation
-export const titleGenerationModelId: modelID = "openrouter/openai/gpt-4.1-mini";
+// Define a specific model ID for title generation - use a model that exists in static languageModels
+export const titleGenerationModelId: modelID = "gpt-4.1-mini";
 
 // Get the actual model instance for title generation
 export const titleGenerationModel = languageModels[titleGenerationModelId as keyof typeof languageModels];
@@ -330,8 +330,25 @@ export const getTitleGenerationModel = (selectedModelId: modelID, apiKeys?: Reco
     return getLanguageModelWithKeys(titleModelId, apiKeys);
   }
 
-  // Otherwise use the static model
-  return languageModels[titleModelId as keyof typeof languageModels];
+  // If no API keys provided, check if the title model exists in static models
+  if (titleModelId in languageModels) {
+    return languageModels[titleModelId as keyof typeof languageModels];
+  }
+
+  // Fallback to a static model that definitely exists
+  // Priority: gpt-4.1-mini -> claude-3-7-sonnet -> qwen-qwq -> grok-3-mini
+  if ('gpt-4.1-mini' in languageModels) {
+    return languageModels['gpt-4.1-mini'];
+  } else if ('claude-3-7-sonnet' in languageModels) {
+    return languageModels['claude-3-7-sonnet'];
+  } else if ('qwen-qwq' in languageModels) {
+    return languageModels['qwen-qwq'];
+  } else if ('grok-3-mini' in languageModels) {
+    return languageModels['grok-3-mini'];
+  }
+
+  // This should never happen, but if it does, throw a clear error
+  throw new Error('No available title generation model found in static models');
 };
 
 export type modelID = keyof typeof languageModels | string;
