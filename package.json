@@ -16,6 +16,9 @@
     "test:local:debug": "playwright test --config=playwright.local.config.ts --debug",
     "test:local:headed": "playwright test --config=playwright.local.config.ts --headed",
     "test:anonymous": "playwright test --project=local-anonymous-chromium --config=playwright.local.config.ts",
+    "test:basic": "playwright test --config=playwright.basic.config.ts",
+    "test:basic:ui": "playwright test --config=playwright.basic.config.ts --ui",
+    "test:basic:debug": "playwright test --config=playwright.basic.config.ts --debug",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -77,6 +80,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "sonner": "^2.0.3",
+    "swr": "^2.3.4",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2"
