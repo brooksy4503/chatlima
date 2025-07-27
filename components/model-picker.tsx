@@ -162,6 +162,30 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     if (isOpen && filteredAndSortedModels.length > 0) {
       const selectedIndex = filteredAndSortedModels.findIndex(model => model.id === selectedModel);
       setKeyboardFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
+      
+      // Scroll to the selected model when picker opens
+      if (selectedIndex >= 0) {
+        setTimeout(() => {
+          const innerContainer = modelListRef.current;
+          const scrollableContainer = innerContainer?.parentElement; // The actual scrollable div
+          const selectedElement = innerContainer?.children[selectedIndex] as HTMLElement;
+          
+          if (selectedElement && scrollableContainer && innerContainer) {
+            // Get the element's position relative to the scrollable container
+            const elementTop = selectedElement.offsetTop;
+            const containerHeight = scrollableContainer.clientHeight;
+            
+            // Position element about 1/3 from top to avoid cutting off
+            const desiredScrollTop = elementTop - (containerHeight / 3);
+            
+            // Ensure we don't scroll negative or beyond content
+            const maxScroll = scrollableContainer.scrollHeight - containerHeight;
+            const scrollPosition = Math.max(0, Math.min(desiredScrollTop, maxScroll));
+            
+            scrollableContainer.scrollTop = scrollPosition;
+          }
+        }, 300); // Even longer delay to ensure rendering is complete
+      }
     }
   }, [isOpen, filteredAndSortedModels, selectedModel]);
 

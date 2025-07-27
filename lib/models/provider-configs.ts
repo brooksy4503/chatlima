@@ -1,10 +1,46 @@
 import { ProviderConfig, ModelInfo, RawProviderModel } from '@/lib/types/models';
+import fs from 'fs';
+import path from 'path';
 
-// Blocklist for models that appear in the API but don't have working endpoints
-const BLOCKED_MODELS = new Set([
-    'google/gemini-2.5-pro-exp-03-25', // No endpoints found
-    // Add other problematic models here as they're discovered
-]);
+// Interface for blocked models data
+interface BlockedModelsList {
+    models: Record<string, {
+        provider: string;
+        reason: string;
+        lastTested: string;
+        testError: string;
+        retryCount: number;
+        manuallyBlocked: boolean;
+    }>;
+}
+
+// Load blocked models from JSON file
+function loadBlockedModels(): Set<string> {
+    try {
+        const blockedModelsPath = path.join(process.cwd(), 'lib/models/blocked-models.json');
+        if (!fs.existsSync(blockedModelsPath)) {
+            console.warn('Blocked models file not found, using empty blocked list');
+            return new Set();
+        }
+
+        const data = fs.readFileSync(blockedModelsPath, 'utf-8');
+        const blockedData: BlockedModelsList = JSON.parse(data);
+        return new Set(Object.keys(blockedData.models));
+    } catch (error) {
+        console.warn('Failed to load blocked models, using empty blocked list:', error);
+        return new Set();
+    }
+}
+
+// Cached blocked models (loaded once per process)
+let BLOCKED_MODELS: Set<string> | null = null;
+
+function getBlockedModels(): Set<string> {
+    if (BLOCKED_MODELS === null) {
+        BLOCKED_MODELS = loadBlockedModels();
+    }
+    return BLOCKED_MODELS;
+}
 
 // OpenRouter model parser
 export function parseOpenRouterModels(data: any): ModelInfo[] {
@@ -15,7 +51,8 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
     return data.data
         .filter((model: any) => {
             // Filter out blocked models
-            if (BLOCKED_MODELS.has(model.id)) {
+            const blockedModels = getBlockedModels();
+            if (blockedModels.has(model.id)) {
                 console.warn(`Filtering out blocked model: ${model.id}`);
                 return false;
             }
@@ -147,85 +184,96 @@ export function parseRequestyModels(data: any): ModelInfo[] {
         throw new Error('Invalid Requesty API response format');
     }
 
-    return data.map((model: any): ModelInfo => {
-        const providerId = `${model.provider}/${model.model}`;
-        const id = `requesty/${providerId}`;
+    return data
+        .filter((model: any) => {
+            // Filter out blocked models
+            const modelId = `${model.provider}/${model.model}`;
+            const blockedModels = getBlockedModels();
+            if (blockedModels.has(modelId)) {
+                console.warn(`Filtering out blocked model: ${modelId}`);
+                return false;
+            }
+            return true;
+        })
+        .map((model: any): ModelInfo => {
+            const providerId = `${model.provider}/${model.model}`;
+            const id = `requesty/${providerId}`;
 
-        // Parse capabilities from model properties
-        const capabilities: string[] = [];
+            // Parse capabilities from model properties
+            const capabilities: string[] = [];
 
-        if (model.supports_vision) capabilities.push('Vision');
-        if (model.supports_reasoning) capabilities.push('Reasoning');
-        if (model.supports_caching) capabilities.push('Caching');
-        if (model.supports_computer_use) capabilities.push('Tools');
+            if (model.supports_vision) capabilities.push('Vision');
+            if (model.supports_reasoning) capabilities.push('Reasoning');
+            if (model.supports_caching) capabilities.push('Caching');
+            if (model.supports_computer_use) capabilities.push('Tools');
 
-        // Determine if it's coding-related based on model name
-        if (model.model?.toLowerCase().includes('code') ||
-            model.model?.toLowerCase().includes('coder') ||
-            model.description?.toLowerCase().includes('coding')) {
-            capabilities.push('Coding');
-        }
+            // Determine if it's coding-related based on model name
+            if (model.model?.toLowerCase().includes('code') ||
+                model.model?.toLowerCase().includes('coder') ||
+                model.description?.toLowerCase().includes('coding')) {
+                capabilities.push('Coding');
+            }
 
-        // Determine if it's fast based on model name
-        if (model.model?.toLowerCase().includes('fast') ||
-            model.model?.toLowerCase().includes('turbo') ||
-            model.model?.toLowerCase().includes('flash')) {
-            capabilities.push('Fast');
-        }
+            // Determine if it's fast based on model name
+            if (model.model?.toLowerCase().includes('fast') ||
+                model.model?.toLowerCase().includes('turbo') ||
+                model.model?.toLowerCase().includes('flash')) {
+                capabilities.push('Fast');
+            }
 
-        // Default to general purpose if no specific capabilities
-        if (capabilities.length === 0) capabilities.push('General Purpose');
+            // Default to general purpose if no specific capabilities
+            if (capabilities.length === 0) capabilities.push('General Purpose');
 
-        // Determine if premium based on pricing (threshold of $3+ per million input tokens OR $5+ per million output tokens)
-        const inputPrice = parseFloat(model.input_tokens_price_per_million || '0');
-        const outputPrice = parseFloat(model.output_tokens_price_per_million || '0');
-        const isPremium = inputPrice >= 3.0 || outputPrice >= 5.0;
+            // Determine if premium based on pricing (threshold of $3+ per million input tokens OR $5+ per million output tokens)
+            const inputPrice = parseFloat(model.input_tokens_price_per_million || '0');
+            const outputPrice = parseFloat(model.output_tokens_price_per_million || '0');
+            const isPremium = inputPrice >= 3.0 || outputPrice >= 5.0;
 
-        // Generate a user-friendly name
-        const providerName = model.provider.charAt(0).toUpperCase() + model.provider.slice(1);
-        const modelName = model.model.split('/').pop() || model.model; // Get last part after slash
-        const displayName = `${providerName} ${modelName}`;
+            // Generate a user-friendly name
+            const providerName = model.provider.charAt(0).toUpperCase() + model.provider.slice(1);
+            const modelName = model.model.split('/').pop() || model.model; // Get last part after slash
+            const displayName = `${providerName} ${modelName}`;
 
-        return {
-            id,
-            provider: 'Requesty',
-            name: displayName,
-            description: model.description || `${displayName} via Requesty`,
-            capabilities,
-            premium: isPremium,
-            vision: model.supports_vision || false,
-            contextMax: model.context_window || undefined,
-            apiVersion: model.model,
-            status: 'available',
-            lastChecked: new Date(),
-            pricing: {
-                // Requesty provides pricing per million tokens, convert to per token for consistency
-                input: model.input_tokens_price_per_million !== undefined && model.input_tokens_price_per_million !== null && model.input_tokens_price_per_million !== ''
-                    ? (() => {
-                        const parsed = parseFloat(model.input_tokens_price_per_million);
-                        return !isNaN(parsed) ? parsed / 1000000 : undefined; // Convert from per-million to per-token
-                    })()
-                    : undefined,
-                output: model.output_tokens_price_per_million !== undefined && model.output_tokens_price_per_million !== null && model.output_tokens_price_per_million !== ''
-                    ? (() => {
-                        const parsed = parseFloat(model.output_tokens_price_per_million);
-                        return !isNaN(parsed) ? parsed / 1000000 : undefined; // Convert from per-million to per-token
-                    })()
-                    : undefined,
-                currency: 'USD'
-            },
-            // Legacy compatibility
-            enabled: true,
-            supportsWebSearch: false, // Requesty doesn't specifically support web search
-            supportsTemperature: true,
-            supportsMaxTokens: true,
-            supportsSystemInstruction: true,
-        };
-    }).sort((a, b) => {
-        // Sort by provider first, then by model name
-        const providerCompare = a.name.localeCompare(b.name);
-        return providerCompare;
-    });
+            return {
+                id,
+                provider: 'Requesty',
+                name: displayName,
+                description: model.description || `${displayName} via Requesty`,
+                capabilities,
+                premium: isPremium,
+                vision: model.supports_vision || false,
+                contextMax: model.context_window || undefined,
+                apiVersion: model.model,
+                status: 'available',
+                lastChecked: new Date(),
+                pricing: {
+                    // Requesty provides pricing per million tokens, convert to per token for consistency
+                    input: model.input_tokens_price_per_million !== undefined && model.input_tokens_price_per_million !== null && model.input_tokens_price_per_million !== ''
+                        ? (() => {
+                            const parsed = parseFloat(model.input_tokens_price_per_million);
+                            return !isNaN(parsed) ? parsed / 1000000 : undefined; // Convert from per-million to per-token
+                        })()
+                        : undefined,
+                    output: model.output_tokens_price_per_million !== undefined && model.output_tokens_price_per_million !== null && model.output_tokens_price_per_million !== ''
+                        ? (() => {
+                            const parsed = parseFloat(model.output_tokens_price_per_million);
+                            return !isNaN(parsed) ? parsed / 1000000 : undefined; // Convert from per-million to per-token
+                        })()
+                        : undefined,
+                    currency: 'USD'
+                },
+                // Legacy compatibility
+                enabled: true,
+                supportsWebSearch: false, // Requesty doesn't specifically support web search
+                supportsTemperature: true,
+                supportsMaxTokens: true,
+                supportsSystemInstruction: true,
+            };
+        }).sort((a, b) => {
+            // Sort by provider first, then by model name
+            const providerCompare = a.name.localeCompare(b.name);
+            return providerCompare;
+        });
 }
 
 // Provider configuration registry
