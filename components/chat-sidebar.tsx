@@ -237,44 +237,22 @@ export function ChatSidebar() {
                     </div>
                     
                     <SidebarGroup className="flex-shrink-0">
-                        <SidebarGroupLabel className={cn(
-                            "px-4 pt-0 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-                            isLayoutCollapsed ? "sr-only" : ""
-                        )}>
-                            MCP Servers
-                        </SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
+                        <SidebarGroupContent className="pt-2">
+                           <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton 
-                                        onClick={() => setMcpSettingsOpen(true)}
-                                        className={cn(
-                                            "w-full flex items-center gap-2 transition-all"
+                                    <div className={cn(
+                                        "w-full flex items-center gap-2 px-3 py-2 rounded-md"
+                                    )}>
+                                        <Skeleton className="h-4 w-4 rounded-md flex-shrink-0" />
+                                        {!isLayoutCollapsed && (
+                                            <>
+                                                <Skeleton className="h-4 flex-grow max-w-[80px]" />
+                                                <Skeleton className="h-3 w-3 rounded-md ml-auto" />
+                                            </>
                                         )}
-                                        tooltip={isCollapsed ? "MCP Servers" : undefined}
-                                    >
-                                        <ServerIcon className={cn(
-                                            "h-4 w-4 flex-shrink-0",
-                                            activeServersCount > 0 ? "text-primary" : "text-muted-foreground"
-                                        )} />
-                                        {!isCollapsed && (
-                                            <span className="flex-grow text-sm text-foreground/80">MCP Servers</span>
-                                        )}
-                                        {activeServersCount > 0 && !isCollapsed ? (
-                                            <Badge 
-                                                variant="secondary" 
-                                                className="ml-auto text-[10px] px-1.5 py-0 h-5 bg-secondary/80"
-                                            >
-                                                {activeServersCount}
-                                            </Badge>
-                                        ) : activeServersCount > 0 && isCollapsed ? (
-                                            <SidebarMenuBadge className="bg-secondary/80 text-secondary-foreground">
-                                                {activeServersCount}
-                                            </SidebarMenuBadge>
-                                        ) : null}
-                                    </SidebarMenuButton>
+                                    </div>
                                 </SidebarMenuItem>
-                            </SidebarMenu>
+                           </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
                 </SidebarContent>

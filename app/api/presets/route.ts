@@ -90,15 +90,17 @@ export async function POST(req: NextRequest) {
       return createErrorResponse('Missing required fields: temperature, maxTokens', 400);
     }
 
+    // Get model info first for validation
+    const modelInfo = await getModelDetails(modelId);
+
     // Validate preset parameters
-    const validation = validatePresetParameters(modelId, temperature, maxTokens, systemInstruction);
+    const validation = validatePresetParameters(modelInfo, temperature, maxTokens, systemInstruction);
     if (!validation.valid) {
       return createErrorResponse(`Invalid parameters: ${validation.errors.join(', ')}`, 400);
     }
 
     // Validate model access
     const canAccessPremium = await userCanAccessPremium(userId);
-    const modelInfo = await getModelDetails(modelId);
     const modelAccessValidation = validateModelAccess(modelInfo, canAccessPremium);
     if (!modelAccessValidation.valid) {
       return createErrorResponse(`Model access denied: ${modelAccessValidation.errors.join(', ')}`, 403);

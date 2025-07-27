@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Type guard for health status
 function isValidHealthStatus(status: string): status is 'healthy' | 'degraded' | 'down' | 'unknown' {
@@ -76,6 +77,26 @@ function getProviderIcon(providerName: string) {
       return <Zap className="h-4 w-4 text-green-500" />;
     default:
       return <Database className="h-4 w-4 text-gray-500" />;
+  }
+}
+
+// Helper function to get provider badge color
+function getProviderBadgeClass(provider: string) {
+  switch (provider.toLowerCase()) {
+    case 'openrouter': 
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+    case 'requesty': 
+      return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300';
+    case 'anthropic': 
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
+    case 'openai': 
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+    case 'groq': 
+      return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300';
+    case 'xai': 
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+    default: 
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
   }
 }
 
@@ -192,7 +213,13 @@ export function ProviderHealthDashboard({
     <div className="space-y-4">
       {/* Header and refresh button for dialog mode */}
       {dialogMode && showRefreshButton && (
-        <div className="flex items-center justify-end">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold">Provider Status ({healthyCount}/{totalCount})</h3>
+            <p className="text-sm text-muted-foreground">
+              Real-time health monitoring of AI model providers
+            </p>
+          </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -201,9 +228,11 @@ export function ProviderHealthDashboard({
                   size="sm"
                   onClick={handleRefresh}
                   disabled={isClearing || isLoading}
+                  className="w-full sm:w-auto"
                 >
                   <RefreshCw className={cn("h-4 w-4 mr-2", (isClearing || isLoading) && "animate-spin")} />
                   <span className="hidden sm:inline">Refresh</span>
+                  <span className="sm:hidden">Refresh All</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Force refresh all provider data</TooltipContent>
@@ -232,80 +261,104 @@ export function ProviderHealthDashboard({
       </div>
 
       {/* Provider grid - improved mobile responsiveness */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {Object.entries(providers).map(([key, provider]) => {
-          // Ensure provider status is valid
-          const safeProviderStatus = isValidHealthStatus(provider.status) ? provider.status : 'unknown';
-          
-          return (
-            <div key={key} className="border rounded-lg p-3 space-y-2 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  {getProviderIcon(provider.name)}
-                  <span className="font-medium text-sm truncate">{provider.name}</span>
-                </div>
-                <HealthIndicator status={safeProviderStatus} />
-              </div>
-              
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs">Models:</span>
-                  <Badge variant="secondary" className="text-xs h-5">
-                    {provider.modelCount}
-                  </Badge>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs">API Key:</span>
-                  <div className="flex gap-1">
-                    {provider.hasEnvironmentKey && (
-                      <Badge variant="outline" className="text-xs h-5">
-                        ENV
-                      </Badge>
-                    )}
-                    {provider.supportsUserKeys && (
-                      <Badge variant="outline" className="text-xs h-5">
-                        User
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Last checked:</span>
-                  <span className="truncate ml-2">{formatTime(provider.lastChecked)}</span>
-                </div>
-                
-                {provider.error && (
-                  <div className="text-xs text-red-600 bg-red-50 dark:bg-red-950 p-2 rounded mt-2">
-                    <div className="flex items-start gap-1">
-                      <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />
-                      <span className="break-words text-xs leading-tight" title={provider.error}>
-                        {provider.error}
-                      </span>
+      <ScrollArea className="h-[300px] sm:h-[350px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pr-1">
+          {Object.entries(providers).map(([key, provider]) => {
+            // Ensure provider status is valid
+            const safeProviderStatus = isValidHealthStatus(provider.status) ? provider.status : 'unknown';
+            
+            return (
+              <Card key={key} className="relative">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {getProviderIcon(provider.name)}
+                      <span className="font-medium text-sm truncate">{provider.name}</span>
                     </div>
+                    <HealthIndicator status={safeProviderStatus} />
                   </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  <CardDescription className="flex items-center gap-2 text-xs">
+                    <span className={`px-2 py-0.5 rounded-full font-medium shrink-0 ${getProviderBadgeClass(provider.name)}`}>
+                      {provider.name}
+                    </span>
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent className="pt-2">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground text-xs">Models:</span>
+                      <Badge variant="secondary" className="text-xs h-5">
+                        {provider.modelCount}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground text-xs">API Key:</span>
+                      <div className="flex gap-1">
+                        {provider.hasEnvironmentKey && (
+                          <Badge variant="outline" className="text-xs h-5">
+                            ENV
+                          </Badge>
+                        )}
+                        {provider.supportsUserKeys && (
+                          <Badge variant="outline" className="text-xs h-5">
+                            User
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">Last checked:</span>
+                      <span className="truncate ml-2">{formatTime(provider.lastChecked)}</span>
+                    </div>
+                    
+                    {provider.error && (
+                      <div className="text-xs text-red-600 bg-red-50 dark:bg-red-950 p-2 rounded mt-2">
+                        <div className="flex items-start gap-1">
+                          <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                          <span className="break-words text-xs leading-tight" title={provider.error}>
+                            {provider.error}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </ScrollArea>
 
       {/* Empty state */}
       {Object.keys(providers).length === 0 && !isLoading && (
         <div className="text-center py-8 text-muted-foreground">
-          <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No provider data available</p>
-          <p className="text-xs">Check your API keys and network connection</p>
+          <div className="rounded-full p-3 bg-primary/10 w-fit mx-auto mb-4">
+            <Database className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm sm:text-base font-medium">No Provider Data Available</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-[300px] mx-auto">
+              Check your API keys and network connection
+            </p>
+          </div>
         </div>
       )}
 
       {/* Loading state */}
       {isLoading && Object.keys(providers).length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <RefreshCw className="h-8 w-8 mx-auto mb-2 animate-spin" />
-          <p className="text-sm">Loading provider status...</p>
+          <div className="rounded-full p-3 bg-primary/10 w-fit mx-auto mb-4">
+            <RefreshCw className="h-6 w-6 sm:h-7 sm:w-7 animate-spin text-primary" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm sm:text-base font-medium">Loading Provider Status</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Checking health of all providers...
+            </p>
+          </div>
         </div>
       )}
     </div>
@@ -321,7 +374,7 @@ export function ProviderHealthDashboard({
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <CardTitle className="text-lg">Provider Health</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Provider Health</CardTitle>
             <CardDescription>
               Status of AI model providers and their availability
             </CardDescription>
@@ -335,6 +388,7 @@ export function ProviderHealthDashboard({
                     size="sm"
                     onClick={handleRefresh}
                     disabled={isClearing || isLoading}
+                    className="w-full sm:w-auto"
                   >
                     <RefreshCw className={cn("h-4 w-4 mr-2", (isClearing || isLoading) && "animate-spin")} />
                     Refresh
