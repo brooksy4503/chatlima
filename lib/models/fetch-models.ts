@@ -6,7 +6,8 @@ import {
     ProviderFetchResult,
     ApiKeyContext
 } from '@/lib/types/models';
-import { PROVIDERS, CACHE_CONFIG } from './provider-configs';
+import { PROVIDERS } from './provider-configs';
+import { CACHE_CONFIG } from './client-constants';
 
 // In-memory cache for provider data
 const providerCache = new Map<string, CachedProviderData>();

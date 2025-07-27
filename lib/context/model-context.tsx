@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useModels } from "@/hooks/use-models";
 import { ModelInfo } from "@/lib/types/models";
-import { MODEL_MIGRATIONS } from "@/lib/models/provider-configs";
+import { MODEL_MIGRATIONS } from "@/lib/models/client-constants";
 
 // Legacy compatibility - keep the same interface
 interface ModelContextType {
