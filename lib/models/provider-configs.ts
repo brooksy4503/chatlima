@@ -1,113 +1,144 @@
 import { ProviderConfig, ModelInfo, RawProviderModel } from '@/lib/types/models';
 
+// Blocklist for models that appear in the API but don't have working endpoints
+const BLOCKED_MODELS = new Set([
+    'google/gemini-2.5-pro-exp-03-25', // No endpoints found
+    // Add other problematic models here as they're discovered
+]);
+
 // OpenRouter model parser
 export function parseOpenRouterModels(data: any): ModelInfo[] {
     if (!data || !Array.isArray(data.data)) {
         throw new Error('Invalid OpenRouter API response format');
     }
 
-    return data.data.map((model: any): ModelInfo => {
-        const id = `openrouter/${model.id}`;
+    return data.data
+        .filter((model: any) => {
+            // Filter out blocked models
+            if (BLOCKED_MODELS.has(model.id)) {
+                console.warn(`Filtering out blocked model: ${model.id}`);
+                return false;
+            }
+            return true;
+        })
+        .map((model: any): ModelInfo => {
+            const id = `openrouter/${model.id}`;
 
-        // Parse capabilities from model properties
-        const capabilities: string[] = [];
-        if (model.architecture?.modality?.includes('text')) capabilities.push('Text');
-        if (model.architecture?.modality?.includes('image')) capabilities.push('Vision');
-        if (model.top_provider?.name?.toLowerCase().includes('anthropic')) capabilities.push('Reasoning');
-        if (model.id.includes('code') || model.name?.toLowerCase().includes('code')) capabilities.push('Coding');
-        if (model.id.includes('fast') || model.name?.toLowerCase().includes('flash')) capabilities.push('Fast');
-        if (model.id.includes('reasoning') || model.id.includes('thinking')) capabilities.push('Reasoning');
+            // Parse capabilities from model properties
+            const capabilities: string[] = [];
+            if (model.architecture?.modality?.includes('text')) capabilities.push('Text');
+            if (model.architecture?.modality?.includes('image')) capabilities.push('Vision');
+            if (model.top_provider?.name?.toLowerCase().includes('anthropic')) capabilities.push('Reasoning');
+            if (model.id.includes('code') || model.name?.toLowerCase().includes('code')) capabilities.push('Coding');
+            if (model.id.includes('fast') || model.name?.toLowerCase().includes('flash')) capabilities.push('Fast');
+            if (model.id.includes('reasoning') || model.id.includes('thinking')) capabilities.push('Reasoning');
 
-        // Default capabilities if none detected
-        if (capabilities.length === 0) capabilities.push('General Purpose');
+            // Default capabilities if none detected
+            if (capabilities.length === 0) capabilities.push('General Purpose');
 
-        // Determine maxTokensRange based on model capabilities
-        let maxTokensRange: { min: number; max: number; default: number };
+            // Determine maxTokensRange based on model capabilities
+            let maxTokensRange: { min: number; max: number; default: number };
 
-        const maxCompletionTokens = model.top_provider?.max_completion_tokens;
+            const maxCompletionTokens = model.top_provider?.max_completion_tokens;
 
-        if (maxCompletionTokens && maxCompletionTokens > 0) {
-            // Use the actual max completion tokens from the provider
-            maxTokensRange = {
-                min: 1,
-                max: maxCompletionTokens,
-                default: Math.min(4096, Math.floor(maxCompletionTokens * 0.25))
-            };
-        } else {
-            // Handle specific models with known high token limits
-            if (model.id.includes('gemini')) {
-                // Gemini models support high output token limits
+            if (maxCompletionTokens && maxCompletionTokens > 0) {
+                // Use the actual max completion tokens from the provider
                 maxTokensRange = {
                     min: 1,
-                    max: 65536,
-                    default: 4096
-                };
-            } else if (model.id.includes('claude') && model.id.includes('opus-4')) {
-                // Claude Opus 4 supports high output
-                maxTokensRange = {
-                    min: 1,
-                    max: 32000,
-                    default: 4096
-                };
-            } else if (model.id.includes('claude') && model.id.includes('sonnet-4')) {
-                // Claude Sonnet 4 supports very high output
-                maxTokensRange = {
-                    min: 1,
-                    max: 64000,
-                    default: 4096
-                };
-            } else if (model.id.includes('gpt-4') || model.id.includes('o1') || model.id.includes('o3') || model.id.includes('o4')) {
-                // OpenAI GPT-4 and reasoning models
-                maxTokensRange = {
-                    min: 1,
-                    max: 32768,
-                    default: 4096
-                };
-            } else if (model.id.includes('llama') && model.context_length && model.context_length > 100000) {
-                // Large context Llama models
-                maxTokensRange = {
-                    min: 1,
-                    max: 16384,
-                    default: 4096
+                    max: maxCompletionTokens,
+                    default: Math.min(4096, Math.floor(maxCompletionTokens * 0.25))
                 };
             } else {
-                // Default fallback based on context length
-                const contextLength = model.context_length || 8192;
-                const estimatedMaxTokens = Math.min(8192, Math.floor(contextLength * 0.5));
-                maxTokensRange = {
-                    min: 1,
-                    max: estimatedMaxTokens,
-                    default: Math.min(4096, Math.floor(estimatedMaxTokens * 0.5))
-                };
+                // Handle specific models with known high token limits
+                if (model.id.includes('gemini')) {
+                    // Gemini models support high output token limits
+                    maxTokensRange = {
+                        min: 1,
+                        max: 65536,
+                        default: 4096
+                    };
+                } else if (model.id.includes('claude') && model.id.includes('opus-4')) {
+                    // Claude Opus 4 supports high output
+                    maxTokensRange = {
+                        min: 1,
+                        max: 32000,
+                        default: 4096
+                    };
+                } else if (model.id.includes('claude') && model.id.includes('sonnet-4')) {
+                    // Claude Sonnet 4 supports very high output
+                    maxTokensRange = {
+                        min: 1,
+                        max: 64000,
+                        default: 4096
+                    };
+                } else if (model.id.includes('gpt-4') || model.id.includes('o1') || model.id.includes('o3') || model.id.includes('o4')) {
+                    // OpenAI GPT-4 and reasoning models
+                    maxTokensRange = {
+                        min: 1,
+                        max: 32768,
+                        default: 4096
+                    };
+                } else if (model.id.includes('llama') && model.context_length && model.context_length > 100000) {
+                    // Large context Llama models
+                    maxTokensRange = {
+                        min: 1,
+                        max: 16384,
+                        default: 4096
+                    };
+                } else {
+                    // Default fallback based on context length
+                    const contextLength = model.context_length || 8192;
+                    const estimatedMaxTokens = Math.min(8192, Math.floor(contextLength * 0.5));
+                    maxTokensRange = {
+                        min: 1,
+                        max: estimatedMaxTokens,
+                        default: Math.min(4096, Math.floor(estimatedMaxTokens * 0.5))
+                    };
+                }
             }
-        }
 
-        return {
-            id,
-            provider: 'OpenRouter',
-            name: model.name || model.id,
-            description: model.description || `${model.name} via OpenRouter`,
-            capabilities,
-            premium: model.pricing?.prompt ? parseFloat(model.pricing.prompt) > 0 : false,
-            vision: model.architecture?.modality?.includes('image') || false,
-            contextMax: model.context_length || undefined,
-            apiVersion: model.id,
-            status: 'available',
-            lastChecked: new Date(),
-            pricing: model.pricing ? {
-                input: parseFloat(model.pricing.prompt) || undefined,
-                output: parseFloat(model.pricing.completion) || undefined,
-                currency: 'USD'
-            } : undefined,
-            // Legacy compatibility
-            enabled: true,
-            supportsWebSearch: true,
-            supportsTemperature: true,
-            supportsMaxTokens: true,
-            supportsSystemInstruction: true,
-            maxTokensRange,
-        };
-    });
+            return {
+                id,
+                provider: 'OpenRouter',
+                name: model.name || model.id,
+                description: model.description || `${model.name} via OpenRouter`,
+                capabilities,
+                premium: (() => {
+                    if (!model.pricing) return false;
+                    const inputPrice = model.pricing.prompt ? parseFloat(model.pricing.prompt) : 0;
+                    const outputPrice = model.pricing.completion ? parseFloat(model.pricing.completion) : 0;
+                    // Convert per-token pricing to per-million for consistency (multiply by 1M)
+                    return (inputPrice * 1000000) >= 3.0 || (outputPrice * 1000000) >= 5.0;
+                })(),
+                vision: model.architecture?.modality?.includes('image') || false,
+                contextMax: model.context_length || undefined,
+                apiVersion: model.id,
+                status: 'available',
+                lastChecked: new Date(),
+                pricing: model.pricing ? {
+                    input: model.pricing.prompt !== undefined && model.pricing.prompt !== null && model.pricing.prompt !== ''
+                        ? (() => {
+                            const parsed = parseFloat(model.pricing.prompt);
+                            return !isNaN(parsed) ? parsed : undefined;
+                        })()
+                        : undefined,
+                    output: model.pricing.completion !== undefined && model.pricing.completion !== null && model.pricing.completion !== ''
+                        ? (() => {
+                            const parsed = parseFloat(model.pricing.completion);
+                            return !isNaN(parsed) ? parsed : undefined;
+                        })()
+                        : undefined,
+                    currency: 'USD'
+                } : undefined,
+                // Legacy compatibility
+                enabled: true,
+                supportsWebSearch: true,
+                supportsTemperature: true,
+                supportsMaxTokens: true,
+                supportsSystemInstruction: true,
+                maxTokensRange,
+            };
+        });
 }
 
 // Requesty model parser - Dynamic parser for Requesty API
@@ -145,9 +176,10 @@ export function parseRequestyModels(data: any): ModelInfo[] {
         // Default to general purpose if no specific capabilities
         if (capabilities.length === 0) capabilities.push('General Purpose');
 
-        // Determine if premium based on pricing (threshold of $3+ per million input tokens)
+        // Determine if premium based on pricing (threshold of $3+ per million input tokens OR $5+ per million output tokens)
         const inputPrice = parseFloat(model.input_tokens_price_per_million || '0');
-        const isPremium = inputPrice >= 3.0;
+        const outputPrice = parseFloat(model.output_tokens_price_per_million || '0');
+        const isPremium = inputPrice >= 3.0 || outputPrice >= 5.0;
 
         // Generate a user-friendly name
         const providerName = model.provider.charAt(0).toUpperCase() + model.provider.slice(1);
@@ -167,8 +199,19 @@ export function parseRequestyModels(data: any): ModelInfo[] {
             status: 'available',
             lastChecked: new Date(),
             pricing: {
-                input: parseFloat(model.input_tokens_price_per_million) || undefined,
-                output: parseFloat(model.output_tokens_price_per_million) || undefined,
+                // Requesty provides pricing per million tokens, convert to per token for consistency
+                input: model.input_tokens_price_per_million !== undefined && model.input_tokens_price_per_million !== null && model.input_tokens_price_per_million !== ''
+                    ? (() => {
+                        const parsed = parseFloat(model.input_tokens_price_per_million);
+                        return !isNaN(parsed) ? parsed / 1000000 : undefined; // Convert from per-million to per-token
+                    })()
+                    : undefined,
+                output: model.output_tokens_price_per_million !== undefined && model.output_tokens_price_per_million !== null && model.output_tokens_price_per_million !== ''
+                    ? (() => {
+                        const parsed = parseFloat(model.output_tokens_price_per_million);
+                        return !isNaN(parsed) ? parsed / 1000000 : undefined; // Convert from per-million to per-token
+                    })()
+                    : undefined,
                 currency: 'USD'
             },
             // Legacy compatibility
