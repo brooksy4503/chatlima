@@ -1,4 +1,5 @@
 import { ProviderConfig, ModelInfo, RawProviderModel } from '@/lib/types/models';
+import { CACHE_CONFIG } from './client-constants';
 import fs from 'fs';
 import path from 'path';
 
@@ -298,22 +299,3 @@ export const PROVIDERS: Record<string, ProviderConfig> = {
     },
     // Future providers can be added here
 } satisfies Record<string, ProviderConfig>;
-
-// Cache configuration
-export const CACHE_CONFIG = {
-    modelListTTL: 10 * 60 * 1000,      // 10 minutes
-    modelDetailsTTL: 60 * 60 * 1000,   // 1 hour  
-    providerHealthTTL: 30 * 1000,      // 30 seconds
-    forceRefreshKey: 'force-refresh',   // Admin override
-};
-
-// Model migrations for backwards compatibility
-export const MODEL_MIGRATIONS = [
-    {
-        oldId: 'openrouter/anthropic/claude-3.5-sonnet-old',
-        newId: 'openrouter/anthropic/claude-3.5-sonnet',
-        reason: 'renamed' as const,
-        automaticMigration: true,
-    },
-    // Add more migrations as needed
-]; 

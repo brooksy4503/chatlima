@@ -1,5 +1,5 @@
 import { ModelMigration } from '@/lib/types/models';
-import { MODEL_MIGRATIONS } from './provider-configs';
+import { MODEL_MIGRATIONS } from './client-constants';
 
 // Extended migration data with more real-world scenarios
 export const EXTENDED_MODEL_MIGRATIONS: ModelMigration[] = [
