@@ -837,21 +837,43 @@ export async function POST(req: Request) {
   });
 
   // Helper function to recursively remove $schema fields from any object
+  // NOTE: We *must not* clone or mutate Zod schemas, because doing so strips
+  // internal metadata (e.g. `_def.typeName`) that the downstream AI SDK relies
+  // on for tool-calling. Attempting to copy a Zod object by iterating over
+  // `Object.entries` turns it into a plain object whose internal `_def` field
+  // is non-enumerable, leading to runtime errors such as
+  // "Cannot read properties of undefined (reading 'typeName')" when Gemini
+  // tries to inspect the schema.  Therefore we detect Zod schemas and leave
+  // them untouched while still recursively removing `$schema` keys from plain
+  // JSON objects.
   const removeSchemaRecursively = (obj: any): any => {
     if (obj === null || obj === undefined) return obj;
+
+    // Primitive values can be returned as-is.
     if (typeof obj !== 'object') return obj;
 
-    if (Array.isArray(obj)) {
-      return obj.map(item => removeSchemaRecursively(item));
+    // Leave Zod schemas untouched so we don't lose their prototype / _def.
+    if ((obj as any)._def && typeof (obj as any)._def === 'object' && 'typeName' in (obj as any)._def) {
+      return obj;
     }
 
-    const cleaned: any = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (key !== '$schema') {
-        cleaned[key] = removeSchemaRecursively(value);
-      }
+    // Handle arrays – mutate in place.
+    if (Array.isArray(obj)) {
+      obj.forEach((item, idx) => {
+        obj[idx] = removeSchemaRecursively(item);
+      });
+      return obj;
     }
-    return cleaned;
+
+    // For plain objects, delete `$schema` keys and recurse into others (in place).
+    for (const key of Object.keys(obj)) {
+      if (key === '$schema') {
+        delete obj[key];
+        continue;
+      }
+      obj[key] = removeSchemaRecursively((obj as any)[key]);
+    }
+    return obj;
   };
 
   // Helper function to clean tools for Google Vertex AI (removes all $schema fields)
