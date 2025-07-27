@@ -24,7 +24,13 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "pricing:analysis": "npx tsx scripts/openrouter-pricing-analysis.ts",
-    "update:models": "npx tsx scripts/update-model-parameters.ts"
+    "update:models": "npx tsx scripts/update-model-parameters.ts",
+    "test:endpoints": "npx tsx scripts/test-model-endpoints.ts",
+    "test:endpoints:openrouter": "npx tsx scripts/test-model-endpoints.ts --provider openrouter",
+    "test:endpoints:requesty": "npx tsx scripts/test-model-endpoints.ts --provider requesty",
+    "test:endpoints:quick": "npx tsx scripts/test-model-endpoints.ts --max-models 5",
+    "test:endpoints:summary": "npx tsx scripts/test-model-endpoints.ts --summary --verbose",
+    "test:endpoints:retest": "npx tsx scripts/test-model-endpoints.ts --retest-blocked"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.10",

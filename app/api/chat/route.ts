@@ -876,22 +876,30 @@ export async function POST(req: Request) {
     return obj;
   };
 
-  // Helper function to clean tools for Google Vertex AI (removes all $schema fields)
-  const cleanToolsForVertexAI = (tools: any) => {
-    console.log(`[VERTEX CLEAN] Cleaning ${Object.keys(tools).length} tools for Vertex AI`);
+  // Helper function to clean tools for Google models (removes all $schema fields)
+  const cleanToolsForGoogleModels = (tools: any) => {
+    console.log(`[GOOGLE CLEAN] Cleaning ${Object.keys(tools).length} tools for Google models`);
     const cleanedTools = removeSchemaRecursively(tools);
-    console.log(`[VERTEX CLEAN] Cleaned tools, removed $schema fields recursively`);
+    console.log(`[GOOGLE CLEAN] Cleaned tools, removed $schema fields recursively`);
     return cleanedTools;
   };
 
-  // Determine if we need to clean tools for Google Vertex AI
-  const isVertexAIModel = selectedModel.includes('vertex/google/') ||
+  // Determine if we need to clean tools for Google models (Vertex AI, OpenRouter, and Requesty Gemini)
+  const isGoogleModel = selectedModel.includes('vertex/google/') ||
     selectedModel.includes('google/gemini') ||
-    (selectedModel.includes('vertex') && selectedModel.includes('google'));
+    selectedModel.includes('openrouter/google/') ||
+    selectedModel.includes('coding/gemini') ||
+    selectedModel.includes('requesty/google/') ||
+    (selectedModel.includes('vertex') && selectedModel.includes('google')) ||
+    (selectedModel.toLowerCase().includes('gemini'));
 
-  // Apply tool cleaning for Vertex AI models
-  const toolsToUse = isVertexAIModel && Object.keys(tools).length > 0
-    ? cleanToolsForVertexAI(tools)
+  // Apply tool cleaning for Google models (they don't accept $schema fields)
+  if (isGoogleModel) {
+    console.log(`[GOOGLE MODEL DETECTED] ${selectedModel} - Will clean $schema from tools`);
+  }
+
+  const toolsToUse = isGoogleModel && Object.keys(tools).length > 0
+    ? cleanToolsForGoogleModels(tools)
     : tools;
 
   const openRouterPayload = {
