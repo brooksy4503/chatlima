@@ -597,7 +597,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                 {/* Hint for touch interaction */}
                 {focusedModel && focusedModel !== selectedModel && (
                   <div className="text-[10px] text-primary/80 mb-2 font-medium">
-                    Tap again to select "{detailsPanelModel.name}"
+                    Tap again to select &quot;{detailsPanelModel.name}&quot;
                   </div>
                 )}
                 <div className="flex flex-wrap gap-1 mb-2">
