@@ -63,6 +63,5 @@ Requesty    Claude 3.5 Sonnet (Latest)        $0.003000   $0.015000   $0.008000 
 
 ## Other Scripts
 
-- `add-requesty-models.ts`: Adds Requesty model mappings to the configuration
-- `update-model-parameters.ts`: Updates model parameters and capabilities
-- `update-vision-models.ts`: Updates vision support for models 
+- `test-model-endpoints.ts`: Tests model endpoints and connectivity
+- `debug-polar-api.ts`: Debug utility for Polar API integration 
