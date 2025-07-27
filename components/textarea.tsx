@@ -1,4 +1,4 @@
-import { modelID, modelDetails } from "@/ai/providers";
+import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Globe, AlertCircle, ImageIcon } from "lucide-react";
 import { ModelPicker } from "./model-picker";
@@ -14,6 +14,7 @@ import { ImageUpload } from "./image-upload";
 import { ImagePreview } from "./image-preview";
 import type { ImageAttachment } from "@/lib/types";
 import { Button } from "./ui/button";
+import { useModels } from "@/hooks/use-models";
 
 interface InputProps {
   input: string;
@@ -48,10 +49,18 @@ export const Textarea = ({
   const { activePreset } = usePresets();
   const { user } = useAuth();
   const isMobileScreen = useIsMobile();
+  const { models } = useModels();
 
   // Get the effective model ID - use preset model if active, otherwise selected model
   const getEffectiveModel = (): modelID => {
     return activePreset?.modelId || selectedModel;
+  };
+
+  // Helper function to check if the effective model supports vision
+  const effectiveModelSupportsVision = (): boolean => {
+    const effectiveModelId = getEffectiveModel();
+    const modelInfo = models.find(model => model.id === effectiveModelId);
+    return modelInfo?.vision === true;
   };
 
   // Get the effective web search enabled state - use preset setting if active, otherwise context setting
@@ -131,7 +140,7 @@ export const Textarea = ({
   return (
     <div className="w-full space-y-3">
       {/* Image Upload Interface */}
-      {modelDetails[getEffectiveModel()]?.vision && showImageUpload && (
+      {effectiveModelSupportsVision() && showImageUpload && (
         <div className="bg-card border border-border rounded-xl p-4">
           <ImageUpload
             onImageSelect={handleImageSelect}
@@ -218,7 +227,7 @@ export const Textarea = ({
             </div>
             <div className="flex gap-2 w-full">
               {/* Image Upload Button */}
-              {modelDetails[getEffectiveModel()]?.vision && (
+              {effectiveModelSupportsVision() && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -311,7 +320,7 @@ export const Textarea = ({
                   />
                 )}
                 {/* Image Upload Button */}
-                {modelDetails[getEffectiveModel()]?.vision && (
+                {effectiveModelSupportsVision() && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button

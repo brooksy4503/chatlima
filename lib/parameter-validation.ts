@@ -1,5 +1,6 @@
 // Parameter validation utilities for presets
-import { ModelInfo, modelDetails, type modelID } from "@/ai/providers";
+import { type modelID } from "@/ai/providers";
+import { ModelInfo } from "@/lib/types/models";
 
 export interface ValidationResult {
   valid: boolean;
@@ -16,7 +17,7 @@ export interface ParameterConstraints {
 // Default constraints for models that don't have specific constraints defined
 const DEFAULT_CONSTRAINTS: ParameterConstraints = {
   temperature: { min: 0, max: 2, default: 1 },
-  maxTokens: { min: 1, max: 4096, default: 1024 },
+  maxTokens: { min: 1, max: 4096, default: 4096 },
   supportsSystemInstruction: true,
   maxSystemInstructionLength: 4000
 };
@@ -24,11 +25,9 @@ const DEFAULT_CONSTRAINTS: ParameterConstraints = {
 /**
  * Get parameter constraints for a specific model
  */
-export function getModelParameterConstraints(modelId: modelID): ParameterConstraints {
-  const modelInfo = modelDetails[modelId];
-  
+export function getModelParameterConstraints(modelInfo: ModelInfo | null): ParameterConstraints {
   if (!modelInfo) {
-    console.warn(`Model ${modelId} not found in modelDetails, using default constraints`);
+    console.warn(`Model info not provided, using default constraints`);
     return DEFAULT_CONSTRAINTS;
   }
 
@@ -44,12 +43,12 @@ export function getModelParameterConstraints(modelId: modelID): ParameterConstra
  * Validate preset parameters for a specific model
  */
 export function validatePresetParameters(
-  modelId: modelID, 
-  temperature?: number, 
-  maxTokens?: number, 
+  modelInfo: ModelInfo | null,
+  temperature?: number,
+  maxTokens?: number,
   systemInstruction?: string
 ): ValidationResult {
-  const constraints = getModelParameterConstraints(modelId);
+  const constraints = getModelParameterConstraints(modelInfo);
   const errors: string[] = [];
 
   // Validate temperature
@@ -72,7 +71,7 @@ export function validatePresetParameters(
 
   // Validate system instruction
   if (systemInstruction !== undefined) {
-    const instructionValidation = validateSystemInstruction(systemInstruction, modelId);
+    const instructionValidation = validateSystemInstruction(systemInstruction, modelInfo);
     if (!instructionValidation.valid) {
       errors.push(...instructionValidation.errors);
     }
@@ -84,29 +83,29 @@ export function validatePresetParameters(
 /**
  * Validate system instruction content and security
  */
-export function validateSystemInstruction(instruction: string, modelId: modelID): ValidationResult {
+export function validateSystemInstruction(instruction: string, modelInfo: ModelInfo | null): ValidationResult {
   const errors: string[] = [];
-  const constraints = getModelParameterConstraints(modelId);
-  
+  const constraints = getModelParameterConstraints(modelInfo);
+
   // Length validation
   if (instruction.length > constraints.maxSystemInstructionLength) {
     errors.push(`System instruction too long (max ${constraints.maxSystemInstructionLength} characters)`);
   }
-  
+
   if (instruction.length < 10) {
     errors.push('System instruction must be at least 10 characters');
   }
-  
+
   // Content validation - check for prompt injection risks
   if (containsPromptInjectionRisk(instruction)) {
     errors.push('System instruction contains potentially unsafe content');
   }
-  
+
   // Character validation (prevent control characters)
   if (/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(instruction)) {
     errors.push('System instruction contains invalid characters');
   }
-  
+
   return { valid: errors.length === 0, errors };
 }
 
@@ -125,37 +124,35 @@ export function containsPromptInjectionRisk(text: string): boolean {
     /<\s*system\s*>/i, // System tags
     /assistant\s*:\s*i\s+(?:am|will)\s+now/i, // Assistant hijacking
   ];
-  
+
   return riskyPatterns.some(pattern => pattern.test(text));
 }
 
 /**
  * Validate model access for user (premium models, etc.)
  */
-export function validateModelAccess(modelId: modelID, userCanAccessPremium: boolean): ValidationResult {
-  const modelInfo = modelDetails[modelId];
-  
+export function validateModelAccess(modelInfo: ModelInfo | null, userCanAccessPremium: boolean): ValidationResult {
   if (!modelInfo || !modelInfo.enabled) {
     return { valid: false, errors: ['Model not available'] };
   }
-  
+
   if (modelInfo.premium && !userCanAccessPremium) {
     return { valid: false, errors: ['Premium model requires credits or subscription'] };
   }
-  
+
   return { valid: true, errors: [] };
 }
 
 /**
  * Get default parameter values for a model
  */
-export function getModelDefaults(modelId: modelID): {
+export function getModelDefaults(modelInfo: ModelInfo | null): {
   temperature: number;
   maxTokens: number;
   systemInstruction: string;
 } {
-  const constraints = getModelParameterConstraints(modelId);
-  
+  const constraints = getModelParameterConstraints(modelInfo);
+
   return {
     temperature: constraints.temperature.default,
     maxTokens: constraints.maxTokens.default,
@@ -169,9 +166,9 @@ export function getModelDefaults(modelId: modelID): {
 export function sanitizeSystemInstruction(instruction: string): string {
   // Remove potential control characters
   let sanitized = instruction.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-  
+
   // Trim excessive whitespace
   sanitized = sanitized.trim().replace(/\s+/g, ' ');
-  
+
   return sanitized;
 }
