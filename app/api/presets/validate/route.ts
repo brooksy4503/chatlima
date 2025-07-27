@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { validatePresetParameters, validateModelAccess, getModelParameterConstraints } from '@/lib/parameter-validation';
+import { getModelDetails } from '@/lib/models/fetch-models';
 import { auth } from '@/lib/auth';
 
 // Helper to create error responses
@@ -38,12 +39,15 @@ export async function POST(req: NextRequest) {
       return createErrorResponse('Missing required field: modelId', 400);
     }
 
+    // Get model info first for validation
+    const modelInfo = await getModelDetails(modelId);
+
     // Get model constraints
-    const constraints = getModelParameterConstraints(modelId);
+    const constraints = getModelParameterConstraints(modelInfo);
 
     // Validate model access
     const canAccessPremium = await userCanAccessPremium(userId);
-    const modelAccessValidation = validateModelAccess(modelId, canAccessPremium);
+    const modelAccessValidation = validateModelAccess(modelInfo, canAccessPremium);
     if (!modelAccessValidation.valid) {
       return new Response(JSON.stringify({
         valid: false,
@@ -55,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate parameters
-    const validation = validatePresetParameters(modelId, temperature, maxTokens, systemInstruction);
+    const validation = validatePresetParameters(modelInfo, temperature, maxTokens, systemInstruction);
 
     return new Response(JSON.stringify({
       valid: validation.valid,

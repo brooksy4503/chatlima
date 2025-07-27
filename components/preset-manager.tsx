@@ -69,7 +69,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     setActivePreset
   } = usePresets();
 
-  const { models } = useModels();
+  const { models, isLoading: modelsLoading } = useModels();
 
   // Helper function to get model info from dynamic models
   const getModelInfo = (modelId: string) => {
@@ -261,8 +261,22 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
       errors.push(`Web search is not supported for ${formatApiRoute(formData.modelId)} models`);
     }
 
+    // Check if models are still loading
+    if (modelsLoading) {
+      errors.push('Models are still loading, please wait...');
+      setFormErrors(errors);
+      return false;
+    }
+
     // Validate parameters
     const modelInfo = getModelInfo(formData.modelId) || null;
+    
+    // If we can't find the model info even after loading is complete, warn the user
+    if (!modelInfo) {
+      console.warn(`Model info not found for ${formData.modelId}, available models:`, models.map(m => m.id));
+      errors.push(`Model information not available for ${formData.modelId}. Please try refreshing or selecting a different model.`);
+    }
+    
     const validation = validatePresetParameters(
       modelInfo,
       formData.temperature,
@@ -354,7 +368,18 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
   // Get model constraints for current selection
   const selectedModelInfo = getModelInfo(formData.modelId) || null;
-  const modelConstraints = getModelParameterConstraints(selectedModelInfo);
+  const modelConstraints = useMemo(() => {
+    // If models are still loading, show reasonable defaults that don't restrict too much
+    if (modelsLoading) {
+      return {
+        temperature: { min: 0, max: 2, default: 1 },
+        maxTokens: { min: 1, max: 200000, default: 4096 }, // Use a high max to avoid false restrictions
+        supportsSystemInstruction: true,
+        maxSystemInstructionLength: 50000
+      };
+    }
+    return getModelParameterConstraints(selectedModelInfo);
+  }, [selectedModelInfo, modelsLoading]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -775,13 +800,15 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                     </Button>
                     <Button 
                       onClick={handleSubmit}
-                      disabled={submitting}
+                      disabled={submitting || modelsLoading}
                       className="w-full sm:w-auto"
                     >
                       {submitting ? (
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : modelsLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
                       ) : null}
-                      {editingPreset ? 'Update Preset' : 'Create Preset'}
+                      {modelsLoading ? 'Loading Models...' : editingPreset ? 'Update Preset' : 'Create Preset'}
                     </Button>
                   </div>
                 </div>
