@@ -462,8 +462,8 @@ export const MCPServerManager = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] sm:max-w-md lg:max-w-[480px] max-h-[85vh] overflow-hidden flex flex-col p-4 sm:p-6">
-                <DialogHeader>
+            <DialogContent className="max-w-[95vw] sm:max-w-md lg:max-w-[480px] max-h-[90vh] flex flex-col p-0">
+                <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 shrink-0">
                     <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                         <ServerIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
                         MCP Server Configuration
@@ -479,37 +479,38 @@ export const MCPServerManager = ({
                 </DialogHeader>
 
                 {view === 'list' ? (
-                    <div className="flex-1 overflow-hidden flex flex-col">
-                        {servers.length > 0 ? (
-                            <div className="flex-1 overflow-hidden flex flex-col">
-                                <div className="flex-1 overflow-hidden flex flex-col">
-                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
+                    <>
+                        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+                            {servers.length > 0 ? (
+                                <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-4 sm:px-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2 shrink-0">
                                         <h3 className="text-sm font-medium">Available Servers</h3>
                                         <span className="text-xs text-muted-foreground">
                                             Select multiple servers to combine their tools
                                         </span>
                                     </div>
-                                    <div className="overflow-y-auto pr-1 flex-1 gap-2.5 flex flex-col pb-16">
-                                        {servers
-                                            .sort((a, b) => {
-                                                const aActive = selectedServers.includes(a.id);
-                                                const bActive = selectedServers.includes(b.id);
-                                                if (aActive && !bActive) return -1;
-                                                if (!aActive && bActive) return 1;
-                                                return 0;
-                                            })
-                                            .map((server) => {
-                                            const isActive = selectedServers.includes(server.id);
-                                            return (
-                                                <div
-                                                    key={server.id}
-                                                    className={`
-                            relative flex flex-col p-3.5 rounded-xl transition-colors
-                            border ${isActive
-                                                            ? 'border-primary bg-primary/10'
-                                                            : 'border-border hover:border-primary/30 hover:bg-primary/5'}
-                          `}
-                                                >
+                                    <div className="flex-1 overflow-y-auto -webkit-overflow-scrolling-touch min-h-0">
+                                        <div className="space-y-2.5 pb-2">
+                                            {servers
+                                                .sort((a, b) => {
+                                                    const aActive = selectedServers.includes(a.id);
+                                                    const bActive = selectedServers.includes(b.id);
+                                                    if (aActive && !bActive) return -1;
+                                                    if (!aActive && bActive) return 1;
+                                                    return 0;
+                                                })
+                                                .map((server) => {
+                                                const isActive = selectedServers.includes(server.id);
+                                                return (
+                                                    <div
+                                                        key={server.id}
+                                                        className={`
+                                relative flex flex-col p-3.5 rounded-xl transition-colors
+                                border ${isActive
+                                                                ? 'border-primary bg-primary/10'
+                                                                : 'border-border hover:border-primary/30 hover:bg-primary/5'}
+                              `}
+                                                    >
                                                     {/* Server Header with Type Badge and Delete Button */}
                                                     <div className="flex items-center justify-between mb-2">
                                                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -600,472 +601,37 @@ export const MCPServerManager = ({
                                                 </div>
                                             );
                                         })}
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex-1 py-8 pb-16 flex flex-col items-center justify-center space-y-4">
-                                <div className="rounded-full p-3 bg-primary/10">
-                                    <ServerIcon className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
-                                </div>
-                                <div className="text-center space-y-1">
-                                    <h3 className="text-sm sm:text-base font-medium">No MCP Servers Added</h3>
-                                    <p className="text-xs sm:text-sm text-muted-foreground max-w-[300px]">
-                                        Add your first MCP server to access additional AI tools
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4">
-                                    <a
-                                        href="https://modelcontextprotocol.io"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-1 hover:text-primary transition-colors"
-                                    >
-                                        Learn about MCP
-                                        <ExternalLink className="h-3 w-3 shrink-0" />
-                                    </a>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="space-y-4 overflow-y-auto px-1 py-0.5 mb-14 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                        <h3 className="text-sm font-medium">{editingServerId ? "Edit MCP Server" : "Add New MCP Server"}</h3>
-                        <div className="space-y-4">
-                            <div className="grid gap-1.5">
-                                <Label htmlFor="name" className="text-sm">
-                                    Server Name
-                                </Label>
-                                <Input
-                                    id="name"
-                                    value={newServer.name}
-                                    onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-                                    placeholder="My MCP Server"
-                                    className="relative z-0"
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Unique identifier for this server
-                                </p>
-                            </div>
-
-                            <div className="grid gap-1.5">
-                                <Label htmlFor="title" className="text-sm">
-                                    Display Title (Optional)
-                                </Label>
-                                <Input
-                                    id="title"
-                                    value={newServer.title || ''}
-                                    onChange={(e) => setNewServer({ ...newServer, title: e.target.value })}
-                                    placeholder="File System Access"
-                                    className="relative z-0"
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Human-friendly name for UI display
-                                </p>
-                            </div>
-
-                            <div className="grid gap-1.5">
-                                <Label htmlFor="transport-type" className="text-sm">
-                                    Transport Type
-                                </Label>
-                                <div className="space-y-2">
-                                    <p className="text-xs text-muted-foreground">Choose how to connect to your MCP server:</p>
-                                    <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewServer({ ...newServer, type: 'sse' })}
-                                            className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
-                                                newServer.type === 'sse' 
-                                                    ? 'border-primary bg-primary/10 ring-1 ring-primary' 
-                                                    : 'border-border hover:border-border/80 hover:bg-muted/50'
-                                            }`}
-                                        >
-                                            <Globe className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'sse' ? 'text-primary' : ''}`} />
-                                            <div className="min-w-0">
-                                                <p className="font-medium text-sm">SSE</p>
-                                                <p className="text-xs text-muted-foreground truncate">Server-Sent Events</p>
-                                            </div>
-                                        </button>
-                                        
-                                        <button
-                                            type="button"
-                                            onClick={() => setNewServer({ ...newServer, type: 'stdio' })}
-                                            className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
-                                                newServer.type === 'stdio' 
-                                                    ? 'border-primary bg-primary/10 ring-1 ring-primary' 
-                                                    : 'border-border hover:border-border/80 hover:bg-muted/50'
-                                            }`}
-                                        >
-                                            <Terminal className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'stdio' ? 'text-primary' : ''}`} />
-                                            <div className="min-w-0">
-                                                <p className="font-medium text-sm">stdio</p>
-                                                <p className="text-xs text-muted-foreground truncate">Standard I/O</p>
-                                            </div>
-                                        </button>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setNewServer({ ...newServer, type: 'streamable-http' })}
-                                        className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all w-full ${
-                                            newServer.type === 'streamable-http' 
-                                                ? 'border-primary bg-primary/10 ring-1 ring-primary' 
-                                                : 'border-border hover:border-border/80 hover:bg-muted/50'
-                                        }`}
-                                    >
-                                        <Globe className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'streamable-http' ? 'text-primary' : ''}`} />
-                                        <div className="min-w-0">
-                                            <p className="font-medium text-sm">Streamable HTTP</p>
-                                            <p className="text-xs text-muted-foreground truncate">Streamable HTTP Server</p>
                                         </div>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {newServer.type === 'sse' || newServer.type === 'streamable-http' ? (
-                                <div className="grid gap-1.5">
-                                    <Label htmlFor="url" className="text-sm">
-                                        Server URL
-                                    </Label>
-                                    <Input
-                                        id="url"
-                                        value={newServer.url}
-                                        onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
-                                        placeholder={newServer.type === 'streamable-http' ? "https://mcp.example.com/token/mcp" : "https://mcp.example.com/token/sse"}
-                                        className="relative z-0"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Full URL to the {newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint of the MCP server
-                                    </p>
+                                    </div>
                                 </div>
                             ) : (
-                                <>
-                                    <div className="grid gap-1.5">
-                                        <Label htmlFor="command" className="text-sm">
-                                            Command
-                                        </Label>
-                                        <Input
-                                            id="command"
-                                            value={newServer.command}
-                                            onChange={(e) => setNewServer({ ...newServer, command: e.target.value })}
-                                            placeholder="node"
-                                            className="relative z-0"
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            Executable to run (e.g., node, python)
+                                <div className="flex-1 flex flex-col items-center justify-center space-y-4 px-4 sm:px-6">
+                                    <div className="rounded-full p-3 bg-primary/10">
+                                        <ServerIcon className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
+                                    </div>
+                                    <div className="text-center space-y-1">
+                                        <h3 className="text-sm sm:text-base font-medium">No MCP Servers Added</h3>
+                                        <p className="text-xs sm:text-sm text-muted-foreground max-w-[300px]">
+                                            Add your first MCP server to access additional AI tools
                                         </p>
                                     </div>
-                                    <div className="grid gap-1.5">
-                                        <Label htmlFor="args" className="text-sm">
-                                            Arguments
-                                        </Label>
-                                        <Input
-                                            id="args"
-                                            value={newServer.args?.join(' ') || ''}
-                                            onChange={(e) => handleArgsChange(e.target.value)}
-                                            placeholder="src/mcp-server.js --port 3001"
-                                            className="relative z-0"
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            Space-separated arguments or JSON array
-                                        </p>
+                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4">
+                                        <a
+                                            href="https://modelcontextprotocol.io"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1 hover:text-primary transition-colors"
+                                        >
+                                            Learn about MCP
+                                            <ExternalLink className="h-3 w-3 shrink-0" />
+                                        </a>
                                     </div>
-                                </>
+                                </div>
                             )}
-
-                             {/* Test Connection Button */}
-                             <div className="flex justify-end">
-                                 <Button
-                                     type="button"
-                                     variant="outline"
-                                     size="sm"
-                                     onClick={() => {
-                                         // Create a temporary server object for testing
-                                         const tempServer: MCPServer = {
-                                             id: 'temp',
-                                             ...newServer
-                                         };
-                                         testConnection(tempServer);
-                                     }}
-                                     disabled={
-                                         !newServer.name ||
-                                         (newServer.type === 'sse' && !newServer.url) ||
-                                         (newServer.type === 'streamable-http' && !newServer.url) ||
-                                         (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) ||
-                                         testingServerId === 'temp'
-                                     }
-                                     className="gap-1.5"
-                                 >
-                                     {testingServerId === 'temp' ? (
-                                         <>
-                                             <div className="mr-2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                             Testing...
-                                         </>
-                                     ) : (
-                                          <>
-                                              <Wifi className="h-3.5 w-3.5 shrink-0" />
-                                              Test Connection
-                                          </>
-                                     )}
-                                 </Button>
-                             </div>
-
-                             {/* Advanced Configuration */}
-                             <Accordion type="single" collapsible className="w-full">
-                                <AccordionItem value="env-vars">
-                                    <AccordionTrigger className="text-sm py-2">
-                                        Environment Variables
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="space-y-3">
-                                            <div className="flex flex-col sm:flex-row items-end gap-2">
-                                                <div className="flex-1 w-full">
-                                                    <Label htmlFor="env-key" className="text-xs mb-1 block">
-                                                        Key
-                                                    </Label>
-                                                    <Input
-                                                        id="env-key"
-                                                        value={newEnvVar.key}
-                                                        onChange={(e) => setNewEnvVar({ ...newEnvVar, key: e.target.value })}
-                                                        placeholder="API_KEY"
-                                                        className="h-8 relative z-0"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 w-full">
-                                                    <Label htmlFor="env-value" className="text-xs mb-1 block">
-                                                        Value
-                                                    </Label>
-                                                    <Input
-                                                        id="env-value"
-                                                        value={newEnvVar.value}
-                                                        onChange={(e) => setNewEnvVar({ ...newEnvVar, value: e.target.value })}
-                                                        placeholder="your-secret-key"
-                                                        className="h-8 relative z-0"
-                                                        type="text"
-                                                    />
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={addEnvVar}
-                                                    disabled={!newEnvVar.key}
-                                                    className="h-8 mt-1 w-full sm:w-auto shrink-0"
-                                                >
-                                                    <Plus className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </div>
-
-                                            {newServer.env && newServer.env.length > 0 ? (
-                                                <div className="border rounded-md divide-y">
-                                                    {newServer.env.map((env, index) => (
-                                                        <div key={index} className="flex items-center justify-between p-2 text-sm">
-                                                            <div className="flex-1 flex items-center gap-1 truncate min-w-0">
-                                                                <span className="font-mono text-xs shrink-0">{env.key}</span>
-                                                                <span className="mx-2 text-muted-foreground shrink-0">=</span>
-                                                                
-                                                                {editingEnvIndex === index ? (
-                                                                    <div className="flex gap-1 flex-1 min-w-0">
-                                                                        <Input
-                                                                            className="h-6 text-xs py-1 px-2 flex-1"
-                                                                            value={editedEnvValue}
-                                                                            onChange={(e) => setEditedEnvValue(e.target.value)}
-                                                                            onKeyDown={(e) => e.key === 'Enter' && saveEditedEnvValue()}
-                                                                            autoFocus
-                                                                        />
-                                                                        <Button 
-                                                                            size="sm" 
-                                                                            className="h-6 px-2 shrink-0"
-                                                                            onClick={saveEditedEnvValue}
-                                                                        >
-                                                                            Save
-                                                                        </Button>
-                                                                    </div>
-                                                                ) : (
-                                                                    <>
-                                                                        <span className="text-xs text-muted-foreground truncate">
-                                                                            {isSensitiveKey(env.key) && !showSensitiveEnvValues[index] 
-                                                                                ? maskValue(env.value) 
-                                                                                : env.value}
-                                                                        </span>
-                                                                        <span className="flex ml-1 gap-1 shrink-0">
-                                                                            {isSensitiveKey(env.key) && (
-                                                                                <button
-                                                                                    onClick={() => toggleSensitiveEnvValue(index)}
-                                                                                    className="p-1 hover:bg-muted/50 rounded-full"
-                                                                                >
-                                                                                    {showSensitiveEnvValues[index] ? (
-                                                                                        <EyeOff className="h-3 w-3 text-muted-foreground" />
-                                                                                    ) : (
-                                                                                        <Eye className="h-3 w-3 text-muted-foreground" />
-                                                                                    )}
-                                                                                </button>
-                                                                            )}
-                                                                            <button
-                                                                                onClick={() => startEditEnvValue(index, env.value)}
-                                                                                className="p-1 hover:bg-muted/50 rounded-full"
-                                                                            >
-                                                                                <Edit2 className="h-3 w-3 text-muted-foreground" />
-                                                                            </button>
-                                                                        </span>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => removeEnvVar(index)}
-                                                                className="h-6 w-6 p-0 ml-2 shrink-0"
-                                                            >
-                                                                <X className="h-3 w-3" />
-                                                            </Button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p className="text-xs text-muted-foreground text-center py-2">
-                                                    No environment variables added
-                                                </p>
-                                            )}
-                                            <p className="text-xs text-muted-foreground">
-                                                Environment variables will be passed to the MCP server process.
-                                            </p>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-
-                                <AccordionItem value="headers">
-                                    <AccordionTrigger className="text-sm py-2">
-                                        {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'HTTP Headers' : 'Additional Configuration'}
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="space-y-3">
-                                            <div className="flex flex-col sm:flex-row items-end gap-2">
-                                                <div className="flex-1 w-full">
-                                                    <Label htmlFor="header-key" className="text-xs mb-1 block">
-                                                        Key
-                                                    </Label>
-                                                    <Input
-                                                        id="header-key"
-                                                        value={newHeader.key}
-                                                        onChange={(e) => setNewHeader({ ...newHeader, key: e.target.value })}
-                                                        placeholder="Authorization"
-                                                        className="h-8 relative z-0"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 w-full">
-                                                    <Label htmlFor="header-value" className="text-xs mb-1 block">
-                                                        Value
-                                                    </Label>
-                                                    <Input
-                                                        id="header-value"
-                                                        value={newHeader.value}
-                                                        onChange={(e) => setNewHeader({ ...newHeader, value: e.target.value })}
-                                                        placeholder="Bearer token123"
-                                                        className="h-8 relative z-0"
-                                                    />
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={addHeader}
-                                                    disabled={!newHeader.key}
-                                                    className="h-8 mt-1 w-full sm:w-auto shrink-0"
-                                                >
-                                                    <Plus className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </div>
-
-                                            {newServer.headers && newServer.headers.length > 0 ? (
-                                                <div className="border rounded-md divide-y">
-                                                    {newServer.headers.map((header, index) => (
-                                                        <div key={index} className="flex items-center justify-between p-2 text-sm">
-                                                            <div className="flex-1 flex items-center gap-1 truncate min-w-0">
-                                                                <span className="font-mono text-xs shrink-0">{header.key}</span>
-                                                                <span className="mx-2 text-muted-foreground shrink-0">:</span>
-                                                                
-                                                                {editingHeaderIndex === index ? (
-                                                                    <div className="flex gap-1 flex-1 min-w-0">
-                                                                        <Input
-                                                                            className="h-6 text-xs py-1 px-2 flex-1"
-                                                                            value={editedHeaderValue}
-                                                                            onChange={(e) => setEditedHeaderValue(e.target.value)}
-                                                                            onKeyDown={(e) => e.key === 'Enter' && saveEditedHeaderValue()}
-                                                                            autoFocus
-                                                                        />
-                                                                        <Button 
-                                                                            size="sm" 
-                                                                            className="h-6 px-2 shrink-0"
-                                                                            onClick={saveEditedHeaderValue}
-                                                                        >
-                                                                            Save
-                                                                        </Button>
-                                                                    </div>
-                                                                ) : (
-                                                                    <>
-                                                                        <span className="text-xs text-muted-foreground truncate">
-                                                                            {isSensitiveKey(header.key) && !showSensitiveHeaderValues[index] 
-                                                                                ? maskValue(header.value) 
-                                                                                : header.value}
-                                                                        </span>
-                                                                        <span className="flex ml-1 gap-1 shrink-0">
-                                                                            {isSensitiveKey(header.key) && (
-                                                                                <button
-                                                                                    onClick={() => toggleSensitiveHeaderValue(index)}
-                                                                                    className="p-1 hover:bg-muted/50 rounded-full"
-                                                                                >
-                                                                                    {showSensitiveHeaderValues[index] ? (
-                                                                                        <EyeOff className="h-3 w-3 text-muted-foreground" />
-                                                                                    ) : (
-                                                                                        <Eye className="h-3 w-3 text-muted-foreground" />
-                                                                                    )}
-                                                                                </button>
-                                                                            )}
-                                                                            <button
-                                                                                onClick={() => startEditHeaderValue(index, header.value)}
-                                                                                className="p-1 hover:bg-muted/50 rounded-full"
-                                                                            >
-                                                                                <Edit2 className="h-3 w-3 text-muted-foreground" />
-                                                                            </button>
-                                                                        </span>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => removeHeader(index)}
-                                                                className="h-6 w-6 p-0 ml-2 shrink-0"
-                                                            >
-                                                                <X className="h-3 w-3" />
-                                                            </Button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p className="text-xs text-muted-foreground text-center py-2">
-                                                    No {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'headers' : 'additional configuration'} added
-                                                </p>
-                                            )}
-                                            <p className="text-xs text-muted-foreground">
-                                                {newServer.type === 'sse' || newServer.type === 'streamable-http'
-                                                    ? `HTTP headers will be sent with requests to the ${newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint.`
-                                                    : 'Additional configuration parameters for the stdio transport.'}
-                                            </p>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
                         </div>
-                    </div>
-                )}
-
-                {/* Persistent fixed footer with buttons */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t border-border flex flex-col sm:flex-row justify-between gap-3 z-10">
-                    {view === 'list' ? (
-                        <>
+                        
+                        {/* Footer for list view */}
+                        <div className="shrink-0 p-4 sm:p-6 pt-3 sm:pt-4 border-t border-border flex flex-col sm:flex-row justify-between gap-3">
                             <Button
                                 variant="outline"
                                 onClick={clearAllServers}
@@ -1084,9 +650,446 @@ export const MCPServerManager = ({
                                 <PlusCircle className="h-3.5 w-3.5 shrink-0" />
                                 Add Server
                             </Button>
-                        </>
-                    ) : (
-                        <>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="flex-1 overflow-y-auto -webkit-overflow-scrolling-touch min-h-0 px-4 sm:px-6">
+                            <div className="space-y-4 pb-2">
+                                <h3 className="text-sm font-medium">{editingServerId ? "Edit MCP Server" : "Add New MCP Server"}</h3>
+                                <div className="space-y-4">
+                                    <div className="grid gap-1.5">
+                                        <Label htmlFor="name" className="text-sm">
+                                            Server Name
+                                        </Label>
+                                        <Input
+                                            id="name"
+                                            value={newServer.name}
+                                            onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
+                                            placeholder="My MCP Server"
+                                            className="relative z-0"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Unique identifier for this server
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-1.5">
+                                        <Label htmlFor="title" className="text-sm">
+                                            Display Title (Optional)
+                                        </Label>
+                                        <Input
+                                            id="title"
+                                            value={newServer.title || ''}
+                                            onChange={(e) => setNewServer({ ...newServer, title: e.target.value })}
+                                            placeholder="File System Access"
+                                            className="relative z-0"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Human-friendly name for UI display
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-1.5">
+                                        <Label htmlFor="transport-type" className="text-sm">
+                                            Transport Type
+                                        </Label>
+                                        <div className="space-y-2">
+                                            <p className="text-xs text-muted-foreground">Choose how to connect to your MCP server:</p>
+                                            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewServer({ ...newServer, type: 'sse' })}
+                                                    className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
+                                                        newServer.type === 'sse' 
+                                                            ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+                                                            : 'border-border hover:border-border/80 hover:bg-muted/50'
+                                                    }`}
+                                                >
+                                                    <Globe className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'sse' ? 'text-primary' : ''}`} />
+                                                    <div className="min-w-0">
+                                                        <p className="font-medium text-sm">SSE</p>
+                                                        <p className="text-xs text-muted-foreground truncate">Server-Sent Events</p>
+                                                    </div>
+                                                </button>
+                                                
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewServer({ ...newServer, type: 'stdio' })}
+                                                    className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all ${
+                                                        newServer.type === 'stdio' 
+                                                            ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+                                                            : 'border-border hover:border-border/80 hover:bg-muted/50'
+                                                    }`}
+                                                >
+                                                    <Terminal className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'stdio' ? 'text-primary' : ''}`} />
+                                                    <div className="min-w-0">
+                                                        <p className="font-medium text-sm">stdio</p>
+                                                        <p className="text-xs text-muted-foreground truncate">Standard I/O</p>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setNewServer({ ...newServer, type: 'streamable-http' })}
+                                                className={`flex items-center gap-2 p-3 rounded-md text-left border transition-all w-full ${
+                                                    newServer.type === 'streamable-http' 
+                                                        ? 'border-primary bg-primary/10 ring-1 ring-primary' 
+                                                        : 'border-border hover:border-border/80 hover:bg-muted/50'
+                                                }`}
+                                            >
+                                                <Globe className={`h-4 w-4 sm:h-5 sm:w-5 shrink-0 ${newServer.type === 'streamable-http' ? 'text-primary' : ''}`} />
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-sm">Streamable HTTP</p>
+                                                    <p className="text-xs text-muted-foreground truncate">Streamable HTTP Server</p>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {newServer.type === 'sse' || newServer.type === 'streamable-http' ? (
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="url" className="text-sm">
+                                                Server URL
+                                            </Label>
+                                            <Input
+                                                id="url"
+                                                value={newServer.url}
+                                                onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
+                                                placeholder={newServer.type === 'streamable-http' ? "https://mcp.example.com/token/mcp" : "https://mcp.example.com/token/sse"}
+                                                className="relative z-0"
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Full URL to the {newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint of the MCP server
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="grid gap-1.5">
+                                                <Label htmlFor="command" className="text-sm">
+                                                    Command
+                                                </Label>
+                                                <Input
+                                                    id="command"
+                                                    value={newServer.command}
+                                                    onChange={(e) => setNewServer({ ...newServer, command: e.target.value })}
+                                                    placeholder="node"
+                                                    className="relative z-0"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Executable to run (e.g., node, python)
+                                                </p>
+                                            </div>
+                                            <div className="grid gap-1.5">
+                                                <Label htmlFor="args" className="text-sm">
+                                                    Arguments
+                                                </Label>
+                                                <Input
+                                                    id="args"
+                                                    value={newServer.args?.join(' ') || ''}
+                                                    onChange={(e) => handleArgsChange(e.target.value)}
+                                                    placeholder="src/mcp-server.js --port 3001"
+                                                    className="relative z-0"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Space-separated arguments or JSON array
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
+
+                                     {/* Test Connection Button */}
+                                     <div className="flex justify-end">
+                                         <Button
+                                             type="button"
+                                             variant="outline"
+                                             size="sm"
+                                             onClick={() => {
+                                                 // Create a temporary server object for testing
+                                                 const tempServer: MCPServer = {
+                                                     id: 'temp',
+                                                     ...newServer
+                                                 };
+                                                 testConnection(tempServer);
+                                             }}
+                                             disabled={
+                                                 !newServer.name ||
+                                                 (newServer.type === 'sse' && !newServer.url) ||
+                                                 (newServer.type === 'streamable-http' && !newServer.url) ||
+                                                 (newServer.type === 'stdio' && (!newServer.command || !newServer.args?.length)) ||
+                                                 testingServerId === 'temp'
+                                             }
+                                             className="gap-1.5"
+                                         >
+                                             {testingServerId === 'temp' ? (
+                                                 <>
+                                                     <div className="mr-2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                     Testing...
+                                                 </>
+                                             ) : (
+                                                  <>
+                                                      <Wifi className="h-3.5 w-3.5 shrink-0" />
+                                                      Test Connection
+                                                  </>
+                                             )}
+                                         </Button>
+                                     </div>
+
+                                     {/* Advanced Configuration */}
+                                     <Accordion type="single" collapsible className="w-full">
+                                        <AccordionItem value="env-vars">
+                                            <AccordionTrigger className="text-sm py-2">
+                                                Environment Variables
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="space-y-3">
+                                                    <div className="flex flex-col sm:flex-row items-end gap-2">
+                                                        <div className="flex-1 w-full">
+                                                            <Label htmlFor="env-key" className="text-xs mb-1 block">
+                                                                Key
+                                                            </Label>
+                                                            <Input
+                                                                id="env-key"
+                                                                value={newEnvVar.key}
+                                                                onChange={(e) => setNewEnvVar({ ...newEnvVar, key: e.target.value })}
+                                                                placeholder="API_KEY"
+                                                                className="h-8 relative z-0"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1 w-full">
+                                                            <Label htmlFor="env-value" className="text-xs mb-1 block">
+                                                                Value
+                                                            </Label>
+                                                            <Input
+                                                                id="env-value"
+                                                                value={newEnvVar.value}
+                                                                onChange={(e) => setNewEnvVar({ ...newEnvVar, value: e.target.value })}
+                                                                placeholder="your-secret-key"
+                                                                className="h-8 relative z-0"
+                                                                type="text"
+                                                            />
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={addEnvVar}
+                                                            disabled={!newEnvVar.key}
+                                                            className="h-8 mt-1 w-full sm:w-auto shrink-0"
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+
+                                                    {newServer.env && newServer.env.length > 0 ? (
+                                                        <div className="border rounded-md divide-y">
+                                                            {newServer.env.map((env, index) => (
+                                                                <div key={index} className="flex items-center justify-between p-2 text-sm">
+                                                                    <div className="flex-1 flex items-center gap-1 truncate min-w-0">
+                                                                        <span className="font-mono text-xs shrink-0">{env.key}</span>
+                                                                        <span className="mx-2 text-muted-foreground shrink-0">=</span>
+                                                                        
+                                                                        {editingEnvIndex === index ? (
+                                                                            <div className="flex gap-1 flex-1 min-w-0">
+                                                                                <Input
+                                                                                    className="h-6 text-xs py-1 px-2 flex-1"
+                                                                                    value={editedEnvValue}
+                                                                                    onChange={(e) => setEditedEnvValue(e.target.value)}
+                                                                                    onKeyDown={(e) => e.key === 'Enter' && saveEditedEnvValue()}
+                                                                                    autoFocus
+                                                                                />
+                                                                                <Button 
+                                                                                    size="sm" 
+                                                                                    className="h-6 px-2 shrink-0"
+                                                                                    onClick={saveEditedEnvValue}
+                                                                                >
+                                                                                    Save
+                                                                                </Button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span className="text-xs text-muted-foreground truncate">
+                                                                                    {isSensitiveKey(env.key) && !showSensitiveEnvValues[index] 
+                                                                                        ? maskValue(env.value) 
+                                                                                        : env.value}
+                                                                                </span>
+                                                                                <span className="flex ml-1 gap-1 shrink-0">
+                                                                                    {isSensitiveKey(env.key) && (
+                                                                                        <button
+                                                                                            onClick={() => toggleSensitiveEnvValue(index)}
+                                                                                            className="p-1 hover:bg-muted/50 rounded-full"
+                                                                                        >
+                                                                                            {showSensitiveEnvValues[index] ? (
+                                                                                                <EyeOff className="h-3 w-3 text-muted-foreground" />
+                                                                                            ) : (
+                                                                                                <Eye className="h-3 w-3 text-muted-foreground" />
+                                                                                            )}
+                                                                                        </button>
+                                                                                    )}
+                                                                                    <button
+                                                                                        onClick={() => startEditEnvValue(index, env.value)}
+                                                                                        className="p-1 hover:bg-muted/50 rounded-full"
+                                                                                    >
+                                                                                        <Edit2 className="h-3 w-3 text-muted-foreground" />
+                                                                                    </button>
+                                                                                </span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => removeEnvVar(index)}
+                                                                        className="h-6 w-6 p-0 ml-2 shrink-0"
+                                                                    >
+                                                                        <X className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-xs text-muted-foreground text-center py-2">
+                                                            No environment variables added
+                                                        </p>
+                                                    )}
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Environment variables will be passed to the MCP server process.
+                                                    </p>
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+
+                                        <AccordionItem value="headers">
+                                            <AccordionTrigger className="text-sm py-2">
+                                                {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'HTTP Headers' : 'Additional Configuration'}
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="space-y-3">
+                                                    <div className="flex flex-col sm:flex-row items-end gap-2">
+                                                        <div className="flex-1 w-full">
+                                                            <Label htmlFor="header-key" className="text-xs mb-1 block">
+                                                                Key
+                                                            </Label>
+                                                            <Input
+                                                                id="header-key"
+                                                                value={newHeader.key}
+                                                                onChange={(e) => setNewHeader({ ...newHeader, key: e.target.value })}
+                                                                placeholder="Authorization"
+                                                                className="h-8 relative z-0"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1 w-full">
+                                                            <Label htmlFor="header-value" className="text-xs mb-1 block">
+                                                                Value
+                                                            </Label>
+                                                            <Input
+                                                                id="header-value"
+                                                                value={newHeader.value}
+                                                                onChange={(e) => setNewHeader({ ...newHeader, value: e.target.value })}
+                                                                placeholder="Bearer token123"
+                                                                className="h-8 relative z-0"
+                                                            />
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={addHeader}
+                                                            disabled={!newHeader.key}
+                                                            className="h-8 mt-1 w-full sm:w-auto shrink-0"
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </div>
+
+                                                    {newServer.headers && newServer.headers.length > 0 ? (
+                                                        <div className="border rounded-md divide-y">
+                                                            {newServer.headers.map((header, index) => (
+                                                                <div key={index} className="flex items-center justify-between p-2 text-sm">
+                                                                    <div className="flex-1 flex items-center gap-1 truncate min-w-0">
+                                                                        <span className="font-mono text-xs shrink-0">{header.key}</span>
+                                                                        <span className="mx-2 text-muted-foreground shrink-0">:</span>
+                                                                        
+                                                                        {editingHeaderIndex === index ? (
+                                                                            <div className="flex gap-1 flex-1 min-w-0">
+                                                                                <Input
+                                                                                    className="h-6 text-xs py-1 px-2 flex-1"
+                                                                                    value={editedHeaderValue}
+                                                                                    onChange={(e) => setEditedHeaderValue(e.target.value)}
+                                                                                    onKeyDown={(e) => e.key === 'Enter' && saveEditedHeaderValue()}
+                                                                                    autoFocus
+                                                                                />
+                                                                                <Button 
+                                                                                    size="sm" 
+                                                                                    className="h-6 px-2 shrink-0"
+                                                                                    onClick={saveEditedHeaderValue}
+                                                                                >
+                                                                                    Save
+                                                                                </Button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span className="text-xs text-muted-foreground truncate">
+                                                                                    {isSensitiveKey(header.key) && !showSensitiveHeaderValues[index] 
+                                                                                        ? maskValue(header.value) 
+                                                                                        : header.value}
+                                                                                </span>
+                                                                                <span className="flex ml-1 gap-1 shrink-0">
+                                                                                    {isSensitiveKey(header.key) && (
+                                                                                        <button
+                                                                                            onClick={() => toggleSensitiveHeaderValue(index)}
+                                                                                            className="p-1 hover:bg-muted/50 rounded-full"
+                                                                                        >
+                                                                                            {showSensitiveHeaderValues[index] ? (
+                                                                                                <EyeOff className="h-3 w-3 text-muted-foreground" />
+                                                                                            ) : (
+                                                                                                <Eye className="h-3 w-3 text-muted-foreground" />
+                                                                                            )}
+                                                                                        </button>
+                                                                                    )}
+                                                                                    <button
+                                                                                        onClick={() => startEditHeaderValue(index, header.value)}
+                                                                                        className="p-1 hover:bg-muted/50 rounded-full"
+                                                                                    >
+                                                                                        <Edit2 className="h-3 w-3 text-muted-foreground" />
+                                                                                    </button>
+                                                                                </span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => removeHeader(index)}
+                                                                        className="h-6 w-6 p-0 ml-2 shrink-0"
+                                                                    >
+                                                                        <X className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-xs text-muted-foreground text-center py-2">
+                                                            No {newServer.type === 'sse' || newServer.type === 'streamable-http' ? 'headers' : 'additional configuration'} added
+                                                        </p>
+                                                    )}
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {newServer.type === 'sse' || newServer.type === 'streamable-http'
+                                                            ? `HTTP headers will be sent with requests to the ${newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint.`
+                                                            : 'Additional configuration parameters for the stdio transport.'}
+                                                    </p>
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    </Accordion>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Footer for add/edit view */}
+                        <div className="shrink-0 p-4 sm:p-6 pt-3 sm:pt-4 border-t border-border flex flex-col sm:flex-row justify-between gap-3">
                             <Button 
                                 variant="outline" 
                                 onClick={handleFormCancel}
@@ -1106,9 +1109,9 @@ export const MCPServerManager = ({
                             >
                                 {editingServerId ? "Save Changes" : "Add Server"}
                             </Button>
-                        </>
-                    )}
-                </div>
+                        </div>
+                    </>
+                )}
             </DialogContent>
         </Dialog>
     );
