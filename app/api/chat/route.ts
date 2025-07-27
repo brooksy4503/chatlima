@@ -377,14 +377,14 @@ export async function POST(req: Request) {
 
   // SECURITY FIX: Block premium model access for users without credits
   // This prevents anonymous users and users without credits from accessing expensive models
-  if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits && modelDetails[selectedModel]?.premium) {
+  if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits && selectedModelInfo?.premium) {
     const userType = isAnonymous ? "Anonymous users" : "Users without credits";
     const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
 
     console.log(`[SECURITY] ${userType} attempted to access premium model: ${selectedModel}`);
     return createErrorResponse(
       "PREMIUM_MODEL_RESTRICTED",
-      `${userType} cannot access premium models. ${actionRequired} to use ${modelDetails[selectedModel]?.name || selectedModel}.`,
+      `${userType} cannot access premium models. ${actionRequired} to use ${selectedModelInfo.name || selectedModel}.`,
       403,
       `Premium model access denied for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
     );

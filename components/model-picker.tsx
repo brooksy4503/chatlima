@@ -15,6 +15,22 @@ import { useAuth } from "@/hooks/useAuth";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 
+// Helper functions for pricing display
+function formatPricingDisplay(pricePerToken: number): string {
+  const pricePerMillion = pricePerToken * 1000000;
+  if (pricePerMillion >= 1) {
+    return `$${pricePerMillion.toFixed(2)}/M`;
+  } else if (pricePerMillion >= 0.01) {
+    return `$${pricePerMillion.toFixed(3)}/M`;
+  } else {
+    return `$${pricePerMillion.toFixed(4)}/M`;
+  }
+}
+
+function formatContextDisplay(contextMax: number): string {
+  return `${contextMax.toLocaleString()} context`;
+}
+
 interface ModelPickerProps {
   selectedModel: string;
   setSelectedModel: (model: string) => void;
@@ -25,6 +41,7 @@ interface ModelPickerProps {
 
 export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, disabled = false, activePresetName }: ModelPickerProps) => {
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
+  const [focusedModel, setFocusedModel] = useState<string | null>(null); // For touch/tap focus
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number>(-1);
@@ -155,7 +172,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   
   // Separate display logic: button always shows selected model, details panel shows hovered/focused model
   const hoveredModelData = hoveredModel ? availableModels.find(m => m.id === hoveredModel) : null;
-  const detailsPanelModel = keyboardFocusedModel || hoveredModelData || availableModels.find(m => m.id === selectedModel);
+  const touchFocusedModelData = focusedModel ? availableModels.find(m => m.id === focusedModel) : null;
+  const detailsPanelModel = keyboardFocusedModel || hoveredModelData || touchFocusedModelData || availableModels.find(m => m.id === selectedModel);
   
   // Main button always shows the selected model (no layout flipping)
   const selectedModelData = availableModels.find(m => m.id === selectedModel);
@@ -169,9 +187,24 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
       setIsOpen(false);
       setSearchTerm("");
       setKeyboardFocusedIndex(-1);
+      setFocusedModel(null);
       onModelSelected?.();
     }
   }, [availableModels, setSelectedModel, onModelSelected]);
+
+  // Handle model tap for mobile - tap to focus, tap again to select
+  const handleModelTap = useCallback((modelId: string, isUnavailable: boolean) => {
+    if (isUnavailable) return;
+    
+    // If this model is already focused, select it
+    if (focusedModel === modelId) {
+      handleModelChange(modelId);
+    } else {
+      // Otherwise, just focus it to show details
+      setFocusedModel(modelId);
+      setKeyboardFocusedIndex(-1); // Clear keyboard focus when using touch
+    }
+  }, [focusedModel, handleModelChange]);
 
   // Handle opening the popover - memoized to prevent re-renders
   const handleOpenChange = useCallback((open: boolean) => {
@@ -181,6 +214,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     if (!open) {
       setSearchTerm("");
       setKeyboardFocusedIndex(-1);
+      setFocusedModel(null);
     } else {
       // Focus search input when opening
       setTimeout(() => {
@@ -192,6 +226,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   // Handle search input change - memoized to prevent re-renders
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setFocusedModel(null); // Clear touch focus when searching
   }, []);
 
   // Handle refresh models
@@ -261,14 +296,14 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              disabled
-              className={cn(
-                "w-full max-w-[160px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
-                "border-primary/20 bg-primary/5 opacity-60"
-              )}
-            >
+                          <Button
+                variant="outline"
+                disabled
+                className={cn(
+                  "w-full sm:w-full md:max-w-fit md:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+                  "border-primary/20 bg-primary/5 opacity-60"
+                )}
+              >
               <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                 <RefreshCw className="h-3 w-3 animate-spin" />
                 <span className="text-xs font-medium">Loading models...</span>
@@ -294,7 +329,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
               onClick={handleRefreshModels}
               disabled={modelsRefreshing}
               className={cn(
-                "w-full max-w-[160px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+                "w-full sm:w-full md:max-w-fit md:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
                 "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
                 modelsRefreshing && "opacity-60"
               )}
@@ -328,7 +363,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                 aria-expanded={isOpen}
                 disabled={disabled}
                 className={cn(
-                  "w-full max-w-[160px] sm:max-w-fit sm:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
+                  "w-full sm:w-full md:max-w-fit md:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
                   "border-primary/20 bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/20",
                   "transition-all duration-200 ring-offset-background focus:ring-2 focus:ring-primary/30 focus:ring-offset-2",
                   "text-foreground hover:text-foreground font-normal",
@@ -361,6 +396,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         <PopoverContent 
           className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[400px] overflow-hidden" 
           align="start"
+          onMouseLeave={() => {
+            setHoveredModel(null);
+            // Don't clear focusedModel on mouse leave - keep it for touch devices
+          }}
         >
           {/* Search input with refresh button */}
           <div className="px-3 pt-3 pb-2 border-b border-border/40 space-y-2">
@@ -368,7 +407,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
               <Input
                 ref={searchInputRef}
                 type="search"
-                placeholder="Search models... (Use ↑↓ arrow keys to navigate, Enter to select)"
+                placeholder="Search models... (↑↓ keys or tap to preview, Enter/tap again to select)"
                 aria-label="Search models by name, provider, or capability"
                 value={searchTerm}
                 onChange={handleSearchChange}
@@ -402,6 +441,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                     const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
                     const isSelected = selectedModel === model.id;
                     const isKeyboardFocused = keyboardFocusedIndex === index;
+                    const isTouchFocused = focusedModel === model.id;
                     
                     const modelItem = (
                       <div
@@ -412,18 +452,17 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                           "focus:bg-accent focus:text-accent-foreground focus:outline-none",
                           isSelected && "!bg-primary/15 !text-foreground font-medium",
                           isKeyboardFocused && "!bg-accent !text-accent-foreground ring-2 ring-primary/30",
+                          isTouchFocused && "!bg-accent !text-accent-foreground ring-2 ring-primary/20",
                           isUnavailable && "opacity-50 cursor-not-allowed"
                         )}
                         onClick={() => {
-                          if (!isUnavailable) {
-                            handleModelChange(model.id);
-                          }
+                          handleModelTap(model.id, isUnavailable);
                         }}
                         onMouseEnter={() => {
                           setHoveredModel(model.id);
                           setKeyboardFocusedIndex(-1); // Clear keyboard focus when using mouse
+                          setFocusedModel(null); // Clear touch focus when using mouse
                         }}
-                        onMouseLeave={() => setHoveredModel(null)}
                       >
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-1.5">
@@ -505,13 +544,49 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                   </div>
                 </div>
                 
-                <div className="bg-muted/40 rounded-md p-2 hidden md:block">
-                  <div className="text-[10px] text-muted-foreground flex justify-between items-center">
-                    <span>API Version:</span>
-                    <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
-                      {detailsPanelModel.apiVersion}
-                    </code>
-                  </div>
+                {/* Model specifications */}
+                <div className="bg-muted/40 rounded-md p-2 hidden md:block space-y-2">
+                  {/* Token Context */}
+                  {detailsPanelModel.contextMax && (
+                    <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+                      <span>Token Context:</span>
+                      <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
+                        {formatContextDisplay(detailsPanelModel.contextMax)}
+                      </code>
+                    </div>
+                  )}
+                  
+                  {/* Pricing Information */}
+                  {detailsPanelModel.pricing && (detailsPanelModel.pricing.input !== undefined || detailsPanelModel.pricing.output !== undefined) && (
+                    <>
+                      {detailsPanelModel.pricing.input !== undefined && (
+                        <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+                          <span>Input Price:</span>
+                          <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
+                            {formatPricingDisplay(detailsPanelModel.pricing.input)} input tokens
+                          </code>
+                        </div>
+                      )}
+                      {detailsPanelModel.pricing.output !== undefined && (
+                        <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+                          <span>Output Price:</span>
+                          <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
+                            {formatPricingDisplay(detailsPanelModel.pricing.output)} output tokens
+                          </code>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* API Version */}
+                  {detailsPanelModel.apiVersion && (
+                    <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+                      <span>API Version:</span>
+                      <code className="bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono">
+                        {detailsPanelModel.apiVersion}
+                      </code>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -519,6 +594,12 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             {/* Condensed model details for mobile only */}
             {detailsPanelModel && (
               <div className="p-3 sm:hidden border-t border-border/30">
+                {/* Hint for touch interaction */}
+                {focusedModel && focusedModel !== selectedModel && (
+                  <div className="text-[10px] text-primary/80 mb-2 font-medium">
+                    Tap again to select "{detailsPanelModel.name}"
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-1 mb-2">
                   {detailsPanelModel.capabilities.slice(0, 4).map((capability) => (
                     <span 
@@ -534,6 +615,25 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                   ))}
                   {detailsPanelModel.capabilities.length > 4 && (
                     <span className="text-[10px] text-muted-foreground">+{detailsPanelModel.capabilities.length - 4} more</span>
+                  )}
+                </div>
+                
+                {/* Key specs for mobile */}
+                <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground">
+                  {detailsPanelModel.contextMax && (
+                    <span className="bg-muted/60 px-2 py-1 rounded">
+                      {formatContextDisplay(detailsPanelModel.contextMax)}
+                    </span>
+                  )}
+                  {detailsPanelModel.pricing?.input !== undefined && (
+                    <span className="bg-muted/60 px-2 py-1 rounded">
+                      In: {formatPricingDisplay(detailsPanelModel.pricing.input)}
+                    </span>
+                  )}
+                  {detailsPanelModel.pricing?.output !== undefined && (
+                    <span className="bg-muted/60 px-2 py-1 rounded">
+                      Out: {formatPricingDisplay(detailsPanelModel.pricing.output)}
+                    </span>
                   )}
                 </div>
               </div>

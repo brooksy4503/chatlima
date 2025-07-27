@@ -1,87 +1,68 @@
-# Scripts
+# Scripts Directory
 
-This directory contains utility scripts for managing and analyzing the ChatLima codebase.
+This directory contains utility scripts for development and maintenance tasks.
 
-## Available Scripts
+## Dynamic API Pricing Analysis
 
-### `update-model-parameters.ts`
+**File**: `dynamic-api-pricing-analysis.ts`
 
-**Purpose:** Dynamically fetches model data from OpenRouter and Requesty APIs and updates the model configuration in `ai/providers.ts` with accurate parameter limits and capabilities.
+A comprehensive pricing analysis tool that fetches model data from both OpenRouter and Requesty APIs and calculates estimated costs for different user types.
 
-**What it updates:**
-- `maxTokensRange`: Updates min/max/default token limits based on actual API data
-- `vision`: Updates vision capabilities based on model input modalities
+### Features
 
-**Usage:**
-```bash
-# Run directly with tsx
-pnpm tsx scripts/update-model-parameters.ts
+- **Multi-Provider Support**: Analyzes models from both OpenRouter and Requesty
+- **Cost Estimation**: Calculates per-message, daily, and monthly costs
+- **User Type Analysis**: Different cost estimates for anonymous vs Google users
+- **Provider Comparison**: Side-by-side comparison of OpenRouter vs Requesty pricing
+- **Error Handling**: Graceful handling of missing API keys and network issues
 
-# Or use the npm script
-pnpm run update:models
-```
-
-**Requirements:**
-- `OPENROUTER_API_KEY` environment variable (required)
-- `REQUESTY_API_KEY` environment variable (optional, will use fallback data if missing)
-
-**What it does:**
-1. Fetches all available models from OpenRouter and Requesty APIs
-2. Extracts `max_completion_tokens` and vision capabilities from API responses
-3. Updates the `ai/providers.ts` file with accurate parameter ranges
-4. Generates a detailed report showing updated models and their new limits
-
-**Example output:**
-```
-🚀 Starting model parameters update...
-✅ Fetched 320 OpenRouter models
-✅ Fetched 341 Requesty models from API
-✅ Updated 73 models with max tokens range
-✅ Updated 1 models with vision capabilities
-```
-
-### `openrouter-pricing-analysis.ts`
-
-**Purpose:** Analyzes pricing data for OpenRouter models configured in ChatLima.
-
-**Usage:**
-```bash
-# Run directly with tsx
-pnpm tsx scripts/openrouter-pricing-analysis.ts
-
-# Or use the npm script
-pnpm run pricing:analysis
-```
-
-### `update-vision-models.ts`
-
-**Purpose:** Updates vision capabilities for models by fetching data from OpenRouter and Requesty APIs.
-
-**Usage:**
-```bash
-pnpm tsx scripts/update-vision-models.ts
-```
-
-### `add-requesty-models.ts`
-
-**Purpose:** Helps add Requesty equivalents for existing OpenRouter models by generating the necessary configuration code.
-
-**Usage:**
-```bash
-pnpm tsx scripts/add-requesty-models.ts
-```
-
-## Environment Variables
-
-Make sure you have the following environment variables set in your `.env.local` file:
+### Usage
 
 ```bash
-OPENROUTER_API_KEY=your_openrouter_api_key
-REQUESTY_API_KEY=your_requesty_api_key  # Optional for some scripts
+# Basic usage (requires API keys)
+npx tsx scripts/dynamic-api-pricing-analysis.ts
+
+# Set API keys in environment
+export OPENROUTER_API_KEY="sk-or-your-key"
+export REQUESTY_API_KEY="rq-your-key"
+npx tsx scripts/dynamic-api-pricing-analysis.ts
 ```
 
-## Notes
+### Environment Variables
 
-- The `update-model-parameters.ts` script is the most comprehensive and should be run regularly to keep model configurations up to date
-- All scripts will automatically load environment variables from both `.env.local` and `.env` files
-- Scripts that update `ai/providers.ts` will create backups and show detailed reports of changes made 
+- `OPENROUTER_API_KEY`: Your OpenRouter API key (optional)
+- `REQUESTY_API_KEY`: Your Requesty API key (optional)
+
+### Output
+
+The script provides:
+
+1. **Pricing Table**: Detailed cost breakdown for each model
+2. **Cost Summary**: Most expensive and cheapest models
+3. **Provider Breakdown**: Average costs per provider
+4. **Usage Notes**: Important caveats about pricing estimates
+
+### Example Output
+
+```
+📊 Dynamic API Model Pricing Analysis
+=====================================
+
+Provider    Model                              Input/M     Output/M    Per Msg     Anon Daily  Google Daily   Anon Monthly  Google Monthly
+OpenRouter  Claude 3.5 Sonnet                 $0.000003   $0.000015   $0.000008   $0.000080   $0.000160      $0.002400     $0.004800
+Requesty    Claude 3.5 Sonnet (Latest)        $0.003000   $0.015000   $0.008000   $0.080000   $0.160000      $2.400000     $4.800000
+```
+
+### Notes
+
+- Requesty pricing is estimated since the API doesn't provide real-time pricing
+- Token estimates are based on actual ChatLima usage data
+- Anonymous users have 10 messages/day limit
+- Google users have 20 messages/day limit
+- Monthly estimates assume 30 days
+
+## Other Scripts
+
+- `add-requesty-models.ts`: Adds Requesty model mappings to the configuration
+- `update-model-parameters.ts`: Updates model parameters and capabilities
+- `update-vision-models.ts`: Updates vision support for models 
