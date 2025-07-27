@@ -79,7 +79,15 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
 
             const maxCompletionTokens = model.top_provider?.max_completion_tokens;
 
-            if (maxCompletionTokens && maxCompletionTokens > 0) {
+            // Override max tokens for specific models that have incorrect API limits
+            if (model.id.includes('deepseek')) {
+                // DeepSeek models support up to 8000 output tokens (override API reported value)
+                maxTokensRange = {
+                    min: 1,
+                    max: 8000,
+                    default: 4096
+                };
+            } else if (maxCompletionTokens && maxCompletionTokens > 0) {
                 // Use the actual max completion tokens from the provider
                 maxTokensRange = {
                     min: 1,

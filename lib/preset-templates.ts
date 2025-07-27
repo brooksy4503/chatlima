@@ -88,7 +88,7 @@ Approach:
 - Suggest performance optimizations where relevant
 - Use modern JavaScript/TypeScript features appropriately`,
       temperature: 0.3,
-      maxTokens: 4096,
+      maxTokens: 8000,
       webSearchEnabled: true,
       webSearchContextSize: 'medium',
       apiKeyPreferences: {},
