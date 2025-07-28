@@ -1,4 +1,4 @@
-import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check } from "drizzle-orm/pg-core";
+import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -196,4 +196,22 @@ export const presetUsage = pgTable('preset_usage', {
 
 export type Preset = typeof presets.$inferSelect;
 export type PresetInsert = typeof presets.$inferInsert;
-export type PresetUsage = typeof presetUsage.$inferSelect; 
+export type PresetUsage = typeof presetUsage.$inferSelect;
+
+// --- Favorite Models Schema ---
+
+export const favoriteModels = pgTable('favorite_models', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  modelId: text('model_id').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  // Ensure one favorite per user per model
+  uniqueUserModel: unique('unique_user_model').on(table.userId, table.modelId),
+  // Indexes for performance
+  userIdIdx: index('idx_favorite_models_user_id').on(table.userId),
+  modelIdIdx: index('idx_favorite_models_model_id').on(table.modelId),
+}));
+
+export type FavoriteModel = typeof favoriteModels.$inferSelect;
+export type FavoriteModelInsert = typeof favoriteModels.$inferInsert; 

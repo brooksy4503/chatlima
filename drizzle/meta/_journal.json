@@ -162,6 +162,20 @@
       "when": 1753164905288,
       "tag": "0023_remove_one_default_per_user_constraint",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1753697235988,
+      "tag": "0024_light_terror",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1753697266625,
+      "tag": "0025_flaky_thing",
+      "breakpoints": true
     }
   ]
 }
