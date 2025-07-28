@@ -7,13 +7,14 @@ import {
   PopoverTrigger,
 } from "./ui/popover";
 import { cn } from "@/lib/utils";
-import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check, RefreshCw, AlertCircle } from "lucide-react";
+import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check, RefreshCw, AlertCircle, Star } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useCredits } from "@/hooks/useCredits";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { FavoriteToggle } from "./favorite-toggle";
 
 // Helper functions for pricing display
 function formatPricingDisplay(pricePerToken: number): string {
@@ -45,6 +46,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number>(-1);
+  const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modelListRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -56,7 +58,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     isLoading: modelsLoading, 
     isRefreshing: modelsRefreshing,
     error: modelsError,
-    refresh: refreshModels
+    refresh: refreshModels,
+    favorites = [],
+    favoriteCount = 0
   } = useModel();
   
   // Function to get the appropriate icon for each provider
@@ -136,26 +140,35 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     }
   };
   
-  // Filter and sort models based on search term - memoized to prevent re-renders
+  // Filter and sort models based on search term and active tab - memoized to prevent re-renders
   const filteredAndSortedModels = useMemo(() => {
-    return [...availableModels]
-      .filter((model) => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-          model.name.toLowerCase().includes(searchLower) ||
-          model.provider.toLowerCase().includes(searchLower) ||
-          model.capabilities.some(cap => cap.toLowerCase().includes(searchLower))
-        );
-      })
-      .sort((modelA, modelB) => {
-        return modelA.name.localeCompare(modelB.name);
-      });
-  }, [availableModels, searchTerm]);
+    let modelsToFilter = [...availableModels];
 
-  // Reset keyboard focus when search term changes
+    // Filter by active tab
+    if (activeTab === 'favorites') {
+      modelsToFilter = modelsToFilter.filter((model) => favorites.includes(model.id));
+    }
+
+    // Filter by search term
+    modelsToFilter = modelsToFilter.filter((model) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        model.name.toLowerCase().includes(searchLower) ||
+        model.provider.toLowerCase().includes(searchLower) ||
+        model.capabilities.some(cap => cap.toLowerCase().includes(searchLower))
+      );
+    });
+
+    // Sort models
+    return modelsToFilter.sort((modelA, modelB) => {
+      return modelA.name.localeCompare(modelB.name);
+    });
+  }, [availableModels, searchTerm, activeTab, favorites]);
+
+  // Reset keyboard focus when search term or tab changes
   useEffect(() => {
     setKeyboardFocusedIndex(-1);
-  }, [searchTerm]);
+  }, [searchTerm, activeTab]);
 
   // Set initial keyboard focus when picker opens
   useEffect(() => {
@@ -239,6 +252,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
       setSearchTerm("");
       setKeyboardFocusedIndex(-1);
       setFocusedModel(null);
+      setActiveTab('all'); // Reset to all tab when closing
     } else {
       // Focus search input when opening
       setTimeout(() => {
@@ -425,13 +439,45 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             // Don't clear focusedModel on mouse leave - keep it for touch devices
           }}
         >
-          {/* Search input with refresh button */}
+          {/* Tabs and search input with refresh button */}
           <div className="px-3 pt-3 pb-2 border-b border-border/40 space-y-2">
+            {/* Tabs */}
+            <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-md">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={cn(
+                  "flex-1 text-xs font-medium px-2 py-1 rounded-sm transition-all duration-200",
+                  activeTab === 'all'
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                )}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setActiveTab('favorites')}
+                className={cn(
+                  "flex-1 text-xs font-medium px-2 py-1 rounded-sm transition-all duration-200 flex items-center justify-center gap-1",
+                  activeTab === 'favorites'
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                )}
+              >
+                <Star className="h-3 w-3" />
+                Favorites
+                {favoriteCount > 0 && (
+                  <span className="bg-primary/20 text-primary text-[9px] px-1 rounded-full min-w-[14px] h-3.5 flex items-center justify-center">
+                    {favoriteCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
             <div className="flex gap-2">
               <Input
                 ref={searchInputRef}
                 type="search"
-                placeholder="Search models... (↑↓ keys or tap to preview, Enter/tap again to select)"
+                placeholder={`Search ${activeTab === 'favorites' ? 'favorite ' : ''}models... (↑↓ keys or tap to preview, Enter/tap again to select)`}
                 aria-label="Search models by name, provider, or capability"
                 value={searchTerm}
                 onChange={handleSearchChange}
@@ -451,7 +497,15 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             </div>
             {availableModels.length > 0 && (
               <div className="text-xs text-muted-foreground">
-                {filteredAndSortedModels.length} of {availableModels.length} models
+                {activeTab === 'favorites' ? (
+                  favoriteCount === 0 ? (
+                    "No favorite models yet. Star models to add them here!"
+                  ) : (
+                    `${filteredAndSortedModels.length} of ${favoriteCount} favorite models`
+                  )
+                ) : (
+                  `${filteredAndSortedModels.length} of ${availableModels.length} models`
+                )}
               </div>
             )}
           </div>
@@ -491,14 +545,21 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-1.5">
                             {getProviderIcon(model.provider)}
-                            <span className="font-medium truncate">{model.name}</span>
+                            <span className="font-medium truncate flex-1">{model.name}</span>
                             {model.premium && (
-                              <Sparkles className="h-3 w-3 text-yellow-500 ml-1 flex-shrink-0" />
+                              <Sparkles className="h-3 w-3 text-yellow-500 flex-shrink-0" />
                             )}
                             {model.vision && (
-                              <Image className="h-3 w-3 text-indigo-500 ml-0.5 flex-shrink-0" aria-hidden="true" />
+                              <Image className="h-3 w-3 text-indigo-500 flex-shrink-0" aria-hidden="true" />
                             )}
-                            {isSelected && <Check className="h-3 w-3 ml-auto text-primary" />}
+                            <FavoriteToggle
+                              modelId={model.id}
+                              isFavorite={model.isFavorite || false}
+                              size="sm"
+                              disabled={isUnavailable}
+                              className="flex-shrink-0"
+                            />
+                            {isSelected && <Check className="h-3 w-3 text-primary flex-shrink-0" />}
                           </div>
                           <span className="text-[10px] sm:text-xs text-muted-foreground">
                             {model.provider}
@@ -521,9 +582,17 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                     }
                     return modelItem;
                   })
+                ) : activeTab === 'favorites' && favoriteCount === 0 ? (
+                  <div className="px-2 sm:px-3 py-4 text-center">
+                    <Star className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                    <div className="text-xs text-muted-foreground">
+                      <div className="font-medium mb-1">No favorite models yet</div>
+                      <div>Switch to &quot;All&quot; tab and star models you use frequently!</div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="px-2 sm:px-3 py-2 text-xs text-muted-foreground">
-                    No models found.
+                    {searchTerm ? `No models found matching "${searchTerm}".` : 'No models found.'}
                   </div>
                 )}
               </div>

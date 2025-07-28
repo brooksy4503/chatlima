@@ -28,6 +28,9 @@ export interface ModelInfo {
         tokensPerMinute?: number;
     };
 
+    // Favorites support
+    isFavorite?: boolean;    // Whether this model is favorited by the current user
+
     // Legacy compatibility fields for existing features
     enabled?: boolean;
     supportsWebSearch?: boolean;
