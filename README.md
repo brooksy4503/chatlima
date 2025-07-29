@@ -106,6 +106,26 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Advanced Model Picker**: Search functionality across models with keyboard navigation and provider icons
 - **Real-time Streaming Status**: Visual indicators for chat generation progress with timing information
 
+### 📝 Smart Code Input
+ChatLima automatically detects when you paste code and wraps it in proper markdown code blocks for better formatting:
+
+- **Auto-detection**: Automatically detects code based on syntax patterns, keywords, and structure
+- **Language detection**: Identifies the programming language and adds appropriate syntax highlighting
+- **Manual wrapping**: Press `Ctrl+K` (or `Cmd+K` on Mac) to manually wrap selected text or entire input in code blocks
+- **Visual feedback**: Shows a temporary indicator when code is automatically wrapped
+- **Smart processing**: Normalizes indentation and fixes common copy-paste artifacts
+
+#### Supported Languages
+- JavaScript/TypeScript (including JSX/TSX)
+- Python
+- HTML/CSS
+- JSON
+- SQL
+- Shell/Bash
+- Java
+- C/C++
+- And more...
+
 ### 🔍 Advanced Capabilities
 - **Web-Enabled Search**: Enhanced search capabilities via OpenRouter with premium billing
 - **Reasoning Model Support**: Support for advanced reasoning models with thinking capabilities
