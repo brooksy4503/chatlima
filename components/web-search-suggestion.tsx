@@ -5,6 +5,7 @@ import { X, Lightbulb, Globe } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
 import { motion, AnimatePresence } from "framer-motion";
+import { useClientMount } from "@/lib/hooks/use-client-mount";
 
 interface WebSearchSuggestionProps {
   messageId: string;
@@ -14,6 +15,7 @@ interface WebSearchSuggestionProps {
 export function WebSearchSuggestion({ messageId, hasWebSearchResults }: WebSearchSuggestionProps) {
   const [dismissed, setDismissed] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(false);
+  const isMounted = useClientMount();
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
 
   // Show suggestion only if:
@@ -44,7 +46,7 @@ export function WebSearchSuggestion({ messageId, hasWebSearchResults }: WebSearc
     setDismissed(true);
   };
 
-  if (!showSuggestion) return null;
+  if (!isMounted || !showSuggestion) return null;
 
   return (
     <AnimatePresence>

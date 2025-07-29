@@ -252,7 +252,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
       setSearchTerm("");
       setKeyboardFocusedIndex(-1);
       setFocusedModel(null);
-      setActiveTab('all'); // Reset to all tab when closing
+      // Keep activeTab as-is to remember user's last selection
     } else {
       // Focus search input when opening
       setTimeout(() => {
@@ -432,7 +432,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         </Tooltip>
         
         <PopoverContent 
-          className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[400px] overflow-hidden" 
+          className="w-[320px] sm:w-[480px] md:w-[680px] p-0 bg-background/95 dark:bg-muted/95 backdrop-blur-sm border-border/80 max-h-[560px] overflow-hidden" 
           align="start"
           onMouseLeave={() => {
             setHoveredModel(null);
@@ -510,9 +510,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start max-h-[340px] overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] md:grid-cols-[320px_1fr] items-start max-h-[440px] overflow-hidden">
             {/* Model selector column */}
-            <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1 overflow-y-auto max-h-[340px]">
+            <div className="sm:border-r border-border/40 bg-muted/20 p-0 pr-1 overflow-y-auto max-h-[440px]">
               <div ref={modelListRef} className="space-y-1 p-1">
                 {filteredAndSortedModels.length > 0 ? (
                   filteredAndSortedModels.map((model, index) => {
@@ -600,7 +600,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             
             {/* Model details column - hidden on smallest screens, visible on sm+ */}
             {detailsPanelModel && (
-              <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[340px] min-h-[340px]">
+              <div className="sm:block hidden p-2 sm:p-3 md:p-4 flex-col overflow-y-auto max-h-[440px] min-h-[440px]">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     {getProviderIcon(detailsPanelModel.provider)}
