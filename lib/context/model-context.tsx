@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useModels } from "@/hooks/use-models";
 import { ModelInfo } from "@/lib/types/models";
 import { MODEL_MIGRATIONS } from "@/lib/models/client-constants";
+import { useFavorites } from "@/hooks/useFavorites";
 
 // Legacy compatibility - keep the same interface
 interface ModelContextType {
@@ -15,6 +16,11 @@ interface ModelContextType {
   error?: Error | null;
   availableModels?: ModelInfo[];
   refresh?: () => Promise<void>;
+  // Favorites functionality
+  favorites?: string[];
+  toggleFavorite?: (modelId: string) => Promise<boolean>;
+  isFavorite?: (modelId: string) => boolean;
+  favoriteCount?: number;
 }
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
@@ -44,6 +50,15 @@ const FALLBACK_MODELS = [
 export function ModelProvider({ children }: { children: ReactNode }) {
   // Dynamic models from the API
   const { models, isLoading, isValidating, error, refresh, forceRefresh } = useModels();
+  
+  // Favorites functionality
+  const { 
+    favorites, 
+    toggleFavorite, 
+    isFavorite, 
+    favoriteCount,
+    isLoading: favoritesLoading 
+  } = useFavorites();
   
   // Selected model state
   const [selectedModel, setSelectedModelState] = useState<string>(
@@ -163,14 +178,24 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     }
   };
   
+  // Enhance models with favorite status
+  const modelsWithFavorites = models.map(model => ({
+    ...model,
+    isFavorite: favorites.includes(model.id),
+  }));
+
   const contextValue = {
     selectedModel,
     setSelectedModel,
-    isLoading,
+    isLoading: isLoading || favoritesLoading,
     isRefreshing: isValidating || isManuallyRefreshing,
     error,
-    availableModels: models,
+    availableModels: modelsWithFavorites,
     refresh: contextRefresh,
+    favorites,
+    toggleFavorite,
+    isFavorite,
+    favoriteCount,
   };
   
 

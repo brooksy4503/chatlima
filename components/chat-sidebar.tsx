@@ -58,6 +58,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useClientMount } from "@/lib/hooks/use-client-mount";
 import {
     Tooltip,
     TooltipContent,
@@ -73,7 +74,7 @@ export function ChatSidebar() {
     const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
     const [providerHealthOpen, setProviderHealthOpen] = useState(false);
-    const [mounted, setMounted] = useState(false);
+    const isMounted = useClientMount();
     const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
     // On mobile, always show expanded layout
@@ -154,12 +155,10 @@ export function ChatSidebar() {
     }, [session, isSessionLoading]);
 
     // Fix hydration error by ensuring consistent initial state
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+
 
     const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle } = useChats();
-    const isLoading = !mounted || isSessionLoading || isChatsLoading;
+    const isLoading = !isMounted || isSessionLoading || isChatsLoading;
 
     const handleNewChat = () => {
         // Close mobile sidebar when navigating to new chat
@@ -368,7 +367,7 @@ export function ChatSidebar() {
                                                 <Activity className="h-4 w-4 mr-2 text-muted-foreground" />
                                                 Provider Health
                                             </DropdownMenuItem>
-                                            {webSearchEnabled && (
+                                            {isMounted && webSearchEnabled && (
                                                 <>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuLabel className="text-xs">Web Search</DropdownMenuLabel>

@@ -1,9 +1,9 @@
 import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Globe, AlertCircle, ImageIcon } from "lucide-react";
+import { ArrowUp, Square, Globe, AlertCircle, ImageIcon, Code2 } from "lucide-react";
 import { ModelPicker } from "./model-picker";
 import { PresetSelector } from "./preset-selector";
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { usePresets } from "@/lib/context/preset-context";
@@ -15,6 +15,9 @@ import { ImagePreview } from "./image-preview";
 import type { ImageAttachment } from "@/lib/types";
 import { Button } from "./ui/button";
 import { useModels } from "@/hooks/use-models";
+import { processTextInput } from "@/lib/text-utils";
+import { processKeyboardInput, expandCodeSnippet, cleanupCodeStructure } from "@/lib/text-utils";
+import { useClientMount } from "@/lib/hooks/use-client-mount";
 
 interface InputProps {
   input: string;
@@ -44,6 +47,14 @@ export const Textarea = ({
   const iconButtonRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  
+  // Code detection and enhancement state
+  const [isCodeMode, setIsCodeMode] = useState(false);
+  const [codeConfidence, setCodeConfidence] = useState(0);
+  const [lastProcessedLength, setLastProcessedLength] = useState(0);
+  const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
+  const [showAutoWrapFeedback, setShowAutoWrapFeedback] = useState(false);
+  const isMounted = useClientMount();
 
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
   const { activePreset } = usePresets();
@@ -119,6 +130,299 @@ export const Textarea = ({
   const canUploadMore = images.length < 5;
   const hasImages = images.length > 0;
 
+  // Detect programming language from content
+  const detectLanguage = useCallback((text: string): string | null => {
+    const lowerText = text.toLowerCase();
+    
+    // JavaScript/TypeScript patterns
+    if (lowerText.includes('console.log') || lowerText.includes('function') || 
+        lowerText.includes('=>') || lowerText.includes('const ') || 
+        lowerText.includes('import ') || lowerText.includes('export ')) {
+      if (lowerText.includes('interface ') || lowerText.includes('type ') || 
+          text.includes(': string') || text.includes(': number')) {
+        return 'typescript';
+      }
+      return 'javascript';
+    }
+    
+    // Python patterns
+    if (lowerText.includes('def ') || lowerText.includes('import ') || 
+        lowerText.includes('print(') || lowerText.includes('class ') ||
+        lowerText.includes('if __name__')) {
+      return 'python';
+    }
+    
+    // HTML/JSX patterns
+    if (text.includes('<') && text.includes('>') && 
+        (text.includes('</') || text.includes('/>'))) {
+      if (text.includes('className=') || text.includes('onClick=')) {
+        return 'jsx';
+      }
+      return 'html';
+    }
+    
+    // CSS patterns
+    if (text.includes('{') && text.includes('}') && 
+        (text.includes(':') && text.includes(';'))) {
+      if (lowerText.includes('@media') || lowerText.includes('px') || 
+          lowerText.includes('rem') || lowerText.includes('color:')) {
+        return 'css';
+      }
+    }
+    
+    // JSON patterns
+    if (text.trim().startsWith('{') && text.trim().endsWith('}') ||
+        text.trim().startsWith('[') && text.trim().endsWith(']')) {
+      try {
+        JSON.parse(text);
+        return 'json';
+      } catch {}
+    }
+    
+    // SQL patterns
+    if (lowerText.includes('select ') || lowerText.includes('from ') || 
+        lowerText.includes('where ') || lowerText.includes('insert ')) {
+      return 'sql';
+    }
+    
+    return null;
+  }, []);
+
+  // Paste event handler for enhanced text processing
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    
+    if (!pastedText) return;
+
+    // Process the pasted text with auto-wrapping enabled
+    const processed = processTextInput(pastedText, { autoWrapCode: true });
+    
+    if (processed.processedText !== pastedText) {
+      // Prevent default paste and use our processed version
+      e.preventDefault();
+      
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const selectionStart = textarea.selectionStart;
+      const selectionEnd = textarea.selectionEnd;
+      const currentValue = textarea.value;
+      
+      // Insert processed text at cursor position
+      const newValue = 
+        currentValue.slice(0, selectionStart) + 
+        processed.processedText + 
+        currentValue.slice(selectionEnd);
+      
+      // Create synthetic event to trigger handleInputChange
+      const syntheticEvent = {
+        target: { value: newValue }
+      } as React.ChangeEvent<HTMLTextAreaElement>;
+      
+      handleInputChange(syntheticEvent);
+      
+      // Restore cursor position
+      requestAnimationFrame(() => {
+        const newCursorPos = selectionStart + processed.processedText.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      });
+      
+      // Show feedback if code was automatically wrapped
+      if (processed.wasWrapped) {
+        console.log(`✅ Code automatically wrapped in \`\`\`${processed.language || ''}\`\`\` blocks`);
+        setShowAutoWrapFeedback(true);
+        // Hide feedback after 3 seconds
+        setTimeout(() => setShowAutoWrapFeedback(false), 3000);
+      }
+    }
+    
+    // Update code detection state
+    if (processed.isCode && processed.confidence > 60) {
+      setIsCodeMode(true);
+      setCodeConfidence(processed.confidence);
+      setDetectedLanguage(processed.language || null);
+      console.log('Code detected:', processed.reasons, processed.language ? `(${processed.language})` : '');
+    } else if (processed.confidence < 30) {
+      setIsCodeMode(false);
+      setCodeConfidence(0);
+      setDetectedLanguage(null);
+    }
+    
+    setLastProcessedLength(processed.processedText.length);
+  }, [handleInputChange]);
+
+  // Enhanced input change handler with dynamic code detection
+  const handleEnhancedInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    
+    // Call the original handler first
+    handleInputChange(e);
+    
+    // Dynamic code detection for longer content (> 50 characters)
+    if (newValue.length > 50 && newValue.length % 20 === 0) {
+      const processed = processTextInput(newValue, { autoWrapCode: false }); // Don't auto-wrap during typing
+      
+      if (processed.isCode && processed.confidence > 70) {
+        if (!isCodeMode) {
+          setIsCodeMode(true);
+          setCodeConfidence(processed.confidence);
+          setDetectedLanguage(processed.language || null);
+        }
+      } else if (processed.confidence < 20 && isCodeMode) {
+        // Only switch out of code mode if confidence is very low
+        setIsCodeMode(false);
+        setCodeConfidence(0);
+        setDetectedLanguage(null);
+      }
+    }
+    
+    // Clear code mode for very short content
+    if (newValue.length < 20 && isCodeMode) {
+      setIsCodeMode(false);
+      setCodeConfidence(0);
+      setDetectedLanguage(null);
+    }
+  }, [handleInputChange, isCodeMode, detectLanguage]);
+
+  // Enhanced keyboard handler with smart input processing
+  const handleEnhancedKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const cursorPosition = textarea.selectionStart;
+    const key = e.key;
+
+    // Handle Enter submission (preserve existing behavior)
+    if (key === "Enter" && !e.shiftKey && !isLoading && (input.trim() || hasImages)) {
+      e.preventDefault();
+      e.currentTarget.form?.requestSubmit();
+      return;
+    }
+
+    // Handle Ctrl/Cmd+K for manual code wrapping
+    if ((e.ctrlKey || e.metaKey) && key === 'k') {
+      e.preventDefault();
+      
+      const selectionStart = textarea.selectionStart;
+      const selectionEnd = textarea.selectionEnd;
+      
+      if (selectionStart !== selectionEnd) {
+        // Wrap selected text
+        const selectedText = input.slice(selectionStart, selectionEnd);
+        const processed = processTextInput(selectedText, { forceCodeWrapping: true });
+        
+        const newValue = 
+          input.slice(0, selectionStart) + 
+          processed.processedText + 
+          input.slice(selectionEnd);
+        
+        const syntheticEvent = {
+          target: { value: newValue }
+        } as React.ChangeEvent<HTMLTextAreaElement>;
+        
+        handleInputChange(syntheticEvent);
+        
+        // Show feedback
+        if (processed.wasWrapped) {
+          setShowAutoWrapFeedback(true);
+          setTimeout(() => setShowAutoWrapFeedback(false), 3000);
+        }
+        
+        // Restore selection around the wrapped code
+        requestAnimationFrame(() => {
+          const newStart = selectionStart;
+          const newEnd = selectionStart + processed.processedText.length;
+          textarea.setSelectionRange(newStart, newEnd);
+        });
+      } else {
+        // No selection - wrap entire input if it looks like code
+        const processed = processTextInput(input, { forceCodeWrapping: true });
+        
+        if (processed.wasWrapped) {
+          const syntheticEvent = {
+            target: { value: processed.processedText }
+          } as React.ChangeEvent<HTMLTextAreaElement>;
+          
+          handleInputChange(syntheticEvent);
+          setShowAutoWrapFeedback(true);
+          setTimeout(() => setShowAutoWrapFeedback(false), 3000);
+          
+          // Keep cursor at the end
+          requestAnimationFrame(() => {
+            textarea.setSelectionRange(processed.processedText.length, processed.processedText.length);
+          });
+        }
+      }
+      return;
+    }
+
+    // Skip processing for modifier keys or special keys
+    if (e.ctrlKey || e.metaKey || e.altKey || key.length > 1) {
+      // Allow Tab for indentation in code mode
+      if (key === 'Tab' && isCodeMode) {
+        // Handle tab logic below
+      } else {
+        return;
+      }
+    }
+
+    // Process keyboard input with smart enhancements
+    const processed = processKeyboardInput(key, input, cursorPosition, detectedLanguage);
+
+    if (processed.shouldPreventDefault) {
+      e.preventDefault();
+
+      if (processed.newText && processed.newCursorPosition !== undefined) {
+        // Create synthetic event for the new text
+        const syntheticEvent = {
+          target: { value: processed.newText }
+        } as React.ChangeEvent<HTMLTextAreaElement>;
+
+        handleInputChange(syntheticEvent);
+
+        // Set cursor position after React updates
+        requestAnimationFrame(() => {
+          textarea.setSelectionRange(processed.newCursorPosition!, processed.newCursorPosition!);
+        });
+      }
+    }
+
+    // Handle code snippet expansion on space or tab
+    if ((key === ' ' || key === 'Tab') && isCodeMode && detectedLanguage) {
+      const words = input.slice(0, cursorPosition).split(/\s+/);
+      const lastWord = words[words.length - 1];
+      
+      if (lastWord && lastWord.length > 1) {
+        const snippet = expandCodeSnippet(lastWord, detectedLanguage);
+        if (snippet) {
+          e.preventDefault();
+          
+          // Replace the trigger word with the snippet
+          const beforeWord = input.slice(0, cursorPosition - lastWord.length);
+          const afterCursor = input.slice(cursorPosition);
+          
+          // Simple snippet expansion (remove ${} placeholders for now)
+          const expandedSnippet = snippet.replace(/\$\{\d+:?([^}]*)\}/g, '$1');
+          const newText = beforeWord + expandedSnippet + afterCursor;
+          
+          const syntheticEvent = {
+            target: { value: newText }
+          } as React.ChangeEvent<HTMLTextAreaElement>;
+          
+          handleInputChange(syntheticEvent);
+          
+          // Position cursor at first placeholder or end of snippet
+          const newCursorPos = beforeWord.length + expandedSnippet.indexOf('// ');
+          if (newCursorPos > beforeWord.length) {
+            requestAnimationFrame(() => {
+              textarea.setSelectionRange(newCursorPos, newCursorPos + 3); // Select "// "
+            });
+          }
+        }
+      }
+    }
+  }, [input, isLoading, hasImages, handleInputChange, isCodeMode, detectedLanguage]);
+
   // Determine tooltip message based on credit status
   const getWebSearchTooltipMessage = () => {
     if (activePreset) {
@@ -136,7 +440,8 @@ export const Textarea = ({
     return effectiveWebSearchEnabled ? 'Disable web search' : 'Enable web search';
   };
 
-  
+
+
   return (
     <div className="w-full space-y-3">
       {/* Image Upload Interface */}
@@ -171,26 +476,50 @@ export const Textarea = ({
       <div className="relative w-full">
         <ShadcnTextarea
           ref={textareaRef}
-          className="resize-y bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl pr-12 pt-4 pb-16 border-input focus-visible:ring-ring placeholder:text-muted-foreground"
+          className={`resize-y bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl px-4 py-4 border-input focus-visible:ring-ring placeholder:text-muted-foreground transition-all duration-300 ease-in-out ${
+            isCodeMode 
+              ? 'font-mono ring-2 ring-blue-500/20 border-blue-500/30 bg-blue-50/10 dark:bg-blue-950/10 text-sm leading-relaxed' 
+              : 'font-sans text-base leading-normal'
+          }`}
           value={input}
           autoFocus
           placeholder={hasImages ? "Describe these images or ask questions..." : "Send a message..."}
-          onChange={handleInputChange}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !isLoading && (input.trim() || hasImages)) {
-              e.preventDefault();
-              e.currentTarget.form?.requestSubmit();
+          onChange={handleEnhancedInputChange}
+          onPaste={handlePaste}
+          onKeyDown={handleEnhancedKeyDown}
+          onBlur={(e) => {
+            // Clean up code structure when user finishes editing
+            if (isCodeMode && input.length > 50) {
+              const cleaned = cleanupCodeStructure(input);
+              if (cleaned !== input) {
+                const syntheticEvent = {
+                  target: { value: cleaned }
+                } as React.ChangeEvent<HTMLTextAreaElement>;
+                handleInputChange(syntheticEvent);
+              }
             }
           }}
           style={{
             maxHeight: '200px',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            fontVariantLigatures: isCodeMode ? 'none' : 'normal',
+            lineHeight: isCodeMode ? '1.6' : '1.5',
+            whiteSpace: isCodeMode ? 'pre' : 'pre-wrap',
+            wordBreak: isCodeMode ? 'normal' : 'break-word',
+            overflowWrap: isCodeMode ? 'normal' : 'break-word',
+            unicodeBidi: 'plaintext',
+            tabSize: 2,
+            // Enhanced text rendering for code
+            ...(isCodeMode && {
+              fontFeatureSettings: '"liga" 0, "calt" 0',
+              textRendering: 'optimizeSpeed',
+            })
           }}
         />
       
       {/* Cost visibility warning */}
-      {shouldShowCostWarning && (
-        <div className="absolute top-2 right-14 z-10">
+      {isMounted && shouldShowCostWarning && (
+        <div className="absolute top-2 right-4 z-10">
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full border border-amber-200 dark:border-amber-700/30">
@@ -208,24 +537,77 @@ export const Textarea = ({
         </div>
       )}
 
-        {/* Mobile Controls - Stacked below textarea */}
-        {isMobileScreen && (
-          <div className="flex flex-col gap-2 mt-2 w-full">
-            <div className="flex gap-2 w-full min-w-0">
-              <PresetSelector className="flex-1 min-w-0" />
-              {/* Only show model picker when no preset is active */}
-              {!activePreset && (
-                <div className="flex-1 min-w-0">
-                  <ModelPicker
-                    setSelectedModel={setSelectedModel}
-                    selectedModel={selectedModel}
-                    onModelSelected={handleModelSelected}
-                    disabled={false}
-                  />
+      {/* Code mode indicator */}
+      {isCodeMode && (
+        <div className={`absolute top-2 z-10 ${shouldShowCostWarning ? 'right-32' : 'right-4'}`}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-all duration-200 ${
+                codeConfidence >= 80 
+                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700/30'
+                  : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/30'
+              }`}>
+                <Code2 className="h-3 w-3" />
+                <span className="font-medium">
+                  {detectedLanguage ? detectedLanguage.toUpperCase() : 'Code'}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={8}>
+              <div className="text-xs">
+                <div>
+                  Code detected: {detectedLanguage || 'Generic'} 
+                  <span className="text-muted-foreground ml-1">({codeConfidence}% confidence)</span>
                 </div>
-              )}
-            </div>
-            <div className="flex gap-2 w-full">
+                <div className="text-muted-foreground">Smart input processing active</div>
+                <div className="text-muted-foreground mt-1 text-[10px]">
+                  • Auto-indentation • Bracket matching • Code cleanup
+                </div>
+                <div className="text-muted-foreground mt-1 text-[10px] border-t border-border/30 pt-1">
+                  💡 Press <kbd className="bg-muted px-1 rounded text-[9px]">Ctrl+K</kbd> to wrap text in code blocks
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
+      {/* Auto-wrap feedback indicator */}
+      {showAutoWrapFeedback && (
+        <div className={`absolute top-2 z-10 ${shouldShowCostWarning && isCodeMode ? 'right-60' : shouldShowCostWarning || isCodeMode ? 'right-32' : 'right-4'}`}>
+          <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs px-2.5 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-700/30 animate-in slide-in-from-right-2 duration-300">
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="font-medium">Code auto-wrapped</span>
+          </div>
+        </div>
+      )}
+      </div>
+
+      {/* Control Bar - Unified for both mobile and desktop */}
+      <div className="w-full bg-background/50 dark:bg-muted/50 backdrop-blur-sm rounded-xl border border-border p-2">
+        <div className={`flex ${isMobileScreen ? 'flex-col gap-2' : 'items-center gap-2'}`}>
+          {/* Left side controls - Stack on mobile */}
+          <div className={`flex items-center gap-2 ${isMobileScreen ? 'w-full' : 'flex-1'}`}>
+            <PresetSelector className={isMobileScreen ? "flex-1 min-w-0" : ""} />
+            {/* Only show model picker when no preset is active */}
+            {!activePreset && (
+              <div className={isMobileScreen ? "flex-1 min-w-0" : ""}>
+                <ModelPicker
+                  setSelectedModel={setSelectedModel}
+                  selectedModel={selectedModel}
+                  onModelSelected={handleModelSelected}
+                  disabled={false}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Right side controls - Second row on mobile */}
+          <div className={`flex items-center ${isMobileScreen ? 'w-full justify-between' : 'gap-2'}`}>
+            {/* Action buttons group */}
+            <div className="flex items-center gap-1.5">
               {/* Image Upload Button */}
               {effectiveModelSupportsVision() && (
                 <Tooltip>
@@ -236,7 +618,9 @@ export const Textarea = ({
                       size="sm"
                       onClick={() => setShowImageUpload(!showImageUpload)}
                       disabled={isLoading || !canUploadMore}
-                      className={`h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                      className={`${
+                        isMobileScreen ? 'h-8 w-8' : 'h-9 w-9'
+                      } flex items-center justify-center rounded-full border transition-colors duration-150 ${
                         !canUploadMore
                           ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
                           : showImageUpload
@@ -244,7 +628,7 @@ export const Textarea = ({
                             : 'bg-background border-border text-muted-foreground hover:bg-accent'
                       } focus:outline-none focus:ring-2 focus:ring-primary/30`}
                     >
-                      <ImageIcon className="h-5 w-5" />
+                      <ImageIcon className={isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent sideOffset={8}>
@@ -252,141 +636,66 @@ export const Textarea = ({
                   </TooltipContent>
                 </Tooltip>
               )}
+              
               {/* Only show web search button when no preset is active and model supports it */}
-              {!activePreset && getEffectiveModel().startsWith("openrouter/") && (
-                <div className="relative flex items-center flex-shrink-0">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        ref={iconButtonRef}
-                        aria-label={getEffectiveWebSearchEnabled() ? "Web search enabled" : "Web search disabled"}
-                        onClick={handleWebSearchToggle}
-                        disabled={!canUseWebSearch}
-                        className={`h-10 w-10 flex items-center justify-center rounded-full border transition-colors duration-150 ${
-                          !canUseWebSearch
-                            ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
-                            : getEffectiveWebSearchEnabled()
-                              ? 'bg-primary text-primary-foreground border-primary shadow'
-                              : 'bg-background border-border text-muted-foreground hover:bg-accent'
-                        } focus:outline-none focus:ring-2 focus:ring-primary/30`}
-                      >
-                        <Globe className="h-5 w-5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent sideOffset={8}>
-                      {getWebSearchTooltipMessage()}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
+              {isMounted && !activePreset && getEffectiveModel().startsWith("openrouter/") && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      ref={iconButtonRef}
+                      aria-label={getEffectiveWebSearchEnabled() ? "Web search enabled" : "Web search disabled"}
+                      onClick={handleWebSearchToggle}
+                      disabled={!canUseWebSearch}
+                      className={`${
+                        isMobileScreen ? 'h-8 w-8' : 'h-9 w-9'
+                      } flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                        !canUseWebSearch
+                          ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                          : getEffectiveWebSearchEnabled()
+                            ? 'bg-primary text-primary-foreground border-primary shadow'
+                            : 'bg-background border-border text-muted-foreground hover:bg-accent'
+                      } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                    >
+                      <Globe className={isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={8}>
+                    {getWebSearchTooltipMessage()}
+                  </TooltipContent>
+                </Tooltip>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type={isStreaming ? "button" : "submit"}
-                    onClick={isStreaming ? stop : undefined}
-                    disabled={(!isStreaming && !(input.trim() || hasImages)) || (isStreaming && status === "submitted")}
-                    className="flex-1 min-w-0 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
-                  >
-                    {isStreaming ? (
-                      <Square className="h-5 w-5 text-primary-foreground flex-shrink-0" />
-                    ) : (
-                      <ArrowUp className={`h-5 w-5 flex-shrink-0 ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
-                    )}
-                    <span className="ml-2 hidden sm:inline">Send</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" sideOffset={8}>
-                  {isStreaming ? "Stop generation" : "Send message"}
-                </TooltipContent>
-              </Tooltip>
             </div>
-          </div>
-        )}
-        
-        {/* Desktop Controls - Original layout */}
-        {!isMobileScreen && (
-          <>
-            <div className="absolute left-2 bottom-2 z-10">
-              <div className="flex items-center gap-2">
-                <PresetSelector />
-                {/* Only show model picker when no preset is active */}
-                {!activePreset && (
-                  <ModelPicker
-                    setSelectedModel={setSelectedModel}
-                    selectedModel={selectedModel}
-                    onModelSelected={handleModelSelected}
-                    disabled={false}
-                  />
-                )}
-                {/* Image Upload Button */}
-                {effectiveModelSupportsVision() && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowImageUpload(!showImageUpload)}
-                        disabled={isLoading || !canUploadMore}
-                        className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
-                          !canUploadMore
-                            ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
-                            : showImageUpload
-                              ? 'bg-primary text-primary-foreground border-primary shadow'
-                              : 'bg-background border-border text-muted-foreground hover:bg-accent'
-                        } focus:outline-none focus:ring-2 focus:ring-primary/30`}
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent sideOffset={8}>
-                      {showImageUpload ? 'Hide image upload' : 'Upload images'}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                {/* Only show web search button when no preset is active and model supports it */}
-                {!activePreset && getEffectiveModel().startsWith("openrouter/") && (
-                  <div className="relative flex items-center">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          ref={iconButtonRef}
-                          aria-label={getEffectiveWebSearchEnabled() ? "Web search enabled" : "Web search disabled"}
-                          onClick={handleWebSearchToggle}
-                          disabled={!canUseWebSearch}
-                          className={`h-8 w-8 flex items-center justify-center rounded-full border transition-colors duration-150 ${
-                            !canUseWebSearch
-                              ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
-                              : getEffectiveWebSearchEnabled()
-                                ? 'bg-primary text-primary-foreground border-primary shadow'
-                                : 'bg-background border-border text-muted-foreground hover:bg-accent'
-                          } focus:outline-none focus:ring-2 focus:ring-primary/30`}
-                        >
-                          <Globe className="h-5 w-5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent sideOffset={8}>
-                        {getWebSearchTooltipMessage()}
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                )}
-              </div>
-            </div>
+
+            {/* Send/Stop Button - Grows on mobile */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type={isStreaming ? "button" : "submit"}
                   onClick={isStreaming ? stop : undefined}
                   disabled={(!isStreaming && !(input.trim() || hasImages)) || (isStreaming && status === "submitted")}
-                  className="absolute right-2 bottom-2 rounded-full p-2 bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                  className={`${
+                    isMobileScreen 
+                      ? 'flex-1 h-8 px-3 text-sm' 
+                      : 'px-3 h-9'
+                  } rounded-full bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2`}
                 >
                   {isStreaming ? (
-                    <Square className="h-4 w-4 text-primary-foreground" />
+                    <>
+                      <Square className={isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+                      <span className={isMobileScreen ? 'text-xs font-medium' : 'text-sm'}>
+                        Stop
+                      </span>
+                    </>
                   ) : (
-                    <ArrowUp className={`h-4 w-4 ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                    <>
+                      <ArrowUp className={`${
+                        isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'
+                      } ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                      <span className={isMobileScreen ? 'text-xs font-medium' : 'text-sm'}>
+                        Send
+                      </span>
+                    </>
                   )}
                 </button>
               </TooltipTrigger>
@@ -394,12 +703,9 @@ export const Textarea = ({
                 {isStreaming ? "Stop generation" : "Send message"}
               </TooltipContent>
             </Tooltip>
-          </>
-        )}
+          </div>
+        </div>
       </div>
-
-      {/* Model Support Message */}
-      {/* Removed: Message about model not supporting images */}
     </div>
   );
 };

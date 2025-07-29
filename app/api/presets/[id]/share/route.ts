@@ -49,11 +49,23 @@ export async function POST(
 
     const preset = existingPreset[0];
 
+    // Helper function to get the correct base URL
+    const getBaseUrl = (req: NextRequest) => {
+      // Check if we're in development
+      if (process.env.NODE_ENV === 'development') {
+        return 'http://localhost:3000';
+      }
+      // Use environment variable or fallback to production
+      return process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com';
+    };
+
+    const baseUrl = getBaseUrl(req);
+
     // If already has a share ID, return it
     if (preset.shareId) {
       return new Response(JSON.stringify({
         shareId: preset.shareId,
-        shareUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com'}/presets/shared/${preset.shareId}`
+        shareUrl: `${baseUrl}/presets/shared/${preset.shareId}`
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
@@ -72,7 +84,7 @@ export async function POST(
 
     return new Response(JSON.stringify({
       shareId,
-      shareUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com'}/presets/shared/${shareId}`
+      shareUrl: `${baseUrl}/presets/shared/${shareId}`
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
