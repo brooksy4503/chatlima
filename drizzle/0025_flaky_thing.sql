@@ -1,0 +1,2 @@
+CREATE INDEX "idx_favorite_models_user_id" ON "favorite_models" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "idx_favorite_models_model_id" ON "favorite_models" USING btree ("model_id");
