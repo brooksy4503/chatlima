@@ -344,8 +344,8 @@
   /* Light Brown Border */
   --sidebar-ring: oklch(0.60 0.15 140);
   /* Avocado Green */
-  --font-sans: 'Lobster', cursive;
-  /* Retro script */
+  --font-sans: Montserrat, sans-serif;
+  /* Default sans-serif */
   --font-serif: 'Playfair Display', serif;
   /* Classic serif */
   --font-mono: 'Courier Prime', monospace;
