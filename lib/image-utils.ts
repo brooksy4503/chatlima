@@ -29,32 +29,66 @@ export async function processImageFile(file: File): Promise<{
             targetPayloadSize
         });
 
-        // Determine compression settings based on file size
-        let maxWidth = 2048;
-        let maxHeight = 2048;
-        let quality = 0.85;
+        // Progressive compression - try multiple passes if needed
+        const compressionAttempts = [
+            { maxWidth: 2048, maxHeight: 2048, quality: 0.85 },
+            { maxWidth: 1792, maxHeight: 1792, quality: 0.8 },
+            { maxWidth: 1536, maxHeight: 1536, quality: 0.75 },
+            { maxWidth: 1280, maxHeight: 1280, quality: 0.7 },
+            { maxWidth: 1024, maxHeight: 1024, quality: 0.65 },
+            { maxWidth: 800, maxHeight: 800, quality: 0.6 }
+        ];
 
+        let currentFile = file;
+        let attemptIndex = 0;
+
+        // Choose starting point based on file size
         if (file.size > 15 * 1024 * 1024) { // > 15MB
-            maxWidth = 1536;
-            maxHeight = 1536;
-            quality = 0.75;
+            attemptIndex = 2; // Start with 1536x1536 @ 75%
         } else if (file.size > 10 * 1024 * 1024) { // > 10MB  
-            maxWidth = 1792;
-            maxHeight = 1792;
-            quality = 0.8;
+            attemptIndex = 1; // Start with 1792x1792 @ 80%
         }
 
-        try {
-            processedFile = await resizeImageIfNeeded(file, maxWidth, maxHeight, quality);
-            console.log('[DEBUG] Image compressed:', {
-                originalSize: file.size,
-                compressedSize: processedFile.size,
-                compressionRatio: (processedFile.size / file.size * 100).toFixed(1) + '%'
-            });
-        } catch (error) {
-            console.warn('[DEBUG] Image compression failed, using original:', error);
-            processedFile = file;
+        for (let i = attemptIndex; i < compressionAttempts.length; i++) {
+            const { maxWidth, maxHeight, quality } = compressionAttempts[i];
+
+            try {
+                const compressedFile = await resizeImageIfNeeded(currentFile, maxWidth, maxHeight, quality);
+                const compressedDataUrl = await fileToDataUrl(compressedFile);
+
+                console.log(`[DEBUG] Compression attempt ${i + 1}:`, {
+                    settings: `${maxWidth}x${maxHeight} @ ${quality * 100}%`,
+                    originalSize: file.size,
+                    compressedSize: compressedFile.size,
+                    dataUrlLength: compressedDataUrl.length,
+                    compressionRatio: (compressedFile.size / file.size * 100).toFixed(1) + '%',
+                    underLimit: compressedDataUrl.length <= targetPayloadSize
+                });
+
+                // If we're under the target size, use this version
+                if (compressedDataUrl.length <= targetPayloadSize) {
+                    processedFile = compressedFile;
+                    console.log(`[SUCCESS] Image compressed successfully on attempt ${i + 1}`);
+                    break;
+                } else {
+                    // Continue with the compressed file for the next attempt
+                    currentFile = compressedFile;
+                    processedFile = compressedFile; // Keep the best we have so far
+                }
+            } catch (error) {
+                console.warn(`[DEBUG] Compression attempt ${i + 1} failed:`, error);
+                if (i === compressionAttempts.length - 1) {
+                    // Last attempt failed, use whatever we have
+                    console.warn('[DEBUG] All compression attempts failed, using best available');
+                }
+            }
         }
+
+        console.log('[DEBUG] Final compression result:', {
+            originalSize: file.size,
+            finalSize: processedFile.size,
+            compressionRatio: (processedFile.size / file.size * 100).toFixed(1) + '%'
+        });
     }
 
     // Extract metadata from processed file
@@ -64,15 +98,37 @@ export async function processImageFile(file: File): Promise<{
 
     // Generate base64 data URL in AI SDK compatible format (used by OpenRouter and Requesty)
     console.log('[DEBUG] Converting file to data URL...');
-    const dataUrl = await fileToDataUrl(processedFile);
+    let dataUrl = await fileToDataUrl(processedFile);
     console.log('[DEBUG] Data URL created, length:', dataUrl.length);
 
-    // Final validation to ensure we're under the payload limit
+    // Final validation and emergency compression if still too large
     if (dataUrl.length > targetPayloadSize) {
-        console.warn('[DEBUG] Data URL still too large after compression:', {
+        console.warn('[DEBUG] Data URL still too large after compression, attempting emergency compression:', {
             dataUrlLength: dataUrl.length,
             targetSize: targetPayloadSize
         });
+
+        // Emergency ultra-aggressive compression
+        try {
+            const emergencyFile = await resizeImageIfNeeded(processedFile, 640, 640, 0.5);
+            const emergencyDataUrl = await fileToDataUrl(emergencyFile);
+
+            console.log('[DEBUG] Emergency compression result:', {
+                originalDataUrlLength: dataUrl.length,
+                emergencyDataUrlLength: emergencyDataUrl.length,
+                underLimit: emergencyDataUrl.length <= targetPayloadSize
+            });
+
+            if (emergencyDataUrl.length <= targetPayloadSize) {
+                processedFile = emergencyFile;
+                dataUrl = emergencyDataUrl;
+                console.log('[SUCCESS] Emergency compression successful');
+            } else {
+                console.error('[ERROR] Even emergency compression failed - image may be too complex or large');
+            }
+        } catch (error) {
+            console.error('[ERROR] Emergency compression failed:', error);
+        }
     }
 
     const result = {
@@ -250,23 +306,24 @@ export function resizeImageIfNeeded(file: File, maxWidth: number = 2048, maxHeig
                 }
             }
 
-            // If no resize needed, return original file
-            if (newWidth === width && newHeight === height) {
-                resolve(file);
-                return;
-            }
-
-            // Resize the image
+            // Always process the image to apply quality compression, even if dimensions don't change
+            // This is crucial for reducing file size when dealing with large images
             canvas.width = newWidth;
             canvas.height = newHeight;
 
             ctx?.drawImage(img, 0, 0, newWidth, newHeight);
 
+            // Use JPEG for better compression, unless it's already WebP
+            const outputFormat = file.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+            const outputExtension = outputFormat === 'image/webp' ? '.webp' : '.jpg';
+            const originalName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+            const outputName = originalName + outputExtension;
+
             canvas.toBlob(
                 (blob) => {
                     if (blob) {
-                        const resizedFile = new File([blob], file.name, {
-                            type: file.type,
+                        const resizedFile = new File([blob], outputName, {
+                            type: outputFormat,
                             lastModified: Date.now()
                         });
                         resolve(resizedFile);
@@ -274,7 +331,7 @@ export function resizeImageIfNeeded(file: File, maxWidth: number = 2048, maxHeig
                         resolve(file); // Fallback to original if resize fails
                     }
                 },
-                file.type,
+                outputFormat,
                 quality
             );
         };
