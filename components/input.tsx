@@ -30,7 +30,7 @@ export const Input = ({
   stop,
   images = [],
   onImagesChange,
-  maxImages = 5,
+  maxImages = 3,
   enableImageUpload = true,
   selectedModel,
 }: InputProps) => {
