@@ -21,8 +21,8 @@ interface ImageUploadProps {
 
 export function ImageUpload({
   onImageSelect,
-  maxFiles = 5,
-  maxSizePerFile = 20 * 1024 * 1024, // 20MB (compatible with OpenRouter and most providers)
+  maxFiles = 3,
+  maxSizePerFile = 2 * 1024 * 1024, // 2MB (optimized for Vercel 4.5MB request limit)
   acceptedTypes = ['image/jpeg', 'image/png', 'image/webp'], // Standard formats supported by most AI providers
   disabled = false,
   defaultDetail = "auto",
@@ -270,7 +270,7 @@ export function ImageUpload({
         <div className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
           <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">✨ Smart Compression:</div>
           <div className="text-blue-700 dark:text-blue-300">
-            Large images (&gt;5MB) are automatically compressed to ensure fast uploads while maintaining quality.
+            Large images (&gt;1MB) are automatically compressed to ensure fast uploads while maintaining quality.
           </div>
         </div>
       </div>
