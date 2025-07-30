@@ -1,0 +1,243 @@
+---
+globs: *.test.ts,*.test.tsx,*.spec.ts,*.spec.tsx
+description: Jest testing standards and best practices for React components
+---
+
+# Jest Testing Standards
+
+Follow these patterns when creating comprehensive unit tests for React components using Jest and React Testing Library.
+
+## File Structure and Setup
+
+### Essential Imports and References
+```typescript
+/// <reference types="@testing-library/jest-dom" />
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { ComponentName } from '../../components/component-name';
+```
+
+### Mock External Dependencies
+Always mock external dependencies at the top of your test file:
+
+```typescript
+// Mock localStorage
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+};
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock
+});
+
+// Mock toast notifications
+jest.mock('sonner', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+// Mock UI components with proper prop forwarding
+jest.mock('../../components/ui/button', () => ({
+  Button: ({ children, onClick, variant, className, ...props }: any) => (
+    <button 
+      onClick={onClick} 
+      className={className} 
+      data-variant={variant}
+      data-testid={`button-${variant || 'default'}`}
+      {...props}
+    >
+      {children}
+    </button>
+  ),
+}));
+```
+
+## Test Organization
+
+### Use Descriptive Describe Blocks
+Organize tests into logical categories:
+
+```typescript
+describe('ComponentName', () => {
+  // Tests for Basic Rendering and Props
+  describe('Basic Rendering and Props', () => {
+    test('renders when prop is true', () => {});
+    test('does not render when prop is false', () => {});
+  });
+
+  // Tests for User Interactions  
+  describe('User Interactions', () => {
+    test('handles click events correctly', () => {});
+    test('updates state when input changes', () => {});
+  });
+
+  // Tests for Error Handling
+  describe('Error Handling', () => {
+    test('handles API errors gracefully', () => {});
+  });
+
+  // Tests for Accessibility
+  describe('Accessibility', () => {
+    test('has proper ARIA attributes', () => {});
+    test('is keyboard accessible', () => {});
+  });
+
+  // Integration Tests
+  describe('Integration Tests', () => {
+    test('complete user workflow works end-to-end', () => {});
+  });
+});
+```
+
+## Setup and Cleanup
+
+### Proper beforeEach Setup
+Always reset mocks and state between tests:
+
+```typescript
+beforeEach(() => {
+  jest.clearAllMocks();
+  // Reset mocks to default behavior
+  localStorageMock.getItem.mockReturnValue(null);
+  localStorageMock.setItem.mockImplementation(() => {});
+  localStorageMock.removeItem.mockImplementation(() => {});
+});
+```
+
+## Testing Patterns
+
+### Test Data-TestIds Not CSS Classes
+```typescript
+// Good
+expect(screen.getByTestId('dialog')).toBeInTheDocument();
+expect(screen.getByTestId('input-email')).toHaveValue('test@example.com');
+
+// Avoid relying on CSS classes for testing logic
+```
+
+### Use Descriptive Test Names
+```typescript
+// Good
+test('saves user preferences to localStorage when save button is clicked', () => {});
+test('displays error message when API call fails', () => {});
+test('toggles password visibility when eye icon is clicked', () => {});
+
+// Avoid vague names
+test('it works', () => {});
+test('button click', () => {});
+```
+
+### Test User Interactions Properly
+```typescript
+// Use proper selectors and interactions
+const saveButton = screen.getByRole('button', { name: /save/i });
+fireEvent.click(saveButton);
+
+// Use waitFor for async operations
+await waitFor(() => {
+  expect(mockApiCall).toHaveBeenCalledWith(expectedData);
+});
+```
+
+### Test Error Scenarios
+```typescript
+test('handles localStorage errors when saving', async () => {
+  localStorageMock.setItem.mockImplementation(() => {
+    throw new Error('localStorage error');
+  });
+  
+  // Trigger the action that should handle the error
+  fireEvent.click(screen.getByRole('button', { name: /save/i }));
+  
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith('Failed to save data');
+  });
+});
+```
+
+## Comprehensive Coverage Areas
+
+Ensure your tests cover these key areas:
+
+1. **Basic Rendering** - Component renders with different props
+2. **User Interactions** - Clicks, form inputs, keyboard events
+3. **State Management** - Component state updates correctly
+4. **API Integration** - Successful and failed API calls
+5. **Error Handling** - Graceful error handling and user feedback
+6. **Accessibility** - ARIA attributes, keyboard navigation, screen readers
+7. **Responsive Behavior** - CSS classes and responsive functionality
+8. **Integration Workflows** - Complete user journeys from start to finish
+
+## Mock Isolation Best Practices
+
+### Reset Mocks Between Tests
+```typescript
+// In beforeEach
+localStorageMock.setItem.mockClear();
+
+// For specific tests, reset to normal behavior
+localStorageMock.setItem.mockImplementation(() => {});
+```
+
+### Mock Components with Proper Props
+```typescript
+jest.mock('../../components/ui/input', () => ({
+  Input: ({ id, type, value, onChange, placeholder, ...props }: any) => (
+    <input
+      id={id}
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      data-testid={`input-${id}`}
+      {...props}
+    />
+  ),
+}));
+```
+
+## Integration Test Patterns
+
+### Test Complete User Workflows
+```typescript
+test('complete workflow: load data, edit, and save', async () => {
+  // Setup initial data
+  mockApi.getData.mockResolvedValue(initialData);
+  
+  render(<Component />);
+  
+  // Wait for data to load
+  await waitFor(() => {
+    expect(screen.getByDisplayValue('initial value')).toBeInTheDocument();
+  });
+  
+  // User interaction
+  fireEvent.change(screen.getByTestId('input-field'), { 
+    target: { value: 'updated value' } 
+  });
+  
+  // Save action
+  fireEvent.click(screen.getByRole('button', { name: /save/i }));
+  
+  // Verify results
+  await waitFor(() => {
+    expect(mockApi.saveData).toHaveBeenCalledWith({
+      ...initialData,
+      field: 'updated value'
+    });
+    expect(toast.success).toHaveBeenCalledWith('Data saved successfully');
+  });
+});
+```
+
+## File Naming and Location
+
+- Place test files adjacent to components: `components/__tests__/component-name.test.tsx`
+- Use descriptive test file names that match component names
+- Include `.test.` or `.spec.` in filename for Jest recognition
+- Use same extension as source file (`.tsx` for React components)
+
+Reference existing test files like [suggested-prompts.test.tsx](mdc:__tests__/components/suggested-prompts.test.tsx) and [api-key-manager.test.tsx](mdc:__tests__/components/api-key-manager.test.tsx) for comprehensive examples.

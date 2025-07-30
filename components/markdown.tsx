@@ -185,6 +185,11 @@ const rehypePlugins = [rehypeKatex];
 
 // Preprocesses markdown to convert \(...\) to $...$ and \[...\] to $$...$$
 function preprocessMathDelimiters(markdown: string): string {
+  // Handle null, undefined, or non-string input
+  if (!markdown || typeof markdown !== 'string') {
+    return '';
+  }
+  
   // Convert block math: \[...\] => $$...$$
   markdown = markdown.replace(/\\\[([\s\S]+?)\\\]/g, (match, p1) => `$$${p1}$$`);
   // Convert inline math: \(...\) => $...$

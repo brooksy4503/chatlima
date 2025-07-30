@@ -1,0 +1,298 @@
+---
+globs: *.test.tsx,*.spec.tsx
+description: React Testing Library query patterns and best practices for component testing
+---
+
+# React Testing Library Best Practices
+
+Follow these patterns when using React Testing Library for component testing to ensure tests are maintainable and user-focused.
+
+## Query Priority and Best Practices
+
+### Use Queries in Order of Priority
+
+1. **Accessible Queries (Preferred)**
+```typescript
+// By role (most preferred)
+screen.getByRole('button', { name: /save/i })
+screen.getByRole('textbox', { name: /email/i })
+screen.getByRole('dialog')
+
+// By label text
+screen.getByLabelText(/password/i)
+
+// By placeholder text
+screen.getByPlaceholderText(/enter your email/i)
+
+// By display text
+screen.getByText(/welcome back/i)
+```
+
+2. **Semantic Queries**
+```typescript
+// By display value (for form elements)
+screen.getByDisplayValue('current value')
+
+// By alt text (for images)
+screen.getByAltText(/profile picture/i)
+```
+
+3. **Test ID Queries (Last Resort)**
+```typescript
+// Only when other queries aren't practical
+screen.getByTestId('complex-component')
+screen.getByTestId('input-email') // When input doesn't have proper label
+```
+
+## Query Variants
+
+### Use Appropriate Query Variants
+
+```typescript
+// get* - Element must exist (throws if not found)
+screen.getByRole('button')
+
+// query* - Element may not exist (returns null if not found)
+screen.queryByRole('button') 
+
+// find* - Async element that will appear (returns Promise)
+screen.findByRole('button')
+
+// *All variants for multiple elements
+screen.getAllByRole('listitem')
+screen.queryAllByRole('listitem')
+screen.findAllByRole('listitem')
+```
+
+## Form Testing Patterns
+
+### Test Forms Like Users Interact With Them
+
+```typescript
+test('submits form with valid data', async () => {
+  render(<LoginForm onSubmit={mockSubmit} />);
+  
+  // Find form elements by their labels (accessible)
+  const emailInput = screen.getByLabelText(/email/i);
+  const passwordInput = screen.getByLabelText(/password/i);
+  const submitButton = screen.getByRole('button', { name: /sign in/i });
+  
+  // Interact like a user would
+  fireEvent.change(emailInput, { target: { value: 'user@example.com' } });
+  fireEvent.change(passwordInput, { target: { value: 'password123' } });
+  fireEvent.click(submitButton);
+  
+  // Verify the expected outcome
+  await waitFor(() => {
+    expect(mockSubmit).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      password: 'password123'
+    });
+  });
+});
+```
+
+## Async Testing Patterns
+
+### Handle Async Operations Properly
+
+```typescript
+// Use waitFor for state changes
+await waitFor(() => {
+  expect(screen.getByText(/success message/i)).toBeInTheDocument();
+});
+
+// Use findBy for elements that will appear
+const errorMessage = await screen.findByText(/error occurred/i);
+expect(errorMessage).toBeInTheDocument();
+
+// Use waitForElementToBeRemoved for elements that disappear
+await waitForElementToBeRemoved(screen.queryByText(/loading/i));
+```
+
+## Event Testing
+
+### Use Proper Event Patterns
+
+```typescript
+// Simple click events
+fireEvent.click(screen.getByRole('button'));
+
+// Form input changes
+fireEvent.change(screen.getByLabelText(/email/i), { 
+  target: { value: 'new@example.com' } 
+});
+
+// Keyboard events
+fireEvent.keyDown(screen.getByRole('textbox'), { 
+  key: 'Enter', 
+  code: 'Enter' 
+});
+
+// Focus events
+fireEvent.focus(screen.getByLabelText(/password/i));
+fireEvent.blur(screen.getByLabelText(/password/i));
+```
+
+## Accessibility Testing
+
+### Test Accessibility Features
+
+```typescript
+test('has proper accessibility attributes', () => {
+  render(<Modal open={true} />);
+  
+  const modal = screen.getByRole('dialog');
+  expect(modal).toHaveAttribute('aria-labelledby');
+  expect(modal).toHaveAttribute('aria-describedby');
+  
+  const closeButton = screen.getByRole('button', { name: /close/i });
+  expect(closeButton).toHaveAttribute('aria-label', 'Close dialog');
+});
+
+test('supports keyboard navigation', () => {
+  render(<Dropdown />);
+  
+  const trigger = screen.getByRole('button', { name: /options/i });
+  
+  // Test keyboard activation
+  fireEvent.keyDown(trigger, { key: 'Enter' });
+  expect(screen.getByRole('menu')).toBeInTheDocument();
+  
+  // Test escape key
+  fireEvent.keyDown(trigger, { key: 'Escape' });
+  expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+});
+```
+
+## Component State Testing
+
+### Test Component State Changes
+
+```typescript
+test('toggles visibility state correctly', () => {
+  render(<PasswordInput />);
+  
+  const input = screen.getByLabelText(/password/i);
+  const toggleButton = screen.getByRole('button', { name: /show password/i });
+  
+  // Initial state
+  expect(input).toHaveAttribute('type', 'password');
+  
+  // After toggle
+  fireEvent.click(toggleButton);
+  expect(input).toHaveAttribute('type', 'text');
+  expect(toggleButton).toHaveAccessibleName(/hide password/i);
+  
+  // Toggle back
+  fireEvent.click(toggleButton);
+  expect(input).toHaveAttribute('type', 'password');
+  expect(toggleButton).toHaveAccessibleName(/show password/i);
+});
+```
+
+## Error State Testing  
+
+### Test Error Handling and Display
+
+```typescript
+test('displays validation errors', async () => {
+  render(<ContactForm />);
+  
+  const emailInput = screen.getByLabelText(/email/i);
+  const submitButton = screen.getByRole('button', { name: /submit/i });
+  
+  // Submit with invalid email
+  fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
+  fireEvent.click(submitButton);
+  
+  // Check for error message
+  await waitFor(() => {
+    expect(screen.getByText(/please enter a valid email/i)).toBeInTheDocument();
+  });
+  
+  // Error should be associated with input
+  expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+  expect(emailInput).toHaveAttribute('aria-describedby');
+});
+```
+
+## Mock Component Integration
+
+### Mock Components While Preserving Testability
+
+```typescript
+// Mock complex child components but preserve essential props
+jest.mock('../../components/ui/select', () => ({
+  Select: ({ children, onValueChange, defaultValue }: any) => (
+    <select 
+      data-testid="select-mock" 
+      onChange={(e) => onValueChange?.(e.target.value)}
+      defaultValue={defaultValue}
+    >
+      {children}
+    </select>
+  ),
+  SelectContent: ({ children }: any) => <div>{children}</div>,
+  SelectItem: ({ children, value }: any) => (
+    <option value={value}>{children}</option>
+  ),
+}));
+```
+
+## Custom Render Utilities
+
+### Create Reusable Test Utilities
+
+```typescript
+// Custom render with providers
+const renderWithProviders = (ui: React.ReactElement, options = {}) => {
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <ThemeProvider>
+      <AuthProvider>
+        {children}
+      </AuthProvider>
+    </ThemeProvider>
+  );
+  
+  return render(ui, { wrapper: Wrapper, ...options });
+};
+
+// Use in tests
+test('renders with theme context', () => {
+  renderWithProviders(<ThemedComponent />);
+  expect(screen.getByText(/themed content/i)).toBeInTheDocument();
+});
+```
+
+## Common Anti-Patterns to Avoid
+
+### Don't Test Implementation Details
+```typescript
+// Bad - testing internal state
+expect(component.instance().state.isVisible).toBe(true);
+
+// Good - testing user-visible behavior  
+expect(screen.getByText(/visible content/i)).toBeInTheDocument();
+```
+
+### Don't Query by CSS Classes or Internal IDs
+```typescript
+// Bad
+screen.getByClassName('btn-primary')
+screen.getBySelector('#internal-id')
+
+// Good
+screen.getByRole('button', { name: /primary action/i })
+```
+
+### Don't Use Container Queries Unless Necessary
+```typescript
+// Bad - when better queries exist
+container.querySelector('.error-message')
+
+// Good - semantic queries
+screen.getByText(/error message/i)
+```
+
+Reference the comprehensive test examples in [api-key-manager.test.tsx](mdc:__tests__/components/api-key-manager.test.tsx) for real-world applications of these patterns.
