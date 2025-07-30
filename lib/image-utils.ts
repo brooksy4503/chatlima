@@ -15,19 +15,73 @@ export async function processImageFile(file: File): Promise<{
         type: file.type
     });
 
-    // Extract metadata first
+    // Determine if we need to compress/resize the image to stay under payload limits
+    // Vercel has a 4.5MB payload limit, so we target ~3MB for images after base64 encoding
+    const targetPayloadSize = 3 * 1024 * 1024; // 3MB in bytes
+    const estimatedBase64Size = (file.size * 4) / 3; // Base64 is ~33% larger than binary
+
+    let processedFile = file;
+
+    if (estimatedBase64Size > targetPayloadSize || file.size > 5 * 1024 * 1024) { // 5MB raw file size
+        console.log('[DEBUG] Image is large, compressing...', {
+            originalSize: file.size,
+            estimatedBase64Size,
+            targetPayloadSize
+        });
+
+        // Determine compression settings based on file size
+        let maxWidth = 2048;
+        let maxHeight = 2048;
+        let quality = 0.85;
+
+        if (file.size > 15 * 1024 * 1024) { // > 15MB
+            maxWidth = 1536;
+            maxHeight = 1536;
+            quality = 0.75;
+        } else if (file.size > 10 * 1024 * 1024) { // > 10MB  
+            maxWidth = 1792;
+            maxHeight = 1792;
+            quality = 0.8;
+        }
+
+        try {
+            processedFile = await resizeImageIfNeeded(file, maxWidth, maxHeight, quality);
+            console.log('[DEBUG] Image compressed:', {
+                originalSize: file.size,
+                compressedSize: processedFile.size,
+                compressionRatio: (processedFile.size / file.size * 100).toFixed(1) + '%'
+            });
+        } catch (error) {
+            console.warn('[DEBUG] Image compression failed, using original:', error);
+            processedFile = file;
+        }
+    }
+
+    // Extract metadata from processed file
     console.log('[DEBUG] Extracting image metadata...');
-    const metadata = await extractImageMetadata(file);
+    const metadata = await extractImageMetadata(processedFile);
     console.log('[DEBUG] Metadata extracted:', metadata);
 
     // Generate base64 data URL in AI SDK compatible format (used by OpenRouter and Requesty)
     console.log('[DEBUG] Converting file to data URL...');
-    const dataUrl = await fileToDataUrl(file);
+    const dataUrl = await fileToDataUrl(processedFile);
     console.log('[DEBUG] Data URL created, length:', dataUrl.length);
+
+    // Final validation to ensure we're under the payload limit
+    if (dataUrl.length > targetPayloadSize) {
+        console.warn('[DEBUG] Data URL still too large after compression:', {
+            dataUrlLength: dataUrl.length,
+            targetSize: targetPayloadSize
+        });
+    }
 
     const result = {
         dataUrl,
-        metadata
+        metadata: {
+            ...metadata,
+            originalSize: file.size, // Keep track of original size
+            compressedSize: processedFile.size
+        }
     };
 
     console.log('[DEBUG] processImageFile complete for:', file.name);

@@ -53,6 +53,8 @@ export interface ImageAttachment {
         mimeType: string;
         width: number;
         height: number;
+        originalSize?: number;
+        compressedSize?: number;
     };
     detail?: "low" | "high" | "auto";
 }
@@ -63,6 +65,8 @@ export interface ImageMetadata {
     size: number;
     mimeType: string;
     filename: string;
+    originalSize?: number; // Track original file size before compression
+    compressedSize?: number; // Track compressed file size
 }
 
 export type MessagePart = TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart; 
