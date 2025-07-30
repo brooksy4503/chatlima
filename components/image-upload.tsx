@@ -91,8 +91,15 @@ export function ImageUpload({
           filename: file.name,
           dataUrlLength: dataUrl.length,
           metadata,
-          detail: selectedDetail
+          detail: selectedDetail,
+          wasCompressed: metadata.originalSize && metadata.originalSize > metadata.size
         });
+
+        // Show compression info if image was compressed
+        if (metadata.originalSize && metadata.originalSize > metadata.size) {
+          const compressionRatio = ((metadata.size / metadata.originalSize) * 100).toFixed(1);
+          console.log(`[INFO] Image ${file.name} compressed from ${Math.round(metadata.originalSize / 1024 / 1024 * 10) / 10}MB to ${Math.round(metadata.size / 1024 / 1024 * 10) / 10}MB (${compressionRatio}%)`);
+        }
 
         processedImages.push({
           file,
@@ -260,6 +267,12 @@ export function ImageUpload({
           <li>• <strong>Low:</strong> Faster processing, good for simple images</li>
           <li>• <strong>High:</strong> Detailed analysis, better for complex images</li>
         </ul>
+        <div className="mt-2 text-xs bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
+          <div className="font-medium text-blue-800 dark:text-blue-200 mb-1">✨ Smart Compression:</div>
+          <div className="text-blue-700 dark:text-blue-300">
+            Large images (&gt;5MB) are automatically compressed to ensure fast uploads while maintaining quality.
+          </div>
+        </div>
       </div>
     </div>
   );
