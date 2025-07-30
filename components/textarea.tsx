@@ -449,7 +449,7 @@ export const Textarea = ({
         <div className="bg-card border border-border rounded-xl p-4">
           <ImageUpload
             onImageSelect={handleImageSelect}
-            maxFiles={5 - images.length}
+            maxFiles={3 - images.length}
             disabled={isLoading || !canUploadMore}
             showDetailSelector={true}
           />
