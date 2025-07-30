@@ -578,6 +578,14 @@ export default function Chat() {
 
   const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat;
 
+  // Function to send a message from suggested prompts
+  const sendSuggestedMessage = useCallback((message: string) => {
+    append({
+      role: 'user',
+      content: message
+    });
+  }, [append]);
+
   const isOpenRouterModel = effectiveModel.startsWith("openrouter/");
 
   // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
@@ -700,10 +708,15 @@ export default function Chat() {
       )}
 
       {/* Main content area: Either ProjectOverview or Messages */}
-      <div className="flex-1 overflow-y-auto min-h-0 pb-2">
+      <div className={`flex-1 min-h-0 pb-2 ${messages.length === 0 && !isLoadingChat ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {messages.length === 0 && !isLoadingChat ? (
-          <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
-            <ProjectOverview />
+          <div className="h-full overflow-y-auto no-scrollbar">
+            <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
+              <ProjectOverview 
+                sendMessage={sendSuggestedMessage}
+                selectedModel={selectedModel}
+              />
+            </div>
           </div>
         ) : (
           <Messages messages={enhancedMessages} isLoading={isLoading} status={status} />

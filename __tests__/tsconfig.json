@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["jest", "@testing-library/jest-dom"]
+  },
+  "include": ["../**/*.ts", "../**/*.tsx"],
+  "files": ["./components/suggested-prompts.test.tsx", "./components/test-utils.d.ts"]
+}

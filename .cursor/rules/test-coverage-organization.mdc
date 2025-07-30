@@ -1,0 +1,327 @@
+---
+globs: *.test.ts,*.test.tsx,*.spec.ts,*.spec.tsx
+description: Test coverage strategies and organizational patterns for comprehensive testing
+---
+
+# Test Coverage and Organization
+
+Ensure comprehensive test coverage by following these organizational patterns and coverage strategies.
+
+## Test Coverage Categories
+
+### Essential Coverage Areas (Minimum Requirements)
+
+Every component should have tests for these core areas:
+
+1. **Basic Rendering** - Component renders without crashing
+2. **Props Handling** - All props work as expected  
+3. **User Interactions** - All interactive elements function correctly
+4. **Error States** - Component handles errors gracefully
+5. **Accessibility** - Component is accessible to all users
+
+### Advanced Coverage Areas (For Complex Components)
+
+Complex components should additionally test:
+
+6. **State Management** - Internal state updates correctly
+7. **API Integration** - External API calls and responses
+8. **Performance** - Component performance characteristics
+9. **Integration Workflows** - Complete user journeys
+10. **Edge Cases** - Boundary conditions and unusual inputs
+
+## Test Organization Patterns
+
+### Hierarchical Describe Structure
+
+```typescript
+describe('ComponentName', () => {
+  // Setup shared across all tests
+  const mockProps = { /* common props */ };
+  
+  describe('Basic Rendering', () => {
+    test('renders with default props', () => {});
+    test('renders with custom props', () => {});
+    test('does not render when hidden', () => {});
+  });
+  
+  describe('User Interactions', () => {
+    test('handles button clicks', () => {});
+    test('handles form submissions', () => {});
+    test('handles keyboard navigation', () => {});
+  });
+  
+  describe('State Management', () => {
+    test('updates state correctly', () => {});
+    test('resets state when needed', () => {});
+  });
+  
+  describe('API Integration', () => {
+    test('handles successful API calls', () => {});
+    test('handles API errors', () => {});
+    test('shows loading states', () => {});
+  });
+  
+  describe('Error Handling', () => {
+    test('displays error messages', () => {});
+    test('recovers from errors', () => {});
+    test('logs errors appropriately', () => {});
+  });
+  
+  describe('Accessibility', () => {
+    test('has proper ARIA attributes', () => {});
+    test('supports keyboard navigation', () => {});
+    test('works with screen readers', () => {});
+  });
+  
+  describe('Performance', () => {
+    test('renders efficiently', () => {});
+    test('handles large datasets', () => {});
+  });
+  
+  describe('Integration Tests', () => {
+    test('complete user workflow', () => {});
+    test('cross-component interactions', () => {});
+  });
+});
+```
+
+## Test Naming Conventions
+
+### Descriptive Test Names
+
+Follow the pattern: "should [expected behavior] when [condition]"
+
+```typescript
+// Good - Descriptive and specific
+test('should display success message when form submission succeeds', () => {});
+test('should disable submit button when form is invalid', () => {});
+test('should clear form fields when reset button is clicked', () => {});
+test('should show loading spinner while API request is pending', () => {});
+
+// Bad - Vague or implementation-focused
+test('it works', () => {});
+test('button click', () => {});
+test('state update', () => {});
+test('renders correctly', () => {});
+```
+
+## Coverage Metrics and Goals
+
+### Aim for These Coverage Targets
+
+- **Statements**: 90%+ (Every line of code executed)
+- **Branches**: 85%+ (All conditional paths tested)
+- **Functions**: 95%+ (All functions called)
+- **Lines**: 90%+ (All lines covered)
+
+### Focus on Business Logic Coverage
+
+```typescript
+// Ensure all business logic paths are tested
+test('calculates discount correctly for premium users', () => {
+  // Test the business rule implementation
+});
+
+test('validates email format according to business rules', () => {
+  // Test each validation rule
+});
+
+test('handles payment processing errors appropriately', () => {
+  // Test error handling business logic
+});
+```
+
+## Test Data Organization
+
+### Create Reusable Test Data
+
+```typescript
+// Test data constants
+const TEST_DATA = {
+  validUser: {
+    id: '1',
+    email: 'test@example.com',
+    name: 'Test User'
+  },
+  invalidUser: {
+    id: '',
+    email: 'invalid-email',
+    name: ''
+  },
+  apiResponse: {
+    success: { status: 200, data: { message: 'Success' } },
+    error: { status: 500, data: { error: 'Server Error' } }
+  }
+};
+
+// Factory functions for dynamic test data
+const createMockUser = (overrides = {}) => ({
+  ...TEST_DATA.validUser,
+  ...overrides
+});
+
+const createMockApiResponse = (status: number, data: any) => ({
+  status,
+  data,
+  headers: {},
+  config: {}
+});
+```
+
+## Test Lifecycle Management
+
+### Proper Setup and Teardown
+
+```typescript
+describe('ComponentName', () => {
+  let mockApiClient: jest.MockedFunction<any>;
+  let mockLocalStorage: jest.MockedFunction<any>;
+  
+  beforeAll(() => {
+    // One-time setup for all tests
+    jest.setTimeout(10000);
+  });
+  
+  beforeEach(() => {
+    // Reset before each test
+    jest.clearAllMocks();
+    mockApiClient = jest.fn();
+    mockLocalStorage = {
+      getItem: jest.fn(),
+      setItem: jest.fn(),
+      removeItem: jest.fn()
+    };
+  });
+  
+  afterEach(() => {
+    // Cleanup after each test
+    cleanup();
+    jest.restoreAllMocks();
+  });
+  
+  afterAll(() => {
+    // Final cleanup
+    jest.clearAllTimers();
+  });
+});
+```
+
+## Integration Test Strategies
+
+### Test User Journeys End-to-End
+
+```typescript
+describe('Complete User Workflows', () => {
+  test('user can register, login, and update profile', async () => {
+    // 1. Registration flow
+    render(<RegistrationForm />);
+    fireEvent.change(screen.getByLabelText(/email/i), { 
+      target: { value: 'user@example.com' } 
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), { 
+      target: { value: 'password123' } 
+    });
+    fireEvent.click(screen.getByRole('button', { name: /register/i }));
+    
+    await waitFor(() => {
+      expect(screen.getByText(/registration successful/i)).toBeInTheDocument();
+    });
+    
+    // 2. Login flow
+    fireEvent.click(screen.getByRole('link', { name: /login/i }));
+    // ... login steps
+    
+    // 3. Profile update flow  
+    fireEvent.click(screen.getByRole('link', { name: /profile/i }));
+    // ... profile update steps
+    
+    // Verify complete workflow
+    expect(mockApiClient).toHaveBeenCalledTimes(3);
+    expect(localStorage.setItem).toHaveBeenCalledWith('user-token', expect.any(String));
+  });
+});
+```
+
+## Edge Case Testing  
+
+### Test Boundary Conditions
+
+```typescript
+describe('Edge Cases', () => {
+  test('handles empty data gracefully', () => {
+    render(<DataTable data={[]} />);
+    expect(screen.getByText(/no data available/i)).toBeInTheDocument();
+  });
+  
+  test('handles very large datasets', () => {
+    const largeDataset = Array(10000).fill(null).map((_, i) => ({ id: i }));
+    render(<DataTable data={largeDataset} />);
+    expect(screen.getByText(/showing 1-50 of 10000/i)).toBeInTheDocument();
+  });
+  
+  test('handles network timeout errors', async () => {
+    mockApiClient.mockRejectedValue(new Error('Network timeout'));
+    render(<ApiDataComponent />);
+    
+    await waitFor(() => {
+      expect(screen.getByText(/connection timeout/i)).toBeInTheDocument();
+    });
+  });
+});
+```
+
+## Performance Testing
+
+### Test Performance Characteristics
+
+```typescript
+describe('Performance', () => {
+  test('renders large lists efficiently', () => {
+    const startTime = performance.now();
+    const largeList = Array(1000).fill(null).map((_, i) => ({ id: i, name: `Item ${i}` }));
+    
+    render(<VirtualizedList items={largeList} />);
+    
+    const endTime = performance.now();
+    expect(endTime - startTime).toBeLessThan(100); // Should render in under 100ms
+  });
+  
+  test('handles rapid state updates', () => {
+    render(<SearchInput />);
+    const input = screen.getByRole('textbox');
+    
+    // Simulate rapid typing
+    for (let i = 0; i < 10; i++) {
+      fireEvent.change(input, { target: { value: `search${i}` } });
+    }
+    
+    // Should handle updates without breaking
+    expect(input).toHaveValue('search9');
+  });
+});
+```
+
+## Test File Organization
+
+### File Structure Best Practices
+
+```
+components/
+├── Button/
+│   ├── Button.tsx
+│   ├── __tests__/
+│   │   ├── Button.test.tsx          # Unit tests
+│   │   ├── Button.integration.test.tsx # Integration tests
+│   │   └── Button.accessibility.test.tsx # A11y tests
+│   └── index.ts
+```
+
+### Test File Naming Conventions
+
+- `Component.test.tsx` - Standard unit tests
+- `Component.integration.test.tsx` - Integration tests
+- `Component.accessibility.test.tsx` - Accessibility-focused tests
+- `Component.performance.test.tsx` - Performance tests
+- `utils.test.ts` - Utility function tests
+
+Use these patterns to ensure comprehensive, well-organized test coverage that provides confidence in your codebase. Reference [api-key-manager.test.tsx](mdc:__tests__/components/api-key-manager.test.tsx) for a complete example implementing these patterns.
