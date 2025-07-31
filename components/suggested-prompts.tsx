@@ -821,12 +821,12 @@ function PureSuggestedPrompts({
           {filteredSuggestions.length === 0 ? (
             <div className="flex items-center justify-center gap-2">
               <Search className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">No suggestions found for "{searchQuery}"</span>
+              <span className="truncate">No suggestions found for &quot;{searchQuery}&quot;</span>
             </div>
           ) : (
             <div className="truncate">
               Found {filteredSuggestions.length} suggestion{filteredSuggestions.length !== 1 ? 's' : ''} 
-              {selectedCategory && ` in "${selectedCategory}"`}
+              {selectedCategory && ` in &quot;${selectedCategory}&quot;`}
             </div>
           )}
         </div>
