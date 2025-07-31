@@ -1,6 +1,6 @@
 import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Globe, AlertCircle, ImageIcon, Code2 } from "lucide-react";
+import { ArrowUp, Square, Globe, AlertCircle, ImageIcon, Code2, X, Eye, EyeOff } from "lucide-react";
 import { ModelPicker } from "./model-picker";
 import { PresetSelector } from "./preset-selector";
 import { useRef, useState, useCallback } from "react";
@@ -54,6 +54,8 @@ export const Textarea = ({
   const [lastProcessedLength, setLastProcessedLength] = useState(0);
   const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
   const [showAutoWrapFeedback, setShowAutoWrapFeedback] = useState(false);
+  const [showAutoUnwrapFeedback, setShowAutoUnwrapFeedback] = useState(false);
+  const [autoDetectionEnabled, setAutoDetectionEnabled] = useState(true);
   const isMounted = useClientMount();
 
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
@@ -84,6 +86,90 @@ export const Textarea = ({
     if (!activePreset) {
       setWebSearchEnabled(!webSearchEnabled);
     }
+  };
+
+  const handleAutoDetectionToggle = () => {
+    const newAutoDetectionEnabled = !autoDetectionEnabled;
+    setAutoDetectionEnabled(newAutoDetectionEnabled);
+    
+    if (!newAutoDetectionEnabled) {
+      // Disabling auto detection: clear code mode state and unwrap any code blocks
+      setIsCodeMode(false);
+      setCodeConfidence(0);
+      setDetectedLanguage(null);
+      
+      // Unwrap code blocks from the current input
+      const unwrappedText = unwrapCodeBlocks(input);
+      if (unwrappedText !== input) {
+        const syntheticEvent = {
+          target: { value: unwrappedText }
+        } as React.ChangeEvent<HTMLTextAreaElement>;
+        handleInputChange(syntheticEvent);
+        
+        // Show feedback that code blocks were automatically unwrapped
+        setShowAutoUnwrapFeedback(true);
+        setTimeout(() => setShowAutoUnwrapFeedback(false), 3000);
+      }
+    } else {
+      // Enabling auto detection: analyze current text and potentially wrap it
+      if (input.trim().length > 20) {
+        const processed = processTextInput(input, { autoWrapCode: true });
+        
+        if (processed.isCode && processed.confidence > 60) {
+          // Update code mode state
+          setIsCodeMode(true);
+          setCodeConfidence(processed.confidence);
+          setDetectedLanguage(processed.language || null);
+          
+          // If the text was wrapped, update the input
+          if (processed.wasWrapped && processed.processedText !== input) {
+            const syntheticEvent = {
+              target: { value: processed.processedText }
+            } as React.ChangeEvent<HTMLTextAreaElement>;
+            handleInputChange(syntheticEvent);
+            
+            // Show feedback that code was automatically wrapped
+            setShowAutoWrapFeedback(true);
+            setTimeout(() => setShowAutoWrapFeedback(false), 3000);
+          }
+        }
+      }
+    }
+  };
+
+  // Helper function to unwrap code blocks
+  const unwrapCodeBlocks = (text: string): string => {
+    if (!text) return text;
+    
+    const trimmed = text.trim();
+    
+    // Check if text starts and ends with triple backticks (simple single code block)
+    if (trimmed.startsWith('```') && trimmed.endsWith('```') && trimmed.split('```').length === 3) {
+      const lines = trimmed.split('\n');
+      
+      // Need at least 3 lines: opening ```, content, closing ```
+      if (lines.length >= 3) {
+        // Remove first line (```language) and last line (```)
+        const unwrapped = lines.slice(1, -1).join('\n');
+        
+        // Preserve original leading/trailing whitespace structure
+        const leadingWhitespace = text.match(/^\s*/)?.[0] || '';
+        const trailingWhitespace = text.match(/\s*$/)?.[0] || '';
+        
+        return leadingWhitespace + unwrapped + trailingWhitespace;
+      }
+    }
+    
+    // Handle edge case: single line code block like ```javascript console.log('hello'); ```
+    const singleLineMatch = trimmed.match(/^```\w*\s*(.*?)\s*```$/);
+    if (singleLineMatch) {
+      const unwrapped = singleLineMatch[1];
+      const leadingWhitespace = text.match(/^\s*/)?.[0] || '';
+      const trailingWhitespace = text.match(/\s*$/)?.[0] || '';
+      return leadingWhitespace + unwrapped + trailingWhitespace;
+    }
+    
+    return text;
   };
 
   // Check if user has enough credits for web search (5 credits minimum)
@@ -236,16 +322,18 @@ export const Textarea = ({
       }
     }
     
-    // Update code detection state
-    if (processed.isCode && processed.confidence > 60) {
-      setIsCodeMode(true);
-      setCodeConfidence(processed.confidence);
-      setDetectedLanguage(processed.language || null);
-      console.log('Code detected:', processed.reasons, processed.language ? `(${processed.language})` : '');
-    } else if (processed.confidence < 30) {
-      setIsCodeMode(false);
-      setCodeConfidence(0);
-      setDetectedLanguage(null);
+    // Update code detection state only if auto detection is enabled
+    if (autoDetectionEnabled) {
+      if (processed.isCode && processed.confidence > 60) {
+        setIsCodeMode(true);
+        setCodeConfidence(processed.confidence);
+        setDetectedLanguage(processed.language || null);
+        console.log('Code detected:', processed.reasons, processed.language ? `(${processed.language})` : '');
+      } else if (processed.confidence < 30) {
+        setIsCodeMode(false);
+        setCodeConfidence(0);
+        setDetectedLanguage(null);
+      }
     }
     
     setLastProcessedLength(processed.processedText.length);
@@ -258,8 +346,8 @@ export const Textarea = ({
     // Call the original handler first
     handleInputChange(e);
     
-    // Dynamic code detection for longer content (> 50 characters)
-    if (newValue.length > 50 && newValue.length % 20 === 0) {
+    // Dynamic code detection for longer content (> 50 characters) - only if auto detection is enabled
+    if (autoDetectionEnabled && newValue.length > 50 && newValue.length % 20 === 0) {
       const processed = processTextInput(newValue, { autoWrapCode: false }); // Don't auto-wrap during typing
       
       if (processed.isCode && processed.confidence > 70) {
@@ -276,13 +364,13 @@ export const Textarea = ({
       }
     }
     
-    // Clear code mode for very short content
-    if (newValue.length < 20 && isCodeMode) {
+    // Clear code mode for very short content - only if auto detection is enabled
+    if (autoDetectionEnabled && newValue.length < 20 && isCodeMode) {
       setIsCodeMode(false);
       setCodeConfidence(0);
       setDetectedLanguage(null);
     }
-  }, [handleInputChange, isCodeMode, detectLanguage]);
+  }, [handleInputChange, isCodeMode, detectLanguage, autoDetectionEnabled]);
 
   // Enhanced keyboard handler with smart input processing
   const handleEnhancedKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -537,9 +625,9 @@ export const Textarea = ({
         </div>
       )}
 
-      {/* Code mode indicator */}
+      {/* Code mode indicator with auto-detection toggle */}
       {isCodeMode && (
-        <div className={`absolute top-2 z-10 ${shouldShowCostWarning ? 'right-32' : 'right-4'}`}>
+        <div className={`absolute top-2 z-10 flex items-center gap-1 ${shouldShowCostWarning ? 'right-32' : 'right-4'}`}>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-all duration-200 ${
@@ -569,17 +657,86 @@ export const Textarea = ({
               </div>
             </TooltipContent>
           </Tooltip>
+          
+          {/* Auto-detection toggle button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={handleAutoDetectionToggle}
+                className={`flex items-center justify-center h-6 w-6 rounded-full border transition-all duration-200 ${
+                  autoDetectionEnabled
+                    ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700/30 hover:bg-orange-100 dark:hover:bg-orange-900/30'
+                    : 'bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-900/30'
+                }`}
+              >
+                {autoDetectionEnabled ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={8}>
+              <div className="text-xs">
+                {autoDetectionEnabled 
+                  ? 'Disable auto language detection'
+                  : 'Enable auto language detection'
+                }
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
+      {/* Auto-detection disabled indicator */}
+      {!autoDetectionEnabled && !isCodeMode && input.length > 20 && (
+        <div className={`absolute top-2 z-10 ${shouldShowCostWarning ? 'right-32' : 'right-4'}`}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={handleAutoDetectionToggle}
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-all duration-200 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-900/30"
+              >
+                <EyeOff className="h-3 w-3" />
+                <span className="font-medium">Auto-detect OFF</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={8}>
+              <div className="text-xs">
+                <div>Language auto-detection is disabled</div>
+                <div className="text-muted-foreground">Click to re-enable automatic code detection</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
 
       {/* Auto-wrap feedback indicator */}
       {showAutoWrapFeedback && (
-        <div className={`absolute top-2 z-10 ${shouldShowCostWarning && isCodeMode ? 'right-60' : shouldShowCostWarning || isCodeMode ? 'right-32' : 'right-4'}`}>
+        <div className={`absolute top-2 z-10 ${
+          shouldShowCostWarning && isCodeMode ? 'right-72' : 
+          shouldShowCostWarning || isCodeMode || (!autoDetectionEnabled && input.length > 20) ? 'right-44' : 
+          'right-4'
+        }`}>
           <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs px-2.5 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-700/30 animate-in slide-in-from-right-2 duration-300">
             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <span className="font-medium">Code auto-wrapped</span>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-unwrap feedback indicator */}
+      {showAutoUnwrapFeedback && (
+        <div className={`absolute top-2 z-10 ${
+          shouldShowCostWarning && isCodeMode ? 'right-72' : 
+          shouldShowCostWarning || isCodeMode || (!autoDetectionEnabled && input.length > 20) ? 'right-44' : 
+          'right-4'
+        }`}>
+          <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs px-2.5 py-1.5 rounded-full border border-blue-200 dark:border-blue-700/30 animate-in slide-in-from-right-2 duration-300">
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="font-medium">Code blocks removed</span>
           </div>
         </div>
       )}

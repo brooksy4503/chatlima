@@ -6,13 +6,36 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
+import { CopyButton } from "./copy-button";
 
 const components: Partial<Components> = {
-  pre: ({ children, ...props }) => (
-    <pre className="overflow-x-auto max-w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 p-2.5 my-1.5 text-sm whitespace-pre-wrap break-words" {...props}>
-      {children}
-    </pre>
-  ),
+  pre: ({ children, ...props }) => {
+    // Extract text content from children for copying
+    const getTextContent = (node: React.ReactNode): string => {
+      if (typeof node === 'string') return node;
+      if (typeof node === 'number') return String(node);
+      if (Array.isArray(node)) return node.map(getTextContent).join('');
+      if (React.isValidElement(node)) {
+        const props = node.props as { children?: React.ReactNode };
+        return getTextContent(props.children);
+      }
+      return '';
+    };
+
+    const textContent = getTextContent(children);
+
+    return (
+      <div className="relative group/codeblock">
+        <pre className="overflow-x-auto max-w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 p-2.5 my-1.5 text-sm whitespace-pre-wrap break-words" {...props}>
+          {children}
+        </pre>
+        <CopyButton 
+          text={textContent} 
+          className="absolute top-2 right-2 opacity-0 group-hover/codeblock:opacity-100 transition-opacity"
+        />
+      </div>
+    );
+  },
   code: ({ children, className, ...props }: React.HTMLProps<HTMLElement> & { className?: string }) => {
     const match = /language-(\w+)/.exec(className || '');
     const isInline = !match && !className;

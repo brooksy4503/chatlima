@@ -15,11 +15,21 @@ import {
   Sparkles,
   FileText,
   Filter,
-  X
+  X,
+  Edit3,
+  Send
 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { getContextualSuggestions, getCategoryColor } from "@/lib/suggested-prompts-utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { Textarea } from "./ui/textarea";
 
 export interface SuggestedAction {
   title: string;
@@ -37,64 +47,340 @@ interface SuggestedPromptsProps {
   selectedModel?: string;
 }
 
-const defaultSuggestions: SuggestedAction[] = [
-  {
-    title: "Explain this code",
-    label: "and suggest improvements",
-    action: "Can you explain this code and suggest any improvements?",
-    category: "coding",
-    icon: <Code className="h-4 w-4" />,
+
+
+// Template configuration for different template types
+const TEMPLATE_CONFIGS = {
+  'explain-concept': {
+    title: 'What concept would you like me to explain?',
+    description: 'I\'ll explain it in simple terms using everyday analogies.',
+    placeholder: 'e.g., blockchain, quantum physics, machine learning...',
+    template: (input: string) => `Explain ${input} in simple terms, using everyday analogies that anyone can understand`,
+    multiline: false,
   },
-  {
-    title: "Write a function",
-    label: "to solve a specific problem",
-    action: "Write a function that handles user authentication with error handling",
-    category: "coding",
-    icon: <Zap className="h-4 w-4" />,
+  'debug-code': {
+    title: 'What code would you like me to debug?',
+    description: 'Paste your code and I\'ll help identify and fix any issues.',
+    placeholder: 'Paste your code here...',
+    template: (input: string) => `I'm having an issue with this code. Can you debug it and explain what's wrong?\n\n\`\`\`\n${input}\n\`\`\``,
+    multiline: true,
   },
-  {
-    title: "Brainstorm ideas",
-    label: "for a new project",
-    action: "Help me brainstorm ideas for a productivity app that uses AI",
-    category: "creative",
-    icon: <Lightbulb className="h-4 w-4" />,
+  'summarize-text': {
+    title: 'What text would you like me to summarize?',
+    description: 'I\'ll create a clear, concise summary of the key points.',
+    placeholder: 'Paste the text you want summarized...',
+    template: (input: string) => `Please summarize this text and highlight the key points:\n\n${input}`,
+    multiline: true,
   },
-  {
-    title: "Research and summarize",
-    label: "latest tech trends",  
-    action: "Research and summarize the latest trends in web development for 2024",
-    category: "research",
-    icon: <Globe className="h-4 w-4" />,
+  'learn-technology': {
+    title: 'What technology would you like to learn?',
+    description: 'I\'ll create a structured learning roadmap with resources and milestones.',
+    placeholder: 'e.g., React, Python, Docker, GraphQL...',
+    template: (input: string) => `Create a comprehensive learning roadmap for mastering ${input}, including key concepts, resources, and practical projects`,
+    multiline: false,
   },
-  {
-    title: "Create a learning plan",
-    label: "for a new technology",
-    action: "Create a comprehensive learning plan for mastering React and TypeScript",
-    category: "learning",
-    icon: <BookOpen className="h-4 w-4" />,
+  'review-document': {
+    title: 'What document would you like me to review?',
+    description: 'I\'ll review it for clarity, structure, and suggest improvements.',
+    placeholder: 'Paste your document here...',
+    template: (input: string) => `Please review this document and suggest improvements for clarity, structure, and effectiveness:\n\n${input}`,
+    multiline: true,
   },
-  {
-    title: "Analyze and debug",
-    label: "this error message",
-    action: "Help me analyze and debug this error: 'Cannot read property of undefined'",
-    category: "debugging",
-    icon: <Search className="h-4 w-4" />,
+  'write-email': {
+    title: 'What kind of email do you need help writing?',
+    description: 'I\'ll help you write a professional and clear email.',
+    placeholder: 'e.g., request a meeting, follow up on interview, ask for feedback...',
+    template: (input: string) => `Help me write a professional email to ${input}`,
+    multiline: false,
   },
-  {
-    title: "Write documentation",
-    label: "for this API",
-    action: "Write comprehensive documentation for a REST API with authentication",
-    category: "documentation",
-    icon: <FileText className="h-4 w-4" />,
+  'write-story': {
+    title: 'What kind of story would you like me to write?',
+    description: 'I\'ll create an engaging story with interesting characters and plot.',
+    placeholder: 'e.g., sci-fi adventure on Mars, mystery in a small town, romance at a coffee shop...',
+    template: (input: string) => `Help me write a short story about ${input}`,
+    multiline: false,
   },
-  {
-    title: "Optimize performance",
-    label: "of my application",
-    action: "What are the best practices to optimize React application performance?",
-    category: "optimization",
-    icon: <Sparkles className="h-4 w-4" />,
+  'make-decision': {
+    title: 'What decision do you need help making?',
+    description: 'I\'ll help you weigh the pros and cons and ask clarifying questions.',
+    placeholder: 'e.g., accept a job offer, choose between two apartments, pick a college major...',
+    template: (input: string) => `Help me decide whether to ${input} by listing pros and cons and asking clarifying questions`,
+    multiline: false,
   },
-];
+  'brainstorm-ideas': {
+    title: 'What do you need ideas for?',
+    description: 'I\'ll help you brainstorm creative and practical solutions.',
+    placeholder: 'e.g., business name, party theme, weekend activities, project features...',
+    template: (input: string) => `Help me brainstorm creative ideas for ${input}`,
+    multiline: false,
+  },
+  'code-review': {
+    title: 'What code would you like me to review?',
+    description: 'I\'ll review your code and suggest improvements following best practices.',
+    placeholder: 'Paste your code here...',
+    template: (input: string) => `Please review this code and suggest improvements following best practices:\n\n\`\`\`\n${input}\n\`\`\``,
+    multiline: true,
+  },
+  'analyze-problem': {
+    title: 'What problem would you like me to analyze?',
+    description: 'I\'ll break it down step by step and provide a detailed analysis.',
+    placeholder: 'Describe the problem you\'re facing...',
+    template: (input: string) => `Break down this problem step by step and provide a detailed analysis: ${input}`,
+    multiline: true,
+  },
+  'write-content': {
+    title: 'What kind of content do you need?',
+    description: 'I\'ll help you create engaging and creative content.',
+    placeholder: 'e.g., blog post about AI, product description, social media caption...',
+    template: (input: string) => `Help me write engaging and creative content for ${input}`,
+    multiline: false,
+  },
+  'optimize-algorithm': {
+    title: 'What algorithm would you like me to optimize?',
+    description: 'I\'ll analyze it and suggest optimizations for better performance.',
+    placeholder: 'Paste your algorithm or code here...',
+    template: (input: string) => `Analyze this algorithm and suggest optimizations for better time/space complexity:\n\n\`\`\`\n${input}\n\`\`\``,
+    multiline: true,
+  },
+  'refactor-code': {
+    title: 'What code would you like me to refactor?',
+    description: 'I\'ll refactor it following clean architecture principles and design patterns.',
+    placeholder: 'Paste your code here...',
+    template: (input: string) => `Refactor this code following clean architecture principles and design patterns:\n\n\`\`\`\n${input}\n\`\`\``,
+    multiline: true,
+  },
+  'research-topic': {
+    title: 'What topic would you like me to research?',
+    description: 'I\'ll research it from multiple angles and synthesize the information.',
+    placeholder: 'e.g., climate change impacts, AI ethics, renewable energy trends...',
+    template: (input: string) => `Research ${input} from multiple angles and synthesize the information into a comprehensive overview`,
+    multiline: false,
+  },
+  'create-documentation': {
+    title: 'What would you like me to document?',
+    description: 'I\'ll create comprehensive documentation with usage examples.',
+    placeholder: 'Paste your code, API, or describe what needs documentation...',
+    template: (input: string) => `Create comprehensive documentation for this with usage examples:\n\n${input}`,
+    multiline: true,
+  },
+  'generate-tests': {
+    title: 'What function or component needs test cases?',
+    description: 'I\'ll generate comprehensive test cases including edge cases.',
+    placeholder: 'Paste your function/component code here...',
+    template: (input: string) => `Generate comprehensive test cases for this function/component including edge cases:\n\n\`\`\`\n${input}\n\`\`\``,
+    multiline: true,
+  },
+  'multimodal-analysis': {
+    title: 'What content would you like me to analyze?',
+    description: 'I\'ll analyze it across multiple formats and provide insights.',
+    placeholder: 'Describe the text, images, data, or other content to analyze...',
+    template: (input: string) => `Analyze this content across multiple formats and provide insights: ${input}`,
+    multiline: true,
+  },
+  'brainstorm-solutions': {
+    title: 'What challenge do you need solutions for?',
+    description: 'I\'ll help you brainstorm creative solutions to overcome it.',
+    placeholder: 'e.g., low team productivity, marketing strategy, technical architecture...',
+    template: (input: string) => `Help me brainstorm creative solutions to overcome this challenge: ${input}`,
+    multiline: false,
+  },
+  'plan-schedule': {
+    title: 'What would you like help planning?',
+    description: 'I\'ll create a balanced and realistic schedule or plan.',
+    placeholder: 'e.g., my weekly routine, study schedule, project timeline, workout plan...',
+    template: (input: string) => `Help me create a balanced and realistic plan for ${input}`,
+    multiline: false,
+  },
+  'write-cover-letter': {
+    title: 'What position are you applying for?',
+    description: 'I\'ll help you write a compelling cover letter.',
+    placeholder: 'e.g., Marketing Manager at Tech Corp, highlighting creativity and analytics...',
+    template: (input: string) => `Help me write a compelling cover letter for ${input}`,
+    multiline: false,
+  },
+  'write-social-post': {
+    title: 'What kind of social media post do you need?',
+    description: 'I\'ll help you create engaging and authentic content.',
+    placeholder: 'e.g., LinkedIn post about career growth, Twitter thread about AI...',
+    template: (input: string) => `Help me write an engaging social media post about ${input}`,
+    multiline: false,
+  },
+  'prepare-interview': {
+    title: 'What position are you interviewing for?',
+    description: 'I\'ll help you prepare with practice questions and tips.',
+    placeholder: 'e.g., Software Developer at startup, Marketing Manager at Fortune 500...',
+    template: (input: string) => `Help me prepare for a job interview for ${input} by creating practice questions and tips`,
+    multiline: false,
+  },
+  'create-workout-plan': {
+    title: 'What are your fitness goals?',
+    description: 'I\'ll design a personalized workout plan to help you achieve them.',
+    placeholder: 'e.g., lose weight, build muscle, improve endurance, yoga routine...',
+    template: (input: string) => `Create a detailed workout plan to help me ${input}, including exercises, sets, reps, and weekly schedule`,
+    multiline: false,
+  },
+  'suggest-date-ideas': {
+    title: 'What kind of date are you planning?',
+    description: 'I\'ll suggest creative and memorable date ideas.',
+    placeholder: 'e.g., first date, anniversary, budget-friendly, adventurous...',
+    template: (input: string) => `Suggest creative and memorable date ideas for ${input}`,
+    multiline: false,
+  },
+  'book-recommendations': {
+    title: 'What genres or topics interest you?',
+    description: 'I\'ll recommend books across different genres and topics.',
+    placeholder: 'e.g., sci-fi, mystery, self-help, history, fantasy...',
+    template: (input: string) => `Recommend a diverse list of must-read books in ${input} with brief descriptions of why each is worth reading`,
+    multiline: false,
+  },
+  'reduce-carbon-footprint': {
+    title: 'What area of your life do you want to make more eco-friendly?',
+    description: 'I\'ll suggest practical ways to reduce your environmental impact.',
+    placeholder: 'e.g., home energy use, transportation, diet, shopping habits...',
+    template: (input: string) => `Give me practical and actionable tips to reduce my carbon footprint in ${input}`,
+    multiline: false,
+  },
+  'create-recipe': {
+    title: 'What ingredients do you have or what dish do you want?',
+    description: 'I\'ll create a delicious recipe with detailed instructions.',
+    placeholder: 'e.g., chicken breast and vegetables, healthy breakfast, vegan dessert...',
+    template: (input: string) => `Create a delicious recipe using ${input} with detailed cooking instructions and tips`,
+    multiline: false,
+  },
+  'improve-public-speaking': {
+    title: 'What aspect of public speaking do you want to improve?',
+    description: 'I\'ll provide strategies and exercises to boost your confidence.',
+    placeholder: 'e.g., managing nerves, engaging audience, storytelling, body language...',
+    template: (input: string) => `Help me improve my public speaking skills, specifically ${input}, with practical exercises and strategies`,
+    multiline: false,
+  },
+  'save-money-tips': {
+    title: 'What area of spending do you want to optimize?',
+    description: 'I\'ll suggest strategies to help you save money effectively.',
+    placeholder: 'e.g., groceries, utilities, entertainment, travel, monthly expenses...',
+    template: (input: string) => `Give me practical money-saving strategies for ${input} that I can implement immediately`,
+    multiline: false,
+  },
+  'learn-language': {
+    title: 'What language do you want to learn?',
+    description: 'I\'ll provide effective techniques and a structured approach.',
+    placeholder: 'e.g., Spanish, French, Mandarin, Japanese, German...',
+    template: (input: string) => `Create a comprehensive guide for learning ${input}, including effective study techniques, resources, and milestones`,
+    multiline: false,
+  },
+  'travel-itinerary': {
+    title: 'Where do you want to travel and for how long?',
+    description: 'I\'ll create a detailed travel itinerary with activities and tips.',
+    placeholder: 'e.g., Japan for 2 weeks, weekend in Paris, backpacking Europe...',
+    template: (input: string) => `Create a detailed travel itinerary for ${input}, including must-see attractions, local experiences, and practical tips`,
+    multiline: false,
+  },
+  'manage-stress': {
+    title: 'What situations or areas cause you stress?',
+    description: 'I\'ll provide techniques for managing stress and anxiety.',
+    placeholder: 'e.g., work pressure, social situations, financial worries, daily life...',
+    template: (input: string) => `Give me effective techniques for managing stress and anxiety related to ${input}`,
+    multiline: false,
+  },
+  'team-building': {
+    title: 'What kind of team building activity do you need?',
+    description: 'I\'ll suggest engaging activities to strengthen team bonds.',
+    placeholder: 'e.g., virtual team, office meeting, outdoor event, creative workshop...',
+    template: (input: string) => `Suggest effective team-building activities for ${input} that will improve collaboration and morale`,
+    multiline: false,
+  },
+  'hobby-suggestions': {
+    title: 'What type of hobby interests you?',
+    description: 'I\'ll suggest interesting hobbies you might enjoy trying.',
+    placeholder: 'e.g., creative, outdoor, intellectual, social, crafts, sports...',
+    template: (input: string) => `Suggest interesting ${input} hobbies I could try, with information about getting started and what to expect`,
+    multiline: false,
+  },
+  'make-adult-friends': {
+    title: 'What\'s your situation for meeting new people?',
+    description: 'I\'ll provide tips for making meaningful connections as an adult.',
+    placeholder: 'e.g., new city, remote work, shy personality, specific interests...',
+    template: (input: string) => `Give me practical tips for making friends as an adult in my situation: ${input}`,
+    multiline: false,
+  },
+  'improve-memory': {
+    title: 'What do you want to remember better?',
+    description: 'I\'ll teach you techniques to enhance memory and recall.',
+    placeholder: 'e.g., names and faces, study material, daily tasks, languages...',
+    template: (input: string) => `Teach me effective techniques to improve my memory and recall abilities for ${input}`,
+    multiline: false,
+  },
+  'meditation-guide': {
+    title: 'What\'s your experience level with meditation?',
+    description: 'I\'ll create a personalized meditation practice guide.',
+    placeholder: 'e.g., complete beginner, some experience, specific technique like mindfulness...',
+    template: (input: string) => `Create a meditation practice guide for ${input}, including techniques, schedules, and tips for success`,
+    multiline: false,
+  },
+  'historical-facts': {
+    title: 'What historical period or topic interests you?',
+    description: 'I\'ll share fascinating historical facts and stories.',
+    placeholder: 'e.g., ancient Rome, World War II, Renaissance, specific country...',
+    template: (input: string) => `Share fascinating and lesser-known historical facts about ${input} that would surprise most people`,
+    multiline: false,
+  },
+  'space-facts': {
+    title: 'What aspect of space and the universe interests you?',
+    description: 'I\'ll share amazing facts about outer space and astronomy.',
+    placeholder: 'e.g., black holes, planets, space exploration, stars, galaxies...',
+    template: (input: string) => `Share mind-blowing facts about ${input} and explain them in an engaging way`,
+    multiline: false,
+  },
+  'unsolved-mysteries': {
+    title: 'What type of mysteries fascinate you?',
+    description: 'I\'ll tell you about intriguing unsolved mysteries.',
+    placeholder: 'e.g., historical, scientific, criminal, archaeological, paranormal...',
+    template: (input: string) => `Tell me about fascinating ${input} unsolved mysteries that continue to puzzle experts today`,
+    multiline: false,
+  },
+  'philosophical-discussion': {
+    title: 'What philosophical topic interests you?',
+    description: 'I\'ll explain philosophical concepts and encourage thoughtful discussion.',
+    placeholder: 'e.g., meaning of life, free will, ethics, consciousness, reality...',
+    template: (input: string) => `Explain the philosophical concept of ${input} and engage me in a thoughtful discussion about it`,
+    multiline: false,
+  },
+  'cultural-awareness': {
+    title: 'What culture or cultural aspect would you like to learn about?',
+    description: 'I\'ll help you become more culturally aware and respectful.',
+    placeholder: 'e.g., Japanese business culture, Middle Eastern traditions, Latin American customs...',
+    template: (input: string) => `Help me understand ${input} and how to be more culturally aware and respectful in my interactions`,
+    multiline: false,
+  },
+  'home-organization': {
+    title: 'What area of your home needs organizing?',
+    description: 'I\'ll provide practical tips for creating an organized living space.',
+    placeholder: 'e.g., bedroom closet, kitchen pantry, home office, garage...',
+    template: (input: string) => `Give me practical tips and strategies for organizing my ${input} and keeping it clutter-free`,
+    multiline: false,
+  },
+  'science-experiments': {
+    title: 'What type of science experiments interest you?',
+    description: 'I\'ll suggest safe and interesting experiments you can do at home.',
+    placeholder: 'e.g., chemistry, physics, biology, for kids, kitchen science...',
+    template: (input: string) => `Suggest interesting and safe ${input} experiments I can do at home with common materials`,
+    multiline: false,
+  },
+  'boost-confidence': {
+    title: 'What situation makes you feel less confident?',
+    description: 'I\'ll provide techniques to boost your self-esteem and confidence.',
+    placeholder: 'e.g., social situations, work presentations, dating, public speaking...',
+    template: (input: string) => `Give me effective techniques to boost my self-esteem and confidence when dealing with ${input}`,
+    multiline: false,
+  },
+  'board-game-suggestions': {
+    title: 'What type of board game experience are you looking for?',
+    description: 'I\'ll recommend engaging board games for different occasions.',
+    placeholder: 'e.g., family night, strategy games, party games, two-player games...',
+    template: (input: string) => `Recommend engaging board games perfect for ${input}, with brief descriptions of gameplay`,
+    multiline: false,
+  },
+} as const;
 
 function PureSuggestedPrompts({
   sendMessage,
@@ -107,14 +393,31 @@ function PureSuggestedPrompts({
   const [isAnimating, setIsAnimating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showMore, setShowMore] = useState(false);
+  
+  // Template modal state
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [currentTemplate, setCurrentTemplate] = useState<keyof typeof TEMPLATE_CONFIGS | null>(null);
+  const [templateInput, setTemplateInput] = useState("");
 
   // Get contextual suggestions based on the selected model
   const contextualSuggestions = useMemo(() => {
     if (suggestions) return suggestions;
-    return selectedModel ? getContextualSuggestions(selectedModel) : defaultSuggestions;
+    return getContextualSuggestions(selectedModel);
   }, [suggestions, selectedModel]);
 
   const handleSuggestionClick = useCallback(async (action: string) => {
+    // Check if this is a template action
+    if (action.startsWith('template:')) {
+      const templateType = action.replace('template:', '') as keyof typeof TEMPLATE_CONFIGS;
+      if (TEMPLATE_CONFIGS[templateType]) {
+        setCurrentTemplate(templateType);
+        setTemplateInput('');
+        setShowTemplateModal(true);
+        return;
+      }
+    }
+    
+    // Regular suggestion - send directly
     setIsAnimating(true);
     sendMessage(action);
     setTimeout(() => setIsAnimating(false), 300);
@@ -123,9 +426,48 @@ function PureSuggestedPrompts({
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLButtonElement>, action: string) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
+      // Check if this is a template action
+      if (action.startsWith('template:')) {
+        const templateType = action.replace('template:', '') as keyof typeof TEMPLATE_CONFIGS;
+        if (TEMPLATE_CONFIGS[templateType]) {
+          setCurrentTemplate(templateType);
+          setTemplateInput('');
+          setShowTemplateModal(true);
+          return;
+        }
+      }
       sendMessage(action);
     }
   }, [sendMessage]);
+
+  // Template modal handlers
+  const handleTemplateSubmit = useCallback(() => {
+    if (!currentTemplate || !templateInput.trim()) return;
+    
+    const config = TEMPLATE_CONFIGS[currentTemplate];
+    const fullMessage = config.template(templateInput.trim());
+    
+    setShowTemplateModal(false);
+    setCurrentTemplate(null);
+    setTemplateInput('');
+    sendMessage(fullMessage);
+  }, [currentTemplate, templateInput, sendMessage]);
+
+  const handleTemplateCancel = useCallback(() => {
+    setShowTemplateModal(false);
+    setCurrentTemplate(null);
+    setTemplateInput('');
+  }, []);
+
+  const handleTemplateKeyDown = useCallback((event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' && !event.shiftKey && currentTemplate && !TEMPLATE_CONFIGS[currentTemplate].multiline) {
+      event.preventDefault();
+      handleTemplateSubmit();
+    }
+    if (event.key === 'Escape') {
+      handleTemplateCancel();
+    }
+  }, [currentTemplate, handleTemplateSubmit, handleTemplateCancel]);
 
   // Get unique categories
   const categories = Array.from(new Set(contextualSuggestions.map(s => s.category).filter(Boolean)));
@@ -320,6 +662,61 @@ function PureSuggestedPrompts({
           Suggestions optimized for {selectedModel}
         </motion.div>
       )}
+
+      {/* Template Modal */}
+      <Dialog open={showTemplateModal} onOpenChange={setShowTemplateModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit3 className="h-4 w-4" />
+              {currentTemplate && TEMPLATE_CONFIGS[currentTemplate].title}
+            </DialogTitle>
+            <DialogDescription>
+              {currentTemplate && TEMPLATE_CONFIGS[currentTemplate].description}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {currentTemplate && TEMPLATE_CONFIGS[currentTemplate].multiline ? (
+              <Textarea
+                placeholder={TEMPLATE_CONFIGS[currentTemplate].placeholder}
+                value={templateInput}
+                onChange={(e) => setTemplateInput(e.target.value)}
+                onKeyDown={handleTemplateKeyDown}
+                className="min-h-[120px] resize-none"
+                autoFocus
+              />
+            ) : (
+              <Input
+                placeholder={currentTemplate ? TEMPLATE_CONFIGS[currentTemplate].placeholder : ''}
+                value={templateInput}
+                onChange={(e) => setTemplateInput(e.target.value)}
+                onKeyDown={handleTemplateKeyDown}
+                autoFocus
+              />
+            )}
+            
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTemplateCancel}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleTemplateSubmit}
+                disabled={!templateInput.trim()}
+                className="flex items-center gap-2"
+              >
+                <Send className="h-3 w-3" />
+                Send Message
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -336,3 +733,4 @@ const arePropsEqual = (prevProps: SuggestedPromptsProps, nextProps: SuggestedPro
 };
 
 export const SuggestedPrompts = memo(PureSuggestedPrompts, arePropsEqual);
+
