@@ -2,7 +2,8 @@
 
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
-import { memo, useCallback, useState, useMemo } from "react";
+import { memo, useCallback, useState, useMemo, useRef, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   Code, 
   MessageCircle, 
@@ -17,7 +18,9 @@ import {
   Filter,
   X,
   Edit3,
-  Send
+  Send,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
@@ -393,11 +396,90 @@ function PureSuggestedPrompts({
   const [isAnimating, setIsAnimating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showMore, setShowMore] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
   // Template modal state
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState<keyof typeof TEMPLATE_CONFIGS | null>(null);
   const [templateInput, setTemplateInput] = useState("");
+
+  // Scroll functions
+  const checkScrollButtons = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    setCanScrollLeft(container.scrollLeft > 0);
+    setCanScrollRight(container.scrollLeft < container.scrollWidth - container.clientWidth);
+  }, []);
+
+  const scrollLeft = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    container.scrollBy({ left: -150, behavior: 'smooth' });
+  }, []);
+
+  const scrollRight = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    container.scrollBy({ left: 150, behavior: 'smooth' });
+  }, []);
+
+  // Check scroll buttons when categories change
+  useEffect(() => {
+    checkScrollButtons();
+  }, [checkScrollButtons]);
+
+  // Mobile-optimized category selection (most popular categories with short names)
+  const getMobilePriorityCategories = useCallback((allCategories: string[]) => {
+    // Prioritize shorter category names that fit better on mobile
+    const priorityOrder = ['writing', 'coding', 'creative', 'planning', 'learning', 'decision', 'health', 'travel', 'science'];
+    const sorted = allCategories.sort((a, b) => {
+      const aIndex = priorityOrder.indexOf(a);
+      const bIndex = priorityOrder.indexOf(b);
+      if (aIndex === -1 && bIndex === -1) {
+        // If neither is in priority list, prefer shorter names
+        if (a.length !== b.length) return a.length - b.length;
+        return a.localeCompare(b);
+      }
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+    // Only show 2-3 categories that fit comfortably on mobile
+    return sorted.slice(0, 2);
+  }, []);
+
+  // Smart search suggestions - provide contextual hints based on search
+  const getSearchHints = useCallback((query: string) => {
+    if (!query) return [];
+    
+    const lowercaseQuery = query.toLowerCase();
+    const hints = [];
+    
+    // Category-based hints
+    if (lowercaseQuery.includes('code') || lowercaseQuery.includes('program')) {
+      hints.push('Try "coding" category for development help');
+    }
+    if (lowercaseQuery.includes('write') || lowercaseQuery.includes('essay')) {
+      hints.push('Check "writing" category for content creation');
+    }
+    if (lowercaseQuery.includes('plan') || lowercaseQuery.includes('organize')) {
+      hints.push('Explore "planning" category for organization tools');
+    }
+    if (lowercaseQuery.includes('learn') || lowercaseQuery.includes('study')) {
+      hints.push('Browse "learning" category for educational help');
+    }
+    
+    return hints.slice(0, 1); // Show only one hint
+  }, []);
+
+  const searchHints = useMemo(() => 
+    getSearchHints(searchQuery), [searchQuery, getSearchHints]
+  );
 
   // Get contextual suggestions based on the selected model
   const contextualSuggestions = useMemo(() => {
@@ -470,7 +552,29 @@ function PureSuggestedPrompts({
   }, [currentTemplate, handleTemplateSubmit, handleTemplateCancel]);
 
   // Get unique categories
-  const categories = Array.from(new Set(contextualSuggestions.map(s => s.category).filter(Boolean)));
+  const categories = Array.from(new Set(contextualSuggestions.map(s => s.category).filter((cat): cat is string => Boolean(cat))));
+
+  // Show categories logic: Search-first approach
+  const shouldShowCategories = useMemo(() => {
+    if (!showCategories || categories.length <= 1) return false;
+    
+    // Always show on desktop
+    if (!isMobile) return true;
+    
+    // On mobile: show only when search is focused or has content
+    return isSearchFocused || searchQuery.length > 0;
+  }, [showCategories, categories.length, isMobile, isSearchFocused, searchQuery]);
+
+  // Get categories to display based on device type
+  const displayCategories = useMemo(() => {
+    if (!shouldShowCategories) return [];
+    
+    if (isMobile) {
+      return getMobilePriorityCategories(categories);
+    }
+    
+    return categories;
+  }, [shouldShowCategories, isMobile, categories, getMobilePriorityCategories]);
   
   // Filter suggestions by search query and selected category
   const filteredSuggestions = useMemo(() => {
@@ -496,21 +600,36 @@ function PureSuggestedPrompts({
   }, [contextualSuggestions, searchQuery, selectedCategory]);
   
   // Limit the number of suggestions based on showMore state
-  const displayLimit = showMore ? Math.min(filteredSuggestions.length, maxSuggestions * 2) : maxSuggestions;
+  const displayLimit = showMore ? filteredSuggestions.length : maxSuggestions;
   const limitedSuggestions = filteredSuggestions.slice(0, displayLimit);
   const hasMoreSuggestions = filteredSuggestions.length > maxSuggestions;
 
   return (
-    <div className="w-full space-y-3">
-      {/* Search input */}
-      <div className="relative max-w-sm mx-auto">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="w-full space-y-3 px-3 sm:px-0">
+      {/* Search input - Made more prominent for search-first approach */}
+      <div className={`relative mx-auto transition-all duration-200 ${
+        isMobile 
+          ? (isSearchFocused || searchQuery.length > 0 ? 'max-w-full px-2' : 'max-w-sm')
+          : 'max-w-sm'
+      }`}>
+        <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 transition-colors ${
+          isSearchFocused ? 'text-primary' : 'text-muted-foreground'
+        }`} />
         <Input
           type="text"
-          placeholder="Search suggestions..."
+          placeholder={isMobile 
+            ? (isSearchFocused ? "Search suggestions..." : "Search or choose categories...")
+            : "Search suggestions..."
+          }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 pr-10 h-9"
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => setIsSearchFocused(false)}
+          className={`pl-10 pr-10 transition-all duration-200 ${
+            isSearchFocused 
+              ? 'h-10 ring-2 ring-primary/20 border-primary' 
+              : 'h-9'
+          }`}
         />
         {searchQuery && (
           <button
@@ -521,31 +640,195 @@ function PureSuggestedPrompts({
             <X className="h-4 w-4" />
           </button>
         )}
+        
+        {/* Mobile hint text - only show when categories would appear on focus */}
+        {isMobile && !isSearchFocused && !searchQuery && shouldShowCategories && (
+          <div className="absolute -bottom-6 left-0 right-0 text-center">
+            <span className="text-xs text-muted-foreground">
+              Tap to search or browse categories
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Category filters */}
-      {showCategories && categories.length > 1 && (
-        <div className="flex flex-wrap gap-1.5 justify-center">
+      {/* Mobile quick actions - Show when categories are hidden */}
+      {isMobile && !shouldShowCategories && !searchQuery && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="flex gap-2 justify-center flex-wrap px-2"
+        >
           <Button
-            variant={selectedCategory === null ? "default" : "outline"}
+            variant="outline"
             size="sm"
-            onClick={() => setSelectedCategory(null)}
-            className="text-xs h-7 px-3"
+            onClick={() => sendMessage("Help me write something")}
+            className="text-xs h-7 px-2 flex-1 min-w-0 max-w-[90px]"
           >
-            <Filter className="h-3 w-3 mr-1" />
-            All
+            <Edit3 className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="truncate">Write</span>
           </Button>
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(category || null)}
-              className="text-xs capitalize h-7 px-3"
-            >
-              {category}
-            </Button>
-          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => sendMessage("Help me code something")}
+            className="text-xs h-7 px-2 flex-1 min-w-0 max-w-[90px]"
+          >
+            <Code className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="truncate">Code</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => sendMessage("Help me plan something")}
+            className="text-xs h-7 px-2 flex-1 min-w-0 max-w-[90px]"
+          >
+            <Zap className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="truncate">Plan</span>
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Smart search hints */}
+      {searchHints.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="text-center px-2"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs max-w-full">
+            <Sparkles className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{searchHints[0]}</span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Category filters - Search-first approach with mobile optimization */}
+      <AnimatePresence>
+        {shouldShowCategories && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: isMobile ? 8 : 0 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            {isMobile ? (
+              /* Mobile: Constrained button layout that prevents overflow */
+              <div className="px-2">
+                <div className="flex gap-1.5 justify-center flex-wrap max-w-full">
+                  <Button
+                    variant={selectedCategory === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(null)}
+                    className="text-xs h-6 px-2 min-w-0"
+                  >
+                    <Filter className="h-3 w-3 mr-1 flex-shrink-0" />
+                    <span className="truncate">All</span>
+                  </Button>
+                  {displayCategories.map((category) => (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category || null)}
+                      className="text-xs capitalize h-6 px-2 min-w-0 max-w-[80px]"
+                    >
+                      <span className="truncate">{category}</span>
+                    </Button>
+                  ))}
+                </div>
+                {categories.length > 2 && (
+                  <div className="text-center mt-2 px-2">
+                    <span className="text-xs text-muted-foreground">
+                      {categories.length - 2} more via search
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Desktop: Full horizontal scroll */
+              <div className="relative flex items-center">
+                {/* Left scroll arrow */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={scrollLeft}
+                  disabled={!canScrollLeft}
+                  className={`absolute left-0 z-20 h-6 w-6 p-0 bg-background/80 backdrop-blur-sm border transition-all ${
+                    canScrollLeft 
+                      ? 'opacity-100 hover:bg-background/90' 
+                      : 'opacity-30 cursor-not-allowed'
+                  }`}
+                  aria-label="Scroll categories left"
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                </Button>
+
+                {/* Scrollable container */}
+                <div 
+                  ref={scrollContainerRef}
+                  className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 px-8 scroll-smooth"
+                  onScroll={checkScrollButtons}
+                >
+                  <Button
+                    variant={selectedCategory === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(null)}
+                    className="text-xs h-6 px-2.5 flex-shrink-0"
+                  >
+                    <Filter className="h-3 w-3 mr-1" />
+                    All
+                  </Button>
+                  {displayCategories.map((category) => (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category || null)}
+                      className="text-xs capitalize h-6 px-2.5 flex-shrink-0 whitespace-nowrap"
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
+
+                {/* Right scroll arrow */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={scrollRight}
+                  disabled={!canScrollRight}
+                  className={`absolute right-0 z-20 h-6 w-6 p-0 bg-background/80 backdrop-blur-sm border transition-all ${
+                    canScrollRight 
+                      ? 'opacity-100 hover:bg-background/90' 
+                      : 'opacity-30 cursor-not-allowed'
+                  }`}
+                  aria-label="Scroll categories right"
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Search results info */}
+      {searchQuery && (
+        <div className="text-center text-sm text-muted-foreground px-2">
+          {filteredSuggestions.length === 0 ? (
+            <div className="flex items-center justify-center gap-2">
+              <Search className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">No suggestions found for "{searchQuery}"</span>
+            </div>
+          ) : (
+            <div className="truncate">
+              Found {filteredSuggestions.length} suggestion{filteredSuggestions.length !== 1 ? 's' : ''} 
+              {selectedCategory && ` in "${selectedCategory}"`}
+            </div>
+          )}
         </div>
       )}
 
