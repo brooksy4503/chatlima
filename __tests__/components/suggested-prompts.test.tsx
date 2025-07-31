@@ -128,8 +128,8 @@ describe('SuggestedPrompts Component', () => {
     test('renders with default suggestions when no suggestions provided', () => {
       render(<SuggestedPrompts sendMessage={mockSendMessage} />);
       
-      // When no selectedModel is provided, component uses defaultSuggestions directly
-      expect(mockGetContextualSuggestions).not.toHaveBeenCalled();
+      // When no selectedModel is provided, component uses getContextualSuggestions with undefined model
+      expect(mockGetContextualSuggestions).toHaveBeenCalledWith(undefined);
       expect(screen.getByTestId('suggested-actions')).toBeInTheDocument();
       expect(screen.getByTestId('search-input')).toBeInTheDocument();
     });
