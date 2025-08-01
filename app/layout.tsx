@@ -9,6 +9,7 @@ import { WebSearchProvider } from "@/lib/context/web-search-context";
 import { cn } from "@/lib/utils";
 import BuildInfo from "@/components/ui/BuildInfo";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
+import { SidebarInset } from "@/components/ui/sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -78,13 +79,15 @@ export default function RootLayout({
         <Providers>
           <WebSearchProvider>
             <div className="flex h-dvh w-full">
+              {/* Sidebar - handled by SidebarProvider for mobile/desktop */}
               <ChatSidebar />
-              <main className="flex-1 flex flex-col">
+              {/* Main content area - SidebarInset handles responsive peer classes */}
+              <SidebarInset className="flex flex-col min-w-0">
                 <TopNav />
                 <div className="flex-1 flex justify-center overflow-hidden">
                   {children}
                 </div>
-              </main>
+              </SidebarInset>
             </div>
             <IOSInstallPrompt />
           </WebSearchProvider>
