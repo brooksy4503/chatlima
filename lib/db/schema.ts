@@ -214,4 +214,30 @@ export const favoriteModels = pgTable('favorite_models', {
 }));
 
 export type FavoriteModel = typeof favoriteModels.$inferSelect;
-export type FavoriteModelInsert = typeof favoriteModels.$inferInsert; 
+export type FavoriteModelInsert = typeof favoriteModels.$inferInsert;
+
+// --- Chat Shares Schema ---
+
+export const chatShares = pgTable('chat_shares', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  ownerUserId: text('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  shareId: text('share_id').notNull().unique(),
+  status: text('status').notNull().default('active'),
+  visibility: text('visibility').notNull().default('unlisted'),
+  snapshotJson: json('snapshot_json').notNull(),
+  viewCount: integer('view_count').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  revokedAt: timestamp('revoked_at'),
+}, (table) => ({
+  // Constraints and indexes
+  checkStatus: check('check_chat_shares_status', sql`${table.status} IN ('active','revoked')`),
+  checkVisibility: check('check_chat_shares_visibility', sql`${table.visibility} IN ('unlisted')`),
+  checkShareIdFormat: check('check_chat_shares_share_id_format', sql`char_length(${table.shareId}) >= 20 AND char_length(${table.shareId}) <= 64`),
+  chatStatusIdx: index('idx_chat_shares_chat_id_status').on(table.chatId, table.status),
+  ownerStatusIdx: index('idx_chat_shares_owner_user_id_status').on(table.ownerUserId, table.status),
+}));
+
+export type ChatShare = typeof chatShares.$inferSelect;
+export type ChatShareInsert = typeof chatShares.$inferInsert;
+
