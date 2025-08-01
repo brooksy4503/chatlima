@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { SharedChatMessages } from '@/components/shared-chat-messages';
+import { ChatSharingService } from '@/lib/services/chat-sharing';
 import type { ChatSnapshot } from '@/lib/services/chat-sharing';
 
 interface PageProps {
@@ -8,17 +9,9 @@ interface PageProps {
 
 async function getSharedChat(shareId: string): Promise<ChatSnapshot | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/chats/shared/${shareId}`, {
-      cache: 'force-cache',
-      next: { revalidate: 300 }, // Cache for 5 minutes
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    return response.json();
+    // Call the service directly instead of making an HTTP request
+    // This avoids issues with server-side fetch and environment variables
+    return await ChatSharingService.getSharedChat(shareId);
   } catch (error) {
     console.error('Error fetching shared chat:', error);
     return null;
@@ -34,7 +27,7 @@ export default async function SharedChatPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="max-w-lg sm:max-w-3xl mx-auto px-4 py-4">
@@ -55,7 +48,7 @@ export default async function SharedChatPage({ params }: PageProps) {
       </header>
 
       {/* Messages */}
-      <main className="flex-1">
+      <main className="flex-1 overflow-hidden">
         <SharedChatMessages 
           messages={snapshot.messages}
           metadata={snapshot.metadata}

@@ -19,7 +19,7 @@ function SharedMessageComponent({ message, isLast }: SharedMessageProps) {
   return (
     <div
       className={cn(
-        "group flex gap-4 px-4 py-4 text-sm",
+        "group/message flex gap-4 px-4 py-4 text-sm",
         !isLast && "border-b border-border/40",
         isUser && "bg-muted/30",
       )}
@@ -73,10 +73,9 @@ function SharedMessageComponent({ message, isLast }: SharedMessageProps) {
 
         {/* Copy button */}
         {message.content && (
-          <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex justify-end">
             <CopyButton 
               text={message.content}
-              className="h-6 w-6 p-1"
             />
           </div>
         )}

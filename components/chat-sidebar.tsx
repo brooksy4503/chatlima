@@ -83,6 +83,7 @@ export function ChatSidebar() {
     const { data: session, isPending: isSessionLoading } = useSession();
     const authenticatedUserId = session?.user?.id;
     const previousSessionRef = useRef(session);
+    const invalidationRef = useRef(false);
 
     const queryClient = useQueryClient();
 
@@ -126,6 +127,12 @@ export function ChatSidebar() {
         const currentSession = session;
         const previousSession = previousSessionRef.current;
 
+        // Prevent multiple rapid invalidations
+        if (invalidationRef.current) {
+            previousSessionRef.current = currentSession;
+            return;
+        }
+
         if (!previousSession?.user && currentSession?.user?.id) {
             const authenticatedUserId = currentSession.user.id;
             console.log('User logged in (ID):', authenticatedUserId);
@@ -133,14 +140,27 @@ export function ChatSidebar() {
             console.log('Session User Object:', currentSession.user);
             
             setUserId(authenticatedUserId);
-            queryClient.invalidateQueries({ queryKey: ['chats'] });
-            queryClient.invalidateQueries({ queryKey: ['chat'] });
+            
+            // Debounce query invalidations to prevent cascade
+            invalidationRef.current = true;
+            setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['chats'] });
+                queryClient.invalidateQueries({ queryKey: ['chat'] });
+                invalidationRef.current = false;
+            }, 100);
+            
         } else if (previousSession?.user && !currentSession?.user) {
             console.log('User logged out.');
             setUserId(null);
             router.push('/');
-            queryClient.invalidateQueries({ queryKey: ['chats'] });
-            queryClient.invalidateQueries({ queryKey: ['chat'] });
+            
+            // Debounce query invalidations to prevent cascade
+            invalidationRef.current = true;
+            setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['chats'] });
+                queryClient.invalidateQueries({ queryKey: ['chat'] });
+                invalidationRef.current = false;
+            }, 100);
         }
 
         previousSessionRef.current = currentSession;

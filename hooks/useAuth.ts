@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { signIn, signOut, useSession } from '@/lib/auth-client';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unauthenticated';
@@ -22,12 +22,15 @@ export function useAuth() {
     const [status, setStatus] = useState<AuthStatus>('loading');
     const [user, setUser] = useState<AuthUser | null>(null);
     const [error, setError] = useState<Error | null>(null);
+    const processingRef = useRef(false);
 
     useEffect(() => {
-        if (isPending) {
+        if (isPending || processingRef.current) {
             setStatus('loading');
             return;
         }
+
+        processingRef.current = true;
 
         try {
             if (session && session.user) {
@@ -62,6 +65,11 @@ export function useAuth() {
             setError(err instanceof Error ? err : new Error(String(err)));
             setStatus('unauthenticated');
             setUser(null);
+        } finally {
+            // Reset processing flag after a brief delay
+            setTimeout(() => {
+                processingRef.current = false;
+            }, 50);
         }
     }, [session, isPending]);
 

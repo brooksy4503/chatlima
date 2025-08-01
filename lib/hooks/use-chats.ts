@@ -16,7 +16,7 @@ export function useChats() {
   } = useQuery<Chat[]>({
     queryKey: ['chats'],
     queryFn: async () => {
-      const response = await fetch('/api/chats');
+      const response = await fetch('/api/chats?limit=50'); // Only load most recent 50 chats
 
       if (!response.ok) {
         throw new Error('Failed to fetch chats');
@@ -25,8 +25,10 @@ export function useChats() {
       return response.json();
     },
     enabled: !isSessionLoading && !!session?.user?.id, // Only fetch when session is loaded and user exists
-    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    refetchOnWindowFocus: true, // Refetch when window regains focus
+    staleTime: 1000 * 60 * 10, // Consider data fresh for 10 minutes (increased from 5)
+    refetchOnWindowFocus: false, // Disable aggressive refetching on focus
+    refetchOnMount: false, // Don't refetch on mount if data is available
+    refetchOnReconnect: false, // Don't refetch on reconnect
   });
 
   // Mutation to delete a chat
