@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type Chat } from '@/lib/db/schema';
 import { toast } from 'sonner';
-import { useSession } from '@/lib/auth-client';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useChats() {
   const queryClient = useQueryClient();
-  const { data: session, isPending: isSessionLoading } = useSession();
+  const { session, isPending: isSessionLoading } = useAuth();
 
   // Main query to fetch chats
   const {

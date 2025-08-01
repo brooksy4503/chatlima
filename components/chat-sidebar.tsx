@@ -53,7 +53,7 @@ import { useMCP } from "@/lib/context/mcp-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignInButton } from "@/components/auth/SignInButton";
 import { UserAccountMenu } from "@/components/auth/UserAccountMenu";
-import { useSession, signOut } from "@/lib/auth-client";
+import { useAuth, signOut } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
@@ -80,7 +80,7 @@ export function ChatSidebar() {
     // On mobile, always show expanded layout
     const isLayoutCollapsed = isCollapsed && !isMobile;
 
-    const { data: session, isPending: isSessionLoading } = useSession();
+    const { session, isPending: isSessionLoading } = useAuth();
     const authenticatedUserId = session?.user?.id;
     const previousSessionRef = useRef(session);
     const invalidationRef = useRef(false);

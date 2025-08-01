@@ -14,6 +14,11 @@ import { Suspense, lazy } from "react";
 // Lazy load the ChatSidebar to improve initial page load performance
 const ChatSidebar = lazy(() => import("@/components/chat-sidebar").then(module => ({ default: module.ChatSidebar })));
 
+// Import auth performance monitor in development
+if (process.env.NODE_ENV === 'development') {
+  import('@/lib/utils/auth-performance-monitor');
+}
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
