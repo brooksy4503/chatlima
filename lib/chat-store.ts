@@ -259,10 +259,11 @@ export function getTextContent(message: Message): string {
   }
 }
 
-export async function getChats(userId: string) {
+export async function getChats(userId: string, limit = 50) {
   return await db.query.chats.findMany({
     where: eq(chats.userId, userId),
-    orderBy: [desc(chats.updatedAt)]
+    orderBy: [desc(chats.updatedAt)],
+    limit: limit
   });
 }
 

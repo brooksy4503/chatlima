@@ -13,9 +13,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CopyButton } from "@/components/copy-button";
 import { toast } from "sonner";
-import { Loader2, Share, Link as LinkIcon, Eye, EyeOff } from "lucide-react";
+import { Loader2, Share, Link as LinkIcon, Eye, EyeOff, Copy, Check } from "lucide-react";
 
 interface ChatShareDialogProps {
   isOpen: boolean;
@@ -39,6 +38,7 @@ export function ChatShareDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [hasConsented, setHasConsented] = useState(false);
   const [isShared, setIsShared] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleCreateShare = async () => {
     if (!hasConsented) {
@@ -94,10 +94,17 @@ export function ChatShareDialog({
     }
   };
 
-  const handleCopyUrl = () => {
+  const handleCopyUrl = async () => {
     if (shareData?.shareUrl) {
-      navigator.clipboard.writeText(shareData.shareUrl);
-      toast.success("Share URL copied to clipboard!");
+      try {
+        await navigator.clipboard.writeText(shareData.shareUrl);
+        setIsCopied(true);
+        toast.success("Share URL copied to clipboard!");
+        // Reset the copied state after 2 seconds
+        setTimeout(() => setIsCopied(false), 2000);
+      } catch (error) {
+        toast.error("Failed to copy URL to clipboard");
+      }
     }
   };
 
@@ -105,6 +112,7 @@ export function ChatShareDialog({
     if (!open) {
       // Reset state when dialog closes
       setHasConsented(false);
+      setIsCopied(false);
     }
     onOpenChange(open);
   };
@@ -185,10 +193,25 @@ export function ChatShareDialog({
                     readOnly
                     className="font-mono text-xs"
                   />
-                  <CopyButton 
-                    text={shareData.shareUrl}
-                    className="h-10 w-10 shrink-0"
-                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyUrl}
+                    className="h-10 px-3 shrink-0"
+                    title="Copy share URL to clipboard"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="h-4 w-4 mr-1" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
