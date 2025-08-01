@@ -2,21 +2,24 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { type Chat } from '@/lib/db/schema';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useState, useCallback } from 'react';
 
 export function useChats() {
   const queryClient = useQueryClient();
   const { session, isPending: isSessionLoading } = useAuth();
+  const [currentLimit, setCurrentLimit] = useState(50);
 
   // Main query to fetch chats
   const {
     data: chats = [],
     isLoading,
     error,
-    refetch
+    refetch,
+    isFetching
   } = useQuery<Chat[]>({
-    queryKey: ['chats'],
+    queryKey: ['chats', currentLimit],
     queryFn: async () => {
-      const response = await fetch('/api/chats?limit=50'); // Only load most recent 50 chats
+      const response = await fetch(`/api/chats?limit=${currentLimit}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch chats');
@@ -30,6 +33,15 @@ export function useChats() {
     refetchOnMount: false, // Don't refetch on mount if data is available
     refetchOnReconnect: false, // Don't refetch on reconnect
   });
+
+  // Load more chats function
+  const loadMoreChats = useCallback(() => {
+    const newLimit = currentLimit + 50;
+    setCurrentLimit(newLimit);
+  }, [currentLimit]);
+
+  // Check if there might be more chats to load
+  const hasMoreChats = chats.length === currentLimit;
 
   // Mutation to delete a chat
   const deleteChat = useMutation({
@@ -124,6 +136,10 @@ export function useChats() {
     updateChatTitle: updateChatTitle.mutate,
     isUpdatingChatTitle: updateChatTitle.isPending,
     refreshChats,
-    refetch
+    refetch,
+    loadMoreChats,
+    hasMoreChats,
+    isLoadingMore: isFetching && !isLoading,
+    currentLimit,
   };
 }

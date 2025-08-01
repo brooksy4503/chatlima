@@ -41,6 +41,9 @@ interface ChatListProps {
     onDeleteChat: (chatId: string, e: React.MouseEvent) => void;
     onUpdateChatTitle: (params: { chatId: string, title: string }, options: { onSuccess: () => void, onError: () => void }) => void;
     onNavigateToChat?: (chatId: string) => void;
+    onLoadMoreChats?: () => void;
+    hasMoreChats?: boolean;
+    isLoadingMore?: boolean;
 }
 
 export function ChatList({
@@ -52,6 +55,9 @@ export function ChatList({
     onDeleteChat,
     onUpdateChatTitle,
     onNavigateToChat,
+    onLoadMoreChats,
+    hasMoreChats = false,
+    isLoadingMore = false,
 }: ChatListProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -307,6 +313,30 @@ export function ChatList({
                                 </motion.div>
                             );
                         })}
+                        
+                        {/* Load More Button */}
+                        {!searchTerm && hasMoreChats && onLoadMoreChats && !isCollapsed && (
+                            <SidebarMenuItem className="mt-2 list-none">
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-muted-foreground hover:text-foreground"
+                                    onClick={onLoadMoreChats}
+                                    disabled={isLoadingMore}
+                                >
+                                    {isLoadingMore ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Loading more chats...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Load more chats
+                                        </>
+                                    )}
+                                </Button>
+                            </SidebarMenuItem>
+                        )}
                     </AnimatePresence>
                 ) : (
                     <SidebarMenu>

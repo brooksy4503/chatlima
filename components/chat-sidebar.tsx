@@ -177,7 +177,7 @@ export function ChatSidebar() {
     // Fix hydration error by ensuring consistent initial state
 
 
-    const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle } = useChats();
+    const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle, loadMoreChats, hasMoreChats, isLoadingMore } = useChats();
     const isLoading = !isMounted || isSessionLoading || isChatsLoading;
 
     const handleNewChat = () => {
@@ -330,6 +330,9 @@ export function ChatSidebar() {
                             onDeleteChat={handleDeleteChat}
                             onUpdateChatTitle={updateChatTitle}
                             onNavigateToChat={handleNavigateToChat}
+                            onLoadMoreChats={loadMoreChats}
+                            hasMoreChats={hasMoreChats}
+                            isLoadingMore={isLoadingMore}
                         />
                     </SidebarGroup>
                     
