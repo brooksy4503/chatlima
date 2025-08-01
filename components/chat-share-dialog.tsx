@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Share, Link as LinkIcon, Eye, EyeOff, Copy, Check } from "lucide-react";
+import { type ChatWithShareInfo } from '@/lib/db/schema';
 
 interface ChatShareDialogProps {
   isOpen: boolean;
@@ -32,22 +34,19 @@ export function ChatShareDialog({
   isOpen, 
   onOpenChange, 
   chatId, 
-  chatTitle 
+  chatTitle
 }: ChatShareDialogProps) {
   const [shareData, setShareData] = useState<ShareData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [hasConsented, setHasConsented] = useState(false);
   const [isShared, setIsShared] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isCheckingExisting, setIsCheckingExisting] = useState(false);
 
-  const handleCreateShare = async () => {
-    if (!hasConsented) {
-      toast.error("Please agree to the terms before creating a share link.");
-      return;
-    }
+  const queryClient = useQueryClient();
 
-    setIsLoading(true);
-    try {
+  // Mutation to create a chat share
+  const createShareMutation = useMutation({
+    mutationFn: async (chatId: string) => {
       const response = await fetch(`/api/chats/${chatId}/share`, {
         method: 'POST',
         headers: {
@@ -60,21 +59,28 @@ export function ChatShareDialog({
         throw new Error(error || 'Failed to create share link');
       }
 
-      const data: ShareData = await response.json();
-      setShareData(data);
+      const data = await response.json();
+      return { chatId, shareData: data };
+    },
+    onSuccess: ({ chatId, shareData }) => {
+      // Update local state
+      setShareData(shareData);
       setIsShared(true);
-      toast.success("Share link created successfully!");
-    } catch (error) {
+
+      // Update all chat queries by invalidating them - this ensures all variants get updated
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+
+      toast.success("Share link ready!");
+    },
+    onError: (error) => {
       console.error('Error creating share:', error);
       toast.error("Failed to create share link. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
 
-  const handleRevokeShare = async () => {
-    setIsLoading(true);
-    try {
+  // Mutation to revoke a chat share
+  const revokeShareMutation = useMutation({
+    mutationFn: async (chatId: string) => {
       const response = await fetch(`/api/chats/${chatId}/share`, {
         method: 'DELETE',
       });
@@ -83,15 +89,71 @@ export function ChatShareDialog({
         throw new Error('Failed to revoke share link');
       }
 
+      return chatId;
+    },
+    onSuccess: (chatId) => {
+      // Update local state
       setShareData(null);
       setIsShared(false);
+
+      // Update all chat queries by invalidating them - this ensures all variants get updated
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+      
       toast.success("Share link revoked successfully!");
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error revoking share:', error);
       toast.error("Failed to revoke share link. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
+  });
+
+  // Check for existing share when dialog opens
+  useEffect(() => {
+    if (isOpen && !shareData) {
+      checkExistingShare();
+    }
+  }, [isOpen, chatId]);
+
+  const checkExistingShare = async () => {
+    setIsCheckingExisting(true);
+    try {
+      const response = await fetch(`/api/chats/${chatId}/share`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.exists !== false) {
+          // Share exists, show it
+          setShareData(data);
+          setIsShared(true);
+        }
+        // If data.exists === false, we'll show the consent form
+      }
+    } catch (error) {
+      console.error('Error checking existing share:', error);
+      // If there's an error, we'll just show the create form
+    } finally {
+      setIsCheckingExisting(false);
+    }
+  };
+
+
+
+  const handleCreateShare = () => {
+    if (!hasConsented) {
+      toast.error("Please agree to the terms before creating a share link.");
+      return;
+    }
+
+    createShareMutation.mutate(chatId);
+  };
+
+  const handleRevokeShare = () => {
+    revokeShareMutation.mutate(chatId);
   };
 
   const handleCopyUrl = async () => {
@@ -113,6 +175,8 @@ export function ChatShareDialog({
       // Reset state when dialog closes
       setHasConsented(false);
       setIsCopied(false);
+      setShareData(null);
+      setIsShared(false);
     }
     onOpenChange(open);
   };
@@ -131,7 +195,17 @@ export function ChatShareDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {!isShared && !shareData && (
+          {(isCheckingExisting || createShareMutation.isPending || revokeShareMutation.isPending) && !shareData && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2 text-sm text-muted-foreground">
+                {isCheckingExisting ? "Checking for existing share..." : 
+                 createShareMutation.isPending ? "Creating share..." : "Revoking share..."}
+              </span>
+            </div>
+          )}
+
+          {!isCheckingExisting && !createShareMutation.isPending && !revokeShareMutation.isPending && !isShared && !shareData && (
             <>
               {/* Privacy Notice */}
               <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
@@ -219,7 +293,10 @@ export function ChatShareDialog({
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          {!isShared && !shareData ? (
+          {(isCheckingExisting || createShareMutation.isPending || revokeShareMutation.isPending) && !shareData ? (
+            // Don't show buttons while processing
+            <></>
+          ) : !isShared && !shareData ? (
             <>
               <Button
                 variant="outline"
@@ -230,10 +307,10 @@ export function ChatShareDialog({
               </Button>
               <Button
                 onClick={handleCreateShare}
-                disabled={!hasConsented || isLoading}
+                disabled={!hasConsented || createShareMutation.isPending}
                 className="w-full sm:w-auto"
               >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {createShareMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <LinkIcon className="mr-2 h-4 w-4" />
                 Create Share Link
               </Button>
@@ -243,10 +320,10 @@ export function ChatShareDialog({
               <Button
                 variant="outline"
                 onClick={handleRevokeShare}
-                disabled={isLoading}
+                disabled={revokeShareMutation.isPending}
                 className="w-full sm:w-auto"
               >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {revokeShareMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <EyeOff className="mr-2 h-4 w-4" />
                 Disable Link
               </Button>

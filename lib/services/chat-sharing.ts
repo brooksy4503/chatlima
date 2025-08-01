@@ -151,6 +151,30 @@ export class ChatSharingService {
         };
     }
 
+    // Get existing share for a chat (without creating a new one)
+    static async getExistingShare(chatId: string, userId: string, baseUrl: string): Promise<{ shareId: string; shareUrl: string } | null> {
+        // Check if an active share already exists
+        const existingShare = await db
+            .select()
+            .from(chatShares)
+            .where(and(
+                eq(chatShares.chatId, chatId),
+                eq(chatShares.ownerUserId, userId),
+                eq(chatShares.status, 'active')
+            ))
+            .limit(1);
+
+        if (existingShare.length > 0) {
+            const share = existingShare[0];
+            return {
+                shareId: share.shareId,
+                shareUrl: `${baseUrl}/chats/shared/${share.shareId}`,
+            };
+        }
+
+        return null;
+    }
+
     // Create or get existing share for a chat
     static async createShare(chatId: string, userId: string, baseUrl: string): Promise<{ shareId: string; shareUrl: string }> {
         // Check if an active share already exists

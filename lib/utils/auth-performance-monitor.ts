@@ -38,7 +38,11 @@ class AuthPerformanceMonitor {
         const originalFetch = window.fetch;
         window.fetch = async (...args) => {
             const [resource, config] = args;
-            const url = typeof resource === 'string' ? resource : resource.url;
+            const url = typeof resource === 'string'
+                ? resource
+                : resource instanceof URL
+                    ? resource.toString()
+                    : resource.url;
 
             // Track auth-related endpoints
             if (this.isAuthEndpoint(url)) {

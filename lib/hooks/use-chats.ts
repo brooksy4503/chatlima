@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { type Chat } from '@/lib/db/schema';
+import { type Chat, type ChatWithShareInfo } from '@/lib/db/schema';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useCallback } from 'react';
@@ -16,7 +16,7 @@ export function useChats() {
     error,
     refetch,
     isFetching
-  } = useQuery<Chat[]>({
+  } = useQuery<ChatWithShareInfo[]>({
     queryKey: ['chats', currentLimit],
     queryFn: async () => {
       const response = await fetch(`/api/chats?limit=${currentLimit}`);
@@ -58,7 +58,7 @@ export function useChats() {
     },
     onSuccess: (deletedChatId) => {
       // Update cache by removing the deleted chat
-      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
+      queryClient.setQueryData<ChatWithShareInfo[]>(['chats'], (oldChats = []) =>
         oldChats.filter(chat => chat.id !== deletedChatId)
       );
 
@@ -93,10 +93,10 @@ export function useChats() {
       await queryClient.cancelQueries({ queryKey: ['chats'] });
 
       // Snapshot the previous value
-      const previousChats = queryClient.getQueryData<Chat[]>(['chats']);
+      const previousChats = queryClient.getQueryData<ChatWithShareInfo[]>(['chats']);
 
       // Optimistically update to the new value
-      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
+      queryClient.setQueryData<ChatWithShareInfo[]>(['chats'], (oldChats = []) =>
         oldChats.map(chat =>
           chat.id === chatId ? { ...chat, title, updatedAt: new Date() } : chat
         )
@@ -109,18 +109,20 @@ export function useChats() {
       console.error('Error updating chat title:', err);
       // Rollback to the previous value if optimistic update occurred
       if (context?.previousChats) {
-        queryClient.setQueryData<Chat[]>(['chats'], context.previousChats);
+        queryClient.setQueryData<ChatWithShareInfo[]>(['chats'], context.previousChats);
       }
       toast.error(err.message || 'Failed to update chat title. Please try again.');
     },
-    onSuccess: (data: Chat, variables) => {
+    onSuccess: (data: ChatWithShareInfo, variables) => {
       // Update the specific chat in the cache with the server's response
-      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
+      queryClient.setQueryData<ChatWithShareInfo[]>(['chats'], (oldChats = []) =>
         oldChats.map(chat => (chat.id === variables.chatId ? data : chat))
       );
       toast.success('Chat title updated successfully!');
     }
   });
+
+
 
   // Function to invalidate chats cache for refresh
   const refreshChats = () => {

@@ -197,6 +197,8 @@ export function ChatSidebar() {
         }
     };
 
+
+
     const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
