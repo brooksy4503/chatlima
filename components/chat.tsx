@@ -16,7 +16,7 @@ import { useModel } from "@/lib/context/model-context";
 import { Sparkles } from "lucide-react";
 import { usePresets } from "@/lib/context/preset-context";
 import { useMCP } from "@/lib/context/mcp-context";
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/useAuth";
 import { MCPServerManager } from "./mcp-server-manager";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { ErrorBoundary } from "./error-boundary";
@@ -37,7 +37,7 @@ export default function Chat() {
   const params = useParams();
   const chatId = params?.id as string | undefined;
   const queryClient = useQueryClient();
-  const { data: session, isPending: isSessionLoading } = useSession();
+  const { session, isPending: isSessionLoading } = useAuth();
   const sessionUpdateRef = useRef(false);
   
   const { 

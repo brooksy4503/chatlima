@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
-import { signIn, useSession } from '@/lib/auth-client';
+import { useAuth, signIn } from '@/hooks/useAuth';
 
 export function AnonymousAuth() {
-  const { data: session, isPending } = useSession();
+  const { session, isPending } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isAttemptingSignIn, setIsAttemptingSignIn] = useState(false);
   const attemptedRef = useRef(false);
