@@ -18,6 +18,44 @@ const getBaseUrl = (req: NextRequest) => {
     return process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com';
 };
 
+// GET /api/chats/[id]/share - Check for existing share without creating one
+export async function GET(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await auth.api.getSession({ headers: req.headers });
+        if (!session?.user?.id) {
+            return createErrorResponse('Authentication required', 401);
+        }
+
+        const userId = session.user.id;
+        const { id: chatId } = await params;
+        const baseUrl = getBaseUrl(req);
+
+        // Check for existing share
+        const existingShare = await ChatSharingService.getExistingShare(chatId, userId, baseUrl);
+
+        if (existingShare) {
+            return new Response(JSON.stringify(existingShare), {
+                headers: { 'Content-Type': 'application/json' }
+            });
+        } else {
+            return new Response(JSON.stringify({ exists: false }), {
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+    } catch (error) {
+        console.error('Error checking existing share:', error);
+
+        if (error instanceof Error && error.message === 'Chat not found or access denied') {
+            return createErrorResponse('Chat not found or access denied', 404);
+        }
+
+        return createErrorResponse('Internal server error', 500);
+    }
+}
+
 // POST /api/chats/[id]/share - Create or retrieve shareable link
 export async function POST(
     req: NextRequest,

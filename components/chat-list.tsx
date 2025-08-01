@@ -2,7 +2,7 @@
 
 import { useState, useRef, ChangeEvent, KeyboardEvent, FocusEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, CheckIcon, XIcon, Loader2, Pencil } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, CheckIcon, XIcon, Loader2, Pencil, Share2 } from "lucide-react";
 import {
     SidebarGroupContent,
     SidebarMenuItem,
@@ -22,6 +22,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { SidebarMenu } from "@/components/ui/sidebar";
+import { ChatShareDialog } from "@/components/chat-share-dialog";
 
 interface Chat {
     id: string;
@@ -29,6 +30,7 @@ interface Chat {
     userId: string;
     createdAt: Date;
     updatedAt: Date;
+    shareId?: string | null;
     sharePath?: string | null;
 }
 
@@ -64,6 +66,8 @@ export function ChatList({
     const [searchTerm, setSearchTerm] = useState("");
     const [editingChatId, setEditingChatId] = useState<string | null>(null);
     const [editingChatTitle, setEditingChatTitle] = useState<string>("");
+    const [sharingChatId, setSharingChatId] = useState<string | null>(null);
+    const [sharingChatTitle, setSharingChatTitle] = useState<string>("");
     const inputRef = useRef<HTMLInputElement>(null);
 
     const filteredChats = chats?.filter(chat =>
@@ -84,6 +88,18 @@ export function ChatList({
     const handleCancelEdit = () => {
         setEditingChatId(null);
         setEditingChatTitle("");
+    };
+
+    const handleStartShare = (chatId: string, chatTitle: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setSharingChatId(chatId);
+        setSharingChatTitle(chatTitle);
+    };
+
+    const handleCloseShare = () => {
+        setSharingChatId(null);
+        setSharingChatTitle("");
     };
 
     const handleSaveEdit = () => {
@@ -252,7 +268,12 @@ export function ChatList({
                                                                 </SidebarMenuButton>
                                                             </TooltipTrigger>
                                                             <TooltipContent side="right" sideOffset={5}>
-                                                                <p>{chat.title}</p>
+                                                                <p>
+                                                                    {chat.title}
+                                                                    {chat.sharePath && (
+                                                                        <span className="ml-2 text-muted-foreground">• Shared</span>
+                                                                    )}
+                                                                </p>
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
@@ -273,20 +294,40 @@ export function ChatList({
                                                                         className="flex items-center flex-grow overflow-hidden"
                                                                         onClick={() => onNavigateToChat?.(chat.id)}
                                                                     >
-                                                                        <span className="truncate max-w-[160px]">
+                                                                        <span className={cn(
+                                                                            "truncate",
+                                                                            chat.sharePath ? "max-w-[130px]" : "max-w-[160px]"
+                                                                        )}>
                                                                             {chat.title || `Chat ${chat.id.substring(0, 8)}...`}
                                                                         </span>
+                                                                        {chat.sharePath && (
+                                                                            <Share2 className="h-3 w-3 ml-2 text-muted-foreground/60 flex-shrink-0" />
+                                                                        )}
                                                                     </Link>
                                                                 </SidebarMenuButton>
                                                             </TooltipTrigger>
                                                             <TooltipContent side="right" sideOffset={5}>
-                                                                <p>{chat.title}</p>
+                                                                <p>
+                                                                    {chat.title}
+                                                                    {chat.sharePath && (
+                                                                        <span className="ml-2 text-muted-foreground">• Shared</span>
+                                                                    )}
+                                                                </p>
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
                                                 )}
                                                 {!isCollapsed && (
                                                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover/menu-item:opacity-100 sm:group-focus-within/menu-item:opacity-100">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6 hover:text-green-500"
+                                                            onClick={(e) => handleStartShare(chat.id, chat.title, e)}
+                                                            title="Share chat"
+                                                        >
+                                                            <Share2 className="h-3 w-3" />
+                                                        </Button>
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
@@ -352,6 +393,20 @@ export function ChatList({
                     </SidebarMenu>
                 )}
             </SidebarGroupContent>
+            
+            {/* Share Dialog */}
+            {sharingChatId && (
+                <ChatShareDialog
+                    isOpen={!!sharingChatId}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            handleCloseShare();
+                        }
+                    }}
+                    chatId={sharingChatId}
+                    chatTitle={sharingChatTitle}
+                />
+            )}
         </>
     );
 } 

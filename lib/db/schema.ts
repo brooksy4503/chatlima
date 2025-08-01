@@ -45,6 +45,10 @@ export type Attachment = {
 };
 
 export type Chat = typeof chats.$inferSelect;
+export type ChatWithShareInfo = Chat & {
+  shareId?: string | null;
+  sharePath?: string | null;
+};
 export type Message = typeof messages.$inferSelect;
 export type DBMessage = {
   id: string;
