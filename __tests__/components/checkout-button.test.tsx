@@ -31,9 +31,35 @@ jest.mock('lucide-react', () => ({
   CreditCard: ({ className }: any) => <div className={className} data-testid="credit-card-icon" />,
 }));
 
+// Mock window.location to prevent JSDOM navigation errors
+const mockLocation = {
+  href: '',
+  assign: jest.fn(),
+  reload: jest.fn(),
+  replace: jest.fn(),
+};
+
+// Store original location for restoration
+const originalLocation = window.location;
+
+// Set up location mock
+beforeAll(() => {
+  delete (window as any).location;
+  window.location = mockLocation as any;
+});
+
+// Restore original location after all tests
+afterAll(() => {
+  if (originalLocation) {
+    delete (window as any).location;
+    window.location = originalLocation;
+  }
+});
+
 describe('CheckoutButton Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLocation.href = '';
   });
 
   describe('Anonymous User', () => {

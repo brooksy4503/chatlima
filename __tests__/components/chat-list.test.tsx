@@ -1,5 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ChatList } from '../../components/chat-list';
 import { toast } from 'sonner';
@@ -635,7 +635,9 @@ describe('ChatList', () => {
       // Simulate successful update
       const call = mockOnUpdateChatTitle.mock.calls[0];
       const { onSuccess } = call[1];
-      onSuccess();
+      act(() => {
+        onSuccess();
+      });
       
       // Edit mode should be exited
       await waitFor(() => {
