@@ -64,13 +64,12 @@ export function TopNav() {
               Terms
             </Link>
             <span className="text-muted-foreground/40">•</span>
-            <button
-              type="button"
-              onClick={() => toast.info("Privacy Policy coming soon")}
+            <Link
+              href="/privacy"
               className="hover:text-muted-foreground hover:underline transition-colors"
             >
               Privacy
-            </button>
+            </Link>
           </div>
           
           {/* Share button - only show if we're on a chat page */}
