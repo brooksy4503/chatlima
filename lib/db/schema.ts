@@ -1,5 +1,5 @@
-import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check, index } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check, index, numeric, date } from "drizzle-orm/pg-core";
+import { sql, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 // Message role enum type
@@ -67,6 +67,8 @@ export const users = pgTable("user", {
   emailVerified: boolean("emailVerified"),
   image: text("image"),
   isAnonymous: boolean("isAnonymous").default(false),
+  role: text("role").default("user"),
+  isAdmin: boolean("is_admin").default(false),
   metadata: json("metadata"),
   defaultPresetId: text("default_preset_id"), // Will add foreign key constraint in migration
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
@@ -244,4 +246,91 @@ export const chatShares = pgTable('chat_shares', {
 
 export type ChatShare = typeof chatShares.$inferSelect;
 export type ChatShareInsert = typeof chatShares.$inferInsert;
+
+// --- Token Usage Metrics Schema ---
+
+export const tokenUsageMetrics = pgTable('token_usage_metrics', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  modelId: text('model_id').notNull(),
+  provider: text('provider').notNull(),
+  inputTokens: integer('input_tokens').default(0).notNull(),
+  outputTokens: integer('output_tokens').default(0).notNull(),
+  totalTokens: integer('total_tokens').default(0).notNull(),
+  estimatedCost: numeric('estimated_cost', { precision: 10, scale: 6 }).default('0').notNull(),
+  actualCost: numeric('actual_cost', { precision: 10, scale: 6 }),
+  currency: text('currency').default('USD').notNull(),
+  processingTimeMs: integer('processing_time_ms'),
+  status: text('status').default('completed').notNull(),
+  errorMessage: text('error_message'),
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  checkStatus: check('check_token_usage_metrics_status', sql`${table.status} IN ('pending', 'processing', 'completed', 'failed')`),
+  checkTokensNonNegative: check('check_token_usage_metrics_tokens_non_negative', sql`${table.inputTokens} >= 0 AND ${table.outputTokens} >= 0 AND ${table.totalTokens} >= 0`),
+  checkCostNonNegative: check('check_token_usage_metrics_cost_non_negative', sql`${table.estimatedCost} >= 0 AND (${table.actualCost} IS NULL OR ${table.actualCost} >= 0)`),
+  // Indexes
+  userIdIdx: index('idx_token_usage_metrics_user_id').on(table.userId),
+  chatIdIdx: index('idx_token_usage_metrics_chat_id').on(table.chatId),
+  modelIdIdx: index('idx_token_usage_metrics_model_id').on(table.modelId),
+  providerIdx: index('idx_token_usage_metrics_provider').on(table.provider),
+  createdAtIdx: index('idx_token_usage_metrics_created_at').on(table.createdAt),
+  statusIdx: index('idx_token_usage_metrics_status').on(table.status),
+}));
+
+export const modelPricing = pgTable('model_pricing', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  modelId: text('model_id').notNull(),
+  provider: text('provider').notNull(),
+  inputTokenPrice: numeric('input_token_price', { precision: 10, scale: 6 }).notNull(),
+  outputTokenPrice: numeric('output_token_price', { precision: 10, scale: 6 }).notNull(),
+  currency: text('currency').default('USD').notNull(),
+  effectiveFrom: timestamp('effective_from').defaultNow().notNull(),
+  effectiveTo: timestamp('effective_to'),
+  isActive: boolean('is_active').default(true).notNull(),
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  checkPricesPositive: check('check_model_pricing_prices_positive', sql`${table.inputTokenPrice} > 0 AND ${table.outputTokenPrice} > 0`),
+  // Indexes
+  uniqueModelProviderActive: unique('model_pricing_model_id_provider_active_idx').on(table.modelId, table.provider),
+  providerIdx: index('idx_model_pricing_provider').on(table.provider),
+  effectiveFromIdx: index('idx_model_pricing_effective_from').on(table.effectiveFrom),
+}));
+
+export const dailyTokenUsage = pgTable('daily_token_usage', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  provider: text('provider').notNull(),
+  totalInputTokens: integer('total_input_tokens').default(0).notNull(),
+  totalOutputTokens: integer('total_output_tokens').default(0).notNull(),
+  totalTokens: integer('total_tokens').default(0).notNull(),
+  totalEstimatedCost: numeric('total_estimated_cost', { precision: 10, scale: 6 }).default('0').notNull(),
+  totalActualCost: numeric('total_actual_cost', { precision: 10, scale: 6 }).default('0').notNull(),
+  requestCount: integer('request_count').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  uniqueUserDateProvider: unique('daily_token_usage_user_id_date_provider_idx').on(table.userId, table.date, table.provider),
+  checkTokensNonNegative: check('check_daily_token_usage_tokens_non_negative', sql`${table.totalInputTokens} >= 0 AND ${table.totalOutputTokens} >= 0 AND ${table.totalTokens} >= 0`),
+  checkCostNonNegative: check('check_daily_token_usage_cost_non_negative', sql`${table.totalEstimatedCost} >= 0 AND ${table.totalActualCost} >= 0`),
+  // Indexes
+  dateIdx: index('idx_daily_token_usage_date').on(table.date),
+}));
+
+// Token usage metrics types
+export type TokenUsageMetrics = typeof tokenUsageMetrics.$inferSelect;
+export type TokenUsageMetricsInsert = typeof tokenUsageMetrics.$inferInsert;
+export type ModelPricing = typeof modelPricing.$inferSelect;
+export type ModelPricingInsert = typeof modelPricing.$inferInsert;
+export type DailyTokenUsage = typeof dailyTokenUsage.$inferSelect;
+export type DailyTokenUsageInsert = typeof dailyTokenUsage.$inferInsert;
 
