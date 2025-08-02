@@ -94,6 +94,13 @@ jest.mock('@/lib/context/web-search-context', () => ({
   })),
 }));
 
+jest.mock('@/lib/context/auth-context', () => ({
+  useAuth: jest.fn(() => ({
+    session: null,
+    isPending: false,
+  })),
+}));
+
 jest.mock('@/hooks/useCredits', () => ({
   useCredits: jest.fn(() => ({
     credits: 100,
@@ -304,7 +311,7 @@ describe('Chat Component', () => {
 
     test('shows loading state correctly', () => {
       mockUseChat.mockReturnValue({
-        messages: [],
+        messages: [{ role: 'user', content: 'Test message' }], // Add a message so Messages component is rendered
         input: '',
         handleInputChange: jest.fn(),
         handleSubmit: jest.fn(),
