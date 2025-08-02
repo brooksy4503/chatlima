@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ChatSidebar } from "@/components/chat-sidebar";
 import { TopNav } from "@/components/top-nav";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -10,6 +9,15 @@ import { cn } from "@/lib/utils";
 import BuildInfo from "@/components/ui/BuildInfo";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { Suspense, lazy } from "react";
+
+// Lazy load the ChatSidebar to improve initial page load performance
+const ChatSidebar = lazy(() => import("@/components/chat-sidebar").then(module => ({ default: module.ChatSidebar })));
+
+// Import auth performance monitor in development
+if (process.env.NODE_ENV === 'development') {
+  import('@/lib/utils/auth-performance-monitor');
+}
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -79,8 +87,22 @@ export default function RootLayout({
         <Providers>
           <WebSearchProvider>
             <div className="flex h-dvh w-full">
-              {/* Sidebar - handled by SidebarProvider for mobile/desktop */}
-              <ChatSidebar />
+              {/* Sidebar - lazy loaded to improve initial page performance */}
+              <Suspense fallback={
+                <div className="w-[280px] bg-background/80 dark:bg-background/40 backdrop-blur-md border-r border-border/40 animate-pulse">
+                  <div className="h-16 border-b border-border/40 flex items-center px-4">
+                    <div className="h-8 w-8 bg-muted rounded-full"></div>
+                    <div className="ml-2 h-4 w-20 bg-muted rounded"></div>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-8 bg-muted rounded"></div>
+                    ))}
+                  </div>
+                </div>
+              }>
+                <ChatSidebar />
+              </Suspense>
               {/* Main content area - SidebarInset handles responsive peer classes */}
               <SidebarInset className="flex flex-col min-w-0">
                 <TopNav />

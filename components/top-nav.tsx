@@ -1,42 +1,114 @@
 "use client";
 
-import { PlusCircle, Menu } from "lucide-react";
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { PlusCircle, Menu, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { ChatShareDialog } from "@/components/chat-share-dialog";
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export function TopNav() {
+  const params = useParams();
+  const chatId = params?.id as string | undefined;
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+
+  // Fetch chat title for sharing - only when actually needed
+  const { data: chatData } = useQuery({
+    queryKey: ['chat', chatId],
+    queryFn: async () => {
+      if (!chatId) return null;
+      const response = await fetch(`/api/chats/${chatId}`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!chatId && isShareDialogOpen,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
 
   const handleNewChat = () => {
     // Use window.location for more reliable navigation
     window.location.href = '/';
   };
 
+  const handleShare = () => {
+    setIsShareDialogOpen(true);
+  };
+
   return (
-    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-4 h-[72px] flex items-center justify-between">
-      {/* Mobile Hamburger Menu - Left side */}
-      <SidebarTrigger>
-        <button 
-          className="flex items-center justify-center h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors"
-          aria-label="Open sidebar"
-        >
-          <Menu className="h-4 w-4" />
-        </button>
-      </SidebarTrigger>
-      
-      {/* ChatLima title - Centered */}
-      <h1 className="text-3xl font-semibold">ChatLima</h1>
-      
-      {/* New Chat Button - Right side */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="flex items-center justify-center h-9 w-9 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-colors"
-        onClick={handleNewChat}
-        title="New Chat"
-        aria-label="Start new chat"
-      >
-        <PlusCircle className="h-4 w-4" />
-      </Button>
-    </nav>
+    <>
+      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-4 h-[72px] flex items-center justify-between">
+        {/* Mobile Hamburger Menu - Left side */}
+        <SidebarTrigger>
+          <button 
+            className="flex items-center justify-center h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors"
+            aria-label="Open sidebar"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        </SidebarTrigger>
+        
+        {/* ChatLima title - Centered */}
+        <h1 className="text-3xl font-semibold">ChatLima</h1>
+        
+        {/* Action buttons and legal links - Right side */}
+        <div className="flex items-center gap-4">
+          {/* Legal links */}
+          <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground/70">
+            <Link
+              href="/terms"
+              className="hover:text-muted-foreground hover:underline transition-colors"
+            >
+              Terms
+            </Link>
+            <span className="text-muted-foreground/40">•</span>
+            <Link
+              href="/privacy"
+              className="hover:text-muted-foreground hover:underline transition-colors"
+            >
+              Privacy
+            </Link>
+          </div>
+          
+          {/* Share button - only show if we're on a chat page */}
+          {chatId && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex items-center justify-center h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors"
+              onClick={handleShare}
+              title="Share chat"
+              aria-label="Share this chat"
+            >
+              <Share className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {/* New Chat Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex items-center justify-center h-9 w-9 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-colors"
+            onClick={handleNewChat}
+            title="New Chat"
+            aria-label="Start new chat"
+          >
+            <PlusCircle className="h-4 w-4" />
+          </Button>
+        </div>
+      </nav>
+
+      {/* Share Dialog */}
+      {chatId && chatData && (
+        <ChatShareDialog
+          isOpen={isShareDialogOpen}
+          onOpenChange={setIsShareDialogOpen}
+          chatId={chatId}
+          chatTitle={chatData.title || "Untitled Chat"}
+        />
+      )}
+    </>
   );
 } 

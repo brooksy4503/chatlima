@@ -7,7 +7,15 @@ module.exports = {
     '\\.module\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { 
+      presets: [
+        ['next/babel', { 
+          'preset-react': { 
+            runtime: 'automatic' 
+          } 
+        }]
+      ] 
+    }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testPathIgnorePatterns: [
@@ -24,6 +32,10 @@ module.exports = {
     customExportConditions: [''],
   },
   extensionsToTreatAsEsm: ['.jsx', '.tsx'],
+  // Enable fake timers globally to fix waitFor issues
+  fakeTimers: {
+    enableGlobally: true,
+  },
   // Remove deprecated globals
   // globals: {
   //   'ts-jest': {

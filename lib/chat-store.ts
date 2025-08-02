@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { chats, messages, type Chat, type Message, MessageRole, type MessagePart, type DBMessage } from "./db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { chats, messages, chatShares, type Chat, type ChatWithShareInfo, type Message, MessageRole, type MessagePart, type DBMessage } from "./db/schema";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateTitle } from "@/app/actions";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation } from "./types";
@@ -259,11 +259,34 @@ export function getTextContent(message: Message): string {
   }
 }
 
-export async function getChats(userId: string) {
-  return await db.query.chats.findMany({
-    where: eq(chats.userId, userId),
-    orderBy: [desc(chats.updatedAt)]
-  });
+export async function getChats(userId: string, limit = 50): Promise<ChatWithShareInfo[]> {
+  // Join with chatShares to get share information
+  const chatsWithShares = await db
+    .select({
+      id: chats.id,
+      userId: chats.userId,
+      title: chats.title,
+      createdAt: chats.createdAt,
+      updatedAt: chats.updatedAt,
+      shareId: chatShares.shareId,
+      sharePath: sql<string | null>`
+        CASE 
+          WHEN ${chatShares.status} = 'active' 
+          THEN '/chats/shared/' || ${chatShares.shareId}
+          ELSE NULL 
+        END
+      `.as('sharePath')
+    })
+    .from(chats)
+    .leftJoin(chatShares, and(
+      eq(chats.id, chatShares.chatId),
+      eq(chatShares.status, 'active')
+    ))
+    .where(eq(chats.userId, userId))
+    .orderBy(desc(chats.updatedAt))
+    .limit(limit);
+
+  return chatsWithShares;
 }
 
 export async function getChatById(id: string, userId: string): Promise<ChatWithMessages | null> {

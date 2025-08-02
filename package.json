@@ -32,7 +32,9 @@
     "test:endpoints:requesty": "npx tsx scripts/test-model-endpoints.ts --provider requesty",
     "test:endpoints:quick": "npx tsx scripts/test-model-endpoints.ts --max-models 5",
     "test:endpoints:summary": "npx tsx scripts/test-model-endpoints.ts --summary --verbose",
-    "test:endpoints:retest": "npx tsx scripts/test-model-endpoints.ts --retest-blocked"
+    "test:endpoints:retest": "npx tsx scripts/test-model-endpoints.ts --retest-blocked",
+    "cache:clear": "./scripts/clear-cache.sh",
+    "dev:fresh": "pnpm cache:clear && pnpm dev"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.10",

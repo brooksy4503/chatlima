@@ -2,7 +2,7 @@
 
 import { useState, useRef, ChangeEvent, KeyboardEvent, FocusEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, CheckIcon, XIcon, Loader2, Pencil } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, CheckIcon, XIcon, Loader2, Pencil, Share2 } from "lucide-react";
 import {
     SidebarGroupContent,
     SidebarMenuItem,
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -22,6 +22,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { SidebarMenu } from "@/components/ui/sidebar";
+import { ChatShareDialog } from "@/components/chat-share-dialog";
 
 interface Chat {
     id: string;
@@ -29,6 +30,7 @@ interface Chat {
     userId: string;
     createdAt: Date;
     updatedAt: Date;
+    shareId?: string | null;
     sharePath?: string | null;
 }
 
@@ -41,6 +43,9 @@ interface ChatListProps {
     onDeleteChat: (chatId: string, e: React.MouseEvent) => void;
     onUpdateChatTitle: (params: { chatId: string, title: string }, options: { onSuccess: () => void, onError: () => void }) => void;
     onNavigateToChat?: (chatId: string) => void;
+    onLoadMoreChats?: () => void;
+    hasMoreChats?: boolean;
+    isLoadingMore?: boolean;
 }
 
 export function ChatList({
@@ -52,12 +57,17 @@ export function ChatList({
     onDeleteChat,
     onUpdateChatTitle,
     onNavigateToChat,
+    onLoadMoreChats,
+    hasMoreChats = false,
+    isLoadingMore = false,
 }: ChatListProps) {
     const router = useRouter();
     const pathname = usePathname();
     const [searchTerm, setSearchTerm] = useState("");
     const [editingChatId, setEditingChatId] = useState<string | null>(null);
     const [editingChatTitle, setEditingChatTitle] = useState<string>("");
+    const [sharingChatId, setSharingChatId] = useState<string | null>(null);
+    const [sharingChatTitle, setSharingChatTitle] = useState<string>("");
     const inputRef = useRef<HTMLInputElement>(null);
 
     const filteredChats = chats?.filter(chat =>
@@ -78,6 +88,18 @@ export function ChatList({
     const handleCancelEdit = () => {
         setEditingChatId(null);
         setEditingChatTitle("");
+    };
+
+    const handleStartShare = (chatId: string, chatTitle: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setSharingChatId(chatId);
+        setSharingChatTitle(chatTitle);
+    };
+
+    const handleCloseShare = () => {
+        setSharingChatId(null);
+        setSharingChatTitle("");
     };
 
     const handleSaveEdit = () => {
@@ -246,7 +268,12 @@ export function ChatList({
                                                                 </SidebarMenuButton>
                                                             </TooltipTrigger>
                                                             <TooltipContent side="right" sideOffset={5}>
-                                                                <p>{chat.title}</p>
+                                                                <p>
+                                                                    {chat.title}
+                                                                    {chat.sharePath && (
+                                                                        <span className="ml-2 text-muted-foreground">• Shared</span>
+                                                                    )}
+                                                                </p>
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
@@ -258,55 +285,97 @@ export function ChatList({
                                                                     asChild
                                                                     isActive={isActive}
                                                                     className={cn(
-                                                                        "w-full flex justify-start pr-10",
+                                                                        "w-full flex items-center gap-2",
                                                                         isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
                                                                     )}
                                                                 >
-                                                                    <Link 
-                                                                        href={`/chat/${chat.id}`} 
-                                                                        className="flex items-center flex-grow overflow-hidden"
-                                                                        onClick={() => onNavigateToChat?.(chat.id)}
-                                                                    >
-                                                                        <span className="truncate max-w-[160px]">
-                                                                            {chat.title || `Chat ${chat.id.substring(0, 8)}...`}
-                                                                        </span>
-                                                                    </Link>
+                                                                    <div className="flex items-center w-full min-w-0">
+                                                                        <Link
+                                                                            href={`/chat/${chat.id}`}
+                                                                            className="flex items-center min-w-0 flex-1 gap-2"
+                                                                            onClick={() => onNavigateToChat?.(chat.id)}
+                                                                        >
+                                                                            <span className="min-w-0 flex-1 truncate">
+                                                                                {chat.title || `Chat ${chat.id.substring(0, 8)}...`}
+                                                                            </span>
+                                                                            {chat.sharePath && (
+                                                                                <Share2 className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
+                                                                            )}
+                                                                        </Link>
+                                                                        <div className="ml-2 flex items-center gap-1 opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 hover:text-green-500"
+                                                                                onClick={(e) => handleStartShare(chat.id, chat.title, e)}
+                                                                                title="Share chat"
+                                                                            >
+                                                                                <Share2 className="h-3 w-3" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 hover:text-blue-500"
+                                                                                onClick={(e) => handleStartEdit(chat.id, chat.title, e)}
+                                                                                title="Edit title"
+                                                                            >
+                                                                                <Pencil className="h-3 w-3" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 hover:text-red-500"
+                                                                                onClick={(e) => onDeleteChat(chat.id, e)}
+                                                                                title="Delete chat"
+                                                                            >
+                                                                                <Trash2 className="h-3 w-3" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
                                                                 </SidebarMenuButton>
                                                             </TooltipTrigger>
                                                             <TooltipContent side="right" sideOffset={5}>
-                                                                <p>{chat.title}</p>
+                                                                <p>
+                                                                    {chat.title}
+                                                                    {chat.sharePath && (
+                                                                        <span className="ml-2 text-muted-foreground">• Shared</span>
+                                                                    )}
+                                                                </p>
                                                             </TooltipContent>
                                                         </Tooltip>
                                                     </TooltipProvider>
                                                 )}
-                                                {!isCollapsed && (
-                                                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150 sm:opacity-0 sm:group-hover/menu-item:opacity-100 sm:group-focus-within/menu-item:opacity-100">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-6 w-6 hover:text-blue-500"
-                                                            onClick={(e) => handleStartEdit(chat.id, chat.title, e)}
-                                                            title="Edit title"
-                                                        >
-                                                            <Pencil className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-6 w-6 hover:text-red-500"
-                                                            onClick={(e) => onDeleteChat(chat.id, e)}
-                                                            title="Delete chat"
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                )}
+                                                {!isCollapsed && null}
                                             </>
                                         )}
                                     </SidebarMenuItem>
                                 </motion.div>
                             );
                         })}
+                        
+                        {/* Load More Button */}
+                        {!searchTerm && hasMoreChats && onLoadMoreChats && !isCollapsed && (
+                            <SidebarMenuItem className="mt-2 list-none">
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-muted-foreground hover:text-foreground"
+                                    onClick={onLoadMoreChats}
+                                    disabled={isLoadingMore}
+                                >
+                                    {isLoadingMore ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Loading more chats...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Load more chats
+                                        </>
+                                    )}
+                                </Button>
+                            </SidebarMenuItem>
+                        )}
                     </AnimatePresence>
                 ) : (
                     <SidebarMenu>
@@ -322,6 +391,20 @@ export function ChatList({
                     </SidebarMenu>
                 )}
             </SidebarGroupContent>
+            
+            {/* Share Dialog */}
+            {sharingChatId && (
+                <ChatShareDialog
+                    isOpen={!!sharingChatId}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            handleCloseShare();
+                        }
+                    }}
+                    chatId={sharingChatId}
+                    chatTitle={sharingChatTitle}
+                />
+            )}
         </>
     );
 } 

@@ -1,19 +1,30 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { signIn, useSession } from '@/lib/auth-client';
+import { useEffect, useState, useRef } from 'react';
+import { useAuth, signIn } from '@/hooks/useAuth';
 
 export function AnonymousAuth() {
-  const { data: session, isPending } = useSession();
+  const { session, isPending } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [isAttemptingSignIn, setIsAttemptingSignIn] = useState(false);
+  const attemptedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple simultaneous sign-in attempts
+    if (isAttemptingSignIn || attemptedRef.current) {
+      return;
+    }
+
     // Only try to sign in anonymously if:
     // 1. We're not already signing in
     // 2. Session is not pending (loading)
     // 3. There's no active session
+    // 4. We haven't already attempted to sign in
     if (!isPending && !session) {
       const attemptSignIn = async () => {
+        setIsAttemptingSignIn(true);
+        attemptedRef.current = true;
+        
         console.log("Attempting anonymous sign-in (simplified logic)...");
         try {
           // Try the standard way first
@@ -38,12 +49,14 @@ export function AnonymousAuth() {
             console.error("Standard anonymous sign-in failed:", error);
             // No fallback - rely solely on the standard method
           }
+        } finally {
+          setIsAttemptingSignIn(false);
         }
       };
 
       attemptSignIn();
     }
-  }, [session, isPending]);
+  }, [session, isPending, isAttemptingSignIn]);
 
   // This component doesn't render anything - it just handles the authentication logic
   return null;

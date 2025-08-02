@@ -77,7 +77,9 @@ describe('ErrorBoundary', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
-    jest.runOnlyPendingTimers();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
   });
 
   describe('Basic Rendering and Props', () => {

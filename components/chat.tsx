@@ -2,7 +2,7 @@
 
 import { type modelID } from "@/ai/providers";
 import { Message, useChat } from "@ai-sdk/react";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
@@ -13,11 +13,10 @@ import { convertToUIMessages } from "@/lib/chat-store";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
-import { useChats } from "@/lib/hooks/use-chats";
 import { Sparkles } from "lucide-react";
 import { usePresets } from "@/lib/context/preset-context";
 import { useMCP } from "@/lib/context/mcp-context";
-import { useSession } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/useAuth";
 import { MCPServerManager } from "./mcp-server-manager";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { ErrorBoundary } from "./error-boundary";
@@ -38,7 +37,8 @@ export default function Chat() {
   const params = useParams();
   const chatId = params?.id as string | undefined;
   const queryClient = useQueryClient();
-  const { data: session, isPending: isSessionLoading } = useSession();
+  const { session, isPending: isSessionLoading } = useAuth();
+  const sessionUpdateRef = useRef(false);
   
   const { 
     webSearchEnabled, 
@@ -69,17 +69,23 @@ export default function Chat() {
   }, []);
 
   useEffect(() => {
-    if (isMounted && !isSessionLoading) {
+    if (isMounted && !isSessionLoading && !sessionUpdateRef.current) {
+      sessionUpdateRef.current = true;
       if (session?.user?.id) {
         setUserId(session.user.id);
       } else {
         setUserId(null);
       }
+      // Reset after a brief delay to allow for proper session handling
+      setTimeout(() => {
+        sessionUpdateRef.current = false;
+      }, 50);
     }
   }, [isMounted, isSessionLoading, session]);
   
   useEffect(() => {
-    if (isMounted && !isSessionLoading && !session && chatId && params?.id) {
+    // Only redirect if we're sure the session is actually gone and not just loading
+    if (isMounted && !isSessionLoading && !session && chatId && params?.id && !sessionUpdateRef.current) {
       console.log("User logged out while on chat page, redirecting to home.");
       toast.info("You have been logged out.");
       router.push('/'); 
