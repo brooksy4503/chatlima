@@ -39,22 +39,26 @@ export function TopNav() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-4 h-[72px] flex items-center justify-between">
+      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-4 h-[72px] flex items-center relative">
         {/* Mobile Hamburger Menu - Left side */}
-        <SidebarTrigger>
-          <button 
-            className="flex items-center justify-center h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors"
-            aria-label="Open sidebar"
-          >
-            <Menu className="h-4 w-4" />
-          </button>
-        </SidebarTrigger>
+        <div className="absolute left-4">
+          <SidebarTrigger>
+            <button 
+              className="flex items-center justify-center h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors"
+              aria-label="Open sidebar"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+          </SidebarTrigger>
+        </div>
         
-        {/* ChatLima title - Centered */}
-        <h1 className="text-3xl font-semibold">ChatLima</h1>
+        {/* ChatLima title - Truly centered */}
+        <div className="flex-1 flex justify-center">
+          <h1 className="text-3xl font-semibold">ChatLima</h1>
+        </div>
         
         {/* Action buttons and legal links - Right side */}
-        <div className="flex items-center gap-4">
+        <div className="absolute right-4 flex items-center gap-4">
           {/* Legal links */}
           <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground/70">
             <Link
