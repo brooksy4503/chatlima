@@ -374,8 +374,10 @@ describe('FavoriteToggle', () => {
         expect(mockToggleFavorite).toHaveBeenCalled();
       });
       
-      // Should not crash when onToggle is not provided
-      expect(button).not.toBeDisabled();
+      // Wait for the toggle operation to complete
+      await waitFor(() => {
+        expect(screen.getByRole('button')).not.toBeDisabled();
+      });
     });
   });
 

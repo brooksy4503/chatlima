@@ -393,10 +393,10 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
-            <TabsTrigger value="list" className="text-xs sm:text-sm px-2 py-2">My Presets</TabsTrigger>
-            <TabsTrigger value="templates" className="text-xs sm:text-sm px-2 py-2">Templates</TabsTrigger>
-            <TabsTrigger value="create" className="text-xs sm:text-sm px-2 py-2">Create New</TabsTrigger>
-            <TabsTrigger value="edit" disabled={!editingPreset} className="text-xs sm:text-sm px-2 py-2">Edit</TabsTrigger>
+            <TabsTrigger value="list" className="text-xs sm:text-sm px-2 py-2" aria-label="My Presets">My Presets</TabsTrigger>
+            <TabsTrigger value="templates" className="text-xs sm:text-sm px-2 py-2" aria-label="Preset Templates">Templates</TabsTrigger>
+            <TabsTrigger value="create" className="text-xs sm:text-sm px-2 py-2" aria-label="Create New">Create New</TabsTrigger>
+            <TabsTrigger value="edit" disabled={!editingPreset} className="text-xs sm:text-sm px-2 py-2" aria-label="Edit">Edit</TabsTrigger>
           </TabsList>
 
           {/* Error Display */}
@@ -420,6 +420,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                 }}
                 size="sm"
                 className="w-full sm:w-auto"
+                aria-label="New Preset"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Preset
@@ -447,7 +448,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                               </Badge>
                             )}
                           </CardTitle>
-                          <CardDescription className="flex items-center gap-2 flex-wrap">
+                          <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${getProviderBadgeClass(getModelProvider(preset.modelId))}`}>
                               {getModelProvider(preset.modelId)}
                             </span>
@@ -459,11 +460,11 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p className="text-xs font-mono">Model ID: {preset.modelId}</p>
+                                  <div className="text-xs font-mono">Model ID: {preset.modelId}</div>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          </CardDescription>
+                          </div>
                         </div>
                         
                         <div className="flex items-center gap-1 shrink-0 overflow-x-auto sm:overflow-visible">
@@ -473,6 +474,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                             onClick={() => setActivePreset(preset)}
                             title="Use this preset"
                             className="h-8 w-8 shrink-0"
+                            aria-label="Use this preset"
                           >
                             <Check className="w-4 h-4" />
                           </Button>
@@ -482,6 +484,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                             onClick={() => startEdit(preset)}
                             title="Edit preset"
                             className="h-8 w-8 shrink-0"
+                            aria-label="Edit preset"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -491,6 +494,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                             onClick={() => handleShare(preset)}
                             title="Share preset"
                             className="h-8 w-8 shrink-0"
+                            aria-label="Share preset"
                           >
                             <Share className="w-4 h-4" />
                           </Button>
@@ -501,6 +505,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                               onClick={() => handleSetDefault(preset)}
                               title="Set as default"
                               className="h-8 w-8 shrink-0"
+                              aria-label="Set as default"
                             >
                               <Star className="w-4 h-4" />
                             </Button>
@@ -511,6 +516,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                             onClick={() => handleDelete(preset)}
                             title="Delete preset"
                             className="h-8 w-8 shrink-0"
+                            aria-label="Delete preset"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -617,7 +623,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="text-xs font-mono">Model ID: {template.preset.modelId}</p>
+                                      <div className="text-xs font-mono">Model ID: {template.preset.modelId}</div>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -627,6 +633,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                                   size="sm"
                                   className="flex-1 text-xs px-2 py-1 h-7"
                                   onClick={() => handleCreateFromTemplate(template)}
+                                  aria-label="Use Template"
                                 >
                                   Use Template
                                 </Button>

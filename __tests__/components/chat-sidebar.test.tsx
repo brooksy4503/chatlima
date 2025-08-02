@@ -9,6 +9,7 @@ import { useWebSearch } from '@/lib/context/web-search-context';
 import { useClientMount } from '@/lib/hooks/use-client-mount';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/context/auth-context';
 
 // Mock external dependencies
 jest.mock('next/navigation', () => ({
@@ -35,6 +36,10 @@ jest.mock('@/lib/context/web-search-context', () => ({
 
 jest.mock('@/lib/hooks/use-client-mount', () => ({
   useClientMount: jest.fn(),
+}));
+
+jest.mock('@/lib/context/auth-context', () => ({
+  useAuth: jest.fn(),
 }));
 
 jest.mock('@/components/ui/sidebar', () => ({
@@ -386,6 +391,47 @@ describe('ChatSidebar', () => {
       data: null,
       isPending: false,
     },
+    useAuth: {
+      session: {
+        user: {
+          id: 'test-user-id',
+          name: 'Test User',
+          email: 'test@example.com',
+          isAnonymous: true,
+        },
+      },
+      isPending: false,
+      user: {
+        id: 'test-user-id',
+        name: 'Test User',
+        email: 'test@example.com',
+        isAnonymous: true,
+        hasSubscription: false,
+        messageLimit: 20,
+        messageRemaining: 15,
+        credits: 100,
+        hasCredits: true,
+        usedCredits: false,
+      },
+      status: 'anonymous',
+      usageData: {
+        limit: 20,
+        used: 5,
+        remaining: 15,
+        credits: 100,
+        hasCredits: true,
+        usedCredits: false,
+        lastFetched: Date.now(),
+      },
+      error: null,
+      signIn: jest.fn(),
+      signOut: jest.fn(),
+      refetchUsage: jest.fn(),
+      refreshMessageUsage: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      isAnonymous: true,
+    },
     useChats: {
       chats: [],
       isLoading: false,
@@ -443,6 +489,7 @@ describe('ChatSidebar', () => {
     (useRouter as jest.Mock).mockReturnValue(defaultMocks.useRouter);
     (usePathname as jest.Mock).mockReturnValue(defaultMocks.usePathname);
     (useSession as jest.Mock).mockReturnValue(defaultMocks.useSession);
+    (useAuth as jest.Mock).mockReturnValue(defaultMocks.useAuth);
     (useChats as jest.Mock).mockReturnValue(defaultMocks.useChats);
     (useMCP as jest.Mock).mockReturnValue(defaultMocks.useMCP);
     (useWebSearch as jest.Mock).mockReturnValue(defaultMocks.useWebSearch);
@@ -462,9 +509,14 @@ describe('ChatSidebar', () => {
     });
 
     test('renders loading skeleton when session is loading', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        data: null,
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: null,
         isPending: true,
+        user: null,
+        status: 'loading',
+        isAuthenticated: false,
+        isAnonymous: false,
       });
       
       render(<ChatSidebar />);
@@ -506,14 +558,28 @@ describe('ChatSidebar', () => {
 
   describe('Authentication States', () => {
     test('displays sign-in button for anonymous users', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        data: {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: {
           user: {
             id: 'anon-123',
             isAnonymous: true,
           },
         },
         isPending: false,
+        user: {
+          id: 'anon-123',
+          isAnonymous: true,
+          hasSubscription: false,
+          messageLimit: 10,
+          messageRemaining: 5,
+          credits: 0,
+          hasCredits: false,
+          usedCredits: false,
+        },
+        status: 'anonymous',
+        isAuthenticated: false,
+        isAnonymous: true,
       });
       
       render(<ChatSidebar />);
@@ -523,8 +589,9 @@ describe('ChatSidebar', () => {
     });
 
     test('displays user account menu for authenticated users', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        data: {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: {
           user: {
             id: 'user-123',
             email: 'test@example.com',
@@ -532,6 +599,20 @@ describe('ChatSidebar', () => {
           },
         },
         isPending: false,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          isAnonymous: false,
+          hasSubscription: false,
+          messageLimit: 20,
+          messageRemaining: 15,
+          credits: 100,
+          hasCredits: true,
+          usedCredits: false,
+        },
+        status: 'authenticated',
+        isAuthenticated: true,
+        isAnonymous: false,
       });
       
       render(<ChatSidebar />);
@@ -541,9 +622,14 @@ describe('ChatSidebar', () => {
     });
 
     test('displays loading skeleton for authentication state', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        data: null,
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: null,
         isPending: true,
+        user: null,
+        status: 'loading',
+        isAuthenticated: false,
+        isAnonymous: false,
       });
       
       render(<ChatSidebar />);
@@ -822,17 +908,44 @@ describe('ChatSidebar', () => {
 
   describe('Session Management Effects', () => {
     test('invalidates queries when user logs in', async () => {
+      // Start with no user (anonymous/unauthenticated state)
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: null,
+        isPending: false,
+        user: null,
+        status: 'unauthenticated',
+        isAuthenticated: false,
+        isAnonymous: false,
+      });
+      
       const { rerender } = render(<ChatSidebar />);
       
       // Simulate user login
-      (useSession as jest.Mock).mockReturnValue({
-        data: {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: {
           user: {
             id: 'user-123',
             email: 'test@example.com',
+            isAnonymous: false,
           },
         },
         isPending: false,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          isAnonymous: false,
+          hasSubscription: false,
+          messageLimit: 20,
+          messageRemaining: 15,
+          credits: 100,
+          hasCredits: true,
+          usedCredits: false,
+        },
+        status: 'authenticated',
+        isAuthenticated: true,
+        isAnonymous: false,
       });
       
       rerender(<ChatSidebar />);
@@ -845,22 +958,43 @@ describe('ChatSidebar', () => {
 
     test('redirects to home when user logs out', async () => {
       // Start with authenticated user
-      (useSession as jest.Mock).mockReturnValue({
-        data: {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: {
           user: {
             id: 'user-123',
             email: 'test@example.com',
+            isAnonymous: false,
           },
         },
         isPending: false,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          isAnonymous: false,
+          hasSubscription: false,
+          messageLimit: 20,
+          messageRemaining: 15,
+          credits: 100,
+          hasCredits: true,
+          usedCredits: false,
+        },
+        status: 'authenticated',
+        isAuthenticated: true,
+        isAnonymous: false,
       });
       
       const { rerender } = render(<ChatSidebar />);
       
       // Simulate user logout
-      (useSession as jest.Mock).mockReturnValue({
-        data: null,
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: null,
         isPending: false,
+        user: null,
+        status: 'unauthenticated',
+        isAuthenticated: false,
+        isAnonymous: false,
       });
       
       rerender(<ChatSidebar />);
@@ -905,14 +1039,28 @@ describe('ChatSidebar', () => {
     });
 
     test('sign-in button receives collapsed state for accessibility', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        data: {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: {
           user: {
             id: 'anon-123',
             isAnonymous: true,
           },
         },
         isPending: false,
+        user: {
+          id: 'anon-123',
+          isAnonymous: true,
+          hasSubscription: false,
+          messageLimit: 10,
+          messageRemaining: 5,
+          credits: 0,
+          hasCredits: false,
+          usedCredits: false,
+        },
+        status: 'anonymous',
+        isAuthenticated: false,
+        isAnonymous: true,
       });
       
       (useSidebar as jest.Mock).mockReturnValue({
@@ -943,9 +1091,14 @@ describe('ChatSidebar', () => {
     });
 
     test('handles undefined session data', () => {
-      (useSession as jest.Mock).mockReturnValue({
-        data: undefined,
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: undefined,
         isPending: false,
+        user: null,
+        status: 'unauthenticated',
+        isAuthenticated: false,
+        isAnonymous: false,
       });
       
       render(<ChatSidebar />);
@@ -971,14 +1124,28 @@ describe('ChatSidebar', () => {
   describe('Integration Tests', () => {
     test('complete user workflow: login, navigate chat, open settings', async () => {
       // Start as anonymous user
-      (useSession as jest.Mock).mockReturnValue({
-        data: {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: {
           user: {
             id: 'anon-123',
             isAnonymous: true,
           },
         },
         isPending: false,
+        user: {
+          id: 'anon-123',
+          isAnonymous: true,
+          hasSubscription: false,
+          messageLimit: 10,
+          messageRemaining: 5,
+          credits: 0,
+          hasCredits: false,
+          usedCredits: false,
+        },
+        status: 'anonymous',
+        isAuthenticated: false,
+        isAnonymous: true,
       });
       
       const { rerender } = render(<ChatSidebar />);
@@ -987,8 +1154,9 @@ describe('ChatSidebar', () => {
       expect(screen.getByTestId('sign-in-button')).toBeInTheDocument();
       
       // Simulate user login
-      (useSession as jest.Mock).mockReturnValue({
-        data: {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...defaultMocks.useAuth,
+        session: {
           user: {
             id: 'user-123',
             email: 'test@example.com',
@@ -996,6 +1164,20 @@ describe('ChatSidebar', () => {
           },
         },
         isPending: false,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          isAnonymous: false,
+          hasSubscription: false,
+          messageLimit: 20,
+          messageRemaining: 15,
+          credits: 100,
+          hasCredits: true,
+          usedCredits: false,
+        },
+        status: 'authenticated',
+        isAuthenticated: true,
+        isAnonymous: false,
       });
       
       (useChats as jest.Mock).mockReturnValue({
