@@ -26,6 +26,8 @@ import { MCPServerManager } from "./mcp-server-manager";
 import { ApiKeyManager } from "./api-key-manager";
 import { ThemeToggle } from "./theme-toggle";
 import { ProviderHealthDashboard } from "./provider-health-dashboard";
+import { MiniChatTokenSummary } from "./token-metrics/ChatTokenSummary";
+import { useQuery } from "@tanstack/react-query";
 import { useChats } from "@/lib/hooks/use-chats";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -66,6 +68,53 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ChatList } from "./chat-list";
+
+// Token Usage Summary component for the sidebar
+function TokenUsageSummary({ userId }: { userId: string | null }) {
+    const { data: tokenData, isLoading, error, refetch } = useQuery({
+        queryKey: ['user-token-usage', userId],
+        queryFn: async ({ queryKey }) => {
+            const [_, userId] = queryKey;
+            if (!userId) return null;
+            
+            try {
+                const response = await fetch(`/api/token-usage?userId=${userId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load token usage data');
+                }
+                
+                const data = await response.json();
+                return data.data;
+            } catch (error) {
+                console.error('Error loading user token usage:', error);
+                throw error;
+            }
+        },
+        enabled: !!userId,
+        retry: 1,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        refetchOnWindowFocus: false
+    });
+
+    if (!userId) {
+        return null;
+    }
+
+    return (
+        <MiniChatTokenSummary
+            totalInputTokens={tokenData?.totalInputTokens || 0}
+            totalOutputTokens={tokenData?.totalOutputTokens || 0}
+            totalTokens={tokenData?.totalTokens || 0}
+            totalEstimatedCost={tokenData?.totalEstimatedCost || 0}
+            totalActualCost={tokenData?.totalActualCost || 0}
+            messageCount={tokenData?.messageCount || 0}
+            currency={tokenData?.currency || 'USD'}
+            isLoading={isLoading}
+            error={error?.message || null}
+        />
+    );
+}
 
 export function ChatSidebar() {
     const router = useRouter();
@@ -337,6 +386,13 @@ export function ChatSidebar() {
                             isLoadingMore={isLoadingMore}
                         />
                     </SidebarGroup>
+                    
+                    {/* Token Usage Summary - only show when not collapsed */}
+                    {!isLayoutCollapsed && (
+                        <div className="px-3 py-2">
+                            <TokenUsageSummary userId={userId} />
+                        </div>
+                    )}
                     
                     <div className="relative my-0">
                         <div className="absolute inset-x-0">

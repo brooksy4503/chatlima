@@ -12,6 +12,7 @@ import { db } from '@/lib/db';
 import { chats } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
+import { TokenTrackingService } from '@/lib/tokenTracking';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
 import { auth, checkMessageLimit } from '@/lib/auth';
 import type { ImageUIPart } from '@/lib/types';
@@ -21,6 +22,12 @@ import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'a
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn } from "child_process";
+
+// Diagnostic logging helper
+const logDiagnostic = (type: string, message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}][${type}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+};
 
 // Allow streaming responses up to 300 seconds on Hobby plan
 export const maxDuration = 300;
@@ -103,7 +110,12 @@ const createErrorResponse = (
 };
 
 export async function POST(req: Request) {
-  console.log('[DEBUG] Chat API called');
+  const requestId = nanoid(); // Unique ID for this request
+  logDiagnostic('REQUEST_START', `Starting chat API request`, {
+    requestId,
+    url: req.url,
+    method: req.method
+  });
 
   const {
     messages,
@@ -135,7 +147,8 @@ export async function POST(req: Request) {
     systemInstruction?: string;
   } = await req.json();
 
-  console.log('[DEBUG] Request body parsed:', {
+  logDiagnostic('REQUEST_PARSED', `Request body parsed`, {
+    requestId,
     messagesCount: messages.length,
     chatId,
     selectedModel,
@@ -284,16 +297,23 @@ export async function POST(req: Request) {
   const processedMessages = await processMessagesWithAttachments(messages, attachments, selectedModelInfo);
 
   // Get the authenticated session (including anonymous users)
+  logDiagnostic('AUTH_START', `Starting authentication check`, { requestId });
   const session = await auth.api.getSession({ headers: req.headers });
 
   // If no session exists, return error
   if (!session || !session.user || !session.user.id) {
+    logDiagnostic('AUTH_FAILED', `Authentication failed - no session`, { requestId });
     return createErrorResponse(
       "AUTHENTICATION_REQUIRED",
       "Authentication required. Please log in.",
       401
     );
   }
+  logDiagnostic('AUTH_SUCCESS', `Authentication successful`, {
+    requestId,
+    userId: session.user.id,
+    isAnonymous: (session.user as any).isAnonymous === true
+  });
 
   const userId = session.user.id;
   const isAnonymous = (session.user as any).isAnonymous === true;
@@ -316,14 +336,26 @@ export async function POST(req: Request) {
   // 1. Check if user has sufficient credits (if they have a Polar account and not using own keys)
   let hasCredits = false;
   let actualCredits: number | null = null;
-  console.log(`[Debug] User ${userId} - isAnonymous: ${isAnonymous}, polarCustomerId: ${polarCustomerId}`);
+  logDiagnostic('CREDIT_CHECK_START', `Starting credit check`, {
+    requestId,
+    userId,
+    isAnonymous,
+    polarCustomerId,
+    isUsingOwnApiKeys,
+    isFreeModel,
+    estimatedTokens
+  });
 
   // Skip credit checks entirely if user is using their own API keys or using a free model
   if (isUsingOwnApiKeys) {
-    console.log(`[Debug] User ${userId} is using own API keys, skipping credit checks`);
+    logDiagnostic('CREDIT_CHECK_SKIP', `User is using own API keys, skipping credit checks`, { requestId, userId });
     hasCredits = true; // Allow request to proceed
   } else if (isFreeModel) {
-    console.log(`[Debug] User ${userId} is using a free model (${selectedModel}), skipping credit checks`);
+    logDiagnostic('CREDIT_CHECK_SKIP', `User is using a free model, skipping credit checks`, {
+      requestId,
+      userId,
+      selectedModel
+    });
     hasCredits = true; // Allow request to proceed
   } else {
     try {
@@ -334,23 +366,43 @@ export async function POST(req: Request) {
       // Pass isAnonymous flag to skip Polar checks for anonymous users
       // Pass model info to check for premium model access
       hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined);
-      console.log(`[Debug] hasEnoughCredits result: ${hasCredits}`);
+      logDiagnostic('CREDIT_CHECK_RESULT', `hasEnoughCredits result`, {
+        requestId,
+        userId,
+        hasCredits
+      });
 
       // Also get the actual credit balance to check for negative balances
       if (!isAnonymous) {
         if (userId) {
           try {
             actualCredits = await getRemainingCreditsByExternalId(userId);
-            console.log(`[Debug] Actual credits for user ${userId}: ${actualCredits}`);
+            logDiagnostic('CREDIT_BALANCE', `Actual credits for user`, {
+              requestId,
+              userId,
+              actualCredits
+            });
           } catch (error) {
-            console.warn('Error getting actual credits by external ID:', error);
+            logDiagnostic('CREDIT_BALANCE_ERROR', `Error getting actual credits by external ID`, {
+              requestId,
+              userId,
+              error: error instanceof Error ? error.message : String(error)
+            });
             // Fall back to legacy method
             if (polarCustomerId) {
               try {
                 actualCredits = await getRemainingCredits(polarCustomerId);
-                console.log(`[Debug] Actual credits via legacy method: ${actualCredits}`);
+                logDiagnostic('CREDIT_BALANCE_LEGACY', `Actual credits via legacy method`, {
+                  requestId,
+                  userId,
+                  actualCredits
+                });
               } catch (legacyError) {
-                console.warn('Error getting actual credits by legacy method:', legacyError);
+                logDiagnostic('CREDIT_BALANCE_LEGACY_ERROR', `Error getting actual credits by legacy method`, {
+                  requestId,
+                  userId,
+                  error: legacyError instanceof Error ? legacyError.message : String(legacyError)
+                });
               }
             }
           }
@@ -358,7 +410,11 @@ export async function POST(req: Request) {
       }
     } catch (error: any) {
       // Log but continue - don't block users if credit check fails
-      console.error('[CreditCheckError] Error checking credits:', error);
+      logDiagnostic('CREDIT_CHECK_ERROR', `Error checking credits`, {
+        requestId,
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
       // Potentially return a specific error if this failure is critical
       // For now, matches existing behavior of allowing request if check fails.
     }
@@ -1160,12 +1216,19 @@ export async function POST(req: Request) {
         }
 
         let dbMessages;
+        let assistantMessageId: string | undefined;
+
         try {
           dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
             ...msg,
             hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
             webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
           }));
+
+          // Extract the assistant message ID from the converted messages to ensure consistency
+          const assistantMessage = dbMessages.find(msg => msg.role === 'assistant');
+          assistantMessageId = assistantMessage?.id;
+
         } catch (conversionError: any) {
           console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
           // If conversion fails, we cannot save messages.
@@ -1176,6 +1239,213 @@ export async function POST(req: Request) {
         try {
           await saveMessages({ messages: dbMessages });
           console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
+
+          // Track detailed token usage metrics - moved inside the try block to ensure message ID consistency
+          const typedResponse = response as any;
+          const provider = selectedModel.split('/')[0];
+          const finalAssistantMessageId = assistantMessageId || response.messages?.[response.messages.length - 1]?.id || nanoid();
+
+          try {
+            logDiagnostic('TOKEN_TRACKING_START', `Starting detailed token tracking`, {
+              requestId,
+              userId,
+              chatId: id,
+              messageId: finalAssistantMessageId,
+              modelId: selectedModel,
+              provider,
+              tokenUsage: typedResponse.usage || {
+                inputTokens: 0,
+                outputTokens: 0,
+                totalTokens: 0
+              }
+            });
+
+            // Debug: Log the actual response structure to understand the format
+            const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+            const lastMessageContent = lastMessage?.content;
+            let contentPreview = '';
+
+            if (typeof lastMessageContent === 'string') {
+              contentPreview = lastMessageContent.substring(0, 100);
+            } else if (Array.isArray(lastMessageContent)) {
+              // Handle structured content (Google models)
+              const textParts = lastMessageContent
+                .filter((part: any) => part.type === 'text')
+                .map((part: any) => part.text)
+                .join(' ');
+              contentPreview = textParts.substring(0, 100);
+            } else if (lastMessageContent) {
+              contentPreview = JSON.stringify(lastMessageContent).substring(0, 100);
+            }
+
+            console.log(`[Chat ${id}][onFinish] OpenRouter response structure:`, {
+              hasUsage: !!typedResponse.usage,
+              usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
+              usageValue: typedResponse.usage,
+              hasMessages: !!typedResponse.messages,
+              messageCount: typedResponse.messages?.length || 0,
+              lastMessageContent: contentPreview
+            });
+
+            // Extract token usage with better fallback logic
+            let tokenUsageData = typedResponse.usage;
+
+            // Enhanced logging to debug OpenRouter response
+            console.log(`[Chat ${id}][onFinish] Raw OpenRouter usage data:`, {
+              hasUsage: !!typedResponse.usage,
+              usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
+              usageValue: typedResponse.usage,
+              inputTokens: typedResponse.usage?.inputTokens,
+              outputTokens: typedResponse.usage?.outputTokens,
+              promptTokens: typedResponse.usage?.promptTokens,
+              prompt_tokens: typedResponse.usage?.prompt_tokens,
+              completionTokens: typedResponse.usage?.completionTokens,
+              completion_tokens: typedResponse.usage?.completion_tokens,
+              total_tokens: typedResponse.usage?.total_tokens,
+              usageObject: typedResponse.usage
+            });
+
+            // If no usage data or missing input tokens, try to estimate from message content
+            // OpenRouter may use different field names (prompt_tokens, completion_tokens)
+            const inputTokenCount = tokenUsageData?.inputTokens || tokenUsageData?.prompt_tokens || 0;
+            const outputTokenCount = tokenUsageData?.outputTokens || tokenUsageData?.completion_tokens || 0;
+
+            console.log(`[Chat ${id}][onFinish] Parsed token counts:`, {
+              inputTokenCount,
+              outputTokenCount,
+              needsInputEstimation: inputTokenCount === 0,
+              needsOutputEstimation: outputTokenCount === 0
+            });
+
+            const needsInputEstimation = !tokenUsageData ||
+              inputTokenCount === 0 ||
+              inputTokenCount === undefined;
+
+            const needsOutputEstimation = !tokenUsageData ||
+              outputTokenCount === 0 ||
+              outputTokenCount === undefined;
+
+            if (needsInputEstimation || needsOutputEstimation) {
+              const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+
+              let outputContentLength = 0;
+              let inputContentLength = 0;
+
+              // Calculate output tokens from the AI response
+              if (needsOutputEstimation && lastMessage?.content) {
+                // Handle structured content (Google models)
+                if (Array.isArray(lastMessage.content)) {
+                  outputContentLength = lastMessage.content
+                    .filter((part: any) => part.type === 'text')
+                    .map((part: any) => part.text)
+                    .join('').length;
+                } else if (typeof lastMessage.content === 'string') {
+                  outputContentLength = lastMessage.content.length;
+                }
+              }
+
+              // Calculate input tokens from the ENTIRE conversation context sent to the AI
+              if (needsInputEstimation && modelMessages) {
+                console.log(`[Chat ${id}][onFinish] Estimating input tokens from full conversation context (${modelMessages.length} messages)`);
+
+                let totalInputContentLength = 0;
+
+                // Count all messages that were sent to the AI model
+                modelMessages.forEach((message, index) => {
+                  let messageContentLength = 0;
+
+                  if (message.content) {
+                    if (Array.isArray(message.content)) {
+                      // Handle structured content (parts array)
+                      messageContentLength = message.content
+                        .filter((part: any) => part.type === 'text')
+                        .map((part: any) => part.text || '')
+                        .join('').length;
+                    } else if (typeof message.content === 'string') {
+                      messageContentLength = message.content.length;
+                    }
+                  }
+
+                  // Add to total input length
+                  totalInputContentLength += messageContentLength;
+
+                  console.log(`[Chat ${id}][onFinish] Message ${index + 1} (${message.role}): ${messageContentLength} chars`);
+                });
+
+                inputContentLength = totalInputContentLength;
+                console.log(`[Chat ${id}][onFinish] Total input content length: ${inputContentLength} chars (${modelMessages.length} messages)`);
+              }
+
+              // Add system instruction length if present
+              if (needsInputEstimation && effectiveSystemInstruction) {
+                const systemLength = effectiveSystemInstruction.length;
+                inputContentLength += systemLength;
+                console.log(`[Chat ${id}][onFinish] Added system instruction: ${systemLength} chars`);
+              }
+
+              const estimatedOutputTokens = Math.ceil(outputContentLength / 4);
+              const estimatedInputTokens = Math.ceil(inputContentLength / 4);
+
+              // Use existing token data if available, otherwise use estimates
+              const finalInputTokens = needsInputEstimation ? estimatedInputTokens : inputTokenCount;
+              const finalOutputTokens = needsOutputEstimation ? estimatedOutputTokens : outputTokenCount;
+
+              tokenUsageData = {
+                inputTokens: finalInputTokens,
+                outputTokens: finalOutputTokens,
+                totalTokens: finalInputTokens + finalOutputTokens
+              };
+
+              console.log(`[Chat ${id}][onFinish] Final token usage (estimated + OpenRouter):`, {
+                originalInput: typedResponse.usage?.inputTokens,
+                originalOutput: typedResponse.usage?.outputTokens,
+                estimatedInput: estimatedInputTokens,
+                estimatedOutput: estimatedOutputTokens,
+                finalInput: finalInputTokens,
+                finalOutput: finalOutputTokens,
+                finalTotal: finalInputTokens + finalOutputTokens,
+                conversationLength: modelMessages ? modelMessages.length : 0,
+                totalInputChars: inputContentLength,
+                systemInstructionChars: effectiveSystemInstruction ? effectiveSystemInstruction.length : 0
+              });
+            }
+
+            await TokenTrackingService.trackTokenUsage({
+              userId,
+              chatId: id,
+              messageId: finalAssistantMessageId,
+              modelId: selectedModel,
+              provider,
+              tokenUsage: tokenUsageData || {
+                inputTokens: 0,
+                outputTokens: 0,
+                totalTokens: 0
+              },
+              processingTimeMs: event?.durationMs,
+              status: 'completed',
+              metadata: {
+                webSearchEnabled: secureWebSearch.enabled,
+                webSearchContextSize: secureWebSearch.contextSize,
+                isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
+                responseTime: event?.timestamp
+              }
+            });
+
+            logDiagnostic('TOKEN_TRACKING_SUCCESS', `Successfully tracked detailed token usage`, {
+              requestId,
+              userId,
+              chatId: id,
+              messageId: finalAssistantMessageId
+            });
+          } catch (error: any) {
+            logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage`, {
+              requestId,
+              userId,
+              error: error instanceof Error ? error.message : String(error)
+            });
+            console.error(`[Chat ${id}][onFinish] Failed to track detailed token usage for user ${userId}:`, error);
+            // Don't break the response flow if detailed tracking fails
+          }
         } catch (dbMessagesError: any) {
           console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
         }
@@ -1184,11 +1454,8 @@ export async function POST(req: Request) {
       }
 
       // Extract token usage from response - OpenRouter may provide it in different formats
-      let completionTokens = 0;
-
-      // Access response with type assertion to avoid TypeScript errors
-      // The actual structure may vary by provider
       const typedResponse = response as any;
+      let completionTokens = 0;
 
       // Try to extract tokens from different possible response structures
       if (typedResponse.usage?.completion_tokens) {
@@ -1199,8 +1466,20 @@ export async function POST(req: Request) {
         // Estimate based on last message content length if available
         const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
         if (lastMessage?.content) {
+          let contentLength = 0;
+
+          // Handle structured content (Google models)
+          if (Array.isArray(lastMessage.content)) {
+            contentLength = lastMessage.content
+              .filter((part: any) => part.type === 'text')
+              .map((part: any) => part.text)
+              .join('').length;
+          } else if (typeof lastMessage.content === 'string') {
+            contentLength = lastMessage.content.length;
+          }
+
           // Rough estimate: 1 token ≈ 4 characters
-          completionTokens = Math.ceil(lastMessage.content.length / 4);
+          completionTokens = Math.ceil(contentLength / 4);
         } else if (typeof typedResponse.content === 'string') {
           completionTokens = Math.ceil(typedResponse.content.length / 4);
         } else {
@@ -1209,7 +1488,7 @@ export async function POST(req: Request) {
         }
       }
 
-      // Existing code for tracking tokens
+      // Existing code for tracking tokens (legacy credit system)
       let polarCustomerId: string | undefined;
 
       // Get from session
@@ -1223,15 +1502,25 @@ export async function POST(req: Request) {
         console.warn('Failed to get session for Polar customer ID:', error);
       }
 
-      // Track token usage
+      // Track token usage for legacy credit system
       if (completionTokens > 0) {
         try {
+          logDiagnostic('LEGACY_TOKEN_TRACKING_START', `Starting legacy token tracking`, {
+            requestId,
+            userId,
+            completionTokens
+          });
+
           // Get isAnonymous status from session if available
           let isAnonymous = false;
           try {
             isAnonymous = (session?.user as any)?.isAnonymous === true;
           } catch (error) {
-            console.warn('Could not determine if user is anonymous, assuming not anonymous');
+            logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Could not determine if user is anonymous, assuming not anonymous`, {
+              requestId,
+              userId,
+              error: error instanceof Error ? error.message : String(error)
+            });
           }
 
           // Recalculate isUsingOwnApiKeys in callback scope since it's not accessible here
@@ -1243,7 +1532,11 @@ export async function POST(req: Request) {
             try {
               callbackActualCredits = await getRemainingCreditsByExternalId(userId);
             } catch (error) {
-              console.warn('Error getting actual credits in onFinish callback:', error);
+              logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Error getting actual credits in onFinish callback`, {
+                requestId,
+                userId,
+                error: error instanceof Error ? error.message : String(error)
+              });
             }
           }
 
@@ -1267,8 +1560,24 @@ export async function POST(req: Request) {
           await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
           const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
           const trackingReason = isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : isFreeModel ? 'Tracked (free model)' : 'Tracked (daily limit)';
+
+          logDiagnostic('LEGACY_TOKEN_TRACKING_SUCCESS', `Successfully tracked legacy token usage`, {
+            requestId,
+            userId,
+            completionTokens,
+            actualCreditsReported,
+            trackingReason,
+            shouldDeductCredits,
+            additionalCost
+          });
+
           console.log(`${trackingReason} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
         } catch (error: any) {
+          logDiagnostic('LEGACY_TOKEN_TRACKING_ERROR', `Failed to track legacy token usage`, {
+            requestId,
+            userId,
+            error: error instanceof Error ? error.message : String(error)
+          });
           console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
           // Don't break the response flow if tracking fails
         }
