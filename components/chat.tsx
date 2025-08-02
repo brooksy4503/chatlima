@@ -23,6 +23,7 @@ import { ErrorBoundary } from "./error-boundary";
 import { useCredits } from "@/hooks/useCredits";
 import type { ImageAttachment } from "@/lib/types";
 import { useModels } from "@/hooks/use-models";
+import { ChatTokenSummary } from "./token-metrics/ChatTokenSummary";
 
 // Type for chat data from DB
 interface ChatData {
@@ -63,6 +64,14 @@ export default function Chat() {
   const [lastToastId, setLastToastId] = useState<string | null>(null);
   const [lastErrorMessage, setLastErrorMessage] = useState<string>("");
   const [lastToastTimestamp, setLastToastTimestamp] = useState<number>(0);
+  
+  // Token usage state
+  const [chatTokenUsage, setChatTokenUsage] = useState<{
+    inputTokens?: number;
+    outputTokens?: number;
+    estimatedCost?: number;
+    currency?: string;
+  }>({});
 
   useEffect(() => {
     setIsMounted(true);
@@ -620,6 +629,100 @@ export default function Chat() {
     });
   }, [messages, webSearchEnabled, activePreset, isOpenRouterModel]);
 
+  // Fetch chat token usage data
+  const { data: chatTokenData, isLoading: isTokenDataLoading, error: tokenDataError, refetch: refetchTokenData } = useQuery({
+    queryKey: ['chat-token-usage', chatId],
+    queryFn: async ({ queryKey }) => {
+      const [_, chatId] = queryKey;
+      if (!chatId || !userId) return null;
+      
+      try {
+        const response = await fetch(`/api/token-usage?chatId=${chatId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to load token usage data');
+        }
+        
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        console.error('Error loading chat token usage:', error);
+        throw error;
+      }
+    },
+    enabled: !!chatId && !!userId,
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false
+  });
+
+  // Update chat token usage when streaming
+  useEffect(() => {
+    if (status === "streaming" && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        // Simulate real-time token updates during streaming
+        // In a real implementation, this would come from the streaming response
+        let outputContentLength = 0;
+        let inputContentLength = 0;
+
+        // Handle structured content (Google models)
+        if (Array.isArray(lastMessage.content)) {
+          outputContentLength = lastMessage.content
+            .filter((part: any) => part.type === 'text')
+            .map((part: any) => part.text)
+            .join('').length;
+        } else if (typeof lastMessage.content === 'string') {
+          outputContentLength = lastMessage.content.length;
+        }
+
+        // Handle input message content
+        if (messages.length > 1) {
+          const inputMessage = messages[messages.length - 2];
+          if (Array.isArray(inputMessage.content)) {
+            inputContentLength = inputMessage.content
+              .filter((part: any) => part.type === 'text')
+              .map((part: any) => part.text)
+              .join('').length;
+          } else if (typeof inputMessage.content === 'string') {
+            inputContentLength = inputMessage.content.length;
+          }
+        }
+
+        const estimatedOutputTokens = Math.floor(outputContentLength / 4); // Rough estimate
+        const estimatedInputTokens = Math.floor(inputContentLength / 4);
+        
+        setChatTokenUsage({
+          inputTokens: estimatedInputTokens,
+          outputTokens: estimatedOutputTokens,
+          estimatedCost: (estimatedInputTokens + estimatedOutputTokens) * 0.000002, // Rough estimate
+          currency: 'USD'
+        });
+      }
+    } else if (status === "ready" && chatTokenData) {
+      // When streaming is complete, update with actual data from the API
+      // Handle both old format (totalInputTokens) and new format (totalInputTokens from chat-specific data)
+      const inputTokens = chatTokenData.totalInputTokens || chatTokenData.inputTokens || 0;
+      const outputTokens = chatTokenData.totalOutputTokens || chatTokenData.outputTokens || 0;
+      const estimatedCost = chatTokenData.totalEstimatedCost || chatTokenData.estimatedCost || 0;
+      
+      setChatTokenUsage({
+        inputTokens,
+        outputTokens,
+        estimatedCost,
+        currency: chatTokenData.currency || 'USD'
+      });
+      
+      // Refetch token data to get the latest information
+      refetchTokenData();
+      
+      // Invalidate user token usage queries to refresh sidebar data
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
+      }
+    }
+  }, [messages, status, chatTokenData, refetchTokenData, userId, queryClient]);
+
   // Manual recovery function
   const forceRecovery = useCallback(() => {
     console.log('Manual recovery triggered by user');
@@ -725,9 +828,33 @@ export default function Chat() {
             </div>
           </div>
         ) : (
-          <Messages messages={enhancedMessages} isLoading={isLoading} status={status} />
+          <Messages
+            messages={enhancedMessages}
+            isLoading={isLoading}
+            status={status}
+            chatTokenUsage={chatTokenUsage}
+          />
         )}
       </div>
+
+      {/* Token Usage Summary */}
+      {chatId && (
+        <div className="mb-4">
+          <ChatTokenSummary
+            totalInputTokens={chatTokenData?.totalInputTokens || chatTokenUsage?.inputTokens || 0}
+            totalOutputTokens={chatTokenData?.totalOutputTokens || chatTokenUsage?.outputTokens || 0}
+            totalTokens={chatTokenData?.totalTokens || (chatTokenUsage?.inputTokens || 0) + (chatTokenUsage?.outputTokens || 0) || 0}
+            totalEstimatedCost={chatTokenData?.totalEstimatedCost || chatTokenUsage?.estimatedCost || 0}
+            totalActualCost={chatTokenData?.totalActualCost || 0}
+            messageCount={messages.length}
+            currency={chatTokenData?.currency || chatTokenUsage?.currency || 'USD'}
+            isLoading={isTokenDataLoading && !chatTokenUsage?.inputTokens && !chatTokenUsage?.outputTokens}
+            error={tokenDataError?.message || null}
+            onRefresh={refetchTokenData}
+            compact={true}
+          />
+        </div>
+      )}
 
       {/* Streaming Status */}
       <StreamingStatus />
