@@ -223,34 +223,35 @@ jest.mock('../../components/model-picker', () => ({
   ),
 }));
 
-// Mock preset templates
-const mockTemplates = [
-  {
-    id: 'test-template',
-    name: 'Test Template',
-    description: 'A test template',
-    category: 'coding',
-    icon: '🧪',
-    preset: {
-      name: 'Test Template Preset',
-      modelId: 'openrouter/anthropic/claude-3.5-sonnet',
-      systemInstruction: 'You are a test assistant.',
-      temperature: 0.7,
-      maxTokens: 2048,
-      webSearchEnabled: false,
-      webSearchContextSize: 'medium',
-      apiKeyPreferences: {},
-      isDefault: false,
-      visibility: 'private',
+jest.mock('@/lib/preset-templates', () => {
+  const mockTemplates = [
+    {
+      id: 'test-template',
+      name: 'Test Template',
+      description: 'A test template',
+      category: 'coding',
+      icon: '🧪',
+      preset: {
+        name: 'Test Template Preset',
+        modelId: 'openrouter/anthropic/claude-3.5-sonnet',
+        systemInstruction: 'You are a test assistant.',
+        temperature: 0.7,
+        maxTokens: 2048,
+        webSearchEnabled: false,
+        webSearchContextSize: 'medium',
+        apiKeyPreferences: {},
+        isDefault: false,
+        visibility: 'private',
+      },
     },
-  },
-];
-
-jest.mock('@/lib/preset-templates', () => ({
-  PRESET_TEMPLATES: mockTemplates,
-  getTemplateCategories: jest.fn(() => ['coding']),
-  getTemplatesByCategory: jest.fn(() => mockTemplates),
-}));
+  ];
+  
+  return {
+    PRESET_TEMPLATES: mockTemplates,
+    getTemplateCategories: jest.fn(() => ['coding']),
+    getTemplatesByCategory: jest.fn(() => mockTemplates),
+  };
+});
 
 jest.mock('@/lib/parameter-validation', () => ({
   validatePresetParameters: jest.fn(() => ({ valid: true, errors: [] })),

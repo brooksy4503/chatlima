@@ -24,6 +24,10 @@ module.exports = {
     customExportConditions: [''],
   },
   extensionsToTreatAsEsm: ['.jsx', '.tsx'],
+  // Enable fake timers globally to fix waitFor issues
+  fakeTimers: {
+    enableGlobally: true,
+  },
   // Remove deprecated globals
   // globals: {
   //   'ts-jest': {

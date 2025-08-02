@@ -18,7 +18,7 @@ jest.mock('sonner', () => ({
 }));
 
 // Mock motion components
-jest.mock('motion/react', () => ({
+jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
@@ -104,6 +104,17 @@ jest.mock('next/link', () => {
   );
 });
 
+// Mock ChatShareDialog component
+jest.mock('../../components/chat-share-dialog', () => ({
+  ChatShareDialog: ({ isOpen, onOpenChange, chatId, chatTitle }: any) => 
+    isOpen ? (
+      <div data-testid="chat-share-dialog">
+        <div>Share Dialog for {chatTitle}</div>
+        <button onClick={() => onOpenChange(false)}>Close</button>
+      </div>
+    ) : null,
+}));
+
 // Mock Lucide icons
 jest.mock('lucide-react', () => ({
   MessageSquare: () => <div data-testid="message-square-icon" />,
@@ -113,6 +124,7 @@ jest.mock('lucide-react', () => ({
   XIcon: () => <div data-testid="x-icon" />,
   Loader2: () => <div data-testid="loader-icon" />,
   Pencil: () => <div data-testid="pencil-icon" />,
+  Share2: () => <div data-testid="share-icon" />,
 }));
 
 describe('ChatList', () => {
