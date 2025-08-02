@@ -53,7 +53,7 @@ import { useMCP } from "@/lib/context/mcp-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignInButton } from "@/components/auth/SignInButton";
 import { UserAccountMenu } from "@/components/auth/UserAccountMenu";
-import { useSession, signOut } from "@/lib/auth-client";
+import { useAuth, signOut } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
@@ -80,9 +80,10 @@ export function ChatSidebar() {
     // On mobile, always show expanded layout
     const isLayoutCollapsed = isCollapsed && !isMobile;
 
-    const { data: session, isPending: isSessionLoading } = useSession();
+    const { session, isPending: isSessionLoading } = useAuth();
     const authenticatedUserId = session?.user?.id;
     const previousSessionRef = useRef(session);
+    const invalidationRef = useRef(false);
 
     const queryClient = useQueryClient();
 
@@ -126,6 +127,12 @@ export function ChatSidebar() {
         const currentSession = session;
         const previousSession = previousSessionRef.current;
 
+        // Prevent multiple rapid invalidations
+        if (invalidationRef.current) {
+            previousSessionRef.current = currentSession;
+            return;
+        }
+
         if (!previousSession?.user && currentSession?.user?.id) {
             const authenticatedUserId = currentSession.user.id;
             console.log('User logged in (ID):', authenticatedUserId);
@@ -133,14 +140,27 @@ export function ChatSidebar() {
             console.log('Session User Object:', currentSession.user);
             
             setUserId(authenticatedUserId);
-            queryClient.invalidateQueries({ queryKey: ['chats'] });
-            queryClient.invalidateQueries({ queryKey: ['chat'] });
+            
+            // Debounce query invalidations to prevent cascade
+            invalidationRef.current = true;
+            setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['chats'] });
+                queryClient.invalidateQueries({ queryKey: ['chat'] });
+                invalidationRef.current = false;
+            }, 100);
+            
         } else if (previousSession?.user && !currentSession?.user) {
             console.log('User logged out.');
             setUserId(null);
             router.push('/');
-            queryClient.invalidateQueries({ queryKey: ['chats'] });
-            queryClient.invalidateQueries({ queryKey: ['chat'] });
+            
+            // Debounce query invalidations to prevent cascade
+            invalidationRef.current = true;
+            setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['chats'] });
+                queryClient.invalidateQueries({ queryKey: ['chat'] });
+                invalidationRef.current = false;
+            }, 100);
         }
 
         previousSessionRef.current = currentSession;
@@ -157,7 +177,7 @@ export function ChatSidebar() {
     // Fix hydration error by ensuring consistent initial state
 
 
-    const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle } = useChats();
+    const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle, loadMoreChats, hasMoreChats, isLoadingMore } = useChats();
     const isLoading = !isMounted || isSessionLoading || isChatsLoading;
 
     const handleNewChat = () => {
@@ -176,6 +196,8 @@ export function ChatSidebar() {
             setOpenMobile(false);
         }
     };
+
+
 
     const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -310,6 +332,9 @@ export function ChatSidebar() {
                             onDeleteChat={handleDeleteChat}
                             onUpdateChatTitle={updateChatTitle}
                             onNavigateToChat={handleNavigateToChat}
+                            onLoadMoreChats={loadMoreChats}
+                            hasMoreChats={hasMoreChats}
+                            isLoadingMore={isLoadingMore}
                         />
                     </SidebarGroup>
                     
@@ -473,8 +498,9 @@ export function ChatSidebar() {
                             className="w-8 h-8 flex items-center justify-center text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
                             showLabel={false}
                         />
-
                     </div>
+
+
                 </SidebarFooter>
             </Sidebar>
 

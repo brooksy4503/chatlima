@@ -17,7 +17,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const chats = await getChats(userId);
+    // Get URL parameters for pagination
+    const { searchParams } = new URL(request.url);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 500); // Cap at 500 for reasonable performance
+
+    const chats = await getChats(userId, limit);
     return NextResponse.json(chats);
   } catch (error) {
     console.error("Error fetching chats:", error);

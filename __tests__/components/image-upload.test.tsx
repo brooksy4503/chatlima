@@ -217,13 +217,13 @@ describe('ImageUpload Component', () => {
       
       expect(screen.getByText('Image Detail Levels:')).toBeInTheDocument();
       expect(screen.getByText((content, element) => {
-        return element && element.textContent === '• Auto: AI chooses optimal quality (recommended)';
+        return Boolean(element && element.textContent === '• Auto: AI chooses optimal quality (recommended)');
       })).toBeInTheDocument();
       expect(screen.getByText((content, element) => {
-        return element && element.textContent === '• Low: Faster processing, good for simple images';
+        return Boolean(element && element.textContent === '• Low: Faster processing, good for simple images');
       })).toBeInTheDocument();
       expect(screen.getByText((content, element) => {
-        return element && element.textContent === '• High: Detailed analysis, better for complex images';
+        return Boolean(element && element.textContent === '• High: Detailed analysis, better for complex images');
       })).toBeInTheDocument();
     });
   });
@@ -336,7 +336,7 @@ describe('ImageUpload Component', () => {
       });
       
       expect(mockValidateImageFile).toHaveBeenCalledWith(mockFile, {
-        maxSize: 20 * 1024 * 1024,
+        maxSize: 2 * 1024 * 1024,
         allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
       });
       

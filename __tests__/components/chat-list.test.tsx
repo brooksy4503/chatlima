@@ -1,5 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ChatList } from '../../components/chat-list';
 import { toast } from 'sonner';
@@ -18,7 +18,7 @@ jest.mock('sonner', () => ({
 }));
 
 // Mock motion components
-jest.mock('motion/react', () => ({
+jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
@@ -104,6 +104,17 @@ jest.mock('next/link', () => {
   );
 });
 
+// Mock ChatShareDialog component
+jest.mock('../../components/chat-share-dialog', () => ({
+  ChatShareDialog: ({ isOpen, onOpenChange, chatId, chatTitle }: any) => 
+    isOpen ? (
+      <div data-testid="chat-share-dialog">
+        <div>Share Dialog for {chatTitle}</div>
+        <button onClick={() => onOpenChange(false)}>Close</button>
+      </div>
+    ) : null,
+}));
+
 // Mock Lucide icons
 jest.mock('lucide-react', () => ({
   MessageSquare: () => <div data-testid="message-square-icon" />,
@@ -113,6 +124,7 @@ jest.mock('lucide-react', () => ({
   XIcon: () => <div data-testid="x-icon" />,
   Loader2: () => <div data-testid="loader-icon" />,
   Pencil: () => <div data-testid="pencil-icon" />,
+  Share2: () => <div data-testid="share-icon" />,
 }));
 
 describe('ChatList', () => {
@@ -623,7 +635,9 @@ describe('ChatList', () => {
       // Simulate successful update
       const call = mockOnUpdateChatTitle.mock.calls[0];
       const { onSuccess } = call[1];
-      onSuccess();
+      act(() => {
+        onSuccess();
+      });
       
       // Edit mode should be exited
       await waitFor(() => {

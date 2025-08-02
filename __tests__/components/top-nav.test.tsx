@@ -1,6 +1,22 @@
 /// <reference types="@testing-library/jest-dom" />
 import { render, screen, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TopNav } from '../../components/top-nav';
+
+// Mock Next.js navigation
+jest.mock('next/navigation', () => ({
+  useParams: jest.fn(() => ({ id: undefined })),
+}));
+
+// Mock Next.js Link component
+jest.mock('next/link', () => ({
+  __esModule: true,
+  default: ({ children, href, className, ...props }: any) => (
+    <a href={href} className={className} {...props}>
+      {children}
+    </a>
+  ),
+}));
 
 // Mock Lucide React icons
 jest.mock('lucide-react', () => ({
@@ -9,6 +25,9 @@ jest.mock('lucide-react', () => ({
   ),
   Menu: ({ className }: { className?: string }) => (
     <svg data-testid="menu-icon" className={className} />
+  ),
+  Share: ({ className }: { className?: string }) => (
+    <svg data-testid="share-icon" className={className} />
   ),
 }));
 
@@ -47,6 +66,28 @@ jest.mock('../../components/ui/sidebar', () => ({
   ),
 }));
 
+// Mock ChatShareDialog component
+jest.mock('../../components/chat-share-dialog', () => ({
+  ChatShareDialog: ({ isOpen, onOpenChange, chatId, chatTitle }: any) => 
+    isOpen ? (
+      <div data-testid="chat-share-dialog">
+        <div data-testid="dialog-chat-id">{chatId}</div>
+        <div data-testid="dialog-chat-title">{chatTitle}</div>
+        <button onClick={() => onOpenChange(false)}>Close</button>
+      </div>
+    ) : null,
+}));
+
+// Mock toast
+jest.mock('sonner', () => ({
+  toast: {
+    info: jest.fn(),
+  },
+}));
+
+// Mock fetch globally
+global.fetch = jest.fn();
+
 // Mock window.location (simplified since we're not testing navigation)
 const originalLocation = window.location;
 
@@ -74,18 +115,49 @@ beforeAll(() => {
 
 // Restore original location after all tests
 afterAll(() => {
-  window.location = originalLocation;
+  if (originalLocation) {
+    delete (window as any).location;
+    window.location = originalLocation;
+  }
 });
 
 describe('TopNav', () => {
+  let queryClient: QueryClient;
+  let mockUseParams: jest.MockedFunction<any>;
+
+  const renderWithProviders = (ui: React.ReactElement) => {
+    return render(
+      <QueryClientProvider client={queryClient}>
+        {ui}
+      </QueryClientProvider>
+    );
+  };
+
   beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    
     jest.clearAllMocks();
     mockLocation.href = '';
+    
+    // Setup useParams mock
+    mockUseParams = require('next/navigation').useParams;
+    mockUseParams.mockReturnValue({ id: undefined });
+    
+    // Mock fetch to return a successful response
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ title: 'Test Chat' }),
+    });
   });
 
   describe('Basic Rendering and Props', () => {
     test('renders navigation bar with correct structure', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const nav = screen.getByRole('navigation');
       expect(nav).toBeInTheDocument();
@@ -93,7 +165,7 @@ describe('TopNav', () => {
     });
 
     test('renders ChatLima title', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const title = screen.getByRole('heading', { level: 1 });
       expect(title).toBeInTheDocument();
@@ -102,7 +174,7 @@ describe('TopNav', () => {
     });
 
     test('renders sidebar trigger with menu icon', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const sidebarTrigger = screen.getByTestId('sidebar-trigger');
       expect(sidebarTrigger).toBeInTheDocument();
@@ -117,7 +189,7 @@ describe('TopNav', () => {
     });
 
     test('renders new chat button with correct attributes', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const newChatButton = screen.getByRole('button', { name: /start new chat/i });
       expect(newChatButton).toBeInTheDocument();
@@ -132,7 +204,7 @@ describe('TopNav', () => {
     });
 
     test('applies correct CSS classes to navigation elements', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const nav = screen.getByRole('navigation');
       expect(nav).toHaveClass(
@@ -155,7 +227,7 @@ describe('TopNav', () => {
 
   describe('User Interactions', () => {
     test('new chat button is clickable and does not crash', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const newChatButton = screen.getByRole('button', { name: /start new chat/i });
       
@@ -164,7 +236,7 @@ describe('TopNav', () => {
     });
 
     test('handles multiple clicks on new chat button without crashing', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const newChatButton = screen.getByRole('button', { name: /start new chat/i });
       
@@ -177,7 +249,7 @@ describe('TopNav', () => {
     });
 
     test('sidebar trigger button is clickable', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const menuButton = screen.getByRole('button', { name: /open sidebar/i });
       
@@ -188,21 +260,21 @@ describe('TopNav', () => {
 
   describe('Accessibility', () => {
     test('has proper ARIA attributes for navigation', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const nav = screen.getByRole('navigation');
       expect(nav).toBeInTheDocument();
     });
 
     test('sidebar trigger has accessible name and role', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const menuButton = screen.getByRole('button', { name: /open sidebar/i });
       expect(menuButton).toHaveAttribute('aria-label', 'Open sidebar');
     });
 
     test('new chat button has accessible name and role', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const newChatButton = screen.getByRole('button', { name: /start new chat/i });
       expect(newChatButton).toHaveAttribute('aria-label', 'Start new chat');
@@ -210,7 +282,7 @@ describe('TopNav', () => {
     });
 
     test('supports keyboard navigation', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const menuButton = screen.getByRole('button', { name: /open sidebar/i });
       const newChatButton = screen.getByRole('button', { name: /start new chat/i });
@@ -224,7 +296,7 @@ describe('TopNav', () => {
     });
 
     test('has proper heading hierarchy', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const heading = screen.getByRole('heading', { level: 1 });
       expect(heading).toBeInTheDocument();
@@ -234,7 +306,7 @@ describe('TopNav', () => {
 
   describe('Component Structure', () => {
     test('maintains correct layout structure', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const nav = screen.getByRole('navigation');
       const sidebarTrigger = screen.getByTestId('sidebar-trigger');
@@ -248,7 +320,7 @@ describe('TopNav', () => {
     });
 
     test('renders icons with correct dimensions', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       const menuIcon = screen.getByTestId('menu-icon');
       const plusIcon = screen.getByTestId('plus-circle-icon');
@@ -260,7 +332,7 @@ describe('TopNav', () => {
 
   describe('Error Handling', () => {
     test('handles navigation errors gracefully', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       // Mock location.href to throw an error when set
       const originalHref = mockLocation.href;
@@ -288,7 +360,7 @@ describe('TopNav', () => {
 
   describe('Integration Tests', () => {
     test('complete navigation workflow', () => {
-      render(<TopNav />);
+      renderWithProviders(<TopNav />);
       
       // User sees the navigation bar
       expect(screen.getByRole('navigation')).toBeInTheDocument();

@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut, useSession } from "@/lib/auth-client";
+import { useAuth, signOut } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CheckoutButton } from "@/components/checkout-button";
 
 export function UserAccountMenu() {
-  const { data: session } = useSession();
+  const { session } = useAuth();
 
   if (!session?.user) return null;
 
@@ -30,7 +30,7 @@ export function UserAccountMenu() {
   const userInitials = session.user.name
     ? session.user.name
         .split(' ')
-        .map(name => name[0])
+        .map((name: string) => name[0])
         .join('')
         .toUpperCase()
     : session.user.email?.[0]?.toUpperCase() || 'U';

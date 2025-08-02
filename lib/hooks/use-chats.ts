@@ -1,22 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { type Chat } from '@/lib/db/schema';
+import { type Chat, type ChatWithShareInfo } from '@/lib/db/schema';
 import { toast } from 'sonner';
-import { useSession } from '@/lib/auth-client';
+import { useAuth } from '@/hooks/useAuth';
+import { useState, useCallback } from 'react';
 
 export function useChats() {
   const queryClient = useQueryClient();
-  const { data: session, isPending: isSessionLoading } = useSession();
+  const { session, isPending: isSessionLoading } = useAuth();
+  const [currentLimit, setCurrentLimit] = useState(50);
 
   // Main query to fetch chats
   const {
     data: chats = [],
     isLoading,
     error,
-    refetch
-  } = useQuery<Chat[]>({
-    queryKey: ['chats'],
+    refetch,
+    isFetching
+  } = useQuery<ChatWithShareInfo[]>({
+    queryKey: ['chats', currentLimit],
     queryFn: async () => {
-      const response = await fetch('/api/chats');
+      const response = await fetch(`/api/chats?limit=${currentLimit}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch chats');
@@ -25,9 +28,20 @@ export function useChats() {
       return response.json();
     },
     enabled: !isSessionLoading && !!session?.user?.id, // Only fetch when session is loaded and user exists
-    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    refetchOnWindowFocus: true, // Refetch when window regains focus
+    staleTime: 1000 * 60 * 10, // Consider data fresh for 10 minutes (increased from 5)
+    refetchOnWindowFocus: false, // Disable aggressive refetching on focus
+    refetchOnMount: false, // Don't refetch on mount if data is available
+    refetchOnReconnect: false, // Don't refetch on reconnect
   });
+
+  // Load more chats function
+  const loadMoreChats = useCallback(() => {
+    const newLimit = currentLimit + 50;
+    setCurrentLimit(newLimit);
+  }, [currentLimit]);
+
+  // Check if there might be more chats to load
+  const hasMoreChats = chats.length === currentLimit;
 
   // Mutation to delete a chat
   const deleteChat = useMutation({
@@ -44,7 +58,7 @@ export function useChats() {
     },
     onSuccess: (deletedChatId) => {
       // Update cache by removing the deleted chat
-      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
+      queryClient.setQueryData<ChatWithShareInfo[]>(['chats'], (oldChats = []) =>
         oldChats.filter(chat => chat.id !== deletedChatId)
       );
 
@@ -79,10 +93,10 @@ export function useChats() {
       await queryClient.cancelQueries({ queryKey: ['chats'] });
 
       // Snapshot the previous value
-      const previousChats = queryClient.getQueryData<Chat[]>(['chats']);
+      const previousChats = queryClient.getQueryData<ChatWithShareInfo[]>(['chats']);
 
       // Optimistically update to the new value
-      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
+      queryClient.setQueryData<ChatWithShareInfo[]>(['chats'], (oldChats = []) =>
         oldChats.map(chat =>
           chat.id === chatId ? { ...chat, title, updatedAt: new Date() } : chat
         )
@@ -95,18 +109,20 @@ export function useChats() {
       console.error('Error updating chat title:', err);
       // Rollback to the previous value if optimistic update occurred
       if (context?.previousChats) {
-        queryClient.setQueryData<Chat[]>(['chats'], context.previousChats);
+        queryClient.setQueryData<ChatWithShareInfo[]>(['chats'], context.previousChats);
       }
       toast.error(err.message || 'Failed to update chat title. Please try again.');
     },
-    onSuccess: (data: Chat, variables) => {
+    onSuccess: (data: ChatWithShareInfo, variables) => {
       // Update the specific chat in the cache with the server's response
-      queryClient.setQueryData<Chat[]>(['chats'], (oldChats = []) =>
+      queryClient.setQueryData<ChatWithShareInfo[]>(['chats'], (oldChats = []) =>
         oldChats.map(chat => (chat.id === variables.chatId ? data : chat))
       );
       toast.success('Chat title updated successfully!');
     }
   });
+
+
 
   // Function to invalidate chats cache for refresh
   const refreshChats = () => {
@@ -122,6 +138,10 @@ export function useChats() {
     updateChatTitle: updateChatTitle.mutate,
     isUpdatingChatTitle: updateChatTitle.isPending,
     refreshChats,
-    refetch
+    refetch,
+    loadMoreChats,
+    hasMoreChats,
+    isLoadingMore: isFetching && !isLoading,
+    currentLimit,
   };
 }
