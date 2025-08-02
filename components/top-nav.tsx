@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ChatShareDialog } from "@/components/chat-share-dialog";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { toast } from "sonner";
 
 export function TopNav() {
   const params = useParams();
@@ -51,8 +53,26 @@ export function TopNav() {
         {/* ChatLima title - Centered */}
         <h1 className="text-3xl font-semibold">ChatLima</h1>
         
-        {/* Action buttons - Right side */}
-        <div className="flex items-center gap-2">
+        {/* Action buttons and legal links - Right side */}
+        <div className="flex items-center gap-4">
+          {/* Legal links */}
+          <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground/70">
+            <Link
+              href="/terms"
+              className="hover:text-muted-foreground hover:underline transition-colors"
+            >
+              Terms
+            </Link>
+            <span className="text-muted-foreground/40">•</span>
+            <button
+              type="button"
+              onClick={() => toast.info("Privacy Policy coming soon")}
+              className="hover:text-muted-foreground hover:underline transition-colors"
+            >
+              Privacy
+            </button>
+          </div>
+          
           {/* Share button - only show if we're on a chat page */}
           {chatId && (
             <Button

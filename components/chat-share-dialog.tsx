@@ -227,13 +227,22 @@ export function ChatShareDialog({
                 />
                 <Label htmlFor="consent" className="text-sm leading-5">
                   I understand this creates an unlisted public link and agree to the{" "}
-                  <a 
-                    href="/terms" 
-                    target="_blank" 
+                  <a
+                    href="/terms"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
                   >
                     Terms of Service
+                  </a>
+                  {" "}and{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Privacy Policy
                   </a>
                   .
                 </Label>

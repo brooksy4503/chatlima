@@ -498,8 +498,9 @@ export function ChatSidebar() {
                             className="w-8 h-8 flex items-center justify-center text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
                             showLabel={false}
                         />
-
                     </div>
+
+
                 </SidebarFooter>
             </Sidebar>
 
