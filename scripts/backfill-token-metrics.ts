@@ -127,9 +127,10 @@ async function backfillTokenMetrics() {
                     processed++;
 
                     // Extract data from polar event
-                    const credits = event.eventPayload.credits_consumed || 1;
-                    const additionalCost = event.eventPayload.additionalCost || 0;
-                    const timestamp = event.eventPayload.timestamp || event.createdAt.toISOString();
+                    const payload = event.eventPayload as PolarEvent['eventPayload'];
+                    const credits = payload.credits_consumed || 1;
+                    const additionalCost = payload.additionalCost || 0;
+                    const timestamp = payload.timestamp || event.createdAt.toISOString();
 
                     // Estimate token usage
                     const { inputTokens, outputTokens, totalTokens } = estimateTokensFromCredits(credits, additionalCost);
