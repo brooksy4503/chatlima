@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
             .select({
                 userId: tokenUsageMetrics.userId,
                 totalTokens: sql<number>`COALESCE(SUM(${tokenUsageMetrics.totalTokens}), 0)`,
-                totalCost: sql<number>`COALESCE(SUM(${tokenUsageMetrics.estimatedCost}), 0)`,
+                totalCost: sql<number>`COALESCE(SUM(COALESCE(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestCount: sql<number>`COUNT(*)`,
                 lastActive: sql<string>`MAX(${tokenUsageMetrics.createdAt})`,
             })

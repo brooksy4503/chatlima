@@ -176,10 +176,10 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
     const colors: Record<string, string> = {
       openai: "bg-green-100 text-green-800",
       anthropic: "bg-blue-100 text-blue-800",
-      google: "bg-red-100 text-red-800",
       groq: "bg-purple-100 text-purple-800",
       xai: "bg-orange-100 text-orange-800",
-      openrouter: "bg-cyan-100 text-cyan-800",
+      openrouter: "bg-indigo-100 text-indigo-800",
+      requesty: "bg-cyan-100 text-cyan-800",
     };
     return colors[provider.toLowerCase()] || "bg-gray-100 text-gray-800";
   };
@@ -265,10 +265,10 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
                   <SelectItem value="all">All Providers</SelectItem>
                   <SelectItem value="openai">OpenAI</SelectItem>
                   <SelectItem value="anthropic">Anthropic</SelectItem>
-                  <SelectItem value="google">Google</SelectItem>
                   <SelectItem value="groq">Groq</SelectItem>
                   <SelectItem value="xai">xAI</SelectItem>
                   <SelectItem value="openrouter">OpenRouter</SelectItem>
+                  <SelectItem value="requesty">Requesty</SelectItem>
                 </SelectContent>
               </Select>
               

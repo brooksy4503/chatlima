@@ -204,6 +204,13 @@
       "when": 1754180474639,
       "tag": "0029_absurd_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1738347600000,
+      "tag": "0030_fix_model_pricing_unique_constraint",
+      "breakpoints": true
     }
   ]
 }
