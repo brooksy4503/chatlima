@@ -4,6 +4,7 @@ import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { modelID } from '@/ai/providers';
 import { CostCalculationService } from './services/costCalculation';
+import { OpenRouterCostTracker } from './services/openrouterCostTracker';
 
 // Diagnostic logging helper
 const logDiagnostic = (category: string, message: string, data?: any) => {
@@ -49,6 +50,8 @@ export interface TokenTrackingParams {
     status?: 'pending' | 'processing' | 'completed' | 'failed';
     errorMessage?: string;
     metadata?: Record<string, any>;
+    /** Generation ID from OpenRouter for fetching actual costs */
+    generationId?: string;
 }
 
 /**
@@ -87,13 +90,14 @@ export class TokenTrackingService {
                 processingTimeMs,
                 status = 'completed',
                 errorMessage,
-                metadata = {}
+                metadata = {},
+                generationId
             } = params;
 
             // Extract token counts from various possible formats
-            const inputTokens = this.extractInputTokens(tokenUsage);
-            const outputTokens = this.extractOutputTokens(tokenUsage);
-            const totalTokens = inputTokens + outputTokens;
+            let inputTokens = this.extractInputTokens(tokenUsage);
+            let outputTokens = this.extractOutputTokens(tokenUsage);
+            let totalTokens = inputTokens + outputTokens;
 
             logDiagnostic('TOKEN_EXTRACTION', `Extracted token counts`, { trackingId, inputTokens, outputTokens, totalTokens, rawUsage: tokenUsage });
 
@@ -102,20 +106,74 @@ export class TokenTrackingService {
             const pricingInfo = await this.getModelPricing(modelId, provider);
             logDiagnostic('PRICING_RESULT', `Model pricing result`, { trackingId, hasPricing: !!pricingInfo, currency: pricingInfo?.currency });
 
-            // Calculate costs
-            logDiagnostic('COST_CALCULATION', `Calculating costs`, { trackingId, inputTokens, outputTokens });
-            const { estimatedCost, actualCost } = await this.calculateCosts(
+            // Calculate costs using estimated pricing first
+            logDiagnostic('COST_CALCULATION', `Calculating estimated costs`, { trackingId, inputTokens, outputTokens });
+            const { estimatedCost, actualCost: fallbackActualCost } = await this.calculateCosts(
                 inputTokens,
                 outputTokens,
                 modelId,
                 provider,
                 pricingInfo
             );
-            logDiagnostic('COST_RESULT', `Cost calculation result`, { trackingId, estimatedCost, actualCost });
+            logDiagnostic('COST_RESULT', `Estimated cost calculation result`, { trackingId, estimatedCost, actualCost: fallbackActualCost });
+
+            // For OpenRouter: Try to fetch actual cost and native token counts
+            let finalActualCost = fallbackActualCost;
+            let openRouterData = null;
+
+            if (provider === 'openrouter' && generationId) {
+                logDiagnostic('OPENROUTER_FETCH_START', `Fetching actual cost from OpenRouter`, { trackingId, generationId });
+
+                const openRouterResult = await OpenRouterCostTracker.fetchActualCost(generationId);
+                openRouterData = openRouterResult.generationData;
+
+                if (openRouterResult.actualCost !== null) {
+                    finalActualCost = openRouterResult.actualCost;
+                    logDiagnostic('OPENROUTER_ACTUAL_COST', `Retrieved actual cost from OpenRouter`, {
+                        trackingId,
+                        generationId,
+                        actualCost: finalActualCost,
+                        estimatedCost,
+                        costDifference: finalActualCost - estimatedCost
+                    });
+                }
+
+                // Use native token counts if available (more accurate than normalized counts)
+                if (openRouterResult.nativeInputTokens !== null && openRouterResult.nativeOutputTokens !== null) {
+                    inputTokens = openRouterResult.nativeInputTokens;
+                    outputTokens = openRouterResult.nativeOutputTokens;
+                    totalTokens = inputTokens + outputTokens;
+
+                    logDiagnostic('OPENROUTER_NATIVE_TOKENS', `Using native token counts from OpenRouter`, {
+                        trackingId,
+                        generationId,
+                        nativeInputTokens: inputTokens,
+                        nativeOutputTokens: outputTokens,
+                        originalInputTokens: this.extractInputTokens(tokenUsage),
+                        originalOutputTokens: this.extractOutputTokens(tokenUsage)
+                    });
+                }
+            }
 
             // Store token usage metrics
             logDiagnostic('DB_INSERT_START', `Inserting token usage metrics`, { trackingId, userId, chatId, messageId });
             const recordId = nanoid();
+
+            // Prepare enhanced metadata
+            const enhancedMetadata = {
+                ...metadata,
+                rawUsage: tokenUsage,
+                ...(generationId && { generationId }),
+                ...(openRouterData && { openRouterData }),
+                ...(provider === 'openrouter' && {
+                    openRouterFetch: {
+                        attempted: !!generationId,
+                        successful: !!openRouterData,
+                        hasActualCost: finalActualCost !== fallbackActualCost
+                    }
+                })
+            };
+
             await db.insert(tokenUsageMetrics).values({
                 id: recordId,
                 userId,
@@ -127,12 +185,12 @@ export class TokenTrackingService {
                 outputTokens,
                 totalTokens,
                 estimatedCost: estimatedCost.toString(),
-                actualCost: actualCost ? actualCost.toString() : undefined,
+                actualCost: finalActualCost ? finalActualCost.toString() : undefined,
                 currency: pricingInfo?.currency || 'USD',
                 processingTimeMs,
                 status,
                 errorMessage,
-                metadata: { ...metadata, rawUsage: tokenUsage },
+                metadata: enhancedMetadata,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
@@ -147,7 +205,7 @@ export class TokenTrackingService {
                 outputTokens,
                 totalTokens,
                 estimatedCost,
-                actualCost: actualCost || 0,
+                actualCost: finalActualCost || 0,
             });
             logDiagnostic('DAILY_UPDATE_SUCCESS', `Successfully updated daily token usage`, { trackingId });
 

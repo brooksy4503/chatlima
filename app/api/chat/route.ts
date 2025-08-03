@@ -1236,218 +1236,229 @@ export async function POST(req: Request) {
           return; // Exit onFinish early if messages can't be processed for DB.
         }
 
+        // Step 1: Save messages to database (independent)
         try {
           await saveMessages({ messages: dbMessages });
           console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
-
-          // Track detailed token usage metrics - moved inside the try block to ensure message ID consistency
-          const typedResponse = response as any;
-          const provider = selectedModel.split('/')[0];
-          const finalAssistantMessageId = assistantMessageId || response.messages?.[response.messages.length - 1]?.id || nanoid();
-
-          try {
-            logDiagnostic('TOKEN_TRACKING_START', `Starting detailed token tracking`, {
-              requestId,
-              userId,
-              chatId: id,
-              messageId: finalAssistantMessageId,
-              modelId: selectedModel,
-              provider,
-              tokenUsage: typedResponse.usage || {
-                inputTokens: 0,
-                outputTokens: 0,
-                totalTokens: 0
-              }
-            });
-
-            // Debug: Log the actual response structure to understand the format
-            const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
-            const lastMessageContent = lastMessage?.content;
-            let contentPreview = '';
-
-            if (typeof lastMessageContent === 'string') {
-              contentPreview = lastMessageContent.substring(0, 100);
-            } else if (Array.isArray(lastMessageContent)) {
-              // Handle structured content (Google models)
-              const textParts = lastMessageContent
-                .filter((part: any) => part.type === 'text')
-                .map((part: any) => part.text)
-                .join(' ');
-              contentPreview = textParts.substring(0, 100);
-            } else if (lastMessageContent) {
-              contentPreview = JSON.stringify(lastMessageContent).substring(0, 100);
-            }
-
-            console.log(`[Chat ${id}][onFinish] OpenRouter response structure:`, {
-              hasUsage: !!typedResponse.usage,
-              usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
-              usageValue: typedResponse.usage,
-              hasMessages: !!typedResponse.messages,
-              messageCount: typedResponse.messages?.length || 0,
-              lastMessageContent: contentPreview
-            });
-
-            // Extract token usage with better fallback logic
-            let tokenUsageData = typedResponse.usage;
-
-            // Enhanced logging to debug OpenRouter response
-            console.log(`[Chat ${id}][onFinish] Raw OpenRouter usage data:`, {
-              hasUsage: !!typedResponse.usage,
-              usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
-              usageValue: typedResponse.usage,
-              inputTokens: typedResponse.usage?.inputTokens,
-              outputTokens: typedResponse.usage?.outputTokens,
-              promptTokens: typedResponse.usage?.promptTokens,
-              prompt_tokens: typedResponse.usage?.prompt_tokens,
-              completionTokens: typedResponse.usage?.completionTokens,
-              completion_tokens: typedResponse.usage?.completion_tokens,
-              total_tokens: typedResponse.usage?.total_tokens,
-              usageObject: typedResponse.usage
-            });
-
-            // If no usage data or missing input tokens, try to estimate from message content
-            // OpenRouter may use different field names (prompt_tokens, completion_tokens)
-            const inputTokenCount = tokenUsageData?.inputTokens || tokenUsageData?.prompt_tokens || 0;
-            const outputTokenCount = tokenUsageData?.outputTokens || tokenUsageData?.completion_tokens || 0;
-
-            console.log(`[Chat ${id}][onFinish] Parsed token counts:`, {
-              inputTokenCount,
-              outputTokenCount,
-              needsInputEstimation: inputTokenCount === 0,
-              needsOutputEstimation: outputTokenCount === 0
-            });
-
-            const needsInputEstimation = !tokenUsageData ||
-              inputTokenCount === 0 ||
-              inputTokenCount === undefined;
-
-            const needsOutputEstimation = !tokenUsageData ||
-              outputTokenCount === 0 ||
-              outputTokenCount === undefined;
-
-            if (needsInputEstimation || needsOutputEstimation) {
-              const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
-
-              let outputContentLength = 0;
-              let inputContentLength = 0;
-
-              // Calculate output tokens from the AI response
-              if (needsOutputEstimation && lastMessage?.content) {
-                // Handle structured content (Google models)
-                if (Array.isArray(lastMessage.content)) {
-                  outputContentLength = lastMessage.content
-                    .filter((part: any) => part.type === 'text')
-                    .map((part: any) => part.text)
-                    .join('').length;
-                } else if (typeof lastMessage.content === 'string') {
-                  outputContentLength = lastMessage.content.length;
-                }
-              }
-
-              // Calculate input tokens from the ENTIRE conversation context sent to the AI
-              if (needsInputEstimation && modelMessages) {
-                console.log(`[Chat ${id}][onFinish] Estimating input tokens from full conversation context (${modelMessages.length} messages)`);
-
-                let totalInputContentLength = 0;
-
-                // Count all messages that were sent to the AI model
-                modelMessages.forEach((message, index) => {
-                  let messageContentLength = 0;
-
-                  if (message.content) {
-                    if (Array.isArray(message.content)) {
-                      // Handle structured content (parts array)
-                      messageContentLength = message.content
-                        .filter((part: any) => part.type === 'text')
-                        .map((part: any) => part.text || '')
-                        .join('').length;
-                    } else if (typeof message.content === 'string') {
-                      messageContentLength = message.content.length;
-                    }
-                  }
-
-                  // Add to total input length
-                  totalInputContentLength += messageContentLength;
-
-                  console.log(`[Chat ${id}][onFinish] Message ${index + 1} (${message.role}): ${messageContentLength} chars`);
-                });
-
-                inputContentLength = totalInputContentLength;
-                console.log(`[Chat ${id}][onFinish] Total input content length: ${inputContentLength} chars (${modelMessages.length} messages)`);
-              }
-
-              // Add system instruction length if present
-              if (needsInputEstimation && effectiveSystemInstruction) {
-                const systemLength = effectiveSystemInstruction.length;
-                inputContentLength += systemLength;
-                console.log(`[Chat ${id}][onFinish] Added system instruction: ${systemLength} chars`);
-              }
-
-              const estimatedOutputTokens = Math.ceil(outputContentLength / 4);
-              const estimatedInputTokens = Math.ceil(inputContentLength / 4);
-
-              // Use existing token data if available, otherwise use estimates
-              const finalInputTokens = needsInputEstimation ? estimatedInputTokens : inputTokenCount;
-              const finalOutputTokens = needsOutputEstimation ? estimatedOutputTokens : outputTokenCount;
-
-              tokenUsageData = {
-                inputTokens: finalInputTokens,
-                outputTokens: finalOutputTokens,
-                totalTokens: finalInputTokens + finalOutputTokens
-              };
-
-              console.log(`[Chat ${id}][onFinish] Final token usage (estimated + OpenRouter):`, {
-                originalInput: typedResponse.usage?.inputTokens,
-                originalOutput: typedResponse.usage?.outputTokens,
-                estimatedInput: estimatedInputTokens,
-                estimatedOutput: estimatedOutputTokens,
-                finalInput: finalInputTokens,
-                finalOutput: finalOutputTokens,
-                finalTotal: finalInputTokens + finalOutputTokens,
-                conversationLength: modelMessages ? modelMessages.length : 0,
-                totalInputChars: inputContentLength,
-                systemInstructionChars: effectiveSystemInstruction ? effectiveSystemInstruction.length : 0
-              });
-            }
-
-            await TokenTrackingService.trackTokenUsage({
-              userId,
-              chatId: id,
-              messageId: finalAssistantMessageId,
-              modelId: selectedModel,
-              provider,
-              tokenUsage: tokenUsageData || {
-                inputTokens: 0,
-                outputTokens: 0,
-                totalTokens: 0
-              },
-              processingTimeMs: event?.durationMs,
-              status: 'completed',
-              metadata: {
-                webSearchEnabled: secureWebSearch.enabled,
-                webSearchContextSize: secureWebSearch.contextSize,
-                isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
-                responseTime: event?.timestamp
-              }
-            });
-
-            logDiagnostic('TOKEN_TRACKING_SUCCESS', `Successfully tracked detailed token usage`, {
-              requestId,
-              userId,
-              chatId: id,
-              messageId: finalAssistantMessageId
-            });
-          } catch (error: any) {
-            logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage`, {
-              requestId,
-              userId,
-              error: error instanceof Error ? error.message : String(error)
-            });
-            console.error(`[Chat ${id}][onFinish] Failed to track detailed token usage for user ${userId}:`, error);
-            // Don't break the response flow if detailed tracking fails
-          }
         } catch (dbMessagesError: any) {
           console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
+          // Continue to analytics logging even if message saving fails
+        }
+
+        // Step 2: Track detailed token usage metrics (INDEPENDENT of database operations)
+        const typedResponse = response as any;
+        const provider = selectedModel.split('/')[0];
+        const finalAssistantMessageId = assistantMessageId || response.messages?.[response.messages.length - 1]?.id || nanoid();
+
+        try {
+          logDiagnostic('TOKEN_TRACKING_START', `Starting detailed token tracking`, {
+            requestId,
+            userId,
+            chatId: id,
+            messageId: finalAssistantMessageId,
+            modelId: selectedModel,
+            provider,
+            tokenUsage: typedResponse.usage || {
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0
+            }
+          });
+
+          // Debug: Log the actual response structure to understand the format
+          const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+          const lastMessageContent = lastMessage?.content;
+          let contentPreview = '';
+
+          if (typeof lastMessageContent === 'string') {
+            contentPreview = lastMessageContent.substring(0, 100);
+          } else if (Array.isArray(lastMessageContent)) {
+            // Handle structured content (Google models)
+            const textParts = lastMessageContent
+              .filter((part: any) => part.type === 'text')
+              .map((part: any) => part.text)
+              .join(' ');
+            contentPreview = textParts.substring(0, 100);
+          } else if (lastMessageContent) {
+            contentPreview = JSON.stringify(lastMessageContent).substring(0, 100);
+          }
+
+          // Extract generation ID for OpenRouter cost tracking
+          const generationId = provider === 'openrouter' ?
+            (typedResponse.id || typedResponse.generation_id || typedResponse.generationId) : null;
+
+          console.log(`[Chat ${id}][onFinish] OpenRouter response structure:`, {
+            hasUsage: !!typedResponse.usage,
+            usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
+            usageValue: typedResponse.usage,
+            hasMessages: !!typedResponse.messages,
+            messageCount: typedResponse.messages?.length || 0,
+            lastMessageContent: contentPreview,
+            generationId: generationId,
+            hasGenerationId: !!generationId
+          });
+
+          // Extract token usage with better fallback logic
+          let tokenUsageData = typedResponse.usage;
+
+          // Enhanced logging to debug OpenRouter response
+          console.log(`[Chat ${id}][onFinish] Raw OpenRouter usage data:`, {
+            hasUsage: !!typedResponse.usage,
+            usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
+            usageValue: typedResponse.usage,
+            inputTokens: typedResponse.usage?.inputTokens,
+            outputTokens: typedResponse.usage?.outputTokens,
+            promptTokens: typedResponse.usage?.promptTokens,
+            prompt_tokens: typedResponse.usage?.prompt_tokens,
+            completionTokens: typedResponse.usage?.completionTokens,
+            completion_tokens: typedResponse.usage?.completion_tokens,
+            total_tokens: typedResponse.usage?.total_tokens,
+            usageObject: typedResponse.usage
+          });
+
+          // If no usage data or missing input tokens, try to estimate from message content
+          // OpenRouter may use different field names (prompt_tokens, completion_tokens)
+          const inputTokenCount = tokenUsageData?.inputTokens || tokenUsageData?.prompt_tokens || 0;
+          const outputTokenCount = tokenUsageData?.outputTokens || tokenUsageData?.completion_tokens || 0;
+
+          console.log(`[Chat ${id}][onFinish] Parsed token counts:`, {
+            inputTokenCount,
+            outputTokenCount,
+            needsInputEstimation: inputTokenCount === 0,
+            needsOutputEstimation: outputTokenCount === 0
+          });
+
+          const needsInputEstimation = !tokenUsageData ||
+            inputTokenCount === 0 ||
+            inputTokenCount === undefined;
+
+          const needsOutputEstimation = !tokenUsageData ||
+            outputTokenCount === 0 ||
+            outputTokenCount === undefined;
+
+          if (needsInputEstimation || needsOutputEstimation) {
+            const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+
+            let outputContentLength = 0;
+            let inputContentLength = 0;
+
+            // Calculate output tokens from the AI response
+            if (needsOutputEstimation && lastMessage?.content) {
+              // Handle structured content (Google models)
+              if (Array.isArray(lastMessage.content)) {
+                outputContentLength = lastMessage.content
+                  .filter((part: any) => part.type === 'text')
+                  .map((part: any) => part.text)
+                  .join('').length;
+              } else if (typeof lastMessage.content === 'string') {
+                outputContentLength = lastMessage.content.length;
+              }
+            }
+
+            // Calculate input tokens from the ENTIRE conversation context sent to the AI
+            if (needsInputEstimation && modelMessages) {
+              console.log(`[Chat ${id}][onFinish] Estimating input tokens from full conversation context (${modelMessages.length} messages)`);
+
+              let totalInputContentLength = 0;
+
+              // Count all messages that were sent to the AI model
+              modelMessages.forEach((message, index) => {
+                let messageContentLength = 0;
+
+                if (message.content) {
+                  if (Array.isArray(message.content)) {
+                    // Handle structured content (parts array)
+                    messageContentLength = message.content
+                      .filter((part: any) => part.type === 'text')
+                      .map((part: any) => part.text || '')
+                      .join('').length;
+                  } else if (typeof message.content === 'string') {
+                    messageContentLength = message.content.length;
+                  }
+                }
+
+                // Add to total input length
+                totalInputContentLength += messageContentLength;
+
+                console.log(`[Chat ${id}][onFinish] Message ${index + 1} (${message.role}): ${messageContentLength} chars`);
+              });
+
+              inputContentLength = totalInputContentLength;
+              console.log(`[Chat ${id}][onFinish] Total input content length: ${inputContentLength} chars (${modelMessages.length} messages)`);
+            }
+
+            // Add system instruction length if present
+            if (needsInputEstimation && effectiveSystemInstruction) {
+              const systemLength = effectiveSystemInstruction.length;
+              inputContentLength += systemLength;
+              console.log(`[Chat ${id}][onFinish] Added system instruction: ${systemLength} chars`);
+            }
+
+            const estimatedOutputTokens = Math.ceil(outputContentLength / 4);
+            const estimatedInputTokens = Math.ceil(inputContentLength / 4);
+
+            // Use existing token data if available, otherwise use estimates
+            const finalInputTokens = needsInputEstimation ? estimatedInputTokens : inputTokenCount;
+            const finalOutputTokens = needsOutputEstimation ? estimatedOutputTokens : outputTokenCount;
+
+            tokenUsageData = {
+              inputTokens: finalInputTokens,
+              outputTokens: finalOutputTokens,
+              totalTokens: finalInputTokens + finalOutputTokens
+            };
+
+            console.log(`[Chat ${id}][onFinish] Final token usage (estimated + OpenRouter):`, {
+              originalInput: typedResponse.usage?.inputTokens,
+              originalOutput: typedResponse.usage?.outputTokens,
+              estimatedInput: estimatedInputTokens,
+              estimatedOutput: estimatedOutputTokens,
+              finalInput: finalInputTokens,
+              finalOutput: finalOutputTokens,
+              finalTotal: finalInputTokens + finalOutputTokens,
+              conversationLength: modelMessages ? modelMessages.length : 0,
+              totalInputChars: inputContentLength,
+              systemInstructionChars: effectiveSystemInstruction ? effectiveSystemInstruction.length : 0
+            });
+          }
+
+          await TokenTrackingService.trackTokenUsage({
+            userId,
+            chatId: id,
+            messageId: finalAssistantMessageId,
+            modelId: selectedModel,
+            provider,
+            tokenUsage: tokenUsageData || {
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0
+            },
+            processingTimeMs: event?.durationMs,
+            status: 'completed',
+            generationId: generationId || undefined,
+            metadata: {
+              webSearchEnabled: secureWebSearch.enabled,
+              webSearchContextSize: secureWebSearch.contextSize,
+              isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
+              responseTime: event?.timestamp,
+              // Add flag to indicate this was logged independently of DB operations
+              independentLogging: true
+            }
+          });
+
+          logDiagnostic('TOKEN_TRACKING_SUCCESS', `Successfully tracked detailed token usage (independent)`, {
+            requestId,
+            userId,
+            chatId: id,
+            messageId: finalAssistantMessageId
+          });
+        } catch (error: any) {
+          logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage (independent)`, {
+            requestId,
+            userId,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          console.error(`[Chat ${id}][onFinish] Failed to track detailed token usage for user ${userId}:`, error);
+          // Don't break the response flow if detailed tracking fails
         }
       } catch (finishError: any) {
         console.error(`[Chat ${id}][onFinish] Unexpected error in onFinish:`, finishError);

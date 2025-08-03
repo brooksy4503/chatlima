@@ -29,11 +29,36 @@ import { AdminUserBreakdown } from "./AdminUserBreakdown";
 import { AdminModelAnalytics } from "./AdminModelAnalytics";
 import { AdminPricingManagement } from "./AdminPricingManagement";
 import { AdminUsageLimits } from "./AdminUsageLimits";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export function AdminDashboard() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState("overview");
+
+  // Pricing sync mutation
+  const syncPricingMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/sync-pricing', {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to sync pricing data');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast.success('Pricing data synchronized successfully', {
+        description: `Processed ${data.data.modelsProcessed} models, added ${data.data.newPricingEntries} new entries, updated ${data.data.updatedPricingEntries} entries.`
+      });
+    },
+    onError: (error) => {
+      toast.error('Failed to sync pricing data', {
+        description: error.message
+      });
+    }
+  });
 
   const handleRefresh = () => {
     setLoading(true);
@@ -44,6 +69,10 @@ export function AdminDashboard() {
   const handleExport = () => {
     // Placeholder for export functionality
     console.log("Export functionality not implemented yet");
+  };
+
+  const handleSyncPricing = () => {
+    syncPricingMutation.mutate();
   };
 
   return (
@@ -60,6 +89,14 @@ export function AdminDashboard() {
           </div>
         </div>
         <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={handleSyncPricing}
+            disabled={syncPricingMutation.isPending}
+          >
+            <RefreshCw className={cn("mr-2 h-4 w-4", syncPricingMutation.isPending && "animate-spin")} />
+            Sync Pricing
+          </Button>
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
             Refresh

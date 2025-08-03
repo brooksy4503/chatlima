@@ -30,7 +30,7 @@ CREATE TABLE "model_pricing" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "model_pricing_model_id_provider_active_idx" UNIQUE("model_id","provider"),
-	CONSTRAINT "check_model_pricing_prices_positive" CHECK ("model_pricing"."input_token_price" > 0 AND "model_pricing"."output_token_price" > 0)
+	CONSTRAINT "check_model_pricing_prices_positive" CHECK ("model_pricing"."input_token_price" >= 0 AND "model_pricing"."output_token_price" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "token_usage_metrics" (

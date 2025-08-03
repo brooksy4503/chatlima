@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { 
   BarChart3, 
@@ -73,141 +74,80 @@ interface TimeSeriesData {
   requests: number;
 }
 
-export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProps) {
+export function AdminModelAnalytics({ loading: externalLoading = false }: AdminModelAnalyticsProps) {
   const [timeRange, setTimeRange] = React.useState<"day" | "week" | "month" | "year">("month");
   const [providerFilter, setProviderFilter] = React.useState<string>("all");
   const [sortBy, setSortBy] = React.useState<"tokens" | "cost" | "requests">("tokens");
-  const [modelAnalytics, setModelAnalytics] = React.useState<ModelAnalytics[]>([]);
-  const [providerAnalytics, setProviderAnalytics] = React.useState<ProviderAnalytics[]>([]);
-  const [timeSeriesData, setTimeSeriesData] = React.useState<TimeSeriesData[]>([]);
 
-  // Mock data for model analytics
-  React.useEffect(() => {
-    const mockModelAnalytics: ModelAnalytics[] = [
-      {
-        id: "gpt-4",
-        name: "GPT-4",
-        provider: "openai",
-        tokensUsed: 5432100,
-        cost: 12345.67,
-        requestCount: 8765,
-        avgResponseTime: 1.5,
-        successRate: 99.5,
-        lastUsed: "2024-01-15",
-        usagePercentage: 35.7,
-        costPercentage: 52.6,
-      },
-      {
-        id: "gpt-3.5-turbo",
-        name: "GPT-3.5 Turbo",
-        provider: "openai",
-        tokensUsed: 4321000,
-        cost: 5432.10,
-        requestCount: 10987,
-        avgResponseTime: 0.8,
-        successRate: 99.8,
-        lastUsed: "2024-01-15",
-        usagePercentage: 28.4,
-        costPercentage: 23.2,
-      },
-      {
-        id: "claude-3",
-        name: "Claude 3",
-        provider: "anthropic",
-        tokensUsed: 3210000,
-        cost: 4567.89,
-        requestCount: 6543,
-        avgResponseTime: 1.2,
-        successRate: 99.2,
-        lastUsed: "2024-01-14",
-        usagePercentage: 21.1,
-        costPercentage: 19.5,
-      },
-      {
-        id: "gemini-pro",
-        name: "Gemini Pro",
-        provider: "google",
-        tokensUsed: 2100000,
-        cost: 2345.67,
-        requestCount: 4321,
-        avgResponseTime: 0.9,
-        successRate: 99.7,
-        lastUsed: "2024-01-14",
-        usagePercentage: 13.8,
-        costPercentage: 10.0,
-      },
-      {
-        id: "llama-2",
-        name: "Llama 2",
-        provider: "groq",
-        tokensUsed: 1234567,
-        cost: 1234.56,
-        requestCount: 3210,
-        avgResponseTime: 0.5,
-        successRate: 99.9,
-        lastUsed: "2024-01-13",
-        usagePercentage: 8.1,
-        costPercentage: 5.3,
-      },
-    ];
-    setModelAnalytics(mockModelAnalytics);
+  // Fetch model analytics data
+  const { data: analyticsData, isLoading, error, refetch } = useQuery({
+    queryKey: ['admin-model-analytics', timeRange, providerFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        timeRange,
+        ...(providerFilter !== 'all' && { provider: providerFilter })
+      });
+      
+      const response = await fetch(`/api/admin/model-analytics?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch model analytics');
+      }
+      return response.json();
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
-    const mockProviderAnalytics: ProviderAnalytics[] = [
-      {
-        name: "OpenAI",
-        tokensUsed: 9753100,
-        cost: 17777.77,
-        requestCount: 19752,
-        avgResponseTime: 1.15,
-        successRate: 99.65,
-        modelCount: 2,
-        usagePercentage: 64.1,
-        costPercentage: 75.8,
-      },
-      {
-        name: "Anthropic",
-        tokensUsed: 3210000,
-        cost: 4567.89,
-        requestCount: 6543,
-        avgResponseTime: 1.2,
-        successRate: 99.2,
-        modelCount: 1,
-        usagePercentage: 21.1,
-        costPercentage: 19.5,
-      },
-      {
-        name: "Google",
-        tokensUsed: 2100000,
-        cost: 2345.67,
-        requestCount: 4321,
-        avgResponseTime: 0.9,
-        successRate: 99.7,
-        modelCount: 1,
-        usagePercentage: 13.8,
-        costPercentage: 10.0,
-      },
-      {
-        name: "Groq",
-        tokensUsed: 1234567,
-        cost: 1234.56,
-        requestCount: 3210,
-        avgResponseTime: 0.5,
-        successRate: 99.9,
-        modelCount: 1,
-        usagePercentage: 8.1,
-        costPercentage: 5.3,
-      },
-    ];
-    setProviderAnalytics(mockProviderAnalytics);
+  const modelAnalytics = analyticsData?.data?.modelAnalytics || [];
+  const providerAnalytics = analyticsData?.data?.providerAnalytics || [];
+  const summary = analyticsData?.data?.summary || {};
 
-    const mockTimeSeriesData: TimeSeriesData[] = Array.from({ length: 30 }, (_, i) => ({
-      date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      tokens: Math.floor(Math.random() * 500000) + 100000,
-      cost: Math.random() * 1000 + 100,
-      requests: Math.floor(Math.random() * 1000) + 200,
-    })).reverse();
-    setTimeSeriesData(mockTimeSeriesData);
-  }, []);
+  const loading = isLoading || externalLoading;
+
+  // Sort model analytics for display and export
+  const sortedModelAnalytics = [...modelAnalytics].sort((a, b) => {
+    switch (sortBy) {
+      case "tokens":
+        return b.tokensUsed - a.tokensUsed;
+      case "cost":
+        return b.cost - a.cost;
+      case "requests":
+        return b.requestCount - a.requestCount;
+      default:
+        return b.tokensUsed - a.tokensUsed;
+    }
+  });
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  const handleExport = () => {
+    if (!modelAnalytics.length) return;
+    
+    const csvContent = [
+      ["Model", "Provider", "Tokens Used", "Cost", "Requests", "Avg Response Time", "Success Rate", "Last Used"],
+      ...sortedModelAnalytics.map(model => [
+        model.name,
+        model.provider,
+        model.tokensUsed,
+        model.cost,
+        model.requestCount,
+        model.avgResponseTime,
+        model.successRate,
+        model.lastUsed
+      ])
+    ].map(row => row.join(",")).join("\n");
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `model_analytics_${timeRange}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -239,6 +179,7 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
       google: "bg-red-100 text-red-800",
       groq: "bg-purple-100 text-purple-800",
       xai: "bg-orange-100 text-orange-800",
+      openrouter: "bg-cyan-100 text-cyan-800",
     };
     return colors[provider.toLowerCase()] || "bg-gray-100 text-gray-800";
   };
@@ -255,23 +196,6 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
     return "text-red-600";
   };
 
-  const filteredModelAnalytics = modelAnalytics.filter(
-    (model) => providerFilter === "all" || model.provider === providerFilter
-  );
-
-  const sortedModelAnalytics = [...filteredModelAnalytics].sort((a, b) => {
-    switch (sortBy) {
-      case "tokens":
-        return b.tokensUsed - a.tokensUsed;
-      case "cost":
-        return b.cost - a.cost;
-      case "requests":
-        return b.requestCount - a.requestCount;
-      default:
-        return b.tokensUsed - a.tokensUsed;
-    }
-  });
-
   const renderLoadingRows = () => {
     return Array.from({ length: 5 }).map((_, index) => (
       <TableRow key={index}>
@@ -287,31 +211,23 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
     ));
   };
 
-  const exportData = () => {
-    const csvContent = [
-      ["Model", "Provider", "Tokens Used", "Cost", "Requests", "Avg Response Time", "Success Rate", "Last Used"],
-      ...sortedModelAnalytics.map(model => [
-        model.name,
-        model.provider,
-        model.tokensUsed,
-        model.cost,
-        model.requestCount,
-        model.avgResponseTime,
-        model.successRate,
-        model.lastUsed
-      ])
-    ].map(row => row.join(",")).join("\n");
-    
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "model_analytics.csv");
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-red-500">
+              <p>Error loading model analytics: {error.message}</p>
+              <Button variant="outline" onClick={handleRefresh} className="mt-4">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -319,9 +235,14 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <CardTitle className="flex items-center space-x-2">
+                          <CardTitle className="flex items-center space-x-2">
               <BarChart3 className="h-5 w-5" />
               <span>Model & Provider Analytics</span>
+              {summary.totalModelsWithUsage && summary.totalModelsInPricing && (
+                <Badge variant="outline" className="ml-2">
+                  {summary.totalModelsWithUsage} of {summary.totalModelsInPricing} models active
+                </Badge>
+              )}
             </CardTitle>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
@@ -346,6 +267,8 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
                   <SelectItem value="anthropic">Anthropic</SelectItem>
                   <SelectItem value="google">Google</SelectItem>
                   <SelectItem value="groq">Groq</SelectItem>
+                  <SelectItem value="xai">xAI</SelectItem>
+                  <SelectItem value="openrouter">OpenRouter</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -360,13 +283,13 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
                 </SelectContent>
               </Select>
               
-              <Button variant="outline" onClick={exportData}>
+              <Button variant="outline" onClick={handleExport} disabled={!modelAnalytics.length}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
               
-              <Button variant="outline">
-                <RefreshCw className="mr-2 h-4 w-4" />
+              <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+                <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
                 Refresh
               </Button>
             </div>
@@ -458,7 +381,7 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
               ) : sortedModelAnalytics.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No models found
+                    {loading ? "Loading models..." : `No models found${providerFilter !== 'all' ? ` for ${providerFilter}` : ''} in the selected time period`}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -527,8 +450,15 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
             <div className="flex items-center space-x-2">
               <Server className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Models</p>
-                <p className="text-2xl font-bold">{modelAnalytics.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Models with Usage</p>
+                <div className="text-2xl font-bold">
+                  {loading ? <Skeleton className="h-8 w-16 inline-block" /> : summary.totalModelsWithUsage || 0}
+                </div>
+                {summary.totalModelsInPricing && (
+                  <p className="text-xs text-muted-foreground">
+                    of {summary.totalModelsInPricing} total in pricing
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -540,9 +470,9 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
               <Zap className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Tokens</p>
-                <p className="text-2xl font-bold">
-                  {formatNumber(modelAnalytics.reduce((sum, model) => sum + model.tokensUsed, 0))}
-                </p>
+                <div className="text-2xl font-bold">
+                  {loading ? <Skeleton className="h-8 w-24 inline-block" /> : formatNumber(summary.totalTokens || 0)}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -554,9 +484,9 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Cost</p>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(modelAnalytics.reduce((sum, model) => sum + model.cost, 0))}
-                </p>
+                <div className="text-2xl font-bold">
+                  {loading ? <Skeleton className="h-8 w-20 inline-block" /> : formatCurrency(summary.totalCost || 0)}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -568,9 +498,9 @@ export function AdminModelAnalytics({ loading = false }: AdminModelAnalyticsProp
               <Activity className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Requests</p>
-                <p className="text-2xl font-bold">
-                  {formatNumber(modelAnalytics.reduce((sum, model) => sum + model.requestCount, 0))}
-                </p>
+                <div className="text-2xl font-bold">
+                  {loading ? <Skeleton className="h-8 w-20 inline-block" /> : formatNumber(summary.totalRequests || 0)}
+                </div>
               </div>
             </div>
           </CardContent>
