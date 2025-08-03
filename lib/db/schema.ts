@@ -297,7 +297,7 @@ export const modelPricing = pgTable('model_pricing', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   // Constraints
-  checkPricesPositive: check('check_model_pricing_prices_positive', sql`${table.inputTokenPrice} > 0 AND ${table.outputTokenPrice} > 0`),
+  checkPricesPositive: check('check_model_pricing_prices_positive', sql`${table.inputTokenPrice} >= 0 AND ${table.outputTokenPrice} >= 0`),
   // Indexes
   uniqueModelProviderActive: unique('model_pricing_model_id_provider_active_idx').on(table.modelId, table.provider),
   providerIdx: index('idx_model_pricing_provider').on(table.provider),

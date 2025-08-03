@@ -28,6 +28,7 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface AdminSystemStatsProps {
   loading?: boolean;
@@ -47,11 +48,13 @@ interface SystemStats {
     name: string;
     usage: number;
     cost: number;
+    requestCount: number;
   }>;
   topProviders: Array<{
     name: string;
     usage: number;
     cost: number;
+    requestCount: number;
   }>;
   dailyUsage: Array<{
     date: string;
@@ -62,40 +65,20 @@ interface SystemStats {
 
 export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
   const [timeRange, setTimeRange] = React.useState<"day" | "week" | "month" | "year">("month");
-  const [systemStats, setSystemStats] = React.useState<SystemStats | null>(null);
 
-  // Mock data for system stats
-  React.useEffect(() => {
-    const mockSystemStats: SystemStats = {
-      totalUsers: 1245,
-      activeUsers: 423,
-      totalTokens: 15234567,
-      totalCost: 23456.78,
-      avgResponseTime: 1.2,
-      systemUptime: 99.9,
-      requestsToday: 2345,
-      requestsThisMonth: 67890,
-      topModels: [
-        { id: "gpt-4", name: "GPT-4", usage: 5432100, cost: 12345.67 },
-        { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", usage: 4321000, cost: 5432.10 },
-        { id: "claude-3", name: "Claude 3", usage: 3210000, cost: 4567.89 },
-        { id: "gemini-pro", name: "Gemini Pro", usage: 2100000, cost: 2345.67 },
-        { id: "llama-2", name: "Llama 2", usage: 1234567, cost: 1234.56 },
-      ],
-      topProviders: [
-        { name: "OpenAI", usage: 9753100, cost: 17777.77 },
-        { name: "Anthropic", usage: 3210000, cost: 4567.89 },
-        { name: "Google", usage: 2100000, cost: 2345.67 },
-        { name: "Groq", usage: 1234567, cost: 1234.56 },
-      ],
-      dailyUsage: Array.from({ length: 30 }, (_, i) => ({
-        date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        tokens: Math.floor(Math.random() * 500000) + 100000,
-        cost: Math.random() * 1000 + 100,
-      })).reverse(),
-    };
-    setSystemStats(mockSystemStats);
-  }, []);
+  // Fetch system stats from API
+  const { data: systemStats, isLoading, error, refetch } = useQuery({
+    queryKey: ['admin-system-stats', timeRange],
+    queryFn: async (): Promise<SystemStats> => {
+      const response = await fetch(`/api/admin/system-stats?timeRange=${timeRange}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch system stats');
+      }
+      const result = await response.json();
+      return result.data;
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -119,6 +102,8 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
       google: "bg-red-100 text-red-800",
       groq: "bg-purple-100 text-purple-800",
       xai: "bg-orange-100 text-orange-800",
+      openrouter: "bg-purple-100 text-purple-800",
+      requesty: "bg-cyan-100 text-cyan-800",
     };
     return colors[provider.toLowerCase()] || "bg-gray-100 text-gray-800";
   };
@@ -167,7 +152,11 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
     ));
   };
 
-  if (!systemStats) {
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  if (isLoading || loading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -191,6 +180,76 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold tracking-tight">System Overview</h2>
+          <div className="flex space-x-2">
+            <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Last 24 Hours</SelectItem>
+                <SelectItem value="week">Last 7 Days</SelectItem>
+                <SelectItem value="month">Last 30 Days</SelectItem>
+                <SelectItem value="year">Last Year</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={handleRefresh}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <p>Failed to load system stats. Please try again.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!systemStats) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold tracking-tight">System Overview</h2>
+          <div className="flex space-x-2">
+            <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Last 24 Hours</SelectItem>
+                <SelectItem value="week">Last 7 Days</SelectItem>
+                <SelectItem value="month">Last 30 Days</SelectItem>
+                <SelectItem value="year">Last Year</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={handleRefresh}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              <AlertCircle className="h-4 w-4" />
+              <p>No system stats available.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -208,8 +267,8 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
               <SelectItem value="year">Last Year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
             Refresh
           </Button>
         </div>
@@ -366,7 +425,7 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
                   <div>
                     <p className="font-medium">{model.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatNumber(model.usage)} tokens
+                      {formatNumber(model.usage)} tokens ({formatNumber(model.requestCount)} requests)
                     </p>
                   </div>
                 </div>
@@ -406,7 +465,7 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {formatNumber(provider.usage)} tokens
+                      {formatNumber(provider.usage)} tokens ({formatNumber(provider.requestCount)} requests)
                     </p>
                   </div>
                 </div>

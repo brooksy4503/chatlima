@@ -55,10 +55,12 @@ interface ModelPricing {
   inputTokenPrice: number;
   outputTokenPrice: number;
   currency: string;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
   isActive: boolean;
+  metadata?: any;
   createdAt: string;
   updatedAt: string;
-  description?: string;
 }
 
 interface PricingFormData {
@@ -68,7 +70,7 @@ interface PricingFormData {
   outputTokenPrice: number;
   currency: string;
   isActive: boolean;
-  description?: string;
+  metadata?: any;
 }
 
 export function AdminPricingManagement({ loading = false }: AdminPricingManagementProps) {
@@ -76,7 +78,17 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingPricing, setEditingPricing] = React.useState<ModelPricing | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  
+  // Filters and pagination
   const [providerFilter, setProviderFilter] = React.useState<string>("all");
+  const [statusFilter, setStatusFilter] = React.useState<string>("all");
+  const [modelSearch, setModelSearch] = React.useState<string>("");
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(50);
+  const [totalRecords, setTotalRecords] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(0);
+  
   const [formData, setFormData] = React.useState<PricingFormData>({
     modelId: "",
     provider: "openai",
@@ -84,75 +96,49 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
     outputTokenPrice: 0.002,
     currency: "USD",
     isActive: true,
-    description: "",
+    metadata: {},
   });
 
-  // Mock data for pricing
+  // Fetch real pricing data from API with pagination and filters
+  const fetchPricingData = React.useCallback(async (page = currentPage, filters = {}) => {
+    setIsLoading(true);
+    try {
+      const searchParams = new URLSearchParams({
+        page: page.toString(),
+        limit: pageSize.toString(),
+        ...filters
+      });
+
+      const response = await fetch(`/api/model-pricing?${searchParams.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch pricing data');
+      }
+      const result = await response.json();
+      if (result.success && result.data.pricing) {
+        setPricingData(result.data.pricing);
+        setTotalRecords(result.data.total || 0);
+        setTotalPages(result.data.totalPages || 0);
+        setCurrentPage(result.data.page || 1);
+      } else {
+        console.error('Invalid response format:', result);
+        setPricingData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching pricing data:', error);
+      setPricingData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, pageSize]);
+
   React.useEffect(() => {
-    const mockPricingData: ModelPricing[] = [
-      {
-        id: "1",
-        modelId: "gpt-4",
-        provider: "openai",
-        inputTokenPrice: 0.001,
-        outputTokenPrice: 0.002,
-        currency: "USD",
-        isActive: true,
-        createdAt: "2023-06-01",
-        updatedAt: "2024-01-15",
-        description: "GPT-4 pricing",
-      },
-      {
-        id: "2",
-        modelId: "gpt-3.5-turbo",
-        provider: "openai",
-        inputTokenPrice: 0.0005,
-        outputTokenPrice: 0.0015,
-        currency: "USD",
-        isActive: true,
-        createdAt: "2023-06-01",
-        updatedAt: "2024-01-15",
-        description: "GPT-3.5 Turbo pricing",
-      },
-      {
-        id: "3",
-        modelId: "claude-3",
-        provider: "anthropic",
-        inputTokenPrice: 0.0008,
-        outputTokenPrice: 0.0024,
-        currency: "USD",
-        isActive: true,
-        createdAt: "2023-07-15",
-        updatedAt: "2024-01-14",
-        description: "Claude 3 pricing",
-      },
-      {
-        id: "4",
-        modelId: "gemini-pro",
-        provider: "google",
-        inputTokenPrice: 0.0005,
-        outputTokenPrice: 0.0015,
-        currency: "USD",
-        isActive: true,
-        createdAt: "2023-08-20",
-        updatedAt: "2024-01-13",
-        description: "Gemini Pro pricing",
-      },
-      {
-        id: "5",
-        modelId: "llama-2",
-        provider: "groq",
-        inputTokenPrice: 0.0002,
-        outputTokenPrice: 0.0008,
-        currency: "USD",
-        isActive: true,
-        createdAt: "2023-10-05",
-        updatedAt: "2024-01-12",
-        description: "Llama 2 pricing",
-      },
-    ];
-    setPricingData(mockPricingData);
-  }, []);
+    const filters: Record<string, string> = {};
+    if (providerFilter !== "all") filters.provider = providerFilter;
+    if (statusFilter !== "all") filters.isActive = statusFilter;
+    if (modelSearch.trim()) filters.modelId = modelSearch.trim();
+    
+    fetchPricingData(1, filters);
+  }, [providerFilter, statusFilter, modelSearch, pageSize, fetchPricingData]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -171,9 +157,8 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
     });
   };
 
-  const filteredPricingData = pricingData.filter(
-    (pricing) => providerFilter === "all" || pricing.provider === providerFilter
-  );
+  // API handles filtering now, so we use pricingData directly
+  const filteredPricingData = pricingData;
 
   const handleEdit = (pricing: ModelPricing) => {
     setEditingPricing(pricing);
@@ -184,7 +169,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
       outputTokenPrice: pricing.outputTokenPrice,
       currency: pricing.currency,
       isActive: pricing.isActive,
-      description: pricing.description || "",
+      metadata: pricing.metadata || {},
     });
     setIsDialogOpen(true);
   };
@@ -219,7 +204,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
         // Update existing pricing
         setPricingData(pricingData.map(p => 
           p.id === editingPricing.id 
-            ? { ...p, ...formData, updatedAt: new Date().toISOString() }
+            ? { ...p, ...formData, effectiveFrom: new Date().toISOString(), updatedAt: new Date().toISOString() }
             : p
         ));
       } else {
@@ -227,6 +212,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
         const newPricing: ModelPricing = {
           id: Date.now().toString(),
           ...formData,
+          effectiveFrom: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -242,7 +228,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
         outputTokenPrice: 0.002,
         currency: "USD",
         isActive: true,
-        description: "",
+        metadata: {},
       });
     } catch (error) {
       console.error("Error saving pricing:", error);
@@ -270,9 +256,9 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-12" /></TableCell>
         <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+        <TableCell><Skeleton className="h-4 w-12" /></TableCell>
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
       </TableRow>
     ));
@@ -287,8 +273,17 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
             <CardTitle className="flex items-center space-x-2">
               <Settings className="h-5 w-5" />
               <span>Model Pricing Management</span>
+              <div className="text-sm font-normal text-muted-foreground ml-2">
+                ({totalRecords} total records)
+              </div>
             </CardTitle>
             <div className="flex space-x-2">
+              <Input
+                placeholder="Search model ID..."
+                value={modelSearch}
+                onChange={(e) => setModelSearch(e.target.value)}
+                className="w-48"
+              />
               <Select value={providerFilter} onValueChange={setProviderFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Provider" />
@@ -300,6 +295,17 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                   <SelectItem value="google">Google</SelectItem>
                   <SelectItem value="groq">Groq</SelectItem>
                   <SelectItem value="xai">xAI</SelectItem>
+                  <SelectItem value="openrouter">OpenRouter</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Inactive</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -396,14 +402,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                       </Select>
                     </div>
                     
-                    <div>
-                      <label className="text-sm font-medium">Description</label>
-                      <Input
-                        placeholder="Optional description"
-                        value={formData.description}
-                        onChange={(e) => handleInputChange("description", e.target.value)}
-                      />
-                    </div>
+
                   </div>
                   
                   <DialogFooter>
@@ -420,7 +419,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                           outputTokenPrice: 0.002,
                           currency: "USD",
                           isActive: true,
-                          description: "",
+                          metadata: {},
                         });
                       }}
                     >
@@ -447,20 +446,20 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Model ID</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead>Input Price</TableHead>
-                <TableHead>Output Price</TableHead>
-                <TableHead>Currency</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Updated</TableHead>
-                <TableHead className="w-24">Actions</TableHead>
-              </TableRow>
+                          <TableRow>
+              <TableHead>Model ID</TableHead>
+              <TableHead>Provider</TableHead>
+              <TableHead>Input Price</TableHead>
+              <TableHead>Output Price</TableHead>
+              <TableHead>Currency</TableHead>
+              <TableHead>Effective From</TableHead>
+              <TableHead>Effective To</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
+            </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {loading || isLoading ? (
                 renderLoadingRows()
               ) : filteredPricingData.length === 0 ? (
                 <TableRow>
@@ -473,9 +472,6 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                   <TableRow key={pricing.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="font-medium">{pricing.modelId}</div>
-                      {pricing.description && (
-                        <div className="text-sm text-muted-foreground">{pricing.description}</div>
-                      )}
                     </TableCell>
                     <TableCell>
                       <Badge className={getProviderColor(pricing.provider)}>
@@ -492,15 +488,17 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                       <div className="text-sm">{pricing.currency}</div>
                     </TableCell>
                     <TableCell>
+                      <div className="text-sm">{formatDate(pricing.effectiveFrom)}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {pricing.effectiveTo ? formatDate(pricing.effectiveTo) : "—"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={pricing.isActive ? "default" : "secondary"}>
                         {pricing.isActive ? "Active" : "Inactive"}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">{formatDate(pricing.createdAt)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">{formatDate(pricing.updatedAt)}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
@@ -528,6 +526,71 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
         </CardContent>
       </Card>
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalRecords)} of {totalRecords} records
+                </p>
+                <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value))}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                    <SelectItem value="100">100 per page</SelectItem>
+                    <SelectItem value="200">200 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchPricingData(1)}
+                  disabled={currentPage === 1 || isLoading}
+                >
+                  First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchPricingData(currentPage - 1)}
+                  disabled={currentPage === 1 || isLoading}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center space-x-1">
+                  <p className="text-sm">
+                    Page {currentPage} of {totalPages}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchPricingData(currentPage + 1)}
+                  disabled={currentPage === totalPages || isLoading}
+                >
+                  Next
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchPricingData(totalPages)}
+                  disabled={currentPage === totalPages || isLoading}
+                >
+                  Last
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -536,7 +599,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Models</p>
-                <p className="text-2xl font-bold">{pricingData.length}</p>
+                <p className="text-2xl font-bold">{totalRecords}</p>
               </div>
             </div>
           </CardContent>
@@ -547,9 +610,9 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Models</p>
+                <p className="text-sm font-medium text-muted-foreground">Current Page</p>
                 <p className="text-2xl font-bold">
-                  {pricingData.filter(p => p.isActive).length}
+                  {pricingData.filter(p => p.isActive).length} active
                 </p>
               </div>
             </div>
@@ -561,7 +624,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-4 w-4 text-orange-600" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Providers</p>
+                <p className="text-sm font-medium text-muted-foreground">Providers (Current)</p>
                 <p className="text-2xl font-bold">
                   {new Set(pricingData.map(p => p.provider)).size}
                 </p>

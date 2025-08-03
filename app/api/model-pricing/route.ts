@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { TokenTrackingService } from '@/lib/tokenTracking';
+import { db } from '@/lib/db';
+import { modelPricing, users } from '@/lib/db/schema';
+import { eq, desc, sql, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 // Diagnostic logging helper
@@ -184,15 +187,33 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Check if user is an admin
-    const isAdmin = (session.user as any)?.role === 'admin' || (session.user as any)?.isAdmin === true;
+    // Query the database to get the user's admin status
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      logDiagnostic('AUTH_FAILED', `User not found in database`, {
+        requestId,
+        userId: session.user.id
+      });
+      return NextResponse.json(
+        { error: { code: 'FORBIDDEN', message: 'User not found' } },
+        { status: 403 }
+      );
+    }
+
+    const user = userResult[0];
+    const isAdmin = user.role === "admin" || user.isAdmin === true;
 
     if (!isAdmin) {
       logDiagnostic('AUTH_FAILED', `Authentication failed - not admin`, {
         requestId,
         userId: session.user.id,
-        userRole: (session.user as any)?.role,
-        isAdmin: (session.user as any)?.isAdmin
+        userRole: user.role,
+        isAdmin: user.isAdmin
       });
       return NextResponse.json(
         { error: { code: 'FORBIDDEN', message: 'Admin access required' } },
@@ -206,17 +227,94 @@ export async function GET(req: NextRequest) {
       isAdmin
     });
 
-    // For now, return a message that pricing data is stored in the database
-    // In a real implementation, you would query the model_pricing table here
-    logDiagnostic('PRICING_INFO', `Returning model pricing information`, { requestId });
+    // Parse query parameters for filtering and pagination
+    const { searchParams } = new URL(req.url);
+    const provider = searchParams.get('provider');
+    const modelId = searchParams.get('modelId');
+    const isActiveParam = searchParams.get('isActive');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 200); // Max 200 records per page
+    const offset = (page - 1) * limit;
+
+    logDiagnostic('PRICING_QUERY_START', `Querying model pricing data from database`, {
+      requestId,
+      filters: { provider, modelId, isActive: isActiveParam },
+      pagination: { page, limit, offset }
+    });
+
+    // Build the query with optional filters
+    let query = db.select().from(modelPricing);
+
+    // Apply filters
+    const conditions = [];
+    if (provider) {
+      conditions.push(eq(modelPricing.provider, provider));
+    }
+    if (modelId) {
+      conditions.push(eq(modelPricing.modelId, modelId));
+    }
+    if (isActiveParam !== null) {
+      conditions.push(eq(modelPricing.isActive, isActiveParam === 'true'));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
+    }
+
+    // Get total count for pagination
+    const countQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(modelPricing);
+
+    if (conditions.length > 0) {
+      countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions));
+    }
+
+    const [pricingData, totalResult] = await Promise.all([
+      query
+        .orderBy(desc(modelPricing.createdAt))
+        .limit(limit)
+        .offset(offset),
+      countQuery
+    ]);
+
+    const total = totalResult[0]?.count || 0;
+
+    logDiagnostic('PRICING_QUERY_SUCCESS', `Retrieved pricing data from database`, {
+      requestId,
+      count: pricingData.length,
+      total,
+      page,
+      limit
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'Model pricing data is stored in the database',
+      message: 'Model pricing data retrieved successfully',
       data: {
-        note: 'Use the database to query model pricing information',
+        pricing: pricingData,
+        count: pricingData.length,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
         table: 'model_pricing',
       },
+      meta: {
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: page < Math.ceil(total / limit),
+          hasPrevPage: page > 1
+        },
+        filters: {
+          provider,
+          modelId,
+          isActive: isActiveParam
+        }
+      }
     });
   } catch (error) {
     logDiagnostic('REQUEST_ERROR', `Error in model pricing API (GET)`, {

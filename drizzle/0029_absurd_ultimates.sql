@@ -1,0 +1,2 @@
+ALTER TABLE "model_pricing" DROP CONSTRAINT "check_model_pricing_prices_positive";--> statement-breakpoint
+ALTER TABLE "model_pricing" ADD CONSTRAINT "check_model_pricing_prices_positive" CHECK ("model_pricing"."input_token_price" >= 0 AND "model_pricing"."output_token_price" >= 0);

@@ -38,6 +38,7 @@ import {
   Mail,
   Filter
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface AdminUserBreakdownProps {
   loading?: boolean;
@@ -57,6 +58,23 @@ interface UserUsage {
   usagePercentage: number;
 }
 
+interface UsersResponse {
+  users: UserUsage[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  summary: {
+    totalUsers: number;
+    activeUsers: number;
+    totalTokens: number;
+    totalCost: number;
+    totalRequests: number;
+  };
+}
+
 export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortColumn, setSortColumn] = React.useState<keyof UserUsage>("tokensUsed");
@@ -65,144 +83,33 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
   const [activeFilter, setActiveFilter] = React.useState<string>("all");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage] = React.useState(10);
-  const [userUsage, setUserUsage] = React.useState<UserUsage[]>([]);
 
-  // Mock data for user usage
-  React.useEffect(() => {
-    const mockUserUsage: UserUsage[] = [
-      {
-        id: "1",
-        email: "admin@example.com",
-        name: "Admin User",
-        tokensUsed: 543210,
-        cost: 1234.56,
-        requestCount: 876,
-        lastActive: "2024-01-15",
-        isActive: true,
-        createdAt: "2023-01-01",
-        plan: "premium",
-        usagePercentage: 85,
-      },
-      {
-        id: "2",
-        email: "user1@example.com",
-        name: "John Doe",
-        tokensUsed: 432100,
-        cost: 987.65,
-        requestCount: 654,
-        lastActive: "2024-01-14",
-        isActive: true,
-        createdAt: "2023-02-15",
-        plan: "premium",
-        usagePercentage: 72,
-      },
-      {
-        id: "3",
-        email: "user2@example.com",
-        name: "Jane Smith",
-        tokensUsed: 321000,
-        cost: 765.43,
-        requestCount: 543,
-        lastActive: "2024-01-13",
-        isActive: true,
-        createdAt: "2023-03-20",
-        plan: "standard",
-        usagePercentage: 65,
-      },
-      {
-        id: "4",
-        email: "user3@example.com",
-        name: "Bob Johnson",
-        tokensUsed: 210000,
-        cost: 543.21,
-        requestCount: 432,
-        lastActive: "2024-01-12",
-        isActive: true,
-        createdAt: "2023-04-10",
-        plan: "standard",
-        usagePercentage: 45,
-      },
-      {
-        id: "5",
-        email: "user4@example.com",
-        name: "Alice Williams",
-        tokensUsed: 123456,
-        cost: 321.09,
-        requestCount: 321,
-        lastActive: "2024-01-11",
-        isActive: true,
-        createdAt: "2023-05-05",
-        plan: "basic",
-        usagePercentage: 30,
-      },
-      {
-        id: "6",
-        email: "user5@example.com",
-        name: "Charlie Brown",
-        tokensUsed: 98765,
-        cost: 210.98,
-        requestCount: 210,
-        lastActive: "2024-01-10",
-        isActive: true,
-        createdAt: "2023-06-15",
-        plan: "basic",
-        usagePercentage: 25,
-      },
-      {
-        id: "7",
-        email: "user6@example.com",
-        name: "Diana Prince",
-        tokensUsed: 65432,
-        cost: 154.32,
-        requestCount: 154,
-        lastActive: "2024-01-09",
-        isActive: true,
-        createdAt: "2023-07-20",
-        plan: "basic",
-        usagePercentage: 20,
-      },
-      {
-        id: "8",
-        email: "user7@example.com",
-        name: "Ethan Hunt",
-        tokensUsed: 43210,
-        cost: 98.76,
-        requestCount: 98,
-        lastActive: "2024-01-08",
-        isActive: true,
-        createdAt: "2023-08-10",
-        plan: "basic",
-        usagePercentage: 15,
-      },
-      {
-        id: "9",
-        email: "user8@example.com",
-        name: "Fiona Green",
-        tokensUsed: 21098,
-        cost: 54.32,
-        requestCount: 54,
-        lastActive: "2023-12-15",
-        isActive: false,
-        createdAt: "2023-09-05",
-        plan: "basic",
-        usagePercentage: 10,
-      },
-      {
-        id: "10",
-        email: "user9@example.com",
-        name: "George Wilson",
-        tokensUsed: 10987,
-        cost: 32.10,
-        requestCount: 32,
-        lastActive: "2023-11-20",
-        isActive: false,
-        createdAt: "2023-10-12",
-        plan: "basic",
-        usagePercentage: 5,
-      },
-    ];
-    setUserUsage(mockUserUsage);
-  }, []);
+  // Fetch users data from API
+  const { data: usersData, isLoading, error, refetch } = useQuery<UsersResponse>({
+    queryKey: ['admin-users', currentPage, itemsPerPage, searchTerm, planFilter, activeFilter, sortColumn, sortDirection],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+        search: searchTerm,
+        plan: planFilter,
+        active: activeFilter,
+        sortBy: sortColumn,
+        sortOrder: sortDirection,
+      });
+      
+      const response = await fetch(`/api/admin/users?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      return response.json();
+    },
+    staleTime: 30000, // 30 seconds
+  });
+
+  const userUsage = usersData?.users || [];
+  const summary = usersData?.summary;
+  const pagination = usersData?.pagination;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -252,44 +159,15 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
     return sortDirection === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
   };
 
-  const filteredUserUsage = userUsage.filter(user => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesPlan = planFilter === "all" || user.plan === planFilter;
-    
-    const matchesActive = activeFilter === "all" || 
-      (activeFilter === "active" && user.isActive) ||
-      (activeFilter === "inactive" && !user.isActive);
-    
-    return matchesSearch && matchesPlan && matchesActive;
-  });
-
-  const sortedUserUsage = [...filteredUserUsage].sort((a, b) => {
-    const aValue = a[sortColumn];
-    const bValue = b[sortColumn];
-    
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
-    }
-    
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortDirection === "asc" 
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    }
-    
-    return 0;
-  });
-
-  // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedUserUsage.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedUserUsage.length / itemsPerPage);
-
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  // Handle search and filter changes
+  React.useEffect(() => {
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [searchTerm, planFilter, activeFilter]);
+
+  const currentItems = userUsage;
+  const totalPages = pagination?.totalPages || 1;
 
   const renderLoadingRows = () => {
     return Array.from({ length: 5 }).map((_, index) => (
@@ -310,7 +188,7 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
   const exportData = () => {
     const csvContent = [
       ["Name", "Email", "Tokens Used", "Cost", "Requests", "Last Active", "Plan", "Usage %"],
-      ...sortedUserUsage.map(user => [
+      ...currentItems.map((user: UserUsage) => [
         user.name,
         user.email,
         user.tokensUsed,
@@ -348,8 +226,8 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
-              <Button variant="outline">
-                <RefreshCw className="mr-2 h-4 w-4" />
+              <Button variant="outline" onClick={() => refetch()}>
+                <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
                 Refresh
               </Button>
             </div>
@@ -468,8 +346,14 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {loading || isLoading ? (
                 renderLoadingRows()
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    Error loading users: {error.message}
+                  </TableCell>
+                </TableRow>
               ) : currentItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
@@ -552,34 +436,117 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
       {totalPages > 1 && (
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
               <div className="text-sm text-muted-foreground">
-                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, sortedUserUsage.length)} of {sortedUserUsage.length} users
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, pagination?.total || 0)} of {pagination?.total || 0} users
               </div>
-              <div className="flex space-x-2">
+              <div className="flex items-center space-x-1 overflow-x-auto pb-2 sm:pb-0">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
+                  className="flex-shrink-0"
                 >
                   Previous
                 </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => paginate(page)}
-                  >
-                    {page}
-                  </Button>
-                ))}
+                
+                {/* Smart pagination with ellipsis */}
+                {(() => {
+                  const pages = [];
+                  const maxVisiblePages = 7; // Show max 7 page numbers
+                  
+                  if (totalPages <= maxVisiblePages) {
+                    // Show all pages if total is small
+                    for (let i = 1; i <= totalPages; i++) {
+                      pages.push(
+                        <Button
+                          key={i}
+                          variant={currentPage === i ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => paginate(i)}
+                          className="flex-shrink-0"
+                        >
+                          {i}
+                        </Button>
+                      );
+                    }
+                  } else {
+                    // Smart pagination with ellipsis
+                    const startPage = Math.max(1, currentPage - 2);
+                    const endPage = Math.min(totalPages, currentPage + 2);
+                    
+                    // Always show first page
+                    if (startPage > 1) {
+                      pages.push(
+                        <Button
+                          key={1}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => paginate(1)}
+                          className="flex-shrink-0"
+                        >
+                          1
+                        </Button>
+                      );
+                      
+                      if (startPage > 2) {
+                        pages.push(
+                          <span key="ellipsis1" className="px-2 text-muted-foreground">
+                            ...
+                          </span>
+                        );
+                      }
+                    }
+                    
+                    // Show pages around current page
+                    for (let i = startPage; i <= endPage; i++) {
+                      pages.push(
+                        <Button
+                          key={i}
+                          variant={currentPage === i ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => paginate(i)}
+                          className="flex-shrink-0"
+                        >
+                          {i}
+                        </Button>
+                      );
+                    }
+                    
+                    // Always show last page
+                    if (endPage < totalPages) {
+                      if (endPage < totalPages - 1) {
+                        pages.push(
+                          <span key="ellipsis2" className="px-2 text-muted-foreground">
+                            ...
+                          </span>
+                        );
+                      }
+                      
+                      pages.push(
+                        <Button
+                          key={totalPages}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => paginate(totalPages)}
+                          className="flex-shrink-0"
+                        >
+                          {totalPages}
+                        </Button>
+                      );
+                    }
+                  }
+                  
+                  return pages;
+                })()}
+                
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
+                  className="flex-shrink-0"
                 >
                   Next
                 </Button>
@@ -597,7 +564,7 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
               <Users className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">{userUsage.length}</p>
+                <p className="text-2xl font-bold">{summary?.totalUsers || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -610,7 +577,7 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active Users</p>
                 <p className="text-2xl font-bold">
-                  {userUsage.filter(u => u.isActive).length}
+                  {summary?.activeUsers || 0}
                 </p>
               </div>
             </div>
@@ -624,7 +591,7 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Tokens</p>
                 <p className="text-2xl font-bold">
-                  {formatNumber(userUsage.reduce((sum, user) => sum + user.tokensUsed, 0))}
+                  {formatNumber(summary?.totalTokens || 0)}
                 </p>
               </div>
             </div>
@@ -638,7 +605,7 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Cost</p>
                 <p className="text-2xl font-bold">
-                  {formatCurrency(userUsage.reduce((sum, user) => sum + user.cost, 0))}
+                  {formatCurrency(summary?.totalCost || 0)}
                 </p>
               </div>
             </div>
