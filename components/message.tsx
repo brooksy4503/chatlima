@@ -341,15 +341,17 @@ const PurePreviewMessage = ({
                     className="text-xs"
                   />
                 ) : (
-                  <CompactMessageTokenMetrics
-                    inputTokens={message.tokenUsage?.inputTokens}
-                    outputTokens={message.tokenUsage?.outputTokens}
-                    totalTokens={message.tokenUsage?.totalTokens}
-                    estimatedCost={message.tokenUsage?.estimatedCost}
-                    currency={message.tokenUsage?.currency}
-                    isLoading={isLoading}
-                    className="text-xs"
-                  />
+                  message.tokenUsage ? (
+                    <CompactMessageTokenMetrics
+                      inputTokens={message.tokenUsage.inputTokens}
+                      outputTokens={message.tokenUsage.outputTokens}
+                      totalTokens={message.tokenUsage.totalTokens}
+                      estimatedCost={message.tokenUsage.estimatedCost}
+                      currency={message.tokenUsage.currency}
+                      isLoading={false}
+                      className="text-xs"
+                    />
+                  ) : null
                 )}
               </div>
             )}
