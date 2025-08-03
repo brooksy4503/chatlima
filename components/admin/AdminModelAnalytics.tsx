@@ -307,7 +307,7 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {providerAnalytics.map((provider, index) => (
+            {providerAnalytics.map((provider: ProviderAnalytics, index: number) => (
               <div key={provider.name} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center space-x-4">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium">

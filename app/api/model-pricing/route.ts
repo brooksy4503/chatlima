@@ -242,10 +242,7 @@ export async function GET(req: NextRequest) {
       pagination: { page, limit, offset }
     });
 
-    // Build the query with optional filters
-    let query = db.select().from(modelPricing);
-
-    // Apply filters
+    // Build filters
     const conditions = [];
     if (provider) {
       conditions.push(eq(modelPricing.provider, provider));
@@ -257,18 +254,19 @@ export async function GET(req: NextRequest) {
       conditions.push(eq(modelPricing.isActive, isActiveParam === 'true'));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
+    // Build the query with optional filters
+    const baseQuery = db.select().from(modelPricing);
+    const query = conditions.length > 0
+      ? baseQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions))
+      : baseQuery;
 
     // Get total count for pagination
-    const countQuery = db
+    const baseCountQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(modelPricing);
-
-    if (conditions.length > 0) {
-      countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
+    const countQuery = conditions.length > 0
+      ? baseCountQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions))
+      : baseCountQuery;
 
     const [pricingData, totalResult] = await Promise.all([
       query

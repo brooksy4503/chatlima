@@ -217,7 +217,7 @@ export class TokenTrackingService {
                 outputTokens,
                 totalTokens,
                 estimatedCost,
-                actualCost
+                actualCost: finalActualCost
             });
         } catch (error) {
             logDiagnostic('TRACK_ERROR', `Error tracking token usage`, {
