@@ -699,27 +699,30 @@ export default function Chat() {
           currency: 'USD'
         });
       }
-    } else if (status === "ready" && chatTokenData) {
-      // When streaming is complete, update with actual data from the API
-      // Handle both old format (totalInputTokens) and new format (totalInputTokens from chat-specific data)
-      const inputTokens = chatTokenData.totalInputTokens || chatTokenData.inputTokens || 0;
-      const outputTokens = chatTokenData.totalOutputTokens || chatTokenData.outputTokens || 0;
-      const estimatedCost = chatTokenData.totalEstimatedCost || chatTokenData.estimatedCost || 0;
-      
-      setChatTokenUsage({
-        inputTokens,
-        outputTokens,
-        estimatedCost,
-        currency: chatTokenData.currency || 'USD'
-      });
-      
-      // Refetch token data to get the latest information
-      refetchTokenData();
-      
-      // Invalidate user token usage queries to refresh sidebar data
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
+    } else if (status === "ready") {
+      if (chatTokenData) {
+        // When streaming is complete and we have actual data from the API
+        // Handle both old format (totalInputTokens) and new format (totalInputTokens from chat-specific data)
+        const inputTokens = chatTokenData.totalInputTokens || chatTokenData.inputTokens || 0;
+        const outputTokens = chatTokenData.totalOutputTokens || chatTokenData.outputTokens || 0;
+        const estimatedCost = chatTokenData.totalEstimatedCost || chatTokenData.estimatedCost || 0;
+        
+        setChatTokenUsage({
+          inputTokens,
+          outputTokens,
+          estimatedCost,
+          currency: chatTokenData.currency || 'USD'
+        });
+        
+        // Refetch token data to get the latest information
+        refetchTokenData();
+        
+        // Invalidate user token usage queries to refresh sidebar data
+        if (userId) {
+          queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
+        }
       }
+      // If chatTokenData is not available yet, keep the estimated values from streaming
     }
   }, [messages, status, chatTokenData, refetchTokenData, userId, queryClient]);
 
@@ -837,8 +840,8 @@ export default function Chat() {
         )}
       </div>
 
-      {/* Token Usage Summary */}
-      {chatId && (
+      {/* Token Usage Summary - Only show when not streaming or submitted */}
+      {chatId && status === "ready" && (
         <div className="mb-4">
           <ChatTokenSummary
             totalInputTokens={chatTokenData?.totalInputTokens || chatTokenUsage?.inputTokens || 0}
@@ -848,7 +851,7 @@ export default function Chat() {
             totalActualCost={chatTokenData?.totalActualCost || 0}
             messageCount={messages.length}
             currency={chatTokenData?.currency || chatTokenUsage?.currency || 'USD'}
-            isLoading={isTokenDataLoading && !chatTokenUsage?.inputTokens && !chatTokenUsage?.outputTokens}
+            isLoading={false}
             error={tokenDataError?.message || null}
             onRefresh={refetchTokenData}
             compact={true}
