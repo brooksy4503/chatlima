@@ -9,27 +9,32 @@ export interface PricingSyncResult {
     modelsProcessed: number;
     newPricingEntries: number;
     updatedPricingEntries: number;
+    skippedModels: number;
     errors: string[];
+    details: string[];
 }
 
-export class PricingSyncService {
+export class PricingSyncTestService {
     /**
-     * Sync pricing data from model APIs to the modelPricing table
+     * TEST VERSION: Sync pricing data for only a few models to verify fixes
      */
-    static async syncPricingData(): Promise<PricingSyncResult> {
+    static async syncPricingDataTest(maxModels: number = 5): Promise<PricingSyncResult> {
         const result: PricingSyncResult = {
             success: false,
             modelsProcessed: 0,
             newPricingEntries: 0,
             updatedPricingEntries: 0,
-            errors: []
+            skippedModels: 0,
+            errors: [],
+            details: []
         };
 
         // Track processed models to avoid duplicates
         const processedModels = new Set<string>();
 
         try {
-            console.log('[PricingSync] Starting pricing data sync...');
+            console.log(`[PricingSyncTest] Starting LIMITED pricing data sync (max ${maxModels} models)...`);
+            result.details.push(`Starting test sync with maximum ${maxModels} models`);
 
             // Try to fetch current models with pricing from APIs
             let models: any[] = [];
@@ -38,6 +43,7 @@ export class PricingSyncService {
             try {
                 // Get environment API keys for server-side fetching
                 const environmentKeys = getEnvironmentApiKeys();
+                result.details.push(`Environment keys available: ${Object.keys(environmentKeys).join(', ')}`);
 
                 const modelsResponse = await fetchAllModels({
                     environment: environmentKeys,
@@ -46,53 +52,77 @@ export class PricingSyncService {
 
                 if (modelsResponse && modelsResponse.models && modelsResponse.models.length > 0) {
                     models = modelsResponse.models;
-                    console.log(`[PricingSync] Successfully fetched ${models.length} models from API`);
+                    console.log(`[PricingSyncTest] Successfully fetched ${models.length} models from API`);
+                    result.details.push(`Fetched ${models.length} models from API`);
                 } else {
-                    console.log('[PricingSync] API fetch returned no models, using fallback pricing data');
+                    console.log('[PricingSyncTest] API fetch returned no models, using fallback pricing data');
+                    result.details.push('API fetch failed, using fallback data');
                     useFallback = true;
                 }
             } catch (error) {
-                console.log('[PricingSync] API fetch error, using fallback pricing data:', error);
+                console.log('[PricingSyncTest] API fetch error, using fallback pricing data:', error);
+                result.errors.push(`API fetch error: ${error}`);
+                result.details.push(`API fetch error: ${error}`);
                 useFallback = true;
             }
 
             if (useFallback) {
                 models = this.getFallbackPricingData();
-                console.log(`[PricingSync] Using fallback data with ${models.length} models`);
+                console.log(`[PricingSyncTest] Using fallback data with ${models.length} models`);
+                result.details.push(`Using fallback data with ${models.length} models`);
             }
+
+            // LIMIT MODELS FOR TESTING
+            const originalCount = models.length;
+            models = models.slice(0, maxModels);
+            console.log(`[PricingSyncTest] LIMITED to ${models.length} models (from ${originalCount} total)`);
+            result.details.push(`Limited to ${models.length} models for testing (from ${originalCount} total)`);
 
             result.modelsProcessed = models.length;
 
-            console.log(`[PricingSync] Processing ${models.length} models...`);
+            console.log(`[PricingSyncTest] Processing ${models.length} models...`);
 
             for (const model of models) {
                 try {
                     // Skip if already processed to avoid duplicates
                     if (processedModels.has(model.id)) {
-                        console.log(`[PricingSync] Skipping model ${model.id} - already processed`);
+                        console.log(`[PricingSyncTest] Skipping model ${model.id} - already processed`);
+                        result.skippedModels++;
                         continue;
                     }
 
                     // Skip models with no pricing data
                     if (!model.pricing?.input && !model.pricing?.output) {
-                        console.log(`[PricingSync] Skipping model ${model.id} - no pricing data`);
+                        console.log(`[PricingSyncTest] Skipping model ${model.id} - no pricing data`);
+                        result.details.push(`Skipped ${model.id}: no pricing data`);
+                        result.skippedModels++;
                         continue;
                     }
 
-                    // Skip models with zero or negative pricing (violates database constraint)
+                    // Skip models with zero or negative pricing
                     const inputPrice = model.pricing?.input || 0;
                     const outputPrice = model.pricing?.output || 0;
 
-                    // Check for very small values that might be rounded to zero
-                    const minValidPrice = 0.0000001; // 1e-7 minimum valid price (more conservative)
+                    // UPDATED: More reasonable threshold (was too strict before)
+                    const minValidPrice = 0.0000001; // 1e-7 minimum valid price
 
-                    if (inputPrice <= minValidPrice || outputPrice <= minValidPrice) {
-                        console.log(`[PricingSync] Skipping model ${model.id} - pricing too small (input: ${inputPrice}, output: ${outputPrice}) - below threshold ${minValidPrice}`);
+                    if (inputPrice <= 0 || outputPrice <= 0) {
+                        console.log(`[PricingSyncTest] Skipping model ${model.id} - zero/negative pricing (input: ${inputPrice}, output: ${outputPrice})`);
+                        result.details.push(`Skipped ${model.id}: zero/negative pricing`);
+                        result.skippedModels++;
+                        continue;
+                    }
+
+                    if (inputPrice < minValidPrice || outputPrice < minValidPrice) {
+                        console.log(`[PricingSyncTest] Skipping model ${model.id} - pricing too small (input: ${inputPrice}, output: ${outputPrice}) - below threshold ${minValidPrice}`);
+                        result.details.push(`Skipped ${model.id}: pricing below threshold (${inputPrice}, ${outputPrice})`);
+                        result.skippedModels++;
                         continue;
                     }
 
                     // Log successful pricing data for debugging
-                    console.log(`[PricingSync] Processing model ${model.id} with valid pricing (input: ${inputPrice}, output: ${outputPrice})`);
+                    console.log(`[PricingSyncTest] Processing model ${model.id} with valid pricing (input: ${inputPrice}, output: ${outputPrice})`);
+                    result.details.push(`Processing ${model.id}: input=${inputPrice}, output=${outputPrice}`);
 
                     // Extract provider from model ID
                     const provider = this.extractProviderFromModelId(model.id);
@@ -123,7 +153,8 @@ export class PricingSyncService {
                             capabilities: model.capabilities,
                             premium: model.premium,
                             vision: model.vision,
-                            contextMax: model.contextMax
+                            contextMax: model.contextMax,
+                            testSync: true // Mark as test sync
                         }
                     };
 
@@ -137,7 +168,7 @@ export class PricingSyncService {
                             existing.outputTokenPrice !== pricingData.outputTokenPrice
                         ) {
                             try {
-                                // IMPROVED: Use transaction for atomicity and better error handling
+                                // IMPROVED: Use transaction for atomicity
                                 await db.transaction(async (tx) => {
                                     // Deactivate old pricing entry
                                     await tx
@@ -159,16 +190,21 @@ export class PricingSyncService {
                                 });
 
                                 result.updatedPricingEntries++;
-                                console.log(`[PricingSync] Updated pricing for ${model.id}`);
+                                console.log(`[PricingSyncTest] ✅ Updated pricing for ${model.id}`);
+                                result.details.push(`✅ Updated ${model.id}: ${existing.inputTokenPrice} → ${inputPrice}`);
                             } catch (error) {
-                                if (error instanceof Error && (error.message.includes('duplicate key') || error.message.includes('unique'))) {
-                                    console.log(`[PricingSync] Skipping ${model.id} - unique constraint issue during update`);
+                                if (error instanceof Error && error.message.includes('unique')) {
+                                    console.log(`[PricingSyncTest] ⚠️ Skipping ${model.id} - unique constraint issue`);
+                                    result.details.push(`⚠️ Skipped ${model.id}: unique constraint issue`);
+                                    result.skippedModels++;
                                     continue;
                                 }
                                 throw error;
                             }
                         } else {
-                            console.log(`[PricingSync] Skipping ${model.id} - pricing unchanged`);
+                            console.log(`[PricingSyncTest] ➡️ Skipping ${model.id} - pricing unchanged`);
+                            result.details.push(`➡️ Unchanged ${model.id}: pricing already current`);
+                            result.skippedModels++;
                         }
                     } else {
                         // Create new pricing entry
@@ -181,10 +217,13 @@ export class PricingSyncService {
                             });
 
                             result.newPricingEntries++;
-                            console.log(`[PricingSync] Added new pricing for ${model.id}`);
+                            console.log(`[PricingSyncTest] ✅ Added new pricing for ${model.id}`);
+                            result.details.push(`✅ Added new ${model.id}: input=${inputPrice}, output=${outputPrice}`);
                         } catch (error) {
-                            if (error instanceof Error && (error.message.includes('duplicate key') || error.message.includes('unique'))) {
-                                console.log(`[PricingSync] Skipping ${model.id} - unique constraint issue during insert`);
+                            if (error instanceof Error && error.message.includes('unique')) {
+                                console.log(`[PricingSyncTest] ⚠️ Skipping ${model.id} - unique constraint issue during insert`);
+                                result.details.push(`⚠️ Skipped ${model.id}: unique constraint issue (insert)`);
+                                result.skippedModels++;
                                 continue;
                             }
                             throw error;
@@ -195,27 +234,28 @@ export class PricingSyncService {
                     processedModels.add(model.id);
                 } catch (error) {
                     const errorMsg = `Failed to process model ${model.id}: ${error}`;
-                    console.error(`[PricingSync] ${errorMsg}`);
+                    console.error(`[PricingSyncTest] ${errorMsg}`);
                     result.errors.push(errorMsg);
+                    result.details.push(`❌ Error ${model.id}: ${error}`);
                 }
             }
 
             result.success = true;
-            console.log(`[PricingSync] Sync completed successfully. Processed: ${result.modelsProcessed}, New: ${result.newPricingEntries}, Updated: ${result.updatedPricingEntries}`);
-            console.log(`[PricingSync] Summary: ${result.newPricingEntries + result.updatedPricingEntries} pricing entries saved, ${result.errors.length} errors encountered`);
-            console.log(`[PricingSync] Duplicates avoided: ${processedModels.size} unique models processed`);
+            console.log(`[PricingSyncTest] ✅ Test sync completed! Processed: ${result.modelsProcessed}, New: ${result.newPricingEntries}, Updated: ${result.updatedPricingEntries}, Skipped: ${result.skippedModels}`);
+            result.details.push(`✅ Test sync completed: ${result.newPricingEntries + result.updatedPricingEntries} changes, ${result.skippedModels} skipped, ${result.errors.length} errors`);
 
         } catch (error) {
-            const errorMsg = `Pricing sync failed: ${error}`;
-            console.error(`[PricingSync] ${errorMsg}`);
+            const errorMsg = `Pricing sync test failed: ${error}`;
+            console.error(`[PricingSyncTest] ${errorMsg}`);
             result.errors.push(errorMsg);
+            result.details.push(`❌ Test sync failed: ${error}`);
         }
 
         return result;
     }
 
     /**
-     * Get fallback pricing data when API is not available
+     * Get fallback pricing data when API is not available (limited for testing)
      */
     private static getFallbackPricingData() {
         return [
@@ -232,20 +272,6 @@ export class PricingSyncService {
                 premium: true,
                 vision: false,
                 contextMax: 200000
-            },
-            {
-                id: 'openrouter/openai/gpt-4o',
-                name: 'GPT-4o',
-                provider: 'OpenRouter',
-                pricing: {
-                    input: 0.000005,
-                    output: 0.000015,
-                    currency: 'USD'
-                },
-                capabilities: ['General Purpose', 'Vision'],
-                premium: true,
-                vision: true,
-                contextMax: 128000
             },
             {
                 id: 'openrouter/openai/gpt-4o-mini',
@@ -274,20 +300,6 @@ export class PricingSyncService {
                 premium: true,
                 vision: false,
                 contextMax: 200000
-            },
-            {
-                id: 'requesty/openai/gpt-4o',
-                name: 'GPT-4o',
-                provider: 'Requesty',
-                pricing: {
-                    input: 0.000005,
-                    output: 0.000015,
-                    currency: 'USD'
-                },
-                capabilities: ['General Purpose', 'Vision'],
-                premium: true,
-                vision: true,
-                contextMax: 128000
             }
         ];
     }
@@ -320,8 +332,8 @@ export class PricingSyncService {
         const stats = await db
             .select({
                 totalModels: count(),
-                activeModels: count(),
-                providers: modelPricing.provider,
+                activeModels: sql<number>`COUNT(*) FILTER (WHERE ${modelPricing.isActive} = true)`,
+                inactiveModels: sql<number>`COUNT(*) FILTER (WHERE ${modelPricing.isActive} = false)`,
                 avgInputPrice: avg(modelPricing.inputTokenPrice),
                 avgOutputPrice: avg(modelPricing.outputTokenPrice),
                 minInputPrice: min(modelPricing.inputTokenPrice),
@@ -329,9 +341,8 @@ export class PricingSyncService {
                 minOutputPrice: min(modelPricing.outputTokenPrice),
                 maxOutputPrice: max(modelPricing.outputTokenPrice)
             })
-            .from(modelPricing)
-            .where(eq(modelPricing.isActive, true));
+            .from(modelPricing);
 
-        return stats;
+        return stats[0];
     }
-} 
+}

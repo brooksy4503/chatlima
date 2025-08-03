@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
                 modelId: tokenUsageMetrics.modelId,
                 provider: tokenUsageMetrics.provider,
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
-                totalCost: sql<number>`coalesce(sum(${tokenUsageMetrics.estimatedCost}), 0)`,
+                totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestCount: sql<number>`count(*)`,
                 avgResponseTime: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`,
                 successRate: sql<number>`(count(case when ${tokenUsageMetrics.status} = 'completed' then 1 end) * 100.0) / count(*)`,
@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
             .select({
                 provider: tokenUsageMetrics.provider,
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
-                totalCost: sql<number>`coalesce(sum(${tokenUsageMetrics.estimatedCost}), 0)`,
+                totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestCount: sql<number>`count(*)`,
                 avgResponseTime: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`,
                 successRate: sql<number>`(count(case when ${tokenUsageMetrics.status} = 'completed' then 1 end) * 100.0) / count(*)`,

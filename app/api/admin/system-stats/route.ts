@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
         const tokenStatsResult = await db
             .select({
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
-                totalCost: sql<number>`coalesce(sum(${tokenUsageMetrics.estimatedCost}), 0)`,
+                totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestsToday: sql<number>`coalesce(count(*), 0)`
             })
             .from(tokenUsageMetrics)
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
             .select({
                 modelId: tokenUsageMetrics.modelId,
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
-                totalCost: sql<number>`coalesce(sum(${tokenUsageMetrics.estimatedCost}), 0)`,
+                totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestCount: sql<number>`count(*)`
             })
             .from(tokenUsageMetrics)
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
             .select({
                 provider: tokenUsageMetrics.provider,
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
-                totalCost: sql<number>`coalesce(sum(${tokenUsageMetrics.estimatedCost}), 0)`,
+                totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestCount: sql<number>`count(*)`
             })
             .from(tokenUsageMetrics)
@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
             .select({
                 date: dailyTokenUsage.date,
                 totalTokens: sql<number>`coalesce(sum(${dailyTokenUsage.totalTokens}), 0)`,
-                totalCost: sql<number>`coalesce(sum(${dailyTokenUsage.totalEstimatedCost}), 0)`
+                totalCost: sql<number>`coalesce(sum(coalesce(${dailyTokenUsage.totalActualCost}, ${dailyTokenUsage.totalEstimatedCost})), 0)`
             })
             .from(dailyTokenUsage)
             .where(gte(dailyTokenUsage.date, startDate.toISOString().split('T')[0]))
