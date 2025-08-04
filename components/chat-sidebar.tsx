@@ -60,7 +60,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useClientMount } from "@/lib/hooks/use-client-mount";
 import {
     Tooltip,
     TooltipContent,
@@ -123,7 +122,6 @@ export function ChatSidebar() {
     const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
     const [providerHealthOpen, setProviderHealthOpen] = useState(false);
-    const isMounted = useClientMount();
     const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
     // On mobile, always show expanded layout
@@ -227,7 +225,7 @@ export function ChatSidebar() {
 
 
     const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle, loadMoreChats, hasMoreChats, isLoadingMore } = useChats();
-    const isLoading = !isMounted || isSessionLoading || isChatsLoading;
+    const isLoading = isSessionLoading || isChatsLoading;
 
     const handleNewChat = () => {
         // Close mobile sidebar when navigating to new chat
@@ -448,7 +446,7 @@ export function ChatSidebar() {
                                                 <Activity className="h-4 w-4 mr-2 text-muted-foreground" />
                                                 Provider Health
                                             </DropdownMenuItem>
-                                            {isMounted && webSearchEnabled && (
+                                            {webSearchEnabled && (
                                                 <>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuLabel className="text-xs">Web Search</DropdownMenuLabel>

@@ -89,15 +89,37 @@ export default function RootLayout({
             <div className="flex h-dvh w-full">
               {/* Sidebar - lazy loaded to improve initial page performance */}
               <Suspense fallback={
-                <div className="w-[280px] bg-background/80 dark:bg-background/40 backdrop-blur-md border-r border-border/40 animate-pulse">
-                  <div className="h-16 border-b border-border/40 flex items-center px-4">
-                    <div className="h-8 w-8 bg-muted rounded-full"></div>
-                    <div className="ml-2 h-4 w-20 bg-muted rounded"></div>
-                  </div>
-                  <div className="p-4 space-y-2">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="h-8 bg-muted rounded"></div>
-                    ))}
+                <div
+                  className="group peer text-sidebar-foreground hidden md:block"
+                  data-state="expanded"
+                  data-collapsible=""
+                  data-variant="sidebar"
+                  data-side="left"
+                  data-slot="sidebar"
+                >
+                  <div
+                    data-slot="sidebar-gap"
+                    className="relative w-[16rem] bg-transparent transition-[width] duration-200 ease-linear"
+                  />
+                  <div
+                    data-slot="sidebar-container"
+                    className="fixed inset-y-0 z-10 hidden h-svh w-[16rem] transition-[left,right,width] duration-200 ease-linear md:flex left-0 group-data-[side=left]:border-r group-data-[side=right]:border-l shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md"
+                  >
+                    <div
+                      data-sidebar="sidebar"
+                      data-slot="sidebar-inner"
+                      className="bg-sidebar flex h-full w-full flex-col animate-pulse"
+                    >
+                      <div className="p-4 border-b border-border/40 h-[72px] flex items-center">
+                        <div className="h-8 w-8 bg-muted rounded-full"></div>
+                        <div className="ml-2 h-4 w-20 bg-muted rounded"></div>
+                      </div>
+                      <div className="p-4 space-y-2 flex-1">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="h-8 bg-muted rounded"></div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               }>

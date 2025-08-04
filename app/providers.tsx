@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "sonner";
@@ -30,13 +30,6 @@ export function Providers({ children }: { children: ReactNode }) {
     STORAGE_KEYS.SIDEBAR_STATE,
     true
   );
-  
-  // Prevent hydration mismatch by ensuring we only use localStorage values after mounting
-  const [isMounted, setIsMounted] = useState(false);
-  
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -54,7 +47,7 @@ export function Providers({ children }: { children: ReactNode }) {
               <PresetProvider>
                 <SidebarProvider 
                   defaultOpen={true} 
-                  open={isMounted ? sidebarOpen : true} 
+                  open={sidebarOpen} 
                   onOpenChange={setSidebarOpen}
                 >
                   <AnonymousAuth />
