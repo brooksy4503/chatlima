@@ -12,14 +12,17 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
   const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Check if we're in the browser environment
   const isBrowser = typeof window !== 'undefined';
 
   // Initialize state from localStorage or use initialValue
   useEffect(() => {
+    setIsMounted(true);
+
     if (!isBrowser) return;
-    
+
     try {
       const item = window.localStorage.getItem(key);
       if (item) {
@@ -30,19 +33,22 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }
   }, [key, isBrowser]);
 
+  // Prevent hydration mismatch by ensuring we only use localStorage values after mounting
+  const effectiveValue = isMounted ? storedValue : initialValue;
+
   // Return a wrapped version of useState's setter function that
   // persists the new value to localStorage.
   const setValue = useCallback((value: SetValue<T>) => {
     if (!isBrowser) return;
-    
+
     try {
       // Allow value to be a function so we have same API as useState
       const valueToStore =
         value instanceof Function ? value(storedValue) : value;
-      
+
       // Save state
       setStoredValue(valueToStore);
-      
+
       // Save to localStorage
       if (valueToStore === undefined) {
         window.localStorage.removeItem(key);
@@ -54,7 +60,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }
   }, [key, storedValue, isBrowser]);
 
-  return [storedValue, setValue] as const;
+  return [effectiveValue, setValue] as const;
 }
 
 // Helper function to parse JSON with error handling
