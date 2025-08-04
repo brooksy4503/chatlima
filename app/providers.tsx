@@ -30,6 +30,13 @@ export function Providers({ children }: { children: ReactNode }) {
     STORAGE_KEYS.SIDEBAR_STATE,
     true
   );
+  
+  // Prevent hydration mismatch by ensuring we only use localStorage values after mounting
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -45,7 +52,11 @@ export function Providers({ children }: { children: ReactNode }) {
           <MCPProvider>
             <ModelProvider>
               <PresetProvider>
-                <SidebarProvider defaultOpen={sidebarOpen} open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SidebarProvider 
+                  defaultOpen={true} 
+                  open={isMounted ? sidebarOpen : true} 
+                  onOpenChange={setSidebarOpen}
+                >
                   <AnonymousAuth />
                   {children}
                   <Toaster position="top-center" richColors />
