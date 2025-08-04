@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PricingSyncTestService } from '@/lib/services/pricingSyncTest';
-import { getSession } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
     try {
         // Check authentication and admin permissions
-        const session = await getSession();
+        const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {
             return NextResponse.json(
                 { error: 'Authentication required' },
@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if user is admin
-        if (!session.user.isAdmin) {
+        const isAdmin = (session.user as any)?.role === 'admin' || (session.user as any)?.isAdmin === true;
+        if (!isAdmin) {
             return NextResponse.json(
                 { error: 'Admin access required' },
                 { status: 403 }
