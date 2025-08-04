@@ -80,6 +80,19 @@ jest.mock('../../components/icons', () => ({
   SpinnerIcon: () => <div data-testid="spinner-icon">Spinner</div>,
 }));
 
+jest.mock('../../components/token-metrics/MessageTokenMetrics', () => ({
+  CompactMessageTokenMetrics: ({ messageId, isLatestMessage }: any) => (
+    <div data-testid="compact-token-metrics" data-message-id={messageId} data-is-latest={isLatestMessage}>
+      Compact Token Metrics
+    </div>
+  ),
+  StreamingTokenMetrics: ({ messageId, isLatestMessage, isStreaming }: any) => (
+    <div data-testid="streaming-token-metrics" data-message-id={messageId} data-is-latest={isLatestMessage} data-is-streaming={isStreaming}>
+      Streaming Token Metrics
+    </div>
+  ),
+}));
+
 jest.mock('lucide-react', () => ({
   ChevronDownIcon: ({ className }: any) => <div className={className} data-testid="chevron-down">↓</div>,
   ChevronUpIcon: ({ className }: any) => <div className={className} data-testid="chevron-up">↑</div>,
