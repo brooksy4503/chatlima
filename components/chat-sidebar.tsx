@@ -420,7 +420,7 @@ export function ChatSidebar() {
                                             </SidebarMenuButton>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent 
-                                            align="end" 
+                                            align="start" 
                                             side={isCollapsed ? "right" : "bottom"} 
                                             sideOffset={8} 
                                             className="min-w-[200px]"
