@@ -108,13 +108,15 @@ export class TokenTrackingService {
 
             // Calculate costs using estimated pricing first
             logDiagnostic('COST_CALCULATION', `Calculating estimated costs`, { trackingId, inputTokens, outputTokens });
-            let { estimatedCost, actualCost: fallbackActualCost } = await this.calculateCosts(
+            const costResult = await this.calculateCosts(
                 inputTokens,
                 outputTokens,
                 modelId,
                 provider,
                 pricingInfo
             );
+            let estimatedCost = costResult.estimatedCost;
+            const fallbackActualCost = costResult.actualCost;
             logDiagnostic('COST_RESULT', `Estimated cost calculation result`, { trackingId, estimatedCost, actualCost: fallbackActualCost });
 
             // For OpenRouter: Try to fetch actual cost and native token counts
