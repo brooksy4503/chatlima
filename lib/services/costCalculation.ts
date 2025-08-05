@@ -321,7 +321,7 @@ export class CostCalculationService {
                         eq(modelPricing.modelId, modelId),
                         eq(modelPricing.provider, provider),
                         eq(modelPricing.isActive, true),
-                        gte(modelPricing.effectiveFrom, new Date()),
+                        lte(modelPricing.effectiveFrom, new Date()),
                         sql`${modelPricing.effectiveTo} IS NULL OR ${modelPricing.effectiveTo} >= ${new Date()}`
                     ),
                     orderBy: desc(modelPricing.effectiveFrom),
@@ -386,8 +386,29 @@ export class CostCalculationService {
             }
 
             // Convert prices to per-token values
-            const inputPricePerToken = inputTokenPrice / 1000000;
-            const outputPricePerToken = outputTokenPrice / 1000000;
+            // Database prices are already per-token, default prices are per 1M tokens
+            let inputPricePerToken: number;
+            let outputPricePerToken: number;
+
+            if (pricingSource === 'database') {
+                // Database prices are already per-token (in dollars per token)
+                logDiagnostic('PRICING_CONVERSION', `Using database prices (already per-token)`, {
+                    calculationId,
+                    inputTokenPrice,
+                    outputTokenPrice
+                });
+                inputPricePerToken = inputTokenPrice;
+                outputPricePerToken = outputTokenPrice;
+            } else {
+                // Default and custom prices are per 1M tokens
+                logDiagnostic('PRICING_CONVERSION', `Converting default/custom prices (per 1M tokens)`, {
+                    calculationId,
+                    inputTokenPrice,
+                    outputTokenPrice
+                });
+                inputPricePerToken = inputTokenPrice / 1000000;
+                outputPricePerToken = outputTokenPrice / 1000000;
+            }
 
             logDiagnostic('COST_CALCULATION', `Calculating base costs`, {
                 calculationId,
@@ -1002,7 +1023,7 @@ export class CostCalculationService {
             google: { input: 0.0005, output: 0.0015 }, // $0.50 / 1M input, $1.50 / 1M output
             groq: { input: 0.00005, output: 0.00008 }, // $0.05 / 1M input, $0.08 / 1M output
             xai: { input: 0.0002, output: 0.0006 }, // $0.20 / 1M input, $0.60 / 1M output
-            openrouter: { input: 0.0005, output: 0.0015 }, // Varies by model, using OpenAI as baseline
+            openrouter: { input: 0.00125, output: 0.01 }, // Updated to match Gemini 2.5 Pro pricing: $1.25/$10 per 1M tokens
             requesty: { input: 0.0005, output: 0.0015 }, // Varies by model, using OpenAI as baseline
         };
 

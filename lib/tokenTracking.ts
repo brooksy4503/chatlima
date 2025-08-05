@@ -108,7 +108,7 @@ export class TokenTrackingService {
 
             // Calculate costs using estimated pricing first
             logDiagnostic('COST_CALCULATION', `Calculating estimated costs`, { trackingId, inputTokens, outputTokens });
-            const { estimatedCost, actualCost: fallbackActualCost } = await this.calculateCosts(
+            let { estimatedCost, actualCost: fallbackActualCost } = await this.calculateCosts(
                 inputTokens,
                 outputTokens,
                 modelId,
@@ -151,6 +151,27 @@ export class TokenTrackingService {
                         nativeOutputTokens: outputTokens,
                         originalInputTokens: this.extractInputTokens(tokenUsage),
                         originalOutputTokens: this.extractOutputTokens(tokenUsage)
+                    });
+
+                    // Recalculate estimated cost using native token counts for better accuracy
+                    logDiagnostic('COST_RECALCULATION', `Recalculating costs with native tokens`, { trackingId, inputTokens, outputTokens });
+                    const { estimatedCost: recalculatedCost } = await this.calculateCosts(
+                        inputTokens,
+                        outputTokens,
+                        modelId,
+                        provider,
+                        pricingInfo
+                    );
+
+                    // Update estimated cost to use native token calculation
+                    const originalEstimatedCost = estimatedCost;
+                    estimatedCost = recalculatedCost;
+
+                    logDiagnostic('COST_RECALC_RESULT', `Updated estimated cost using native tokens`, {
+                        trackingId,
+                        originalEstimatedCost,
+                        recalculatedCost,
+                        improvement: `${((Math.abs(originalEstimatedCost - recalculatedCost) / Math.max(originalEstimatedCost, recalculatedCost)) * 100).toFixed(1)}% difference`
                     });
                 }
             }
@@ -529,8 +550,8 @@ export class TokenTrackingService {
         });
 
         try {
+            // Use UTC date to avoid timezone issues
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
             const todayString = today.toISOString().split('T')[0];
 
             logDiagnostic('DAILY_LOOKUP', `Checking for existing daily entry`, {

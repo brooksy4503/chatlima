@@ -169,7 +169,7 @@ export const auth = betterAuth({
                         // Transfer all presets from anonymous user to authenticated user
                         const migratedPresets = await db
                             .update(presets)
-                            .set({ 
+                            .set({
                                 userId: newUser.user.id,
                                 updatedAt: new Date()
                             })
@@ -335,9 +335,9 @@ export async function checkMessageLimit(userId: string, isAnonymous: boolean): P
             messageLimit = (user as any).metadata?.messageLimit || 20;
         }
 
-        // Count today's messages for this user
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        // Count today's messages for this user (using UTC date to match database timestamps)
+        const now = new Date();
+        const startOfDay = new Date(now.toISOString().split('T')[0] + 'T00:00:00.000Z');
 
         const messageCount = await db.select({ count: count() })
             .from(schema.messages)

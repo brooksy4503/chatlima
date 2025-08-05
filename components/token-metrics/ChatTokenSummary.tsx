@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { 
   Coins, 
-  DollarSign, 
   TrendingUp, 
   TrendingDown, 
   RefreshCw,
@@ -61,13 +60,13 @@ export function ChatTokenSummary({
   className,
   compact = false,
 }: ChatTokenSummaryProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: value < 0.01 ? 4 : 2,
-      maximumFractionDigits: value < 0.01 ? 4 : 2,
-    }).format(value);
+  const formatCost = (totalCost: number) => {
+    if (totalCost === 0) return "$0.00";
+    if (totalCost >= 0.01) {
+      return `$${totalCost.toFixed(2)}`;
+    }
+    // For very small amounts, show as "< $0.01"
+    return "< $0.01";
   };
 
   const formatNumber = (value: number) => {
@@ -111,10 +110,9 @@ export function ChatTokenSummary({
               <Coins className="h-3 w-3" />
               <span>{formatNumber(totalTokens)}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-3 w-3" />
-              <span>{formatCurrency(totalEstimatedCost)}</span>
-            </div>
+            {totalEstimatedCost > 0 && (
+              <span>{formatCost(totalEstimatedCost)}</span>
+            )}
             <div className="flex items-center gap-1">
               <BarChart3 className="h-3 w-3" />
               <span>{messageCount} msgs</span>
@@ -144,9 +142,9 @@ export function ChatTokenSummary({
               <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
             </Button>
           )}
-          {totalEstimatedCost >= 0.0001 && (
+          {totalEstimatedCost > 0 && (
             <Badge variant="secondary" className="text-xs">
-              {formatCurrency(totalEstimatedCost)}
+              {formatCost(totalEstimatedCost)}
             </Badge>
           )}
         </div>
@@ -189,16 +187,16 @@ export function ChatTokenSummary({
             </div>
 
             {/* Cost Information */}
-            {totalEstimatedCost >= 0.0001 && (
+            {totalEstimatedCost > 0 && (
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Estimated Cost:</span>
-                  <span className="font-medium">{formatCurrency(totalEstimatedCost)}</span>
+                  <span className="font-medium">{formatCost(totalEstimatedCost)}</span>
                 </div>
                 {totalActualCost > 0 && totalActualCost !== totalEstimatedCost && (
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Actual Cost:</span>
-                    <span className="font-medium">{formatCurrency(totalActualCost)}</span>
+                    <span className="font-medium">{formatCost(totalActualCost)}</span>
                   </div>
                 )}
               </div>
@@ -214,10 +212,10 @@ export function ChatTokenSummary({
                 <span className="text-muted-foreground">Avg Tokens/Msg:</span>
                 <span className="font-medium">{formatNumber(calculateAverageTokensPerMessage())}</span>
               </div>
-              {totalEstimatedCost >= 0.0001 && (
+              {totalEstimatedCost > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Avg Cost/Msg:</span>
-                  <span className="font-medium">{formatCurrency(calculateAverageCostPerMessage())}</span>
+                  <span className="font-medium">{formatCost(calculateAverageCostPerMessage())}</span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -269,13 +267,13 @@ export function MiniChatTokenSummary({
   className,
   showCost = true,
 }: MiniChatTokenSummaryProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: value < 0.01 ? 4 : 2,
-      maximumFractionDigits: value < 0.01 ? 4 : 2,
-    }).format(value);
+  const formatCost = (totalCost: number) => {
+    if (totalCost === 0) return "$0.00";
+    if (totalCost >= 0.01) {
+      return `$${totalCost.toFixed(2)}`;
+    }
+    // For very small amounts, show as "< $0.01"
+    return "< $0.01";
   };
 
   const formatNumber = (value: number) => {
@@ -311,11 +309,8 @@ export function MiniChatTokenSummary({
         <Coins className="h-3 w-3" />
         <span>{formatNumber(totalTokens)}</span>
       </div>
-              {showCost && totalEstimatedCost >= 0.0001 && (
-        <div className="flex items-center gap-1">
-          <DollarSign className="h-3 w-3" />
-          <span>{formatCurrency(totalEstimatedCost)}</span>
-        </div>
+              {showCost && totalEstimatedCost > 0 && (
+        <span>{formatCost(totalEstimatedCost)}</span>
       )}
       <div className="flex items-center gap-1">
         <BarChart3 className="h-3 w-3" />

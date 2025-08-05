@@ -86,18 +86,18 @@ export async function GET(req: NextRequest) {
 
             switch (period) {
                 case 'day':
-                    calculatedStartDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    calculatedStartDate = new Date(now.toISOString().split('T')[0] + 'T00:00:00.000Z');
                     break;
                 case 'week':
-                    const dayOfWeek = now.getDay();
-                    calculatedStartDate = new Date(now.getTime() - (dayOfWeek * 24 * 60 * 60 * 1000));
-                    calculatedStartDate.setHours(0, 0, 0, 0);
+                    const dayOfWeek = now.getUTCDay();
+                    const utcStartOfWeek = new Date(now.getTime() - (dayOfWeek * 24 * 60 * 60 * 1000));
+                    calculatedStartDate = new Date(utcStartOfWeek.toISOString().split('T')[0] + 'T00:00:00.000Z');
                     break;
                 case 'month':
-                    calculatedStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    calculatedStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
                     break;
                 case 'year':
-                    calculatedStartDate = new Date(now.getFullYear(), 0, 1);
+                    calculatedStartDate = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
                     break;
             }
         }

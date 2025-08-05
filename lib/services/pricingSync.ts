@@ -222,7 +222,7 @@ export class PricingSyncService {
             {
                 id: 'openrouter/anthropic/claude-3-5-sonnet-20241022',
                 name: 'Claude 3.5 Sonnet',
-                provider: 'OpenRouter',
+                provider: 'openrouter',
                 pricing: {
                     input: 0.000003,
                     output: 0.000015,
@@ -236,7 +236,7 @@ export class PricingSyncService {
             {
                 id: 'openrouter/openai/gpt-4o',
                 name: 'GPT-4o',
-                provider: 'OpenRouter',
+                provider: 'openrouter',
                 pricing: {
                     input: 0.000005,
                     output: 0.000015,
@@ -250,7 +250,7 @@ export class PricingSyncService {
             {
                 id: 'openrouter/openai/gpt-4o-mini',
                 name: 'GPT-4o Mini',
-                provider: 'OpenRouter',
+                provider: 'openrouter',
                 pricing: {
                     input: 0.00000015,
                     output: 0.0000006,
@@ -264,7 +264,7 @@ export class PricingSyncService {
             {
                 id: 'requesty/anthropic/claude-3-5-sonnet-20241022',
                 name: 'Claude 3.5 Sonnet',
-                provider: 'Requesty',
+                provider: 'requesty',
                 pricing: {
                     input: 0.000003,
                     output: 0.000015,
@@ -278,7 +278,7 @@ export class PricingSyncService {
             {
                 id: 'requesty/openai/gpt-4o',
                 name: 'GPT-4o',
-                provider: 'Requesty',
+                provider: 'requesty',
                 pricing: {
                     input: 0.000005,
                     output: 0.000015,
@@ -297,19 +297,19 @@ export class PricingSyncService {
      */
     private static extractProviderFromModelId(modelId: string): string {
         if (modelId.startsWith('openrouter/')) {
-            return 'OpenRouter';
+            return 'openrouter';  // Fixed: Use lowercase to match token usage records
         } else if (modelId.startsWith('requesty/')) {
-            return 'Requesty';
+            return 'requesty';    // Fixed: Use lowercase for consistency
         } else if (modelId.includes('claude')) {
-            return 'Anthropic';
+            return 'anthropic';
         } else if (modelId.includes('gpt')) {
-            return 'OpenAI';
+            return 'openai';
         } else if (modelId.includes('grok')) {
-            return 'XAI';
+            return 'xai';
         } else if (modelId.includes('qwen')) {
-            return 'Groq';
+            return 'groq';
         } else {
-            return 'Unknown';
+            return 'unknown';
         }
     }
 
