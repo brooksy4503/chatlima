@@ -3,8 +3,16 @@
 import dotenv from 'dotenv';
 
 // Load environment variables BEFORE importing database
-dotenv.config({ path: '.env.local' });
+const envResult = dotenv.config({ path: '.env.local' });
+console.log('Loaded .env.local:', !!envResult.parsed);
 dotenv.config({ path: '.env' });
+
+// Verify DATABASE_URL is loaded
+if (!process.env.DATABASE_URL) {
+    console.error('❌ DATABASE_URL not found in environment variables');
+    process.exit(1);
+}
+console.log('✅ DATABASE_URL loaded');
 
 // Now import the service after environment is loaded
 import { PricingSyncService } from '../lib/services/pricingSync';

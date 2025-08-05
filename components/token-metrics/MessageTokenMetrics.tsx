@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Coins, Zap, DollarSign } from "lucide-react";
+import { Coins, Zap } from "lucide-react";
 
 interface MessageTokenMetricsProps {
   inputTokens?: number;
@@ -40,13 +40,13 @@ export function MessageTokenMetrics({
   className,
   compact = false,
 }: MessageTokenMetricsProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: value < 0.01 ? 4 : 2,
-      maximumFractionDigits: value < 0.01 ? 4 : 2,
-    }).format(value);
+  const formatCost = (totalCost: number) => {
+    if (totalCost === 0) return "$0.00";
+    if (totalCost >= 0.01) {
+      return `$${totalCost.toFixed(2)}`;
+    }
+    // For very small amounts, show as "< $0.01"
+    return "< $0.01";
   };
 
   const formatNumber = (value: number) => {
@@ -77,10 +77,7 @@ export function MessageTokenMetrics({
           <span>{formatNumber(totalTokens)}</span>
         </div>
         {estimatedCost > 0 && (
-          <div className="flex items-center gap-1">
-            <DollarSign className="h-3 w-3" />
-            <span>{formatCurrency(estimatedCost)}</span>
-          </div>
+          <span>{formatCost(estimatedCost)}</span>
         )}
       </div>
     );
@@ -96,7 +93,7 @@ export function MessageTokenMetrics({
           </div>
           {estimatedCost > 0 && (
             <Badge variant="secondary" className="text-xs">
-              {formatCurrency(estimatedCost)}
+              {formatCost(estimatedCost)}
             </Badge>
           )}
         </div>
@@ -137,13 +134,13 @@ export function CompactMessageTokenMetrics({
   className,
   showCost = true,
 }: CompactMessageTokenMetricsProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: value < 0.01 ? 4 : 2,
-      maximumFractionDigits: value < 0.01 ? 4 : 2,
-    }).format(value);
+  const formatCost = (totalCost: number) => {
+    if (totalCost === 0) return "$0.00";
+    if (totalCost >= 0.01) {
+      return `$${totalCost.toFixed(2)}`;
+    }
+    // For very small amounts, show as "< $0.01"
+    return "< $0.01";
   };
 
   const formatNumber = (value: number) => {
@@ -170,11 +167,8 @@ export function CompactMessageTokenMetrics({
         <Zap className="h-3 w-3" />
         <span>{formatNumber(totalTokens)}</span>
       </div>
-      {showCost && estimatedCost >= 0.0001 && (
-        <div className="flex items-center gap-1">
-          <DollarSign className="h-3 w-3" />
-          <span>{formatCurrency(estimatedCost)}</span>
-        </div>
+      {showCost && estimatedCost > 0 && (
+        <span>{formatCost(estimatedCost)}</span>
       )}
     </div>
   );
@@ -202,13 +196,14 @@ export function StreamingTokenMetrics({
 }: StreamingTokenMetricsProps) {
   // Only pulse if we're actively streaming (not just if tokens exist)
   const isActivelyStreaming = isStreaming;
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: value < 0.01 ? 4 : 2,
-      maximumFractionDigits: value < 0.01 ? 4 : 2,
-    }).format(value);
+  const totalTokens = inputTokens + outputTokens;
+  const formatCost = (totalCost: number) => {
+    if (totalCost === 0) return "$0.00";
+    if (totalCost >= 0.01) {
+      return `$${totalCost.toFixed(2)}`;
+    }
+    // For very small amounts, show as "< $0.01"
+    return "< $0.01";
   };
 
   return (
@@ -217,11 +212,8 @@ export function StreamingTokenMetrics({
         <Coins className="h-3 w-3" />
         <span>{inputTokens} → {outputTokens}</span>
       </div>
-      {estimatedCost >= 0.0001 && (
-        <div className="flex items-center gap-1">
-          <DollarSign className="h-3 w-3" />
-          <span>{formatCurrency(estimatedCost)}</span>
-        </div>
+      {estimatedCost > 0 && (
+        <span>{formatCost(estimatedCost)}</span>
       )}
     </div>
   );

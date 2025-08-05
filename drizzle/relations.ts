@@ -1,33 +1,26 @@
 import { relations } from "drizzle-orm/relations";
-import { users as user, favoriteModels, chats, chatShares, dailyTokenUsage, tokenUsageMetrics, messages, sessions as session, accounts as account, presets, polarUsageEvents, presetUsage } from "../lib/db/schema";
+import { user, favoriteModels, chats, chatShares, dailyTokenUsage, tokenUsageMetrics, messages, session, account, polarUsageEvents, presets, presetUsage } from "./schema";
 
-export const favoriteModelsRelations = relations(favoriteModels, ({ one }) => ({
+export const favoriteModelsRelations = relations(favoriteModels, ({one}) => ({
 	user: one(user, {
 		fields: [favoriteModels.userId],
 		references: [user.id]
 	}),
 }));
 
-export const userRelations = relations(user, ({ one, many }) => ({
+export const userRelations = relations(user, ({many}) => ({
 	favoriteModels: many(favoriteModels),
 	chatShares: many(chatShares),
 	dailyTokenUsages: many(dailyTokenUsage),
 	tokenUsageMetrics: many(tokenUsageMetrics),
 	sessions: many(session),
 	accounts: many(account),
-	preset: one(presets, {
-		fields: [user.defaultPresetId],
-		references: [presets.id],
-		relationName: "user_defaultPresetId_presets_id"
-	}),
 	polarUsageEvents: many(polarUsageEvents),
-	presets: many(presets, {
-		relationName: "presets_userId_user_id"
-	}),
+	presets: many(presets),
 	presetUsages: many(presetUsage),
 }));
 
-export const chatSharesRelations = relations(chatShares, ({ one }) => ({
+export const chatSharesRelations = relations(chatShares, ({one}) => ({
 	chat: one(chats, {
 		fields: [chatShares.chatId],
 		references: [chats.id]
@@ -38,20 +31,20 @@ export const chatSharesRelations = relations(chatShares, ({ one }) => ({
 	}),
 }));
 
-export const chatsRelations = relations(chats, ({ many }) => ({
+export const chatsRelations = relations(chats, ({many}) => ({
 	chatShares: many(chatShares),
 	tokenUsageMetrics: many(tokenUsageMetrics),
 	messages: many(messages),
 }));
 
-export const dailyTokenUsageRelations = relations(dailyTokenUsage, ({ one }) => ({
+export const dailyTokenUsageRelations = relations(dailyTokenUsage, ({one}) => ({
 	user: one(user, {
 		fields: [dailyTokenUsage.userId],
 		references: [user.id]
 	}),
 }));
 
-export const tokenUsageMetricsRelations = relations(tokenUsageMetrics, ({ one }) => ({
+export const tokenUsageMetricsRelations = relations(tokenUsageMetrics, ({one}) => ({
 	user: one(user, {
 		fields: [tokenUsageMetrics.userId],
 		references: [user.id]
@@ -66,7 +59,7 @@ export const tokenUsageMetricsRelations = relations(tokenUsageMetrics, ({ one })
 	}),
 }));
 
-export const messagesRelations = relations(messages, ({ one, many }) => ({
+export const messagesRelations = relations(messages, ({one, many}) => ({
 	tokenUsageMetrics: many(tokenUsageMetrics),
 	chat: one(chats, {
 		fields: [messages.chatId],
@@ -74,40 +67,36 @@ export const messagesRelations = relations(messages, ({ one, many }) => ({
 	}),
 }));
 
-export const sessionRelations = relations(session, ({ one }) => ({
+export const sessionRelations = relations(session, ({one}) => ({
 	user: one(user, {
 		fields: [session.userId],
 		references: [user.id]
 	}),
 }));
 
-export const accountRelations = relations(account, ({ one }) => ({
+export const accountRelations = relations(account, ({one}) => ({
 	user: one(user, {
 		fields: [account.userId],
 		references: [user.id]
 	}),
 }));
 
-export const presetsRelations = relations(presets, ({ one, many }) => ({
-	users: many(user, {
-		relationName: "user_defaultPresetId_presets_id"
-	}),
-	user: one(user, {
-		fields: [presets.userId],
-		references: [user.id],
-		relationName: "presets_userId_user_id"
-	}),
-	presetUsages: many(presetUsage),
-}));
-
-export const polarUsageEventsRelations = relations(polarUsageEvents, ({ one }) => ({
+export const polarUsageEventsRelations = relations(polarUsageEvents, ({one}) => ({
 	user: one(user, {
 		fields: [polarUsageEvents.userId],
 		references: [user.id]
 	}),
 }));
 
-export const presetUsageRelations = relations(presetUsage, ({ one }) => ({
+export const presetsRelations = relations(presets, ({one, many}) => ({
+	user: one(user, {
+		fields: [presets.userId],
+		references: [user.id]
+	}),
+	presetUsages: many(presetUsage),
+}));
+
+export const presetUsageRelations = relations(presetUsage, ({one}) => ({
 	preset: one(presets, {
 		fields: [presetUsage.presetId],
 		references: [presets.id]
