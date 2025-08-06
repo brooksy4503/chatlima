@@ -150,6 +150,11 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
                 description: model.description || `${model.name} via OpenRouter`,
                 capabilities,
                 premium: (() => {
+                    // Manual override for specific premium models
+                    if (model.id === 'openai/gpt-4o-mini-search-preview') {
+                        return true;
+                    }
+
                     if (!model.pricing) return false;
                     const inputPrice = model.pricing.prompt ? parseFloat(model.pricing.prompt) : 0;
                     const outputPrice = model.pricing.completion ? parseFloat(model.pricing.completion) : 0;
