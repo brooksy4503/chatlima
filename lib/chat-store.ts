@@ -153,7 +153,7 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
         if (hasEnoughMessages) {
           try {
             // Use AI to generate a meaningful title based on conversation
-            chatTitle = await generateTitle(aiMessages, selectedModel, apiKeys);
+            chatTitle = await generateTitle(aiMessages, selectedModel, apiKeys, userId);
           } catch (error) {
             console.error('Error generating title:', error);
             // Fallback to basic title extraction if AI title generation fails

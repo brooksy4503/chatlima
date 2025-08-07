@@ -298,6 +298,11 @@ export async function POST(req: Request) {
   const userId = session.user.id;
   const isAnonymous = (session.user as any).isAnonymous === true;
 
+  // Create OpenRouter user identifier for tracking
+  const openRouterUserId = isAnonymous
+    ? `chatlima_anon_${userId}`
+    : `chatlima_user_${userId}`;
+
   // Try to get the Polar customer ID from session
   const polarCustomerId: string | undefined = (session.user as any)?.polarCustomerId ||
     (session.user as any)?.metadata?.polarCustomerId;
@@ -737,7 +742,7 @@ export async function POST(req: Request) {
     } else {
       // Model does not support web search, or flag is not explicitly true
       effectiveWebSearchEnabled = false;
-      modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
+      modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openRouterUserId);
       console.log(`[Web Search] Requested for ${selectedModel}, but not supported or not enabled for this model. Using standard model.`);
     }
   } else {
@@ -746,7 +751,7 @@ export async function POST(req: Request) {
       console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
     }
     effectiveWebSearchEnabled = false;
-    modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
+    modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openRouterUserId);
   }
 
   const modelOptions: { // Add type for clarity and to allow logprobs
@@ -910,6 +915,7 @@ export async function POST(req: Request) {
     messages: formattedMessages,
     tools: toolsToUse,
     maxSteps: 20,
+    user: openRouterUserId, // Add user tracking for OpenRouter logs
     providerOptions: {
       google: {
         thinkingConfig: {
@@ -922,7 +928,13 @@ export async function POST(req: Request) {
           budgetTokens: 12000
         },
       },
-      openrouter: modelOptions,
+      openrouter: {
+        ...modelOptions,
+        user: openRouterUserId, // Also pass user in provider options for OpenRouter
+        extraBody: {
+          user: openRouterUserId, // Try passing in extraBody as well
+        },
+      },
       requesty: {
         // Pass tools via extraBody for Requesty models
         // For Google Vertex AI models, use cleaned tools without $schema field
@@ -1292,6 +1304,7 @@ export async function POST(req: Request) {
 
     // Log the model being used for debugging
     console.log(`[Chat ${id}] Using model: ${selectedModel}, effectiveWebSearchEnabled: ${effectiveWebSearchEnabled}`);
+    console.log(`[Chat ${id}] OpenRouter user tracking: ${openRouterUserId}`);
 
     const result = streamText(openRouterPayload);
 

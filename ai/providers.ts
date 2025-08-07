@@ -122,7 +122,7 @@ export const createXaiClientWithKey = (apiKey?: string) => {
   });
 };
 
-export const createOpenRouterClientWithKey = (apiKey?: string) => {
+export const createOpenRouterClientWithKey = (apiKey?: string, userId?: string) => {
   const finalApiKey = getApiKeyWithOverride('OPENROUTER_API_KEY', apiKey);
   if (!finalApiKey) {
     throw new Error('OpenRouter API key is missing. Pass it using the \'apiKey\' parameter or the OPENROUTER_API_KEY environment variable.');
@@ -132,6 +132,8 @@ export const createOpenRouterClientWithKey = (apiKey?: string) => {
     headers: {
       'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
       'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+      // Add user tracking header for additional context (optional)
+      ...(userId && { 'X-ChatLima-User-ID': userId })
     }
   });
 };
@@ -166,13 +168,13 @@ const languageModels = {
 };
 
 // Helper to get language model with dynamic API keys
-export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>) => {
+export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>, userId?: string) => {
   // Helper function to create clients on demand
   const getOpenAIClient = () => createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
   const getAnthropicClient = () => createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
   const getGroqClient = () => createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']);
   const getXaiClient = () => createXaiClientWithKey(apiKeys?.['XAI_API_KEY']);
-  const getOpenRouterClient = () => createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+  const getOpenRouterClient = () => createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY'], userId);
   const getRequestyClient = () => createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']);
 
   // Check if the specific model exists and create only the needed client
@@ -322,12 +324,12 @@ export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => 
 };
 
 // Get the title generation model instance based on the selected model
-export const getTitleGenerationModel = (selectedModelId: modelID, apiKeys?: Record<string, string>) => {
+export const getTitleGenerationModel = (selectedModelId: modelID, apiKeys?: Record<string, string>, userId?: string) => {
   const titleModelId = getTitleGenerationModelId(selectedModelId);
 
   // If API keys are provided, use the dynamic model with keys
   if (apiKeys) {
-    return getLanguageModelWithKeys(titleModelId, apiKeys);
+    return getLanguageModelWithKeys(titleModelId, apiKeys, userId);
   }
 
   // If no API keys provided, check if the title model exists in static models

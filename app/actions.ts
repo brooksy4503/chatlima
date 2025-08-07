@@ -37,7 +37,7 @@ function getMessageText(message: any): string {
   return '';
 }
 
-export async function generateTitle(messages: any[], selectedModel?: string, apiKeys?: Record<string, string>) {
+export async function generateTitle(messages: any[], selectedModel?: string, apiKeys?: Record<string, string>, userId?: string) {
   // Find the first user message
   const firstUserMessage = messages.find(msg => msg.role === 'user');
 
@@ -63,10 +63,10 @@ export async function generateTitle(messages: any[], selectedModel?: string, api
   let titleModel;
   if (selectedModel && apiKeys) {
     // Use dynamic model selection with API keys
-    titleModel = getTitleGenerationModel(selectedModel as modelID, apiKeys);
+    titleModel = getTitleGenerationModel(selectedModel as modelID, apiKeys, userId);
   } else if (selectedModel) {
     // Use dynamic model selection without API keys
-    titleModel = getTitleGenerationModel(selectedModel as modelID);
+    titleModel = getTitleGenerationModel(selectedModel as modelID, undefined, userId);
   } else {
     // Fallback to static model
     titleModel = titleGenerationModel;
