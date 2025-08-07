@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2019-09/schema",
   "description": "List of AI models that have been tested and found to have non-working endpoints",
-  "lastUpdated": "2025-07-27T07:58:31.407Z",
+  "lastUpdated": "2025-08-07T09:40:46.587Z",
   "models": {
     "google/gemini-2.5-pro-exp-03-25": {
       "provider": "openrouter",
@@ -27,260 +27,84 @@
       "retryCount": 0,
       "manuallyBlocked": true
     },
-    "moonshotai/kimi-k2:free": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"moonshotai/kimi-k2:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Parasail\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:32:20.097Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"moonshotai/kimi-k2:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Parasail\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"cognitivecomputations/dolphin-mistral-24b-venice-edition:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:32:28.781Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"cognitivecomputations/dolphin-mistral-24b-venice-edition:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "baidu/ernie-4.5-300b-a47b": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 502: {\"error\":{\"message\":\"Provider returned error\",\"code\":502,\"metadata\":{\"raw\":\"{\\\"message\\\":\\\"unknown error in the model inference server trace_id: 55961200a01655fab684da7f9ae27989\\\",\\\"type\\\":\\\"server_error\\\"}\\n\",\"provider_name\":\"Novita\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:33:39.869Z",
-      "testError": "HTTP 502: {\"error\":{\"message\":\"Provider returned error\",\"code\":502,\"metadata\":{\"raw\":\"{\\\"message\\\":\\\"unknown error in the model inference server trace_id: 55961200a01655fab684da7f9ae27989\\\",\\\"type\\\":\\\"server_error\\\"}\\n\",\"provider_name\":\"Novita\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
     "openai/o3-pro": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 403: {\"error\":{\"message\":\"OpenAI is requiring a key to access this model, which you can add in https://openrouter.ai/settings/integrations - you can also switch to o3-mini.\",\"code\":403}}",
-      "lastTested": "2025-07-27T07:34:05.656Z",
-      "testError": "HTTP 403: {\"error\":{\"message\":\"OpenAI is requiring a key to access this model, which you can add in https://openrouter.ai/settings/integrations - you can also switch to o3-mini.\",\"code\":403}}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "openai/codex-mini": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:34:52.632Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "qwen/qwen3-4b:free": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"qwen/qwen3-4b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:35:14.792Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"qwen/qwen3-4b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "openai/o4-mini-high": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:36:05.662Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on requests per min (RPM): Limit 0, Requested 1. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "lastTested": "2025-08-07T09:40:08.266Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on requests per min (RPM): Limit 0, Requested 1. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "retryCount": 3,
       "manuallyBlocked": false
     },
     "openai/o3": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 403: {\"error\":{\"message\":\"OpenAI is requiring a key to access this model, which you can add in https://openrouter.ai/settings/integrations - you can also switch to o3-mini.\",\"code\":403}}",
-      "lastTested": "2025-07-27T07:36:06.745Z",
-      "testError": "HTTP 403: {\"error\":{\"message\":\"OpenAI is requiring a key to access this model, which you can add in https://openrouter.ai/settings/integrations - you can also switch to o3-mini.\",\"code\":403}}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "openai/o4-mini": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:36:08.141Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on tokens per min (TPM): Limit 0, Requested 4. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "lastTested": "2025-08-07T09:40:02.683Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on tokens per min (TPM): Limit 0, Requested 4. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "retryCount": 3,
       "manuallyBlocked": false
     },
     "nvidia/llama-3.1-nemotron-ultra-253b-v1:free": {
       "provider": "openrouter",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"model not found: nvidia/Llama-3_1-Nemotron-Ultra-253B-v1\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:36:45.235Z",
+      "lastTested": "2025-08-07T09:33:39.837Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"model not found: nvidia/Llama-3_1-Nemotron-Ultra-253B-v1\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "openai/o1-pro": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:37:18.498Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "rekaai/reka-flash-3:free": {
       "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"No instances available (yet) for chute_id='893971c6-0f01-54fc-8cbe-420d24a20b54'\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:37:48.832Z",
-      "testError": "HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"No instances available (yet) for chute_id='893971c6-0f01-54fc-8cbe-420d24a20b54'\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"model not found: RekaAI/reka-flash-3\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-08-07T09:33:41.737Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"model not found: RekaAI/reka-flash-3\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "rekaai/reka-flash-3": {
       "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"No instances available (yet) for chute_id='893971c6-0f01-54fc-8cbe-420d24a20b54'\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:37:50.339Z",
-      "testError": "HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"No instances available (yet) for chute_id='893971c6-0f01-54fc-8cbe-420d24a20b54'\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "qwen/qwq-32b:free": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"qwen/qwq-32b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:38:18.437Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"qwen/qwq-32b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "openai/o3-mini-high": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:38:50.141Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "openai/o3-mini": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:39:18.654Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"No endpoints found for rekaai/reka-flash-3.\",\"code\":404},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-08-07T09:33:43.092Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"No endpoints found for rekaai/reka-flash-3.\",\"code\":404},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "deepseek/deepseek-r1-distill-qwen-14b:free": {
       "provider": "openrouter",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"model not found: deepseek-ai/DeepSeek-R1-Distill-Qwen-14B\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:39:29.771Z",
+      "lastTested": "2025-08-07T09:33:48.619Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"model not found: deepseek-ai/DeepSeek-R1-Distill-Qwen-14B\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "openai/o1": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:40:02.437Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "google/gemini-2.0-flash-exp:free": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"google/gemini-2.0-flash-exp:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Google\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:40:10.934Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"google/gemini-2.0-flash-exp:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Google\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "qwen/qwq-32b-preview": {
       "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"object\\\":\\\"error\\\",\\\"message\\\":\\\"Only Qwen/Qwen2.5-72B-Instruct && Qwen/Qwen2.5-VL-72B-Instruct && deepseek-ai/DeepSeek-V3-0324 && meta-llama/Meta-Llama-3.1-70B-Instruct && meta-llama/Llama-3.3-70B-Instruct && meta-llama/Llama-3.2-3B-Instruct && FLUX.1-dev && StableDiffusion && meta-llama/Meta-Llama-3.1-8B-Instruct && tt && deepseek-ai/DeepSeek-R1 && moonshotai/Kimi-K2-Instruct && meta-llama/Meta-Llama-3-70B-Instruct && Qwen/Qwen2.5-VL-7B-Instruct && Qwen/Qwen3-235B-A22B && meta-llama/Meta-Llama-3.1-405B-Instruct && Qwen/QwQ-32B && deepseek-ai/DeepSeek-V3 && Qwen/Qwen3-235B-A22B-Instruct-2507 && NousResearch/Hermes-3-Llama-3.1-70B && meta-llama/Meta-Llama-3.1-405B && Qwen/Qwen3-Coder-480B-A35B-Instruct && mistralai/Pixtral-12B-2409 && Qwen/Qwen2.5-Coder-32B-Instruct && TTS && deepseek-ai/DeepSeek-R1-0528 allowed now, your model Qwen/QwQ-32B-Preview\\\",\\\"type\\\":\\\"\\\",\\\"param\\\":null,\\\"code\\\":40301}\",\"provider_name\":\"Hyperbolic\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:40:23.426Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"object\\\":\\\"error\\\",\\\"message\\\":\\\"Only Qwen/Qwen2.5-72B-Instruct && Qwen/Qwen2.5-VL-72B-Instruct && deepseek-ai/DeepSeek-V3-0324 && meta-llama/Meta-Llama-3.1-70B-Instruct && meta-llama/Llama-3.3-70B-Instruct && meta-llama/Llama-3.2-3B-Instruct && FLUX.1-dev && StableDiffusion && meta-llama/Meta-Llama-3.1-8B-Instruct && tt && deepseek-ai/DeepSeek-R1 && moonshotai/Kimi-K2-Instruct && meta-llama/Meta-Llama-3-70B-Instruct && Qwen/Qwen2.5-VL-7B-Instruct && Qwen/Qwen3-235B-A22B && meta-llama/Meta-Llama-3.1-405B-Instruct && Qwen/QwQ-32B && deepseek-ai/DeepSeek-V3 && Qwen/Qwen3-235B-A22B-Instruct-2507 && NousResearch/Hermes-3-Llama-3.1-70B && meta-llama/Meta-Llama-3.1-405B && Qwen/Qwen3-Coder-480B-A35B-Instruct && mistralai/Pixtral-12B-2409 && Qwen/Qwen2.5-Coder-32B-Instruct && TTS && deepseek-ai/DeepSeek-R1-0528 allowed now, your model Qwen/QwQ-32B-Preview\\\",\\\"type\\\":\\\"\\\",\\\"param\\\":null,\\\"code\\\":40301}\",\"provider_name\":\"Hyperbolic\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"object\\\":\\\"error\\\",\\\"message\\\":\\\"Only Qwen/Qwen2.5-72B-Instruct && Qwen/Qwen2.5-VL-72B-Instruct && deepseek-ai/DeepSeek-V3-0324 && meta-llama/Meta-Llama-3.1-70B-Instruct && meta-llama/Llama-3.3-70B-Instruct && meta-llama/Llama-3.2-3B-Instruct && FLUX.1-dev && StableDiffusion && meta-llama/Meta-Llama-3.1-8B-Instruct && tt && test && deepseek-ai/DeepSeek-R1 && moonshotai/Kimi-K2-Instruct && meta-llama/Meta-Llama-3-70B-Instruct && Qwen/Qwen2.5-VL-7B-Instruct && Qwen/Qwen3-235B-A22B && meta-llama/Meta-Llama-3.1-405B-Instruct && Qwen/QwQ-32B && deepseek-ai/DeepSeek-V3 && Qwen/Qwen3-235B-A22B-Instruct-2507 && NousResearch/Hermes-3-Llama-3.1-70B && meta-llama/Meta-Llama-3.1-405B && Qwen/Qwen3-Coder-480B-A35B-Instruct && mistralai/Pixtral-12B-2409 && Qwen/Qwen2.5-Coder-32B-Instruct && TTS && openai/gpt-oss-20b && deepseek-ai/DeepSeek-R1-0528 && openai/gpt-oss-120b allowed now, your model Qwen/QwQ-32B-Preview\\\",\\\"type\\\":\\\"\\\",\\\"param\\\":null,\\\"code\\\":40301}\",\"provider_name\":\"Hyperbolic\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-08-07T09:33:52.719Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"object\\\":\\\"error\\\",\\\"message\\\":\\\"Only Qwen/Qwen2.5-72B-Instruct && Qwen/Qwen2.5-VL-72B-Instruct && deepseek-ai/DeepSeek-V3-0324 && meta-llama/Meta-Llama-3.1-70B-Instruct && meta-llama/Llama-3.3-70B-Instruct && meta-llama/Llama-3.2-3B-Instruct && FLUX.1-dev && StableDiffusion && meta-llama/Meta-Llama-3.1-8B-Instruct && tt && test && deepseek-ai/DeepSeek-R1 && moonshotai/Kimi-K2-Instruct && meta-llama/Meta-Llama-3-70B-Instruct && Qwen/Qwen2.5-VL-7B-Instruct && Qwen/Qwen3-235B-A22B && meta-llama/Meta-Llama-3.1-405B-Instruct && Qwen/QwQ-32B && deepseek-ai/DeepSeek-V3 && Qwen/Qwen3-235B-A22B-Instruct-2507 && NousResearch/Hermes-3-Llama-3.1-70B && meta-llama/Meta-Llama-3.1-405B && Qwen/Qwen3-Coder-480B-A35B-Instruct && mistralai/Pixtral-12B-2409 && Qwen/Qwen2.5-Coder-32B-Instruct && TTS && openai/gpt-oss-20b && deepseek-ai/DeepSeek-R1-0528 && openai/gpt-oss-120b allowed now, your model Qwen/QwQ-32B-Preview\\\",\\\"type\\\":\\\"\\\",\\\"param\\\":null,\\\"code\\\":40301}\",\"provider_name\":\"Hyperbolic\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "x-ai/grok-vision-beta": {
       "provider": "openrouter",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"code\\\":\\\"Some requested entity was not found\\\",\\\"error\\\":\\\"The model grok-vision-beta does not exist or your team bb642ce4-5161-45c9-8f34-408850883602 does not have access to it. Please ensure you're using the correct API key. If you believe this is a mistake, please contact support and quote your team ID and the model name.\\\"}\",\"provider_name\":\"xAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:40:40.221Z",
+      "lastTested": "2025-08-07T09:33:54.360Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"code\\\":\\\"Some requested entity was not found\\\",\\\"error\\\":\\\"The model grok-vision-beta does not exist or your team bb642ce4-5161-45c9-8f34-408850883602 does not have access to it. Please ensure you're using the correct API key. If you believe this is a mistake, please contact support and quote your team ID and the model name.\\\"}\",\"provider_name\":\"xAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "anthracite-org/magnum-v2-72b": {
       "provider": "openrouter",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"error\\\":{\\\"message\\\":\\\"400: {'error': '/completions: Invalid model name passed in model=anthracite-org-magnum-v2-72b-FP8-Dynamic. Call `/v1/models` to view available models for your key.'}\\\",\\\"type\\\":\\\"None\\\",\\\"param\\\":\\\"None\\\",\\\"code\\\":\\\"400\\\"}}\",\"provider_name\":\"Infermatic\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:41:24.672Z",
+      "lastTested": "2025-08-07T09:33:56.369Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"error\\\":{\\\"message\\\":\\\"400: {'error': '/completions: Invalid model name passed in model=anthracite-org-magnum-v2-72b-FP8-Dynamic. Call `/v1/models` to view available models for your key.'}\\\",\\\"type\\\":\\\"None\\\",\\\"param\\\":\\\"None\\\",\\\"code\\\":\\\"400\\\"}}\",\"provider_name\":\"Infermatic\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "01-ai/yi-large": {
       "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"error\\\":{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"message\\\":\\\"Model not found, inaccessible, and/or not deployed\\\",\\\"requestId\\\":\\\"chatcmpl-bb1eb3bc97084c0ebaf6fe549700eb88\\\",\\\"param\\\":\\\"model\\\"}}\",\"provider_name\":\"Fireworks\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:42:54.674Z",
-      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"error\\\":{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"message\\\":\\\"Model not found, inaccessible, and/or not deployed\\\",\\\"requestId\\\":\\\"chatcmpl-bb1eb3bc97084c0ebaf6fe549700eb88\\\",\\\"param\\\":\\\"model\\\"}}\",\"provider_name\":\"Fireworks\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "openai/gpt-4-1106-preview": {
-      "provider": "openrouter",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "lastTested": "2025-07-27T07:44:44.651Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"max_output_tokens\\\",\\n    \\\"code\\\": \\\"integer_below_min_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "anthropic/claude-3-7-sonnet-20250219@us-east-2": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"message\":\"Internal server error\"}}\n",
-      "lastTested": "2025-07-27T07:46:25.416Z",
-      "testError": "HTTP 500: {\"error\":{\"message\":\"Internal server error\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "anthropic/claude-4-opus-20250514@us-east-1": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "lastTested": "2025-07-27T07:47:21.782Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "anthropic/claude-4-opus-latest": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "lastTested": "2025-07-27T07:47:33.409Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "anthropic/claude-4-opus-latest@us-east-1": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "lastTested": "2025-07-27T07:47:35.054Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "anthropic/claude-4-opus@us-east-2": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "lastTested": "2025-07-27T07:47:49.972Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "anthropic/claude-4-opus@us-west-2": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "lastTested": "2025-07-27T07:47:51.544Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "anthropic/claude-4-sonnet-20250514@us-east-1": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "lastTested": "2025-07-27T07:48:07.816Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "anthropic/claude-4-sonnet@us-east-1": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "lastTested": "2025-07-27T07:48:44.271Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
-      "retryCount": 1,
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"No endpoints found for 01-ai/yi-large.\",\"code\":404},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-08-07T09:33:57.668Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"No endpoints found for 01-ai/yi-large.\",\"code\":404},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "claude-3-7-sonnet:1024": {
@@ -350,81 +174,81 @@
     "o3-mini": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:14.435Z",
+      "lastTested": "2025-08-07T09:05:57.764Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 2,
+      "retryCount": 3,
       "manuallyBlocked": false
     },
     "o3-mini:high": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:17.919Z",
+      "lastTested": "2025-08-07T09:12:00.373Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 2,
+      "retryCount": 3,
       "manuallyBlocked": false
     },
     "o3-mini:low": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:19.965Z",
+      "lastTested": "2025-08-07T09:12:02.129Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 2,
+      "retryCount": 3,
       "manuallyBlocked": false
     },
     "o3-mini:medium": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:21.632Z",
+      "lastTested": "2025-08-07T09:12:04.065Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 2,
+      "retryCount": 3,
       "manuallyBlocked": false
     },
     "gemini-2.5-pro-preview-03-25": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 404,\\n    \\\"message\\\": \\\"Publisher Model `projects/gen-lang-client-0028523586/locations/us-east1/publishers/google/models/gemini-2.5-pro-preview-03-25` not found.\\\",\\n    \\\"status\\\": \\\"NOT_FOUND\\\"\\n  }\\n}\\n\"}}\n",
-      "lastTested": "2025-07-27T07:50:02.096Z",
+      "lastTested": "2025-08-07T09:06:49.311Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 404,\\n    \\\"message\\\": \\\"Publisher Model `projects/gen-lang-client-0028523586/locations/us-east1/publishers/google/models/gemini-2.5-pro-preview-03-25` not found.\\\",\\n    \\\"status\\\": \\\"NOT_FOUND\\\"\\n  }\\n}\\n\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "gemini-2.5-pro-preview-05-06": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 404,\\n    \\\"message\\\": \\\"Publisher Model `projects/gen-lang-client-0028523586/locations/us-east1/publishers/google/models/gemini-2.5-pro-preview-05-06` not found.\\\",\\n    \\\"status\\\": \\\"NOT_FOUND\\\"\\n  }\\n}\\n\"}}\n",
-      "lastTested": "2025-07-27T07:50:03.552Z",
+      "lastTested": "2025-08-07T09:06:50.745Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"{\\n  \\\"error\\\": {\\n    \\\"code\\\": 404,\\n    \\\"message\\\": \\\"Publisher Model `projects/gen-lang-client-0028523586/locations/us-east1/publishers/google/models/gemini-2.5-pro-preview-05-06` not found.\\\",\\n    \\\"status\\\": \\\"NOT_FOUND\\\"\\n  }\\n}\\n\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "qwen-qwq-32b": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"The model `qwen-qwq-32b` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.\"}}\n",
-      "lastTested": "2025-07-27T07:51:31.043Z",
+      "lastTested": "2025-08-07T09:08:33.738Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"The model `qwen-qwq-32b` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "jondurbin/airoboros-l2-70b": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:52:03.457Z",
+      "lastTested": "2025-08-07T09:09:38.204Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "google/gemma-2-9b-it": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:52:30.579Z",
+      "lastTested": "2025-08-07T09:10:06.684Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "meta-llama/llama-3.1-70b-instruct": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:52:46.961Z",
+      "lastTested": "2025-08-07T09:10:24.694Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "meta-llama/llama-3.1-8b-instruct-bf16": {
@@ -438,73 +262,73 @@
     "meta-llama/llama-3.1-8b-instruct-max": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:52:51.485Z",
+      "lastTested": "2025-08-07T09:10:28.528Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "meta-llama/llama-3.2-11b-vision-instruct": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:52:52.856Z",
+      "lastTested": "2025-08-07T09:10:29.961Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "nousresearch/nous-hermes-llama2-13b": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:53:09.521Z",
+      "lastTested": "2025-08-07T09:10:57.146Z",
       "testError": "HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "openchat/openchat-7b": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:53:11.025Z",
+      "lastTested": "2025-08-07T09:10:58.634Z",
       "testError": "HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "teknium/openhermes-2.5-mistral-7b": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:53:12.460Z",
+      "lastTested": "2025-08-07T09:11:00.018Z",
       "testError": "HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "qwen/qwen-2-7b-instruct": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:53:13.800Z",
+      "lastTested": "2025-08-07T09:11:01.379Z",
       "testError": "HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "qwen/qwen-2-vl-72b-instruct": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:53:15.156Z",
+      "lastTested": "2025-08-07T09:11:02.745Z",
       "testError": "HTTP 500: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "qwen/qwq-32b": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "lastTested": "2025-07-27T07:53:22.110Z",
+      "lastTested": "2025-08-07T09:11:10.616Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "gpt-4.5-preview": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"The model `gpt-4.5-preview` does not exist or you do not have access to it.\"}}\n",
-      "lastTested": "2025-07-27T07:53:45.739Z",
+      "lastTested": "2025-08-07T09:11:27.623Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"The model `gpt-4.5-preview` does not exist or you do not have access to it.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o1": {
@@ -518,49 +342,33 @@
     "o1-2024-12-17": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:00.806Z",
+      "lastTested": "2025-08-07T09:11:46.200Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "o1-mini": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\"}}\n",
-      "lastTested": "2025-07-27T07:54:02.705Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "o1-mini-2024-09-12": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\"}}\n",
-      "lastTested": "2025-07-27T07:54:04.212Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o1:high": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:06.316Z",
+      "lastTested": "2025-08-07T09:11:51.804Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o1:low": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:07.972Z",
+      "lastTested": "2025-08-07T09:11:53.478Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o1:medium": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:09.803Z",
+      "lastTested": "2025-08-07T09:11:55.595Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o3": {
@@ -573,18 +381,18 @@
     },
     "o3-2025-04-16": {
       "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on requests per min (RPM): Limit 0, Requested 1. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
-      "lastTested": "2025-07-27T07:54:12.709Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on requests per min (RPM): Limit 0, Requested 1. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
-      "retryCount": 1,
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on tokens per min (TPM): Limit 0, Requested 4. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "lastTested": "2025-08-07T09:11:57.048Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on tokens per min (TPM): Limit 0, Requested 4. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o3-mini-2025-01-31": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:16.074Z",
+      "lastTested": "2025-08-07T09:11:58.654Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o3-pro": {
@@ -597,98 +405,90 @@
     },
     "o3:flex": {
       "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on requests per min (RPM): Limit 0, Requested 1. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
-      "lastTested": "2025-07-27T07:54:24.582Z",
-      "testError": "HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on requests per min (RPM): Limit 0, Requested 1. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
-      "retryCount": 1,
-      "manuallyBlocked": false
-    },
-    "o4-mini": {
-      "provider": "requesty",
-      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:26.315Z",
-      "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on tokens per min (TPM): Limit 0, Requested 4. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "lastTested": "2025-08-07T09:12:05.603Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on tokens per min (TPM): Limit 0, Requested 4. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o4-mini-2025-04-16": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:27.932Z",
+      "lastTested": "2025-08-07T09:12:07.345Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o4-mini:flex": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:30.225Z",
+      "lastTested": "2025-08-07T09:12:09.393Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o4-mini:high": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:31.877Z",
+      "lastTested": "2025-08-07T09:12:11.017Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o4-mini:low": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:33.542Z",
+      "lastTested": "2025-08-07T09:12:12.651Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "o4-mini:medium": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "lastTested": "2025-07-27T07:54:35.357Z",
+      "lastTested": "2025-08-07T09:12:15.129Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 403: {\"error\":{\"message\":\"Deployment meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8 doesn't exist or isn't accessible.\"}}\n",
-      "lastTested": "2025-07-27T07:54:37.347Z",
+      "lastTested": "2025-08-07T09:12:17.270Z",
       "testError": "HTTP 403: {\"error\":{\"message\":\"Deployment meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8 doesn't exist or isn't accessible.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "meta-llama/Llama-4-Scout-17B-16E-Instruct": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 403: {\"error\":{\"message\":\"Deployment meta-llama/Llama-4-Scout-17B-16E-Instruct doesn't exist or isn't accessible.\"}}\n",
-      "lastTested": "2025-07-27T07:54:38.810Z",
+      "lastTested": "2025-08-07T09:12:19.291Z",
       "testError": "HTTP 403: {\"error\":{\"message\":\"Deployment meta-llama/Llama-4-Scout-17B-16E-Instruct doesn't exist or isn't accessible.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "parasail-deepseek-r1": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 403: {\"error\":{\"message\":\"Deployment parasail-deepseek-r1 doesn't exist or isn't accessible.\"}}\n",
-      "lastTested": "2025-07-27T07:54:42.087Z",
+      "lastTested": "2025-08-07T09:12:22.217Z",
       "testError": "HTTP 403: {\"error\":{\"message\":\"Deployment parasail-deepseek-r1 doesn't exist or isn't accessible.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "parasail-eva-25-72b-v02-fp8": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 403: {\"error\":{\"message\":\"Deployment parasail-eva-25-72b-v02-fp8 doesn't exist or isn't accessible.\"}}\n",
-      "lastTested": "2025-07-27T07:54:43.504Z",
+      "lastTested": "2025-08-07T09:12:23.579Z",
       "testError": "HTTP 403: {\"error\":{\"message\":\"Deployment parasail-eva-25-72b-v02-fp8 doesn't exist or isn't accessible.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "parasail-mistral-7b-instruct-03": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 403: {\"error\":{\"message\":\"Deployment parasail-mistral-7b-instruct-03 doesn't exist or isn't accessible.\"}}\n",
-      "lastTested": "2025-07-27T07:54:46.289Z",
+      "lastTested": "2025-08-07T09:12:28.031Z",
       "testError": "HTTP 403: {\"error\":{\"message\":\"Deployment parasail-mistral-7b-instruct-03 doesn't exist or isn't accessible.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "parasail-qwen-coder32b-longcontext-128": {
@@ -702,40 +502,424 @@
     "deepseek-llm-67b-chat": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Unable to access model deepseek-llm-67b-chat. Please visit https://api.together.ai/models to view the list of supported models.\"}}\n",
-      "lastTested": "2025-07-27T07:55:06.638Z",
+      "lastTested": "2025-08-07T09:13:03.421Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"Unable to access model deepseek-llm-67b-chat. Please visit https://api.together.ai/models to view the list of supported models.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "meta-llama/Llama-2-13b-chat-hf": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Unable to access model meta-llama/Llama-2-13b-chat-hf. Please visit https://api.together.ai/models to view the list of supported models.\"}}\n",
-      "lastTested": "2025-07-27T07:55:13.319Z",
+      "lastTested": "2025-08-07T09:13:11.695Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"Unable to access model meta-llama/Llama-2-13b-chat-hf. Please visit https://api.together.ai/models to view the list of supported models.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "meta-llama/Llama-2-7b-chat-hf": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Unable to access non-serverless model meta-llama/Llama-2-7b-chat-hf. Please visit https://api.together.ai/models/meta-llama/Llama-2-7b-chat-hf to create and start a new dedicated endpoint for the model.\"}}\n",
-      "lastTested": "2025-07-27T07:55:17.268Z",
+      "lastTested": "2025-08-07T09:13:15.809Z",
       "testError": "HTTP 400: {\"error\":{\"message\":\"Unable to access non-serverless model meta-llama/Llama-2-7b-chat-hf. Please visit https://api.together.ai/models/meta-llama/Llama-2-7b-chat-hf to create and start a new dedicated endpoint for the model.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "meta-llama/Meta-Llama-3-70B-Instruct-Lite": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Unable to access model meta-llama/Meta-Llama-3-70B-Instruct-Lite. Please visit https://api.together.ai/models to view the list of supported models.\"}}\n",
-      "lastTested": "2025-07-27T07:55:34.517Z",
+      "lastTested": "2025-08-07T09:13:32.646Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"Unable to access model meta-llama/Meta-Llama-3-70B-Instruct-Lite. Please visit https://api.together.ai/models to view the list of supported models.\"}}\n",
-      "retryCount": 1,
+      "retryCount": 2,
       "manuallyBlocked": false
     },
     "upstage/SOLAR-10.7B-Instruct-v1.0": {
       "provider": "requesty",
       "reason": "Endpoint test failed: HTTP 503: {\"error\":{\"message\":\"Service unavailable\"}}\n",
-      "lastTested": "2025-07-27T07:56:00.117Z",
+      "lastTested": "2025-08-07T09:13:59.678Z",
       "testError": "HTTP 503: {\"error\":{\"message\":\"Service unavailable\"}}\n",
+      "retryCount": 2,
+      "manuallyBlocked": false
+    },
+    "sarvamai/sarvam-m:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"model not found: sarvamai/sarvam-m\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-08-07T09:33:59.416Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider returned error\",\"code\":404,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"model not found: sarvamai/sarvam-m\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 2,
+      "manuallyBlocked": false
+    },
+    "thudm/glm-z1-32b": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"No endpoints found for thudm/glm-z1-32b.\",\"code\":404},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-08-07T09:34:06.389Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"No endpoints found for thudm/glm-z1-32b.\",\"code\":404},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 2,
+      "manuallyBlocked": false
+    },
+    "sao10k/fimbulvetr-11b-v2": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"statusCode\\\":400,\\\"message\\\":\\\"The model is not ready for inference. Please wait for the model to warm, then try again.\\\",\\\"code\\\":\\\"model_pending_deploy\\\"}\",\"provider_name\":\"Featherless\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-08-07T09:34:13.809Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"statusCode\\\":400,\\\"message\\\":\\\"The model is not ready for inference. Please wait for the model to warm, then try again.\\\",\\\"code\\\":\\\"model_pending_deploy\\\"}\",\"provider_name\":\"Featherless\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 2,
+      "manuallyBlocked": false
+    },
+    "undi95/toppy-m-7b": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"statusCode\\\":400,\\\"message\\\":\\\"The model is not ready for inference. Please wait for the model to warm, then try again.\\\",\\\"code\\\":\\\"model_pending_deploy\\\"}\",\"provider_name\":\"Featherless\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-08-07T09:34:15.554Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"statusCode\\\":400,\\\"message\\\":\\\"The model is not ready for inference. Please wait for the model to warm, then try again.\\\",\\\"code\\\":\\\"model_pending_deploy\\\"}\",\"provider_name\":\"Featherless\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 2,
+      "manuallyBlocked": false
+    },
+    "claude-4-opus@us-west-2": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "lastTested": "2025-08-07T09:04:14.201Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "claude-4-sonnet@eu-central-1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "lastTested": "2025-08-07T09:05:18.971Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "claude-4-sonnet@eu-north-1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "lastTested": "2025-08-07T09:05:24.088Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "claude-4-sonnet@eu-west-1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "lastTested": "2025-08-07T09:05:27.980Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "claude-4-sonnet@eu-west-3": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "lastTested": "2025-08-07T09:05:32.650Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"{\\\"message\\\":\\\"Too many requests, please wait before trying again.\\\"}\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepseek-ai/DeepSeek-V3-0324-fast": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: Request timeout",
+      "lastTested": "2025-08-07T09:09:26.790Z",
+      "testError": "Request timeout",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/google/gemini-2.5-flash-preview-05-20": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:05.337Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "anthropic/claude-3-7-sonnet": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:15.521Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 8,
+      "manuallyBlocked": false
+    },
+    "google/gemini-2.5-pro-preview-03-25": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:27.810Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "google/gemini-2.5-pro-preview-05-06": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:29.020Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/qwen-qwq-32b": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:30.226Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/jondurbin/airoboros-l2-70b": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:31.423Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/google/gemma-2-9b-it": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:32.648Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/llama-3.1-70b-instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:33.859Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/llama-3.1-8b-instruct-bf16": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:35.445Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/llama-3.1-8b-instruct-max": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:36.647Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/llama-3.2-11b-vision-instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:37.868Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/nousresearch/nous-hermes-llama2-13b": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:39.065Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/openchat/openchat-7b": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:40.258Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/teknium/openhermes-2.5-mistral-7b": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:41.444Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/qwen/qwen-2-7b-instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:42.645Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/qwen/qwen-2-vl-72b-instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:43.840Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/qwen/qwq-32b": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:39:45.028Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/gpt-4.5-preview": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"The model `gpt-4.5-preview` does not exist or you do not have access to it.\"}}\n",
+      "lastTested": "2025-08-07T09:39:46.507Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"The model `gpt-4.5-preview` does not exist or you do not have access to it.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/o3-2025-04-16": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on tokens per min (TPM): Limit 0, Requested 4. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "lastTested": "2025-08-07T09:40:04.132Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on tokens per min (TPM): Limit 0, Requested 4. The input or output tokens must be reduced in order to run successfully. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/o3:flex": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on requests per min (RPM): Limit 0, Requested 1. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "lastTested": "2025-08-07T09:40:09.747Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Request too large for o3 in organization org-lLOq0ZcXUOSmEIdMWqYdwRFY on requests per min (RPM): Limit 0, Requested 1. Visit https://platform.openai.com/account/rate-limits to learn more.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/o4-mini-2025-04-16": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
+      "lastTested": "2025-08-07T09:40:12.113Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:26.347Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/Llama-4-Scout-17B-16E-Instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:27.546Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/parasail-deepseek-r1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:28.748Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/parasail-eva-25-72b-v02-fp8": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:29.958Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/parasail-mistral-7b-instruct-03": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:31.171Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/parasail-qwen-coder32b-longcontext-128": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:32.354Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/deepseek-llm-67b-chat": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:33.550Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/Llama-2-13b-chat-hf": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:34.763Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/Llama-2-7b-chat-hf": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:35.981Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/meta-llama/Meta-Llama-3-70B-Instruct-Lite": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:37.185Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/upstage/SOLAR-10.7B-Instruct-v1.0": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:38.369Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "anthropic/claude-4-opus@us-west-2": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:39.577Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "anthropic/claude-4-sonnet@eu-central-1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:40.763Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "anthropic/claude-4-sonnet@eu-north-1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:41.953Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "anthropic/claude-4-sonnet@eu-west-1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:43.153Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "anthropic/claude-4-sonnet@eu-west-3": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:45.401Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/deepseek-ai/DeepSeek-V3-0324-fast": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "lastTested": "2025-08-07T09:40:46.587Z",
+      "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
       "retryCount": 1,
       "manuallyBlocked": false
     }
