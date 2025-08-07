@@ -220,7 +220,7 @@ describe('TopNav', () => {
         'h-[72px]',
         'flex',
         'items-center',
-        'justify-between'
+        'relative'
       );
     });
   });
