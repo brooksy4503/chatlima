@@ -521,6 +521,7 @@ export async function POST(req: Request) {
         messages: [], // Start with empty messages, will be updated in onFinish
         selectedModel,
         apiKeys,
+        isAnonymous,
       });
       console.log(`[Chat ${id}] Pre-emptively created chat record.`);
     } catch (error) {
@@ -724,7 +725,7 @@ export async function POST(req: Request) {
     if (currentModelDetails?.supportsWebSearch === true) {
       // Model supports web search, use :online variant
       const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
-      const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY']);
+      const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY'], openRouterUserId);
       // For DeepSeek R1, Grok 3 Beta, Grok 3 Mini Beta, Grok 3 Mini Beta (High Reasoning), and Qwen 32B, explicitly disable logprobs
       if (
         selectedModel === "openrouter/deepseek/deepseek-r1" ||
@@ -1009,6 +1010,7 @@ export async function POST(req: Request) {
               userId,
               selectedModel,
               apiKeys,
+              isAnonymous,
               // Don't pass title parameter to trigger generation
             });
             console.log(`[Chat ${id}][onStop] Chat saved successfully`);
@@ -1042,6 +1044,7 @@ export async function POST(req: Request) {
                 userId,
                 selectedModel,
                 apiKeys,
+                isAnonymous,
               });
               console.log(`[Chat ${id}][onStop] Saved user messages only (no assistant response)`);
             } catch (userMessagesSaveError) {
@@ -1162,6 +1165,7 @@ export async function POST(req: Request) {
             messages: processedMessages as any, // Cast to any to bypass type error
             selectedModel,
             apiKeys,
+            isAnonymous,
           });
           console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
         } catch (dbError: any) {
@@ -1524,6 +1528,7 @@ export async function POST(req: Request) {
         messages: modelMessages as any, // UIMessage[] is compatible enough for JSONB storage here
         selectedModel,
         apiKeys,
+        isAnonymous,
       });
       console.log(`[Chat ${id}][Error Handler] Successfully updated 'chats.messages' with current messages after an error.`);
 
