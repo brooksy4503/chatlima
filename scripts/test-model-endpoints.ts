@@ -38,7 +38,7 @@ const DEFAULT_CONFIG: TestConfig = {
     requestTimeoutMs: 30000, // 30 seconds
     rateLimitDelayMs: 1000, // 1 second between requests
     testMessage: "Hello",
-    maxTokens: 1
+    maxTokens: 50
 };
 
 class ModelEndpointTester {
@@ -129,8 +129,8 @@ class ModelEndpointTester {
                 // Remove the 'openrouter/' prefix for OpenRouter API calls
                 modelId = model.id.replace('openrouter/', '');
             } else if (provider === 'requesty') {
-                // Remove the 'requesty/' prefix for Requesty API calls  
-                modelId = model.id.replace('requesty/', '');
+                // For Requesty, use the apiVersion which contains the full provider/model format
+                modelId = model.apiVersion || model.id.replace('requesty/', '');
             } else {
                 modelId = model.apiVersion || model.id;
             }
@@ -140,7 +140,10 @@ class ModelEndpointTester {
                 ? 'https://openrouter.ai/api/v1/chat/completions'
                 : 'https://router.requesty.ai/v1/chat/completions';
 
-            const requestBody = {
+            // Determine which token parameter to use based on the model
+            const useMaxCompletionTokens = modelId.includes('o4-mini') || modelId.includes('o1-mini');
+
+            const requestBody: any = {
                 model: modelId,
                 messages: [
                     {
@@ -148,9 +151,15 @@ class ModelEndpointTester {
                         content: this.config.testMessage
                     }
                 ],
-                max_tokens: this.config.maxTokens,
                 temperature: 0.1
             };
+
+            // Use the appropriate token parameter
+            if (useMaxCompletionTokens) {
+                requestBody.max_completion_tokens = this.config.maxTokens;
+            } else {
+                requestBody.max_tokens = this.config.maxTokens;
+            }
 
             // Add provider-specific headers
             const headers: Record<string, string> = {
@@ -233,26 +242,77 @@ class ModelEndpointTester {
         retestBlocked?: boolean;
         maxModels?: number;
         skipWorking?: boolean;
+        onlyBlocked?: boolean;
     } = {}): Promise<void> {
         console.log(`\n🧪 Testing ${provider} models...`);
 
         const blockedModels = await this.loadBlockedModels();
         let models: ModelInfo[];
 
-        try {
-            models = await this.fetchModels(provider);
-        } catch (error) {
-            console.error(`❌ Failed to fetch models from ${provider}:`, error);
-            this.stats.errors++;
-            return;
-        }
+        if (options.onlyBlocked) {
+            // Only test blocked models for this provider
+            const blockedModelIds = Object.entries(blockedModels.models)
+                .filter(([_, model]) => model.provider === provider)
+                .map(([modelId, _]) => modelId);
 
-        if (options.maxModels) {
-            models = models.slice(0, options.maxModels);
-        }
+            console.log(`Found ${blockedModelIds.length} blocked models to test for ${provider}`);
+            this.stats.total += blockedModelIds.length;
 
-        console.log(`Found ${models.length} models to test`);
-        this.stats.total += models.length;
+            // Create mock ModelInfo objects for blocked models
+            models = blockedModelIds.map(modelId => {
+                // For Requesty models, we need to construct the proper provider/model format
+                let apiVersion = modelId;
+                if (provider === 'requesty') {
+                    // Remove context window suffixes like :1024, :16384, etc.
+                    apiVersion = modelId.replace(/:\d+$/, '');
+                    // Also handle special cases like :high, :low, :medium, :max
+                    apiVersion = apiVersion.replace(/:(high|low|medium|max)$/, '');
+
+                    // For Requesty, we need to determine the provider from the model name
+                    // Common patterns: claude-* -> anthropic, gpt-* -> openai, etc.
+                    let providerName = 'openai'; // default
+                    if (apiVersion.startsWith('claude-')) {
+                        providerName = 'anthropic';
+                    } else if (apiVersion.startsWith('gpt-')) {
+                        providerName = 'openai';
+                    } else if (apiVersion.startsWith('gemini-')) {
+                        providerName = 'google';
+                    } else if (apiVersion.startsWith('o1') || apiVersion.startsWith('o3') || apiVersion.startsWith('o4')) {
+                        providerName = 'openai';
+                    }
+
+                    apiVersion = `${providerName}/${apiVersion}`;
+                }
+
+                return {
+                    id: `${provider}/${modelId}`,
+                    provider: provider === 'openrouter' ? 'OpenRouter' : 'Requesty',
+                    name: modelId,
+                    capabilities: [],
+                    premium: false,
+                    vision: false,
+                    status: 'available' as const,
+                    lastChecked: new Date(),
+                    apiVersion: apiVersion, // This will be used for the actual API call
+                    pricing: { input: 0, output: 0 }
+                };
+            });
+        } else {
+            try {
+                models = await this.fetchModels(provider);
+            } catch (error) {
+                console.error(`❌ Failed to fetch models from ${provider}:`, error);
+                this.stats.errors++;
+                return;
+            }
+
+            if (options.maxModels) {
+                models = models.slice(0, options.maxModels);
+            }
+
+            console.log(`Found ${models.length} models to test`);
+            this.stats.total += models.length;
+        }
 
         for (let i = 0; i < models.length; i++) {
             const model = models[i];
@@ -334,6 +394,7 @@ class ModelEndpointTester {
 
     async testAllProviders(options: {
         retestBlocked?: boolean;
+        onlyBlocked?: boolean;
         maxModels?: number;
         skipWorking?: boolean;
         providers?: ('openrouter' | 'requesty')[];
@@ -415,6 +476,7 @@ Options:
   --help, -h              Show this help message
   --provider <name>       Test specific provider (openrouter, requesty)
   --retest-blocked        Re-test previously blocked models
+  --only-blocked          Test ONLY blocked models (don't fetch all models)
   --max-models <n>        Limit number of models to test per provider
   --skip-working          Skip models that aren't currently blocked
   --summary               Show summary of blocked models
@@ -424,6 +486,7 @@ Examples:
   tsx scripts/test-model-endpoints.ts
   tsx scripts/test-model-endpoints.ts --provider openrouter --max-models 10
   tsx scripts/test-model-endpoints.ts --retest-blocked
+  tsx scripts/test-model-endpoints.ts --only-blocked
   tsx scripts/test-model-endpoints.ts --summary --verbose
 `);
         return;
@@ -436,6 +499,7 @@ Examples:
 
     const options = {
         retestBlocked: args.includes('--retest-blocked'),
+        onlyBlocked: args.includes('--only-blocked'),
         skipWorking: args.includes('--skip-working'),
         maxModels: args.includes('--max-models') ?
             parseInt(args[args.indexOf('--max-models') + 1] || '10') : undefined,
