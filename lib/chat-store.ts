@@ -32,6 +32,7 @@ type SaveChatParams = {
   title?: string;
   selectedModel?: string;
   apiKeys?: Record<string, string>;
+  isAnonymous?: boolean;
 };
 
 type ChatWithMessages = Chat & {
@@ -124,7 +125,7 @@ export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage
   }));
 }
 
-export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys }: SaveChatParams) {
+export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys, isAnonymous }: SaveChatParams) {
   // Generate a new ID if one wasn't provided
   const chatId = id || nanoid();
 
@@ -153,7 +154,7 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
         if (hasEnoughMessages) {
           try {
             // Use AI to generate a meaningful title based on conversation
-            chatTitle = await generateTitle(aiMessages, selectedModel, apiKeys, userId);
+            chatTitle = await generateTitle(aiMessages, selectedModel, apiKeys, userId, isAnonymous);
           } catch (error) {
             console.error('Error generating title:', error);
             // Fallback to basic title extraction if AI title generation fails

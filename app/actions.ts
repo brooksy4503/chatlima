@@ -37,7 +37,7 @@ function getMessageText(message: any): string {
   return '';
 }
 
-export async function generateTitle(messages: any[], selectedModel?: string, apiKeys?: Record<string, string>, userId?: string) {
+export async function generateTitle(messages: any[], selectedModel?: string, apiKeys?: Record<string, string>, userId?: string, isAnonymous?: boolean) {
   // Find the first user message
   const firstUserMessage = messages.find(msg => msg.role === 'user');
 
@@ -58,6 +58,13 @@ export async function generateTitle(messages: any[], selectedModel?: string, api
   ];
 
   console.log('Generating title with simplified messages:', JSON.stringify(titleGenMessages, null, 2)); // Log the messages
+
+  // Create OpenRouter user identifier for tracking (same format as in chat route)
+  const openRouterUserId = userId && isAnonymous !== undefined
+    ? isAnonymous
+      ? `chatlima_anon_${userId}`
+      : `chatlima_user_${userId}`
+    : undefined;
 
   // Determine the title generation model to use
   let titleModel;
@@ -92,6 +99,14 @@ export async function generateTitle(messages: any[], selectedModel?: string, api
           content: "Generate a concise title based on my first message.",
         },
       ],
+      // Add user tracking for OpenRouter models
+      ...(openRouterUserId && selectedModel?.startsWith('openrouter/') && {
+        providerOptions: {
+          openrouter: {
+            user: openRouterUserId
+          }
+        }
+      }),
     });
     return object.title;
   } catch (error) {
