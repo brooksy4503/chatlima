@@ -1,16 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { users, tokenUsageMetrics, chats, messages } from "@/lib/db/schema";
-import { eq, and, gte, desc, sql } from "drizzle-orm";
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { users, tokenUsageMetrics } from '@/lib/db/schema';
+import { eq, like, or, and, sql, gte } from 'drizzle-orm';
 
-export async function GET(request: NextRequest) {
+/**
+ * Admin API endpoint for fetching users with usage statistics
+ * 
+ * GET /api/admin/users - List all users with usage breakdown
+ */
+
+export async function GET(req: NextRequest) {
     try {
-        // Get session to check admin access
-        const session = await auth.api.getSession({ headers: request.headers });
+        // Get the authenticated session
+        const session = await auth.api.getSession({ headers: req.headers });
 
         if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
         }
 
         // Check if user is admin
@@ -21,141 +30,184 @@ export async function GET(request: NextRequest) {
             .limit(1);
 
         if (userResult.length === 0) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+            return NextResponse.json(
+                { error: 'User not found' },
+                { status: 404 }
+            );
         }
 
         const user = userResult[0];
         const isAdmin = user.role === "admin" || user.isAdmin === true;
 
         if (!isAdmin) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            return NextResponse.json(
+                { error: 'Forbidden - Admin access required' },
+                { status: 403 }
+            );
         }
 
         // Get query parameters
-        const { searchParams } = new URL(request.url);
-        const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "10");
-        const search = searchParams.get("search") || "";
-        const planFilter = searchParams.get("plan") || "all";
-        const activeFilter = searchParams.get("active") || "all";
-        const sortBy = searchParams.get("sortBy") || "tokensUsed";
-        const sortOrder = searchParams.get("sortOrder") || "desc";
+        const { searchParams } = new URL(req.url);
+        const search = searchParams.get('search') || '';
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '10');
+        const plan = searchParams.get('plan') || 'all';
+        const active = searchParams.get('active') || 'all';
+        const sortBy = searchParams.get('sortBy') || 'tokensUsed';
+        const sortOrder = searchParams.get('sortOrder') || 'desc';
 
         const offset = (page - 1) * limit;
 
-        // Calculate date for "active" users (last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        // Build query conditions for users
+        const userConditions = [];
 
-        // Build conditions array
-        const conditions = [];
-
-        // Add search filter
         if (search) {
-            conditions.push(sql`(${users.name} ILIKE ${`%${search}%`} OR ${users.email} ILIKE ${`%${search}%`})`);
+            userConditions.push(
+                or(
+                    like(users.name, `%${search}%`),
+                    like(users.email, `%${search}%`)
+                )
+            );
         }
 
-        // Add plan filter (based on role for now)
-        if (planFilter !== "all") {
-            conditions.push(eq(users.role, planFilter));
+        if (plan !== 'all') {
+            // For now, we'll use role as plan (can be enhanced later)
+            userConditions.push(eq(users.role, plan));
         }
 
-        // Get all users first to apply active filter
-        const allUsers = await db
+        // Note: Active/inactive filtering will be handled after the join query
+        // since we need to check the last activity date
+
+        // Get users with their usage statistics
+        const usersWithUsage = await db
             .select({
                 id: users.id,
                 name: users.name,
                 email: users.email,
-                createdAt: users.createdAt,
-                updatedAt: users.updatedAt,
                 role: users.role,
                 isAdmin: users.isAdmin,
                 isAnonymous: users.isAnonymous,
-            })
-            .from(users)
-            .where(conditions.length > 0 ? and(...conditions) : undefined);
-
-        // Get usage statistics for all users
-        const userStats = await db
-            .select({
-                userId: tokenUsageMetrics.userId,
-                totalTokens: sql<number>`COALESCE(SUM(${tokenUsageMetrics.totalTokens}), 0)`,
-                totalCost: sql<number>`COALESCE(SUM(COALESCE(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
-                requestCount: sql<number>`COUNT(*)`,
+                createdAt: users.createdAt,
+                updatedAt: users.updatedAt,
+                // Token usage statistics
+                tokensUsed: sql<number>`COALESCE(SUM(${tokenUsageMetrics.totalTokens}), 0)`,
+                cost: sql<number>`COALESCE(SUM(COALESCE(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
+                requestCount: sql<number>`COUNT(${tokenUsageMetrics.id})`,
                 lastActive: sql<string>`MAX(${tokenUsageMetrics.createdAt})`,
             })
-            .from(tokenUsageMetrics)
-            .groupBy(tokenUsageMetrics.userId);
+            .from(users)
+            .leftJoin(tokenUsageMetrics, eq(users.id, tokenUsageMetrics.userId))
+            .where(userConditions.length > 0 ? and(...userConditions) : undefined)
+            .groupBy(users.id, users.name, users.email, users.role, users.isAdmin, users.isAnonymous, users.createdAt, users.updatedAt);
 
-        // Create a map of user stats
-        const userStatsMap = new Map(
-            userStats.map(stat => [stat.userId, stat])
-        );
+        // Get total count for pagination (before filtering)
+        const totalCountResult = await db
+            .select({ count: users.id })
+            .from(users)
+            .where(userConditions.length > 0 ? and(...userConditions) : undefined);
 
-        // Combine user data with stats and apply active filter
-        let combinedUsers = allUsers.map(user => {
-            const stats = userStatsMap.get(user.id);
-            const lastActive = stats?.lastActive ? new Date(stats.lastActive) : user.createdAt;
-            const isActive = lastActive >= thirtyDaysAgo;
+        let totalUsers = totalCountResult.length;
+
+        // Apply active/inactive filtering
+        let filteredUsers = usersWithUsage;
+        if (active !== 'all') {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            filteredUsers = usersWithUsage.filter(user => {
+                const isActive = user.lastActive ? new Date(user.lastActive) > thirtyDaysAgo : false;
+                return active === 'active' ? isActive : !isActive;
+            });
+
+            // Update total count after filtering
+            totalUsers = filteredUsers.length;
+        }
+
+        // Apply sorting
+        let sortedUsers = filteredUsers;
+        if (sortBy === 'tokensUsed') {
+            sortedUsers = sortedUsers.sort((a, b) =>
+                sortOrder === 'asc' ? a.tokensUsed - b.tokensUsed : b.tokensUsed - a.tokensUsed
+            );
+        } else if (sortBy === 'cost') {
+            sortedUsers = sortedUsers.sort((a, b) =>
+                sortOrder === 'asc' ? a.cost - b.cost : b.cost - a.cost
+            );
+        } else if (sortBy === 'requestCount') {
+            sortedUsers = sortedUsers.sort((a, b) =>
+                sortOrder === 'asc' ? a.requestCount - b.requestCount : b.requestCount - a.requestCount
+            );
+        } else if (sortBy === 'lastActive') {
+            sortedUsers = sortedUsers.sort((a, b) => {
+                const dateA = a.lastActive ? new Date(a.lastActive).getTime() : 0;
+                const dateB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
+                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+            });
+        } else if (sortBy === 'name') {
+            sortedUsers = sortedUsers.sort((a, b) => {
+                const nameA = a.name || '';
+                const nameB = b.name || '';
+                return sortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+            });
+        }
+
+        // Apply pagination
+        const paginatedUsers = sortedUsers.slice(offset, offset + limit);
+
+        // Calculate additional fields for each user
+        const usersWithDetails = paginatedUsers.map(user => {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const isActive = user.lastActive ? new Date(user.lastActive) > thirtyDaysAgo : false;
+
+            // Calculate usage percentage (placeholder - can be enhanced with actual limits)
+            const usagePercentage = Math.min(Math.round((user.tokensUsed / 1000000) * 100), 100);
+
+            // Map role to plan
+            const plan = user.role === 'admin' ? 'premium' : user.role === 'user' ? 'standard' : 'basic';
 
             return {
                 id: user.id,
-                name: user.name || "Anonymous User",
                 email: user.email,
-                tokensUsed: stats?.totalTokens || 0,
-                cost: parseFloat(String(stats?.totalCost || "0")),
-                requestCount: stats?.requestCount || 0,
-                lastActive: lastActive.toISOString().split('T')[0],
+                name: user.name || 'Anonymous User',
+                tokensUsed: Number(user.tokensUsed),
+                cost: Number(user.cost),
+                requestCount: Number(user.requestCount),
+                lastActive: user.lastActive || user.createdAt.toISOString(),
                 isActive,
-                createdAt: user.createdAt.toISOString().split('T')[0],
-                plan: user.role || "basic",
-                usagePercentage: 0, // Will calculate based on total usage
+                createdAt: user.createdAt.toISOString(),
+                plan,
+                usagePercentage,
             };
         });
 
-        // Apply active filter
-        if (activeFilter !== "all") {
-            combinedUsers = combinedUsers.filter(user =>
-                activeFilter === "active" ? user.isActive : !user.isActive
-            );
-        }
+        // Get summary statistics
+        const summaryStats = await db
+            .select({
+                totalUsers: sql<number>`COUNT(DISTINCT ${users.id})`,
+                totalTokens: sql<number>`COALESCE(SUM(${tokenUsageMetrics.totalTokens}), 0)`,
+                totalCost: sql<number>`COALESCE(SUM(COALESCE(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
+                totalRequests: sql<number>`COUNT(${tokenUsageMetrics.id})`,
+            })
+            .from(users)
+            .leftJoin(tokenUsageMetrics, eq(users.id, tokenUsageMetrics.userId));
 
-        // Calculate usage percentage based on total tokens across all users
-        const totalTokens = combinedUsers.reduce((sum, user) => sum + user.tokensUsed, 0);
-        combinedUsers = combinedUsers.map(user => ({
-            ...user,
-            usagePercentage: totalTokens > 0 ? Math.round((user.tokensUsed / totalTokens) * 100) : 0,
-        }));
+        // Count active users (users with activity in last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        // Sort users
-        combinedUsers.sort((a, b) => {
-            const aValue = a[sortBy as keyof typeof a];
-            const bValue = b[sortBy as keyof typeof b];
+        const activeUsersResult = await db
+            .select({ count: users.id })
+            .from(users)
+            .leftJoin(tokenUsageMetrics, eq(users.id, tokenUsageMetrics.userId))
+            .where(gte(tokenUsageMetrics.createdAt, thirtyDaysAgo))
+            .groupBy(users.id);
 
-            if (typeof aValue === 'number' && typeof bValue === 'number') {
-                return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
-            }
-
-            if (typeof aValue === 'string' && typeof bValue === 'string') {
-                return sortOrder === "asc"
-                    ? aValue.localeCompare(bValue)
-                    : bValue.localeCompare(aValue);
-            }
-
-            return 0;
-        });
-
-        // Apply pagination
-        const totalUsers = combinedUsers.length;
-        const paginatedUsers = combinedUsers.slice(offset, offset + limit);
-
-        // Calculate summary statistics
-        const activeUsers = combinedUsers.filter(u => u.isActive).length;
-        const totalCost = combinedUsers.reduce((sum, user) => sum + user.cost, 0);
-        const totalRequests = combinedUsers.reduce((sum, user) => sum + user.requestCount, 0);
+        const activeUsers = activeUsersResult.length;
 
         return NextResponse.json({
-            users: paginatedUsers,
+            users: usersWithDetails,
             pagination: {
                 page,
                 limit,
@@ -165,16 +217,16 @@ export async function GET(request: NextRequest) {
             summary: {
                 totalUsers,
                 activeUsers,
-                totalTokens,
-                totalCost,
-                totalRequests,
+                totalTokens: Number(summaryStats[0]?.totalTokens || 0),
+                totalCost: Number(summaryStats[0]?.totalCost || 0),
+                totalRequests: Number(summaryStats[0]?.totalRequests || 0),
             },
         });
 
     } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error('Error fetching users:', error);
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: 'Failed to fetch users' },
             { status: 500 }
         );
     }

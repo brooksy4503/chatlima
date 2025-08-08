@@ -30,14 +30,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import { 
   DollarSign, 
   Plus, 
   Edit, 
   Trash2, 
   Save,
-  X,
   RefreshCw,
   AlertTriangle,
   CheckCircle,
@@ -79,6 +77,8 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
   const [editingPricing, setEditingPricing] = React.useState<ModelPricing | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   
   // Filters and pagination
   const [providerFilter, setProviderFilter] = React.useState<string>("all");
@@ -109,15 +109,15 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
         ...filters
       });
 
-      const response = await fetch(`/api/model-pricing?${searchParams.toString()}`);
+      const response = await fetch(`/api/pricing/models?${searchParams.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch pricing data');
       }
       const result = await response.json();
-      if (result.success && result.data.pricing) {
-        setPricingData(result.data.pricing);
+      if (result.success && result.data.models) {
+        setPricingData(result.data.models);
         setTotalRecords(result.data.total || 0);
-        setTotalPages(result.data.totalPages || 0);
+        setTotalPages(Math.ceil((result.data.total || 0) / pageSize));
         setCurrentPage(result.data.page || 1);
       } else {
         console.error('Invalid response format:', result);
@@ -174,9 +174,61 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this pricing configuration?")) {
-      setPricingData(pricingData.filter(p => p.id !== id));
+      setDeletingId(id); // Set deletingId to track the deletion process
+      try {
+        // Find the pricing entry to get its details
+        const pricingToDelete = pricingData.find(p => p.id === id);
+        if (!pricingToDelete) {
+          alert("Pricing entry not found");
+          setDeletingId(null); // Clear deletingId on not found
+          return;
+        }
+
+        // Deactivate the pricing entry by setting isActive to false
+        const payload = {
+          modelId: pricingToDelete.modelId,
+          provider: pricingToDelete.provider,
+          inputTokenPrice: pricingToDelete.inputTokenPrice,
+          outputTokenPrice: pricingToDelete.outputTokenPrice,
+          currency: pricingToDelete.currency,
+          isActive: false, // This will deactivate the entry
+          effectiveFrom: new Date().toISOString(),
+          effectiveTo: new Date().toISOString() // Set end date to now
+        };
+
+        const response = await fetch('/api/pricing/models', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || 'Failed to delete pricing');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Refresh the data from the server
+          await fetchPricingData(1, {});
+          setDeletingId(null); // Clear deletingId on success
+          
+          // Show success message
+          setSuccessMessage('Pricing deleted successfully!');
+          setTimeout(() => setSuccessMessage(null), 3000); // Clear after 3 seconds
+        } else {
+          throw new Error(result.error?.message || 'Failed to delete pricing');
+        }
+      } catch (error) {
+        console.error("Error deleting pricing:", error);
+        alert(`Error deleting pricing: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setDeletingId(null); // Clear deletingId on error
+      }
     }
   };
 
@@ -197,41 +249,60 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
         return;
       }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (editingPricing) {
-        // Update existing pricing
-        setPricingData(pricingData.map(p => 
-          p.id === editingPricing.id 
-            ? { ...p, ...formData, effectiveFrom: new Date().toISOString(), updatedAt: new Date().toISOString() }
-            : p
-        ));
-      } else {
-        // Add new pricing
-        const newPricing: ModelPricing = {
-          id: Date.now().toString(),
-          ...formData,
-          effectiveFrom: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        setPricingData([...pricingData, newPricing]);
-      }
-      
-      setIsDialogOpen(false);
-      setEditingPricing(null);
-      setFormData({
-        modelId: "",
-        provider: "openai",
-        inputTokenPrice: 0.001,
-        outputTokenPrice: 0.002,
-        currency: "USD",
-        isActive: true,
-        metadata: {},
+      // Prepare the request payload
+      const payload = {
+        modelId: formData.modelId,
+        provider: formData.provider,
+        inputTokenPrice: formData.inputTokenPrice,
+        outputTokenPrice: formData.outputTokenPrice,
+        currency: formData.currency,
+        isActive: formData.isActive,
+        effectiveFrom: new Date().toISOString(),
+        metadata: formData.metadata || {}
+      };
+
+      // Make real API call
+      const response = await fetch('/api/pricing/models', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to save pricing');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Refresh the data from the server
+        await fetchPricingData(1, {});
+        
+        // Show success message
+        const action = editingPricing ? 'updated' : 'created';
+        setSuccessMessage(`Pricing ${action} successfully!`);
+        setTimeout(() => setSuccessMessage(null), 3000); // Clear after 3 seconds
+        
+        setIsDialogOpen(false);
+        setEditingPricing(null);
+        setFormData({
+          modelId: "",
+          provider: "openai",
+          inputTokenPrice: 0.001,
+          outputTokenPrice: 0.002,
+          currency: "USD",
+          isActive: true,
+          metadata: {},
+        });
+      } else {
+        throw new Error(result.error?.message || 'Failed to save pricing');
+      }
     } catch (error) {
       console.error("Error saving pricing:", error);
+      alert(`Error saving pricing: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -267,6 +338,14 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
 
   return (
     <div className="space-y-6">
+      {/* Success Message */}
+      {successMessage && (
+        <div className="flex items-center space-x-2 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <CheckCircle className="h-5 w-5 text-green-600" />
+          <span className="text-green-800 font-medium">{successMessage}</span>
+        </div>
+      )}
+
       {/* Header */}
       <Card>
         <CardHeader>
@@ -404,6 +483,21 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                       </Select>
                     </div>
                     
+                    <div>
+                      <label className="text-sm font-medium">Status</label>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <input
+                          type="checkbox"
+                          id="isActive"
+                          checked={formData.isActive}
+                          onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <label htmlFor="isActive" className="text-sm text-muted-foreground">
+                          Active (this pricing configuration is currently in use)
+                        </label>
+                      </div>
+                    </div>
 
                   </div>
                   
@@ -515,8 +609,13 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(pricing.id)}
+                          disabled={deletingId === pricing.id}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {deletingId === pricing.id ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>

@@ -13,8 +13,10 @@ import { chats } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { TokenTrackingService } from '@/lib/tokenTracking';
+import { CostCalculationService } from '@/lib/services/costCalculation';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
 import { auth, checkMessageLimit } from '@/lib/auth';
+import { UsageLimitsService } from '@/lib/services/usageLimits';
 import type { ImageUIPart } from '@/lib/types';
 import { convertToOpenRouterFormat } from '@/lib/openrouter-utils';
 
@@ -111,10 +113,12 @@ const createErrorResponse = (
 
 export async function POST(req: Request) {
   const requestId = nanoid(); // Unique ID for this request
+  const requestStartTime = Date.now(); // Track when the request started
   logDiagnostic('REQUEST_START', `Starting chat API request`, {
     requestId,
     url: req.url,
-    method: req.method
+    method: req.method,
+    startTime: requestStartTime
   });
 
   const {
@@ -512,7 +516,109 @@ export async function POST(req: Request) {
     contextSize: webSearch.contextSize
   };
 
-  // 3. If user has credits or is using own API keys or using free model, allow request (skip daily message limit)
+  // 3. Check usage limits (for all users, regardless of credits or API keys)
+  logDiagnostic('USAGE_LIMITS_CHECK_START', `Starting usage limits check`, {
+    requestId,
+    userId,
+    isAnonymous,
+    isUsingOwnApiKeys,
+    isFreeModel
+  });
+
+  // Skip usage limit checks for users with their own API keys (they pay directly to providers)
+  if (!isUsingOwnApiKeys) {
+    try {
+      // Get current usage statistics
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Get daily and monthly token usage
+      const dailyTokenStats = await TokenTrackingService.getUserTokenStats(userId, {
+        startDate: startOfDay,
+        endDate: now,
+      });
+
+      const monthlyTokenStats = await TokenTrackingService.getUserTokenStats(userId, {
+        startDate: startOfMonth,
+        endDate: now,
+      });
+
+      // Get daily and monthly cost data
+      const dailyCostData = await CostCalculationService.getAggregatedCosts(userId, {
+        startDate: startOfDay,
+        endDate: now,
+        currency: 'USD',
+      });
+
+      const monthlyCostData = await CostCalculationService.getAggregatedCosts(userId, {
+        startDate: startOfMonth,
+        endDate: now,
+        currency: 'USD',
+      });
+
+      // Check usage limits
+      const usageLimitCheck = await UsageLimitsService.checkUsageLimits(userId, {
+        dailyTokens: dailyTokenStats.totalTokens,
+        monthlyTokens: monthlyTokenStats.totalTokens,
+        dailyCost: dailyCostData.totalCost,
+        monthlyCost: monthlyCostData.totalCost,
+      });
+
+      logDiagnostic('USAGE_LIMITS_CHECK_RESULT', `Usage limits check result`, {
+        requestId,
+        userId,
+        isOverLimit: usageLimitCheck.isOverLimit,
+        exceededLimits: usageLimitCheck.exceededLimits,
+        limits: {
+          dailyTokens: usageLimitCheck.limits.dailyTokenLimit,
+          monthlyTokens: usageLimitCheck.limits.monthlyTokenLimit,
+          dailyCost: usageLimitCheck.limits.dailyCostLimit,
+          monthlyCost: usageLimitCheck.limits.monthlyCostLimit,
+        },
+        currentUsage: {
+          dailyTokens: dailyTokenStats.totalTokens,
+          monthlyTokens: monthlyTokenStats.totalTokens,
+          dailyCost: dailyCostData.totalCost,
+          monthlyCost: monthlyCostData.totalCost,
+        }
+      });
+
+      if (usageLimitCheck.isOverLimit) {
+        const exceededLimitMessages = usageLimitCheck.exceededLimits.map(limit => {
+          switch (limit) {
+            case 'daily_tokens':
+              return `Daily token limit (${usageLimitCheck.limits.dailyTokenLimit}) exceeded`;
+            case 'monthly_tokens':
+              return `Monthly token limit (${usageLimitCheck.limits.monthlyTokenLimit}) exceeded`;
+            case 'daily_cost':
+              return `Daily cost limit ($${usageLimitCheck.limits.dailyCostLimit}) exceeded`;
+            case 'monthly_cost':
+              return `Monthly cost limit ($${usageLimitCheck.limits.monthlyCostLimit}) exceeded`;
+            default:
+              return `Usage limit exceeded`;
+          }
+        });
+
+        return createErrorResponse(
+          "USAGE_LIMIT_EXCEEDED",
+          `You have exceeded your usage limits: ${exceededLimitMessages.join(', ')}. Please contact an administrator to increase your limits.`,
+          429,
+          `User exceeded limits: ${usageLimitCheck.exceededLimits.join(', ')}`
+        );
+      }
+    } catch (error) {
+      console.error(`[Usage Limits Check] Error checking usage limits for user ${userId}:`, error);
+      // Continue with the request if there's an error checking limits
+      logDiagnostic('USAGE_LIMITS_CHECK_ERROR', `Error checking usage limits`, {
+        requestId,
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  // 4. If user has credits or is using own API keys or using free model, allow request (skip daily message limit)
   console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, isFreeModel=${isFreeModel}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel}`);
 
   if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel) {
@@ -520,7 +626,7 @@ export async function POST(req: Request) {
     // proceed
   } else {
     console.log(`[Debug] User ${userId} entering message limit check - isAnonymous: ${isAnonymous}`);
-    // 4. Otherwise, check message limit based on authentication status
+    // 5. Otherwise, check message limit based on authentication status
     const limitStatus = await checkMessageLimit(userId, isAnonymous);
     console.log(`[Debug] limitStatus:`, limitStatus);
 
@@ -1444,6 +1550,12 @@ export async function POST(req: Request) {
             });
           }
 
+          // Calculate processing time ourselves since AI SDK might not provide it
+          const requestEndTime = Date.now();
+          const calculatedProcessingTimeMs = requestEndTime - requestStartTime;
+
+
+
           await TokenTrackingService.trackTokenUsage({
             userId,
             chatId: id,
@@ -1455,7 +1567,7 @@ export async function POST(req: Request) {
               outputTokens: 0,
               totalTokens: 0
             },
-            processingTimeMs: event?.durationMs,
+            processingTimeMs: event?.durationMs || calculatedProcessingTimeMs,
             status: 'completed',
             generationId: generationId || undefined,
             metadata: {
@@ -1463,6 +1575,7 @@ export async function POST(req: Request) {
               webSearchContextSize: secureWebSearch.contextSize,
               isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
               responseTime: event?.timestamp,
+              calculatedProcessingTimeMs,
               // Add flag to indicate this was logged independently of DB operations
               independentLogging: true
             }

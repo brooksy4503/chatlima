@@ -43,6 +43,12 @@ interface SystemStats {
   systemUptime: number;
   requestsToday: number;
   requestsThisMonth: number;
+  trends: {
+    tokenTrend: number;
+    costTrend: number;
+    userTrend: number;
+    activeUserTrend: number;
+  };
   topModels: Array<{
     id: string;
     name: string;
@@ -72,30 +78,69 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
     queryFn: async (): Promise<SystemStats> => {
       const response = await fetch(`/api/admin/system-stats?timeRange=${timeRange}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch system stats');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
       }
       const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error?.message || 'Failed to fetch system stats');
+      }
       return result.data;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
+  const safeNumber = (value: any): number => {
+    if (typeof value === 'number' && !isNaN(value) && isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      if (!isNaN(parsed) && isFinite(parsed)) return parsed;
+    }
+    return 0;
+  };
+
   const formatCurrency = (value: number) => {
+    const safeValue = safeNumber(value);
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(value);
+    }).format(safeValue);
   };
 
   const formatNumber = (value: number) => {
-    return new Intl.NumberFormat("en-US").format(value);
+    const safeValue = safeNumber(value);
+    return new Intl.NumberFormat("en-US").format(safeValue);
   };
 
   const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
+    const safeValue = safeNumber(value);
+    return `${safeValue.toFixed(1)}%`;
+  };
+
+  const formatTrend = (value: number) => {
+    const safeValue = safeNumber(value);
+    const sign = safeValue >= 0 ? "+" : "";
+    return `${sign}${safeValue.toFixed(1)}%`;
+  };
+
+  const getTrendIcon = (value: number) => {
+    const safeValue = safeNumber(value);
+    return safeValue >= 0 ? (
+      <TrendingUp className="h-3 w-3 text-green-600" />
+    ) : (
+      <TrendingDown className="h-3 w-3 text-red-600" />
+    );
+  };
+
+  const getTrendColor = (value: number) => {
+    const safeValue = safeNumber(value);
+    return safeValue >= 0 ? "text-green-600" : "text-red-600";
   };
 
   const getProviderColor = (provider: string) => {
+    if (!provider) return "bg-gray-100 text-gray-800";
     const colors: Record<string, string> = {
       openai: "bg-green-100 text-green-800",
       anthropic: "bg-blue-100 text-blue-800",
@@ -109,31 +154,40 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
   };
 
   const getStatusColor = (value: number, type: "uptime" | "response") => {
+    const safeValue = safeNumber(value);
     if (type === "uptime") {
-      return value >= 99.5 ? "text-green-600" : value >= 99 ? "text-yellow-600" : "text-red-600";
+      return safeValue >= 99.5 ? "text-green-600" : safeValue >= 99 ? "text-yellow-600" : "text-red-600";
     } else {
-      return value <= 1 ? "text-green-600" : value <= 2 ? "text-yellow-600" : "text-red-600";
+      return safeValue <= 1 ? "text-green-600" : safeValue <= 2 ? "text-yellow-600" : "text-red-600";
     }
   };
 
   const getStatusIcon = (value: number, type: "uptime" | "response") => {
+    const safeValue = safeNumber(value);
     if (type === "uptime") {
-      return value >= 99.5 ? (
+      return safeValue >= 99.5 ? (
         <CheckCircle className="h-4 w-4 text-green-600" />
-      ) : value >= 99 ? (
+      ) : safeValue >= 99 ? (
         <AlertCircle className="h-4 w-4 text-yellow-600" />
       ) : (
         <AlertCircle className="h-4 w-4 text-red-600" />
       );
     } else {
-      return value <= 1 ? (
+      return safeValue <= 1 ? (
         <CheckCircle className="h-4 w-4 text-green-600" />
-      ) : value <= 2 ? (
+      ) : safeValue <= 2 ? (
         <AlertCircle className="h-4 w-4 text-yellow-600" />
       ) : (
         <AlertCircle className="h-4 w-4 text-red-600" />
       );
     }
+  };
+
+  const calculatePercentage = (value: number, total: number) => {
+    const safeValue = safeNumber(value);
+    const safeTotal = safeNumber(total);
+    if (safeTotal === 0) return 0;
+    return (safeValue / safeTotal) * 100;
   };
 
   const renderLoadingCards = () => {
@@ -207,7 +261,12 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2 text-red-600">
               <AlertCircle className="h-4 w-4" />
-              <p>Failed to load system stats. Please try again.</p>
+              <div>
+                <p className="font-medium">Failed to load system stats</p>
+                <p className="text-sm text-muted-foreground">
+                  {error instanceof Error ? error.message : 'An unexpected error occurred'}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -284,9 +343,11 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
                 <p className="text-sm font-medium text-muted-foreground">Total Users</p>
                 <p className="text-2xl font-bold">{formatNumber(systemStats.totalUsers)}</p>
                 <div className="flex items-center space-x-1 text-xs">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600">+12.5%</span>
-                  <span className="text-muted-foreground">from last month</span>
+                  {getTrendIcon(systemStats.trends?.userTrend || 0)}
+                  <span className={getTrendColor(systemStats.trends?.userTrend || 0)}>
+                    {formatTrend(systemStats.trends?.userTrend || 0)}
+                  </span>
+                  <span className="text-muted-foreground">from previous period</span>
                 </div>
               </div>
             </div>
@@ -301,9 +362,11 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
                 <p className="text-sm font-medium text-muted-foreground">Active Users</p>
                 <p className="text-2xl font-bold">{formatNumber(systemStats.activeUsers)}</p>
                 <div className="flex items-center space-x-1 text-xs">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600">+8.3%</span>
-                  <span className="text-muted-foreground">from last month</span>
+                  {getTrendIcon(systemStats.trends?.activeUserTrend || 0)}
+                  <span className={getTrendColor(systemStats.trends?.activeUserTrend || 0)}>
+                    {formatTrend(systemStats.trends?.activeUserTrend || 0)}
+                  </span>
+                  <span className="text-muted-foreground">from previous period</span>
                 </div>
               </div>
             </div>
@@ -318,9 +381,11 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
                 <p className="text-sm font-medium text-muted-foreground">Total Tokens</p>
                 <p className="text-2xl font-bold">{formatNumber(systemStats.totalTokens)}</p>
                 <div className="flex items-center space-x-1 text-xs">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600">+15.2%</span>
-                  <span className="text-muted-foreground">from last month</span>
+                  {getTrendIcon(systemStats.trends?.tokenTrend || 0)}
+                  <span className={getTrendColor(systemStats.trends?.tokenTrend || 0)}>
+                    {formatTrend(systemStats.trends?.tokenTrend || 0)}
+                  </span>
+                  <span className="text-muted-foreground">from previous period</span>
                 </div>
               </div>
             </div>
@@ -335,9 +400,11 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
                 <p className="text-sm font-medium text-muted-foreground">Total Cost</p>
                 <p className="text-2xl font-bold">{formatCurrency(systemStats.totalCost)}</p>
                 <div className="flex items-center space-x-1 text-xs">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600">+10.7%</span>
-                  <span className="text-muted-foreground">from last month</span>
+                  {getTrendIcon(systemStats.trends?.costTrend || 0)}
+                  <span className={getTrendColor(systemStats.trends?.costTrend || 0)}>
+                    {formatTrend(systemStats.trends?.costTrend || 0)}
+                  </span>
+                  <span className="text-muted-foreground">from previous period</span>
                 </div>
               </div>
             </div>
@@ -379,7 +446,7 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
                 <p className="text-sm font-medium text-muted-foreground">Avg Response Time</p>
                 <div className="flex items-center space-x-1">
                   <p className={`text-2xl font-bold ${getStatusColor(systemStats.avgResponseTime, "response")}`}>
-                    {systemStats.avgResponseTime}s
+                    {typeof systemStats.avgResponseTime === 'number' ? systemStats.avgResponseTime.toFixed(1) : '0.0'}s
                   </p>
                   {getStatusIcon(systemStats.avgResponseTime, "response")}
                 </div>
@@ -416,27 +483,33 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {systemStats.topModels.map((model, index) => (
-              <div key={model.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                    {index + 1}
+            {systemStats.topModels && systemStats.topModels.length > 0 ? (
+              systemStats.topModels.map((model, index) => (
+                <div key={model.id} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-medium">{model.name || 'Unknown Model'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatNumber(model.usage)} tokens ({formatNumber(model.requestCount)} requests)
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{model.name}</p>
+                  <div className="text-right">
+                    <p className="font-medium">{formatCurrency(model.cost)}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatNumber(model.usage)} tokens ({formatNumber(model.requestCount)} requests)
+                      {formatPercentage(calculatePercentage(model.usage, systemStats.totalTokens))} of total
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">{formatCurrency(model.cost)}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatPercentage((model.usage / systemStats.totalTokens) * 100)} of total
-                  </p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No model usage data available
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -451,32 +524,38 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {systemStats.topProviders.map((provider, index) => (
-              <div key={provider.name} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <p className="font-medium">{provider.name}</p>
-                      <Badge className={getProviderColor(provider.name)}>
-                        {provider.name}
-                      </Badge>
+            {systemStats.topProviders && systemStats.topProviders.length > 0 ? (
+              systemStats.topProviders.map((provider, index) => (
+                <div key={provider.name} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {index + 1}
                     </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium">{provider.name || 'Unknown Provider'}</p>
+                        <Badge className={getProviderColor(provider.name)}>
+                          {provider.name || 'Unknown'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {formatNumber(provider.usage)} tokens ({formatNumber(provider.requestCount)} requests)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{formatCurrency(provider.cost)}</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatNumber(provider.usage)} tokens ({formatNumber(provider.requestCount)} requests)
+                      {formatPercentage(calculatePercentage(provider.usage, systemStats.totalTokens))} of total
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">{formatCurrency(provider.cost)}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatPercentage((provider.usage / systemStats.totalTokens) * 100)} of total
-                  </p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No provider usage data available
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>

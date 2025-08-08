@@ -4,6 +4,7 @@ import { ValidationMiddleware } from '@/lib/middleware/validation';
 import { RateLimitMiddleware } from '@/lib/middleware/rateLimit';
 import { TokenTrackingService } from '@/lib/tokenTracking';
 import { CostCalculationService } from '@/lib/services/costCalculation';
+import { UsageLimitsService } from '@/lib/services/usageLimits';
 import { UsageLimitStatus, UsageLimitConfig, ApiResponse } from '@/lib/types/api';
 import { nanoid } from 'nanoid';
 
@@ -130,52 +131,46 @@ export async function GET(req: NextRequest) {
             currency,
         });
 
-        // Get usage limits (mock data for now)
-        const limits = {
-            monthlyTokenLimit: 1000000, // 1M tokens
-            monthlyCostLimit: 100, // $100
-            dailyTokenLimit: 50000, // 50K tokens
-            dailyCostLimit: 10, // $10
-            requestRateLimit: 60, // 60 requests per minute
-        };
+        // Get actual usage limits from database
+        const limits = await UsageLimitsService.getEffectiveLimits(finalUserId);
 
         // Calculate usage status
         const result: UsageLimitStatus = {
             monthlyTokens: {
                 used: monthlyTokenStats.totalTokens,
-                limit: limits.monthlyTokenLimit || 1000000, // Default 1M tokens
-                remaining: Math.max(0, (limits.monthlyTokenLimit || 1000000) - monthlyTokenStats.totalTokens),
-                percentage: ((monthlyTokenStats.totalTokens / (limits.monthlyTokenLimit || 1000000)) * 100),
+                limit: limits.monthlyTokenLimit,
+                remaining: Math.max(0, limits.monthlyTokenLimit - monthlyTokenStats.totalTokens),
+                percentage: ((monthlyTokenStats.totalTokens / limits.monthlyTokenLimit) * 100),
             },
             monthlyCost: {
                 used: monthlyCostData.totalCost,
-                limit: limits.monthlyCostLimit || 100, // Default $100
-                remaining: Math.max(0, (limits.monthlyCostLimit || 100) - monthlyCostData.totalCost),
-                percentage: ((monthlyCostData.totalCost / (limits.monthlyCostLimit || 100)) * 100),
+                limit: limits.monthlyCostLimit,
+                remaining: Math.max(0, limits.monthlyCostLimit - monthlyCostData.totalCost),
+                percentage: ((monthlyCostData.totalCost / limits.monthlyCostLimit) * 100),
             },
             dailyTokens: {
                 used: dailyTokenStats.totalTokens,
-                limit: limits.dailyTokenLimit || 50000, // Default 50K tokens
-                remaining: Math.max(0, (limits.dailyTokenLimit || 50000) - dailyTokenStats.totalTokens),
-                percentage: ((dailyTokenStats.totalTokens / (limits.dailyTokenLimit || 50000)) * 100),
+                limit: limits.dailyTokenLimit,
+                remaining: Math.max(0, limits.dailyTokenLimit - dailyTokenStats.totalTokens),
+                percentage: ((dailyTokenStats.totalTokens / limits.dailyTokenLimit) * 100),
             },
             dailyCost: {
                 used: dailyCostData.totalCost,
-                limit: limits.dailyCostLimit || 10, // Default $10
-                remaining: Math.max(0, (limits.dailyCostLimit || 10) - dailyCostData.totalCost),
-                percentage: ((dailyCostData.totalCost / (limits.dailyCostLimit || 10)) * 100),
+                limit: limits.dailyCostLimit,
+                remaining: Math.max(0, limits.dailyCostLimit - dailyCostData.totalCost),
+                percentage: ((dailyCostData.totalCost / limits.dailyCostLimit) * 100),
             },
             isApproachingAnyLimit: (
-                ((monthlyTokenStats.totalTokens / (limits.monthlyTokenLimit || 1000000)) * 100) > 80 ||
-                ((monthlyCostData.totalCost / (limits.monthlyCostLimit || 100)) * 100) > 80 ||
-                ((dailyTokenStats.totalTokens / (limits.dailyTokenLimit || 50000)) * 100) > 80 ||
-                ((dailyCostData.totalCost / (limits.dailyCostLimit || 10)) * 100) > 80
+                ((monthlyTokenStats.totalTokens / limits.monthlyTokenLimit) * 100) > 80 ||
+                ((monthlyCostData.totalCost / limits.monthlyCostLimit) * 100) > 80 ||
+                ((dailyTokenStats.totalTokens / limits.dailyTokenLimit) * 100) > 80 ||
+                ((dailyCostData.totalCost / limits.dailyCostLimit) * 100) > 80
             ),
             isOverAnyLimit: (
-                monthlyTokenStats.totalTokens > (limits.monthlyTokenLimit || 1000000) ||
-                monthlyCostData.totalCost > (limits.monthlyCostLimit || 100) ||
-                dailyTokenStats.totalTokens > (limits.dailyTokenLimit || 50000) ||
-                dailyCostData.totalCost > (limits.dailyCostLimit || 10)
+                monthlyTokenStats.totalTokens > limits.monthlyTokenLimit ||
+                monthlyCostData.totalCost > limits.monthlyCostLimit ||
+                dailyTokenStats.totalTokens > limits.dailyTokenLimit ||
+                dailyCostData.totalCost > limits.dailyCostLimit
             ),
             currency,
         };
@@ -237,35 +232,83 @@ export async function PUT(req: NextRequest) {
             isActive,
         } = validation.data;
 
-        // Update usage limits (mock implementation)
-        const limitConfig = {
-            id: nanoid(),
-            userId: targetUserId,
-            monthlyTokenLimit,
-            monthlyCostLimit,
-            dailyTokenLimit,
-            dailyCostLimit,
-            requestRateLimit,
-            currency,
-            isActive,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
+        // Import database and schema
+        const { db } = await import('@/lib/db');
+        const { usageLimits } = await import('@/lib/db/schema');
+        const { eq, and } = await import('drizzle-orm');
 
-        // Create result
-        const result: UsageLimitConfig = {
-            id: limitConfig.id || nanoid(),
-            userId: targetUserId,
-            monthlyTokenLimit,
-            monthlyCostLimit,
-            dailyTokenLimit,
-            dailyCostLimit,
-            requestRateLimit,
-            currency,
-            isActive,
-            createdAt: limitConfig.createdAt || new Date(),
-            updatedAt: new Date(),
-        };
+        // Check if a limit already exists for this user
+        const existingLimit = await db
+            .select()
+            .from(usageLimits)
+            .where(eq(usageLimits.userId, targetUserId))
+            .limit(1);
+
+        let result: UsageLimitConfig;
+
+        if (existingLimit.length > 0) {
+            // Update existing limit
+            const updatedLimit = await db
+                .update(usageLimits)
+                .set({
+                    monthlyTokenLimit,
+                    monthlyCostLimit,
+                    dailyTokenLimit,
+                    dailyCostLimit,
+                    requestRateLimit,
+                    currency,
+                    isActive,
+                    updatedAt: new Date(),
+                })
+                .where(eq(usageLimits.id, existingLimit[0].id))
+                .returning();
+
+            result = {
+                id: updatedLimit[0].id,
+                userId: targetUserId,
+                monthlyTokenLimit: Number(updatedLimit[0].monthlyTokenLimit),
+                monthlyCostLimit: Number(updatedLimit[0].monthlyCostLimit),
+                dailyTokenLimit: Number(updatedLimit[0].dailyTokenLimit),
+                dailyCostLimit: Number(updatedLimit[0].dailyCostLimit),
+                requestRateLimit: Number(updatedLimit[0].requestRateLimit),
+                currency: updatedLimit[0].currency,
+                isActive: updatedLimit[0].isActive,
+                createdAt: updatedLimit[0].createdAt,
+                updatedAt: updatedLimit[0].updatedAt,
+            };
+        } else {
+            // Create new limit
+            const newLimit = await db
+                .insert(usageLimits)
+                .values({
+                    id: nanoid(),
+                    userId: targetUserId,
+                    monthlyTokenLimit,
+                    monthlyCostLimit,
+                    dailyTokenLimit,
+                    dailyCostLimit,
+                    requestRateLimit,
+                    currency,
+                    isActive,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .returning();
+
+            result = {
+                id: newLimit[0].id,
+                userId: targetUserId,
+                monthlyTokenLimit: Number(newLimit[0].monthlyTokenLimit),
+                monthlyCostLimit: Number(newLimit[0].monthlyCostLimit),
+                dailyTokenLimit: Number(newLimit[0].dailyTokenLimit),
+                dailyCostLimit: Number(newLimit[0].dailyCostLimit),
+                requestRateLimit: Number(newLimit[0].requestRateLimit),
+                currency: newLimit[0].currency,
+                isActive: newLimit[0].isActive,
+                createdAt: newLimit[0].createdAt,
+                updatedAt: newLimit[0].updatedAt,
+            };
+        }
 
         const meta = {
             userId,
