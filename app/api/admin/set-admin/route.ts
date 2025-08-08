@@ -1,10 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
     try {
+        // Check authentication
+        const session = await auth.api.getSession({ headers: request.headers });
+
+        if (!session?.user?.id) {
+            return NextResponse.json(
+                { success: false, error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
+        // Check if user is admin
+        const userResult = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, session.user.id))
+            .limit(1);
+
+        if (userResult.length === 0) {
+            return NextResponse.json(
+                { success: false, error: 'User not found' },
+                { status: 404 }
+            );
+        }
+
+        const user = userResult[0];
+        const isAdmin = user.role === "admin" || user.isAdmin === true;
+
+        if (!isAdmin) {
+            return NextResponse.json(
+                { success: false, error: 'Admin access required' },
+                { status: 403 }
+            );
+        }
+
         const { email } = await request.json();
 
         if (!email) {

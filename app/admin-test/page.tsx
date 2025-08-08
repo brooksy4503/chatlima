@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -9,22 +10,33 @@ export default function AdminTestPage() {
   const [userStatus, setUserStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [settingAdmin, setSettingAdmin] = useState(false);
+  const [authStatus, setAuthStatus] = useState<'loading' | 'authenticated' | 'unauthorized'>('loading');
+  const router = useRouter();
 
-  useEffect(() => {
-    checkAdminStatus();
-  }, []);
-
-  const checkAdminStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/check-status');
       const data = await response.json();
-      setUserStatus(data);
+      
+      if (data.success) {
+        setAuthStatus('authenticated');
+        setUserStatus(data);
+      } else {
+        setAuthStatus('unauthorized');
+        router.push('/auth/sign-in');
+      }
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      console.error('Error checking auth status:', error);
+      setAuthStatus('unauthorized');
+      router.push('/auth/sign-in');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const setAsAdmin = async () => {
     setSettingAdmin(true);
@@ -39,7 +51,7 @@ export default function AdminTestPage() {
 
       const data = await response.json();
       if (data.success) {
-        await checkAdminStatus(); // Refresh status
+        await checkAuthStatus(); // Refresh status
       } else {
         alert('Failed to set admin: ' + data.error);
       }
@@ -50,12 +62,16 @@ export default function AdminTestPage() {
     }
   };
 
-  if (loading) {
+  if (authStatus === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div>Loading...</div>
       </div>
     );
+  }
+
+  if (authStatus === 'unauthorized') {
+    return null; // Will redirect via useEffect
   }
 
   return (

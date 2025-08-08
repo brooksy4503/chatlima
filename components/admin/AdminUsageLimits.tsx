@@ -45,6 +45,7 @@ import {
   Users,
   BarChart3
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface AdminUsageLimitsProps {
   loading?: boolean;
@@ -59,10 +60,14 @@ interface UsageLimit {
   monthlyTokenLimit: number;
   dailyCostLimit: number;
   monthlyCostLimit: number;
+  requestRateLimit: number;
+  currency: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   description?: string;
+  userName?: string;
+  userEmail?: string;
 }
 
 interface UsageLimitFormData {
@@ -73,6 +78,8 @@ interface UsageLimitFormData {
   monthlyTokenLimit: number;
   dailyCostLimit: number;
   monthlyCostLimit: number;
+  requestRateLimit: number;
+  currency: string;
   isActive: boolean;
   description?: string;
 }
@@ -91,9 +98,12 @@ interface Model {
 
 export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
   const [usageLimits, setUsageLimits] = React.useState<UsageLimit[]>([]);
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [models, setModels] = React.useState<Model[]>([]);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingLimit, setEditingLimit] = React.useState<UsageLimit | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [limitType, setLimitType] = React.useState<"user" | "model">("user");
   const [formData, setFormData] = React.useState<UsageLimitFormData>({
     userId: "",
@@ -103,84 +113,56 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
     monthlyTokenLimit: 300000,
     dailyCostLimit: 10,
     monthlyCostLimit: 300,
+    requestRateLimit: 60,
+    currency: "USD",
     isActive: true,
     description: "",
   });
 
-  // Mock data for users
-  const mockUsers: User[] = [
-    { id: "1", email: "admin@example.com", name: "Admin User" },
-    { id: "2", email: "user1@example.com", name: "John Doe" },
-    { id: "3", email: "user2@example.com", name: "Jane Smith" },
-    { id: "4", email: "user3@example.com", name: "Bob Johnson" },
-    { id: "5", email: "user4@example.com", name: "Alice Williams" },
-  ];
-
-  // Mock data for models
-  const mockModels: Model[] = [
-    { id: "gpt-4", name: "GPT-4", provider: "openai" },
-    { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", provider: "openai" },
-    { id: "claude-3", name: "Claude 3", provider: "anthropic" },
-    { id: "gemini-pro", name: "Gemini Pro", provider: "google" },
-    { id: "llama-2", name: "Llama 2", provider: "groq" },
-  ];
-
-  // Mock data for usage limits
+  // Fetch data on component mount
   React.useEffect(() => {
-    const mockUsageLimits: UsageLimit[] = [
-      {
-        id: "1",
-        userId: "2",
-        dailyTokenLimit: 10000,
-        monthlyTokenLimit: 300000,
-        dailyCostLimit: 10,
-        monthlyCostLimit: 300,
-        isActive: true,
-        createdAt: "2023-06-01",
-        updatedAt: "2024-01-15",
-        description: "Standard user limits",
-      },
-      {
-        id: "2",
-        userId: "3",
-        dailyTokenLimit: 5000,
-        monthlyTokenLimit: 150000,
-        dailyCostLimit: 5,
-        monthlyCostLimit: 150,
-        isActive: true,
-        createdAt: "2023-07-15",
-        updatedAt: "2024-01-14",
-        description: "Reduced limits for trial user",
-      },
-      {
-        id: "3",
-        modelId: "gpt-4",
-        provider: "openai",
-        dailyTokenLimit: 50000,
-        monthlyTokenLimit: 1500000,
-        dailyCostLimit: 50,
-        monthlyCostLimit: 1500,
-        isActive: true,
-        createdAt: "2023-08-20",
-        updatedAt: "2024-01-13",
-        description: "GPT-4 model limits",
-      },
-      {
-        id: "4",
-        modelId: "claude-3",
-        provider: "anthropic",
-        dailyTokenLimit: 40000,
-        monthlyTokenLimit: 1200000,
-        dailyCostLimit: 40,
-        monthlyCostLimit: 1200,
-        isActive: true,
-        createdAt: "2023-10-05",
-        updatedAt: "2024-01-12",
-        description: "Claude 3 model limits",
-      },
-    ];
-    setUsageLimits(mockUsageLimits);
+    fetchData();
   }, []);
+
+
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch usage limits, users, and models in parallel
+      const [limitsResponse, usersResponse, modelsResponse] = await Promise.all([
+        fetch('/api/admin/usage-limits'),
+        fetch('/api/admin/users'),
+        fetch('/api/admin/models')
+      ]);
+
+      if (limitsResponse.ok) {
+        const limitsData = await limitsResponse.json();
+        setUsageLimits(limitsData.data || []);
+      } else {
+        toast.error('Failed to fetch usage limits');
+      }
+
+      if (usersResponse.ok) {
+        const usersData = await usersResponse.json();
+        setUsers(usersData.users || []);
+      } else {
+        toast.error('Failed to fetch users');
+      }
+
+      if (modelsResponse.ok) {
+        const modelsData = await modelsResponse.json();
+        setModels(modelsData.data || []);
+      } else {
+        toast.error('Failed to fetch models');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Failed to fetch data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -202,12 +184,12 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
   };
 
   const getUserName = (userId: string) => {
-    const user = mockUsers.find(u => u.id === userId);
-    return user ? `${user.name} (${user.email})` : "Unknown User";
+    const user = users.find(u => u.id === userId);
+    return user ? `${user.name || 'Unknown'} (${user.email})` : "Unknown User";
   };
 
   const getModelName = (modelId: string) => {
-    const model = mockModels.find(m => m.id === modelId);
+    const model = models.find(m => m.id === modelId);
     return model ? `${model.name} (${model.provider})` : "Unknown Model";
   };
 
@@ -226,22 +208,41 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
     setEditingLimit(limit);
     setLimitType(limit.userId ? "user" : "model");
     setFormData({
-      userId: limit.userId,
-      modelId: limit.modelId,
-      provider: limit.provider,
+      userId: limit.userId || "",
+      modelId: limit.modelId || "",
+      provider: limit.provider || "openai",
       dailyTokenLimit: limit.dailyTokenLimit,
       monthlyTokenLimit: limit.monthlyTokenLimit,
       dailyCostLimit: limit.dailyCostLimit,
       monthlyCostLimit: limit.monthlyCostLimit,
+      requestRateLimit: limit.requestRateLimit,
+      currency: limit.currency,
       isActive: limit.isActive,
       description: limit.description || "",
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this usage limit?")) {
-      setUsageLimits(usageLimits.filter(l => l.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this usage limit?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/usage-limits/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setUsageLimits(usageLimits.filter(l => l.id !== id));
+        toast.success('Usage limit deleted successfully');
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to delete usage limit');
+      }
+    } catch (error) {
+      console.error('Error deleting usage limit:', error);
+      toast.error('Failed to delete usage limit');
     }
   };
 
@@ -258,57 +259,84 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
     try {
       // Validate required fields
       if (limitType === "user" && !formData.userId) {
-        alert("Please select a user");
+        toast.error("Please select a user");
         return;
       }
       
       if (limitType === "model" && !formData.modelId) {
-        alert("Please select a model");
+        toast.error("Please select a model");
         return;
       }
       
       if (formData.dailyTokenLimit <= 0 || formData.monthlyTokenLimit <= 0 || 
           formData.dailyCostLimit <= 0 || formData.monthlyCostLimit <= 0) {
-        alert("All limits must be greater than 0");
+        toast.error("All limits must be greater than 0");
         return;
       }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const url = editingLimit 
+        ? `/api/admin/usage-limits/${editingLimit.id}`
+        : '/api/admin/usage-limits';
       
-      if (editingLimit) {
-        // Update existing limit
-        setUsageLimits(usageLimits.map(l => 
-          l.id === editingLimit.id 
-            ? { ...l, ...formData, updatedAt: new Date().toISOString() }
-            : l
-        ));
-      } else {
-        // Add new limit
-        const newLimit: UsageLimit = {
-          id: Date.now().toString(),
-          ...formData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        setUsageLimits([...usageLimits, newLimit]);
-      }
+      const method = editingLimit ? 'PUT' : 'POST';
       
-      setIsDialogOpen(false);
-      setEditingLimit(null);
-      setFormData({
-        userId: "",
-        modelId: "",
-        provider: "openai",
-        dailyTokenLimit: 10000,
-        monthlyTokenLimit: 300000,
-        dailyCostLimit: 10,
-        monthlyCostLimit: 300,
-        isActive: true,
-        description: "",
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: limitType === "user" ? formData.userId : null,
+          modelId: limitType === "model" ? formData.modelId : null,
+          provider: limitType === "model" ? formData.provider : null,
+          dailyTokenLimit: formData.dailyTokenLimit,
+          monthlyTokenLimit: formData.monthlyTokenLimit,
+          dailyCostLimit: formData.dailyCostLimit,
+          monthlyCostLimit: formData.monthlyCostLimit,
+          requestRateLimit: formData.requestRateLimit,
+          currency: formData.currency,
+          isActive: formData.isActive,
+          description: formData.description,
+        }),
       });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (editingLimit) {
+          // Update existing limit
+          setUsageLimits(usageLimits.map(l => 
+            l.id === editingLimit.id ? result.data : l
+          ));
+          toast.success('Usage limit updated successfully');
+        } else {
+          // Add new limit
+          setUsageLimits([...usageLimits, result.data]);
+          toast.success('Usage limit created successfully');
+        }
+        
+        setIsDialogOpen(false);
+        setEditingLimit(null);
+        setFormData({
+          userId: "",
+          modelId: "",
+          provider: "openai",
+          dailyTokenLimit: 10000,
+          monthlyTokenLimit: 300000,
+          dailyCostLimit: 10,
+          monthlyCostLimit: 300,
+          requestRateLimit: 60,
+          currency: "USD",
+          isActive: true,
+          description: "",
+        });
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to save usage limit');
+      }
     } catch (error) {
       console.error("Error saving usage limit:", error);
+      toast.error('Failed to save usage limit');
     } finally {
       setIsSubmitting(false);
     }
@@ -330,6 +358,40 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
     ));
   };
 
+  if (loading || isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Target</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Daily Tokens</TableHead>
+                  <TableHead>Monthly Tokens</TableHead>
+                  <TableHead>Daily Cost</TableHead>
+                  <TableHead>Monthly Cost</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead className="w-24">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {renderLoadingRows()}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -341,6 +403,10 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
               <span>Usage Limits Management</span>
             </CardTitle>
             <div className="flex space-x-2">
+              <Button onClick={fetchData} variant="outline" size="sm">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -389,11 +455,17 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
                             <SelectValue placeholder="Select user" />
                           </SelectTrigger>
                           <SelectContent>
-                            {mockUsers.map(user => (
-                              <SelectItem key={user.id} value={user.id}>
-                                {user.name} ({user.email})
+                            {users.length === 0 ? (
+                              <SelectItem value="" disabled>
+                                No users available
                               </SelectItem>
-                            ))}
+                            ) : (
+                              users.map(user => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.name || 'Unknown'} ({user.email})
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -403,7 +475,7 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
                         <Select 
                           value={formData.modelId} 
                           onValueChange={(value) => {
-                            const model = mockModels.find(m => m.id === value);
+                            const model = models.find(m => m.id === value);
                             handleInputChange("modelId", value);
                             if (model) {
                               handleInputChange("provider", model.provider);
@@ -414,11 +486,17 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
                             <SelectValue placeholder="Select model" />
                           </SelectTrigger>
                           <SelectContent>
-                            {mockModels.map(model => (
-                              <SelectItem key={model.id} value={model.id}>
-                                {model.name} ({model.provider})
+                            {models.length === 0 ? (
+                              <SelectItem value="" disabled>
+                                No models available
                               </SelectItem>
-                            ))}
+                            ) : (
+                              models.map(model => (
+                                <SelectItem key={model.id} value={model.id}>
+                                  {model.name} ({model.provider})
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -471,6 +549,16 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
                     </div>
                     
                     <div>
+                      <label className="text-sm font-medium">Request Rate Limit (per minute)</label>
+                      <Input
+                        type="number"
+                        placeholder="60"
+                        value={formData.requestRateLimit}
+                        onChange={(e) => handleInputChange("requestRateLimit", parseInt(e.target.value))}
+                      />
+                    </div>
+                    
+                    <div>
                       <label className="text-sm font-medium">Description</label>
                       <Input
                         placeholder="Optional description"
@@ -495,6 +583,8 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
                           monthlyTokenLimit: 300000,
                           dailyCostLimit: 10,
                           monthlyCostLimit: 300,
+                          requestRateLimit: 60,
+                          currency: "USD",
                           isActive: true,
                           description: "",
                         });
@@ -536,9 +626,7 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                renderLoadingRows()
-              ) : usageLimits.length === 0 ? (
+              {usageLimits.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No usage limits configured

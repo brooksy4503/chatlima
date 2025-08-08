@@ -327,6 +327,35 @@ export const dailyTokenUsage = pgTable('daily_token_usage', {
   dateIdx: index('idx_daily_token_usage_date').on(table.date),
 }));
 
+// --- Usage Limits Schema ---
+
+export const usageLimits = pgTable('usage_limits', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), // null for global limits
+  modelId: text('model_id'), // null for user-specific limits
+  provider: text('provider'), // null for user-specific limits
+  dailyTokenLimit: integer('daily_token_limit').notNull(),
+  monthlyTokenLimit: integer('monthly_token_limit').notNull(),
+  dailyCostLimit: numeric('daily_cost_limit', { precision: 10, scale: 2 }).notNull(),
+  monthlyCostLimit: numeric('monthly_cost_limit', { precision: 10, scale: 2 }).notNull(),
+  requestRateLimit: integer('request_rate_limit').default(60).notNull(), // requests per minute
+  currency: text('currency').default('USD').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  checkLimitsPositive: check('check_usage_limits_positive', sql`${table.dailyTokenLimit} >= 0 AND ${table.monthlyTokenLimit} >= 0 AND ${table.dailyCostLimit} >= 0 AND ${table.monthlyCostLimit} >= 0 AND ${table.requestRateLimit} >= 1`),
+  checkUserOrModel: check('check_usage_limits_user_or_model', sql`(${table.userId} IS NOT NULL) OR (${table.modelId} IS NOT NULL AND ${table.provider} IS NOT NULL)`),
+  // Indexes
+  userIdIdx: index('idx_usage_limits_user_id').on(table.userId),
+  modelIdIdx: index('idx_usage_limits_model_id').on(table.modelId),
+  providerIdx: index('idx_usage_limits_provider').on(table.provider),
+  isActiveIdx: index('idx_usage_limits_is_active').on(table.isActive),
+  createdAtIdx: index('idx_usage_limits_created_at').on(table.createdAt),
+}));
+
 // Token usage metrics types
 export type TokenUsageMetrics = typeof tokenUsageMetrics.$inferSelect;
 export type TokenUsageMetricsInsert = typeof tokenUsageMetrics.$inferInsert;
@@ -334,4 +363,6 @@ export type ModelPricing = typeof modelPricing.$inferSelect;
 export type ModelPricingInsert = typeof modelPricing.$inferInsert;
 export type DailyTokenUsage = typeof dailyTokenUsage.$inferSelect;
 export type DailyTokenUsageInsert = typeof dailyTokenUsage.$inferInsert;
+export type UsageLimit = typeof usageLimits.$inferSelect;
+export type UsageLimitInsert = typeof usageLimits.$inferInsert;
 

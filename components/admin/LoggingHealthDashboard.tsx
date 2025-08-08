@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,52 +49,74 @@ interface LoggingAlert {
 }
 
 export function LoggingHealthDashboard() {
-  const [health, setHealth] = useState<LoggingHealthStatus | null>(null);
-  const [summary, setSummary] = useState<LoggingSummary | null>(null);
-  const [alerts, setAlerts] = useState<LoggingAlert[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const [healthRes, summaryRes, alertsRes] = await Promise.all([
-        fetch('/api/admin/logging-health?action=health'),
-        fetch('/api/admin/logging-health?action=summary&days=7'),
-        fetch('/api/admin/logging-health?action=alerts')
-      ]);
-
-      if (!healthRes.ok || !summaryRes.ok || !alertsRes.ok) {
-        throw new Error('Failed to fetch logging health data');
+  // Fetch health data
+  const { 
+    data: health, 
+    isLoading: healthLoading, 
+    error: healthError,
+    refetch: refetchHealth 
+  } = useQuery({
+    queryKey: ['logging-health', 'health'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/logging-health?action=health');
+      if (!response.ok) {
+        throw new Error('Failed to fetch health data');
       }
+      return response.json() as Promise<LoggingHealthStatus>;
+    },
+    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
+  });
 
-      const [healthData, summaryData, alertsData] = await Promise.all([
-        healthRes.json(),
-        summaryRes.json(),
-        alertsRes.json()
-      ]);
+  // Fetch summary data
+  const { 
+    data: summary, 
+    isLoading: summaryLoading, 
+    error: summaryError,
+    refetch: refetchSummary 
+  } = useQuery({
+    queryKey: ['logging-health', 'summary'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/logging-health?action=summary&days=7');
+      if (!response.ok) {
+        throw new Error('Failed to fetch summary data');
+      }
+      return response.json() as Promise<LoggingSummary>;
+    },
+    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
+  });
 
-      setHealth(healthData);
-      setSummary(summaryData);
-      setAlerts(alertsData.alerts || []);
-      setLastRefresh(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
-    } finally {
-      setLoading(false);
-    }
+  // Fetch alerts data
+  const { 
+    data: alertsData, 
+    isLoading: alertsLoading, 
+    error: alertsError,
+    refetch: refetchAlerts 
+  } = useQuery({
+    queryKey: ['logging-health', 'alerts'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/logging-health?action=alerts');
+      if (!response.ok) {
+        throw new Error('Failed to fetch alerts data');
+      }
+      return response.json() as Promise<{ alerts: LoggingAlert[] }>;
+    },
+    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
+  });
+
+  const alerts = alertsData?.alerts || [];
+  const loading = healthLoading || summaryLoading || alertsLoading;
+  const error = healthError || summaryError || alertsError;
+
+  const fetchData = async () => {
+    setLastRefresh(new Date());
+    await Promise.all([
+      refetchHealth(),
+      refetchSummary(),
+      refetchAlerts()
+    ]);
   };
-
-  useEffect(() => {
-    fetchData();
-    
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -153,6 +176,7 @@ export function LoggingHealthDashboard() {
   }
 
   if (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -165,7 +189,7 @@ export function LoggingHealthDashboard() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Error loading logging health data: {error}
+            Error loading logging health data: {errorMessage}
           </AlertDescription>
         </Alert>
       </div>
@@ -241,7 +265,7 @@ export function LoggingHealthDashboard() {
                   <p className="text-sm font-medium text-gray-600">Missing Records</p>
                   <p className="text-lg font-semibold text-red-600">{health.discrepancy}</p>
                   <p className="text-xs text-gray-500">
-                    {(health.discrepancyPercentage * 100).toFixed(1)}% loss
+                    {typeof health.discrepancyPercentage === 'number' ? (health.discrepancyPercentage * 100).toFixed(1) : '0.0'}% loss
                   </p>
                 </div>
                 <TrendingDown className="h-5 w-5 text-red-500" />
@@ -265,7 +289,7 @@ export function LoggingHealthDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {alerts.map((alert, index) => (
+              {alerts.map((alert: LoggingAlert, index: number) => (
                 <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
                   <Badge className={getSeverityColor(alert.severity)}>
                     {alert.severity.toUpperCase()}
@@ -337,7 +361,7 @@ export function LoggingHealthDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {summary.dailyBreakdown.slice(-5).map((day, index) => (
+                {summary.dailyBreakdown.slice(-5).map((day: any, index: number) => (
                   <div key={index} className="flex justify-between items-center text-sm">
                     <span className="font-medium">
                       {new Date(day.date).toLocaleDateString()}
@@ -374,7 +398,7 @@ export function LoggingHealthDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {health.recommendations.map((recommendation, index) => (
+              {health.recommendations.map((recommendation: string, index: number) => (
                 <div key={index} className="flex items-start gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
                   <p className="text-sm">{recommendation}</p>
@@ -396,7 +420,7 @@ export function LoggingHealthDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {health.recentErrors.map((error, index) => (
+              {health.recentErrors.map((error: string, index: number) => (
                 <div key={index} className="p-2 bg-red-50 border border-red-200 rounded text-sm">
                   <code className="text-red-800">{error}</code>
                 </div>

@@ -27,14 +27,11 @@ import {
   PieChart, 
   Download, 
   RefreshCw,
-  TrendingUp,
-  TrendingDown,
   Zap,
   DollarSign,
   Activity,
   Calendar,
-  Server,
-  Filter
+  Server
 } from "lucide-react";
 
 interface AdminModelAnalyticsProps {
@@ -65,13 +62,6 @@ interface ProviderAnalytics {
   modelCount: number;
   usagePercentage: number;
   costPercentage: number;
-}
-
-interface TimeSeriesData {
-  date: string;
-  tokens: number;
-  cost: number;
-  requests: number;
 }
 
 export function AdminModelAnalytics({ loading: externalLoading = false }: AdminModelAnalyticsProps) {
@@ -125,7 +115,7 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
     if (!modelAnalytics.length) return;
     
     const csvContent = [
-      ["Model", "Provider", "Tokens Used", "Cost", "Requests", "Avg Response Time", "Success Rate", "Last Used"],
+      ["Model", "Provider", "Tokens Used", "Cost", "Requests", "Avg Response Time (s)", "Success Rate (%)", "Last Used"],
       ...sortedModelAnalytics.map(model => [
         model.name,
         model.provider,
@@ -149,27 +139,45 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
     document.body.removeChild(link);
   };
 
+  const safeNumber = (value: any): number => {
+    if (typeof value === 'number' && !isNaN(value) && isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      if (!isNaN(parsed) && isFinite(parsed)) return parsed;
+    }
+    return 0;
+  };
+
   const formatCurrency = (value: number) => {
+    const safeValue = safeNumber(value);
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(value);
+    }).format(safeValue);
   };
 
   const formatNumber = (value: number) => {
-    return new Intl.NumberFormat("en-US").format(value);
+    const safeValue = safeNumber(value);
+    return new Intl.NumberFormat("en-US").format(safeValue);
   };
 
   const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
+    const safeValue = safeNumber(value);
+    return `${safeValue.toFixed(1)}%`;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Invalid Date";
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return "Invalid Date";
+    }
   };
 
   const getProviderColor = (provider: string) => {
@@ -185,14 +193,16 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
   };
 
   const getResponseTimeColor = (responseTime: number) => {
-    if (responseTime <= 1) return "text-green-600";
-    if (responseTime <= 2) return "text-yellow-600";
+    const safeValue = safeNumber(responseTime);
+    if (safeValue <= 1) return "text-green-600";
+    if (safeValue <= 2) return "text-yellow-600";
     return "text-red-600";
   };
 
   const getSuccessRateColor = (successRate: number) => {
-    if (successRate >= 99.5) return "text-green-600";
-    if (successRate >= 99) return "text-yellow-600";
+    const safeValue = safeNumber(successRate);
+    if (safeValue >= 99.5) return "text-green-600";
+    if (safeValue >= 99) return "text-yellow-600";
     return "text-red-600";
   };
 
@@ -343,7 +353,7 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
                   <div>
                     <p className="text-sm text-muted-foreground">Avg Response</p>
                     <p className={`font-medium ${getResponseTimeColor(provider.avgResponseTime)}`}>
-                      {provider.avgResponseTime}s
+                      {typeof provider.avgResponseTime === 'number' ? provider.avgResponseTime.toFixed(1) : '0.0'}s
                     </p>
                   </div>
                   <div>
@@ -421,7 +431,7 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
                     </TableCell>
                     <TableCell>
                       <p className={`font-medium ${getResponseTimeColor(model.avgResponseTime)}`}>
-                        {model.avgResponseTime}s
+                        {typeof model.avgResponseTime === 'number' ? model.avgResponseTime.toFixed(1) : '0.0'}s
                       </p>
                     </TableCell>
                     <TableCell>

@@ -6,6 +6,9 @@ import { PaginationUtil } from '@/lib/utils/pagination';
 import { TokenTrackingService } from '@/lib/tokenTracking';
 import { ModelPricingInfo, ModelPricingList, ApiResponse } from '@/lib/types/api';
 import { nanoid } from 'nanoid';
+import { db } from '@/lib/db';
+import { modelPricing } from '@/lib/db/schema';
+import { and, eq, gte, lte, desc, asc, like, or, isNull, sql } from 'drizzle-orm';
 
 /**
  * API endpoint for retrieving and managing model pricing information
@@ -104,53 +107,67 @@ export async function GET(req: NextRequest) {
             offset,
         } = validation.data;
 
-        // Get model pricing data
-        // Note: This would typically query the model_pricing table directly
-        // For now, we'll return mock data
-        const mockPricingData: ModelPricingInfo[] = [
-            {
-                id: '1',
-                modelId: 'gpt-4' as any,
-                provider: 'openai',
-                inputTokenPrice: 0.00003,
-                outputTokenPrice: 0.00006,
-                currency: 'USD',
-                effectiveFrom: new Date('2024-01-01'),
-                isActive: true,
-                createdAt: new Date('2024-01-01'),
-                updatedAt: new Date('2024-01-01'),
-            },
-            {
-                id: '2',
-                modelId: 'gpt-3.5-turbo' as any,
-                provider: 'openai',
-                inputTokenPrice: 0.0000015,
-                outputTokenPrice: 0.000002,
-                currency: 'USD',
-                effectiveFrom: new Date('2024-01-01'),
-                isActive: true,
-                createdAt: new Date('2024-01-01'),
-                updatedAt: new Date('2024-01-01'),
-            },
-        ];
+        // Build database query conditions
+        const conditions = [];
 
-        // Filter data based on parameters
-        let filteredData = mockPricingData;
         if (provider) {
-            filteredData = filteredData.filter(item => item.provider === provider);
+            conditions.push(eq(modelPricing.provider, provider));
         }
         if (modelId) {
-            filteredData = filteredData.filter(item => item.modelId === modelId);
+            conditions.push(like(modelPricing.modelId, `%${modelId}%`));
         }
         if (currency) {
-            filteredData = filteredData.filter(item => item.currency === currency);
+            conditions.push(eq(modelPricing.currency, currency));
         }
         if (isActive !== undefined) {
-            filteredData = filteredData.filter(item => item.isActive === isActive);
+            conditions.push(eq(modelPricing.isActive, isActive));
         }
 
+        // Get total count for pagination
+        const countQuery = conditions.length > 0
+            ? await db.select({ count: sql`count(*)` }).from(modelPricing).where(and(...conditions))
+            : await db.select({ count: sql`count(*)` }).from(modelPricing);
+
+        const totalCount = Number(countQuery[0]?.count || 0);
+
+        // Calculate pagination
+        const pageNum = page || 1;
+        const limitNum = limit || 50;
+        const offsetNum = offset || ((pageNum - 1) * limitNum);
+
+        // Query model pricing data from database
+        let pricingData;
+        if (conditions.length > 0) {
+            pricingData = await db.select().from(modelPricing)
+                .where(and(...conditions))
+                .orderBy(desc(modelPricing.effectiveFrom), desc(modelPricing.createdAt))
+                .limit(limitNum)
+                .offset(offsetNum);
+        } else {
+            pricingData = await db.select().from(modelPricing)
+                .orderBy(desc(modelPricing.effectiveFrom), desc(modelPricing.createdAt))
+                .limit(limitNum)
+                .offset(offsetNum);
+        }
+
+        // Transform database results to API format
+        const transformedData: ModelPricingInfo[] = pricingData.map(pricing => ({
+            id: pricing.id,
+            modelId: pricing.modelId,
+            provider: pricing.provider,
+            inputTokenPrice: parseFloat(pricing.inputTokenPrice.toString()),
+            outputTokenPrice: parseFloat(pricing.outputTokenPrice.toString()),
+            currency: pricing.currency,
+            effectiveFrom: pricing.effectiveFrom,
+            effectiveTo: pricing.effectiveTo || undefined,
+            isActive: pricing.isActive,
+            metadata: pricing.metadata || {},
+            createdAt: pricing.createdAt,
+            updatedAt: pricing.updatedAt,
+        }));
+
         // Apply pagination
-        const paginatedData = PaginationUtil.applyPagination(filteredData, page, limit, offset);
+        const paginatedData = PaginationUtil.applyPagination(transformedData, pageNum, limitNum, offsetNum);
 
         // Create response metadata
         const baseUrl = `${req.nextUrl.origin}${req.nextUrl.pathname}`;
@@ -160,16 +177,16 @@ export async function GET(req: NextRequest) {
         delete queryParams.offset;
 
         const paginationMeta = PaginationUtil.createMetadata(
-            page,
-            limit,
-            paginatedData.total,
+            pageNum,
+            limitNum,
+            totalCount,
             baseUrl,
             queryParams
         );
 
         const result: ModelPricingList = {
             models: paginatedData.items,
-            total: paginatedData.total,
+            total: totalCount,
         };
 
         const meta = {

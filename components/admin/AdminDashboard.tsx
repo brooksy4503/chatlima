@@ -22,20 +22,23 @@ import {
   Settings,
   Users,
   Database,
-  Shield
+  Shield,
+  Activity
 } from "lucide-react";
 import { AdminSystemStats } from "./AdminSystemStats";
 import { AdminUserBreakdown } from "./AdminUserBreakdown";
 import { AdminModelAnalytics } from "./AdminModelAnalytics";
 import { AdminPricingManagement } from "./AdminPricingManagement";
 import { AdminUsageLimits } from "./AdminUsageLimits";
-import { useMutation } from "@tanstack/react-query";
+import { LoggingHealthDashboard } from "./LoggingHealthDashboard";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export function AdminDashboard() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [activeTab, setActiveTab] = React.useState("overview");
+  const queryClient = useQueryClient();
 
   // Pricing sync mutation
   const syncPricingMutation = useMutation({
@@ -60,10 +63,30 @@ export function AdminDashboard() {
     }
   });
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setLoading(true);
-    // Simulate refresh
-    setTimeout(() => setLoading(false), 1000);
+    setError(null);
+    
+    try {
+      // Invalidate all admin-related queries to force refetch
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin-system-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-model-analytics'] }),
+        queryClient.invalidateQueries({ queryKey: ['pricing'] }),
+        queryClient.invalidateQueries({ queryKey: ['logging-health'] }),
+      ]);
+      
+      toast.success('Dashboard data refreshed successfully');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh data';
+      setError(errorMessage);
+      toast.error('Failed to refresh dashboard data', {
+        description: errorMessage
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExport = () => {
@@ -118,7 +141,7 @@ export function AdminDashboard() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <BarChart3 className="h-4 w-4" />
             <span>Overview</span>
@@ -138,6 +161,10 @@ export function AdminDashboard() {
           <TabsTrigger value="limits" className="flex items-center space-x-2">
             <Settings className="h-4 w-4" />
             <span>Limits</span>
+          </TabsTrigger>
+          <TabsTrigger value="logging" className="flex items-center space-x-2">
+            <Activity className="h-4 w-4" />
+            <span>Logging</span>
           </TabsTrigger>
         </TabsList>
 
@@ -159,6 +186,10 @@ export function AdminDashboard() {
 
         <TabsContent value="limits" className="mt-6 space-y-6">
           <AdminUsageLimits loading={loading} />
+        </TabsContent>
+
+        <TabsContent value="logging" className="mt-6 space-y-6">
+          <LoggingHealthDashboard />
         </TabsContent>
       </Tabs>
     </div>

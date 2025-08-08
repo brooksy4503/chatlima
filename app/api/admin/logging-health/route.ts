@@ -1,5 +1,8 @@
 import { LoggingMonitorService } from '@/lib/services/loggingMonitor';
 import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
@@ -7,13 +10,23 @@ export async function GET(req: Request) {
         // Check authentication and admin privileges
         const session = await auth.api.getSession({ headers: req.headers });
 
-        if (!session?.user) {
+        if (!session?.user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if user is admin (you may need to adjust this based on your auth setup)
-        const isAdmin = (session.user as any)?.role === 'admin' ||
-            (session.user as any)?.email?.endsWith('@chatlima.com');
+        // Check if user is admin using database query
+        const userResult = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, session.user.id))
+            .limit(1);
+
+        if (userResult.length === 0) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        const user = userResult[0];
+        const isAdmin = user.role === "admin" || user.isAdmin === true;
 
         if (!isAdmin) {
             return NextResponse.json({ error: 'Admin access required' }, { status: 403 });

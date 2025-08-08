@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { db } from '@/lib/db';
 import { users, chats, messages, tokenUsageMetrics, dailyTokenUsage, modelPricing } from '@/lib/db/schema';
 import { eq, and, gte, lte, sql, desc, asc } from 'drizzle-orm';
+import { ModelNameService } from '@/lib/services/model-names';
 
 export async function GET(req: NextRequest) {
     try {
@@ -57,22 +58,28 @@ export async function GET(req: NextRequest) {
         // Calculate date range
         const now = new Date();
         let startDate: Date;
+        let previousStartDate: Date;
 
         switch (timeRange) {
             case 'day':
                 startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                previousStartDate = new Date(now.getTime() - 48 * 60 * 60 * 1000);
                 break;
             case 'week':
                 startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
                 break;
             case 'month':
                 startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                previousStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
                 break;
             case 'year':
                 startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                previousStartDate = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000);
                 break;
             default:
                 startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                previousStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
         }
 
         // Get total users
@@ -80,7 +87,7 @@ export async function GET(req: NextRequest) {
             .select({ count: sql<number>`count(*)` })
             .from(users);
 
-        const totalUsers = totalUsersResult[0]?.count || 0;
+        const totalUsers = Number(totalUsersResult[0]?.count || 0);
 
         // Get active users (users with activity in the time range)
         const activeUsersResult = await db
@@ -89,21 +96,23 @@ export async function GET(req: NextRequest) {
             .innerJoin(chats, eq(users.id, chats.userId))
             .where(gte(chats.updatedAt, startDate));
 
-        const activeUsers = activeUsersResult[0]?.count || 0;
+        const activeUsers = Number(activeUsersResult[0]?.count || 0);
 
-        // Get total tokens and cost
+        // Get total tokens and cost with real response time calculation
         const tokenStatsResult = await db
             .select({
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
                 totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
-                requestsToday: sql<number>`coalesce(count(*), 0)`
+                requestsToday: sql<number>`coalesce(count(*), 0)`,
+                avgResponseTime: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`
             })
             .from(tokenUsageMetrics)
             .where(gte(tokenUsageMetrics.createdAt, startDate));
 
-        const totalTokens = tokenStatsResult[0]?.totalTokens || 0;
-        const totalCost = tokenStatsResult[0]?.totalCost || 0;
-        const requestsToday = tokenStatsResult[0]?.requestsToday || 0;
+        const totalTokens = Number(tokenStatsResult[0]?.totalTokens || 0);
+        const totalCost = Number(tokenStatsResult[0]?.totalCost || 0);
+        const requestsToday = Number(tokenStatsResult[0]?.requestsToday || 0);
+        const avgResponseTime = Number(tokenStatsResult[0]?.avgResponseTime || 0);
 
         // Get requests this month
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -112,9 +121,9 @@ export async function GET(req: NextRequest) {
             .from(tokenUsageMetrics)
             .where(gte(tokenUsageMetrics.createdAt, monthStart));
 
-        const requestsThisMonth = requestsThisMonthResult[0]?.count || 0;
+        const requestsThisMonth = Number(requestsThisMonthResult[0]?.count || 0);
 
-        // Get top models by usage
+        // Get top models by usage with actual model names
         const topModelsResult = await db
             .select({
                 modelId: tokenUsageMetrics.modelId,
@@ -154,11 +163,49 @@ export async function GET(req: NextRequest) {
             .groupBy(dailyTokenUsage.date)
             .orderBy(asc(dailyTokenUsage.date));
 
-        // Calculate average response time (mock for now - would need to track this)
-        const avgResponseTime = 1.2; // Mock value - would need to track actual response times
+        // Calculate real system uptime based on successful requests vs total requests
+        const uptimeResult = await db
+            .select({
+                totalRequests: sql<number>`coalesce(count(*), 0)`,
+                successfulRequests: sql<number>`coalesce(count(*) filter (where ${tokenUsageMetrics.status} = 'completed'), 0)`
+            })
+            .from(tokenUsageMetrics)
+            .where(gte(tokenUsageMetrics.createdAt, startDate));
 
-        // Calculate system uptime (mock for now)
-        const systemUptime = 99.9; // Mock value - would need to track actual uptime
+        const totalRequests = Number(uptimeResult[0]?.totalRequests || 0);
+        const successfulRequests = Number(uptimeResult[0]?.successfulRequests || 0);
+        const systemUptime = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 99.9;
+
+        // Calculate trend data for current vs previous period
+        const previousPeriodStats = await db
+            .select({
+                totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
+                totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
+                totalUsers: sql<number>`coalesce(count(distinct ${tokenUsageMetrics.userId}), 0)`,
+                activeUsers: sql<number>`coalesce(count(distinct ${users.id}), 0)`
+            })
+            .from(tokenUsageMetrics)
+            .leftJoin(users, eq(tokenUsageMetrics.userId, users.id))
+            .where(and(
+                gte(tokenUsageMetrics.createdAt, previousStartDate),
+                lte(tokenUsageMetrics.createdAt, startDate)
+            ));
+
+        const prevStats = previousPeriodStats[0];
+
+        // Calculate percentage changes
+        const calculatePercentageChange = (current: number, previous: number): number => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return ((current - previous) / previous) * 100;
+        };
+
+        const tokenTrend = calculatePercentageChange(totalTokens, Number(prevStats?.totalTokens || 0));
+        const costTrend = calculatePercentageChange(totalCost, Number(prevStats?.totalCost || 0));
+        const userTrend = calculatePercentageChange(totalUsers, Number(prevStats?.totalUsers || 0));
+        const activeUserTrend = calculatePercentageChange(activeUsers, Number(prevStats?.activeUsers || 0));
+
+        // Get model names using the ModelNameService
+        const modelNamesMap = await ModelNameService.getModelNamesFromDatabase();
 
         // Format the response
         const systemStats = {
@@ -170,23 +217,29 @@ export async function GET(req: NextRequest) {
             systemUptime,
             requestsToday,
             requestsThisMonth,
+            trends: {
+                tokenTrend,
+                costTrend,
+                userTrend,
+                activeUserTrend
+            },
             topModels: topModelsResult.map(model => ({
                 id: model.modelId,
-                name: model.modelId, // Would need to join with modelPricing for actual names
-                usage: model.totalTokens,
-                cost: model.totalCost,
-                requestCount: model.requestCount
+                name: modelNamesMap.get(model.modelId) || ModelNameService.getDisplayName(model.modelId),
+                usage: Number(model.totalTokens),
+                cost: Number(model.totalCost),
+                requestCount: Number(model.requestCount)
             })),
             topProviders: topProvidersResult.map(provider => ({
                 name: provider.provider,
-                usage: provider.totalTokens,
-                cost: provider.totalCost,
-                requestCount: provider.requestCount
+                usage: Number(provider.totalTokens),
+                cost: Number(provider.totalCost),
+                requestCount: Number(provider.requestCount)
             })),
             dailyUsage: dailyUsageResult.map(day => ({
                 date: day.date,
-                tokens: day.totalTokens,
-                cost: day.totalCost
+                tokens: Number(day.totalTokens),
+                cost: Number(day.totalCost)
             }))
         };
 
