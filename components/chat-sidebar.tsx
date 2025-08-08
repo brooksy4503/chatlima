@@ -519,41 +519,37 @@ export function ChatSidebar() {
                         "flex items-center justify-center py-2",
                         isLayoutCollapsed ? "flex-col gap-2" : "gap-3"
                     )}>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link
-                                        href="https://chatlima-docs.netlify.app/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
-                                    >
-                                        <BookOpen className="h-4 w-4" />
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={5}>
-                                    Documentation
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Link
+                                    href="https://chatlima-docs.netlify.app/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+                                >
+                                    <BookOpen className="h-4 w-4" />
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={5}>
+                                Documentation
+                            </TooltipContent>
+                        </Tooltip>
 
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link 
-                                        href="https://github.com/brooksy4503/chatlima" 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
-                                    >
-                                        <Github className="h-4 w-4" />
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={5}>
-                                    ChatLima on GitHub
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Link 
+                                    href="https://github.com/brooksy4503/chatlima" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+                                >
+                                    <Github className="h-4 w-4" />
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={5}>
+                                ChatLima on GitHub
+                            </TooltipContent>
+                        </Tooltip>
 
                         <ThemeToggle
                             className="w-8 h-8 flex items-center justify-center text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"

@@ -199,6 +199,29 @@ export async function POST(req: Request) {
     mcpServers = [];
   }
 
+  // ----------------------------------------------------------------------------
+  // Anonymous user free-model-only enforcement
+  // ----------------------------------------------------------------------------
+  // Acquire session to determine anonymous status (if not already available later)
+  const earlySession = await auth.api.getSession({ headers: req.headers });
+  const earlyUserId = earlySession?.user?.id || 'anonymous';
+  const earlyIsAnonymous = (earlySession?.user as any)?.isAnonymous === true;
+
+  // Compute own-keys and free-model status as early as possible
+  const earlyIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+  const earlyIsFreeModel = selectedModel.startsWith('openrouter/') && selectedModel.endsWith(':free');
+  const allowAnonOwnKeys = process.env.ALLOW_ANON_OWN_KEYS === 'true';
+
+  if (earlyIsAnonymous && !earlyIsFreeModel && !(allowAnonOwnKeys && earlyIsUsingOwnApiKeys)) {
+    console.log(`[Security] Anonymous user ${earlyUserId} attempted non-free model: ${selectedModel}`);
+    return createErrorResponse(
+      'ANON_FREE_ONLY',
+      'Anonymous users can only use free models. Please sign in to use other models.',
+      403,
+      'Anonymous free-only enforcement'
+    );
+  }
+
   // Process attachments into message parts
   async function processMessagesWithAttachments(
     messages: UIMessage[],
