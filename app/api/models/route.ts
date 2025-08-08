@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchAllModels, getEnvironmentApiKeys, clearProviderCache, getCacheStats } from '@/lib/models/fetch-models';
+import { auth } from '@/lib/auth';
 import { ApiKeyContext } from '@/lib/types/models';
 import { headers } from 'next/headers';
 
@@ -103,7 +104,25 @@ export async function GET(request: NextRequest) {
                 headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-keys');
             }
 
-            return NextResponse.json(response, { headers });
+            // Determine if requester is anonymous (or unauthenticated)
+            const session = await auth.api.getSession({ headers: request.headers });
+            const isAnonymous = !session?.user?.id || ((session.user as any)?.isAnonymous === true);
+
+            // Filter models for anonymous/unauthenticated users: only allow OpenRouter :free
+            const models = isAnonymous
+                ? response.models.filter(m => m.id.startsWith('openrouter/') && m.id.endsWith(':free'))
+                : response.models;
+
+            const filteredResponse = {
+                ...response,
+                models,
+                metadata: {
+                    ...response.metadata,
+                    totalModels: models.length,
+                }
+            };
+
+            return NextResponse.json(filteredResponse, { headers });
 
         } catch (error) {
             clearTimeout(timeoutId);

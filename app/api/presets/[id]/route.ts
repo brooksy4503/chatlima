@@ -15,8 +15,9 @@ const createErrorResponse = (message: string, status: number) => {
 };
 
 // Helper to check if user has access to premium models
-async function userCanAccessPremium(userId: string): Promise<boolean> {
-  return true; // For now, assume all authenticated users can access premium models
+async function userCanAccessPremium(userId: string, isAnonymous: boolean): Promise<boolean> {
+  if (isAnonymous) return false;
+  return true;
 }
 
 // GET /api/presets/[id] - Get preset details
@@ -84,6 +85,7 @@ export async function PUT(
     }
 
     const userId = session.user.id;
+    const isAnonymous = (session.user as any)?.isAnonymous === true;
     const { id: presetId } = await params;
     const data = await req.json();
 
@@ -122,8 +124,13 @@ export async function PUT(
       }
 
       // Validate model access
-      const canAccessPremium = await userCanAccessPremium(userId);
+      const canAccessPremium = await userCanAccessPremium(userId, isAnonymous);
       const modelInfo = await getModelDetails(modelId);
+
+      // Anonymous users can only use OpenRouter :free models
+      if (isAnonymous && modelId && !(modelId.startsWith('openrouter/') && modelId.endsWith(':free'))) {
+        return createErrorResponse('Anonymous users can only use free models', 403);
+      }
       const modelAccessValidation = validateModelAccess(modelInfo, canAccessPremium);
       if (!modelAccessValidation.valid) {
         return createErrorResponse(`Model access denied: ${modelAccessValidation.errors.join(', ')}`, 403);

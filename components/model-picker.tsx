@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check, RefreshCw, AlertCircle, Star } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useCredits } from "@/hooks/useCredits";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -331,9 +331,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   // Loading state
   if (modelsLoading) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
+      <Tooltip>
+        <TooltipTrigger asChild>
                           <Button
                 variant="outline"
                 disabled
@@ -352,16 +351,14 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             <p>Loading available models from providers...</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
     );
   }
 
   // Error state
   if (modelsError || !selectedModelData) {
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
+      <Tooltip>
+        <TooltipTrigger asChild>
             <Button
               variant="outline"
               onClick={handleRefreshModels}
@@ -385,12 +382,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             <p>{modelsRefreshing ? "Refreshing models..." : "Failed to load models. Click to retry."}</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
     );
   }
 
   return (
-    <TooltipProvider>
       <Popover open={isOpen} onOpenChange={handleOpenChange}>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -570,14 +565,12 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
 
                     if (isUnavailable && !creditsLoading) {
                       return (
-                        <TooltipProvider key={`${model.id}-tooltip`} delayDuration={300}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>{modelItem}</TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <p className="text-xs">This is a premium model. Credits are required to use it.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip key={`${model.id}-tooltip`}>
+                          <TooltipTrigger asChild>{modelItem}</TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-xs">This is a premium model. Credits are required to use it.</p>
+                          </TooltipContent>
+                        </Tooltip>
                       );
                     }
                     return modelItem;
@@ -734,6 +727,5 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
           </div>
         </PopoverContent>
       </Popover>
-    </TooltipProvider>
   );
 };
