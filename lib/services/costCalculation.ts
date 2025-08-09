@@ -139,6 +139,13 @@ export interface UsageLimitWarning {
  */
 export class CostCalculationService {
     private static defaultCurrency = 'USD';
+
+    // Cache for pricing data to avoid repeated database queries
+    private static pricingCache = new Map<string, {
+        data: { inputTokenPrice: number; outputTokenPrice: number; currency: string; source: 'database' | 'default' };
+        timestamp: number;
+    }>();
+    private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
     private static defaultExchangeRates: CurrencyRates = {
         USD: 1,
         EUR: 0.85,
@@ -242,6 +249,120 @@ export class CostCalculationService {
             );
         } catch (error) {
             console.error('[CostCalculation] Error calculating cost for record:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Calculate cost for a specific token usage with pre-fetched pricing
+     */
+    private static async calculateCostWithPricing(
+        inputTokens: number,
+        outputTokens: number,
+        modelId: modelID,
+        provider: string,
+        pricing: { inputTokenPrice: number; outputTokenPrice: number; currency: string; source: 'database' | 'default' },
+        options: CostCalculationOptions = {}
+    ): Promise<CostBreakdown> {
+        const calculationId = nanoid();
+        logDiagnostic('CALCULATE_WITH_PRICING_START', `Starting cost calculation with pre-fetched pricing`, {
+            calculationId,
+            inputTokens,
+            outputTokens,
+            modelId,
+            provider,
+            pricingSource: pricing.source
+        });
+
+        try {
+            const {
+                includeVolumeDiscounts = true,
+                currency = this.defaultCurrency,
+                exchangeRates = this.defaultExchangeRates,
+            } = options;
+
+            // Convert prices to per-token values
+            let inputPricePerToken: number;
+            let outputPricePerToken: number;
+
+            if (pricing.source === 'database') {
+                // Database prices are already per-token
+                inputPricePerToken = pricing.inputTokenPrice;
+                outputPricePerToken = pricing.outputTokenPrice;
+            } else {
+                // Default prices are per 1M tokens
+                inputPricePerToken = pricing.inputTokenPrice / 1000000;
+                outputPricePerToken = pricing.outputTokenPrice / 1000000;
+            }
+
+            // Calculate base costs
+            const inputCost = inputTokens * inputPricePerToken;
+            const outputCost = outputTokens * outputPricePerToken;
+            const subtotal = inputCost + outputCost;
+
+            // Apply volume discounts if enabled
+            let discountAmount = 0;
+            let volumeDiscountApplied = false;
+            let discountPercentage = 0;
+
+            if (includeVolumeDiscounts) {
+                const totalTokens = inputTokens + outputTokens;
+                const providerConfig = this.providerConfigs.find(c => c.provider === provider);
+
+                if (providerConfig) {
+                    for (const tier of providerConfig.volumeDiscountTiers) {
+                        if (totalTokens >= tier.minTokens && (!tier.maxTokens || totalTokens <= tier.maxTokens)) {
+                            discountPercentage = tier.discountPercentage;
+                            discountAmount = subtotal * (discountPercentage / 100);
+                            volumeDiscountApplied = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const totalCost = subtotal - discountAmount;
+
+            // Convert currency if needed
+            let finalCost = totalCost;
+            let finalCurrency = currency;
+            if (pricing.currency !== currency && exchangeRates[pricing.currency] && exchangeRates[currency]) {
+                finalCost = this.convertCurrency(totalCost, pricing.currency, currency, exchangeRates);
+                finalCurrency = currency;
+            }
+
+            const result = {
+                inputTokens,
+                outputTokens,
+                totalTokens: inputTokens + outputTokens,
+                inputCost,
+                outputCost,
+                subtotal,
+                discountAmount,
+                totalCost: finalCost,
+                currency: finalCurrency,
+                volumeDiscountApplied,
+                discountPercentage,
+            };
+
+            logDiagnostic('CALCULATE_WITH_PRICING_SUCCESS', `Cost calculation completed with pre-fetched pricing`, {
+                calculationId,
+                result: {
+                    inputCost,
+                    outputCost,
+                    subtotal,
+                    discountAmount,
+                    totalCost: finalCost,
+                    currency: finalCurrency
+                }
+            });
+
+            return result;
+        } catch (error) {
+            logDiagnostic('CALCULATE_WITH_PRICING_ERROR', `Error calculating cost with pre-fetched pricing`, {
+                calculationId,
+                error: error instanceof Error ? error.message : String(error)
+            });
             throw error;
         }
     }
@@ -620,7 +741,29 @@ export class CostCalculationService {
                 }))
             });
 
-            // Calculate costs for each record
+            // Batch fetch pricing for all unique model-provider combinations
+            const uniqueModelProviders = Array.from(new Set(records.map(r => `${r.modelId}:${r.provider}`)))
+                .map(pair => {
+                    const [modelId, provider] = pair.split(':');
+                    return { modelId, provider };
+                });
+
+            logDiagnostic('AGGREGATE_BATCH_PRICING_START', `Starting batch pricing lookup`, {
+                aggregationId,
+                uniqueModelCount: uniqueModelProviders.length,
+                totalRecordCount: records.length
+            });
+
+            const batchPricing = await this.getBatchPricing(uniqueModelProviders, { currency, includeVolumeDiscounts });
+
+            logDiagnostic('AGGREGATE_BATCH_PRICING_COMPLETE', `Batch pricing lookup completed`, {
+                aggregationId,
+                pricingMapSize: batchPricing.size,
+                databasePricingCount: Array.from(batchPricing.values()).filter(p => p.source === 'database').length,
+                defaultPricingCount: Array.from(batchPricing.values()).filter(p => p.source === 'default').length
+            });
+
+            // Calculate costs for each record using batch pricing
             const costBreakdowns: CostBreakdown[] = [];
             logDiagnostic('AGGREGATE_COST_CALC_START', `Starting cost calculation for records`, {
                 aggregationId,
@@ -629,6 +772,19 @@ export class CostCalculationService {
 
             for (let i = 0; i < records.length; i++) {
                 const record = records[i];
+                const pricingKey = `${record.modelId}:${record.provider}`;
+                const pricing = batchPricing.get(pricingKey);
+
+                if (!pricing) {
+                    logDiagnostic('AGGREGATE_PRICING_MISSING', `No pricing found for model`, {
+                        aggregationId,
+                        recordIndex: i,
+                        modelId: record.modelId,
+                        provider: record.provider
+                    });
+                    continue;
+                }
+
                 logDiagnostic('AGGREGATE_COST_CALC_RECORD', `Calculating cost for record`, {
                     aggregationId,
                     recordIndex: i,
@@ -636,14 +792,17 @@ export class CostCalculationService {
                     modelId: record.modelId,
                     provider: record.provider,
                     inputTokens: record.inputTokens,
-                    outputTokens: record.outputTokens
+                    outputTokens: record.outputTokens,
+                    pricingSource: pricing.source
                 });
 
-                const breakdown = await this.calculateCost(
+                // Calculate costs using batch pricing data
+                const breakdown = await this.calculateCostWithPricing(
                     record.inputTokens,
                     record.outputTokens,
                     record.modelId,
                     record.provider,
+                    pricing,
                     { currency, includeVolumeDiscounts }
                 );
                 costBreakdowns.push(breakdown);
@@ -1028,5 +1187,102 @@ export class CostCalculationService {
         };
 
         return defaultPrices[provider] || defaultPrices.openai;
+    }
+
+    /**
+ * Batch fetch pricing for multiple models in a single query with caching
+ */
+    private static async getBatchPricing(
+        modelProviderPairs: Array<{ modelId: string; provider: string }>,
+        options: CostCalculationOptions = {}
+    ): Promise<Map<string, { inputTokenPrice: number; outputTokenPrice: number; currency: string; source: 'database' | 'default' }>> {
+        const pricingMap = new Map();
+        const now = Date.now();
+
+        // Extract unique model-provider combinations
+        const uniquePairs = Array.from(new Set(modelProviderPairs.map(p => `${p.modelId}:${p.provider}`)))
+            .map(pair => {
+                const [modelId, provider] = pair.split(':');
+                return { modelId, provider };
+            });
+
+        // Check cache first
+        const uncachedPairs: Array<{ modelId: string; provider: string }> = [];
+        for (const { modelId, provider } of uniquePairs) {
+            const cacheKey = `${modelId}:${provider}`;
+            const cached = this.pricingCache.get(cacheKey);
+
+            if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
+                pricingMap.set(cacheKey, cached.data);
+            } else {
+                uncachedPairs.push({ modelId, provider });
+            }
+        }
+
+        // Only query database for uncached items
+        if (uncachedPairs.length > 0) {
+            const allPricing = await db.query.modelPricing.findMany({
+                where: and(
+                    sql`(${modelPricing.modelId}, ${modelPricing.provider}) IN (${sql.join(uncachedPairs.map(p => sql`(${p.modelId}, ${p.provider})`), sql`, `)})`,
+                    eq(modelPricing.isActive, true),
+                    lte(modelPricing.effectiveFrom, new Date()),
+                    sql`${modelPricing.effectiveTo} IS NULL OR ${modelPricing.effectiveTo} >= ${new Date()}`
+                ),
+                orderBy: [desc(modelPricing.effectiveFrom), desc(modelPricing.modelId)]
+            });
+
+            // Group by model-provider and take the most recent for each
+            const pricingByModel = new Map();
+            for (const pricing of allPricing) {
+                const key = `${pricing.modelId}:${pricing.provider}`;
+                if (!pricingByModel.has(key)) {
+                    pricingByModel.set(key, pricing);
+                }
+            }
+
+            // Build result map with fallbacks for missing models
+            for (const { modelId, provider } of uncachedPairs) {
+                const key = `${modelId}:${provider}`;
+                const pricing = pricingByModel.get(key);
+
+                if (pricing) {
+                    const pricingData = {
+                        inputTokenPrice: parseFloat(pricing.inputTokenPrice.toString()),
+                        outputTokenPrice: parseFloat(pricing.outputTokenPrice.toString()),
+                        currency: pricing.currency,
+                        source: 'database' as const
+                    };
+                    pricingMap.set(key, pricingData);
+                    this.pricingCache.set(key, { data: pricingData, timestamp: now });
+                } else {
+                    // Use default pricing
+                    const providerConfig = this.providerConfigs.find(c => c.provider === provider);
+                    if (providerConfig) {
+                        let inputPrice: number;
+                        let outputPrice: number;
+
+                        if (providerConfig.specialModels && providerConfig.specialModels[modelId]) {
+                            inputPrice = providerConfig.specialModels[modelId].inputTokenPrice;
+                            outputPrice = providerConfig.specialModels[modelId].outputTokenPrice;
+                        } else {
+                            const defaultPrices = this.getDefaultProviderPricing(provider);
+                            inputPrice = defaultPrices.input;
+                            outputPrice = defaultPrices.output;
+                        }
+
+                        const pricingData = {
+                            inputTokenPrice: inputPrice,
+                            outputTokenPrice: outputPrice,
+                            currency: providerConfig.currency,
+                            source: 'default' as const
+                        };
+                        pricingMap.set(key, pricingData);
+                        this.pricingCache.set(key, { data: pricingData, timestamp: now });
+                    }
+                }
+            }
+        }
+
+        return pricingMap;
     }
 }

@@ -283,6 +283,10 @@ export const tokenUsageMetrics = pgTable('token_usage_metrics', {
   providerIdx: index('idx_token_usage_metrics_provider').on(table.provider),
   createdAtIdx: index('idx_token_usage_metrics_created_at').on(table.createdAt),
   statusIdx: index('idx_token_usage_metrics_status').on(table.status),
+  // NEW: Composite indexes for cost calculation performance
+  userCreatedAtIdx: index('idx_token_usage_metrics_user_created_at').on(table.userId, table.createdAt),
+  userProviderCreatedAtIdx: index('idx_token_usage_metrics_user_provider_created_at').on(table.userId, table.provider, table.createdAt),
+  modelProviderIdx: index('idx_token_usage_metrics_model_provider').on(table.modelId, table.provider),
 }));
 
 export const modelPricing = pgTable('model_pricing', {
@@ -306,6 +310,15 @@ export const modelPricing = pgTable('model_pricing', {
   // Note: The actual constraint is created via SQL migration due to Drizzle ORM limitations with conditional constraints
   providerIdx: index('idx_model_pricing_provider').on(table.provider),
   effectiveFromIdx: index('idx_model_pricing_effective_from').on(table.effectiveFrom),
+  // NEW: Add missing indexes for performance
+  modelIdIdx: index('idx_model_pricing_model_id').on(table.modelId),
+  isActiveIdx: index('idx_model_pricing_is_active').on(table.isActive),
+  // Composite index for the most common query pattern
+  modelProviderActiveIdx: index('idx_model_pricing_model_provider_active').on(table.modelId, table.provider, table.isActive),
+  // NEW: Optimized composite index for batch pricing queries
+  modelProviderActiveEffectiveIdx: index('idx_model_pricing_model_provider_active_effective').on(table.modelId, table.provider, table.isActive, table.effectiveFrom),
+  // NEW: Partial index for active pricing only (most common query)
+  activePricingIdx: index('idx_model_pricing_active_only').on(table.modelId, table.provider, table.effectiveFrom).where(sql`${table.isActive} = true`),
 }));
 
 export const dailyTokenUsage = pgTable('daily_token_usage', {
@@ -328,6 +341,11 @@ export const dailyTokenUsage = pgTable('daily_token_usage', {
   checkCostNonNegative: check('check_daily_token_usage_cost_non_negative', sql`${table.totalEstimatedCost} >= 0 AND ${table.totalActualCost} >= 0`),
   // Indexes
   dateIdx: index('idx_daily_token_usage_date').on(table.date),
+  // NEW: Add missing indexes for performance
+  userIdIdx: index('idx_daily_token_usage_user_id').on(table.userId),
+  providerIdx: index('idx_daily_token_usage_provider').on(table.provider),
+  // Composite index for the most common query pattern
+  userDateProviderIdx: index('idx_daily_token_usage_user_date_provider').on(table.userId, table.date, table.provider),
 }));
 
 // --- Usage Limits Schema ---
