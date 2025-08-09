@@ -14,9 +14,15 @@ import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { TokenTrackingService } from '@/lib/tokenTracking';
 import { CostCalculationService } from '@/lib/services/costCalculation';
+import { SimpleCostEstimationService } from '@/lib/services/simpleCostEstimation';
+import { BackgroundCostTrackingService } from '@/lib/services/backgroundCostTracking';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
+import { createRequestCreditCache, hasEnoughCreditsWithCache } from '@/lib/services/creditCache';
 import { auth, checkMessageLimit } from '@/lib/auth';
+import { logDiagnostic as originalLogDiagnostic, logChunk, logPerformanceMetrics, logError, logRequestBoundary } from '@/lib/utils/performantLogging';
+import { createMessageLimitCache } from '@/lib/services/messageLimitCache';
 import { UsageLimitsService } from '@/lib/services/usageLimits';
+import { OptimizedUsageLimitsService } from '@/lib/services/optimizedUsageLimits';
 import type { ImageUIPart } from '@/lib/types';
 import { convertToOpenRouterFormat } from '@/lib/openrouter-utils';
 
@@ -25,11 +31,8 @@ import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdi
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn } from "child_process";
 
-// Diagnostic logging helper
-const logDiagnostic = (type: string, message: string, data?: any) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}][${type}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
-};
+// Use optimized logging - only logs in development and uses efficient patterns
+const logDiagnostic = originalLogDiagnostic;
 
 // Allow streaming responses up to 300 seconds on Hobby plan
 export const maxDuration = 300;
@@ -112,7 +115,11 @@ const createErrorResponse = (
 };
 
 export async function POST(req: Request) {
-  const requestId = nanoid(); // Unique ID for this request
+  const requestId = nanoid();
+
+  // Create request-scoped caches for performance optimization
+  const { getRemainingCreditsByExternalId: getCachedCreditsByExternal, getRemainingCredits: getCachedCredits, cache: creditCache } = createRequestCreditCache();
+  const messageLimitCache = createMessageLimitCache();
   const requestStartTime = Date.now(); // Track when the request started
 
   // Enhanced timing tracking variables
@@ -121,8 +128,7 @@ export async function POST(req: Request) {
   let timeToFirstTokenMs: number | null = null;
   let tokensPerSecond: number | null = null;
 
-  logDiagnostic('REQUEST_START', `Starting chat API request`, {
-    requestId,
+  logRequestBoundary('START', requestId, {
     url: req.url,
     method: req.method,
     startTime: requestStartTime
@@ -393,13 +399,14 @@ export async function POST(req: Request) {
     hasCredits = true; // Allow request to proceed
   } else {
     try {
-      // Get model info for premium model checks
-      const modelInfo = await getModelDetails(selectedModel);
+      // Reuse the model info we already fetched earlier (line 177) instead of calling getModelDetails again
+      const modelInfo = selectedModelInfo;
 
       // Check credits using both the external ID (userId) and legacy polarCustomerId
       // Pass isAnonymous flag to skip Polar checks for anonymous users
       // Pass model info to check for premium model access
-      hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined);
+      // Use request-scoped credit cache to avoid redundant API calls
+      hasCredits = await hasEnoughCreditsWithCache(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined, creditCache);
       logDiagnostic('CREDIT_CHECK_RESULT', `hasEnoughCredits result`, {
         requestId,
         userId,
@@ -410,8 +417,9 @@ export async function POST(req: Request) {
       if (!isAnonymous) {
         if (userId) {
           try {
-            actualCredits = await getRemainingCreditsByExternalId(userId);
-            logDiagnostic('CREDIT_BALANCE', `Actual credits for user`, {
+            // Use cached credit data from the hasEnoughCredits call above - no additional API call needed!
+            actualCredits = await getCachedCreditsByExternal(userId);
+            logDiagnostic('CREDIT_BALANCE', `Actual credits for user (cached)`, {
               requestId,
               userId,
               actualCredits
@@ -425,8 +433,8 @@ export async function POST(req: Request) {
             // Fall back to legacy method
             if (polarCustomerId) {
               try {
-                actualCredits = await getRemainingCredits(polarCustomerId);
-                logDiagnostic('CREDIT_BALANCE_LEGACY', `Actual credits via legacy method`, {
+                actualCredits = await getCachedCredits(polarCustomerId);
+                logDiagnostic('CREDIT_BALANCE_LEGACY', `Actual credits via legacy method (cached)`, {
                   requestId,
                   userId,
                   actualCredits
@@ -540,37 +548,8 @@ export async function POST(req: Request) {
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      // Get daily and monthly token usage
-      const dailyTokenStats = await TokenTrackingService.getUserTokenStats(userId, {
-        startDate: startOfDay,
-        endDate: now,
-      });
-
-      const monthlyTokenStats = await TokenTrackingService.getUserTokenStats(userId, {
-        startDate: startOfMonth,
-        endDate: now,
-      });
-
-      // Get daily and monthly cost data
-      const dailyCostData = await CostCalculationService.getAggregatedCosts(userId, {
-        startDate: startOfDay,
-        endDate: now,
-        currency: 'USD',
-      });
-
-      const monthlyCostData = await CostCalculationService.getAggregatedCosts(userId, {
-        startDate: startOfMonth,
-        endDate: now,
-        currency: 'USD',
-      });
-
-      // Check usage limits
-      const usageLimitCheck = await UsageLimitsService.checkUsageLimits(userId, {
-        dailyTokens: dailyTokenStats.totalTokens,
-        monthlyTokens: monthlyTokenStats.totalTokens,
-        dailyCost: dailyCostData.totalCost,
-        monthlyCost: monthlyCostData.totalCost,
-      });
+      // Use optimized single-query usage check instead of 4+ separate queries
+      const usageLimitCheck = await OptimizedUsageLimitsService.getUserUsageAndLimits(userId);
 
       logDiagnostic('USAGE_LIMITS_CHECK_RESULT', `Usage limits check result`, {
         requestId,
@@ -584,10 +563,10 @@ export async function POST(req: Request) {
           monthlyCost: usageLimitCheck.limits.monthlyCostLimit,
         },
         currentUsage: {
-          dailyTokens: dailyTokenStats.totalTokens,
-          monthlyTokens: monthlyTokenStats.totalTokens,
-          dailyCost: dailyCostData.totalCost,
-          monthlyCost: monthlyCostData.totalCost,
+          dailyTokens: usageLimitCheck.dailyTokens,
+          monthlyTokens: usageLimitCheck.monthlyTokens,
+          dailyCost: usageLimitCheck.dailyCost,
+          monthlyCost: usageLimitCheck.monthlyCost,
         }
       });
 
@@ -632,10 +611,10 @@ export async function POST(req: Request) {
     console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : isFreeModel ? 'using free model' : 'has credits'}, skipping message limit check`);
     // proceed
   } else {
-    console.log(`[Debug] User ${userId} entering message limit check - isAnonymous: ${isAnonymous}`);
-    // 5. Otherwise, check message limit based on authentication status
-    const limitStatus = await checkMessageLimit(userId, isAnonymous);
-    console.log(`[Debug] limitStatus:`, limitStatus);
+    logDiagnostic('MESSAGE_LIMIT_CHECK', `Checking message limits`, { userId, isAnonymous });
+    // 5. Otherwise, check message limit based on authentication status with caching
+    const limitStatus = await messageLimitCache.checkMessageLimit(userId, isAnonymous, creditCache);
+    logDiagnostic('MESSAGE_LIMIT_RESULT', `Message limit result`, limitStatus);
 
     // Log message usage for anonymous users
     if (isAnonymous) {
@@ -1129,13 +1108,6 @@ export async function POST(req: Request) {
       console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));
     },
     onChunk: (chunk: any) => {
-      console.log(`[DEBUG][Chat ${id}] onChunk called:`, {
-        chunkType: chunk.type,
-        chunkKeys: Object.keys(chunk),
-        firstTokenTime: firstTokenTime,
-        requestId
-      });
-
       // Track time to first token
       if (firstTokenTime === null) {
         firstTokenTime = Date.now();
@@ -1150,10 +1122,12 @@ export async function POST(req: Request) {
           requestId,
           firstTokenTime,
           timeToFirstTokenMs,
-          chunkType: chunk.type,
-          chunkPreview: JSON.stringify(chunk).substring(0, 100)
+          chunkType: chunk.type
         });
       }
+
+      // Use optimized chunk logging (only logs first few chunks, then summarizes)
+      logChunk(id, chunk, firstTokenTime, requestId);
     },
     async onStop(event: any) {
       console.log(`[Chat ${id}][onStop] Stream stopped by user, saving current state...`);
@@ -1283,7 +1257,8 @@ export async function POST(req: Request) {
             let callbackActualCredits: number | null = null;
             if (!isAnonymous && userId) {
               try {
-                callbackActualCredits = await getRemainingCreditsByExternalId(userId);
+                // Use cached credit data - no additional API call needed!
+                callbackActualCredits = await getCachedCreditsByExternal(userId);
               } catch (error) {
                 console.warn('Error getting actual credits in onStop callback:', error);
               }
@@ -1304,10 +1279,26 @@ export async function POST(req: Request) {
               additionalCost = WEB_SEARCH_COST;
             }
 
-            // Track token usage for stopped stream
-            await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
+            // Queue credit tracking for background processing (stopped stream)
+            const provider = selectedModel.split('/')[0];
+            BackgroundCostTrackingService.queueCostCalculation({
+              userId,
+              chatId: id,
+              messageId: `${id}-stopped-${Date.now()}`, // Generate unique message ID for stopped streams
+              modelId: selectedModel,
+              provider,
+              inputTokens: 0, // Not available in onStop callback
+              outputTokens: completionTokens,
+              // Credit tracking parameters (will be processed in background)
+              polarCustomerId,
+              completionTokens,
+              isAnonymous,
+              shouldDeductCredits,
+              additionalCost
+            });
+
             const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
-            const trackingReason = isAnonymous ? 'Tracked (stopped)' : shouldDeductCredits ? 'Reported to Polar (stopped)' : isFreeModel ? 'Tracked (free model, stopped)' : 'Tracked (daily limit, stopped)';
+            const trackingReason = isAnonymous ? 'Queued (stopped)' : shouldDeductCredits ? 'Queued for Polar (stopped)' : isFreeModel ? 'Queued (free model, stopped)' : 'Queued (daily limit, stopped)';
             console.log(`${trackingReason} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
           } catch (tokenError) {
             console.error(`[Chat ${id}][onStop] Error tracking token usage:`, tokenError);
@@ -1659,40 +1650,13 @@ export async function POST(req: Request) {
             calculatedProcessingTimeMs
           });
 
-          await TokenTrackingService.trackTokenUsage({
-            userId,
-            chatId: id,
-            messageId: finalAssistantMessageId,
-            modelId: selectedModel,
-            provider,
-            tokenUsage: tokenUsageData || {
-              inputTokens: 0,
-              outputTokens: 0,
-              totalTokens: 0
-            },
-            processingTimeMs: event?.durationMs || calculatedProcessingTimeMs,
-            timeToFirstTokenMs: timeToFirstTokenMs || undefined,
-            tokensPerSecond: tokensPerSecond || undefined,
-            streamingStartTime: streamingStartTime || undefined,
-            status: 'completed',
-            generationId: generationId || undefined,
-            metadata: {
-              webSearchEnabled: secureWebSearch.enabled,
-              webSearchContextSize: secureWebSearch.contextSize,
-              isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
-              responseTime: event?.timestamp,
-              calculatedProcessingTimeMs,
-              // Add flag to indicate this was logged independently of DB operations
-              independentLogging: true
-            }
-          });
+          // Queue detailed cost calculation for background processing
+          // This prevents blocking the response while still capturing all cost data
+          const extractedTokenUsage = tokenUsageData || { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+          const inputTokens = extractedTokenUsage.inputTokens || extractedTokenUsage.prompt_tokens || 0;
+          const outputTokens = extractedTokenUsage.outputTokens || extractedTokenUsage.completion_tokens || 0;
 
-          logDiagnostic('TOKEN_TRACKING_SUCCESS', `Successfully tracked detailed token usage (independent)`, {
-            requestId,
-            userId,
-            chatId: id,
-            messageId: finalAssistantMessageId
-          });
+          // Note: Credit tracking will be handled later with the legacy token tracking variables
         } catch (error: any) {
           logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage (independent)`, {
             requestId,
@@ -1783,7 +1747,8 @@ export async function POST(req: Request) {
           let callbackActualCredits: number | null = null;
           if (!isAnonymous && userId) {
             try {
-              callbackActualCredits = await getRemainingCreditsByExternalId(userId);
+              // Use cached credit data - no additional API call needed!
+              callbackActualCredits = await getCachedCreditsByExternal(userId);
             } catch (error) {
               logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Error getting actual credits in onFinish callback`, {
                 requestId,
@@ -1809,12 +1774,32 @@ export async function POST(req: Request) {
             additionalCost = WEB_SEARCH_COST;
           }
 
-          // Pass flags to control credit deduction vs daily message tracking, including web search surcharge
-          await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
-          const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
-          const trackingReason = isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : isFreeModel ? 'Tracked (free model)' : 'Tracked (daily limit)';
+          // Queue both cost calculation and credit tracking for background processing
+          // This prevents blocking the response while still capturing all cost and credit data
+          const provider = selectedModel.split('/')[0];
+          const finalAssistantMessageId = nanoid(); // Generate unique message ID
+          BackgroundCostTrackingService.queueCostCalculation({
+            userId,
+            chatId: id,
+            messageId: finalAssistantMessageId,
+            modelId: selectedModel,
+            provider,
+            inputTokens: typedResponse.usage?.prompt_tokens || typedResponse.usage?.input_tokens || 0,
+            outputTokens: completionTokens,
+            generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
+            openRouterResponse: typedResponse,
+            // Credit tracking parameters (will be processed in background)
+            polarCustomerId,
+            completionTokens,
+            isAnonymous,
+            shouldDeductCredits,
+            additionalCost
+          });
 
-          logDiagnostic('LEGACY_TOKEN_TRACKING_SUCCESS', `Successfully tracked legacy token usage`, {
+          const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
+          const trackingReason = isAnonymous ? 'Queued (stopped)' : shouldDeductCredits ? 'Queued for Polar' : isFreeModel ? 'Queued (free model)' : 'Queued (daily limit)';
+
+          logDiagnostic('BACKGROUND_TOKEN_TRACKING_QUEUED', `Queued background token usage tracking`, {
             requestId,
             userId,
             completionTokens,

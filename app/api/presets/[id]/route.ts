@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { eq, and, isNull } from 'drizzle-orm';
 import { validatePresetParameters, validateModelAccess } from '@/lib/parameter-validation';
 import { getModelDetails } from '@/lib/models/fetch-models';
+import { createRequestModelCache } from '@/lib/models/request-cache';
 
 // Helper to create error responses
 const createErrorResponse = (message: string, status: number) => {
@@ -79,6 +80,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Create request-scoped model cache for performance
+    const { getModelDetails: getModelDetailsCache } = createRequestModelCache();
+
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
       return createErrorResponse('Authentication required', 401);
@@ -125,7 +129,7 @@ export async function PUT(
 
       // Validate model access
       const canAccessPremium = await userCanAccessPremium(userId, isAnonymous);
-      const modelInfo = await getModelDetails(modelId);
+      const modelInfo = await getModelDetailsCache(modelId);
 
       // Anonymous users can only use OpenRouter :free models
       if (isAnonymous && modelId && !(modelId.startsWith('openrouter/') && modelId.endsWith(':free'))) {
