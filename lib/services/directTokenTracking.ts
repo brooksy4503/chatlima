@@ -21,7 +21,8 @@ interface DirectTokenTrackingParams {
     inputTokens: number;
     outputTokens: number;
     generationId?: string;
-    openRouterResponse?: any;
+    openRouterResponse?: any; // Legacy name for backward compatibility
+    providerResponse?: any; // New generic response parameter for all providers
     // Timing parameters
     processingTimeMs?: number;
     timeToFirstTokenMs?: number;
@@ -46,22 +47,30 @@ export class DirectTokenTrackingService {
         const startTime = Date.now();
 
         try {
-            console.log(`[DirectTokenTracking] Processing token usage for user ${params.userId}, chat ${params.chatId}`);
+            console.log(`[DirectTokenTracking] Processing token usage for user ${params.userId}, chat ${params.chatId}, provider ${params.provider}`);
 
-            // Extract input tokens using comprehensive method
-            const extractedInputTokens = this.extractInputTokens(params.openRouterResponse, params.inputTokens);
-            console.log(`[DirectTokenTracking] Input tokens: original=${params.inputTokens}, extracted=${extractedInputTokens}`);
+            // Use the already-extracted input tokens (extracted correctly in chat API for all providers)
+            // Only try to re-extract if the passed tokens are 0 or missing
+            const extractedInputTokens = params.inputTokens > 0 ?
+                params.inputTokens :
+                this.extractInputTokensFromResponse(
+                    params.providerResponse || params.openRouterResponse,
+                    params.provider,
+                    params.inputTokens
+                );
+            console.log(`[DirectTokenTracking] Input tokens: original=${params.inputTokens}, final=${extractedInputTokens}, provider=${params.provider}`);
 
             let actualCost: number | null = null;
             let estimatedCost = 0;
             const isFreeOpenRouterModel = params.provider === 'openrouter' && params.modelId.endsWith(':free');
 
-            // Extract actual cost from OpenRouter response first (fastest method)
-            if (params.provider === 'openrouter' && params.openRouterResponse) {
-                const costData = OpenRouterCostExtractor.extractCostFromResponse(params.openRouterResponse);
+            // Extract actual cost from provider response (currently only OpenRouter supports this)
+            const providerResponse = params.providerResponse || params.openRouterResponse;
+            if (params.provider === 'openrouter' && providerResponse) {
+                const costData = OpenRouterCostExtractor.extractCostFromResponse(providerResponse);
                 if (costData.actualCost !== null && OpenRouterCostExtractor.validateCostData(costData)) {
                     actualCost = costData.actualCost;
-                    console.log(`[DirectTokenTracking] Using actual cost from response: $${actualCost}`);
+                    console.log(`[DirectTokenTracking] Using actual cost from OpenRouter response: $${actualCost}`);
 
                     // Update pricing cache for future estimations
                     if (costData.inputTokens && costData.outputTokens) {
@@ -75,6 +84,9 @@ export class DirectTokenTrackingService {
                 }
             }
 
+            // TODO: Add cost extraction for Requesty if they provide cost information in their responses
+            // Currently Requesty does not appear to provide cost data in API responses
+
             // Calculate estimated cost using the simplified service (fast, no DB queries)
             try {
                 const simpleCostBreakdown = SimplifiedCostCalculationService.calculateCost(
@@ -84,7 +96,7 @@ export class DirectTokenTrackingService {
                     params.provider,
                     {
                         includeVolumeDiscounts: false,
-                        openRouterResponse: params.openRouterResponse
+                        openRouterResponse: providerResponse // Use unified response parameter
                     }
                 );
                 estimatedCost = simpleCostBreakdown.totalCost;
@@ -154,9 +166,10 @@ export class DirectTokenTrackingService {
             console.log(`[DirectTokenTracking] Successfully processed token usage in ${processingTime}ms - estimated: $${estimatedCost}, actual: $${actualCost || 'N/A'}`);
 
             // If we don't have actual cost, try to fetch it asynchronously (fire-and-forget)
+            // Currently only supported for OpenRouter
             if (!actualCost && params.provider === 'openrouter' && params.generationId) {
                 // Try with the same API key context the original request used (if present on response)
-                const apiKeyOverride = params.apiKeyOverride || (params.openRouterResponse as any)?.apiKey || undefined;
+                const apiKeyOverride = params.apiKeyOverride || (providerResponse as any)?.apiKey || undefined;
                 this.fetchActualCostAsync(params.generationId, params.userId, params.chatId, params.messageId, apiKeyOverride).catch(error => {
                     console.warn(`[DirectTokenTracking] Failed to fetch actual cost asynchronously for generation ${params.generationId}:`, error);
                 });
@@ -168,7 +181,13 @@ export class DirectTokenTrackingService {
 
             // Store error record
             try {
-                const errorExtractedInputTokens = this.extractInputTokens(params.openRouterResponse, params.inputTokens);
+                const errorExtractedInputTokens = params.inputTokens > 0 ?
+                    params.inputTokens :
+                    this.extractInputTokensFromResponse(
+                        params.providerResponse || params.openRouterResponse,
+                        params.provider,
+                        params.inputTokens
+                    );
                 await db.insert(tokenUsageMetrics).values({
                     id: nanoid(),
                     userId: params.userId,
@@ -205,29 +224,73 @@ export class DirectTokenTrackingService {
     }
 
     /**
-     * Extract input tokens from various response formats
+     * Extract input tokens from various provider response formats
      */
-    private static extractInputTokens(openRouterResponse: any, fallbackInputTokens: number): number {
-        if (!openRouterResponse) return fallbackInputTokens;
+    private static extractInputTokensFromResponse(response: any, provider: string, fallbackInputTokens: number): number {
+        if (!response) return fallbackInputTokens;
 
-        // Try various field names in the response
-        const usage = openRouterResponse.usage;
+        console.log(`[DirectTokenTracking] Extracting tokens from ${provider} response:`, {
+            hasUsage: !!response.usage,
+            usageKeys: response.usage ? Object.keys(response.usage) : [],
+            responseKeys: Object.keys(response),
+            provider
+        });
+
+        // Try standard AI SDK format (works for Requesty and other providers)
+        const usage = response.usage;
         if (usage) {
-            if (usage.prompt_tokens) return usage.prompt_tokens;
-            if (usage.input_tokens) return usage.input_tokens;
+            // AI SDK standard format (used by most providers including Requesty)
+            if (usage.promptTokens) {
+                console.log(`[DirectTokenTracking] Found input tokens in usage.promptTokens: ${usage.promptTokens}`);
+                return usage.promptTokens;
+            }
+            if (usage.inputTokens) {
+                console.log(`[DirectTokenTracking] Found input tokens in usage.inputTokens: ${usage.inputTokens}`);
+                return usage.inputTokens;
+            }
+            // OpenRouter-style format
+            if (usage.prompt_tokens) {
+                console.log(`[DirectTokenTracking] Found input tokens in usage.prompt_tokens: ${usage.prompt_tokens}`);
+                return usage.prompt_tokens;
+            }
+            if (usage.input_tokens) {
+                console.log(`[DirectTokenTracking] Found input tokens in usage.input_tokens: ${usage.input_tokens}`);
+                return usage.input_tokens;
+            }
         }
 
-        // Check root level
-        if (openRouterResponse.prompt_tokens) return openRouterResponse.prompt_tokens;
-        if (openRouterResponse.input_tokens) return openRouterResponse.input_tokens;
-
-        // Try metadata
-        if (openRouterResponse.metadata?.rawUsage) {
-            const rawUsage = openRouterResponse.metadata.rawUsage;
-            if (rawUsage.inputTokens) return rawUsage.inputTokens;
-            if (rawUsage.prompt_tokens) return rawUsage.prompt_tokens;
+        // Check root level (for non-standard response formats)
+        if (response.promptTokens) {
+            console.log(`[DirectTokenTracking] Found input tokens at root level promptTokens: ${response.promptTokens}`);
+            return response.promptTokens;
+        }
+        if (response.inputTokens) {
+            console.log(`[DirectTokenTracking] Found input tokens at root level inputTokens: ${response.inputTokens}`);
+            return response.inputTokens;
+        }
+        if (response.prompt_tokens) {
+            console.log(`[DirectTokenTracking] Found input tokens at root level prompt_tokens: ${response.prompt_tokens}`);
+            return response.prompt_tokens;
+        }
+        if (response.input_tokens) {
+            console.log(`[DirectTokenTracking] Found input tokens at root level input_tokens: ${response.input_tokens}`);
+            return response.input_tokens;
         }
 
+        // Try metadata (for complex response structures)
+        if (response.metadata?.rawUsage) {
+            const rawUsage = response.metadata.rawUsage;
+            if (rawUsage.inputTokens) {
+                console.log(`[DirectTokenTracking] Found input tokens in metadata.rawUsage.inputTokens: ${rawUsage.inputTokens}`);
+                return rawUsage.inputTokens;
+            }
+            if (rawUsage.prompt_tokens) {
+                console.log(`[DirectTokenTracking] Found input tokens in metadata.rawUsage.prompt_tokens: ${rawUsage.prompt_tokens}`);
+                return rawUsage.prompt_tokens;
+            }
+        }
+
+        console.log(`[DirectTokenTracking] No input tokens found in ${provider} response, using fallback: ${fallbackInputTokens}`);
         return fallbackInputTokens;
     }
 
