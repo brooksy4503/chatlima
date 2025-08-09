@@ -64,6 +64,10 @@ export default function Chat() {
   const [lastToastId, setLastToastId] = useState<string | null>(null);
   const [lastErrorMessage, setLastErrorMessage] = useState<string>("");
   const [lastToastTimestamp, setLastToastTimestamp] = useState<number>(0);
+  // NEW: Enhanced timing tracking for Phase 2
+  const [timeToFirstToken, setTimeToFirstToken] = useState<number | null>(null);
+  const [tokensPerSecond, setTokensPerSecond] = useState<number | null>(null);
+  const [totalDuration, setTotalDuration] = useState<number | null>(null);
   
   // Token usage state
   const [chatTokenUsage, setChatTokenUsage] = useState<{
@@ -71,6 +75,10 @@ export default function Chat() {
     outputTokens?: number;
     estimatedCost?: number;
     currency?: string;
+    // NEW: Enhanced timing metrics for Phase 2
+    timeToFirstToken?: number;
+    tokensPerSecond?: number;
+    totalDuration?: number;
   }>({});
 
   useEffect(() => {
@@ -473,7 +481,7 @@ export default function Chat() {
     }
   }, [isErrorRecoveryNeeded, lastErrorTime, originalStop, chatId]);
 
-  // Track streaming start/stop and activity
+  // Track streaming start/stop and activity with enhanced timing metrics
   useEffect(() => {
     if (status === "streaming") {
       if (!streamingStartTime) {
@@ -484,12 +492,28 @@ export default function Chat() {
         const lastMessage = messages[messages.length - 1];
         if (lastMessage.role === 'assistant' && lastMessage.content) {
           setLastStreamingActivity(Date.now());
+          
+          // NEW: Track time to first token when first content appears
+          if (timeToFirstToken === null && streamingStartTime) {
+            const ttft = Date.now() - streamingStartTime;
+            setTimeToFirstToken(ttft);
+            console.log(`[Chat] Time to first token: ${ttft}ms`);
+          }
         }
       }
     } else {
+      // Reset timing metrics when streaming stops
+      if (streamingStartTime && status === "ready") {
+        const duration = Date.now() - streamingStartTime;
+        setTotalDuration(duration);
+        console.log(`[Chat] Total duration: ${duration}ms`);
+      }
       setStreamingStartTime(null);
+      setTimeToFirstToken(null);
+      setTokensPerSecond(null);
+      setTotalDuration(null);
     }
-  }, [status, messages, streamingStartTime]);
+  }, [status, messages, streamingStartTime, timeToFirstToken]);
 
   // Intelligent stuck detection: only trigger if no streaming activity for extended period
   useEffect(() => {
@@ -696,7 +720,11 @@ export default function Chat() {
           inputTokens: estimatedInputTokens,
           outputTokens: estimatedOutputTokens,
           estimatedCost: (estimatedInputTokens + estimatedOutputTokens) * 0.000002, // Rough estimate
-          currency: 'USD'
+          currency: 'USD',
+          // NEW: Enhanced timing metrics for Phase 2
+          timeToFirstToken: timeToFirstToken || undefined,
+          tokensPerSecond: tokensPerSecond || undefined,
+          totalDuration: totalDuration || undefined
         });
       }
     } else if (status === "ready") {
@@ -711,7 +739,11 @@ export default function Chat() {
           inputTokens,
           outputTokens,
           estimatedCost,
-          currency: chatTokenData.currency || 'USD'
+          currency: chatTokenData.currency || 'USD',
+          // NEW: Enhanced timing metrics for Phase 2
+          timeToFirstToken: chatTokenData.avgTimeToFirstToken || timeToFirstToken || undefined,
+          tokensPerSecond: chatTokenData.avgTokensPerSecond || tokensPerSecond || undefined,
+          totalDuration: chatTokenData.avgTotalDuration || totalDuration || undefined
         });
         
         // Refetch token data to get the latest information
@@ -724,7 +756,7 @@ export default function Chat() {
       }
       // If chatTokenData is not available yet, keep the estimated values from streaming
     }
-  }, [messages, status, chatTokenData, refetchTokenData, userId, queryClient]);
+  }, [messages, status, chatTokenData, refetchTokenData, userId, queryClient, timeToFirstToken, tokensPerSecond, totalDuration, chatTokenData?.avgTimeToFirstToken, chatTokenData?.avgTokensPerSecond, chatTokenData?.avgTotalDuration]);
 
   // Manual recovery function
   const forceRecovery = useCallback(() => {
@@ -757,7 +789,7 @@ export default function Chat() {
     });
   }, [originalStop, lastToastId, chatId]);
 
-  // Streaming status component
+  // Streaming status component with enhanced timing metrics
   const StreamingStatus = () => {
     const [elapsed, setElapsed] = useState(0);
 
@@ -782,6 +814,19 @@ export default function Chat() {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
 
+    const formatTime = (ms: number) => {
+      if (ms < 1000) {
+        return `${ms}ms`;
+      }
+      return `${(ms / 1000).toFixed(1)}s`;
+    };
+
+    const getTimingColor = (ttft: number) => {
+      if (ttft < 1000) return "text-green-600 dark:text-green-400";
+      if (ttft < 3000) return "text-yellow-600 dark:text-yellow-400";
+      return "text-red-600 dark:text-red-400";
+    };
+
     return (
       <div className="flex items-center justify-center py-2">
         <div className="flex items-center space-x-2 text-xs text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
@@ -793,6 +838,17 @@ export default function Chat() {
           <span>
             Generating response... {minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`}
           </span>
+          {/* NEW: Show timing metrics during streaming */}
+          {timeToFirstToken && (
+            <span className={getTimingColor(timeToFirstToken)}>
+              • TTFT: {formatTime(timeToFirstToken)}
+            </span>
+          )}
+          {tokensPerSecond && (
+            <span>
+              • {tokensPerSecond.toFixed(1)}/s
+            </span>
+          )}
         </div>
       </div>
     );

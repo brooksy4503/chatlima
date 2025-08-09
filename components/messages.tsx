@@ -16,6 +16,10 @@ export const Messages = ({
     outputTokens?: number;
     estimatedCost?: number;
     currency?: string;
+    // NEW: Enhanced timing metrics for Phase 2
+    timeToFirstToken?: number;
+    tokensPerSecond?: number;
+    totalDuration?: number;
   };
 }) => {
   const [containerRef, endRef] = useScrollToBottom();

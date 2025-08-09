@@ -12,7 +12,9 @@ interface ModelAnalytics {
     tokensUsed: number;
     cost: number;
     requestCount: number;
-    avgResponseTime: number;
+    avgTotalDuration: number; // Renamed from avgResponseTime
+    avgTimeToFirstToken: number; // NEW
+    avgTokensPerSecond: number; // NEW
     successRate: number;
     lastUsed: string;
     usagePercentage: number;
@@ -26,7 +28,9 @@ interface ProviderAnalytics {
     tokensUsed: number;
     cost: number;
     requestCount: number;
-    avgResponseTime: number;
+    avgTotalDuration: number; // Renamed from avgResponseTime
+    avgTimeToFirstToken: number; // NEW
+    avgTokensPerSecond: number; // NEW
     successRate: number;
     modelCount: number;
     usagePercentage: number;
@@ -110,7 +114,9 @@ export async function GET(req: NextRequest) {
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
                 totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestCount: sql<number>`count(*)`,
-                avgResponseTime: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`,
+                avgTotalDuration: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`,
+                avgTimeToFirstToken: sql<number>`coalesce(avg(${tokenUsageMetrics.timeToFirstTokenMs}), 0) / 1000.0`,
+                avgTokensPerSecond: sql<number>`coalesce(avg(${tokenUsageMetrics.tokensPerSecond}), 0)`,
                 successRate: sql<number>`(count(case when ${tokenUsageMetrics.status} = 'completed' then 1 end) * 100.0) / count(*)`,
                 lastUsed: sql<string>`max(${tokenUsageMetrics.createdAt})`
             })
@@ -149,7 +155,9 @@ export async function GET(req: NextRequest) {
                 tokensUsed,
                 cost,
                 requestCount: Number(model.requestCount),
-                avgResponseTime: Number(model.avgResponseTime),
+                avgTotalDuration: Number(model.avgTotalDuration),
+                avgTimeToFirstToken: Number(model.avgTimeToFirstToken),
+                avgTokensPerSecond: Number(model.avgTokensPerSecond),
                 successRate: Number(model.successRate),
                 lastUsed: model.lastUsed,
                 usagePercentage: totalTokens > 0 ? (tokensUsed / totalTokens) * 100 : 0,
@@ -166,7 +174,9 @@ export async function GET(req: NextRequest) {
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
                 totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestCount: sql<number>`count(*)`,
-                avgResponseTime: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`,
+                avgTotalDuration: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`,
+                avgTimeToFirstToken: sql<number>`coalesce(avg(${tokenUsageMetrics.timeToFirstTokenMs}), 0) / 1000.0`,
+                avgTokensPerSecond: sql<number>`coalesce(avg(${tokenUsageMetrics.tokensPerSecond}), 0)`,
                 successRate: sql<number>`(count(case when ${tokenUsageMetrics.status} = 'completed' then 1 end) * 100.0) / count(*)`,
                 modelCount: sql<number>`count(distinct ${tokenUsageMetrics.modelId})`
             })
@@ -184,7 +194,9 @@ export async function GET(req: NextRequest) {
                 tokensUsed,
                 cost,
                 requestCount: Number(provider.requestCount),
-                avgResponseTime: Number(provider.avgResponseTime),
+                avgTotalDuration: Number(provider.avgTotalDuration),
+                avgTimeToFirstToken: Number(provider.avgTimeToFirstToken),
+                avgTokensPerSecond: Number(provider.avgTokensPerSecond),
                 successRate: Number(provider.successRate),
                 modelCount: Number(provider.modelCount),
                 usagePercentage: totalTokens > 0 ? (tokensUsed / totalTokens) * 100 : 0,
@@ -212,8 +224,8 @@ export async function GET(req: NextRequest) {
                     avgSuccessRate: modelUsageData.length > 0
                         ? modelUsageData.reduce((sum, model) => sum + Number(model.successRate), 0) / modelUsageData.length
                         : 0,
-                    avgResponseTime: modelUsageData.length > 0
-                        ? modelUsageData.reduce((sum, model) => sum + Number(model.avgResponseTime), 0) / modelUsageData.length
+                    avgTotalDuration: modelUsageData.length > 0
+                        ? modelUsageData.reduce((sum, model) => sum + Number(model.avgTotalDuration), 0) / modelUsageData.length
                         : 0,
                     timeRange,
                     startDate: startDate.toISOString(),

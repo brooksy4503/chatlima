@@ -45,7 +45,9 @@ interface ModelAnalytics {
   tokensUsed: number;
   cost: number;
   requestCount: number;
-  avgResponseTime: number;
+  avgTotalDuration: number; // Renamed from avgResponseTime
+  avgTimeToFirstToken: number; // NEW
+  avgTokensPerSecond: number; // NEW
   successRate: number;
   lastUsed: string;
   usagePercentage: number;
@@ -57,7 +59,9 @@ interface ProviderAnalytics {
   tokensUsed: number;
   cost: number;
   requestCount: number;
-  avgResponseTime: number;
+  avgTotalDuration: number; // Renamed from avgResponseTime
+  avgTimeToFirstToken: number; // NEW
+  avgTokensPerSecond: number; // NEW
   successRate: number;
   modelCount: number;
   usagePercentage: number;
@@ -115,14 +119,14 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
     if (!modelAnalytics.length) return;
     
     const csvContent = [
-      ["Model", "Provider", "Tokens Used", "Cost", "Requests", "Avg Response Time (s)", "Success Rate (%)", "Last Used"],
+      ["Model", "Provider", "Tokens Used", "Cost", "Requests", "Total Duration (s)", "Success Rate (%)", "Last Used"],
       ...sortedModelAnalytics.map(model => [
         model.name,
         model.provider,
         model.tokensUsed,
         model.cost,
         model.requestCount,
-        model.avgResponseTime,
+        model.avgTotalDuration,
         model.successRate,
         model.lastUsed
       ])
@@ -211,6 +215,8 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
       <TableRow key={index}>
         <TableCell><Skeleton className="h-4 w-32" /></TableCell>
         <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
@@ -351,9 +357,9 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Avg Response</p>
-                    <p className={`font-medium ${getResponseTimeColor(provider.avgResponseTime)}`}>
-                      {typeof provider.avgResponseTime === 'number' ? provider.avgResponseTime.toFixed(1) : '0.0'}s
+                    <p className="text-sm text-muted-foreground">Total Duration</p>
+                    <p className={`font-medium ${getResponseTimeColor(provider.avgTotalDuration)}`}>
+                      {typeof provider.avgTotalDuration === 'number' ? provider.avgTotalDuration.toFixed(1) : '0.0'}s
                     </p>
                   </div>
                   <div>
@@ -380,7 +386,9 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
                 <TableHead>Tokens Used</TableHead>
                 <TableHead>Cost</TableHead>
                 <TableHead>Requests</TableHead>
-                <TableHead>Avg Response</TableHead>
+                <TableHead>Total Duration</TableHead>
+                <TableHead>Time to First Token</TableHead>
+                <TableHead>Tokens Per Second</TableHead>
                 <TableHead>Success Rate</TableHead>
                 <TableHead>Last Used</TableHead>
               </TableRow>
@@ -390,7 +398,7 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
                 renderLoadingRows()
               ) : sortedModelAnalytics.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     {loading ? "Loading models..." : `No models found${providerFilter !== 'all' ? ` for ${providerFilter}` : ''} in the selected time period`}
                   </TableCell>
                 </TableRow>
@@ -430,8 +438,18 @@ export function AdminModelAnalytics({ loading: externalLoading = false }: AdminM
                       </div>
                     </TableCell>
                     <TableCell>
-                      <p className={`font-medium ${getResponseTimeColor(model.avgResponseTime)}`}>
-                        {typeof model.avgResponseTime === 'number' ? model.avgResponseTime.toFixed(1) : '0.0'}s
+                      <p className={`font-medium ${getResponseTimeColor(model.avgTotalDuration)}`}>
+                        {typeof model.avgTotalDuration === 'number' ? model.avgTotalDuration.toFixed(1) : '0.0'}s
+                      </p>
+                    </TableCell>
+                    <TableCell>
+                      <p className={`font-medium ${getResponseTimeColor(model.avgTimeToFirstToken)}`}>
+                        {typeof model.avgTimeToFirstToken === 'number' ? model.avgTimeToFirstToken.toFixed(1) : '0.0'}s
+                      </p>
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-medium">
+                        {typeof model.avgTokensPerSecond === 'number' ? model.avgTokensPerSecond.toFixed(1) : '0.0'}
                       </p>
                     </TableCell>
                     <TableCell>
