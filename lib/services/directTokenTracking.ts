@@ -33,6 +33,8 @@ interface DirectTokenTrackingParams {
     isAnonymous?: boolean;
     shouldDeductCredits?: boolean;
     additionalCost?: number;
+    // For OpenRouter async fetch when the user used their own key
+    apiKeyOverride?: string;
 }
 
 export class DirectTokenTrackingService {
@@ -52,6 +54,7 @@ export class DirectTokenTrackingService {
 
             let actualCost: number | null = null;
             let estimatedCost = 0;
+            const isFreeOpenRouterModel = params.provider === 'openrouter' && params.modelId.endsWith(':free');
 
             // Extract actual cost from OpenRouter response first (fastest method)
             if (params.provider === 'openrouter' && params.openRouterResponse) {
@@ -94,6 +97,11 @@ export class DirectTokenTrackingService {
                 console.warn('Failed to calculate simplified cost, using fallback estimation:', error);
                 // Fallback to very simple calculation
                 estimatedCost = OpenRouterCostExtractor.getEstimatedCost(params.modelId, extractedInputTokens, params.outputTokens);
+            }
+
+            // For free OpenRouter models, ensure actual cost is stored as 0
+            if (actualCost === null && isFreeOpenRouterModel) {
+                actualCost = 0;
             }
 
             // Store the results in token usage metrics table
@@ -147,7 +155,9 @@ export class DirectTokenTrackingService {
 
             // If we don't have actual cost, try to fetch it asynchronously (fire-and-forget)
             if (!actualCost && params.provider === 'openrouter' && params.generationId) {
-                this.fetchActualCostAsync(params.generationId, params.userId, params.chatId, params.messageId).catch(error => {
+                // Try with the same API key context the original request used (if present on response)
+                const apiKeyOverride = params.apiKeyOverride || (params.openRouterResponse as any)?.apiKey || undefined;
+                this.fetchActualCostAsync(params.generationId, params.userId, params.chatId, params.messageId, apiKeyOverride).catch(error => {
                     console.warn(`[DirectTokenTracking] Failed to fetch actual cost asynchronously for generation ${params.generationId}:`, error);
                 });
             }
@@ -224,9 +234,9 @@ export class DirectTokenTrackingService {
     /**
      * Fetch actual cost from OpenRouter asynchronously (fire-and-forget)
      */
-    private static async fetchActualCostAsync(generationId: string, userId: string, chatId: string, messageId: string): Promise<void> {
+    private static async fetchActualCostAsync(generationId: string, userId: string, chatId: string, messageId: string, apiKeyOverride?: string): Promise<void> {
         try {
-            const openRouterData = await OpenRouterCostTracker.fetchActualCost(generationId);
+            const openRouterData = await OpenRouterCostTracker.fetchActualCost(generationId, apiKeyOverride);
             if (openRouterData.actualCost !== null) {
                 // Get existing record to preserve metadata
                 const existingRecord = await db.select()
