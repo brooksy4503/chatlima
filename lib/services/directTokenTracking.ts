@@ -228,16 +228,30 @@ export class DirectTokenTrackingService {
         try {
             const openRouterData = await OpenRouterCostTracker.fetchActualCost(generationId);
             if (openRouterData.actualCost !== null) {
-                // Update the existing record with actual cost
+                // Get existing record to preserve metadata
+                const existingRecord = await db.select()
+                    .from(tokenUsageMetrics)
+                    .where(
+                        and(
+                            eq(tokenUsageMetrics.userId, userId),
+                            eq(tokenUsageMetrics.chatId, chatId),
+                            eq(tokenUsageMetrics.messageId, messageId)
+                        )
+                    )
+                    .limit(1);
+
+                const existingMetadata = existingRecord[0]?.metadata || {};
+
+                // Update the existing record with actual cost, preserving existing metadata
                 await db.update(tokenUsageMetrics)
                     .set({
                         actualCost: openRouterData.actualCost.toString(),
                         updatedAt: new Date(),
                         metadata: {
-                            directProcessed: true,
-                            processedAt: new Date().toISOString(),
-                            generationId: generationId,
-                            actualCostUpdatedAsync: true
+                            ...existingMetadata, // Preserve existing metadata
+                            actualCostUpdatedAsync: true,
+                            asyncUpdateProcessedAt: new Date().toISOString(),
+                            asyncUpdateGenerationId: generationId
                         }
                     })
                     .where(
