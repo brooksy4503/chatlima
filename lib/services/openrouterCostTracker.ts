@@ -13,7 +13,7 @@ export class OpenRouterCostTracker {
     /**
      * Fetch actual cost and native token counts from OpenRouter generation endpoint
      */
-    static async fetchActualCost(generationId: string): Promise<{
+    static async fetchActualCost(generationId: string, apiKeyOverride?: string): Promise<{
         actualCost: number | null;
         nativeInputTokens: number | null;
         nativeOutputTokens: number | null;
@@ -27,7 +27,7 @@ export class OpenRouterCostTracker {
         });
 
         try {
-            const apiKey = process.env.OPENROUTER_API_KEY;
+            const apiKey = apiKeyOverride || process.env.OPENROUTER_API_KEY;
             if (!apiKey) {
                 logDiagnostic('OPENROUTER_COST_FETCH_ERROR', `No OpenRouter API key available`, {
                     trackingId,

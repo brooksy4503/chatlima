@@ -1860,7 +1860,19 @@ export async function POST(req: Request) {
             try {
               const finalProcessingTimeMs = Date.now() - requestStartTime;
 
+              // Opportunistic reconciliation of a few recent rows missing actual_cost (best-effort, short and non-blocking)
+              // Intentionally not awaited to avoid delaying the response
+              import('@/lib/services/costReconciliation').then(async ({ CostReconciliationService }) => {
+                try {
+                  const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
+                  await CostReconciliationService.reconcileRecentMissingActualCosts({ limit: 3, maxAgeHours: 48, apiKeyOverride: openrouterApiKey });
+                } catch (e) {
+                  // Swallow errors silently
+                }
+              });
+
               // Use direct processing instead of background queue for Vercel compatibility
+              const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
               await DirectTokenTrackingService.processTokenUsage({
                 userId,
                 chatId: id,
@@ -1871,6 +1883,7 @@ export async function POST(req: Request) {
                 outputTokens: completionTokens,
                 generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
                 openRouterResponse: typedResponse,
+                apiKeyOverride: openrouterApiKey,
                 // Timing parameters
                 processingTimeMs: finalProcessingTimeMs,
                 timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
