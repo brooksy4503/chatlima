@@ -1311,6 +1311,13 @@ export async function POST(req: Request) {
     },
     async onFinish(event: any) {
       console.log(`[Chat ${id}][onFinish] Stream finished, processing and saving...`);
+
+      // Track whether messages are saved successfully for background cost tracking
+      let messagesSavedSuccessfully = false;
+
+      // Declare finalAssistantMessageId at function scope to ensure it's accessible throughout
+      let finalAssistantMessageId: string = nanoid(); // Default value in case it's not assigned later
+
       console.log(`[Chat ${id}][onFinish] Event data:`, {
         eventKeys: Object.keys(event),
         hasResponse: !!event.response,
@@ -1410,6 +1417,7 @@ export async function POST(req: Request) {
         try {
           await saveMessages({ messages: dbMessages });
           console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
+          messagesSavedSuccessfully = true;
         } catch (dbMessagesError: any) {
           console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
           // Continue to analytics logging even if message saving fails
@@ -1418,7 +1426,7 @@ export async function POST(req: Request) {
         // Step 2: Track detailed token usage metrics (INDEPENDENT of database operations)
         const typedResponse = response as any;
         const provider = selectedModel.split('/')[0];
-        const finalAssistantMessageId = assistantMessageId || response.messages?.[response.messages.length - 1]?.id || nanoid();
+        finalAssistantMessageId = assistantMessageId || response.messages?.[response.messages.length - 1]?.id || nanoid();
 
         try {
           logDiagnostic('TOKEN_TRACKING_START', `Starting detailed token tracking`, {
@@ -1656,6 +1664,8 @@ export async function POST(req: Request) {
           const inputTokens = extractedTokenUsage.inputTokens || extractedTokenUsage.prompt_tokens || 0;
           const outputTokens = extractedTokenUsage.outputTokens || extractedTokenUsage.completion_tokens || 0;
 
+          // Note: Background cost tracking will be queued later with complete credit tracking parameters
+
           // Note: Credit tracking will be handled later with the legacy token tracking variables
         } catch (error: any) {
           logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage (independent)`, {
@@ -1774,40 +1784,46 @@ export async function POST(req: Request) {
             additionalCost = WEB_SEARCH_COST;
           }
 
-          // Queue both cost calculation and credit tracking for background processing
-          // This prevents blocking the response while still capturing all cost and credit data
-          const provider = selectedModel.split('/')[0];
-          const finalAssistantMessageId = nanoid(); // Generate unique message ID
-          BackgroundCostTrackingService.queueCostCalculation({
-            userId,
-            chatId: id,
-            messageId: finalAssistantMessageId,
-            modelId: selectedModel,
-            provider,
-            inputTokens: typedResponse.usage?.prompt_tokens || typedResponse.usage?.input_tokens || 0,
-            outputTokens: completionTokens,
-            generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
-            openRouterResponse: typedResponse,
-            // Credit tracking parameters (will be processed in background)
-            polarCustomerId,
-            completionTokens,
-            isAnonymous,
-            shouldDeductCredits,
-            additionalCost
-          });
-
           const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
           const trackingReason = isAnonymous ? 'Queued (stopped)' : shouldDeductCredits ? 'Queued for Polar' : isFreeModel ? 'Queued (free model)' : 'Queued (daily limit)';
 
-          logDiagnostic('BACKGROUND_TOKEN_TRACKING_QUEUED', `Queued background token usage tracking`, {
-            requestId,
-            userId,
-            completionTokens,
-            actualCreditsReported,
-            trackingReason,
-            shouldDeductCredits,
-            additionalCost
-          });
+          // Update background cost tracking with credit parameters (if messages were saved successfully)
+          if (messagesSavedSuccessfully) {
+            try {
+              // Add credit tracking parameters to the already queued job
+              BackgroundCostTrackingService.queueCostCalculation({
+                userId,
+                chatId: id,
+                messageId: finalAssistantMessageId,
+                modelId: selectedModel,
+                provider: selectedModel.split('/')[0],
+                inputTokens: typedResponse.usage?.prompt_tokens || typedResponse.usage?.input_tokens || 0,
+                outputTokens: completionTokens,
+                generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
+                openRouterResponse: typedResponse,
+                // Credit tracking parameters
+                polarCustomerId,
+                completionTokens,
+                isAnonymous,
+                shouldDeductCredits,
+                additionalCost
+              });
+
+              logDiagnostic('BACKGROUND_TOKEN_TRACKING_QUEUED', `Updated background token usage tracking with credit parameters`, {
+                requestId,
+                userId,
+                completionTokens,
+                actualCreditsReported,
+                trackingReason,
+                shouldDeductCredits,
+                additionalCost
+              });
+            } catch (creditTrackingError: any) {
+              console.error(`[Chat ${id}][onFinish] Failed to update background cost tracking with credit parameters:`, creditTrackingError);
+            }
+          } else {
+            console.log(`[Chat ${id}][onFinish] Skipping background cost tracking due to message save failure`);
+          }
 
           console.log(`${trackingReason} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
         } catch (error: any) {

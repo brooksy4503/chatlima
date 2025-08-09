@@ -225,7 +225,7 @@ export class BackgroundCostTrackingService {
                     totalTokens: job.inputTokens + job.outputTokens,
                     estimatedCost: '0',
                     currency: 'USD',
-                    status: 'error',
+                    status: 'failed',
                     errorMessage: error instanceof Error ? error.message : String(error),
                     metadata: {
                         backgroundProcessed: true,

@@ -21,7 +21,7 @@ export class MessageLimitCache {
      * Get message limit status with caching
      */
     async checkMessageLimit(
-        userId: string, 
+        userId: string,
         isAnonymous: boolean = false,
         creditCache?: any
     ): Promise<{
@@ -33,7 +33,7 @@ export class MessageLimitCache {
     }> {
         const cacheKey = `${userId}-${isAnonymous}`;
         const now = Date.now();
-        
+
         // Check cache first
         const cached = this.cache.get(cacheKey);
         if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
@@ -49,14 +49,17 @@ export class MessageLimitCache {
         try {
             // 1. Check Polar credits (for authenticated users only)
             if (!isAnonymous) {
-                const credits = creditCache 
+                const credits = creditCache
                     ? await creditCache.getRemainingCreditsByExternalId(userId)
-                    : await require('@/lib/polar').getRemainingCreditsByExternalId(userId);
-                    
+                    : await (await import('@/lib/polar')).getRemainingCreditsByExternalId(userId);
+
                 if (typeof credits === 'number') {
                     const result = this.handleCreditsResult(credits);
-                    this.cacheResult(cacheKey, result, now);
-                    return result;
+                    if (result !== null) {
+                        this.cacheResult(cacheKey, result, now);
+                        return result;
+                    }
+                    // If result is null (credits === 0), fall through to daily message limit
                 }
             }
 
@@ -82,7 +85,7 @@ export class MessageLimitCache {
                 usedCredits: true
             };
         }
-        
+
         if (credits > 0) {
             return {
                 hasReachedLimit: false,
@@ -92,7 +95,7 @@ export class MessageLimitCache {
                 usedCredits: true
             };
         }
-        
+
         // credits === 0, will fall through to daily message limit
         return null;
     }
@@ -105,7 +108,7 @@ export class MessageLimitCache {
                 where: eq(users.id, userId),
                 columns: { metadata: true } // Only select what we need
             }),
-            
+
             // Optimized message count query - use a more efficient approach
             this.getOptimizedMessageCount(userId)
         ]);
@@ -148,7 +151,7 @@ export class MessageLimitCache {
 
             // Count user messages in today's chats
             const chatIds = todaysChats.map(chat => chat.id);
-            
+
             // Use a more efficient IN query instead of JOIN
             const messageCount = await db.select({ count: count() })
                 .from(messages)
@@ -166,7 +169,7 @@ export class MessageLimitCache {
             return messageCount;
         } catch (error) {
             console.warn('Optimized message count failed, falling back to original query:', error);
-            
+
             // Fallback to original query if optimized version fails
             const messageCount = await db.select({ count: count() })
                 .from(messages)
@@ -186,8 +189,8 @@ export class MessageLimitCache {
     }
 
     private cacheResult(
-        cacheKey: string, 
-        result: any, 
+        cacheKey: string,
+        result: any,
         timestamp: number
     ) {
         this.cache.set(cacheKey, {
