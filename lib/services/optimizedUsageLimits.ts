@@ -52,8 +52,8 @@ export class OptimizedUsageLimitsService {
             const usageResult = await db.execute(sql`
         WITH user_limits AS (
           SELECT 
-            COALESCE(daily_token_limit, 10000) as daily_token_limit,
-            COALESCE(monthly_token_limit, 100000) as monthly_token_limit,
+            COALESCE(daily_token_limit, 50000) as daily_token_limit,
+            COALESCE(monthly_token_limit, 1000000) as monthly_token_limit,
             COALESCE(daily_cost_limit, 10.0) as daily_cost_limit,
             COALESCE(monthly_cost_limit, 100.0) as monthly_cost_limit
           FROM ${usageLimits}
@@ -82,8 +82,8 @@ export class OptimizedUsageLimitsService {
         CROSS JOIN usage_stats us
         UNION ALL
         SELECT 
-          10000 as daily_token_limit,
-          100000 as monthly_token_limit,
+          50000 as daily_token_limit,
+          1000000 as monthly_token_limit,
           10.0 as daily_cost_limit,
           100.0 as monthly_cost_limit,
           us.daily_tokens,
@@ -118,8 +118,8 @@ export class OptimizedUsageLimitsService {
                     dailyCost: 0,
                     monthlyCost: 0,
                     limits: {
-                        dailyTokenLimit: 10000,
-                        monthlyTokenLimit: 100000,
+                        dailyTokenLimit: 50000,
+                        monthlyTokenLimit: 1000000,
                         dailyCostLimit: 10.0,
                         monthlyCostLimit: 100.0,
                     }
@@ -153,10 +153,10 @@ export class OptimizedUsageLimitsService {
                 dailyCost: 0,
                 monthlyCost: 0,
                 limits: {
-                    dailyTokenLimit: 1000, // Conservative defaults
-                    monthlyTokenLimit: 10000,
-                    dailyCostLimit: 1.0,
-                    monthlyCostLimit: 10.0,
+                    dailyTokenLimit: 50000, // Use proper defaults even on error
+                    monthlyTokenLimit: 1000000,
+                    dailyCostLimit: 10.0,
+                    monthlyCostLimit: 100.0,
                 },
                 isOverLimit: false,
                 exceededLimits: []
