@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useModels } from "@/hooks/use-models";
+import { useAuth } from "@/lib/context/auth-context";
 import { ModelInfo } from "@/lib/types/models";
 import { MODEL_MIGRATIONS } from "@/lib/models/client-constants";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -50,6 +51,7 @@ const FALLBACK_MODELS = [
 export function ModelProvider({ children }: { children: ReactNode }) {
   // Dynamic models from the API
   const { models, isLoading, isValidating, error, refresh, forceRefresh } = useModels();
+  const { isAnonymous } = useAuth();
   
   // Favorites functionality
   const { 
@@ -179,7 +181,21 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   };
   
   // Enhance models with favorite status
-  const modelsWithFavorites = models.map(model => ({
+  const visibleModels = isAnonymous
+    ? models.filter(m => m.id.startsWith('openrouter/') && m.id.endsWith(':free'))
+    : models;
+
+  // Ensure selected model is valid for anonymous users
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (!isAnonymous) return;
+    if (!selectedModel.startsWith('openrouter/') || !selectedModel.endsWith(':free')) {
+      const fallback = visibleModels[0]?.id || FALLBACK_MODELS.find(id => id.endsWith(':free')) || selectedModel;
+      setSelectedModelState(fallback);
+    }
+  }, [isAnonymous, isInitialized, selectedModel, visibleModels]);
+
+  const modelsWithFavorites = visibleModels.map(model => ({
     ...model,
     isFavorite: favorites.includes(model.id),
   }));

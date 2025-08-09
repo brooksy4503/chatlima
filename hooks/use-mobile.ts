@@ -4,8 +4,11 @@ const MOBILE_BREAKPOINT = 768;
 
 export const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+
     const checkDevice = () => {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
@@ -18,13 +21,18 @@ export const useIsMobile = () => {
     };
   }, []);
 
-  return isMobile;
+  // Return false during SSR and initial render to prevent hydration mismatch
+  // Only return the actual mobile state after mounting
+  return isMounted ? isMobile : false;
 };
 
 export const useIsTouchDevice = () => {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+
     const checkTouchDevice = () => {
       // Check if device supports touch and doesn't support hover (typical mobile/tablet)
       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -48,5 +56,6 @@ export const useIsTouchDevice = () => {
     };
   }, []);
 
-  return isTouchDevice;
+  // Return false during SSR and initial render to prevent hydration mismatch
+  return isMounted ? isTouchDevice : false;
 };

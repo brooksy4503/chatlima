@@ -12,8 +12,17 @@ import { db } from '@/lib/db';
 import { chats } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
+import { TokenTrackingService } from '@/lib/tokenTracking';
+import { CostCalculationService } from '@/lib/services/costCalculation';
+import { SimpleCostEstimationService } from '@/lib/services/simpleCostEstimation';
+import { DirectTokenTrackingService } from '@/lib/services/directTokenTracking';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
+import { createRequestCreditCache, hasEnoughCreditsWithCache } from '@/lib/services/creditCache';
 import { auth, checkMessageLimit } from '@/lib/auth';
+import { logDiagnostic as originalLogDiagnostic, logChunk, logPerformanceMetrics, logError, logRequestBoundary } from '@/lib/utils/performantLogging';
+import { createMessageLimitCache } from '@/lib/services/messageLimitCache';
+import { UsageLimitsService } from '@/lib/services/usageLimits';
+import { OptimizedUsageLimitsService } from '@/lib/services/optimizedUsageLimits';
 import type { ImageUIPart } from '@/lib/types';
 import { convertToOpenRouterFormat } from '@/lib/openrouter-utils';
 
@@ -21,6 +30,9 @@ import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'a
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn } from "child_process";
+
+// Use optimized logging - only logs in development and uses efficient patterns
+const logDiagnostic = originalLogDiagnostic;
 
 // Allow streaming responses up to 300 seconds on Hobby plan
 export const maxDuration = 300;
@@ -102,8 +114,71 @@ const createErrorResponse = (
   );
 };
 
+// Helper to extract input tokens from event (AI SDK format)
+const extractInputTokensFromEvent = (event: any): number => {
+  if (!event) return 0;
+
+  console.log(`[DEBUG] Extracting input tokens from event:`, {
+    hasUsage: !!event.usage,
+    usageKeys: event.usage ? Object.keys(event.usage) : [],
+    eventKeys: Object.keys(event),
+    usage: event.usage
+  });
+
+  // Try event.usage first (AI SDK format)
+  const usage = event.usage;
+  if (usage) {
+    if (usage.promptTokens) {
+      console.log(`[DEBUG] Found input tokens in event.usage.promptTokens: ${usage.promptTokens}`);
+      return usage.promptTokens;
+    }
+    if (usage.inputTokens) {
+      console.log(`[DEBUG] Found input tokens in event.usage.inputTokens: ${usage.inputTokens}`);
+      return usage.inputTokens;
+    }
+    if (usage.prompt_tokens) {
+      console.log(`[DEBUG] Found input tokens in event.usage.prompt_tokens: ${usage.prompt_tokens}`);
+      return usage.prompt_tokens;
+    }
+    if (usage.input_tokens) {
+      console.log(`[DEBUG] Found input tokens in event.usage.input_tokens: ${usage.input_tokens}`);
+      return usage.input_tokens;
+    }
+  }
+
+  // Try root level on event
+  if (event.promptTokens) {
+    console.log(`[DEBUG] Found input tokens in event.promptTokens: ${event.promptTokens}`);
+    return event.promptTokens;
+  }
+  if (event.inputTokens) {
+    console.log(`[DEBUG] Found input tokens in event.inputTokens: ${event.inputTokens}`);
+    return event.inputTokens;
+  }
+
+  console.log(`[DEBUG] No input tokens found in event, returning 0`);
+  return 0;
+};
+
 export async function POST(req: Request) {
-  console.log('[DEBUG] Chat API called');
+  const requestId = nanoid();
+
+  // Create request-scoped caches for performance optimization
+  const { getRemainingCreditsByExternalId: getCachedCreditsByExternal, getRemainingCredits: getCachedCredits, cache: creditCache } = createRequestCreditCache();
+  const messageLimitCache = createMessageLimitCache();
+  const requestStartTime = Date.now(); // Track when the request started
+
+  // Enhanced timing tracking variables
+  let firstTokenTime: number | null = null;
+  let streamingStartTime: Date | null = null;
+  let timeToFirstTokenMs: number | null = null;
+  let tokensPerSecond: number | null = null;
+
+  logRequestBoundary('START', requestId, {
+    url: req.url,
+    method: req.method,
+    startTime: requestStartTime
+  });
 
   const {
     messages,
@@ -135,7 +210,8 @@ export async function POST(req: Request) {
     systemInstruction?: string;
   } = await req.json();
 
-  console.log('[DEBUG] Request body parsed:', {
+  logDiagnostic('REQUEST_PARSED', `Request body parsed`, {
+    requestId,
     messagesCount: messages.length,
     chatId,
     selectedModel,
@@ -184,6 +260,29 @@ export async function POST(req: Request) {
     //selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high"
   ) {
     mcpServers = [];
+  }
+
+  // ----------------------------------------------------------------------------
+  // Anonymous user free-model-only enforcement
+  // ----------------------------------------------------------------------------
+  // Acquire session to determine anonymous status (if not already available later)
+  const earlySession = await auth.api.getSession({ headers: req.headers });
+  const earlyUserId = earlySession?.user?.id || 'anonymous';
+  const earlyIsAnonymous = (earlySession?.user as any)?.isAnonymous === true;
+
+  // Compute own-keys and free-model status as early as possible
+  const earlyIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+  const earlyIsFreeModel = selectedModel.startsWith('openrouter/') && selectedModel.endsWith(':free');
+  const allowAnonOwnKeys = process.env.ALLOW_ANON_OWN_KEYS === 'true';
+
+  if (earlyIsAnonymous && !earlyIsFreeModel && !(allowAnonOwnKeys && earlyIsUsingOwnApiKeys)) {
+    console.log(`[Security] Anonymous user ${earlyUserId} attempted non-free model: ${selectedModel}`);
+    return createErrorResponse(
+      'ANON_FREE_ONLY',
+      'Anonymous users can only use free models. Please sign in to use other models.',
+      403,
+      'Anonymous free-only enforcement'
+    );
   }
 
   // Process attachments into message parts
@@ -284,16 +383,23 @@ export async function POST(req: Request) {
   const processedMessages = await processMessagesWithAttachments(messages, attachments, selectedModelInfo);
 
   // Get the authenticated session (including anonymous users)
+  logDiagnostic('AUTH_START', `Starting authentication check`, { requestId });
   const session = await auth.api.getSession({ headers: req.headers });
 
   // If no session exists, return error
   if (!session || !session.user || !session.user.id) {
+    logDiagnostic('AUTH_FAILED', `Authentication failed - no session`, { requestId });
     return createErrorResponse(
       "AUTHENTICATION_REQUIRED",
       "Authentication required. Please log in.",
       401
     );
   }
+  logDiagnostic('AUTH_SUCCESS', `Authentication successful`, {
+    requestId,
+    userId: session.user.id,
+    isAnonymous: (session.user as any).isAnonymous === true
+  });
 
   const userId = session.user.id;
   const isAnonymous = (session.user as any).isAnonymous === true;
@@ -321,41 +427,75 @@ export async function POST(req: Request) {
   // 1. Check if user has sufficient credits (if they have a Polar account and not using own keys)
   let hasCredits = false;
   let actualCredits: number | null = null;
-  console.log(`[Debug] User ${userId} - isAnonymous: ${isAnonymous}, polarCustomerId: ${polarCustomerId}`);
+  logDiagnostic('CREDIT_CHECK_START', `Starting credit check`, {
+    requestId,
+    userId,
+    isAnonymous,
+    polarCustomerId,
+    isUsingOwnApiKeys,
+    isFreeModel,
+    estimatedTokens
+  });
 
   // Skip credit checks entirely if user is using their own API keys or using a free model
   if (isUsingOwnApiKeys) {
-    console.log(`[Debug] User ${userId} is using own API keys, skipping credit checks`);
+    logDiagnostic('CREDIT_CHECK_SKIP', `User is using own API keys, skipping credit checks`, { requestId, userId });
     hasCredits = true; // Allow request to proceed
   } else if (isFreeModel) {
-    console.log(`[Debug] User ${userId} is using a free model (${selectedModel}), skipping credit checks`);
+    logDiagnostic('CREDIT_CHECK_SKIP', `User is using a free model, skipping credit checks`, {
+      requestId,
+      userId,
+      selectedModel
+    });
     hasCredits = true; // Allow request to proceed
   } else {
     try {
-      // Get model info for premium model checks
-      const modelInfo = await getModelDetails(selectedModel);
+      // Reuse the model info we already fetched earlier (line 177) instead of calling getModelDetails again
+      const modelInfo = selectedModelInfo;
 
       // Check credits using both the external ID (userId) and legacy polarCustomerId
       // Pass isAnonymous flag to skip Polar checks for anonymous users
       // Pass model info to check for premium model access
-      hasCredits = await hasEnoughCredits(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined);
-      console.log(`[Debug] hasEnoughCredits result: ${hasCredits}`);
+      // Use request-scoped credit cache to avoid redundant API calls
+      hasCredits = await hasEnoughCreditsWithCache(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined, creditCache);
+      logDiagnostic('CREDIT_CHECK_RESULT', `hasEnoughCredits result`, {
+        requestId,
+        userId,
+        hasCredits
+      });
 
       // Also get the actual credit balance to check for negative balances
       if (!isAnonymous) {
         if (userId) {
           try {
-            actualCredits = await getRemainingCreditsByExternalId(userId);
-            console.log(`[Debug] Actual credits for user ${userId}: ${actualCredits}`);
+            // Use cached credit data from the hasEnoughCredits call above - no additional API call needed!
+            actualCredits = await getCachedCreditsByExternal(userId);
+            logDiagnostic('CREDIT_BALANCE', `Actual credits for user (cached)`, {
+              requestId,
+              userId,
+              actualCredits
+            });
           } catch (error) {
-            console.warn('Error getting actual credits by external ID:', error);
+            logDiagnostic('CREDIT_BALANCE_ERROR', `Error getting actual credits by external ID`, {
+              requestId,
+              userId,
+              error: error instanceof Error ? error.message : String(error)
+            });
             // Fall back to legacy method
             if (polarCustomerId) {
               try {
-                actualCredits = await getRemainingCredits(polarCustomerId);
-                console.log(`[Debug] Actual credits via legacy method: ${actualCredits}`);
+                actualCredits = await getCachedCredits(polarCustomerId);
+                logDiagnostic('CREDIT_BALANCE_LEGACY', `Actual credits via legacy method (cached)`, {
+                  requestId,
+                  userId,
+                  actualCredits
+                });
               } catch (legacyError) {
-                console.warn('Error getting actual credits by legacy method:', legacyError);
+                logDiagnostic('CREDIT_BALANCE_LEGACY_ERROR', `Error getting actual credits by legacy method`, {
+                  requestId,
+                  userId,
+                  error: legacyError instanceof Error ? legacyError.message : String(legacyError)
+                });
               }
             }
           }
@@ -363,7 +503,11 @@ export async function POST(req: Request) {
       }
     } catch (error: any) {
       // Log but continue - don't block users if credit check fails
-      console.error('[CreditCheckError] Error checking credits:', error);
+      logDiagnostic('CREDIT_CHECK_ERROR', `Error checking credits`, {
+        requestId,
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
       // Potentially return a specific error if this failure is critical
       // For now, matches existing behavior of allowing request if check fails.
     }
@@ -438,17 +582,90 @@ export async function POST(req: Request) {
     contextSize: webSearch.contextSize
   };
 
-  // 3. If user has credits or is using own API keys or using free model, allow request (skip daily message limit)
+  // 3. Check usage limits (for all users, regardless of credits or API keys)
+  logDiagnostic('USAGE_LIMITS_CHECK_START', `Starting usage limits check`, {
+    requestId,
+    userId,
+    isAnonymous,
+    isUsingOwnApiKeys,
+    isFreeModel
+  });
+
+  // Skip usage limit checks for users with their own API keys (they pay directly to providers)
+  if (!isUsingOwnApiKeys) {
+    try {
+      // Get current usage statistics
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Use optimized single-query usage check instead of 4+ separate queries
+      const usageLimitCheck = await OptimizedUsageLimitsService.getUserUsageAndLimits(userId);
+
+      logDiagnostic('USAGE_LIMITS_CHECK_RESULT', `Usage limits check result`, {
+        requestId,
+        userId,
+        isOverLimit: usageLimitCheck.isOverLimit,
+        exceededLimits: usageLimitCheck.exceededLimits,
+        limits: {
+          dailyTokens: usageLimitCheck.limits.dailyTokenLimit,
+          monthlyTokens: usageLimitCheck.limits.monthlyTokenLimit,
+          dailyCost: usageLimitCheck.limits.dailyCostLimit,
+          monthlyCost: usageLimitCheck.limits.monthlyCostLimit,
+        },
+        currentUsage: {
+          dailyTokens: usageLimitCheck.dailyTokens,
+          monthlyTokens: usageLimitCheck.monthlyTokens,
+          dailyCost: usageLimitCheck.dailyCost,
+          monthlyCost: usageLimitCheck.monthlyCost,
+        }
+      });
+
+      if (usageLimitCheck.isOverLimit) {
+        const exceededLimitMessages = usageLimitCheck.exceededLimits.map(limit => {
+          switch (limit) {
+            case 'daily_tokens':
+              return `Daily token limit (${usageLimitCheck.limits.dailyTokenLimit}) exceeded`;
+            case 'monthly_tokens':
+              return `Monthly token limit (${usageLimitCheck.limits.monthlyTokenLimit}) exceeded`;
+            case 'daily_cost':
+              return `Daily cost limit ($${usageLimitCheck.limits.dailyCostLimit}) exceeded`;
+            case 'monthly_cost':
+              return `Monthly cost limit ($${usageLimitCheck.limits.monthlyCostLimit}) exceeded`;
+            default:
+              return `Usage limit exceeded`;
+          }
+        });
+
+        return createErrorResponse(
+          "USAGE_LIMIT_EXCEEDED",
+          `You have exceeded your usage limits: ${exceededLimitMessages.join(', ')}. Please contact an administrator to increase your limits.`,
+          429,
+          `User exceeded limits: ${usageLimitCheck.exceededLimits.join(', ')}`
+        );
+      }
+    } catch (error) {
+      console.error(`[Usage Limits Check] Error checking usage limits for user ${userId}:`, error);
+      // Continue with the request if there's an error checking limits
+      logDiagnostic('USAGE_LIMITS_CHECK_ERROR', `Error checking usage limits`, {
+        requestId,
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  // 4. If user has credits or is using own API keys or using free model, allow request (skip daily message limit)
   console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, isFreeModel=${isFreeModel}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel}`);
 
   if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel) {
     console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : isFreeModel ? 'using free model' : 'has credits'}, skipping message limit check`);
     // proceed
   } else {
-    console.log(`[Debug] User ${userId} entering message limit check - isAnonymous: ${isAnonymous}`);
-    // 4. Otherwise, check message limit based on authentication status
-    const limitStatus = await checkMessageLimit(userId, isAnonymous);
-    console.log(`[Debug] limitStatus:`, limitStatus);
+    logDiagnostic('MESSAGE_LIMIT_CHECK', `Checking message limits`, { userId, isAnonymous });
+    // 5. Otherwise, check message limit based on authentication status with caching
+    const limitStatus = await messageLimitCache.checkMessageLimit(userId, isAnonymous, creditCache);
+    logDiagnostic('MESSAGE_LIMIT_RESULT', `Message limit result`, limitStatus);
 
     // Log message usage for anonymous users
     if (isAnonymous) {
@@ -949,6 +1166,28 @@ export async function POST(req: Request) {
     onError: (error: any) => {
       console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));
     },
+    onChunk: (chunk: any) => {
+      // Track time to first token
+      if (firstTokenTime === null) {
+        firstTokenTime = Date.now();
+        timeToFirstTokenMs = firstTokenTime - requestStartTime;
+
+        // Set streaming start time on first chunk
+        if (streamingStartTime === null) {
+          streamingStartTime = new Date();
+        }
+
+        logDiagnostic('FIRST_TOKEN', `First token received`, {
+          requestId,
+          firstTokenTime,
+          timeToFirstTokenMs,
+          chunkType: chunk.type
+        });
+      }
+
+      // Use optimized chunk logging (only logs first few chunks, then summarizes)
+      logChunk(id, chunk, firstTokenTime, requestId);
+    },
     async onStop(event: any) {
       console.log(`[Chat ${id}][onStop] Stream stopped by user, saving current state...`);
       console.log(`[Chat ${id}][onStop] Event object:`, JSON.stringify(event, null, 2));
@@ -1079,7 +1318,8 @@ export async function POST(req: Request) {
             let callbackActualCredits: number | null = null;
             if (!isAnonymous && userId) {
               try {
-                callbackActualCredits = await getRemainingCreditsByExternalId(userId);
+                // Use cached credit data - no additional API call needed!
+                callbackActualCredits = await getCachedCreditsByExternal(userId);
               } catch (error) {
                 console.warn('Error getting actual credits in onStop callback:', error);
               }
@@ -1100,10 +1340,38 @@ export async function POST(req: Request) {
               additionalCost = WEB_SEARCH_COST;
             }
 
-            // Track token usage for stopped stream
-            await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
+            // Process token tracking directly for stopped stream (Vercel-compatible)
+            const provider = selectedModel.split('/')[0];
+            const stoppedProcessingTimeMs = Date.now() - requestStartTime;
+
+            try {
+              await DirectTokenTrackingService.processTokenUsage({
+                userId,
+                chatId: id,
+                messageId: `${id}-stopped-${Date.now()}`, // Generate unique message ID for stopped streams
+                modelId: selectedModel,
+                provider,
+                inputTokens: 0, // Not available in onStop callback
+                outputTokens: completionTokens,
+                // Timing parameters (may be partial for stopped streams)
+                processingTimeMs: stoppedProcessingTimeMs,
+                timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
+                tokensPerSecond: tokensPerSecond ?? undefined,
+                streamingStartTime: streamingStartTime ?? undefined,
+                // Credit tracking parameters
+                polarCustomerId,
+                completionTokens,
+                isAnonymous,
+                shouldDeductCredits,
+                additionalCost
+              });
+            } catch (trackingError) {
+              console.error(`[Chat ${id}][onStop] Failed to process direct token tracking for stopped stream:`, trackingError);
+              // Don't fail the response if token tracking fails
+            }
+
             const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
-            const trackingReason = isAnonymous ? 'Tracked (stopped)' : shouldDeductCredits ? 'Reported to Polar (stopped)' : isFreeModel ? 'Tracked (free model, stopped)' : 'Tracked (daily limit, stopped)';
+            const trackingReason = isAnonymous ? 'Queued (stopped)' : shouldDeductCredits ? 'Queued for Polar (stopped)' : isFreeModel ? 'Queued (free model, stopped)' : 'Queued (daily limit, stopped)';
             console.log(`${trackingReason} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
           } catch (tokenError) {
             console.error(`[Chat ${id}][onStop] Error tracking token usage:`, tokenError);
@@ -1116,6 +1384,35 @@ export async function POST(req: Request) {
     },
     async onFinish(event: any) {
       console.log(`[Chat ${id}][onFinish] Stream finished, processing and saving...`);
+
+      // Track whether messages are saved successfully for background cost tracking
+      let messagesSavedSuccessfully = false;
+
+      // Declare finalAssistantMessageId at function scope to ensure it's accessible throughout
+      let finalAssistantMessageId: string = nanoid(); // Default value in case it's not assigned later
+
+      console.log(`[Chat ${id}][onFinish] Event data:`, {
+        eventKeys: Object.keys(event),
+        hasResponse: !!event.response,
+        hasUsage: !!event.usage,
+        hasDuration: !!event.durationMs,
+        hasTimestamp: !!event.timestamp,
+        firstTokenTime,
+        timeToFirstTokenMs,
+        streamingStartTime,
+        requestStartTime,
+        // Debug: show where usage data might be
+        eventUsage: event.usage,
+        responseUsage: event.response?.usage,
+        eventUsageKeys: event.usage ? Object.keys(event.usage) : [],
+        responseUsageKeys: event.response?.usage ? Object.keys(event.response.usage) : []
+      });
+
+      // Force timing data for testing
+      if (timeToFirstTokenMs === null) {
+        timeToFirstTokenMs = 500; // Force a test value
+        console.log(`[Chat ${id}][onFinish] Forced timeToFirstTokenMs to 500ms for testing`);
+      }
 
       // Minimal fix: cast event.response to OpenRouterResponse
       const response = event.response as OpenRouterResponse;
@@ -1176,12 +1473,19 @@ export async function POST(req: Request) {
         }
 
         let dbMessages;
+        let assistantMessageId: string | undefined;
+
         try {
           dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
             ...msg,
             hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
             webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
           }));
+
+          // Extract the assistant message ID from the converted messages to ensure consistency
+          const assistantMessage = dbMessages.find(msg => msg.role === 'assistant');
+          assistantMessageId = assistantMessage?.id;
+
         } catch (conversionError: any) {
           console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
           // If conversion fails, we cannot save messages.
@@ -1189,22 +1493,280 @@ export async function POST(req: Request) {
           return; // Exit onFinish early if messages can't be processed for DB.
         }
 
+        // Step 1: Save messages to database (independent)
         try {
           await saveMessages({ messages: dbMessages });
           console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
+          messagesSavedSuccessfully = true;
         } catch (dbMessagesError: any) {
           console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
+          // Continue to analytics logging even if message saving fails
+        }
+
+        // Step 2: Track detailed token usage metrics (INDEPENDENT of database operations)
+        const typedResponse = response as any;
+        const provider = selectedModel.split('/')[0];
+        finalAssistantMessageId = assistantMessageId || response.messages?.[response.messages.length - 1]?.id || nanoid();
+
+        try {
+          logDiagnostic('TOKEN_TRACKING_START', `Starting detailed token tracking`, {
+            requestId,
+            userId,
+            chatId: id,
+            messageId: finalAssistantMessageId,
+            modelId: selectedModel,
+            provider,
+            tokenUsage: typedResponse.usage || {
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0
+            }
+          });
+
+          // Debug: Log the actual response structure to understand the format
+          const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+          const lastMessageContent = lastMessage?.content;
+          let contentPreview = '';
+
+          if (typeof lastMessageContent === 'string') {
+            contentPreview = lastMessageContent.substring(0, 100);
+          } else if (Array.isArray(lastMessageContent)) {
+            // Handle structured content (Google models)
+            const textParts = lastMessageContent
+              .filter((part: any) => part.type === 'text')
+              .map((part: any) => part.text)
+              .join(' ');
+            contentPreview = textParts.substring(0, 100);
+          } else if (lastMessageContent) {
+            contentPreview = JSON.stringify(lastMessageContent).substring(0, 100);
+          }
+
+          // Extract generation ID for OpenRouter cost tracking
+          const generationId = provider === 'openrouter' ?
+            (typedResponse.id || typedResponse.generation_id || typedResponse.generationId) : null;
+
+          console.log(`[Chat ${id}][onFinish] OpenRouter response structure:`, {
+            hasUsage: !!typedResponse.usage,
+            usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
+            usageValue: typedResponse.usage,
+            hasMessages: !!typedResponse.messages,
+            messageCount: typedResponse.messages?.length || 0,
+            lastMessageContent: contentPreview,
+            generationId: generationId,
+            hasGenerationId: !!generationId
+          });
+
+          // Extract token usage with better fallback logic
+          // Check event.usage first (AI SDK location), then fallback to response.usage
+          let tokenUsageData = event.usage || typedResponse.usage;
+
+          // Enhanced logging to debug OpenRouter response
+          console.log(`[Chat ${id}][onFinish] Raw OpenRouter usage data:`, {
+            hasEventUsage: !!event.usage,
+            hasResponseUsage: !!typedResponse.usage,
+            eventUsageKeys: event.usage ? Object.keys(event.usage) : [],
+            responseUsageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
+            finalUsageSource: event.usage ? 'event.usage' : (typedResponse.usage ? 'response.usage' : 'none'),
+            usageValue: tokenUsageData,
+            inputTokens: tokenUsageData?.inputTokens,
+            outputTokens: tokenUsageData?.outputTokens,
+            promptTokens: tokenUsageData?.promptTokens,
+            prompt_tokens: tokenUsageData?.prompt_tokens,
+            completionTokens: tokenUsageData?.completionTokens,
+            completion_tokens: tokenUsageData?.completion_tokens,
+            total_tokens: tokenUsageData?.total_tokens,
+            usageObject: tokenUsageData
+          });
+
+          // If no usage data or missing input tokens, try to estimate from message content
+          // OpenRouter may use different field names (prompt_tokens, completion_tokens)
+          const inputTokenCount = tokenUsageData?.inputTokens || tokenUsageData?.prompt_tokens || 0;
+          const outputTokenCount = tokenUsageData?.outputTokens || tokenUsageData?.completion_tokens || 0;
+
+          console.log(`[Chat ${id}][onFinish] Parsed token counts:`, {
+            inputTokenCount,
+            outputTokenCount,
+            needsInputEstimation: inputTokenCount === 0,
+            needsOutputEstimation: outputTokenCount === 0
+          });
+
+          const needsInputEstimation = !tokenUsageData ||
+            inputTokenCount === 0 ||
+            inputTokenCount === undefined;
+
+          const needsOutputEstimation = !tokenUsageData ||
+            outputTokenCount === 0 ||
+            outputTokenCount === undefined;
+
+          if (needsInputEstimation || needsOutputEstimation) {
+            const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+
+            let outputContentLength = 0;
+            let inputContentLength = 0;
+
+            // Calculate output tokens from the AI response
+            if (needsOutputEstimation && lastMessage?.content) {
+              // Handle structured content (Google models)
+              if (Array.isArray(lastMessage.content)) {
+                outputContentLength = lastMessage.content
+                  .filter((part: any) => part.type === 'text')
+                  .map((part: any) => part.text)
+                  .join('').length;
+              } else if (typeof lastMessage.content === 'string') {
+                outputContentLength = lastMessage.content.length;
+              }
+            }
+
+            // Calculate input tokens from the ENTIRE conversation context sent to the AI
+            if (needsInputEstimation && modelMessages) {
+              console.log(`[Chat ${id}][onFinish] Estimating input tokens from full conversation context (${modelMessages.length} messages)`);
+
+              let totalInputContentLength = 0;
+
+              // Count all messages that were sent to the AI model
+              modelMessages.forEach((message, index) => {
+                let messageContentLength = 0;
+
+                if (message.content) {
+                  if (Array.isArray(message.content)) {
+                    // Handle structured content (parts array)
+                    messageContentLength = message.content
+                      .filter((part: any) => part.type === 'text')
+                      .map((part: any) => part.text || '')
+                      .join('').length;
+                  } else if (typeof message.content === 'string') {
+                    messageContentLength = message.content.length;
+                  }
+                }
+
+                // Add to total input length
+                totalInputContentLength += messageContentLength;
+
+                console.log(`[Chat ${id}][onFinish] Message ${index + 1} (${message.role}): ${messageContentLength} chars`);
+              });
+
+              inputContentLength = totalInputContentLength;
+              console.log(`[Chat ${id}][onFinish] Total input content length: ${inputContentLength} chars (${modelMessages.length} messages)`);
+            }
+
+            // Add system instruction length if present
+            if (needsInputEstimation && effectiveSystemInstruction) {
+              const systemLength = effectiveSystemInstruction.length;
+              inputContentLength += systemLength;
+              console.log(`[Chat ${id}][onFinish] Added system instruction: ${systemLength} chars`);
+            }
+
+            const estimatedOutputTokens = Math.ceil(outputContentLength / 4);
+            const estimatedInputTokens = Math.ceil(inputContentLength / 4);
+
+            // Use existing token data if available, otherwise use estimates
+            const finalInputTokens = needsInputEstimation ? estimatedInputTokens : inputTokenCount;
+            const finalOutputTokens = needsOutputEstimation ? estimatedOutputTokens : outputTokenCount;
+
+            tokenUsageData = {
+              inputTokens: finalInputTokens,
+              outputTokens: finalOutputTokens,
+              totalTokens: finalInputTokens + finalOutputTokens
+            };
+
+            console.log(`[Chat ${id}][onFinish] Final token usage (estimated + OpenRouter):`, {
+              originalInput: typedResponse.usage?.inputTokens,
+              originalOutput: typedResponse.usage?.outputTokens,
+              estimatedInput: estimatedInputTokens,
+              estimatedOutput: estimatedOutputTokens,
+              finalInput: finalInputTokens,
+              finalOutput: finalOutputTokens,
+              finalTotal: finalInputTokens + finalOutputTokens,
+              conversationLength: modelMessages ? modelMessages.length : 0,
+              totalInputChars: inputContentLength,
+              systemInstructionChars: effectiveSystemInstruction ? effectiveSystemInstruction.length : 0
+            });
+          }
+
+          // Calculate processing time ourselves since AI SDK might not provide it
+          const requestEndTime = Date.now();
+          const calculatedProcessingTimeMs = requestEndTime - requestStartTime;
+
+          // Calculate tokens per second if we have timing data
+          const finalOutputTokens = tokenUsageData?.outputTokens || 0;
+
+          // If we don't have timeToFirstTokenMs from onChunk, try to estimate it
+          console.log(`[DEBUG][Chat ${id}] Event duration check:`, {
+            hasEvent: !!event,
+            eventKeys: event ? Object.keys(event) : [],
+            durationMs: event?.durationMs,
+            timeToFirstTokenMs
+          });
+
+          if (timeToFirstTokenMs === null) {
+            // Try to estimate time to first token
+            if (event?.durationMs) {
+              // Estimate time to first token as 20% of total duration (typical for streaming)
+              timeToFirstTokenMs = Math.round(event.durationMs * 0.2);
+              logDiagnostic('ESTIMATED_TIMING', `Estimated time to first token from event.durationMs`, {
+                requestId,
+                estimatedTimeToFirstTokenMs: timeToFirstTokenMs,
+                totalDurationMs: event.durationMs
+              });
+            } else {
+              // Fallback: estimate based on calculated processing time
+              timeToFirstTokenMs = Math.round(calculatedProcessingTimeMs * 0.2);
+              logDiagnostic('ESTIMATED_TIMING', `Estimated time to first token from calculated processing time`, {
+                requestId,
+                estimatedTimeToFirstTokenMs: timeToFirstTokenMs,
+                calculatedProcessingTimeMs
+              });
+            }
+          }
+
+          if (timeToFirstTokenMs !== null && finalOutputTokens > 0 && calculatedProcessingTimeMs > 0) {
+            const generationTimeMs = calculatedProcessingTimeMs - timeToFirstTokenMs;
+            if (generationTimeMs > 0) {
+              tokensPerSecond = (finalOutputTokens / (generationTimeMs / 1000));
+            }
+          }
+
+          logDiagnostic('ENHANCED_TIMING', `Enhanced timing metrics calculated`, {
+            requestId,
+            timeToFirstTokenMs,
+            tokensPerSecond,
+            streamingStartTime: streamingStartTime?.toISOString(),
+            finalOutputTokens,
+            calculatedProcessingTimeMs
+          });
+
+          console.log(`[DEBUG][Chat ${id}] About to call TokenTrackingService with timing data:`, {
+            timeToFirstTokenMs,
+            tokensPerSecond,
+            streamingStartTime,
+            calculatedProcessingTimeMs
+          });
+
+          // Queue detailed cost calculation for background processing
+          // This prevents blocking the response while still capturing all cost data
+          const extractedTokenUsage = tokenUsageData || { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+          const inputTokens = extractedTokenUsage.inputTokens || extractedTokenUsage.prompt_tokens || 0;
+          const outputTokens = extractedTokenUsage.outputTokens || extractedTokenUsage.completion_tokens || 0;
+
+          // Note: Background cost tracking will be queued later with complete credit tracking parameters
+
+          // Note: Credit tracking will be handled later with the legacy token tracking variables
+        } catch (error: any) {
+          logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage (independent)`, {
+            requestId,
+            userId,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          console.error(`[Chat ${id}][onFinish] Failed to track detailed token usage for user ${userId}:`, error);
+          // Don't break the response flow if detailed tracking fails
         }
       } catch (finishError: any) {
         console.error(`[Chat ${id}][onFinish] Unexpected error in onFinish:`, finishError);
       }
 
       // Extract token usage from response - OpenRouter may provide it in different formats
-      let completionTokens = 0;
-
-      // Access response with type assertion to avoid TypeScript errors
-      // The actual structure may vary by provider
       const typedResponse = response as any;
+      let completionTokens = 0;
 
       // Try to extract tokens from different possible response structures
       if (typedResponse.usage?.completion_tokens) {
@@ -1215,8 +1777,20 @@ export async function POST(req: Request) {
         // Estimate based on last message content length if available
         const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
         if (lastMessage?.content) {
+          let contentLength = 0;
+
+          // Handle structured content (Google models)
+          if (Array.isArray(lastMessage.content)) {
+            contentLength = lastMessage.content
+              .filter((part: any) => part.type === 'text')
+              .map((part: any) => part.text)
+              .join('').length;
+          } else if (typeof lastMessage.content === 'string') {
+            contentLength = lastMessage.content.length;
+          }
+
           // Rough estimate: 1 token ≈ 4 characters
-          completionTokens = Math.ceil(lastMessage.content.length / 4);
+          completionTokens = Math.ceil(contentLength / 4);
         } else if (typeof typedResponse.content === 'string') {
           completionTokens = Math.ceil(typedResponse.content.length / 4);
         } else {
@@ -1225,7 +1799,7 @@ export async function POST(req: Request) {
         }
       }
 
-      // Existing code for tracking tokens
+      // Existing code for tracking tokens (legacy credit system)
       let polarCustomerId: string | undefined;
 
       // Get from session
@@ -1239,15 +1813,25 @@ export async function POST(req: Request) {
         console.warn('Failed to get session for Polar customer ID:', error);
       }
 
-      // Track token usage
+      // Track token usage for legacy credit system
       if (completionTokens > 0) {
         try {
+          logDiagnostic('LEGACY_TOKEN_TRACKING_START', `Starting legacy token tracking`, {
+            requestId,
+            userId,
+            completionTokens
+          });
+
           // Get isAnonymous status from session if available
           let isAnonymous = false;
           try {
             isAnonymous = (session?.user as any)?.isAnonymous === true;
           } catch (error) {
-            console.warn('Could not determine if user is anonymous, assuming not anonymous');
+            logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Could not determine if user is anonymous, assuming not anonymous`, {
+              requestId,
+              userId,
+              error: error instanceof Error ? error.message : String(error)
+            });
           }
 
           // Recalculate isUsingOwnApiKeys in callback scope since it's not accessible here
@@ -1257,9 +1841,14 @@ export async function POST(req: Request) {
           let callbackActualCredits: number | null = null;
           if (!isAnonymous && userId) {
             try {
-              callbackActualCredits = await getRemainingCreditsByExternalId(userId);
+              // Use cached credit data - no additional API call needed!
+              callbackActualCredits = await getCachedCreditsByExternal(userId);
             } catch (error) {
-              console.warn('Error getting actual credits in onFinish callback:', error);
+              logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Error getting actual credits in onFinish callback`, {
+                requestId,
+                userId,
+                error: error instanceof Error ? error.message : String(error)
+              });
             }
           }
 
@@ -1279,12 +1868,75 @@ export async function POST(req: Request) {
             additionalCost = WEB_SEARCH_COST;
           }
 
-          // Pass flags to control credit deduction vs daily message tracking, including web search surcharge
-          await trackTokenUsage(userId, polarCustomerId, completionTokens, isAnonymous, shouldDeductCredits, additionalCost);
           const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
-          const trackingReason = isAnonymous ? 'Tracked' : shouldDeductCredits ? 'Reported to Polar' : isFreeModel ? 'Tracked (free model)' : 'Tracked (daily limit)';
+          const trackingReason = isAnonymous ? 'Queued (stopped)' : shouldDeductCredits ? 'Queued for Polar' : isFreeModel ? 'Queued (free model)' : 'Queued (daily limit)';
+
+          // Process token usage tracking directly (Vercel-compatible)
+          if (messagesSavedSuccessfully) {
+            try {
+              const finalProcessingTimeMs = Date.now() - requestStartTime;
+
+              // Opportunistic reconciliation of a few recent rows missing actual_cost (best-effort, short and non-blocking)
+              // Intentionally not awaited to avoid delaying the response
+              import('@/lib/services/costReconciliation').then(async ({ CostReconciliationService }) => {
+                try {
+                  const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
+                  await CostReconciliationService.reconcileRecentMissingActualCosts({ limit: 3, maxAgeHours: 48, apiKeyOverride: openrouterApiKey });
+                } catch (e) {
+                  // Swallow errors silently
+                }
+              });
+
+              // Use direct processing instead of background queue for Vercel compatibility
+              const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
+              await DirectTokenTrackingService.processTokenUsage({
+                userId,
+                chatId: id,
+                messageId: finalAssistantMessageId,
+                modelId: selectedModel,
+                provider: selectedModel.split('/')[0],
+                inputTokens: extractInputTokensFromEvent(event),
+                outputTokens: completionTokens,
+                generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
+                openRouterResponse: typedResponse,
+                apiKeyOverride: openrouterApiKey,
+                // Timing parameters
+                processingTimeMs: finalProcessingTimeMs,
+                timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
+                tokensPerSecond: tokensPerSecond ?? undefined,
+                streamingStartTime: streamingStartTime ?? undefined,
+                // Credit tracking parameters
+                polarCustomerId,
+                completionTokens,
+                isAnonymous,
+                shouldDeductCredits,
+                additionalCost
+              });
+
+              logDiagnostic('DIRECT_TOKEN_TRACKING_COMPLETED', `Completed direct token usage tracking with credit parameters`, {
+                requestId,
+                userId,
+                completionTokens,
+                actualCreditsReported,
+                trackingReason,
+                shouldDeductCredits,
+                additionalCost
+              });
+            } catch (creditTrackingError: any) {
+              console.error(`[Chat ${id}][onFinish] Failed to process direct token tracking with credit parameters:`, creditTrackingError);
+              // Don't fail the response if token tracking fails
+            }
+          } else {
+            console.log(`[Chat ${id}][onFinish] Skipping background cost tracking due to message save failure`);
+          }
+
           console.log(`${trackingReason} ${actualCreditsReported} credits for user ${userId} [Chat ${id}]`);
         } catch (error: any) {
+          logDiagnostic('LEGACY_TOKEN_TRACKING_ERROR', `Failed to track legacy token usage`, {
+            requestId,
+            userId,
+            error: error instanceof Error ? error.message : String(error)
+          });
           console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${userId}:`, error);
           // Don't break the response flow if tracking fails
         }

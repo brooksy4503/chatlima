@@ -16,6 +16,7 @@ import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from 
 import { formatFileSize } from "@/lib/image-utils";
 import { WebSearchSuggestion } from "./web-search-suggestion";
 import { ImageModal } from "./image-modal";
+import { CompactMessageTokenMetrics, StreamingTokenMetrics } from "./token-metrics/MessageTokenMetrics";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -134,10 +135,27 @@ interface MessageProps {
   message: TMessage & {
     parts?: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
     hasWebSearch?: boolean;
+    tokenUsage?: {
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      estimatedCost?: number;
+      currency?: string;
+    };
   };
   isLoading: boolean;
   status: "error" | "submitted" | "streaming" | "ready";
   isLatestMessage: boolean;
+  chatTokenUsage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    estimatedCost?: number;
+    currency?: string;
+    // NEW: Enhanced timing metrics for Phase 2
+    timeToFirstToken?: number;
+    tokensPerSecond?: number;
+    totalDuration?: number;
+  };
 }
 
 const PurePreviewMessage = ({
@@ -145,6 +163,7 @@ const PurePreviewMessage = ({
   isLatestMessage,
   status,
   isLoading,
+  chatTokenUsage,
 }: MessageProps) => {
   // State for image modal
   const [selectedImage, setSelectedImage] = useState<{
@@ -307,10 +326,46 @@ const PurePreviewMessage = ({
             
             {/* Web Search Suggestion - only for assistant messages with web search results and when not streaming */}
             {message.role === 'assistant' && hasWebSearchResults && status !== "streaming" && (
-              <WebSearchSuggestion 
-                messageId={message.id} 
+              <WebSearchSuggestion
+                messageId={message.id}
                 hasWebSearchResults={hasWebSearchResults}
               />
+            )}
+            
+            {/* Token Usage Metrics - show for assistant messages */}
+            {message.role === 'assistant' && (
+              <div className="mt-2">
+                {status === "streaming" && isLatestMessage ? (
+                  <StreamingTokenMetrics
+                    inputTokens={chatTokenUsage?.inputTokens}
+                    outputTokens={chatTokenUsage?.outputTokens}
+                    estimatedCost={chatTokenUsage?.estimatedCost}
+                    currency={chatTokenUsage?.currency}
+                    isStreaming={status === "streaming"}
+                    // NEW: Enhanced timing metrics for Phase 2
+                    timeToFirstToken={chatTokenUsage?.timeToFirstToken}
+                    tokensPerSecond={chatTokenUsage?.tokensPerSecond}
+                    totalDuration={chatTokenUsage?.totalDuration}
+                    className="text-xs"
+                  />
+                ) : (
+                  message.tokenUsage ? (
+                    <CompactMessageTokenMetrics
+                      inputTokens={message.tokenUsage.inputTokens}
+                      outputTokens={message.tokenUsage.outputTokens}
+                      totalTokens={message.tokenUsage.totalTokens}
+                      estimatedCost={message.tokenUsage.estimatedCost}
+                      currency={message.tokenUsage.currency}
+                      isLoading={false}
+                      // NEW: Enhanced timing metrics for Phase 2
+                      timeToFirstToken={chatTokenUsage?.timeToFirstToken}
+                      tokensPerSecond={chatTokenUsage?.tokensPerSecond}
+                      totalDuration={chatTokenUsage?.totalDuration}
+                      className="text-xs"
+                    />
+                  ) : null
+                )}
+              </div>
             )}
             
             {message.role === 'assistant' && shouldShowCopyButton && (

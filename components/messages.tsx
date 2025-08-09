@@ -6,10 +6,21 @@ export const Messages = ({
   messages,
   isLoading,
   status,
+  chatTokenUsage,
 }: {
   messages: (TMessage & { hasWebSearch?: boolean })[];
   isLoading: boolean;
   status: "error" | "submitted" | "streaming" | "ready";
+  chatTokenUsage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    estimatedCost?: number;
+    currency?: string;
+    // NEW: Enhanced timing metrics for Phase 2
+    timeToFirstToken?: number;
+    tokensPerSecond?: number;
+    totalDuration?: number;
+  };
 }) => {
   const [containerRef, endRef] = useScrollToBottom();
   
@@ -29,6 +40,7 @@ export const Messages = ({
               hasWebSearch: m.hasWebSearch
             }}
             status={status}
+            chatTokenUsage={chatTokenUsage}
           />
         ))}
         <div className="h-1" ref={endRef} />

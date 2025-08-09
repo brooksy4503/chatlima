@@ -1,0 +1,94 @@
+# Suspense Fallback Hydration Rules
+
+## Critical: Suspense Fallback Structure Must Match Actual Component
+
+When using Suspense with complex components, the fallback **must render the exact same HTML structure** as the actual component to prevent hydration errors.
+
+### ❌ Common Mistake
+```tsx
+<Suspense fallback={
+  <div className="simple-skeleton w-[280px]">
+    <div className="h-8 bg-muted rounded"></div>
+  </div>
+}>
+  <ComplexComponent />
+</Suspense>
+```
+
+### ✅ Correct Pattern
+```tsx
+<Suspense fallback={
+  <div
+    className="group peer text-sidebar-foreground hidden md:block"
+    data-state="expanded"
+    data-collapsible=""
+    data-variant="sidebar"
+    data-side="left"
+    data-slot="sidebar"
+  >
+    <div data-slot="sidebar-gap" className="relative w-[16rem]..." />
+    <div data-slot="sidebar-container" className="fixed inset-y-0...">
+      <div data-sidebar="sidebar" data-slot="sidebar-inner" className="...">
+        {/* Skeleton content */}
+      </div>
+    </div>
+  </div>
+}>
+  <ComplexComponent />
+</Suspense>
+```
+
+## Key Requirements
+
+### 1. Data Attributes Are Critical
+Include all `data-*` attributes that the actual component renders:
+- `data-state`
+- `data-collapsible`
+- `data-variant`
+- `data-side`
+- `data-slot`
+- Component-specific attributes (e.g., `data-sidebar`)
+
+### 2. CSS Classes Must Match Exactly
+All critical CSS classes must be identical:
+- Layout classes (`group peer text-sidebar-foreground hidden md:block`)
+- Positioning classes (`fixed inset-y-0 z-10`)
+- Transition classes (`transition-[width] duration-200 ease-linear`)
+- Component-specific classes
+
+### 3. Nested Structure Must Match
+The fallback must have the same nested div structure as the actual component.
+
+## Implementation Checklist
+
+When creating Suspense fallbacks for complex components:
+
+1. **Examine the actual component's rendered HTML structure**
+2. **Copy the exact div hierarchy and attributes**
+3. **Include all data-* attributes**
+4. **Match all CSS classes exactly**
+5. **Test both development and production builds**
+6. **Check browser console for hydration warnings**
+
+## Common UI Library Components
+
+### Radix UI Components
+Fallbacks must include all `data-slot` attributes and component-specific classes.
+
+### Custom Components with Complex Structure
+Always inspect the actual rendered HTML to ensure perfect matching.
+
+## Verification Steps
+- ✅ Build completes successfully
+- ✅ Development server runs without hydration warnings
+- ✅ No hydration-related errors in rendered HTML
+- ✅ No ESLint errors introduced
+
+---
+alwaysApply: true
+---
+
+## Related Files
+- [app/layout.tsx](mdc:app/layout.tsx) - Example of correct Suspense fallback implementation
+- [components/ui/sidebar.tsx](mdc:components/ui/sidebar.tsx) - Complex component structure reference
+- [app/providers.tsx](mdc:app/providers.tsx) - SidebarProvider configuration
