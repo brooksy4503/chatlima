@@ -109,10 +109,10 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
     userId: "",
     modelId: "",
     provider: "openai",
-    dailyTokenLimit: 10000,
-    monthlyTokenLimit: 300000,
+    dailyTokenLimit: 50000,
+    monthlyTokenLimit: 1000000,
     dailyCostLimit: 10,
-    monthlyCostLimit: 300,
+    monthlyCostLimit: 100,
     requestRateLimit: 60,
     currency: "USD",
     isActive: true,
@@ -507,7 +507,7 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
                         <label className="text-sm font-medium">Daily Token Limit</label>
                         <Input
                           type="number"
-                          placeholder="10000"
+                          placeholder="50000"
                           value={formData.dailyTokenLimit}
                           onChange={(e) => handleInputChange("dailyTokenLimit", parseInt(e.target.value))}
                         />
@@ -517,7 +517,7 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
                         <label className="text-sm font-medium">Monthly Token Limit</label>
                         <Input
                           type="number"
-                          placeholder="300000"
+                          placeholder="1000000"
                           value={formData.monthlyTokenLimit}
                           onChange={(e) => handleInputChange("monthlyTokenLimit", parseInt(e.target.value))}
                         />
@@ -541,7 +541,7 @@ export function AdminUsageLimits({ loading = false }: AdminUsageLimitsProps) {
                         <Input
                           type="number"
                           step="0.01"
-                          placeholder="300"
+                          placeholder="100"
                           value={formData.monthlyCostLimit}
                           onChange={(e) => handleInputChange("monthlyCostLimit", parseFloat(e.target.value))}
                         />
