@@ -114,6 +114,52 @@ const createErrorResponse = (
   );
 };
 
+// Helper to extract input tokens from event (AI SDK format)
+const extractInputTokensFromEvent = (event: any): number => {
+  if (!event) return 0;
+
+  console.log(`[DEBUG] Extracting input tokens from event:`, {
+    hasUsage: !!event.usage,
+    usageKeys: event.usage ? Object.keys(event.usage) : [],
+    eventKeys: Object.keys(event),
+    usage: event.usage
+  });
+
+  // Try event.usage first (AI SDK format)
+  const usage = event.usage;
+  if (usage) {
+    if (usage.promptTokens) {
+      console.log(`[DEBUG] Found input tokens in event.usage.promptTokens: ${usage.promptTokens}`);
+      return usage.promptTokens;
+    }
+    if (usage.inputTokens) {
+      console.log(`[DEBUG] Found input tokens in event.usage.inputTokens: ${usage.inputTokens}`);
+      return usage.inputTokens;
+    }
+    if (usage.prompt_tokens) {
+      console.log(`[DEBUG] Found input tokens in event.usage.prompt_tokens: ${usage.prompt_tokens}`);
+      return usage.prompt_tokens;
+    }
+    if (usage.input_tokens) {
+      console.log(`[DEBUG] Found input tokens in event.usage.input_tokens: ${usage.input_tokens}`);
+      return usage.input_tokens;
+    }
+  }
+
+  // Try root level on event
+  if (event.promptTokens) {
+    console.log(`[DEBUG] Found input tokens in event.promptTokens: ${event.promptTokens}`);
+    return event.promptTokens;
+  }
+  if (event.inputTokens) {
+    console.log(`[DEBUG] Found input tokens in event.inputTokens: ${event.inputTokens}`);
+    return event.inputTokens;
+  }
+
+  console.log(`[DEBUG] No input tokens found in event, returning 0`);
+  return 0;
+};
+
 export async function POST(req: Request) {
   const requestId = nanoid();
 
@@ -1281,6 +1327,8 @@ export async function POST(req: Request) {
 
             // Queue credit tracking for background processing (stopped stream)
             const provider = selectedModel.split('/')[0];
+            // Calculate processing time for stopped stream
+            const stoppedProcessingTimeMs = Date.now() - requestStartTime;
             BackgroundCostTrackingService.queueCostCalculation({
               userId,
               chatId: id,
@@ -1289,6 +1337,11 @@ export async function POST(req: Request) {
               provider,
               inputTokens: 0, // Not available in onStop callback
               outputTokens: completionTokens,
+              // Timing parameters (may be partial for stopped streams)
+              processingTimeMs: stoppedProcessingTimeMs,
+              timeToFirstTokenMs: timeToFirstTokenMs ?? undefined, // Convert null to undefined
+              tokensPerSecond: tokensPerSecond ?? undefined, // Convert null to undefined
+              streamingStartTime: streamingStartTime ?? undefined, // Convert null to undefined
               // Credit tracking parameters (will be processed in background)
               polarCustomerId,
               completionTokens,
@@ -1321,12 +1374,18 @@ export async function POST(req: Request) {
       console.log(`[Chat ${id}][onFinish] Event data:`, {
         eventKeys: Object.keys(event),
         hasResponse: !!event.response,
+        hasUsage: !!event.usage,
         hasDuration: !!event.durationMs,
         hasTimestamp: !!event.timestamp,
         firstTokenTime,
         timeToFirstTokenMs,
         streamingStartTime,
-        requestStartTime
+        requestStartTime,
+        // Debug: show where usage data might be
+        eventUsage: event.usage,
+        responseUsage: event.response?.usage,
+        eventUsageKeys: event.usage ? Object.keys(event.usage) : [],
+        responseUsageKeys: event.response?.usage ? Object.keys(event.response.usage) : []
       });
 
       // Force timing data for testing
@@ -1477,21 +1536,25 @@ export async function POST(req: Request) {
           });
 
           // Extract token usage with better fallback logic
-          let tokenUsageData = typedResponse.usage;
+          // Check event.usage first (AI SDK location), then fallback to response.usage
+          let tokenUsageData = event.usage || typedResponse.usage;
 
           // Enhanced logging to debug OpenRouter response
           console.log(`[Chat ${id}][onFinish] Raw OpenRouter usage data:`, {
-            hasUsage: !!typedResponse.usage,
-            usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
-            usageValue: typedResponse.usage,
-            inputTokens: typedResponse.usage?.inputTokens,
-            outputTokens: typedResponse.usage?.outputTokens,
-            promptTokens: typedResponse.usage?.promptTokens,
-            prompt_tokens: typedResponse.usage?.prompt_tokens,
-            completionTokens: typedResponse.usage?.completionTokens,
-            completion_tokens: typedResponse.usage?.completion_tokens,
-            total_tokens: typedResponse.usage?.total_tokens,
-            usageObject: typedResponse.usage
+            hasEventUsage: !!event.usage,
+            hasResponseUsage: !!typedResponse.usage,
+            eventUsageKeys: event.usage ? Object.keys(event.usage) : [],
+            responseUsageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
+            finalUsageSource: event.usage ? 'event.usage' : (typedResponse.usage ? 'response.usage' : 'none'),
+            usageValue: tokenUsageData,
+            inputTokens: tokenUsageData?.inputTokens,
+            outputTokens: tokenUsageData?.outputTokens,
+            promptTokens: tokenUsageData?.promptTokens,
+            prompt_tokens: tokenUsageData?.prompt_tokens,
+            completionTokens: tokenUsageData?.completionTokens,
+            completion_tokens: tokenUsageData?.completion_tokens,
+            total_tokens: tokenUsageData?.total_tokens,
+            usageObject: tokenUsageData
           });
 
           // If no usage data or missing input tokens, try to estimate from message content
@@ -1791,16 +1854,22 @@ export async function POST(req: Request) {
           if (messagesSavedSuccessfully) {
             try {
               // Add credit tracking parameters to the already queued job
+              const finalProcessingTimeMs = Date.now() - requestStartTime; // Recalculate processing time in this scope
               BackgroundCostTrackingService.queueCostCalculation({
                 userId,
                 chatId: id,
                 messageId: finalAssistantMessageId,
                 modelId: selectedModel,
                 provider: selectedModel.split('/')[0],
-                inputTokens: typedResponse.usage?.prompt_tokens || typedResponse.usage?.input_tokens || 0,
+                inputTokens: extractInputTokensFromEvent(event),
                 outputTokens: completionTokens,
                 generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
                 openRouterResponse: typedResponse,
+                // Timing parameters
+                processingTimeMs: finalProcessingTimeMs,
+                timeToFirstTokenMs: timeToFirstTokenMs ?? undefined, // Convert null to undefined
+                tokensPerSecond: tokensPerSecond ?? undefined, // Convert null to undefined  
+                streamingStartTime: streamingStartTime ?? undefined, // Convert null to undefined
                 // Credit tracking parameters
                 polarCustomerId,
                 completionTokens,
