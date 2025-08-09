@@ -185,7 +185,7 @@ export const presets = pgTable('presets', {
   checkNameLength: check('check_name_length', sql`char_length(${table.name}) >= 1 AND char_length(${table.name}) <= 100`),
   checkSystemInstructionLength: check('check_system_instruction_length', sql`char_length(${table.systemInstruction}) >= 10 AND char_length(${table.systemInstruction}) <= 4000`),
   checkTemperatureRange: check('check_temperature_range', sql`${table.temperature} >= 0 AND ${table.temperature} <= 2000`), // 0.0 to 2.0 * 1000
-  checkMaxTokensRange: check('check_max_tokens_range', sql`${table.maxTokens} > 0 AND ${table.maxTokens} <= 100000`),
+  checkMaxTokensRange: check('check_max_tokens_range', sql`${table.maxTokens} > 0 AND ${table.maxTokens} <= 200000`),
   checkVisibility: check('check_visibility', sql`${table.visibility} IN ('private', 'shared')`),
   checkWebSearchContextSize: check('check_web_search_context_size', sql`${table.webSearchContextSize} IN ('low', 'medium', 'high')`),
   checkShareIdFormat: check('check_share_id_format', sql`${table.shareId} IS NULL OR (char_length(${table.shareId}) >= 20 AND char_length(${table.shareId}) <= 50)`),

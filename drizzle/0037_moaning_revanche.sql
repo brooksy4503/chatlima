@@ -1,0 +1,2 @@
+ALTER TABLE "presets" DROP CONSTRAINT "check_max_tokens_range";--> statement-breakpoint
+ALTER TABLE "presets" ADD CONSTRAINT "check_max_tokens_range" CHECK ("presets"."max_tokens" > 0 AND "presets"."max_tokens" <= 200000);
