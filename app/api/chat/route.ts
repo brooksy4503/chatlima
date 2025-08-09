@@ -163,6 +163,12 @@ const extractInputTokensFromEvent = (event: any): number => {
 export async function POST(req: Request) {
   const requestId = nanoid();
 
+  // Process any pending background cost tracking jobs from previous requests
+  // This is necessary for serverless environments where setInterval doesn't work
+  BackgroundCostTrackingService.processPendingJobs().catch(error => {
+    console.error('Failed to process pending background jobs:', error);
+  });
+
   // Create request-scoped caches for performance optimization
   const { getRemainingCreditsByExternalId: getCachedCreditsByExternal, getRemainingCredits: getCachedCredits, cache: creditCache } = createRequestCreditCache();
   const messageLimitCache = createMessageLimitCache();
