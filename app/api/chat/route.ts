@@ -15,7 +15,7 @@ import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenC
 import { TokenTrackingService } from '@/lib/tokenTracking';
 import { CostCalculationService } from '@/lib/services/costCalculation';
 import { SimpleCostEstimationService } from '@/lib/services/simpleCostEstimation';
-import { BackgroundCostTrackingService } from '@/lib/services/backgroundCostTracking';
+import { DirectTokenTrackingService } from '@/lib/services/directTokenTracking';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
 import { createRequestCreditCache, hasEnoughCreditsWithCache } from '@/lib/services/creditCache';
 import { auth, checkMessageLimit } from '@/lib/auth';
@@ -162,12 +162,6 @@ const extractInputTokensFromEvent = (event: any): number => {
 
 export async function POST(req: Request) {
   const requestId = nanoid();
-
-  // Process any pending background cost tracking jobs from previous requests
-  // This is necessary for serverless environments where setInterval doesn't work
-  BackgroundCostTrackingService.processPendingJobs().catch(error => {
-    console.error('Failed to process pending background jobs:', error);
-  });
 
   // Create request-scoped caches for performance optimization
   const { getRemainingCreditsByExternalId: getCachedCreditsByExternal, getRemainingCredits: getCachedCredits, cache: creditCache } = createRequestCreditCache();
@@ -1331,30 +1325,35 @@ export async function POST(req: Request) {
               additionalCost = WEB_SEARCH_COST;
             }
 
-            // Queue credit tracking for background processing (stopped stream)
+            // Process token tracking directly for stopped stream (Vercel-compatible)
             const provider = selectedModel.split('/')[0];
-            // Calculate processing time for stopped stream
             const stoppedProcessingTimeMs = Date.now() - requestStartTime;
-            BackgroundCostTrackingService.queueCostCalculation({
-              userId,
-              chatId: id,
-              messageId: `${id}-stopped-${Date.now()}`, // Generate unique message ID for stopped streams
-              modelId: selectedModel,
-              provider,
-              inputTokens: 0, // Not available in onStop callback
-              outputTokens: completionTokens,
-              // Timing parameters (may be partial for stopped streams)
-              processingTimeMs: stoppedProcessingTimeMs,
-              timeToFirstTokenMs: timeToFirstTokenMs ?? undefined, // Convert null to undefined
-              tokensPerSecond: tokensPerSecond ?? undefined, // Convert null to undefined
-              streamingStartTime: streamingStartTime ?? undefined, // Convert null to undefined
-              // Credit tracking parameters (will be processed in background)
-              polarCustomerId,
-              completionTokens,
-              isAnonymous,
-              shouldDeductCredits,
-              additionalCost
-            });
+
+            try {
+              await DirectTokenTrackingService.processTokenUsage({
+                userId,
+                chatId: id,
+                messageId: `${id}-stopped-${Date.now()}`, // Generate unique message ID for stopped streams
+                modelId: selectedModel,
+                provider,
+                inputTokens: 0, // Not available in onStop callback
+                outputTokens: completionTokens,
+                // Timing parameters (may be partial for stopped streams)
+                processingTimeMs: stoppedProcessingTimeMs,
+                timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
+                tokensPerSecond: tokensPerSecond ?? undefined,
+                streamingStartTime: streamingStartTime ?? undefined,
+                // Credit tracking parameters
+                polarCustomerId,
+                completionTokens,
+                isAnonymous,
+                shouldDeductCredits,
+                additionalCost
+              });
+            } catch (trackingError) {
+              console.error(`[Chat ${id}][onStop] Failed to process direct token tracking for stopped stream:`, trackingError);
+              // Don't fail the response if token tracking fails
+            }
 
             const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
             const trackingReason = isAnonymous ? 'Queued (stopped)' : shouldDeductCredits ? 'Queued for Polar (stopped)' : isFreeModel ? 'Queued (free model, stopped)' : 'Queued (daily limit, stopped)';
@@ -1856,12 +1855,13 @@ export async function POST(req: Request) {
           const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
           const trackingReason = isAnonymous ? 'Queued (stopped)' : shouldDeductCredits ? 'Queued for Polar' : isFreeModel ? 'Queued (free model)' : 'Queued (daily limit)';
 
-          // Update background cost tracking with credit parameters (if messages were saved successfully)
+          // Process token usage tracking directly (Vercel-compatible)
           if (messagesSavedSuccessfully) {
             try {
-              // Add credit tracking parameters to the already queued job
-              const finalProcessingTimeMs = Date.now() - requestStartTime; // Recalculate processing time in this scope
-              BackgroundCostTrackingService.queueCostCalculation({
+              const finalProcessingTimeMs = Date.now() - requestStartTime;
+
+              // Use direct processing instead of background queue for Vercel compatibility
+              await DirectTokenTrackingService.processTokenUsage({
                 userId,
                 chatId: id,
                 messageId: finalAssistantMessageId,
@@ -1873,9 +1873,9 @@ export async function POST(req: Request) {
                 openRouterResponse: typedResponse,
                 // Timing parameters
                 processingTimeMs: finalProcessingTimeMs,
-                timeToFirstTokenMs: timeToFirstTokenMs ?? undefined, // Convert null to undefined
-                tokensPerSecond: tokensPerSecond ?? undefined, // Convert null to undefined  
-                streamingStartTime: streamingStartTime ?? undefined, // Convert null to undefined
+                timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
+                tokensPerSecond: tokensPerSecond ?? undefined,
+                streamingStartTime: streamingStartTime ?? undefined,
                 // Credit tracking parameters
                 polarCustomerId,
                 completionTokens,
@@ -1884,7 +1884,7 @@ export async function POST(req: Request) {
                 additionalCost
               });
 
-              logDiagnostic('BACKGROUND_TOKEN_TRACKING_QUEUED', `Updated background token usage tracking with credit parameters`, {
+              logDiagnostic('DIRECT_TOKEN_TRACKING_COMPLETED', `Completed direct token usage tracking with credit parameters`, {
                 requestId,
                 userId,
                 completionTokens,
@@ -1894,7 +1894,8 @@ export async function POST(req: Request) {
                 additionalCost
               });
             } catch (creditTrackingError: any) {
-              console.error(`[Chat ${id}][onFinish] Failed to update background cost tracking with credit parameters:`, creditTrackingError);
+              console.error(`[Chat ${id}][onFinish] Failed to process direct token tracking with credit parameters:`, creditTrackingError);
+              // Don't fail the response if token tracking fails
             }
           } else {
             console.log(`[Chat ${id}][onFinish] Skipping background cost tracking due to message save failure`);
