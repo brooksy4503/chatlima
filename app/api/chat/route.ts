@@ -1353,6 +1353,7 @@ export async function POST(req: Request) {
                 provider,
                 inputTokens: 0, // Not available in onStop callback
                 outputTokens: completionTokens,
+                providerResponse: null, // No response available for stopped streams
                 // Timing parameters (may be partial for stopped streams)
                 processingTimeMs: stoppedProcessingTimeMs,
                 timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
@@ -1898,7 +1899,8 @@ export async function POST(req: Request) {
                 inputTokens: extractInputTokensFromEvent(event),
                 outputTokens: completionTokens,
                 generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
-                openRouterResponse: typedResponse,
+                openRouterResponse: typedResponse, // Keep for backward compatibility
+                providerResponse: typedResponse, // New unified response parameter for all providers
                 apiKeyOverride: openrouterApiKey,
                 // Timing parameters
                 processingTimeMs: finalProcessingTimeMs,
