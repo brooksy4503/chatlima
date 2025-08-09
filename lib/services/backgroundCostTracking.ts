@@ -24,6 +24,11 @@ interface BackgroundCostJob {
     generationId?: string;
     openRouterResponse?: any;
     timestamp: Date;
+    // Timing data
+    processingTimeMs?: number;
+    timeToFirstTokenMs?: number;
+    tokensPerSecond?: number;
+    streamingStartTime?: Date;
     // Credit tracking data
     polarCustomerId?: string;
     completionTokens?: number;
@@ -50,6 +55,11 @@ export class BackgroundCostTrackingService {
         outputTokens: number;
         generationId?: string;
         openRouterResponse?: any;
+        // Timing parameters
+        processingTimeMs?: number;
+        timeToFirstTokenMs?: number;
+        tokensPerSecond?: number;
+        streamingStartTime?: Date;
         // Credit tracking parameters
         polarCustomerId?: string;
         completionTokens?: number;
@@ -96,6 +106,33 @@ export class BackgroundCostTrackingService {
     }
 
     /**
+     * Extract input tokens from various response formats (similar to TokenTrackingService)
+     */
+    private static extractInputTokens(openRouterResponse: any, fallbackInputTokens: number): number {
+        if (!openRouterResponse) return fallbackInputTokens;
+
+        // Try various field names in the response
+        const usage = openRouterResponse.usage;
+        if (usage) {
+            if (usage.prompt_tokens) return usage.prompt_tokens;
+            if (usage.input_tokens) return usage.input_tokens;
+        }
+
+        // Check root level
+        if (openRouterResponse.prompt_tokens) return openRouterResponse.prompt_tokens;
+        if (openRouterResponse.input_tokens) return openRouterResponse.input_tokens;
+
+        // Try metadata
+        if (openRouterResponse.metadata?.rawUsage) {
+            const rawUsage = openRouterResponse.metadata.rawUsage;
+            if (rawUsage.inputTokens) return rawUsage.inputTokens;
+            if (rawUsage.prompt_tokens) return rawUsage.prompt_tokens;
+        }
+
+        return fallbackInputTokens;
+    }
+
+    /**
      * Process a single cost calculation job
      */
     private static async processJob(job: BackgroundCostJob): Promise<void> {
@@ -104,6 +141,10 @@ export class BackgroundCostTrackingService {
 
             let actualCost: number | null = null;
             let estimatedCost = 0;
+
+            // Extract input tokens using comprehensive method
+            const extractedInputTokens = this.extractInputTokens(job.openRouterResponse, job.inputTokens);
+            console.log(`[BackgroundCostTracking] Input tokens: original=${job.inputTokens}, extracted=${extractedInputTokens}`);
 
             // Extract actual cost from OpenRouter response first (fastest method)
             if (job.provider === 'openrouter' && job.openRouterResponse) {
@@ -141,7 +182,7 @@ export class BackgroundCostTrackingService {
             try {
                 // First try the simplified service for fast calculation
                 const simpleCostBreakdown = SimplifiedCostCalculationService.calculateCost(
-                    job.inputTokens,
+                    extractedInputTokens,
                     job.outputTokens,
                     job.modelId,
                     job.provider,
@@ -160,7 +201,7 @@ export class BackgroundCostTrackingService {
             } catch (error) {
                 console.warn('Failed to calculate simplified cost, using fallback estimation:', error);
                 // Fallback to very simple calculation
-                estimatedCost = OpenRouterCostExtractor.getEstimatedCost(job.modelId, job.inputTokens, job.outputTokens);
+                estimatedCost = OpenRouterCostExtractor.getEstimatedCost(job.modelId, extractedInputTokens, job.outputTokens);
             }
 
             // Store the results
@@ -171,12 +212,16 @@ export class BackgroundCostTrackingService {
                 messageId: job.messageId,
                 modelId: job.modelId,
                 provider: job.provider,
-                inputTokens: job.inputTokens,
+                inputTokens: extractedInputTokens,
                 outputTokens: job.outputTokens,
-                totalTokens: job.inputTokens + job.outputTokens,
+                totalTokens: extractedInputTokens + job.outputTokens,
                 estimatedCost: estimatedCost.toString(),
                 actualCost: actualCost?.toString(),
                 currency: 'USD',
+                processingTimeMs: job.processingTimeMs,
+                timeToFirstTokenMs: job.timeToFirstTokenMs,
+                tokensPerSecond: job.tokensPerSecond?.toString(),
+                streamingStartTime: job.streamingStartTime,
                 status: 'completed',
                 metadata: {
                     backgroundProcessed: true,
@@ -213,6 +258,8 @@ export class BackgroundCostTrackingService {
 
             // Store error record
             try {
+                // Extract input tokens for error case too
+                const errorExtractedInputTokens = this.extractInputTokens(job.openRouterResponse, job.inputTokens);
                 await db.insert(tokenUsageMetrics).values({
                     id: nanoid(),
                     userId: job.userId,
@@ -220,11 +267,15 @@ export class BackgroundCostTrackingService {
                     messageId: job.messageId,
                     modelId: job.modelId,
                     provider: job.provider,
-                    inputTokens: job.inputTokens,
+                    inputTokens: errorExtractedInputTokens,
                     outputTokens: job.outputTokens,
-                    totalTokens: job.inputTokens + job.outputTokens,
+                    totalTokens: errorExtractedInputTokens + job.outputTokens,
                     estimatedCost: '0',
                     currency: 'USD',
+                    processingTimeMs: job.processingTimeMs,
+                    timeToFirstTokenMs: job.timeToFirstTokenMs,
+                    tokensPerSecond: job.tokensPerSecond?.toString(),
+                    streamingStartTime: job.streamingStartTime,
                     status: 'failed',
                     errorMessage: error instanceof Error ? error.message : String(error),
                     metadata: {
