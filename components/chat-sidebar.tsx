@@ -26,6 +26,8 @@ import { MCPServerManager } from "./mcp-server-manager";
 import { ApiKeyManager } from "./api-key-manager";
 import { ThemeToggle } from "./theme-toggle";
 import { ProviderHealthDashboard } from "./provider-health-dashboard";
+import { MiniChatTokenSummary } from "./token-metrics/ChatTokenSummary";
+import { useQuery } from "@tanstack/react-query";
 import { useChats } from "@/lib/hooks/use-chats";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -58,7 +60,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useClientMount } from "@/lib/hooks/use-client-mount";
 import {
     Tooltip,
     TooltipContent,
@@ -67,6 +68,53 @@ import {
 } from "@/components/ui/tooltip";
 import { ChatList } from "./chat-list";
 
+// Token Usage Summary component for the sidebar
+function TokenUsageSummary({ userId }: { userId: string | null }) {
+    const { data: tokenData, isLoading, error, refetch } = useQuery({
+        queryKey: ['user-token-usage', userId],
+        queryFn: async ({ queryKey }) => {
+            const [_, userId] = queryKey;
+            if (!userId) return null;
+            
+            try {
+                const response = await fetch(`/api/token-usage?userId=${userId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load token usage data');
+                }
+                
+                const data = await response.json();
+                return data.data;
+            } catch (error) {
+                console.error('Error loading user token usage:', error);
+                throw error;
+            }
+        },
+        enabled: !!userId,
+        retry: 1,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        refetchOnWindowFocus: false
+    });
+
+    if (!userId) {
+        return null;
+    }
+
+    return (
+        <MiniChatTokenSummary
+            totalInputTokens={tokenData?.totalInputTokens || 0}
+            totalOutputTokens={tokenData?.totalOutputTokens || 0}
+            totalTokens={tokenData?.totalTokens || 0}
+            totalEstimatedCost={tokenData?.totalEstimatedCost || 0}
+            totalActualCost={tokenData?.totalActualCost || 0}
+            messageCount={tokenData?.messageCount || 0}
+            currency={tokenData?.currency || 'USD'}
+            isLoading={isLoading}
+            error={error?.message || null}
+        />
+    );
+}
+
 export function ChatSidebar() {
     const router = useRouter();
     const pathname = usePathname();
@@ -74,7 +122,7 @@ export function ChatSidebar() {
     const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
     const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
     const [providerHealthOpen, setProviderHealthOpen] = useState(false);
-    const isMounted = useClientMount();
+    const [isHydrated, setIsHydrated] = useState(false);
     const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
     // On mobile, always show expanded layout
@@ -112,6 +160,11 @@ export function ChatSidebar() {
             </SidebarMenuItem>
         ));
     };
+
+    // Handle client-side hydration
+    useEffect(() => {
+        setIsHydrated(true);
+    }, []);
 
     useEffect(() => {
         if (!isSessionLoading) {
@@ -178,7 +231,8 @@ export function ChatSidebar() {
 
 
     const { chats, isLoading: isChatsLoading, deleteChat, refreshChats, updateChatTitle, isUpdatingChatTitle, loadMoreChats, hasMoreChats, isLoadingMore } = useChats();
-    const isLoading = !isMounted || isSessionLoading || isChatsLoading;
+    // Show loading state during initial hydration to prevent mismatch
+    const isLoading = !isHydrated || isSessionLoading || isChatsLoading;
 
     const handleNewChat = () => {
         // Close mobile sidebar when navigating to new chat
@@ -338,6 +392,13 @@ export function ChatSidebar() {
                         />
                     </SidebarGroup>
                     
+                    {/* Token Usage Summary - only show when not collapsed */}
+                    {!isLayoutCollapsed && (
+                        <div className="px-3 py-2">
+                            <TokenUsageSummary userId={userId} />
+                        </div>
+                    )}
+                    
                     <div className="relative my-0">
                         <div className="absolute inset-x-0">
                             <Separator className="w-full h-px bg-border/40" />
@@ -364,7 +425,7 @@ export function ChatSidebar() {
                                             </SidebarMenuButton>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent 
-                                            align="end" 
+                                            align="start" 
                                             side={isCollapsed ? "right" : "bottom"} 
                                             sideOffset={8} 
                                             className="min-w-[200px]"
@@ -392,7 +453,7 @@ export function ChatSidebar() {
                                                 <Activity className="h-4 w-4 mr-2 text-muted-foreground" />
                                                 Provider Health
                                             </DropdownMenuItem>
-                                            {isMounted && webSearchEnabled && (
+                                            {webSearchEnabled && (
                                                 <>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuLabel className="text-xs">Web Search</DropdownMenuLabel>
@@ -458,41 +519,37 @@ export function ChatSidebar() {
                         "flex items-center justify-center py-2",
                         isLayoutCollapsed ? "flex-col gap-2" : "gap-3"
                     )}>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link
-                                        href="https://chatlima-docs.netlify.app/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
-                                    >
-                                        <BookOpen className="h-4 w-4" />
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={5}>
-                                    Documentation
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Link
+                                    href="https://chatlima-docs.netlify.app/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+                                >
+                                    <BookOpen className="h-4 w-4" />
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={5}>
+                                Documentation
+                            </TooltipContent>
+                        </Tooltip>
 
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link 
-                                        href="https://github.com/brooksy4503/chatlima" 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
-                                    >
-                                        <Github className="h-4 w-4" />
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" sideOffset={5}>
-                                    ChatLima on GitHub
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Link 
+                                    href="https://github.com/brooksy4503/chatlima" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+                                >
+                                    <Github className="h-4 w-4" />
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={5}>
+                                ChatLima on GitHub
+                            </TooltipContent>
+                        </Tooltip>
 
                         <ThemeToggle
                             className="w-8 h-8 flex items-center justify-center text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"

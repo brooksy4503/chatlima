@@ -89,14 +89,27 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
                 };
             } else if (maxCompletionTokens && maxCompletionTokens > 0) {
                 // Use the actual max completion tokens from the provider
+                // Adjust default specifically for GPT-5 models to allow longer outputs by default
+                const gpt5Default = model.id.includes('gpt-5')
+                    ? 8192
+                    : Math.min(4096, Math.floor(maxCompletionTokens * 0.25));
                 maxTokensRange = {
                     min: 1,
                     max: maxCompletionTokens,
-                    default: Math.min(4096, Math.floor(maxCompletionTokens * 0.25))
+                    default: gpt5Default
                 };
             } else {
                 // Handle specific models with known high token limits
-                if (model.id.includes('gemini')) {
+                if (model.id.includes('gpt-5')) {
+                    // OpenAI GPT-5 family (e.g., gpt-5-nano) supports large context; set high completion cap
+                    maxTokensRange = {
+                        min: 1,
+                        max: 128000,
+                        default: 8192
+                    };
+                } else if (model.id.includes('gemini')) {
+                    // Gemini models support high output token limits
+
                     // Gemini models support high output token limits
                     maxTokensRange = {
                         min: 1,

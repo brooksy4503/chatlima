@@ -68,6 +68,12 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  // Prevent hydration mismatch by ensuring mobile state is consistent
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -113,17 +119,20 @@ function SidebarProvider({
   // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? "expanded" : "collapsed"
 
+  // Use consistent mobile state to prevent hydration mismatch
+  const effectiveIsMobile = isMounted ? isMobile : false
+
   const contextValue = React.useMemo<SidebarContextProps>(
     () => ({
       state,
       open,
       setOpen,
-      isMobile,
+      isMobile: effectiveIsMobile,
       openMobile,
       setOpenMobile,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [state, open, setOpen, effectiveIsMobile, openMobile, setOpenMobile, toggleSidebar]
   )
 
   return (

@@ -23,6 +23,7 @@ import { ErrorBoundary } from "./error-boundary";
 import { useCredits } from "@/hooks/useCredits";
 import type { ImageAttachment } from "@/lib/types";
 import { useModels } from "@/hooks/use-models";
+import { ChatTokenSummary } from "./token-metrics/ChatTokenSummary";
 
 // Type for chat data from DB
 interface ChatData {
@@ -63,6 +64,22 @@ export default function Chat() {
   const [lastToastId, setLastToastId] = useState<string | null>(null);
   const [lastErrorMessage, setLastErrorMessage] = useState<string>("");
   const [lastToastTimestamp, setLastToastTimestamp] = useState<number>(0);
+  // NEW: Enhanced timing tracking for Phase 2
+  const [timeToFirstToken, setTimeToFirstToken] = useState<number | null>(null);
+  const [tokensPerSecond, setTokensPerSecond] = useState<number | null>(null);
+  const [totalDuration, setTotalDuration] = useState<number | null>(null);
+  
+  // Token usage state
+  const [chatTokenUsage, setChatTokenUsage] = useState<{
+    inputTokens?: number;
+    outputTokens?: number;
+    estimatedCost?: number;
+    currency?: string;
+    // NEW: Enhanced timing metrics for Phase 2
+    timeToFirstToken?: number;
+    tokensPerSecond?: number;
+    totalDuration?: number;
+  }>({});
 
   useEffect(() => {
     setIsMounted(true);
@@ -464,7 +481,7 @@ export default function Chat() {
     }
   }, [isErrorRecoveryNeeded, lastErrorTime, originalStop, chatId]);
 
-  // Track streaming start/stop and activity
+  // Track streaming start/stop and activity with enhanced timing metrics
   useEffect(() => {
     if (status === "streaming") {
       if (!streamingStartTime) {
@@ -475,12 +492,28 @@ export default function Chat() {
         const lastMessage = messages[messages.length - 1];
         if (lastMessage.role === 'assistant' && lastMessage.content) {
           setLastStreamingActivity(Date.now());
+          
+          // NEW: Track time to first token when first content appears
+          if (timeToFirstToken === null && streamingStartTime) {
+            const ttft = Date.now() - streamingStartTime;
+            setTimeToFirstToken(ttft);
+            console.log(`[Chat] Time to first token: ${ttft}ms`);
+          }
         }
       }
     } else {
+      // Reset timing metrics when streaming stops
+      if (streamingStartTime && status === "ready") {
+        const duration = Date.now() - streamingStartTime;
+        setTotalDuration(duration);
+        console.log(`[Chat] Total duration: ${duration}ms`);
+      }
       setStreamingStartTime(null);
+      setTimeToFirstToken(null);
+      setTokensPerSecond(null);
+      setTotalDuration(null);
     }
-  }, [status, messages, streamingStartTime]);
+  }, [status, messages, streamingStartTime, timeToFirstToken]);
 
   // Intelligent stuck detection: only trigger if no streaming activity for extended period
   useEffect(() => {
@@ -620,6 +653,111 @@ export default function Chat() {
     });
   }, [messages, webSearchEnabled, activePreset, isOpenRouterModel]);
 
+  // Fetch chat token usage data
+  const { data: chatTokenData, isLoading: isTokenDataLoading, error: tokenDataError, refetch: refetchTokenData } = useQuery({
+    queryKey: ['chat-token-usage', chatId],
+    queryFn: async ({ queryKey }) => {
+      const [_, chatId] = queryKey;
+      if (!chatId || !userId) return null;
+      
+      try {
+        const response = await fetch(`/api/token-usage?chatId=${chatId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to load token usage data');
+        }
+        
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        console.error('Error loading chat token usage:', error);
+        throw error;
+      }
+    },
+    enabled: !!chatId && !!userId,
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false
+  });
+
+  // Update chat token usage when streaming
+  useEffect(() => {
+    if (status === "streaming" && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        // Simulate real-time token updates during streaming
+        // In a real implementation, this would come from the streaming response
+        let outputContentLength = 0;
+        let inputContentLength = 0;
+
+        // Handle structured content (Google models)
+        if (Array.isArray(lastMessage.content)) {
+          outputContentLength = lastMessage.content
+            .filter((part: any) => part.type === 'text')
+            .map((part: any) => part.text)
+            .join('').length;
+        } else if (typeof lastMessage.content === 'string') {
+          outputContentLength = lastMessage.content.length;
+        }
+
+        // Handle input message content
+        if (messages.length > 1) {
+          const inputMessage = messages[messages.length - 2];
+          if (Array.isArray(inputMessage.content)) {
+            inputContentLength = inputMessage.content
+              .filter((part: any) => part.type === 'text')
+              .map((part: any) => part.text)
+              .join('').length;
+          } else if (typeof inputMessage.content === 'string') {
+            inputContentLength = inputMessage.content.length;
+          }
+        }
+
+        const estimatedOutputTokens = Math.floor(outputContentLength / 4); // Rough estimate
+        const estimatedInputTokens = Math.floor(inputContentLength / 4);
+        
+        setChatTokenUsage({
+          inputTokens: estimatedInputTokens,
+          outputTokens: estimatedOutputTokens,
+          estimatedCost: (estimatedInputTokens + estimatedOutputTokens) * 0.000002, // Rough estimate
+          currency: 'USD',
+          // NEW: Enhanced timing metrics for Phase 2
+          timeToFirstToken: timeToFirstToken || undefined,
+          tokensPerSecond: tokensPerSecond || undefined,
+          totalDuration: totalDuration || undefined
+        });
+      }
+    } else if (status === "ready") {
+      if (chatTokenData) {
+        // When streaming is complete and we have actual data from the API
+        // Handle both old format (totalInputTokens) and new format (totalInputTokens from chat-specific data)
+        const inputTokens = chatTokenData.totalInputTokens || chatTokenData.inputTokens || 0;
+        const outputTokens = chatTokenData.totalOutputTokens || chatTokenData.outputTokens || 0;
+        const estimatedCost = chatTokenData.totalEstimatedCost || chatTokenData.estimatedCost || 0;
+        
+        setChatTokenUsage({
+          inputTokens,
+          outputTokens,
+          estimatedCost,
+          currency: chatTokenData.currency || 'USD',
+          // NEW: Enhanced timing metrics for Phase 2
+          timeToFirstToken: chatTokenData.avgTimeToFirstToken || timeToFirstToken || undefined,
+          tokensPerSecond: chatTokenData.avgTokensPerSecond || tokensPerSecond || undefined,
+          totalDuration: chatTokenData.avgTotalDuration || totalDuration || undefined
+        });
+        
+        // Refetch token data to get the latest information
+        refetchTokenData();
+        
+        // Invalidate user token usage queries to refresh sidebar data
+        if (userId) {
+          queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
+        }
+      }
+      // If chatTokenData is not available yet, keep the estimated values from streaming
+    }
+  }, [messages, status, chatTokenData, refetchTokenData, userId, queryClient, timeToFirstToken, tokensPerSecond, totalDuration, chatTokenData?.avgTimeToFirstToken, chatTokenData?.avgTokensPerSecond, chatTokenData?.avgTotalDuration]);
+
   // Manual recovery function
   const forceRecovery = useCallback(() => {
     console.log('Manual recovery triggered by user');
@@ -651,7 +789,7 @@ export default function Chat() {
     });
   }, [originalStop, lastToastId, chatId]);
 
-  // Streaming status component
+  // Streaming status component with enhanced timing metrics
   const StreamingStatus = () => {
     const [elapsed, setElapsed] = useState(0);
 
@@ -676,6 +814,19 @@ export default function Chat() {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
 
+    const formatTime = (ms: number) => {
+      if (ms < 1000) {
+        return `${ms}ms`;
+      }
+      return `${(ms / 1000).toFixed(1)}s`;
+    };
+
+    const getTimingColor = (ttft: number) => {
+      if (ttft < 1000) return "text-green-600 dark:text-green-400";
+      if (ttft < 3000) return "text-yellow-600 dark:text-yellow-400";
+      return "text-red-600 dark:text-red-400";
+    };
+
     return (
       <div className="flex items-center justify-center py-2">
         <div className="flex items-center space-x-2 text-xs text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
@@ -687,6 +838,17 @@ export default function Chat() {
           <span>
             Generating response... {minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`}
           </span>
+          {/* NEW: Show timing metrics during streaming */}
+          {timeToFirstToken && (
+            <span className={getTimingColor(timeToFirstToken)}>
+              • TTFT: {formatTime(timeToFirstToken)}
+            </span>
+          )}
+          {tokensPerSecond && (
+            <span>
+              • {tokensPerSecond.toFixed(1)}/s
+            </span>
+          )}
         </div>
       </div>
     );
@@ -725,9 +887,33 @@ export default function Chat() {
             </div>
           </div>
         ) : (
-          <Messages messages={enhancedMessages} isLoading={isLoading} status={status} />
+          <Messages
+            messages={enhancedMessages}
+            isLoading={isLoading}
+            status={status}
+            chatTokenUsage={chatTokenUsage}
+          />
         )}
       </div>
+
+      {/* Token Usage Summary - Only show when not streaming or submitted */}
+      {chatId && status === "ready" && (
+        <div className="mb-4">
+          <ChatTokenSummary
+            totalInputTokens={chatTokenData?.totalInputTokens || chatTokenUsage?.inputTokens || 0}
+            totalOutputTokens={chatTokenData?.totalOutputTokens || chatTokenUsage?.outputTokens || 0}
+            totalTokens={chatTokenData?.totalTokens || (chatTokenUsage?.inputTokens || 0) + (chatTokenUsage?.outputTokens || 0) || 0}
+            totalEstimatedCost={chatTokenData?.totalEstimatedCost || chatTokenUsage?.estimatedCost || 0}
+            totalActualCost={chatTokenData?.totalActualCost || 0}
+            messageCount={messages.length}
+            currency={chatTokenData?.currency || chatTokenUsage?.currency || 'USD'}
+            isLoading={false}
+            error={tokenDataError?.message || null}
+            onRefresh={refetchTokenData}
+            compact={true}
+          />
+        </div>
+      )}
 
       {/* Streaming Status */}
       <StreamingStatus />

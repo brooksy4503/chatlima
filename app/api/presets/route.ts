@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { eq, and, desc, isNull } from 'drizzle-orm';
 import { validatePresetParameters, validateModelAccess } from '@/lib/parameter-validation';
 import { getModelDetails } from '@/lib/models/fetch-models';
+import { createRequestModelCache } from '@/lib/models/request-cache';
 import { nanoid } from 'nanoid';
 
 // Helper to create error responses
@@ -16,10 +17,10 @@ const createErrorResponse = (message: string, status: number) => {
 };
 
 // Helper to check if user has access to premium models
-async function userCanAccessPremium(userId: string): Promise<boolean> {
-  // Check if user has credits or subscription
-  // For now, assume all authenticated users can access premium models
-  // This can be enhanced with actual credit/subscription checks
+async function userCanAccessPremium(userId: string, isAnonymous: boolean): Promise<boolean> {
+  // Anonymous users cannot access premium models
+  if (isAnonymous) return false;
+  // Authenticated users: existing behavior (could wire to credits here if desired)
   return true;
 }
 
@@ -32,6 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     const userId = session.user.id;
+    const isAnonymous = (session.user as any)?.isAnonymous === true;
 
     // Get user's presets (excluding soft deleted)
     const userPresets = await db
@@ -61,12 +63,16 @@ export async function GET(req: NextRequest) {
 // POST /api/presets - Create new preset
 export async function POST(req: NextRequest) {
   try {
+    // Create request-scoped model cache for performance
+    const { getModelDetails: getModelDetailsCache } = createRequestModelCache();
+
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
       return createErrorResponse('Authentication required', 401);
     }
 
     const userId = session.user.id;
+    const isAnonymous = (session.user as any)?.isAnonymous === true;
     const data = await req.json();
 
     const {
@@ -90,8 +96,8 @@ export async function POST(req: NextRequest) {
       return createErrorResponse('Missing required fields: temperature, maxTokens', 400);
     }
 
-    // Get model info first for validation
-    const modelInfo = await getModelDetails(modelId);
+    // Get model info first for validation (using request cache)
+    const modelInfo = await getModelDetailsCache(modelId);
 
     // Validate preset parameters
     const validation = validatePresetParameters(modelInfo, temperature, maxTokens, systemInstruction);
@@ -100,7 +106,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate model access
-    const canAccessPremium = await userCanAccessPremium(userId);
+    const canAccessPremium = await userCanAccessPremium(userId, isAnonymous);
+
+    // Additional anonymous enforcement: only allow openrouter :free models
+    if (isAnonymous && !(modelId.startsWith('openrouter/') && modelId.endsWith(':free'))) {
+      return createErrorResponse('Anonymous users can only use free models', 403);
+    }
     const modelAccessValidation = validateModelAccess(modelInfo, canAccessPremium);
     if (!modelAccessValidation.valid) {
       return createErrorResponse(`Model access denied: ${modelAccessValidation.errors.join(', ')}`, 403);

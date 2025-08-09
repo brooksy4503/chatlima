@@ -1,5 +1,5 @@
-import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check, index } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { timestamp, pgTable, text, primaryKey, json, boolean, integer, unique, check, index, numeric, date } from "drizzle-orm/pg-core";
+import { sql, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 // Message role enum type
@@ -67,6 +67,8 @@ export const users = pgTable("user", {
   emailVerified: boolean("emailVerified"),
   image: text("image"),
   isAnonymous: boolean("isAnonymous").default(false),
+  role: text("role").default("user"),
+  isAdmin: boolean("is_admin").default(false),
   metadata: json("metadata"),
   defaultPresetId: text("default_preset_id"), // Will add foreign key constraint in migration
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
@@ -183,7 +185,7 @@ export const presets = pgTable('presets', {
   checkNameLength: check('check_name_length', sql`char_length(${table.name}) >= 1 AND char_length(${table.name}) <= 100`),
   checkSystemInstructionLength: check('check_system_instruction_length', sql`char_length(${table.systemInstruction}) >= 10 AND char_length(${table.systemInstruction}) <= 4000`),
   checkTemperatureRange: check('check_temperature_range', sql`${table.temperature} >= 0 AND ${table.temperature} <= 2000`), // 0.0 to 2.0 * 1000
-  checkMaxTokensRange: check('check_max_tokens_range', sql`${table.maxTokens} > 0 AND ${table.maxTokens} <= 100000`),
+  checkMaxTokensRange: check('check_max_tokens_range', sql`${table.maxTokens} > 0 AND ${table.maxTokens} <= 200000`),
   checkVisibility: check('check_visibility', sql`${table.visibility} IN ('private', 'shared')`),
   checkWebSearchContextSize: check('check_web_search_context_size', sql`${table.webSearchContextSize} IN ('low', 'medium', 'high')`),
   checkShareIdFormat: check('check_share_id_format', sql`${table.shareId} IS NULL OR (char_length(${table.shareId}) >= 20 AND char_length(${table.shareId}) <= 50)`),
@@ -244,4 +246,144 @@ export const chatShares = pgTable('chat_shares', {
 
 export type ChatShare = typeof chatShares.$inferSelect;
 export type ChatShareInsert = typeof chatShares.$inferInsert;
+
+// --- Token Usage Metrics Schema ---
+
+export const tokenUsageMetrics = pgTable('token_usage_metrics', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  modelId: text('model_id').notNull(),
+  provider: text('provider').notNull(),
+  inputTokens: integer('input_tokens').default(0).notNull(),
+  outputTokens: integer('output_tokens').default(0).notNull(),
+  totalTokens: integer('total_tokens').default(0).notNull(),
+  estimatedCost: numeric('estimated_cost', { precision: 10, scale: 6 }).default('0').notNull(),
+  actualCost: numeric('actual_cost', { precision: 10, scale: 6 }),
+  currency: text('currency').default('USD').notNull(),
+  processingTimeMs: integer('processing_time_ms'),
+  timeToFirstTokenMs: integer('time_to_first_token_ms'),
+  tokensPerSecond: numeric('tokens_per_second', { precision: 10, scale: 2 }),
+  streamingStartTime: timestamp('streaming_start_time'),
+  status: text('status').default('completed').notNull(),
+  errorMessage: text('error_message'),
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  checkStatus: check('check_token_usage_metrics_status', sql`${table.status} IN ('pending', 'processing', 'completed', 'failed')`),
+  checkTokensNonNegative: check('check_token_usage_metrics_tokens_non_negative', sql`${table.inputTokens} >= 0 AND ${table.outputTokens} >= 0 AND ${table.totalTokens} >= 0`),
+  checkCostNonNegative: check('check_token_usage_metrics_cost_non_negative', sql`${table.estimatedCost} >= 0 AND (${table.actualCost} IS NULL OR ${table.actualCost} >= 0)`),
+  // Indexes
+  userIdIdx: index('idx_token_usage_metrics_user_id').on(table.userId),
+  chatIdIdx: index('idx_token_usage_metrics_chat_id').on(table.chatId),
+  modelIdIdx: index('idx_token_usage_metrics_model_id').on(table.modelId),
+  providerIdx: index('idx_token_usage_metrics_provider').on(table.provider),
+  createdAtIdx: index('idx_token_usage_metrics_created_at').on(table.createdAt),
+  statusIdx: index('idx_token_usage_metrics_status').on(table.status),
+  // NEW: Composite indexes for cost calculation performance
+  userCreatedAtIdx: index('idx_token_usage_metrics_user_created_at').on(table.userId, table.createdAt),
+  userProviderCreatedAtIdx: index('idx_token_usage_metrics_user_provider_created_at').on(table.userId, table.provider, table.createdAt),
+  modelProviderIdx: index('idx_token_usage_metrics_model_provider').on(table.modelId, table.provider),
+}));
+
+export const modelPricing = pgTable('model_pricing', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  modelId: text('model_id').notNull(),
+  provider: text('provider').notNull(),
+  inputTokenPrice: numeric('input_token_price', { precision: 10, scale: 6 }).notNull(),
+  outputTokenPrice: numeric('output_token_price', { precision: 10, scale: 6 }).notNull(),
+  currency: text('currency').default('USD').notNull(),
+  effectiveFrom: timestamp('effective_from').defaultNow().notNull(),
+  effectiveTo: timestamp('effective_to'),
+  isActive: boolean('is_active').default(true).notNull(),
+  metadata: json('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  checkPricesPositive: check('check_model_pricing_prices_positive', sql`${table.inputTokenPrice} >= 0 AND ${table.outputTokenPrice} >= 0`),
+  // Indexes - Conditional unique constraint for active entries only
+  // This allows historical pricing entries while ensuring only one active entry per model+provider
+  // Note: The actual constraint is created via SQL migration due to Drizzle ORM limitations with conditional constraints
+  providerIdx: index('idx_model_pricing_provider').on(table.provider),
+  effectiveFromIdx: index('idx_model_pricing_effective_from').on(table.effectiveFrom),
+  // NEW: Add missing indexes for performance
+  modelIdIdx: index('idx_model_pricing_model_id').on(table.modelId),
+  isActiveIdx: index('idx_model_pricing_is_active').on(table.isActive),
+  // Composite index for the most common query pattern
+  modelProviderActiveIdx: index('idx_model_pricing_model_provider_active').on(table.modelId, table.provider, table.isActive),
+  // NEW: Optimized composite index for batch pricing queries
+  modelProviderActiveEffectiveIdx: index('idx_model_pricing_model_provider_active_effective').on(table.modelId, table.provider, table.isActive, table.effectiveFrom),
+  // NEW: Partial index for active pricing only (most common query)
+  activePricingIdx: index('idx_model_pricing_active_only').on(table.modelId, table.provider, table.effectiveFrom).where(sql`${table.isActive} = true`),
+}));
+
+export const dailyTokenUsage = pgTable('daily_token_usage', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  provider: text('provider').notNull(),
+  totalInputTokens: integer('total_input_tokens').default(0).notNull(),
+  totalOutputTokens: integer('total_output_tokens').default(0).notNull(),
+  totalTokens: integer('total_tokens').default(0).notNull(),
+  totalEstimatedCost: numeric('total_estimated_cost', { precision: 10, scale: 6 }).default('0').notNull(),
+  totalActualCost: numeric('total_actual_cost', { precision: 10, scale: 6 }).default('0').notNull(),
+  requestCount: integer('request_count').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  uniqueUserDateProvider: unique('daily_token_usage_user_id_date_provider_idx').on(table.userId, table.date, table.provider),
+  checkTokensNonNegative: check('check_daily_token_usage_tokens_non_negative', sql`${table.totalInputTokens} >= 0 AND ${table.totalOutputTokens} >= 0 AND ${table.totalTokens} >= 0`),
+  checkCostNonNegative: check('check_daily_token_usage_cost_non_negative', sql`${table.totalEstimatedCost} >= 0 AND ${table.totalActualCost} >= 0`),
+  // Indexes
+  dateIdx: index('idx_daily_token_usage_date').on(table.date),
+  // NEW: Add missing indexes for performance
+  userIdIdx: index('idx_daily_token_usage_user_id').on(table.userId),
+  providerIdx: index('idx_daily_token_usage_provider').on(table.provider),
+  // Composite index for the most common query pattern
+  userDateProviderIdx: index('idx_daily_token_usage_user_date_provider').on(table.userId, table.date, table.provider),
+}));
+
+// --- Usage Limits Schema ---
+
+export const usageLimits = pgTable('usage_limits', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), // null for global limits
+  modelId: text('model_id'), // null for user-specific limits
+  provider: text('provider'), // null for user-specific limits
+  dailyTokenLimit: integer('daily_token_limit').notNull(),
+  monthlyTokenLimit: integer('monthly_token_limit').notNull(),
+  dailyCostLimit: numeric('daily_cost_limit', { precision: 10, scale: 2 }).notNull(),
+  monthlyCostLimit: numeric('monthly_cost_limit', { precision: 10, scale: 2 }).notNull(),
+  requestRateLimit: integer('request_rate_limit').default(60).notNull(), // requests per minute
+  currency: text('currency').default('USD').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  checkLimitsPositive: check('check_usage_limits_positive', sql`${table.dailyTokenLimit} >= 0 AND ${table.monthlyTokenLimit} >= 0 AND ${table.dailyCostLimit} >= 0 AND ${table.monthlyCostLimit} >= 0 AND ${table.requestRateLimit} >= 1`),
+  checkUserOrModel: check('check_usage_limits_user_or_model', sql`(${table.userId} IS NOT NULL) OR (${table.modelId} IS NOT NULL AND ${table.provider} IS NOT NULL)`),
+  // Indexes
+  userIdIdx: index('idx_usage_limits_user_id').on(table.userId),
+  modelIdIdx: index('idx_usage_limits_model_id').on(table.modelId),
+  providerIdx: index('idx_usage_limits_provider').on(table.provider),
+  isActiveIdx: index('idx_usage_limits_is_active').on(table.isActive),
+  createdAtIdx: index('idx_usage_limits_created_at').on(table.createdAt),
+}));
+
+// Token usage metrics types
+export type TokenUsageMetrics = typeof tokenUsageMetrics.$inferSelect;
+export type TokenUsageMetricsInsert = typeof tokenUsageMetrics.$inferInsert;
+export type ModelPricing = typeof modelPricing.$inferSelect;
+export type ModelPricingInsert = typeof modelPricing.$inferInsert;
+export type DailyTokenUsage = typeof dailyTokenUsage.$inferSelect;
+export type DailyTokenUsageInsert = typeof dailyTokenUsage.$inferInsert;
+export type UsageLimit = typeof usageLimits.$inferSelect;
+export type UsageLimitInsert = typeof usageLimits.$inferInsert;
 

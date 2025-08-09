@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useState, useContext, ReactNode, Dispatch, SetStateAction } from 'react';
+import React, { createContext, useState, useContext, ReactNode, Dispatch, SetStateAction, useEffect } from 'react';
 import { useLocalStorage } from '@/lib/hooks/use-local-storage';
 import { STORAGE_KEYS } from '@/lib/constants';
 
@@ -26,6 +26,19 @@ export const WebSearchProvider: React.FC<WebSearchProviderProps> = ({ children }
     contextSize: 'medium'
   });
 
+  // Prevent hydration mismatch by ensuring we only use localStorage values after mounting
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Use default values during SSR and initial render to prevent hydration mismatch
+  const effectiveSettings = isMounted ? webSearchSettings : {
+    enabled: false,
+    contextSize: 'medium' as const
+  };
+
   const setWebSearchEnabled = (enabled: boolean | ((prevState: boolean) => boolean)) => {
     setWebSearchSettings(prev => ({ ...prev, enabled: typeof enabled === 'function' ? enabled(prev.enabled) : enabled }));
   };
@@ -36,9 +49,9 @@ export const WebSearchProvider: React.FC<WebSearchProviderProps> = ({ children }
 
   return (
     <WebSearchContext.Provider value={{ 
-      webSearchEnabled: webSearchSettings.enabled, 
+      webSearchEnabled: effectiveSettings.enabled, 
       setWebSearchEnabled, 
-      webSearchContextSize: webSearchSettings.contextSize, 
+      webSearchContextSize: effectiveSettings.contextSize, 
       setWebSearchContextSize 
     }}>
       {children}

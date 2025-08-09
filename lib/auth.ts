@@ -7,6 +7,7 @@ import { Polar } from '@polar-sh/sdk';
 import { polar as polarPlugin } from '@polar-sh/better-auth';
 import { count, eq, and, gte } from 'drizzle-orm';
 import { getRemainingCreditsByExternalId } from './polar';
+import { createRequestCreditCache } from './services/creditCache';
 
 // Dynamic Google OAuth configuration based on environment
 const getGoogleOAuthConfig = () => {
@@ -169,7 +170,7 @@ export const auth = betterAuth({
                         // Transfer all presets from anonymous user to authenticated user
                         const migratedPresets = await db
                             .update(presets)
-                            .set({ 
+                            .set({
                                 userId: newUser.user.id,
                                 updatedAt: new Date()
                             })
@@ -287,7 +288,11 @@ export const auth = betterAuth({
 });
 
 // Helper to check if user has reached their daily message or credit limit
-export async function checkMessageLimit(userId: string, isAnonymous: boolean): Promise<{
+export async function checkMessageLimit(
+    userId: string,
+    isAnonymous: boolean = false,
+    creditCache?: any // RequestCreditCache type - optional for backward compatibility
+): Promise<{
     hasReachedLimit: boolean;
     limit: number;
     remaining: number;
@@ -297,7 +302,10 @@ export async function checkMessageLimit(userId: string, isAnonymous: boolean): P
     try {
         // 1. Check Polar credits (for authenticated users only)
         if (!isAnonymous) {
-            const credits = await getRemainingCreditsByExternalId(userId);
+            // Use cache if provided, otherwise fall back to original function
+            const credits = creditCache
+                ? await creditCache.getRemainingCreditsByExternalId(userId)
+                : await getRemainingCreditsByExternalId(userId);
             if (typeof credits === 'number') {
                 // If user has negative credits, block them
                 if (credits < 0) {
@@ -335,9 +343,9 @@ export async function checkMessageLimit(userId: string, isAnonymous: boolean): P
             messageLimit = (user as any).metadata?.messageLimit || 20;
         }
 
-        // Count today's messages for this user
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        // Count today's messages for this user (using UTC date to match database timestamps)
+        const now = new Date();
+        const startOfDay = new Date(now.toISOString().split('T')[0] + 'T00:00:00.000Z');
 
         const messageCount = await db.select({ count: count() })
             .from(schema.messages)

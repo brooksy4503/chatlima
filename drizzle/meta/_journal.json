@@ -183,6 +183,83 @@
       "when": 1754039935489,
       "tag": "0026_previous_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1754122786567,
+      "tag": "0027_rare_roulette",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1754123779826,
+      "tag": "0028_rare_newton_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1754180474639,
+      "tag": "0029_absurd_ultimates",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1738347600000,
+      "tag": "0030_fix_model_pricing_unique_constraint",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1754651343300,
+      "tag": "0031_eager_shiver_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1754707694778,
+      "tag": "0032_colossal_karma",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1754712302928,
+      "tag": "0033_new_maelstrom",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1754713343878,
+      "tag": "0034_jittery_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1754714630133,
+      "tag": "0035_overrated_vapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1754714652855,
+      "tag": "0036_warm_elektra",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1754738892174,
+      "tag": "0037_moaning_revanche",
+      "breakpoints": true
     }
   ]
 }
