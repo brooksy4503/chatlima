@@ -437,6 +437,7 @@ export class CostCalculationService {
                     }
                 });
 
+                // Get pricing from database
                 const pricing = await db.query.modelPricing.findFirst({
                     where: and(
                         eq(modelPricing.modelId, modelId),
@@ -503,6 +504,7 @@ export class CostCalculationService {
                         outputTokenPrice = defaultPrices.output;
                     }
                     pricingCurrency = providerConfig.currency;
+                    pricingSource = 'default';
                 }
             }
 

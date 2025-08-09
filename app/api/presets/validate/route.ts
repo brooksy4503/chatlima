@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { validatePresetParameters, validateModelAccess, getModelParameterConstraints } from '@/lib/parameter-validation';
 import { getModelDetails } from '@/lib/models/fetch-models';
+import { createRequestModelCache } from '@/lib/models/request-cache';
 import { auth } from '@/lib/auth';
 
 // Helper to create error responses
@@ -20,6 +21,9 @@ async function userCanAccessPremium(userId: string, isAnonymous: boolean): Promi
 // POST /api/presets/validate - Validate preset parameters for model
 export async function POST(req: NextRequest) {
   try {
+    // Create request-scoped model cache for performance
+    const { getModelDetails: getModelDetailsCache } = createRequestModelCache();
+
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
       return createErrorResponse('Authentication required', 401);
@@ -41,8 +45,8 @@ export async function POST(req: NextRequest) {
       return createErrorResponse('Missing required field: modelId', 400);
     }
 
-    // Get model info first for validation
-    const modelInfo = await getModelDetails(modelId);
+    // Get model info first for validation (using request cache)
+    const modelInfo = await getModelDetailsCache(modelId);
 
     // Get model constraints
     const constraints = getModelParameterConstraints(modelInfo);

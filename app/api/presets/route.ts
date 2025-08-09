@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { eq, and, desc, isNull } from 'drizzle-orm';
 import { validatePresetParameters, validateModelAccess } from '@/lib/parameter-validation';
 import { getModelDetails } from '@/lib/models/fetch-models';
+import { createRequestModelCache } from '@/lib/models/request-cache';
 import { nanoid } from 'nanoid';
 
 // Helper to create error responses
@@ -62,6 +63,9 @@ export async function GET(req: NextRequest) {
 // POST /api/presets - Create new preset
 export async function POST(req: NextRequest) {
   try {
+    // Create request-scoped model cache for performance
+    const { getModelDetails: getModelDetailsCache } = createRequestModelCache();
+
     const session = await auth.api.getSession({ headers: req.headers });
     if (!session?.user?.id) {
       return createErrorResponse('Authentication required', 401);
@@ -92,8 +96,8 @@ export async function POST(req: NextRequest) {
       return createErrorResponse('Missing required fields: temperature, maxTokens', 400);
     }
 
-    // Get model info first for validation
-    const modelInfo = await getModelDetails(modelId);
+    // Get model info first for validation (using request cache)
+    const modelInfo = await getModelDetailsCache(modelId);
 
     // Validate preset parameters
     const validation = validatePresetParameters(modelInfo, temperature, maxTokens, systemInstruction);
