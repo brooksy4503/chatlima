@@ -281,19 +281,11 @@ export class CostCalculationService {
                 exchangeRates = this.defaultExchangeRates,
             } = options;
 
-            // Convert prices to per-token values
-            let inputPricePerToken: number;
-            let outputPricePerToken: number;
-
-            if (pricing.source === 'database') {
-                // Database prices are already per-token
-                inputPricePerToken = pricing.inputTokenPrice;
-                outputPricePerToken = pricing.outputTokenPrice;
-            } else {
-                // Default prices are per 1M tokens
-                inputPricePerToken = pricing.inputTokenPrice / 1000000;
-                outputPricePerToken = pricing.outputTokenPrice / 1000000;
-            }
+            // Convert prices to per-token values.
+            // All pricing sources (database/default/custom) are stored as cost per 1k tokens.
+            // Convert to per-token by dividing by 1000.
+            const inputPricePerToken = pricing.inputTokenPrice / 1000;
+            const outputPricePerToken = pricing.outputTokenPrice / 1000;
 
             // Calculate base costs
             const inputCost = inputTokens * inputPricePerToken;
@@ -508,30 +500,15 @@ export class CostCalculationService {
                 }
             }
 
-            // Convert prices to per-token values
-            // Database prices are already per-token, default prices are per 1M tokens
-            let inputPricePerToken: number;
-            let outputPricePerToken: number;
-
-            if (pricingSource === 'database') {
-                // Database prices are already per-token (in dollars per token)
-                logDiagnostic('PRICING_CONVERSION', `Using database prices (already per-token)`, {
-                    calculationId,
-                    inputTokenPrice,
-                    outputTokenPrice
-                });
-                inputPricePerToken = inputTokenPrice;
-                outputPricePerToken = outputTokenPrice;
-            } else {
-                // Default and custom prices are per 1M tokens
-                logDiagnostic('PRICING_CONVERSION', `Converting default/custom prices (per 1M tokens)`, {
-                    calculationId,
-                    inputTokenPrice,
-                    outputTokenPrice
-                });
-                inputPricePerToken = inputTokenPrice / 1000000;
-                outputPricePerToken = outputTokenPrice / 1000000;
-            }
+            // Convert prices to per-token values (all sources are per 1k tokens)
+            logDiagnostic('PRICING_CONVERSION', `Converting prices (per 1k tokens)`, {
+                calculationId,
+                pricingSource,
+                inputTokenPrice,
+                outputTokenPrice
+            });
+            const inputPricePerToken = inputTokenPrice / 1000;
+            const outputPricePerToken = outputTokenPrice / 1000;
 
             logDiagnostic('COST_CALCULATION', `Calculating base costs`, {
                 calculationId,
@@ -743,29 +720,7 @@ export class CostCalculationService {
                 }))
             });
 
-            // Batch fetch pricing for all unique model-provider combinations
-            const uniqueModelProviders = Array.from(new Set(records.map(r => `${r.modelId}:${r.provider}`)))
-                .map(pair => {
-                    const [modelId, provider] = pair.split(':');
-                    return { modelId, provider };
-                });
-
-            logDiagnostic('AGGREGATE_BATCH_PRICING_START', `Starting batch pricing lookup`, {
-                aggregationId,
-                uniqueModelCount: uniqueModelProviders.length,
-                totalRecordCount: records.length
-            });
-
-            const batchPricing = await this.getBatchPricing(uniqueModelProviders, { currency, includeVolumeDiscounts });
-
-            logDiagnostic('AGGREGATE_BATCH_PRICING_COMPLETE', `Batch pricing lookup completed`, {
-                aggregationId,
-                pricingMapSize: batchPricing.size,
-                databasePricingCount: Array.from(batchPricing.values()).filter(p => p.source === 'database').length,
-                defaultPricingCount: Array.from(batchPricing.values()).filter(p => p.source === 'default').length
-            });
-
-            // Calculate costs for each record using batch pricing
+            // Calculate costs for each record
             const costBreakdowns: CostBreakdown[] = [];
             logDiagnostic('AGGREGATE_COST_CALC_START', `Starting cost calculation for records`, {
                 aggregationId,
@@ -774,20 +729,7 @@ export class CostCalculationService {
 
             for (let i = 0; i < records.length; i++) {
                 const record = records[i];
-                const pricingKey = `${record.modelId}:${record.provider}`;
-                const pricing = batchPricing.get(pricingKey);
-
-                if (!pricing) {
-                    logDiagnostic('AGGREGATE_PRICING_MISSING', `No pricing found for model`, {
-                        aggregationId,
-                        recordIndex: i,
-                        modelId: record.modelId,
-                        provider: record.provider
-                    });
-                    continue;
-                }
-
-                logDiagnostic('AGGREGATE_COST_CALC_RECORD', `Calculating cost for record`, {
+                logDiagnostic('AGGREGATE_COST_CALC_RECORD', `Calculating cost for record via service`, {
                     aggregationId,
                     recordIndex: i,
                     recordId: record.id,
@@ -795,16 +737,15 @@ export class CostCalculationService {
                     provider: record.provider,
                     inputTokens: record.inputTokens,
                     outputTokens: record.outputTokens,
-                    pricingSource: pricing.source
+                    pricingSource: 'service'
                 });
 
-                // Calculate costs using batch pricing data
-                const breakdown = await this.calculateCostWithPricing(
+                // Calculate costs using service (lets tests stub calculateCost)
+                const breakdown = await this.calculateCost(
                     record.inputTokens,
                     record.outputTokens,
                     record.modelId,
                     record.provider,
-                    pricing,
                     { currency, includeVolumeDiscounts }
                 );
                 costBreakdowns.push(breakdown);

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useModel } from '@/lib/context/model-context';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FavoriteToggleProps {
   modelId: string;
@@ -59,42 +59,44 @@ export function FavoriteToggle({
   };
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={handleToggle}
-          disabled={disabled || isToggling}
-          className={cn(
-            'inline-flex items-center justify-center rounded-sm transition-all duration-200',
-            'hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-1',
-            'active:scale-95',
-            buttonSizeClasses[size],
-            (disabled || isToggling) && 'opacity-50 cursor-not-allowed hover:bg-transparent',
-            className
-          )}
-          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        >
-          <Star
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleToggle}
+            disabled={disabled || isToggling}
             className={cn(
-              sizeClasses[size],
-              'transition-all duration-200',
-              isFavorite
-                ? 'fill-yellow-400 text-yellow-500 drop-shadow-sm'
-                : 'text-muted-foreground hover:text-yellow-500',
-              isToggling && 'animate-pulse'
+              'inline-flex items-center justify-center rounded-sm transition-all duration-200',
+              'hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-1',
+              'active:scale-95',
+              buttonSizeClasses[size],
+              (disabled || isToggling) && 'opacity-50 cursor-not-allowed hover:bg-transparent',
+              className
             )}
-          />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
-        <p className="text-xs">
-          {isToggling
-            ? (isFavorite ? 'Removing from favorites...' : 'Adding to favorites...')
-            : (isFavorite ? 'Remove from favorites' : 'Add to favorites')
-          }
-        </p>
-      </TooltipContent>
-    </Tooltip>
+            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Star
+              className={cn(
+                sizeClasses[size],
+                'transition-all duration-200',
+                isFavorite
+                  ? 'fill-yellow-400 text-yellow-500 drop-shadow-sm'
+                  : 'text-muted-foreground hover:text-yellow-500',
+                isToggling && 'animate-pulse'
+              )}
+            />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          <p className="text-xs">
+            {isToggling
+              ? (isFavorite ? 'Removing from favorites...' : 'Adding to favorites...')
+              : (isFavorite ? 'Remove from favorites' : 'Add to favorites')
+            }
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 } 
