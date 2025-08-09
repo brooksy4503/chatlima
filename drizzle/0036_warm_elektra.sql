@@ -1,0 +1,1 @@
+CREATE INDEX "idx_model_pricing_active_only" ON "model_pricing" USING btree ("model_id","provider","effective_from") WHERE "model_pricing"."is_active" = true;
