@@ -47,6 +47,9 @@ export interface TokenTrackingParams {
     provider: string;
     tokenUsage: TokenUsageData;
     processingTimeMs?: number;
+    timeToFirstTokenMs?: number;
+    tokensPerSecond?: number;
+    streamingStartTime?: Date;
     status?: 'pending' | 'processing' | 'completed' | 'failed';
     errorMessage?: string;
     metadata?: Record<string, any>;
@@ -77,7 +80,15 @@ export class TokenTrackingService {
      */
     static async trackTokenUsage(params: TokenTrackingParams): Promise<void> {
         const trackingId = nanoid(); // Unique ID for this tracking attempt
-        logDiagnostic('TRACK_START', `Starting token tracking`, { trackingId, userId: params.userId, modelId: params.modelId, provider: params.provider });
+        logDiagnostic('TRACK_START', `Starting token tracking`, {
+            trackingId,
+            userId: params.userId,
+            modelId: params.modelId,
+            provider: params.provider,
+            timeToFirstTokenMs: params.timeToFirstTokenMs,
+            tokensPerSecond: params.tokensPerSecond,
+            streamingStartTime: params.streamingStartTime
+        });
 
         try {
             const {
@@ -211,6 +222,9 @@ export class TokenTrackingService {
                 actualCost: finalActualCost ? finalActualCost.toString() : undefined,
                 currency: pricingInfo?.currency || 'USD',
                 processingTimeMs,
+                timeToFirstTokenMs: params.timeToFirstTokenMs,
+                tokensPerSecond: params.tokensPerSecond ? params.tokensPerSecond.toString() : undefined,
+                streamingStartTime: params.streamingStartTime,
                 status,
                 errorMessage,
                 metadata: enhancedMetadata,
@@ -813,6 +827,10 @@ export class TokenTrackingService {
         totalEstimatedCost: number;
         totalActualCost: number;
         messageCount: number;
+        // NEW: Enhanced timing metrics for Phase 2
+        avgTimeToFirstToken?: number;
+        avgTokensPerSecond?: number;
+        avgTotalDuration?: number;
         breakdownByMessage: Array<{
             messageId: string;
             modelId: string;
@@ -823,6 +841,10 @@ export class TokenTrackingService {
             estimatedCost: number;
             actualCost: number;
             createdAt: Date;
+            // NEW: Enhanced timing metrics for Phase 2
+            timeToFirstTokenMs?: number;
+            tokensPerSecond?: number;
+            processingTimeMs?: number;
         }>;
     }> {
         try {
@@ -845,7 +867,7 @@ export class TokenTrackingService {
                 return sum + actualCost;
             }, 0);
 
-            // Create breakdown by message
+            // Create breakdown by message with enhanced timing metrics
             const breakdownByMessage = records.map(record => ({
                 messageId: record.messageId,
                 modelId: record.modelId,
@@ -856,7 +878,39 @@ export class TokenTrackingService {
                 estimatedCost: parseFloat(record.estimatedCost.toString()),
                 actualCost: record.actualCost ? parseFloat(record.actualCost.toString()) : 0,
                 createdAt: record.createdAt,
+                // NEW: Enhanced timing metrics for Phase 2
+                timeToFirstTokenMs: record.timeToFirstTokenMs || undefined,
+                tokensPerSecond: record.tokensPerSecond ? parseFloat(record.tokensPerSecond.toString()) : undefined,
+                processingTimeMs: record.processingTimeMs || undefined,
             }));
+
+            // Calculate average timing metrics
+            const recordsWithTiming = records.filter(record =>
+                record.timeToFirstTokenMs !== null &&
+                record.timeToFirstTokenMs !== undefined
+            );
+
+            const avgTimeToFirstToken = recordsWithTiming.length > 0
+                ? recordsWithTiming.reduce((sum, record) => sum + (record.timeToFirstTokenMs || 0), 0) / recordsWithTiming.length
+                : undefined;
+
+            const recordsWithTPS = records.filter(record =>
+                record.tokensPerSecond !== null &&
+                record.tokensPerSecond !== undefined
+            );
+
+            const avgTokensPerSecond = recordsWithTPS.length > 0
+                ? recordsWithTPS.reduce((sum, record) => sum + parseFloat(record.tokensPerSecond!.toString()), 0) / recordsWithTPS.length
+                : undefined;
+
+            const recordsWithDuration = records.filter(record =>
+                record.processingTimeMs !== null &&
+                record.processingTimeMs !== undefined
+            );
+
+            const avgTotalDuration = recordsWithDuration.length > 0
+                ? recordsWithDuration.reduce((sum, record) => sum + (record.processingTimeMs || 0), 0) / recordsWithDuration.length
+                : undefined;
 
             return {
                 totalInputTokens,
@@ -865,6 +919,10 @@ export class TokenTrackingService {
                 totalEstimatedCost,
                 totalActualCost,
                 messageCount: records.length,
+                // NEW: Enhanced timing metrics for Phase 2
+                avgTimeToFirstToken,
+                avgTokensPerSecond,
+                avgTotalDuration,
                 breakdownByMessage,
             };
         } catch (error) {
@@ -876,6 +934,10 @@ export class TokenTrackingService {
                 totalEstimatedCost: 0,
                 totalActualCost: 0,
                 messageCount: 0,
+                // NEW: Enhanced timing metrics for Phase 2
+                avgTimeToFirstToken: undefined,
+                avgTokensPerSecond: undefined,
+                avgTotalDuration: undefined,
                 breakdownByMessage: [],
             };
         }

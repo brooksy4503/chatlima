@@ -151,6 +151,10 @@ interface MessageProps {
     outputTokens?: number;
     estimatedCost?: number;
     currency?: string;
+    // NEW: Enhanced timing metrics for Phase 2
+    timeToFirstToken?: number;
+    tokensPerSecond?: number;
+    totalDuration?: number;
   };
 }
 
@@ -338,6 +342,10 @@ const PurePreviewMessage = ({
                     estimatedCost={chatTokenUsage?.estimatedCost}
                     currency={chatTokenUsage?.currency}
                     isStreaming={status === "streaming"}
+                    // NEW: Enhanced timing metrics for Phase 2
+                    timeToFirstToken={chatTokenUsage?.timeToFirstToken}
+                    tokensPerSecond={chatTokenUsage?.tokensPerSecond}
+                    totalDuration={chatTokenUsage?.totalDuration}
                     className="text-xs"
                   />
                 ) : (
@@ -349,6 +357,10 @@ const PurePreviewMessage = ({
                       estimatedCost={message.tokenUsage.estimatedCost}
                       currency={message.tokenUsage.currency}
                       isLoading={false}
+                      // NEW: Enhanced timing metrics for Phase 2
+                      timeToFirstToken={chatTokenUsage?.timeToFirstToken}
+                      tokensPerSecond={chatTokenUsage?.tokensPerSecond}
+                      totalDuration={chatTokenUsage?.totalDuration}
                       className="text-xs"
                     />
                   ) : null

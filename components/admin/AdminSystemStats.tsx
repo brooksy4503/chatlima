@@ -39,7 +39,7 @@ interface SystemStats {
   activeUsers: number;
   totalTokens: number;
   totalCost: number;
-  avgResponseTime: number;
+  avgTotalDuration: number;
   systemUptime: number;
   requestsToday: number;
   requestsThisMonth: number;
@@ -443,12 +443,12 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Response Time</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Duration</p>
                 <div className="flex items-center space-x-1">
-                  <p className={`text-2xl font-bold ${getStatusColor(systemStats.avgResponseTime, "response")}`}>
-                    {typeof systemStats.avgResponseTime === 'number' ? systemStats.avgResponseTime.toFixed(1) : '0.0'}s
+                  <p className={`text-2xl font-bold ${getStatusColor(systemStats.avgTotalDuration, "response")}`}>
+                    {typeof systemStats.avgTotalDuration === 'number' ? systemStats.avgTotalDuration.toFixed(1) : '0.0'}s
                   </p>
-                  {getStatusIcon(systemStats.avgResponseTime, "response")}
+                  {getStatusIcon(systemStats.avgTotalDuration, "response")}
                 </div>
               </div>
             </div>

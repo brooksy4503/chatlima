@@ -98,13 +98,13 @@ export async function GET(req: NextRequest) {
 
         const activeUsers = Number(activeUsersResult[0]?.count || 0);
 
-        // Get total tokens and cost with real response time calculation
+        // Get total tokens and cost with real total duration calculation
         const tokenStatsResult = await db
             .select({
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
                 totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
                 requestsToday: sql<number>`coalesce(count(*), 0)`,
-                avgResponseTime: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`
+                avgTotalDuration: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`
             })
             .from(tokenUsageMetrics)
             .where(gte(tokenUsageMetrics.createdAt, startDate));
@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
         const totalTokens = Number(tokenStatsResult[0]?.totalTokens || 0);
         const totalCost = Number(tokenStatsResult[0]?.totalCost || 0);
         const requestsToday = Number(tokenStatsResult[0]?.requestsToday || 0);
-        const avgResponseTime = Number(tokenStatsResult[0]?.avgResponseTime || 0);
+        const avgTotalDuration = Number(tokenStatsResult[0]?.avgTotalDuration || 0);
 
         // Get requests this month
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -213,7 +213,7 @@ export async function GET(req: NextRequest) {
             activeUsers,
             totalTokens,
             totalCost,
-            avgResponseTime,
+            avgTotalDuration,
             systemUptime,
             requestsToday,
             requestsThisMonth,

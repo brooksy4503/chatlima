@@ -218,6 +218,13 @@
       "when": 1754651343300,
       "tag": "0031_eager_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1754707694778,
+      "tag": "0032_colossal_karma",
+      "breakpoints": true
     }
   ]
 }
