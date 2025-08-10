@@ -67,11 +67,29 @@ export class UserCleanupService {
         }
 
         // Check for any recent activity
-        return !!(
-            (user.lastChatActivity && user.lastChatActivity > threshold) ||
-            (user.lastSessionActivity && user.lastSessionActivity > threshold) ||
-            (user.lastTokenUsage && user.lastTokenUsage > threshold)
-        );
+        const chatActive = user.lastChatActivity && user.lastChatActivity > threshold;
+        const sessionActive = user.lastSessionActivity && user.lastSessionActivity > threshold;
+        const tokenActive = user.lastTokenUsage && user.lastTokenUsage > threshold;
+
+        // If no recorded activities, fall back to account creation (same logic as calculateDaysSinceLastActivity)
+        const hasAnyActivity = user.lastChatActivity || user.lastSessionActivity || user.lastTokenUsage;
+        const accountAsActivity = !hasAnyActivity && user.accountCreated > threshold;
+
+        const isActive = !!(chatActive || sessionActive || tokenActive || accountAsActivity);
+
+        // DEBUG: Add detailed logging for boundary cases
+        if (user.daysSinceLastActivity >= 40 && user.daysSinceLastActivity <= 50) {
+            console.log(`[ISACTIVE_DEBUG] User ${user.userId.substring(0, 8)}:`);
+            console.log(`  Chat Activity: ${user.lastChatActivity?.toISOString() || 'null'} > ${threshold.toISOString()} = ${chatActive}`);
+            console.log(`  Session Activity: ${user.lastSessionActivity?.toISOString() || 'null'} > ${threshold.toISOString()} = ${sessionActive}`);
+            console.log(`  Token Activity: ${user.lastTokenUsage?.toISOString() || 'null'} > ${threshold.toISOString()} = ${tokenActive}`);
+            console.log(`  Has Any Activity: ${hasAnyActivity}`);
+            console.log(`  Account as Activity: ${user.accountCreated.toISOString()} > ${threshold.toISOString()} = ${accountAsActivity}`);
+            console.log(`  Account Created: ${user.accountCreated.toISOString()} > ${minimumAge.toISOString()} = ${user.accountCreated > minimumAge}`);
+            console.log(`  Final Result: ${isActive}`);
+        }
+
+        return isActive;
     }
 
     /**
