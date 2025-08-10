@@ -155,6 +155,7 @@ interface CleanupResult {
   thresholdDays: number;
   batchSize: number;
   dryRun: boolean;
+  isPartialSuccess?: boolean;
 }
 
 interface AdminUserCleanupProps {
@@ -277,16 +278,27 @@ export function AdminUserCleanup({ loading: externalLoading = false }: AdminUser
       }
 
       const result = await response.json();
-      return result.data as CleanupResult;
+      return { 
+        ...result.data as CleanupResult, 
+        isPartialSuccess: response.status === 206 
+      };
     },
     onSuccess: (result) => {
       setLastExecutionResult(result);
       setIsExecuteDialogOpen(false);
       setConfirmationText("");
       
+      // Handle different success scenarios
       if (result.dryRun) {
         toast.success(`Dry run completed: ${result.usersDeleted} users would be deleted`);
+      } else if (result.errors.length > 0) {
+        // Partial success - some users deleted but with errors
+        toast.success(
+          `Cleanup partially completed: ${result.usersDeleted} users deleted (${result.errors.length} errors)`,
+          { duration: 6000 }
+        );
       } else {
+        // Complete success
         toast.success(`Cleanup completed: ${result.usersDeleted} users deleted`);
       }
       
@@ -770,17 +782,28 @@ export function AdminUserCleanup({ loading: externalLoading = false }: AdminUser
 
           {/* Last Execution Result */}
           {lastExecutionResult && (
-            <Alert variant={lastExecutionResult.success ? "default" : "destructive"}>
+            <Alert variant={
+              lastExecutionResult.success || (lastExecutionResult.usersDeleted > 0 && lastExecutionResult.errors.length > 0) 
+                ? "default" 
+                : "destructive"
+            }>
               <div className="flex items-center space-x-2">
                 {lastExecutionResult.success ? (
                   <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : lastExecutionResult.usersDeleted > 0 ? (
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
                 ) : (
                   <XCircle className="h-4 w-4 text-red-600" />
                 )}
                 <div>
                   <p className="font-medium">
                     {lastExecutionResult.dryRun ? "Dry Run" : "Cleanup"} 
-                    {lastExecutionResult.success ? " Completed" : " Failed"}
+                    {lastExecutionResult.success 
+                      ? " Completed" 
+                      : lastExecutionResult.usersDeleted > 0 
+                        ? " Partially Completed" 
+                        : " Failed"
+                    }
                   </p>
                   <p className="text-sm">
                     {lastExecutionResult.dryRun ? "Would delete" : "Deleted"} {lastExecutionResult.usersDeleted} users
@@ -789,10 +812,15 @@ export function AdminUserCleanup({ loading: externalLoading = false }: AdminUser
                   </p>
                   {lastExecutionResult.errors.length > 0 && (
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-sm font-medium">View Errors</summary>
+                      <summary className="cursor-pointer text-sm font-medium">
+                        {lastExecutionResult.usersDeleted > 0 ? "View Warnings & Errors" : "View Errors"}
+                      </summary>
                       <div className="mt-2 text-xs space-y-1">
                         {lastExecutionResult.errors.map((error, i) => (
-                          <div key={i} className="bg-red-50 p-2 rounded">
+                          <div key={i} className={cn(
+                            "p-2 rounded",
+                            lastExecutionResult.usersDeleted > 0 ? "bg-orange-50" : "bg-red-50"
+                          )}>
                             {error}
                           </div>
                         ))}
