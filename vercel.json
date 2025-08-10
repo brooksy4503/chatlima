@@ -1,30 +1,20 @@
 {
     "functions": {
-        "app/api/admin/cleanup-users/execute/route.js": {
-            "memory": 3009,
-            "maxDuration": 300
+        "app/api/admin/cleanup-users/**": {
+            "maxDuration": 30,
+            "runtime": "edge"
         },
-        "app/api/admin/cleanup-users/preview/route.js": {
-            "memory": 1024,
-            "maxDuration": 30
-        },
-        "app/api/admin/cleanup-users/schedule/route.js": {
-            "memory": 512,
-            "maxDuration": 10
-        },
-        "app/api/admin/cleanup-users/logs/route.js": {
-            "memory": 1024,
-            "maxDuration": 15
-        },
-        "app/api/admin/cleanup-users/health/route.js": {
-            "memory": 1024,
-            "maxDuration": 15
+        "app/api/admin/**": {
+            "maxDuration": 25,
+            "runtime": "edge"
         }
     },
-    "crons": [
-        {
-            "path": "/api/admin/cleanup-users/execute",
-            "schedule": "0 2 * * 0"
+    "regions": [
+        "iad1"
+    ],
+    "build": {
+        "env": {
+            "NODE_OPTIONS": "--max-old-space-size=1024"
         }
-    ]
+    }
 }
