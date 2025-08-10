@@ -1516,7 +1516,7 @@ export async function POST(req: Request) {
               await DirectTokenTrackingService.processTokenUsage({
                 userId,
                 chatId: id,
-                messageId: `${id}-stopped-${Date.now()}`, // Generate unique message ID for stopped streams
+                // messageId removed - no longer required and was causing foreign key constraint violations
                 modelId: selectedModel,
                 provider,
                 inputTokens: 0, // Not available in onStop callback
@@ -2085,7 +2085,7 @@ export async function POST(req: Request) {
               await DirectTokenTrackingService.processTokenUsage({
                 userId,
                 chatId: id,
-                messageId: finalAssistantMessageId,
+                ...(finalAssistantMessageId && { messageId: finalAssistantMessageId }), // Only pass if we have a valid message ID
                 modelId: selectedModel,
                 provider: selectedModel.split('/')[0],
                 inputTokens: extractedInputTokens,

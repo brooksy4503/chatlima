@@ -832,7 +832,7 @@ export class TokenTrackingService {
         avgTokensPerSecond?: number;
         avgTotalDuration?: number;
         breakdownByMessage: Array<{
-            messageId: string;
+            messageId: string | null;
             modelId: string;
             provider: string;
             inputTokens: number;

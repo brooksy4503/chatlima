@@ -15,7 +15,7 @@ import { nanoid } from 'nanoid';
 interface DirectTokenTrackingParams {
     userId: string;
     chatId: string;
-    messageId: string;
+    messageId?: string; // Made optional since it's no longer required in the database
     modelId: string;
     provider: string;
     inputTokens: number;
@@ -184,9 +184,12 @@ export class DirectTokenTrackingService {
             if (!actualCost && params.provider === 'openrouter' && params.generationId) {
                 // Try with the same API key context the original request used (if present on response)
                 const apiKeyOverride = params.apiKeyOverride || (providerResponse as any)?.apiKey || undefined;
-                this.fetchActualCostAsync(params.generationId, params.userId, params.chatId, params.messageId, apiKeyOverride).catch(error => {
-                    console.warn(`[DirectTokenTracking] Failed to fetch actual cost asynchronously for generation ${params.generationId}:`, error);
-                });
+                // Only call fetchActualCostAsync if we have a messageId
+                if (params.messageId) {
+                    this.fetchActualCostAsync(params.generationId, params.userId, params.chatId, params.messageId, apiKeyOverride).catch(error => {
+                        console.warn(`[DirectTokenTracking] Failed to fetch actual cost asynchronously for generation ${params.generationId}:`, error);
+                    });
+                }
             }
 
         } catch (error) {
