@@ -244,13 +244,8 @@ export class CleanupConfigService {
                 .limit(limit)
                 .offset(offset);
 
-            // Calculate summary statistics
-            const allLogsForSummary = await db
-                .select()
-                .from(cleanupExecutionLogs)
-                .where(conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : and(...conditions)) : undefined);
-
-            const summary = this.calculateSummary(allLogsForSummary);
+            // Calculate summary statistics efficiently using aggregation
+            const summary = await this.calculateSummaryEfficient(whereCondition);
 
             return {
                 logs: logs.map(log => this.mapLogToEntry(log)),
@@ -287,6 +282,63 @@ export class CleanupConfigService {
         } catch (error) {
             console.error('Error getting execution history:', error);
             return [];
+        }
+    }
+
+    /**
+     * Calculate summary statistics efficiently using database aggregation
+     */
+    private static async calculateSummaryEfficient(whereCondition?: any): Promise<LogsResponse['summary']> {
+        try {
+            // Build base query with aggregations
+            const baseQuery = db
+                .select({
+                    totalExecutions: count(),
+                    totalUsersDeleted: sql<number>`sum(${cleanupExecutionLogs.usersDeleted})`,
+                    successCount: sql<number>`sum(case when ${cleanupExecutionLogs.status} = 'success' then 1 else 0 end)`,
+                    errorCount: sql<number>`sum(case when ${cleanupExecutionLogs.status} = 'error' then 1 else 0 end)`,
+                    partialCount: sql<number>`sum(case when ${cleanupExecutionLogs.status} = 'partial' then 1 else 0 end)`,
+                    dryRunCount: sql<number>`sum(case when ${cleanupExecutionLogs.dryRun} = true then 1 else 0 end)`,
+                    cronCount: sql<number>`sum(case when ${cleanupExecutionLogs.executedBy} = 'cron' then 1 else 0 end)`,
+                    adminCount: sql<number>`sum(case when ${cleanupExecutionLogs.executedBy} = 'admin' then 1 else 0 end)`,
+                    scriptCount: sql<number>`sum(case when ${cleanupExecutionLogs.executedBy} = 'script' then 1 else 0 end)`,
+                    avgDuration: sql<number>`avg(${cleanupExecutionLogs.durationMs})`,
+                    lastExecution: sql<Date | null>`max(${cleanupExecutionLogs.executedAt})`
+                })
+                .from(cleanupExecutionLogs);
+
+            const query = whereCondition ? baseQuery.where(whereCondition) : baseQuery;
+            const [result] = await query;
+
+            return {
+                totalExecutions: result.totalExecutions || 0,
+                totalUsersDeleted: result.totalUsersDeleted || 0,
+                successfulExecutions: result.successCount || 0,
+                failedExecutions: result.errorCount || 0,
+                partialExecutions: result.partialCount || 0,
+                dryRunExecutions: result.dryRunCount || 0,
+                cronExecutions: result.cronCount || 0,
+                manualExecutions: result.adminCount || 0,
+                scriptExecutions: result.scriptCount || 0,
+                averageDuration: Math.round(result.avgDuration || 0),
+                lastExecution: result.lastExecution?.toISOString()
+            };
+        } catch (error) {
+            console.error('Error calculating summary:', error);
+            // Fallback to empty summary
+            return {
+                totalExecutions: 0,
+                totalUsersDeleted: 0,
+                successfulExecutions: 0,
+                failedExecutions: 0,
+                partialExecutions: 0,
+                dryRunExecutions: 0,
+                cronExecutions: 0,
+                manualExecutions: 0,
+                scriptExecutions: 0,
+                averageDuration: 0,
+                lastExecution: undefined
+            };
         }
     }
 

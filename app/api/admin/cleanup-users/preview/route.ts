@@ -78,18 +78,14 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Get cleanup preview
-        const preview = await UserCleanupService.previewCleanup(thresholdDays);
-
-        // Limit the candidates returned
-        const limitedCandidates = preview.candidates.slice(0, limit);
+        // Get cleanup preview with the limit parameter for memory efficiency
+        const preview = await UserCleanupService.previewCleanup(thresholdDays, limit);
 
         const response = {
             success: true,
             data: {
                 ...preview,
-                candidates: limitedCandidates,
-                candidatesShown: limitedCandidates.length,
+                candidatesShown: preview.candidates.length,
                 candidatesTotal: preview.candidatesForDeletion,
             },
             metadata: {

@@ -164,7 +164,7 @@ interface AdminUserCleanupProps {
 export function AdminUserCleanup({ loading: externalLoading = false }: AdminUserCleanupProps) {
   const [thresholdDays, setThresholdDays] = React.useState(45);
   const [batchSize, setBatchSize] = React.useState(50);
-  const [previewLimit, setPreviewLimit] = React.useState(100);
+  const [previewLimit, setPreviewLimit] = React.useState(50);
   const [isExecuteDialogOpen, setIsExecuteDialogOpen] = React.useState(false);
   const [confirmationText, setConfirmationText] = React.useState("");
   const [lastExecutionResult, setLastExecutionResult] = React.useState<CleanupResult | null>(null);
@@ -555,12 +555,12 @@ export function AdminUserCleanup({ loading: externalLoading = false }: AdminUser
               id="preview-limit"
               type="number"
               min="10"
-              max="1000"
+              max="200"
               value={previewLimit}
-              onChange={(e) => setPreviewLimit(parseInt(e.target.value) || 100)}
+              onChange={(e) => setPreviewLimit(parseInt(e.target.value) || 50)}
             />
             <p className="text-xs text-muted-foreground">
-              Maximum candidates to show in preview
+              Maximum candidates to show in preview (max: 200 for performance)
             </p>
           </div>
         </CardContent>

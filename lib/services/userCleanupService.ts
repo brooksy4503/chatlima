@@ -94,52 +94,57 @@ export class UserCleanupService {
     }
 
     /**
-     * Get all anonymous users with their activity data
+     * Get anonymous users with their activity data using efficient SQL queries
+     * @param limit Maximum number of users to return (for memory efficiency)
+     * @param offset Number of users to skip (for pagination)
      */
-    static async getAllAnonymousUsersWithActivity(): Promise<UserActivity[]> {
-        const anonymousUsers = await db
+    static async getAnonymousUsersWithActivity(
+        limit: number = 1000,
+        offset: number = 0
+    ): Promise<UserActivity[]> {
+        // Use a single query with JOINs and subqueries for efficiency
+        const result = await db
             .select({
-                id: users.id,
+                userId: users.id,
                 email: users.email,
-                createdAt: users.createdAt,
+                accountCreated: users.createdAt,
+                lastChatActivity: sql<Date | null>`(
+                    SELECT ${chats.updatedAt} 
+                    FROM ${chats} 
+                    WHERE ${chats.userId} = ${users.id} 
+                    ORDER BY ${chats.updatedAt} DESC 
+                    LIMIT 1
+                )`,
+                lastSessionActivity: sql<Date | null>`(
+                    SELECT ${sessions.updatedAt} 
+                    FROM ${sessions} 
+                    WHERE ${sessions.userId} = ${users.id} 
+                    ORDER BY ${sessions.updatedAt} DESC 
+                    LIMIT 1
+                )`,
+                lastTokenUsage: sql<Date | null>`(
+                    SELECT ${tokenUsageMetrics.createdAt} 
+                    FROM ${tokenUsageMetrics} 
+                    WHERE ${tokenUsageMetrics.userId} = ${users.id} 
+                    ORDER BY ${tokenUsageMetrics.createdAt} DESC 
+                    LIMIT 1
+                )`
             })
             .from(users)
-            .where(eq(users.isAnonymous, true));
+            .where(eq(users.isAnonymous, true))
+            .limit(limit)
+            .offset(offset)
+            .orderBy(users.createdAt); // Consistent ordering for pagination
 
-        const userActivities: UserActivity[] = [];
-
-        for (const user of anonymousUsers) {
-            // Get last chat activity
-            const lastChatResult = await db
-                .select({ updatedAt: chats.updatedAt })
-                .from(chats)
-                .where(eq(chats.userId, user.id))
-                .orderBy(sql`${chats.updatedAt} DESC`)
-                .limit(1);
-
-            // Get last session activity
-            const lastSessionResult = await db
-                .select({ updatedAt: sessions.updatedAt })
-                .from(sessions)
-                .where(eq(sessions.userId, user.id))
-                .orderBy(sql`${sessions.updatedAt} DESC`)
-                .limit(1);
-
-            // Get last token usage
-            const lastTokenResult = await db
-                .select({ createdAt: tokenUsageMetrics.createdAt })
-                .from(tokenUsageMetrics)
-                .where(eq(tokenUsageMetrics.userId, user.id))
-                .orderBy(sql`${tokenUsageMetrics.createdAt} DESC`)
-                .limit(1);
-
+        // Transform to UserActivity objects
+        return result.map(row => {
             const userActivity: UserActivity = {
-                userId: user.id,
-                email: user.email,
-                accountCreated: user.createdAt,
-                lastChatActivity: lastChatResult[0]?.updatedAt || null,
-                lastSessionActivity: lastSessionResult[0]?.updatedAt || null,
-                lastTokenUsage: lastTokenResult[0]?.createdAt || null,
+                userId: row.userId,
+                email: row.email,
+                accountCreated: row.accountCreated,
+                lastChatActivity: row.lastChatActivity,
+                lastSessionActivity: row.lastSessionActivity,
+                lastTokenUsage: row.lastTokenUsage,
                 isActive: false, // Will be calculated below
                 daysSinceLastActivity: 0, // Will be calculated below
             };
@@ -147,31 +152,83 @@ export class UserCleanupService {
             userActivity.daysSinceLastActivity = this.calculateDaysSinceLastActivity(userActivity);
             userActivity.isActive = this.isUserActive(userActivity, this.DEFAULT_THRESHOLD_DAYS);
 
-            userActivities.push(userActivity);
-        }
+            return userActivity;
+        });
+    }
 
-        return userActivities;
+    /**
+     * Get count of anonymous users for pagination
+     */
+    static async getAnonymousUserCount(): Promise<number> {
+        const [result] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(users)
+            .where(eq(users.isAnonymous, true));
+
+        return result.count;
     }
 
     /**
      * Preview users that would be deleted with given parameters
+     * @param thresholdDays Number of days of inactivity threshold
+     * @param limit Maximum number of candidates to return in preview
      */
     static async previewCleanup(
-        thresholdDays: number = this.DEFAULT_THRESHOLD_DAYS
+        thresholdDays: number = this.DEFAULT_THRESHOLD_DAYS,
+        limit: number = 100
     ): Promise<CleanupPreview> {
-        const allAnonymousUsers = await this.getAllAnonymousUsersWithActivity();
+        // Get total count efficiently
+        const totalAnonymousUsers = await this.getAnonymousUserCount();
 
-        const candidates = allAnonymousUsers.filter(user => {
-            // Recalculate activity status with the specific threshold
-            const isActive = this.isUserActive(user, thresholdDays);
-            return !isActive;
-        });
+        // Process users in batches to find candidates without loading all into memory
+        const candidates: UserActivity[] = [];
+        const batchSize = 500; // Process 500 users at a time
+        let offset = 0;
+        let activeUsers = 0;
+
+        while (offset < totalAnonymousUsers && candidates.length < limit) {
+            const batch = await this.getAnonymousUsersWithActivity(batchSize, offset);
+
+            for (const user of batch) {
+                // Recalculate activity status with the specific threshold
+                const isActive = this.isUserActive(user, thresholdDays);
+
+                if (isActive) {
+                    activeUsers++;
+                } else {
+                    candidates.push(user);
+
+                    // Stop if we've found enough candidates for the preview
+                    if (candidates.length >= limit) {
+                        break;
+                    }
+                }
+            }
+
+            offset += batchSize;
+
+            // If we got less than batchSize, we've reached the end
+            if (batch.length < batchSize) {
+                break;
+            }
+        }
+
+        // If we didn't process all users due to limit, estimate active users
+        if (offset < totalAnonymousUsers) {
+            // Estimate based on the ratio we've seen so far
+            const processedUsers = offset;
+            const remainingUsers = totalAnonymousUsers - processedUsers;
+            const activeRatio = processedUsers > 0 ? activeUsers / processedUsers : 0;
+            activeUsers += Math.round(remainingUsers * activeRatio);
+        }
 
         return {
-            totalAnonymousUsers: allAnonymousUsers.length,
-            activeUsers: allAnonymousUsers.length - candidates.length,
+            totalAnonymousUsers,
+            activeUsers,
             candidatesForDeletion: candidates.length,
-            candidates: candidates.sort((a, b) => b.daysSinceLastActivity - a.daysSinceLastActivity),
+            candidates: candidates
+                .sort((a, b) => b.daysSinceLastActivity - a.daysSinceLastActivity)
+                .slice(0, limit), // Ensure we don't exceed the limit
             thresholdDays,
             minimumAgeDays: this.MINIMUM_AGE_DAYS,
         };
@@ -197,26 +254,59 @@ export class UserCleanupService {
         };
 
         try {
-            const preview = await this.previewCleanup(thresholdDays);
-            const candidatesForDeletion = preview.candidates.slice(0, batchSize);
+            // Use efficient batching to find candidates without loading all into memory
+            const candidatesForDeletion: UserActivity[] = [];
+            const processingBatchSize = 500; // Process users in chunks
+            let offset = 0;
+            const totalUsers = await this.getAnonymousUserCount();
+
+            // Find enough candidates for deletion without overloading memory
+            while (candidatesForDeletion.length < batchSize && offset < totalUsers) {
+                const batch = await this.getAnonymousUsersWithActivity(processingBatchSize, offset);
+
+                for (const user of batch) {
+                    const isActive = this.isUserActive(user, thresholdDays);
+
+                    if (!isActive) {
+                        candidatesForDeletion.push(user);
+
+                        // Stop once we have enough candidates
+                        if (candidatesForDeletion.length >= batchSize) {
+                            break;
+                        }
+                    }
+                }
+
+                offset += processingBatchSize;
+
+                // If we got less than processingBatchSize, we've reached the end
+                if (batch.length < processingBatchSize) {
+                    break;
+                }
+            }
+
+            // Sort by inactivity (most inactive first) and take only what we need
+            const finalCandidates = candidatesForDeletion
+                .sort((a, b) => b.daysSinceLastActivity - a.daysSinceLastActivity)
+                .slice(0, batchSize);
 
             if (dryRun) {
                 result.success = true;
-                result.usersDeleted = candidatesForDeletion.length;
-                result.deletedUserIds = candidatesForDeletion.map(u => u.userId);
+                result.usersDeleted = finalCandidates.length;
+                result.deletedUserIds = finalCandidates.map(u => u.userId);
                 result.executionTimeMs = Date.now() - startTime;
                 return result;
             }
 
             // Safety check: Ensure minimum age requirement
             const minimumAgeDate = new Date(Date.now() - (this.MINIMUM_AGE_DAYS * 24 * 60 * 60 * 1000));
-            const safeCandidates = candidatesForDeletion.filter(user =>
+            const safeCandidates = finalCandidates.filter(user =>
                 user.accountCreated < minimumAgeDate
             );
 
-            if (safeCandidates.length !== candidatesForDeletion.length) {
+            if (safeCandidates.length !== finalCandidates.length) {
                 result.errors.push(
-                    `Filtered out ${candidatesForDeletion.length - safeCandidates.length} users that were too young (< ${this.MINIMUM_AGE_DAYS} days)`
+                    `Filtered out ${finalCandidates.length - safeCandidates.length} users that were too young (< ${this.MINIMUM_AGE_DAYS} days)`
                 );
             }
 
