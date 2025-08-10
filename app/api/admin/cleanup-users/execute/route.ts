@@ -8,6 +8,53 @@ import { CleanupMonitoringService, type CleanupMetrics } from '@/lib/services/cl
 import { CleanupConfigService } from '@/lib/services/cleanupConfigService';
 
 /**
+ * Helper function to determine if this execution was triggered by Vercel cron
+ * Vercel cron calls have specific headers that we can detect
+ */
+function isCronExecution(req: NextRequest): boolean {
+    // Check for Vercel cron headers
+    const cronHeader = req.headers.get('x-vercel-cron');
+    const userAgent = req.headers.get('user-agent');
+
+    // Vercel cron requests have these characteristics
+    return !!(cronHeader || (userAgent && userAgent.includes('vercel')));
+}
+
+/**
+ * Helper function to check if current time matches a cron schedule
+ * This is a simplified check - in production you'd want a more robust cron parser
+ */
+function matchesCronSchedule(cronExpression: string): boolean {
+    try {
+        const now = new Date();
+        const [minute, hour, dayOfMonth, month, dayOfWeek] = cronExpression.split(' ');
+
+        // Simple matching for specific patterns
+        // This handles basic cases like "0 2 * * 0" (Sunday at 2 AM)
+        const currentMinute = now.getMinutes();
+        const currentHour = now.getHours();
+        const currentDayOfWeek = now.getDay(); // 0 = Sunday
+
+        // Check minute
+        if (minute !== '*' && parseInt(minute) !== currentMinute) return false;
+
+        // Check hour  
+        if (hour !== '*' && parseInt(hour) !== currentHour) return false;
+
+        // Check day of week (if specified)
+        if (dayOfWeek !== '*' && parseInt(dayOfWeek) !== currentDayOfWeek) return false;
+
+        // For this implementation, we're being lenient with day/month checks
+        // A full implementation would need a proper cron parser library
+
+        return true;
+    } catch (error) {
+        console.error('Error parsing cron expression:', error);
+        return false;
+    }
+}
+
+/**
  * Admin API endpoint for executing anonymous user cleanup
  * 
  * POST /api/admin/cleanup-users/execute
@@ -57,14 +104,85 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Parse request body
-        const body = await req.json();
-        const {
-            thresholdDays = 45,
-            batchSize = 50,
-            dryRun = false,
-            confirmationToken
-        } = body;
+        // Check if this is a cron execution and validate against database configuration
+        const isCron = isCronExecution(req);
+
+        if (isCron) {
+            console.log('🕐 Cron execution detected - validating schedule configuration');
+
+            // Get current cleanup configuration from database
+            const config = await CleanupConfigService.getConfig();
+
+            // Check if cleanup is enabled
+            if (!config.enabled) {
+                console.log('⏸️ Cleanup is disabled in configuration - skipping execution');
+                return NextResponse.json({
+                    success: true,
+                    message: 'Cleanup execution skipped - cleanup is disabled in configuration',
+                    skipped: true,
+                    reason: 'CLEANUP_DISABLED',
+                    configState: {
+                        enabled: config.enabled,
+                        schedule: config.schedule
+                    }
+                });
+            }
+
+            // Check if current time matches the configured schedule
+            if (!matchesCronSchedule(config.schedule)) {
+                console.log(`⏰ Current time does not match configured schedule (${config.schedule}) - skipping execution`);
+                return NextResponse.json({
+                    success: true,
+                    message: `Cleanup execution skipped - current time does not match configured schedule (${config.schedule})`,
+                    skipped: true,
+                    reason: 'SCHEDULE_MISMATCH',
+                    configState: {
+                        enabled: config.enabled,
+                        schedule: config.schedule,
+                        currentTime: new Date().toISOString()
+                    }
+                });
+            }
+
+            console.log('✅ Cron execution validated - proceeding with cleanup');
+        }
+
+        // Parse request body and determine execution parameters
+        let body: any = {};
+        let thresholdDays: number;
+        let batchSize: number;
+        let dryRun: boolean;
+        let confirmationToken: string | undefined;
+
+        if (isCron) {
+            // For cron executions, use database configuration
+            const config = await CleanupConfigService.getConfig();
+            thresholdDays = config.thresholdDays;
+            batchSize = config.batchSize;
+            dryRun = false; // Cron executions are never dry runs
+            confirmationToken = undefined; // Not needed for cron
+
+            console.log(`📋 Using database configuration for cron execution:`, {
+                thresholdDays,
+                batchSize,
+                schedule: config.schedule
+            });
+        } else {
+            // For manual executions, parse request body and use parameters
+            try {
+                body = await req.json();
+            } catch (error) {
+                return NextResponse.json(
+                    { error: { code: 'INVALID_JSON', message: 'Invalid JSON in request body' } },
+                    { status: 400 }
+                );
+            }
+
+            thresholdDays = body.thresholdDays || 45;
+            batchSize = body.batchSize || 50;
+            dryRun = body.dryRun || false;
+            confirmationToken = body.confirmationToken;
+        }
 
         // Validate parameters
         if (thresholdDays < 7) {
@@ -88,8 +206,8 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Require confirmation token for non-dry-run executions
-        if (!dryRun && confirmationToken !== 'DELETE_ANONYMOUS_USERS') {
+        // Require confirmation token for non-dry-run executions (except for cron executions)
+        if (!dryRun && !isCron && confirmationToken !== 'DELETE_ANONYMOUS_USERS') {
             return NextResponse.json(
                 {
                     error: {
@@ -107,6 +225,7 @@ export async function POST(req: NextRequest) {
 
         console.log(`[${executionId}] Starting cleanup execution:`, {
             adminUser: session.user.email || session.user.id,
+            executionType: isCron ? 'cron' : 'manual',
             thresholdDays,
             batchSize,
             dryRun,
@@ -134,7 +253,7 @@ export async function POST(req: NextRequest) {
         const metrics: CleanupMetrics = {
             executionId,
             executedAt: executionStartTime,
-            executedBy: 'admin', // This is from admin UI or cron
+            executedBy: isCron ? 'cron' : 'admin', // Distinguish between cron and manual admin execution
             adminUser: session.user.email || session.user.id,
             usersCounted: result.usersDeleted + Math.floor(Math.random() * 50), // Estimated total analyzed
             usersDeleted: result.usersDeleted,
