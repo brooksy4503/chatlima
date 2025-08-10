@@ -387,3 +387,68 @@ export type DailyTokenUsageInsert = typeof dailyTokenUsage.$inferInsert;
 export type UsageLimit = typeof usageLimits.$inferSelect;
 export type UsageLimitInsert = typeof usageLimits.$inferInsert;
 
+// --- Cleanup System Schema ---
+
+export const cleanupExecutionLogs = pgTable('cleanup_execution_logs', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  executedAt: timestamp('executed_at').notNull(),
+  executedBy: text('executed_by').notNull(), // 'admin', 'cron', 'script'
+  adminUserId: text('admin_user_id').references(() => users.id, { onDelete: 'set null' }),
+  adminUserEmail: text('admin_user_email'),
+  usersCounted: integer('users_counted').notNull(),
+  usersDeleted: integer('users_deleted').notNull(),
+  thresholdDays: integer('threshold_days').notNull(),
+  batchSize: integer('batch_size').notNull(),
+  durationMs: integer('duration_ms').notNull(),
+  status: text('status').notNull(), // 'success', 'error', 'partial'
+  errorMessage: text('error_message'),
+  errorCount: integer('error_count').default(0).notNull(),
+  dryRun: boolean('dry_run').default(false).notNull(),
+  deletedUserIds: json('deleted_user_ids').$type<string[]>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  checkExecutedBy: check('check_cleanup_execution_logs_executed_by', sql`${table.executedBy} IN ('admin', 'cron', 'script')`),
+  checkStatus: check('check_cleanup_execution_logs_status', sql`${table.status} IN ('success', 'error', 'partial')`),
+  checkPositiveValues: check('check_cleanup_execution_logs_positive', sql`${table.usersCounted} >= 0 AND ${table.usersDeleted} >= 0 AND ${table.thresholdDays} > 0 AND ${table.batchSize} > 0 AND ${table.durationMs} >= 0 AND ${table.errorCount} >= 0`),
+  checkUsersDeletedLessOrEqual: check('check_cleanup_execution_logs_users_deleted', sql`${table.usersDeleted} <= ${table.usersCounted}`),
+  // Indexes
+  executedAtIdx: index('idx_cleanup_execution_logs_executed_at').on(table.executedAt),
+  executedByIdx: index('idx_cleanup_execution_logs_executed_by').on(table.executedBy),
+  statusIdx: index('idx_cleanup_execution_logs_status').on(table.status),
+  adminUserIdIdx: index('idx_cleanup_execution_logs_admin_user_id').on(table.adminUserId),
+  // Composite indexes for common queries
+  executedByStatusIdx: index('idx_cleanup_execution_logs_executed_by_status').on(table.executedBy, table.status),
+  executedAtStatusIdx: index('idx_cleanup_execution_logs_executed_at_status').on(table.executedAt, table.status),
+}));
+
+export const cleanupConfig = pgTable('cleanup_config', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  enabled: boolean('enabled').default(false).notNull(),
+  schedule: text('schedule').default('0 2 * * 0').notNull(), // Cron expression
+  thresholdDays: integer('threshold_days').default(45).notNull(),
+  batchSize: integer('batch_size').default(50).notNull(),
+  notificationEnabled: boolean('notification_enabled').default(true).notNull(),
+  webhookUrl: text('webhook_url'),
+  emailEnabled: boolean('email_enabled').default(false).notNull(),
+  lastModified: timestamp('last_modified').defaultNow().notNull(),
+  modifiedBy: text('modified_by'),
+  modifiedByUserId: text('modified_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints - ensure only one configuration record exists
+  singletonConfig: unique('cleanup_config_singleton').on(table.id),
+  checkThresholdDays: check('check_cleanup_config_threshold_days', sql`${table.thresholdDays} >= 7 AND ${table.thresholdDays} <= 365`),
+  checkBatchSize: check('check_cleanup_config_batch_size', sql`${table.batchSize} >= 1 AND ${table.batchSize} <= 100`),
+  // Indexes
+  enabledIdx: index('idx_cleanup_config_enabled').on(table.enabled),
+  lastModifiedIdx: index('idx_cleanup_config_last_modified').on(table.lastModified),
+}));
+
+// Cleanup system types
+export type CleanupExecutionLog = typeof cleanupExecutionLogs.$inferSelect;
+export type CleanupExecutionLogInsert = typeof cleanupExecutionLogs.$inferInsert;
+export type CleanupConfig = typeof cleanupConfig.$inferSelect;
+export type CleanupConfigInsert = typeof cleanupConfig.$inferInsert;
+
