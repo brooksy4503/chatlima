@@ -3,7 +3,7 @@ import { getModelDetails } from "@/lib/models/fetch-models";
 import { type ModelInfo } from "@/lib/types/models";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
-import { streamText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
+import { streamText, generateText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
 import { validatePresetParameters, getModelDefaults, sanitizeSystemInstruction } from "@/lib/parameter-validation";
 import { appendResponseMessages } from 'ai';
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
@@ -120,43 +120,211 @@ const extractInputTokensFromEvent = (event: any): number => {
 
   console.log(`[DEBUG] Extracting input tokens from event:`, {
     hasUsage: !!event.usage,
+    hasResponseUsage: !!event.response?.usage,
     usageKeys: event.usage ? Object.keys(event.usage) : [],
+    responseUsageKeys: event.response?.usage ? Object.keys(event.response.usage) : [],
     eventKeys: Object.keys(event),
-    usage: event.usage
+    usage: event.usage,
+    responseUsage: event.response?.usage
   });
 
-  // Try event.usage first (AI SDK format)
-  const usage = event.usage;
-  if (usage) {
-    if (usage.promptTokens) {
-      console.log(`[DEBUG] Found input tokens in event.usage.promptTokens: ${usage.promptTokens}`);
+  // Helper to check if a value is a valid number (not NaN, null, undefined, or 0)
+  const isValidToken = (value: any): boolean => {
+    return typeof value === 'number' && !isNaN(value) && value > 0;
+  };
+
+  // Helper to detect Requesty models with invalid token data
+  const isRequestyWithInvalidTokens = (event: any): boolean => {
+    if (!event) return false;
+
+    // Check for the specific Requesty pattern: tokens present but NaN
+    const hasNaNTokens = (
+      (event.usage && (
+        (typeof event.usage.promptTokens === 'number' && isNaN(event.usage.promptTokens)) ||
+        (typeof event.usage.completionTokens === 'number' && isNaN(event.usage.completionTokens))
+      )) ||
+      (event.response?.usage && (
+        (typeof event.response.usage.promptTokens === 'number' && isNaN(event.response.usage.promptTokens)) ||
+        (typeof event.response.usage.completionTokens === 'number' && isNaN(event.response.usage.completionTokens))
+      ))
+    );
+
+    return hasNaNTokens;
+  };
+
+  // Helper function to extract tokens from a usage object
+  const extractFromUsage = (usage: any, source: string): number | null => {
+    if (!usage) return null;
+
+    if (isValidToken(usage.promptTokens)) {
+      console.log(`[DEBUG] Found input tokens in ${source}.promptTokens: ${usage.promptTokens}`);
       return usage.promptTokens;
     }
-    if (usage.inputTokens) {
-      console.log(`[DEBUG] Found input tokens in event.usage.inputTokens: ${usage.inputTokens}`);
+    if (isValidToken(usage.inputTokens)) {
+      console.log(`[DEBUG] Found input tokens in ${source}.inputTokens: ${usage.inputTokens}`);
       return usage.inputTokens;
     }
-    if (usage.prompt_tokens) {
-      console.log(`[DEBUG] Found input tokens in event.usage.prompt_tokens: ${usage.prompt_tokens}`);
+    if (isValidToken(usage.prompt_tokens)) {
+      console.log(`[DEBUG] Found input tokens in ${source}.prompt_tokens: ${usage.prompt_tokens}`);
       return usage.prompt_tokens;
     }
-    if (usage.input_tokens) {
-      console.log(`[DEBUG] Found input tokens in event.usage.input_tokens: ${usage.input_tokens}`);
+    if (isValidToken(usage.input_tokens)) {
+      console.log(`[DEBUG] Found input tokens in ${source}.input_tokens: ${usage.input_tokens}`);
       return usage.input_tokens;
     }
-  }
+
+    // Log when we find usage data but with invalid values
+    if (usage.promptTokens !== undefined || usage.inputTokens !== undefined ||
+      usage.prompt_tokens !== undefined || usage.input_tokens !== undefined) {
+      console.log(`[DEBUG] Found usage data in ${source} but values are invalid:`, {
+        promptTokens: usage.promptTokens,
+        inputTokens: usage.inputTokens,
+        prompt_tokens: usage.prompt_tokens,
+        input_tokens: usage.input_tokens
+      });
+    }
+
+    return null;
+  };
+
+  // Try event.usage first (AI SDK format)
+  let tokens = extractFromUsage(event.usage, 'event.usage');
+  if (tokens !== null) return tokens;
+
+  // Try event.response.usage (common in streaming responses, especially for Requesty)
+  tokens = extractFromUsage(event.response?.usage, 'event.response.usage');
+  if (tokens !== null) return tokens;
 
   // Try root level on event
-  if (event.promptTokens) {
+  if (isValidToken(event.promptTokens)) {
     console.log(`[DEBUG] Found input tokens in event.promptTokens: ${event.promptTokens}`);
     return event.promptTokens;
   }
-  if (event.inputTokens) {
+  if (isValidToken(event.inputTokens)) {
     console.log(`[DEBUG] Found input tokens in event.inputTokens: ${event.inputTokens}`);
     return event.inputTokens;
   }
 
-  console.log(`[DEBUG] No input tokens found in event, returning 0`);
+  // Try root level on event.response
+  if (isValidToken(event.response?.promptTokens)) {
+    console.log(`[DEBUG] Found input tokens in event.response.promptTokens: ${event.response.promptTokens}`);
+    return event.response.promptTokens;
+  }
+  if (isValidToken(event.response?.inputTokens)) {
+    console.log(`[DEBUG] Found input tokens in event.response.inputTokens: ${event.response.inputTokens}`);
+    return event.response.inputTokens;
+  }
+
+  // Let's also check if token data is nested deeper in the response or other event properties
+  if (event.response && typeof event.response === 'object') {
+    console.log(`[DEBUG] Checking event.response for nested token data:`, {
+      responseKeys: Object.keys(event.response),
+      hasUsage: !!event.response.usage,
+      hasResult: !!event.response.result,
+      hasData: !!event.response.data,
+      hasMetadata: !!event.response.metadata
+    });
+
+    // Check various possible nested locations
+    const possiblePaths = [
+      event.response.usage,
+      event.response.result?.usage,
+      event.response.data?.usage,
+      event.response.metadata?.usage
+    ];
+
+    for (const pathUsage of possiblePaths) {
+      if (pathUsage) {
+        const pathTokens = extractFromUsage(pathUsage, 'event.response nested');
+        if (pathTokens !== null) return pathTokens;
+      }
+    }
+  }
+
+  // Check if token data is in event.steps (seen in logs)
+  if (event.steps && Array.isArray(event.steps)) {
+    console.log(`[DEBUG] Checking event.steps for token data:`, {
+      stepsCount: event.steps.length,
+      firstStepKeys: event.steps[0] ? Object.keys(event.steps[0]) : []
+    });
+
+    for (let i = 0; i < event.steps.length; i++) {
+      const step = event.steps[i];
+      if (step && step.usage) {
+        const stepTokens = extractFromUsage(step.usage, `event.steps[${i}].usage`);
+        if (stepTokens !== null) return stepTokens;
+      }
+    }
+  }
+
+  // Check if there's a request object with usage data
+  if (event.request && typeof event.request === 'object') {
+    console.log(`[DEBUG] Checking event.request for token data:`, {
+      requestKeys: Object.keys(event.request),
+      hasUsage: !!event.request.usage
+    });
+
+    if (event.request.usage) {
+      const requestTokens = extractFromUsage(event.request.usage, 'event.request.usage');
+      if (requestTokens !== null) return requestTokens;
+    }
+  }
+
+  // As a last resort, try to find ANY object with token-like properties
+  console.log(`[DEBUG] Searching entire event object for token data as last resort`);
+  const searchForTokens = (obj: any, path: string): number | null => {
+    if (!obj || typeof obj !== 'object') return null;
+
+    // Check if this object itself has token properties
+    if (obj.promptTokens || obj.inputTokens || obj.prompt_tokens || obj.input_tokens) {
+      const tokens = extractFromUsage(obj, path);
+      if (tokens !== null) return tokens;
+    }
+
+    // Recursively search nested objects (but limit depth to avoid infinite loops)
+    if (path.split('.').length < 4) {
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'object' && value !== null) {
+          const found = searchForTokens(value, `${path}.${key}`);
+          if (found !== null) return found;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const foundTokens = searchForTokens(event, 'event');
+  if (foundTokens !== null) return foundTokens;
+
+  // Special handling for Requesty models with NaN token values
+  if (isRequestyWithInvalidTokens(event)) {
+    console.log(`[DEBUG] Detected Requesty model with NaN token values - applying estimation fallback`);
+
+    // Estimate input tokens based on available data
+    let estimatedTokens = 0;
+
+    // Try to get text content for estimation
+    const textContent = event.text || '';
+    const systemInstructionLength = 1673; // Known system instruction length
+
+    if (textContent || event.response?.messages?.length > 0) {
+      // Rough estimation: ~4 characters per token for input
+      // Include system instruction + user message content
+      const totalInputChars = systemInstructionLength + (textContent.length || 0);
+      estimatedTokens = Math.round(totalInputChars / 4);
+
+      console.log(`[DEBUG] Requesty fallback estimation: ${estimatedTokens} tokens (based on ${totalInputChars} chars)`);
+    } else {
+      // Minimum fallback if no content available
+      estimatedTokens = Math.round(systemInstructionLength / 4);
+      console.log(`[DEBUG] Requesty minimal fallback estimation: ${estimatedTokens} tokens`);
+    }
+
+    return estimatedTokens > 0 ? estimatedTokens : 0;
+  }
+
+  console.log(`[DEBUG] No input tokens found in event or event.response, returning 0`);
   return 0;
 };
 
@@ -1392,7 +1560,8 @@ export async function POST(req: Request) {
       // Declare finalAssistantMessageId at function scope to ensure it's accessible throughout
       let finalAssistantMessageId: string = nanoid(); // Default value in case it's not assigned later
 
-      console.log(`[Chat ${id}][onFinish] Event data:`, {
+      const provider = selectedModel.split('/')[0];
+      console.log(`[Chat ${id}][onFinish] Event data for provider ${provider}:`, {
         eventKeys: Object.keys(event),
         hasResponse: !!event.response,
         hasUsage: !!event.usage,
@@ -1402,11 +1571,28 @@ export async function POST(req: Request) {
         timeToFirstTokenMs,
         streamingStartTime,
         requestStartTime,
+        provider: provider,
         // Debug: show where usage data might be
         eventUsage: event.usage,
         responseUsage: event.response?.usage,
         eventUsageKeys: event.usage ? Object.keys(event.usage) : [],
-        responseUsageKeys: event.response?.usage ? Object.keys(event.response.usage) : []
+        responseUsageKeys: event.response?.usage ? Object.keys(event.response.usage) : [],
+        // Deep dive into usage data quality
+        eventUsageDetailedDebug: event.usage ? {
+          promptTokens: { value: event.usage.promptTokens, type: typeof event.usage.promptTokens, isNaN: isNaN(event.usage.promptTokens) },
+          completionTokens: { value: event.usage.completionTokens, type: typeof event.usage.completionTokens, isNaN: isNaN(event.usage.completionTokens) },
+          totalTokens: { value: event.usage.totalTokens, type: typeof event.usage.totalTokens, isNaN: isNaN(event.usage.totalTokens) }
+        } : null,
+        // Check if usage data is in steps (seen in Requesty responses)
+        stepsDebug: event.steps ? {
+          stepsCount: event.steps.length,
+          stepsKeys: event.steps.map((step: any, i: number) => ({ index: i, keys: Object.keys(step) })),
+          stepsUsage: event.steps.map((step: any, i: number) => ({
+            index: i,
+            hasUsage: !!step.usage,
+            usage: step.usage
+          }))
+        } : null
       });
 
       // Force timing data for testing
@@ -1546,7 +1732,7 @@ export async function POST(req: Request) {
           const generationId = provider === 'openrouter' ?
             (typedResponse.id || typedResponse.generation_id || typedResponse.generationId) : null;
 
-          console.log(`[Chat ${id}][onFinish] OpenRouter response structure:`, {
+          console.log(`[Chat ${id}][onFinish] ${provider.toUpperCase()} response structure:`, {
             hasUsage: !!typedResponse.usage,
             usageKeys: typedResponse.usage ? Object.keys(typedResponse.usage) : [],
             usageValue: typedResponse.usage,
@@ -1554,15 +1740,16 @@ export async function POST(req: Request) {
             messageCount: typedResponse.messages?.length || 0,
             lastMessageContent: contentPreview,
             generationId: generationId,
-            hasGenerationId: !!generationId
+            hasGenerationId: !!generationId,
+            provider: provider // Add provider info for clarity
           });
 
           // Extract token usage with better fallback logic
           // Check event.usage first (AI SDK location), then fallback to response.usage
           let tokenUsageData = event.usage || typedResponse.usage;
 
-          // Enhanced logging to debug OpenRouter response
-          console.log(`[Chat ${id}][onFinish] Raw OpenRouter usage data:`, {
+          // Enhanced logging to debug provider response
+          console.log(`[Chat ${id}][onFinish] Raw ${provider.toUpperCase()} usage data:`, {
             hasEventUsage: !!event.usage,
             hasResponseUsage: !!typedResponse.usage,
             eventUsageKeys: event.usage ? Object.keys(event.usage) : [],
@@ -1890,13 +2077,18 @@ export async function POST(req: Request) {
 
               // Use direct processing instead of background queue for Vercel compatibility
               const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
+              // Enhanced debugging for token extraction
+              console.log(`[Chat ${id}][onFinish] About to extract input tokens from event for ${selectedModel.split('/')[0]}`);
+              const extractedInputTokens = extractInputTokensFromEvent(event);
+              console.log(`[Chat ${id}][onFinish] Token extraction result: ${extractedInputTokens} input tokens`);
+
               await DirectTokenTrackingService.processTokenUsage({
                 userId,
                 chatId: id,
                 messageId: finalAssistantMessageId,
                 modelId: selectedModel,
                 provider: selectedModel.split('/')[0],
-                inputTokens: extractInputTokensFromEvent(event),
+                inputTokens: extractedInputTokens,
                 outputTokens: completionTokens,
                 generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
                 openRouterResponse: typedResponse, // Keep for backward compatibility

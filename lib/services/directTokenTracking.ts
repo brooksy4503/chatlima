@@ -49,16 +49,30 @@ export class DirectTokenTrackingService {
         try {
             console.log(`[DirectTokenTracking] Processing token usage for user ${params.userId}, chat ${params.chatId}, provider ${params.provider}`);
 
-            // Use the already-extracted input tokens (extracted correctly in chat API for all providers)
-            // Only try to re-extract if the passed tokens are 0 or missing
-            const extractedInputTokens = params.inputTokens > 0 ?
-                params.inputTokens :
-                this.extractInputTokensFromResponse(
+            // Trust the already-extracted input tokens from chat API (which uses comprehensive extraction logic)
+            // The chat API's extractInputTokensFromEvent() handles all provider formats correctly
+            let extractedInputTokens = params.inputTokens;
+
+            // Only try to re-extract if we truly have no tokens (0 or undefined)
+            if (!extractedInputTokens || extractedInputTokens === 0) {
+                console.log(`[DirectTokenTracking] No input tokens provided (${extractedInputTokens}), attempting extraction from ${params.provider} response`);
+                extractedInputTokens = this.extractInputTokensFromResponse(
                     params.providerResponse || params.openRouterResponse,
-                    params.provider,
-                    params.inputTokens
+                    params.provider
                 );
+            }
+
             console.log(`[DirectTokenTracking] Input tokens: original=${params.inputTokens}, final=${extractedInputTokens}, provider=${params.provider}`);
+
+            // Validate that we have input tokens - this is critical for accurate tracking
+            if (extractedInputTokens === 0) {
+                console.warn(`[DirectTokenTracking] WARNING: No input tokens extracted for ${params.provider} model ${params.modelId}. This may indicate a problem with token extraction.`);
+                // Log additional debug info to help troubleshoot
+                if (params.providerResponse || params.openRouterResponse) {
+                    console.warn(`[DirectTokenTracking] Response available but no tokens extracted. Response keys:`,
+                        Object.keys(params.providerResponse || params.openRouterResponse));
+                }
+            }
 
             let actualCost: number | null = null;
             let estimatedCost = 0;
@@ -185,8 +199,7 @@ export class DirectTokenTrackingService {
                     params.inputTokens :
                     this.extractInputTokensFromResponse(
                         params.providerResponse || params.openRouterResponse,
-                        params.provider,
-                        params.inputTokens
+                        params.provider
                     );
                 await db.insert(tokenUsageMetrics).values({
                     id: nanoid(),
@@ -224,10 +237,14 @@ export class DirectTokenTrackingService {
     }
 
     /**
-     * Extract input tokens from various provider response formats
+     * Extract input tokens from provider response using the same logic as the test script
+     * This matches the successful extraction logic that works for Requesty and other providers
      */
-    private static extractInputTokensFromResponse(response: any, provider: string, fallbackInputTokens: number): number {
-        if (!response) return fallbackInputTokens;
+    private static extractInputTokensFromResponse(response: any, provider: string): number {
+        if (!response) {
+            console.log(`[DirectTokenTracking] No response provided for ${provider}, returning 0`);
+            return 0;
+        }
 
         console.log(`[DirectTokenTracking] Extracting tokens from ${provider} response:`, {
             hasUsage: !!response.usage,
@@ -236,62 +253,40 @@ export class DirectTokenTrackingService {
             provider
         });
 
-        // Try standard AI SDK format (works for Requesty and other providers)
+        // Use the same comprehensive extraction logic as the successful test script
+        // This prioritizes AI SDK standard format (promptTokens) which Requesty uses
         const usage = response.usage;
-        if (usage) {
-            // AI SDK standard format (used by most providers including Requesty)
-            if (usage.promptTokens) {
-                console.log(`[DirectTokenTracking] Found input tokens in usage.promptTokens: ${usage.promptTokens}`);
-                return usage.promptTokens;
-            }
-            if (usage.inputTokens) {
-                console.log(`[DirectTokenTracking] Found input tokens in usage.inputTokens: ${usage.inputTokens}`);
-                return usage.inputTokens;
-            }
-            // OpenRouter-style format
-            if (usage.prompt_tokens) {
-                console.log(`[DirectTokenTracking] Found input tokens in usage.prompt_tokens: ${usage.prompt_tokens}`);
-                return usage.prompt_tokens;
-            }
-            if (usage.input_tokens) {
-                console.log(`[DirectTokenTracking] Found input tokens in usage.input_tokens: ${usage.input_tokens}`);
-                return usage.input_tokens;
-            }
+        const usageAny = usage as any;
+
+        const extractedInputTokens =
+            usage?.promptTokens ||           // AI SDK standard (Requesty, most providers)
+            usageAny?.inputTokens ||         // Alternative AI SDK format
+            usageAny?.prompt_tokens ||       // OpenRouter style
+            usageAny?.input_tokens ||        // Alternative OpenRouter style
+            response.promptTokens ||         // Root level (fallback)
+            response.inputTokens ||          // Root level alternative
+            response.prompt_tokens ||        // Root level OpenRouter style
+            response.input_tokens ||         // Root level alternative
+            response.metadata?.rawUsage?.inputTokens ||     // Metadata fallback
+            response.metadata?.rawUsage?.prompt_tokens ||   // Metadata OpenRouter style
+            0;
+
+        if (extractedInputTokens > 0) {
+            console.log(`[DirectTokenTracking] Successfully extracted ${extractedInputTokens} input tokens from ${provider} response`);
+        } else {
+            console.log(`[DirectTokenTracking] No input tokens found in ${provider} response structure:`, {
+                hasUsage: !!usage,
+                usagePromptTokens: usage?.promptTokens,
+                usageInputTokens: usageAny?.inputTokens,
+                usagePrompt_tokens: usageAny?.prompt_tokens,
+                usageInput_tokens: usageAny?.input_tokens,
+                responsePromptTokens: response.promptTokens,
+                responseInputTokens: response.inputTokens,
+                fullUsage: usage
+            });
         }
 
-        // Check root level (for non-standard response formats)
-        if (response.promptTokens) {
-            console.log(`[DirectTokenTracking] Found input tokens at root level promptTokens: ${response.promptTokens}`);
-            return response.promptTokens;
-        }
-        if (response.inputTokens) {
-            console.log(`[DirectTokenTracking] Found input tokens at root level inputTokens: ${response.inputTokens}`);
-            return response.inputTokens;
-        }
-        if (response.prompt_tokens) {
-            console.log(`[DirectTokenTracking] Found input tokens at root level prompt_tokens: ${response.prompt_tokens}`);
-            return response.prompt_tokens;
-        }
-        if (response.input_tokens) {
-            console.log(`[DirectTokenTracking] Found input tokens at root level input_tokens: ${response.input_tokens}`);
-            return response.input_tokens;
-        }
-
-        // Try metadata (for complex response structures)
-        if (response.metadata?.rawUsage) {
-            const rawUsage = response.metadata.rawUsage;
-            if (rawUsage.inputTokens) {
-                console.log(`[DirectTokenTracking] Found input tokens in metadata.rawUsage.inputTokens: ${rawUsage.inputTokens}`);
-                return rawUsage.inputTokens;
-            }
-            if (rawUsage.prompt_tokens) {
-                console.log(`[DirectTokenTracking] Found input tokens in metadata.rawUsage.prompt_tokens: ${rawUsage.prompt_tokens}`);
-                return rawUsage.prompt_tokens;
-            }
-        }
-
-        console.log(`[DirectTokenTracking] No input tokens found in ${provider} response, using fallback: ${fallbackInputTokens}`);
-        return fallbackInputTokens;
+        return extractedInputTokens;
     }
 
     /**
