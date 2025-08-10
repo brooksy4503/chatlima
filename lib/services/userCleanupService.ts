@@ -196,13 +196,17 @@ export class UserCleanupService {
                 if (isActive) {
                     activeUsers++;
                 } else {
-                    candidates.push(user);
-
-                    // Stop if we've found enough candidates for the preview
-                    if (candidates.length >= limit) {
-                        break;
+                    // Only add to candidates if we haven't reached the limit yet
+                    if (candidates.length < limit) {
+                        candidates.push(user);
                     }
                 }
+            }
+
+            // Break out of the outer loop if we have enough candidates
+            // This ensures we finish processing the current batch for accurate active user count
+            if (candidates.length >= limit) {
+                break;
             }
 
             offset += batchSize;
