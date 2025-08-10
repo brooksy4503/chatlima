@@ -212,7 +212,7 @@ export class CleanupMonitoringService {
 
         // Console notification (always available)
         console.log('📧 Cleanup notification would be sent:', {
-            to: 'admin@chatlima.com',
+            to: 'getchatlima@gmail.com',
             subject: `Cleanup Alert: ${metrics.status.toUpperCase()} - ${metrics.usersDeleted} users affected`,
             body: report,
             alertCount: notifiableAlerts.length,
