@@ -6,7 +6,7 @@
         }
     ],
     "functions": {
-        "api/admin/cleanup-users/*.js": {
+        "app/api/admin/cleanup-users/*/route.ts": {
             "memory": 1024,
             "maxDuration": 300
         }
