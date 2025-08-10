@@ -136,14 +136,14 @@ Working approach:
     }
   },
   {
-    id: 'gpt-4.1-mini-rapid-coding',
-    name: 'GPT-4.1 Mini Rapid Coder',
-    description: 'GPT-4.1 Mini for fast coding tasks, code completion, and lightweight development',
+    id: 'gpt-5-nano-rapid-coding',
+    name: 'GPT-5 Nano Rapid Coder',
+    description: 'GPT-5 Nano for fast coding tasks, code completion, and lightweight development',
     category: 'coding',
     icon: '🚀',
     preset: {
-      name: 'GPT-4.1 Mini Rapid Coder',
-      modelId: 'openrouter/openai/gpt-4.1-mini',
+      name: 'GPT-5 Nano Rapid Coder',
+      modelId: 'openrouter/openai/gpt-5-nano',
       systemInstruction: `You are a rapid coding assistant optimized for quick development tasks, code completion, and efficient problem-solving.
 
 Your focus areas:
@@ -414,14 +414,14 @@ Working style:
     }
   },
   {
-    id: 'gpt-4.1-mini-personal-assistant',
-    name: 'GPT-4.1 Mini Personal Assistant',
-    description: 'GPT-4.1 Mini for everyday tasks, quick answers, and personal productivity',
+    id: 'gpt-5-nano-personal-assistant',
+    name: 'GPT-5 Nano Personal Assistant',
+    description: 'GPT-5 Nano for everyday tasks, quick answers, and personal productivity',
     category: 'general',
     icon: '🤝',
     preset: {
-      name: 'GPT-4.1 Mini Personal Assistant',
-      modelId: 'openrouter/openai/gpt-4.1-mini',
+      name: 'GPT-5 Nano Personal Assistant',
+      modelId: 'openrouter/openai/gpt-5-nano',
       systemInstruction: `You are a helpful personal assistant focused on productivity, organization, and everyday task support.
 
 Your assistance includes:
