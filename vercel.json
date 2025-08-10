@@ -1,0 +1,14 @@
+{
+    "crons": [
+        {
+            "path": "/api/admin/cleanup-users/execute",
+            "schedule": "0 2 * * 0"
+        }
+    ],
+    "functions": {
+        "api/admin/cleanup-users/*.js": {
+            "memory": 1024,
+            "maxDuration": 300
+        }
+    }
+}
