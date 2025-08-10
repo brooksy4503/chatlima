@@ -23,7 +23,8 @@ import {
   Users,
   Database,
   Shield,
-  Activity
+  Activity,
+  Trash2
 } from "lucide-react";
 import { AdminSystemStats } from "./AdminSystemStats";
 import { AdminUserBreakdown } from "./AdminUserBreakdown";
@@ -31,6 +32,7 @@ import { AdminModelAnalytics } from "./AdminModelAnalytics";
 import { AdminPricingManagement } from "./AdminPricingManagement";
 import { AdminUsageLimits } from "./AdminUsageLimits";
 import { LoggingHealthDashboard } from "./LoggingHealthDashboard";
+import { AdminUserCleanup } from "./AdminUserCleanup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -75,6 +77,8 @@ export function AdminDashboard() {
         queryClient.invalidateQueries({ queryKey: ['admin-model-analytics'] }),
         queryClient.invalidateQueries({ queryKey: ['pricing'] }),
         queryClient.invalidateQueries({ queryKey: ['logging-health'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-cleanup-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-cleanup-preview'] }),
       ]);
       
       toast.success('Dashboard data refreshed successfully');
@@ -141,7 +145,7 @@ export function AdminDashboard() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <BarChart3 className="h-4 w-4" />
             <span>Overview</span>
@@ -165,6 +169,10 @@ export function AdminDashboard() {
           <TabsTrigger value="logging" className="flex items-center space-x-2">
             <Activity className="h-4 w-4" />
             <span>Logging</span>
+          </TabsTrigger>
+          <TabsTrigger value="cleanup" className="flex items-center space-x-2">
+            <Trash2 className="h-4 w-4" />
+            <span>Cleanup</span>
           </TabsTrigger>
         </TabsList>
 
@@ -190,6 +198,10 @@ export function AdminDashboard() {
 
         <TabsContent value="logging" className="mt-6 space-y-6">
           <LoggingHealthDashboard />
+        </TabsContent>
+
+        <TabsContent value="cleanup" className="mt-6 space-y-6">
+          <AdminUserCleanup loading={loading} />
         </TabsContent>
       </Tabs>
     </div>
