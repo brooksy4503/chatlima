@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Force Edge Runtime for lower memory usage
-export const runtime = 'edge';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
