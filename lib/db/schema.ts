@@ -253,7 +253,7 @@ export const tokenUsageMetrics = pgTable('token_usage_metrics', {
   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   chatId: text('chat_id').notNull().references(() => chats.id, { onDelete: 'cascade' }),
-  messageId: text('message_id').notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  messageId: text('message_id').references(() => messages.id, { onDelete: 'cascade' }), // Made nullable
   modelId: text('model_id').notNull(),
   provider: text('provider').notNull(),
   inputTokens: integer('input_tokens').default(0).notNull(),

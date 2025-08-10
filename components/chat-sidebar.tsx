@@ -107,7 +107,7 @@ function TokenUsageSummary({ userId }: { userId: string | null }) {
             totalTokens={tokenData?.totalTokens || 0}
             totalEstimatedCost={tokenData?.totalEstimatedCost || 0}
             totalActualCost={tokenData?.totalActualCost || 0}
-            messageCount={tokenData?.messageCount || 0}
+            messageCount={tokenData?.requestCount || 0}
             currency={tokenData?.currency || 'USD'}
             isLoading={isLoading}
             error={error?.message || null}

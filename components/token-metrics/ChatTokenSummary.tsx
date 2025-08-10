@@ -38,7 +38,7 @@ interface ChatTokenSummaryProps {
  * @param totalTokens - Total tokens used in the chat
  * @param totalEstimatedCost - Total estimated cost for the chat
  * @param totalActualCost - Total actual cost for the chat
- * @param messageCount - Number of messages in the chat
+ * @param messageCount - Number of messages in the chat (or AI requests for user-wide stats)
  * @param currency - Currency code (default: USD)
  * @param isLoading - Whether the summary is loading
  * @param error - Error message if loading failed
@@ -249,7 +249,8 @@ export function ChatTokenSummary({
 }
 
 /**
- * MiniChatTokenSummary component displays a very compact version for inline use
+ * MiniChatTokenSummary component displays a very compact version for inline use.
+ * When used in the sidebar, messageCount represents the number of AI requests.
  */
 interface MiniChatTokenSummaryProps extends Omit<ChatTokenSummaryProps, 'compact'> {
   showCost?: boolean;
@@ -312,7 +313,7 @@ export function MiniChatTokenSummary({
               {showCost && totalEstimatedCost > 0 && (
         <span>{formatCost(totalEstimatedCost)}</span>
       )}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" title="AI Requests">
         <BarChart3 className="h-3 w-3" />
         <span>{messageCount}</span>
       </div>

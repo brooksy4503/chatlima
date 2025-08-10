@@ -1,0 +1,1 @@
+ALTER TABLE "token_usage_metrics" ALTER COLUMN "message_id" DROP NOT NULL;
