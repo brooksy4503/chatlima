@@ -321,7 +321,7 @@ export class CleanupConfigService {
                 manualExecutions: result.adminCount || 0,
                 scriptExecutions: result.scriptCount || 0,
                 averageDuration: Math.round(result.avgDuration || 0),
-                lastExecution: result.lastExecution?.toISOString()
+                lastExecution: result.lastExecution ? new Date(result.lastExecution).toISOString() : undefined
             };
         } catch (error) {
             console.error('Error calculating summary:', error);
