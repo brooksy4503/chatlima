@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Ultra-lightweight emergency endpoint
-export const runtime = 'edge';
-
 /**
  * Emergency endpoint that returns minimal data to allow deployment
  */
