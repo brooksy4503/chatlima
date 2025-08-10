@@ -94,12 +94,12 @@ export class UserCleanupService {
     }
 
     /**
-     * Get anonymous users with their activity data using efficient SQL queries
-     * @param limit Maximum number of users to return (for memory efficiency)
-     * @param offset Number of users to skip (for pagination)
-     */
+ * Get anonymous users with their activity data using efficient SQL queries
+ * @param limit Maximum number of users to return (for memory efficiency)
+ * @param offset Number of users to skip (for pagination)
+ */
     static async getAnonymousUsersWithActivity(
-        limit: number = 1000,
+        limit: number = 50,
         offset: number = 0
     ): Promise<UserActivity[]> {
         // Use a single query with JOINs and subqueries for efficiency
@@ -182,7 +182,7 @@ export class UserCleanupService {
 
         // Process users in batches to find candidates without loading all into memory
         const candidates: UserActivity[] = [];
-        const batchSize = 500; // Process 500 users at a time
+        const batchSize = 100; // Reduced to 100 users at a time for Vercel memory limits
         let offset = 0;
         let activeUsers = 0;
 
@@ -256,7 +256,7 @@ export class UserCleanupService {
         try {
             // Use efficient batching to find candidates without loading all into memory
             const candidatesForDeletion: UserActivity[] = [];
-            const processingBatchSize = 500; // Process users in chunks
+            const processingBatchSize = 100; // Process users in smaller chunks for Vercel
             let offset = 0;
             const totalUsers = await this.getAnonymousUserCount();
 

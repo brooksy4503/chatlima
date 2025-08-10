@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+// Force Edge Runtime for lower memory usage
+export const runtime = 'edge';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
@@ -113,12 +116,22 @@ export async function POST(req: NextRequest) {
             timestamp: executionStartTime.toISOString()
         });
 
+        // Force garbage collection before heavy operation
+        if (global.gc) {
+            global.gc();
+        }
+
         // Execute cleanup
         const result = await UserCleanupService.executeCleanup(
             thresholdDays,
             batchSize,
             dryRun
         );
+
+        // Force garbage collection after heavy operation
+        if (global.gc) {
+            global.gc();
+        }
 
         // Create monitoring metrics
         const metrics: CleanupMetrics = {
