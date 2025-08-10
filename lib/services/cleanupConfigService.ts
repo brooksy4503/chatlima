@@ -294,7 +294,7 @@ export class CleanupConfigService {
             const baseQuery = db
                 .select({
                     totalExecutions: count(),
-                    totalUsersDeleted: sql<number>`sum(${cleanupExecutionLogs.usersDeleted})`,
+                    totalUsersDeleted: sql<number>`sum(case when ${cleanupExecutionLogs.dryRun} = false then ${cleanupExecutionLogs.usersDeleted} else 0 end)`,
                     successCount: sql<number>`sum(case when ${cleanupExecutionLogs.status} = 'success' then 1 else 0 end)`,
                     errorCount: sql<number>`sum(case when ${cleanupExecutionLogs.status} = 'error' then 1 else 0 end)`,
                     partialCount: sql<number>`sum(case when ${cleanupExecutionLogs.status} = 'partial' then 1 else 0 end)`,
@@ -413,7 +413,7 @@ export class CleanupConfigService {
         const successfulExecutions = logs.filter(log => log.status === 'success').length;
         const failedExecutions = logs.filter(log => log.status === 'error').length;
         const partialExecutions = logs.filter(log => log.status === 'partial').length;
-        const totalUsersDeleted = logs.reduce((sum, log) => sum + log.usersDeleted, 0);
+        const totalUsersDeleted = logs.reduce((sum, log) => sum + (log.dryRun ? 0 : log.usersDeleted), 0);
         const dryRunExecutions = logs.filter(log => log.dryRun).length;
         const averageDuration = logs.length > 0
             ? Math.round(logs.reduce((sum, log) => sum + log.durationMs, 0) / logs.length)
