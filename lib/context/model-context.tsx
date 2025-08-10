@@ -45,7 +45,7 @@ function notifyUserOfInvalidModel(modelId: string) {
 const FALLBACK_MODELS = [
   "openrouter/google/gemini-2.5-flash",
   "openrouter/anthropic/claude-3.5-sonnet", 
-  "openrouter/openai/gpt-4.1-mini",
+  "openrouter/openai/gpt-5-nano",
 ];
 
 export function ModelProvider({ children }: { children: ReactNode }) {

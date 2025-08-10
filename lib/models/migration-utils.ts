@@ -48,7 +48,7 @@ export const EXTENDED_MODEL_MIGRATIONS: ModelMigration[] = [
     },
     {
         oldId: 'openrouter/openai/gpt-3.5-turbo',
-        newId: 'openrouter/openai/gpt-4.1-mini',
+        newId: 'openrouter/openai/gpt-5-nano',
         reason: 'deprecated',
         automaticMigration: false,
     },

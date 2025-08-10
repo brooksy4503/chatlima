@@ -155,7 +155,7 @@ export const createRequestyClientWithKey = (apiKey?: string) => {
 
 const languageModels = {
   "claude-3-7-sonnet": anthropicClient('claude-3-7-sonnet-20250219'),
-  "gpt-4.1-mini": openaiClient("gpt-4.1-mini"),
+  "gpt-5-nano": openaiClient("gpt-5-nano"),
   "grok-3-mini": xaiClient("grok-3-mini-latest"),
   "qwen-qwq": wrapLanguageModel(
     {
@@ -244,8 +244,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       return getAnthropicClient()('claude-3-7-sonnet-20250219');
 
     // OpenAI models
-    case "gpt-4.1-mini":
-      return getOpenAIClient()("gpt-4.1-mini");
+    case "gpt-5-nano":
+      return getOpenAIClient()("gpt-5-nano");
 
     // Groq models
     case "qwen-qwq":
@@ -287,7 +287,7 @@ export const model = customProvider({
 });
 
 // Define a specific model ID for title generation - use a model that exists in static languageModels
-export const titleGenerationModelId: modelID = "gpt-4.1-mini";
+export const titleGenerationModelId: modelID = "gpt-5-nano";
 
 // Get the actual model instance for title generation
 export const titleGenerationModel = languageModels[titleGenerationModelId as keyof typeof languageModels];
@@ -296,9 +296,9 @@ export const titleGenerationModel = languageModels[titleGenerationModelId as key
 export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => {
   // Define preferred title generation models for each provider
   const titleGenerationModels: Record<string, modelID> = {
-    'openrouter': 'openrouter/openai/gpt-4.1-mini',
-    'requesty': 'requesty/openai/gpt-4o-mini',
-    'openai': 'gpt-4.1-mini',
+    'openrouter': 'openrouter/openai/gpt-5-nano',
+    'requesty': 'requesty/openai/gpt-5-nano',
+    'openai': 'gpt-5-nano',
     'anthropic': 'claude-3-7-sonnet',
     'groq': 'qwen-qwq',
     'xai': 'grok-3-mini',
@@ -309,7 +309,7 @@ export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => 
     return titleGenerationModels['openrouter'];
   } else if (selectedModelId.startsWith('requesty/')) {
     return titleGenerationModels['requesty'];
-  } else if (selectedModelId.startsWith('gpt-') || selectedModelId === 'gpt-4.1-mini') {
+  } else if (selectedModelId.startsWith('gpt-') || selectedModelId === 'gpt-5-nano') {
     return titleGenerationModels['openai'];
   } else if (selectedModelId.startsWith('claude-') || selectedModelId === 'claude-3-7-sonnet') {
     return titleGenerationModels['anthropic'];
@@ -338,9 +338,9 @@ export const getTitleGenerationModel = (selectedModelId: modelID, apiKeys?: Reco
   }
 
   // Fallback to a static model that definitely exists
-  // Priority: gpt-4.1-mini -> claude-3-7-sonnet -> qwen-qwq -> grok-3-mini
-  if ('gpt-4.1-mini' in languageModels) {
-    return languageModels['gpt-4.1-mini'];
+  // Priority: gpt-5-nano -> claude-3-7-sonnet -> qwen-qwq -> grok-3-mini
+  if ('gpt-5-nano' in languageModels) {
+    return languageModels['gpt-5-nano'];
   } else if ('claude-3-7-sonnet' in languageModels) {
     return languageModels['claude-3-7-sonnet'];
   } else if ('qwen-qwq' in languageModels) {
