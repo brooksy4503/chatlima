@@ -637,7 +637,7 @@ export function AdminUserCleanup({ loading: externalLoading = false }: AdminUser
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {preview.candidates.slice(0, 10).map((user) => (
+                      {preview.candidates.map((user) => (
                         <TableRow key={user.userId}>
                           <TableCell className="font-mono text-xs">
                             {user.userId.substring(0, 8)}...
@@ -662,12 +662,10 @@ export function AdminUserCleanup({ loading: externalLoading = false }: AdminUser
                     </TableBody>
                   </Table>
                   
-                  {preview.candidatesTotal > 10 && (
+                  {preview.candidatesShown < preview.candidatesTotal && (
                     <div className="p-3 text-center text-sm text-muted-foreground border-t">
-                      Showing 10 of {preview.candidatesTotal} candidates
-                      {preview.candidatesShown < preview.candidatesTotal && 
-                        ` (limited to ${preview.candidatesShown} for preview)`
-                      }
+                      Showing {preview.candidatesShown} of {preview.candidatesTotal} candidates
+                      (limited by preview setting - increase Preview Limit above to see more)
                     </div>
                   )}
                 </div>
