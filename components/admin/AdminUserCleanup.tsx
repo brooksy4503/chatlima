@@ -53,8 +53,7 @@ import {
   Clock,
   Settings,
   History,
-  Bell,
-  BellOff,
+
   BarChart3,
   TrendingUp,
   Monitor,
@@ -70,7 +69,7 @@ interface ScheduleConfig {
   schedule: string;
   thresholdDays: number;
   batchSize: number;
-  notificationEnabled: boolean;
+
   lastModified?: string;
   modifiedBy?: string;
 }
@@ -901,16 +900,16 @@ export function AdminUserCleanup({ loading: externalLoading = false }: AdminUser
                       <h4 className="font-medium">Schedule Settings</h4>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="cron-schedule">Cron Schedule</Label>
-                        <Input
-                          id="cron-schedule"
-                          value={scheduleConfig.schedule}
-                          onChange={(e) => handleScheduleUpdate({ schedule: e.target.value })}
-                          placeholder="0 2 * * 0"
-                          disabled={updateScheduleMutation.isPending}
-                        />
+                        <Label>Cron Schedule (Vercel Controlled)</Label>
+                        <div className="p-3 bg-muted rounded-md border">
+                          <code className="text-sm font-mono">0 2 * * 0</code>
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            (Weekly on Sundays at 2 AM UTC)
+                          </span>
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                          Current: {scheduleConfig.schedule} (Weekly on Sundays at 2 AM UTC)
+                          ⚠️ Schedule is controlled by <code>vercel.json</code> and requires redeployment to change.
+                          The database schedule field is for display only.
                         </p>
                       </div>
 
@@ -942,35 +941,20 @@ export function AdminUserCleanup({ loading: externalLoading = false }: AdminUser
                     </div>
 
                     <div className="space-y-4">
-                      <h4 className="font-medium">Monitoring & Alerts</h4>
+                      <h4 className="font-medium">Cron Configuration</h4>
                       
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          {scheduleConfig.notificationEnabled ? (
-                            <Bell className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <BellOff className="h-4 w-4 text-gray-400" />
-                          )}
-                          <span className="text-sm">Email notifications</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleScheduleUpdate({ notificationEnabled: !scheduleConfig.notificationEnabled })}
-                          disabled={updateScheduleMutation.isPending}
-                        >
-                          {scheduleConfig.notificationEnabled ? "Disable" : "Enable"}
-                        </Button>
-                      </div>
-
                       <div className="p-4 bg-blue-50 rounded-lg">
-                        <h5 className="font-medium text-blue-900 mb-2">Vercel Cron Configuration</h5>
+                        <h5 className="font-medium text-blue-900 mb-2">Actual Vercel Cron Configuration</h5>
                         <code className="text-xs bg-white p-2 rounded block text-blue-800">
                           {JSON.stringify({
                             path: "/api/admin/cleanup-users/execute",
-                            schedule: scheduleConfig.schedule
+                            schedule: "0 2 * * 0"
                           }, null, 2)}
                         </code>
+                        <p className="text-xs text-blue-700 mt-2">
+                          📝 This is the actual schedule from <code>vercel.json</code>. 
+                          To change it, update the file and redeploy.
+                        </p>
                       </div>
 
                       {scheduleConfig.lastModified && (

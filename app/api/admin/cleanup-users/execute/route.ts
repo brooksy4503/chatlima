@@ -122,27 +122,14 @@ export async function POST(req: NextRequest) {
                     skipped: true,
                     reason: 'CLEANUP_DISABLED',
                     configState: {
-                        enabled: config.enabled,
-                        schedule: config.schedule
+                        enabled: config.enabled
                     }
                 });
             }
 
-            // Check if current time matches the configured schedule
-            if (!matchesCronSchedule(config.schedule)) {
-                console.log(`⏰ Current time does not match configured schedule (${config.schedule}) - skipping execution`);
-                return NextResponse.json({
-                    success: true,
-                    message: `Cleanup execution skipped - current time does not match configured schedule (${config.schedule})`,
-                    skipped: true,
-                    reason: 'SCHEDULE_MISMATCH',
-                    configState: {
-                        enabled: config.enabled,
-                        schedule: config.schedule,
-                        currentTime: new Date().toISOString()
-                    }
-                });
-            }
+            // Note: We trust Vercel's cron scheduling rather than validating against database schedule
+            // The schedule is now controlled entirely by vercel.json
+            console.log('📅 Schedule is now controlled by vercel.json (not stored in database)');
 
             console.log('✅ Cron execution validated - proceeding with cleanup');
         }
@@ -164,8 +151,7 @@ export async function POST(req: NextRequest) {
 
             console.log(`📋 Using database configuration for cron execution:`, {
                 thresholdDays,
-                batchSize,
-                schedule: config.schedule
+                batchSize
             });
         } else {
             // For manual executions, parse request body and use parameters

@@ -19,7 +19,6 @@ async function testCleanupDatabase() {
         const initialConfig = await CleanupConfigService.getConfig();
         console.log('✅ Initial config:', {
             enabled: initialConfig.enabled,
-            schedule: initialConfig.schedule,
             thresholdDays: initialConfig.thresholdDays,
             batchSize: initialConfig.batchSize,
         });

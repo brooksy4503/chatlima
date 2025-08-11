@@ -5,7 +5,7 @@ import type { CleanupConfig, CleanupExecutionLog, CleanupExecutionLogInsert } fr
 
 export interface CleanupConfigData {
     enabled: boolean;
-    schedule: string;
+    // schedule: removed - now controlled by vercel.json
     thresholdDays: number;
     batchSize: number;
     notificationEnabled: boolean;
@@ -90,7 +90,7 @@ export class CleanupConfigService {
             // Return default config on error
             return {
                 enabled: false,
-                schedule: '0 2 * * 0',
+                // schedule: removed - now controlled by vercel.json
                 thresholdDays: 45,
                 batchSize: 50,
                 notificationEnabled: true,
@@ -124,7 +124,7 @@ export class CleanupConfigService {
                     .values({
                         id: DEFAULT_CONFIG_ID,
                         enabled: updates.enabled ?? false,
-                        schedule: updates.schedule ?? '0 2 * * 0',
+                        // schedule: removed - now controlled by vercel.json
                         thresholdDays: updates.thresholdDays ?? 45,
                         batchSize: updates.batchSize ?? 50,
                         notificationEnabled: updates.notificationEnabled ?? true,
@@ -349,7 +349,7 @@ export class CleanupConfigService {
         const defaultValues = {
             id: DEFAULT_CONFIG_ID,
             enabled: false,
-            schedule: '0 2 * * 0',
+            // schedule: removed - now controlled by vercel.json
             thresholdDays: 45,
             batchSize: 50,
             notificationEnabled: true,
@@ -372,7 +372,7 @@ export class CleanupConfigService {
     private static mapConfigToData(config: CleanupConfig): CleanupConfigData {
         return {
             enabled: config.enabled,
-            schedule: config.schedule,
+            // schedule: removed - now controlled by vercel.json
             thresholdDays: config.thresholdDays,
             batchSize: config.batchSize,
             notificationEnabled: config.notificationEnabled,

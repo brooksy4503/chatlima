@@ -1,0 +1,1 @@
+ALTER TABLE "cleanup_config" DROP COLUMN "schedule";

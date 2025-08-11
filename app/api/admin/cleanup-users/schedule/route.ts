@@ -17,7 +17,7 @@ import { CleanupConfigService } from '@/lib/services/cleanupConfigService';
  * Request Body:
  * {
  *   "enabled": true,
- *   "schedule": "0 2 * * 0",
+ *   // "schedule": NOT CONFIGURABLE - controlled by vercel.json
  *   "thresholdDays": 45,
  *   "batchSize": 50,
  *   "notificationEnabled": true
@@ -149,9 +149,14 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
 
         // Validation
-        if (body.schedule && !isValidCronExpression(body.schedule)) {
+        if (body.schedule) {
             return NextResponse.json(
-                { error: { code: 'INVALID_SCHEDULE', message: 'Invalid cron expression format' } },
+                {
+                    error: {
+                        code: 'SCHEDULE_NOT_CONFIGURABLE',
+                        message: 'Schedule is controlled by vercel.json and cannot be changed via API. Update vercel.json and redeploy to change the schedule.'
+                    }
+                },
                 { status: 400 }
             );
         }
