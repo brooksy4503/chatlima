@@ -2,11 +2,11 @@
     "crons": [
         {
             "path": "/api/admin/cleanup-users/execute",
-            "schedule": "0 * * * *"
+            "schedule": "0 2 * * 0"
         }
     ],
     "functions": {
-        "app/api/admin/cleanup-users/*/route.ts": {
+        "app/api/admin/cleanup-users/**": {
             "memory": 1024,
             "maxDuration": 300
         }

@@ -274,6 +274,13 @@
       "when": 1754809456587,
       "tag": "0039_silent_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1754905453231,
+      "tag": "0040_lean_stature",
+      "breakpoints": true
     }
   ]
 }

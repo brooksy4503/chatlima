@@ -425,7 +425,7 @@ export const cleanupExecutionLogs = pgTable('cleanup_execution_logs', {
 export const cleanupConfig = pgTable('cleanup_config', {
   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
   enabled: boolean('enabled').default(false).notNull(),
-  schedule: text('schedule').default('0 2 * * 0').notNull(), // Cron expression
+  // Schedule is now controlled by vercel.json, not database
   thresholdDays: integer('threshold_days').default(45).notNull(),
   batchSize: integer('batch_size').default(50).notNull(),
   notificationEnabled: boolean('notification_enabled').default(true).notNull(),
