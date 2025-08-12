@@ -1611,6 +1611,12 @@ export async function POST(req: Request) {
           return;
         }
 
+        console.log(`[Chat ${id}][onFinish] Response has annotations:`, !!response.annotations);
+        if (response.annotations) {
+          console.log(`[Chat ${id}][onFinish] Annotation count:`, response.annotations.length);
+          console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map(a => a.type));
+        }
+
         const allMessages = appendResponseMessages({
           messages: modelMessages,
           responseMessages: response.messages as any, // Cast to any to bypass type error
@@ -1619,6 +1625,8 @@ export async function POST(req: Request) {
         // Extract citations from response messages
         const processedMessages = allMessages.map(msg => {
           if (msg.role === 'assistant' && (response.annotations?.length)) {
+            console.log(`[Chat ${id}] Found ${response.annotations.length} annotations:`, response.annotations);
+
             const citations = response.annotations
               .filter((a: Annotation) => a.type === 'url_citation')
               .map((c: Annotation) => ({
@@ -1629,12 +1637,20 @@ export async function POST(req: Request) {
                 endIndex: c.url_citation.end_index
               }));
 
+            console.log(`[Chat ${id}] Processed citations:`, citations);
+
             // Add citations to message parts if they exist
             if (citations.length > 0 && msg.parts) {
-              msg.parts = (msg.parts as any[]).map(part => ({
-                ...part,
-                citations
-              }));
+              console.log(`[Chat ${id}] Adding citations to ${msg.parts.length} message parts`);
+              msg.parts = (msg.parts as any[]).map(part => {
+                if (part.type === 'text') {
+                  return {
+                    ...part,
+                    citations
+                  };
+                }
+                return part;
+              });
             }
           }
           return msg;

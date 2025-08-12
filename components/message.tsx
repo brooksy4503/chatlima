@@ -242,6 +242,7 @@ const PurePreviewMessage = ({
                       animate={{ y: 0, opacity: 1 }}
                       key={`message-${message.id}-part-${i}`}
                       className="flex flex-row gap-2 items-start w-full"
+                      data-message-id={message.id}
                     >
                       <div
                         className={cn("flex flex-col gap-3 w-full", {
@@ -249,8 +250,21 @@ const PurePreviewMessage = ({
                             message.role === "user",
                         })}
                       >
-                        <Markdown>{textPart.text}</Markdown>
-                        {textPart.citations && <Citations citations={textPart.citations} />}
+                        <Markdown 
+                          citations={textPart.citations}
+                          onScrollToCitations={() => {
+                            // Scroll to citations section
+                            const citationsElement = document.querySelector(`[data-message-id="${message.id}"] .citations-container`);
+                            citationsElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                          }}
+                        >
+                          {textPart.text}
+                        </Markdown>
+                        {textPart.citations && (
+                          <div className="citations-container">
+                            <Citations citations={textPart.citations} />
+                          </div>
+                        )}
                         {message.role === 'user' && shouldShowCopyButton && (
                           <CopyButton text={getMessageText()} className="ml-auto" />
                         )}
