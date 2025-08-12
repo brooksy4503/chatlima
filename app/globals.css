@@ -831,4 +831,57 @@
       @apply max-w-full;
     }
   }
+
+  /* Citation number styling */
+  .citation-number {
+    @apply inline-block text-[10px] px-1 py-0.5 rounded cursor-pointer transition-colors ml-0.5 font-medium;
+    @apply bg-blue-100 text-blue-700 hover:bg-blue-200;
+  }
+
+  /* Dark theme citation styling */
+  .dark .citation-number {
+    @apply bg-blue-900/30 text-blue-300 hover:bg-blue-900/50;
+  }
+
+  .black .citation-number {
+    @apply bg-blue-900/40 text-blue-300 hover:bg-blue-900/60;
+  }
+
+  /* Cyberpunk theme citation styling */
+  .cyberpunk .citation-number {
+    @apply bg-primary/20 text-primary hover:bg-primary/30;
+    border: 1px solid oklch(0.70 0.25 300 / 0.3);
+    box-shadow: 0 0 4px oklch(0.70 0.25 300 / 0.2);
+  }
+
+  .cyberpunk .citation-number:hover {
+    box-shadow: 0 0 6px oklch(0.70 0.25 300 / 0.4);
+  }
+
+  /* Sunset theme citation styling */
+  .sunset .citation-number {
+    @apply bg-primary/20 text-primary hover:bg-primary/30;
+  }
+
+  /* Nature theme citation styling */
+  .nature .citation-number {
+    @apply bg-primary/20 text-primary hover:bg-primary/30;
+  }
+
+  /* Retro theme citation styling */
+  .retro .citation-number {
+    @apply bg-primary/20 text-primary hover:bg-primary/30;
+  }
+
+  /* Focus states for accessibility */
+  .citation-number:focus {
+    @apply outline-none ring-2 ring-primary/50;
+  }
+
+  /* Enhanced mobile touch targets */
+  @media (max-width: 640px) {
+    .citation-number {
+      @apply text-xs px-1.5 py-1 min-w-[24px] min-h-[24px] inline-flex items-center justify-center;
+    }
+  }
 }

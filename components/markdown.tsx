@@ -7,6 +7,20 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "./copy-button";
+import { WebSearchCitation } from "@/lib/types";
+
+// Citation number component for inline rendering
+const CitationNumber = ({ number, onScrollToCitations }: { number: number; onScrollToCitations?: () => void }) => (
+  <span
+    className="citation-number inline-block text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors ml-0.5 font-medium"
+    onClick={onScrollToCitations}
+    role="button"
+    tabIndex={0}
+    aria-label={`Citation ${number}`}
+  >
+    [{number}]
+  </span>
+);
 
 const components: Partial<Components> = {
   pre: ({ children, ...props }) => {
@@ -220,14 +234,93 @@ function preprocessMathDelimiters(markdown: string): string {
   return markdown;
 }
 
-const NonMemoizedMarkdown = ({ children }: { children: string }) => {
-  const processed = preprocessMathDelimiters(children);
+// Preprocesses text to insert inline citation numbers based on citation data
+function preprocessCitations(text: string, citations?: WebSearchCitation[]): string {
+  if (!citations?.length || !text) return text;
+  
+  // Sort citations by startIndex in reverse order to avoid index shifting when inserting
+  const sortedCitations = [...citations]
+    .sort((a, b) => b.startIndex - a.startIndex)
+    .map((citation, index, array) => ({
+      ...citation,
+      // Assign citation numbers based on original order (1, 2, 3, etc.)
+      number: array.length - index
+    }));
+  
+  let processedText = text;
+  
+  // Insert citation numbers at the appropriate positions
+  sortedCitations.forEach(citation => {
+    if (citation.endIndex <= processedText.length) {
+      const beforeText = processedText.slice(0, citation.endIndex);
+      const afterText = processedText.slice(citation.endIndex);
+      processedText = beforeText + `[${citation.number}]` + afterText;
+    }
+  });
+  
+  return processedText;
+}
+
+const NonMemoizedMarkdown = ({ 
+  children, 
+  citations, 
+  onScrollToCitations 
+}: { 
+  children: string; 
+  citations?: WebSearchCitation[];
+  onScrollToCitations?: () => void;
+}) => {
+  // First process math delimiters, then add citations
+  const mathProcessed = preprocessMathDelimiters(children);
+  const processed = preprocessCitations(mathProcessed, citations);
+  
+  // Create components with citation handling
+  const componentsWithCitations: Partial<Components> = {
+    ...components,
+    // Override text handling to render citation numbers as components
+    p: ({ node, children, ...props }) => {
+      const processChildren = (children: React.ReactNode): React.ReactNode => {
+        if (typeof children === 'string') {
+          // Split text by citation numbers and render them as components
+          const parts = children.split(/(\[\d+\])/g);
+          return parts.map((part, index) => {
+            const citationMatch = part.match(/^\[(\d+)\]$/);
+            if (citationMatch) {
+              return (
+                <CitationNumber 
+                  key={index} 
+                  number={parseInt(citationMatch[1])} 
+                  onScrollToCitations={onScrollToCitations}
+                />
+              );
+            }
+            return part;
+          });
+        }
+        if (Array.isArray(children)) {
+          return children.map((child, index) => 
+            React.cloneElement(
+              <span key={index}>{processChildren(child)}</span>
+            )
+          );
+        }
+        return children;
+      };
+
+      return (
+        <p className="leading-relaxed my-1" {...props}>
+          {processChildren(children)}
+        </p>
+      );
+    }
+  };
+  
   return (
     <div className="overflow-x-auto max-w-full">
       <ReactMarkdown 
         remarkPlugins={remarkPlugins} 
         rehypePlugins={rehypePlugins}
-        components={components}
+        components={componentsWithCitations}
       >
         {processed}
       </ReactMarkdown>
@@ -237,5 +330,8 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
 
 export const Markdown = memo(
   NonMemoizedMarkdown,
-  (prevProps, nextProps) => prevProps.children === nextProps.children,
+  (prevProps, nextProps) => 
+    prevProps.children === nextProps.children && 
+    prevProps.citations === nextProps.citations &&
+    prevProps.onScrollToCitations === nextProps.onScrollToCitations,
 );
