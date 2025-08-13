@@ -4,7 +4,7 @@ import * as schema from "./schema";
 
 // Initialize the connection pool
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL,
 });
 
 // Initialize Drizzle with the connection pool and schema
