@@ -287,7 +287,7 @@ export const model = customProvider({
 });
 
 // Define a specific model ID for title generation - use a model that exists in static languageModels
-export const titleGenerationModelId: modelID = "gpt-5-nano";
+export const titleGenerationModelId: modelID = "openrouter/qwen/qwen-turbo";
 
 // Get the actual model instance for title generation
 export const titleGenerationModel = languageModels[titleGenerationModelId as keyof typeof languageModels];
@@ -296,8 +296,8 @@ export const titleGenerationModel = languageModels[titleGenerationModelId as key
 export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => {
   // Define preferred title generation models for each provider
   const titleGenerationModels: Record<string, modelID> = {
-    'openrouter': 'openrouter/openai/gpt-5-nano',
-    'requesty': 'requesty/openai/gpt-5-nano',
+    'openrouter': 'openrouter/qwen/qwen-turbo',
+    'requesty': 'requesty/alibaba/qwen-turbo',
     'openai': 'gpt-5-nano',
     'anthropic': 'claude-3-7-sonnet',
     'groq': 'qwen-qwq',
