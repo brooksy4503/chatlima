@@ -11,6 +11,8 @@ import {
   extractReasoningMiddleware
 } from "ai";
 
+import { titleGenerationModelId } from '@/lib/constants';
+
 
 
 const middleware = extractReasoningMiddleware({
@@ -62,23 +64,6 @@ const groqClient = createGroq({
 
 const xaiClient = createXai({
   apiKey: getApiKey('XAI_API_KEY'),
-});
-
-const openrouterClient = createOpenRouter({
-  apiKey: getApiKey('OPENROUTER_API_KEY'),
-  headers: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
-    'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
-  }
-});
-
-const requestyClient = createRequesty({
-  apiKey: getApiKey('REQUESTY_API_KEY'),
-  baseURL: 'https://router.requesty.ai/v1', // Correct API endpoint for requests
-  headers: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
-    'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
-  }
 });
 
 // Helper functions to create provider clients with dynamic API keys
@@ -286,22 +271,19 @@ export const model = customProvider({
   languageModels,
 });
 
-// Define a specific model ID for title generation - use a model that exists in static languageModels
-export const titleGenerationModelId: modelID = "openrouter/qwen/qwen-turbo";
-
 // Get the actual model instance for title generation
 export const titleGenerationModel = languageModels[titleGenerationModelId as keyof typeof languageModels];
 
 // Function to get the appropriate title generation model based on the provider of the selected model
 export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => {
-  // Define preferred title generation models for each provider
+  // Define preferred title generation models for each provider with environment variable fallbacks
   const titleGenerationModels: Record<string, modelID> = {
-    'openrouter': 'openrouter/qwen/qwen-turbo',
-    'requesty': 'requesty/alibaba/qwen-turbo',
-    'openai': 'gpt-5-nano',
-    'anthropic': 'claude-3-7-sonnet',
-    'groq': 'qwen-qwq',
-    'xai': 'grok-3-mini',
+    'openrouter': process.env.OPENROUTER_TITLE_MODEL || 'openrouter/qwen/qwen-turbo',
+    'requesty': process.env.REQUESTY_TITLE_MODEL || 'requesty/alibaba/qwen-turbo',
+    'openai': process.env.OPENAI_TITLE_MODEL || 'gpt-5-nano',
+    'anthropic': process.env.ANTHROPIC_TITLE_MODEL || 'claude-3-7-sonnet',
+    'groq': process.env.GROQ_TITLE_MODEL || 'qwen-qwq',
+    'xai': process.env.XAI_TITLE_MODEL || 'grok-3-mini',
   };
 
   // Determine the provider from the selected model ID
