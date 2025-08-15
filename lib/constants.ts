@@ -8,4 +8,7 @@ export const STORAGE_KEYS = {
   SELECTED_MCP_SERVERS: "selectedMcpServers",
   SIDEBAR_STATE: "sidebarState",
   WEB_SEARCH: "webSearch"
-} as const; 
+} as const;
+
+// Configurable model IDs
+export const titleGenerationModelId = process.env.TITLE_GENERATION_MODEL_ID || 'openrouter/qwen/qwen-turbo'; 
