@@ -13,7 +13,6 @@ import { convertToUIMessages } from "@/lib/chat-store";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
-import { Sparkles } from "lucide-react";
 import { usePresets } from "@/lib/context/preset-context";
 import { useMCP } from "@/lib/context/mcp-context";
 import { useAuth } from "@/hooks/useAuth";
