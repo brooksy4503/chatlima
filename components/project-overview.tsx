@@ -1,4 +1,3 @@
-import NextLink from "next/link";
 import { SuggestedPrompts } from "./suggested-prompts";
 
 interface ProjectOverviewProps {
@@ -12,7 +11,6 @@ export const ProjectOverview = ({ sendMessage, selectedModel }: ProjectOverviewP
       {/* Welcome header */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
         <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-          Welcome to ChatLima
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground">
           Your AI-powered chat assistant. Choose a suggestion below or start typing your own message.
@@ -31,23 +29,5 @@ export const ProjectOverview = ({ sendMessage, selectedModel }: ProjectOverviewP
         </div>
       )}
     </div>
-  );
-};
-
-const Link = ({
-  children,
-  href,
-}: {
-  children: React.ReactNode;
-  href: string;
-}) => {
-  return (
-    <NextLink
-      target="_blank"
-      className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-75"
-      href={href}
-    >
-      {children}
-    </NextLink>
   );
 };
