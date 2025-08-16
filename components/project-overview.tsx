@@ -10,9 +10,7 @@ export const ProjectOverview = ({ sendMessage, selectedModel }: ProjectOverviewP
     <div className="flex flex-col items-center justify-center space-y-6 p-4">
       {/* Welcome header */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-        </h1>
-        <p className="text-base sm:text-lg text-muted-foreground">
+          <p className="text-base sm:text-lg text-muted-foreground">
           Your AI-powered chat assistant. Choose a suggestion below or start typing your own message.
         </p>
       </div>
