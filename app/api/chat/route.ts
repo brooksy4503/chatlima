@@ -431,27 +431,20 @@ export async function POST(req: Request) {
   }
 
   // ----------------------------------------------------------------------------
-  // Anonymous user free-model-only enforcement
+  // Pre-flight model validation - only check for basic model availability
+  // (Full free-model-only enforcement moved after credit check)
   // ----------------------------------------------------------------------------
   // Acquire session to determine anonymous status (if not already available later)
   const earlySession = await auth.api.getSession({ headers: req.headers });
   const earlyUserId = earlySession?.user?.id || 'anonymous';
   const earlyIsAnonymous = (earlySession?.user as any)?.isAnonymous === true;
 
-  // Compute own-keys and free-model status as early as possible
+  // Compute own-keys and free-model status for later use
   const earlyIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
   const earlyIsFreeModel = selectedModel.startsWith('openrouter/') && selectedModel.endsWith(':free');
   const allowAnonOwnKeys = process.env.ALLOW_ANON_OWN_KEYS === 'true';
 
-  if (earlyIsAnonymous && !earlyIsFreeModel && !(allowAnonOwnKeys && earlyIsUsingOwnApiKeys)) {
-    console.log(`[Security] Anonymous user ${earlyUserId} attempted non-free model: ${selectedModel}`);
-    return createErrorResponse(
-      'ANON_FREE_ONLY',
-      'Anonymous users can only use free models. Please sign in to use other models.',
-      403,
-      'Anonymous free-only enforcement'
-    );
-  }
+  // Note: Free-model-only enforcement moved after credit check to include Google users without credits
 
   // Process attachments into message parts
   async function processMessagesWithAttachments(
@@ -692,8 +685,29 @@ export async function POST(req: Request) {
     );
   }
 
-  // SECURITY FIX: Block premium model access for users without credits
+  // ----------------------------------------------------------------------------
+  // Free-model-only enforcement for users without credits
+  // This applies to both anonymous users AND Google users without credits
+  // ----------------------------------------------------------------------------
+  // Use the computed values from earlier (earlyIsFreeModel and earlyIsUsingOwnApiKeys)
+
+  // Block non-free model access for users without credits (anonymous OR Google users without credits)
+  if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits && !(allowAnonOwnKeys && isUsingOwnApiKeys)) {
+    const userType = isAnonymous ? "Anonymous users" : "Users without credits";
+    const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
+
+    console.log(`[SECURITY] ${userType} attempted non-free model: ${selectedModel}`);
+    return createErrorResponse(
+      'FREE_MODEL_ONLY',
+      `${userType} can only use free models. ${actionRequired} to access other models.`,
+      403,
+      `Free-model-only enforcement for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
+    );
+  }
+
+  // SECURITY FIX: Block premium model access for users without credits  
   // This prevents anonymous users and users without credits from accessing expensive models
+  // NOTE: This check is now redundant with the free-model check above, but kept for clarity
   if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits && selectedModelInfo?.premium) {
     const userType = isAnonymous ? "Anonymous users" : "Users without credits";
     const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";

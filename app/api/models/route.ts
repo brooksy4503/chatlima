@@ -3,6 +3,7 @@ import { fetchAllModels, getEnvironmentApiKeys, clearProviderCache, getCacheStat
 import { auth } from '@/lib/auth';
 import { ApiKeyContext } from '@/lib/types/models';
 import { headers } from 'next/headers';
+import { getRemainingCreditsByExternalId } from '@/lib/polar';
 
 // Helper to extract user API keys from request
 function extractUserApiKeys(request: NextRequest): Record<string, string> {
@@ -104,12 +105,28 @@ export async function GET(request: NextRequest) {
                 headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-keys');
             }
 
-            // Determine if requester is anonymous (or unauthenticated)
+            // Determine user authentication status and credit availability
             const session = await auth.api.getSession({ headers: request.headers });
             const isAnonymous = !session?.user?.id || ((session.user as any)?.isAnonymous === true);
+            const userId = session?.user?.id;
 
-            // Filter models for anonymous/unauthenticated users: only allow OpenRouter :free
-            const models = isAnonymous
+            let hasCredits = false;
+
+            // Check for credits (only for authenticated users)
+            if (!isAnonymous && userId) {
+                try {
+                    const credits = await getRemainingCreditsByExternalId(userId);
+                    hasCredits = typeof credits === 'number' && credits > 0;
+                } catch (error) {
+                    // If credit check fails, assume no credits
+                    hasCredits = false;
+                }
+            }
+
+            // Filter models: only allow OpenRouter :free models for users without credits
+            // This applies to both anonymous users AND Google users without credits
+            const shouldRestrictToFreeModels = isAnonymous || !hasCredits;
+            const models = shouldRestrictToFreeModels
                 ? response.models.filter(m => m.id.startsWith('openrouter/') && m.id.endsWith(':free'))
                 : response.models;
 
