@@ -452,3 +452,33 @@ export type CleanupExecutionLogInsert = typeof cleanupExecutionLogs.$inferInsert
 export type CleanupConfig = typeof cleanupConfig.$inferSelect;
 export type CleanupConfigInsert = typeof cleanupConfig.$inferInsert;
 
+// --- Daily Message Usage Tracking Schema ---
+
+export const dailyMessageUsage = pgTable('daily_message_usage', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(), // YYYY-MM-DD format in UTC
+  messageCount: integer('message_count').default(0).notNull(),
+  isAnonymous: boolean('is_anonymous').default(false).notNull(),
+  lastMessageAt: timestamp('last_message_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Constraints
+  uniqueUserDate: unique('daily_message_usage_user_date_idx').on(table.userId, table.date),
+  checkMessageCountNonNegative: check('check_daily_message_usage_count_non_negative',
+    sql`${table.messageCount} >= 0`),
+  checkMessageCountReasonable: check('check_daily_message_usage_count_reasonable',
+    sql`${table.messageCount} <= 1000`), // Safety limit
+
+  // Indexes for performance
+  userIdIdx: index('idx_daily_message_usage_user_id').on(table.userId),
+  dateIdx: index('idx_daily_message_usage_date').on(table.date),
+  userDateIdx: index('idx_daily_message_usage_user_date').on(table.userId, table.date),
+  isAnonymousIdx: index('idx_daily_message_usage_is_anonymous').on(table.isAnonymous),
+}));
+
+// Daily message usage types
+export type DailyMessageUsage = typeof dailyMessageUsage.$inferSelect;
+export type DailyMessageUsageInsert = typeof dailyMessageUsage.$inferInsert;
+

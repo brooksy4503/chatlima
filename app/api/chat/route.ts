@@ -18,9 +18,9 @@ import { SimpleCostEstimationService } from '@/lib/services/simpleCostEstimation
 import { DirectTokenTrackingService } from '@/lib/services/directTokenTracking';
 import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
 import { createRequestCreditCache, hasEnoughCreditsWithCache } from '@/lib/services/creditCache';
-import { auth, checkMessageLimit } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { logDiagnostic as originalLogDiagnostic, logChunk, logPerformanceMetrics, logError, logRequestBoundary } from '@/lib/utils/performantLogging';
-import { createMessageLimitCache } from '@/lib/services/messageLimitCache';
+import { DailyMessageUsageService } from '@/lib/services/dailyMessageUsageService';
 import { UsageLimitsService } from '@/lib/services/usageLimits';
 import { OptimizedUsageLimitsService } from '@/lib/services/optimizedUsageLimits';
 import type { ImageUIPart } from '@/lib/types';
@@ -333,7 +333,6 @@ export async function POST(req: Request) {
 
   // Create request-scoped caches for performance optimization
   const { getRemainingCreditsByExternalId: getCachedCreditsByExternal, getRemainingCredits: getCachedCredits, cache: creditCache } = createRequestCreditCache();
-  const messageLimitCache = createMessageLimitCache();
   const requestStartTime = Date.now(); // Track when the request started
 
   // Enhanced timing tracking variables
@@ -444,7 +443,7 @@ export async function POST(req: Request) {
   const earlyIsFreeModel = selectedModel.startsWith('openrouter/') && selectedModel.endsWith(':free');
   const allowAnonOwnKeys = process.env.ALLOW_ANON_OWN_KEYS === 'true';
 
-  // Note: Free-model-only enforcement moved after credit check to include Google users without credits
+  // Note: Free models now still require daily limits for users without credits (security fix)
 
   // Process attachments into message parts
   async function processMessagesWithAttachments(
@@ -598,17 +597,18 @@ export async function POST(req: Request) {
     estimatedTokens
   });
 
-  // Skip credit checks entirely if user is using their own API keys or using a free model
+  // Skip credit checks entirely if user is using their own API keys
+  // SECURITY FIX: Do NOT set hasCredits=true for free models - they still need daily limits
   if (isUsingOwnApiKeys) {
     logDiagnostic('CREDIT_CHECK_SKIP', `User is using own API keys, skipping credit checks`, { requestId, userId });
     hasCredits = true; // Allow request to proceed
   } else if (isFreeModel) {
-    logDiagnostic('CREDIT_CHECK_SKIP', `User is using a free model, skipping credit checks`, {
+    logDiagnostic('CREDIT_CHECK_SKIP', `User is using a free model, but still checking for actual credits for limit purposes`, {
       requestId,
       userId,
       selectedModel
     });
-    hasCredits = true; // Allow request to proceed
+    // DO NOT set hasCredits = true here - let the actual credit check determine this
   } else {
     try {
       // Reuse the model info we already fetched earlier (line 177) instead of calling getModelDetails again
@@ -837,33 +837,53 @@ export async function POST(req: Request) {
     }
   }
 
-  // 4. If user has credits or is using own API keys or using free model, allow request (skip daily message limit)
-  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, isFreeModel=${isFreeModel}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel}`);
+  // 4. SECURITY FIX: Apply daily message limits to users without credits, even on free models
+  // Only skip daily message limits for: users with credits OR users with own API keys
+  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, isFreeModel=${isFreeModel}`);
+  console.log(`[Security] Will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys} (removed free model bypass)`);
 
-  if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel) {
-    console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : isFreeModel ? 'using free model' : 'has credits'}, skipping message limit check`);
+  if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys) {
+    console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : 'has credits'}, skipping message limit check`);
     // proceed
   } else {
-    logDiagnostic('MESSAGE_LIMIT_CHECK', `Checking message limits`, { userId, isAnonymous });
-    // 5. Otherwise, check message limit based on authentication status with caching
-    const limitStatus = await messageLimitCache.checkMessageLimit(userId, isAnonymous, creditCache);
-    logDiagnostic('MESSAGE_LIMIT_RESULT', `Message limit result`, limitStatus);
+    logDiagnostic('MESSAGE_LIMIT_CHECK', `Checking daily message limits with new secure tracking (including free models)`, { userId, isAnonymous });
+
+    // 5. NEW SECURE IMPLEMENTATION: Check daily message limit using DailyMessageUsageService
+    // This cannot be bypassed by deleting messages since it tracks usage independently
+    const dailyUsage = await DailyMessageUsageService.getDailyUsage(userId);
+    logDiagnostic('MESSAGE_LIMIT_RESULT', `Daily message usage result`, dailyUsage);
 
     // Log message usage for anonymous users
     if (isAnonymous) {
-      const used = limitStatus.limit - limitStatus.remaining;
-      console.log(`[Anonymous User ${userId}] Messages used: ${used}/${limitStatus.limit}, Remaining: ${limitStatus.remaining}`);
+      console.log(`[Anonymous User ${userId}] Messages used: ${dailyUsage.messageCount}/${dailyUsage.limit}, Remaining: ${dailyUsage.remaining}`);
     }
 
-    if (limitStatus.hasReachedLimit) {
+    if (dailyUsage.hasReachedLimit) {
       return new Response(
         JSON.stringify({
           error: "Message limit reached",
-          message: `You've reached your daily limit of ${limitStatus.limit} messages. ${isAnonymous ? "Sign in with Google to get more messages." : "Purchase credits to continue."}`,
-          limit: limitStatus.limit,
-          remaining: limitStatus.remaining
+          message: `You've reached your daily limit of ${dailyUsage.limit} messages. ${isAnonymous ? "Sign in with Google to get more messages." : "Purchase credits to continue."}`,
+          limit: dailyUsage.limit,
+          remaining: dailyUsage.remaining,
+          resetTime: "midnight UTC"
         }),
         { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 6. CRITICAL SECURITY STEP: Increment usage counter BEFORE creating message
+    // This prevents retrying the same message multiple times to bypass limits
+    try {
+      const newUsage = await DailyMessageUsageService.incrementDailyUsage(userId, isAnonymous);
+      console.log(`[Security] User ${userId} daily usage incremented to ${newUsage.newCount} on ${newUsage.date}`);
+    } catch (error) {
+      console.error(`[Security] Failed to increment daily usage for user ${userId}:`, error);
+      return new Response(
+        JSON.stringify({
+          error: "Usage tracking error",
+          message: "Unable to track message usage. Please try again.",
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
   }

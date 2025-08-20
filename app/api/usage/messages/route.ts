@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { auth, checkMessageLimit } from '@/lib/auth';
+import { auth } from '@/lib/auth';
+import { DailyMessageUsageService } from '@/lib/services/dailyMessageUsageService';
+import { getRemainingCreditsByExternalId } from '@/lib/polar';
 
 /**
  * API endpoint to get message usage information for the current user
@@ -20,20 +22,41 @@ export async function GET(req: Request) {
         const userId = session.user.id;
         const isAnonymous = (session.user as any).isAnonymous === true;
 
-        // Check message limit for this user
-        const limitStatus = await checkMessageLimit(userId, isAnonymous);
+        // Get daily message usage using new secure tracking
+        const dailyUsage = await DailyMessageUsageService.getDailyUsage(userId);
+
+        // Also check for credits (for authenticated users)
+        let credits = 0;
+        let hasCredits = false;
+        let usedCredits = false;
+
+        if (!isAnonymous) {
+            try {
+                const userCredits = await getRemainingCreditsByExternalId(userId);
+                if (typeof userCredits === 'number') {
+                    credits = userCredits;
+                    hasCredits = userCredits > 0;
+                    usedCredits = true;
+                }
+            } catch (error) {
+                console.warn('Failed to get credits for user:', error);
+            }
+        }
 
         return NextResponse.json({
-            limit: limitStatus.limit,
-            used: limitStatus.limit - limitStatus.remaining,
-            remaining: limitStatus.remaining,
-            isAnonymous,
+            limit: dailyUsage.limit,
+            used: dailyUsage.messageCount,
+            remaining: dailyUsage.remaining,
+            isAnonymous: dailyUsage.isAnonymous,
             // Check if user has a Polar subscription
             hasSubscription: (session.user as any)?.metadata?.hasSubscription || false,
             // Include credit information
-            credits: limitStatus.credits || 0,
-            hasCredits: (limitStatus.credits || 0) > 0,
-            usedCredits: limitStatus.usedCredits || false
+            credits,
+            hasCredits,
+            usedCredits,
+            // Additional info from new system
+            date: dailyUsage.date,
+            hasReachedLimit: dailyUsage.hasReachedLimit
         });
     } catch (error) {
         console.error('Error getting message usage:', error);
