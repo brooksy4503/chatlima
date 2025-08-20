@@ -443,7 +443,7 @@ export async function POST(req: Request) {
   const earlyIsFreeModel = selectedModel.startsWith('openrouter/') && selectedModel.endsWith(':free');
   const allowAnonOwnKeys = process.env.ALLOW_ANON_OWN_KEYS === 'true';
 
-  // Note: Free-model-only enforcement moved after credit check to include Google users without credits
+  // Note: Free models now still require daily limits for users without credits (security fix)
 
   // Process attachments into message parts
   async function processMessagesWithAttachments(
@@ -836,14 +836,16 @@ export async function POST(req: Request) {
     }
   }
 
-  // 4. If user has credits or is using own API keys or using free model, allow request (skip daily message limit)
-  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, isFreeModel=${isFreeModel}, will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel}`);
+  // 4. SECURITY FIX: Apply daily message limits to users without credits, even on free models
+  // Only skip daily message limits for: users with credits OR users with own API keys
+  console.log(`[Debug] Credit check: !isAnonymous=${!isAnonymous}, hasCredits=${hasCredits}, actualCredits=${actualCredits}, isUsingOwnApiKeys=${isUsingOwnApiKeys}, isFreeModel=${isFreeModel}`);
+  console.log(`[Security] Will skip limit check: ${(!isAnonymous && hasCredits) || isUsingOwnApiKeys} (removed free model bypass)`);
 
-  if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys || isFreeModel) {
-    console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : isFreeModel ? 'using free model' : 'has credits'}, skipping message limit check`);
+  if ((!isAnonymous && hasCredits) || isUsingOwnApiKeys) {
+    console.log(`[Debug] User ${userId} ${isUsingOwnApiKeys ? 'using own API keys' : 'has credits'}, skipping message limit check`);
     // proceed
   } else {
-    logDiagnostic('MESSAGE_LIMIT_CHECK', `Checking daily message limits with new secure tracking`, { userId, isAnonymous });
+    logDiagnostic('MESSAGE_LIMIT_CHECK', `Checking daily message limits with new secure tracking (including free models)`, { userId, isAnonymous });
 
     // 5. NEW SECURE IMPLEMENTATION: Check daily message limit using DailyMessageUsageService
     // This cannot be bypassed by deleting messages since it tracks usage independently
