@@ -597,17 +597,18 @@ export async function POST(req: Request) {
     estimatedTokens
   });
 
-  // Skip credit checks entirely if user is using their own API keys or using a free model
+  // Skip credit checks entirely if user is using their own API keys
+  // SECURITY FIX: Do NOT set hasCredits=true for free models - they still need daily limits
   if (isUsingOwnApiKeys) {
     logDiagnostic('CREDIT_CHECK_SKIP', `User is using own API keys, skipping credit checks`, { requestId, userId });
     hasCredits = true; // Allow request to proceed
   } else if (isFreeModel) {
-    logDiagnostic('CREDIT_CHECK_SKIP', `User is using a free model, skipping credit checks`, {
+    logDiagnostic('CREDIT_CHECK_SKIP', `User is using a free model, but still checking for actual credits for limit purposes`, {
       requestId,
       userId,
       selectedModel
     });
-    hasCredits = true; // Allow request to proceed
+    // DO NOT set hasCredits = true here - let the actual credit check determine this
   } else {
     try {
       // Reuse the model info we already fetched earlier (line 177) instead of calling getModelDetails again
