@@ -4,14 +4,14 @@ import { XCircle, RefreshCw, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 interface CheckoutErrorPageProps {
-  searchParams: {
+  searchParams: Promise<{
     reason?: string;
     checkout_id?: string;
-  };
+  }>;
 }
 
-export default function CheckoutErrorPage({ searchParams }: CheckoutErrorPageProps) {
-  const { reason, checkout_id } = searchParams;
+export default async function CheckoutErrorPage({ searchParams }: CheckoutErrorPageProps) {
+  const { reason, checkout_id } = await searchParams;
   
   const getErrorMessage = (reason?: string) => {
     switch (reason) {
