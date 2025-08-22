@@ -5,9 +5,9 @@ export const projectOverviewV2Flag = flag<boolean>({
   key: 'project-overview-v2',
   description: 'Enable the new Project Overview component with enhanced features',
   decide() {
-    // TEMPORARY TEST: Force true to test the component
-    // This will be overridden by Edge Config when properly set up
-    return false; // Back to original simple component
+    // Fallback for when Edge Config isn't available (e.g., local development)
+    // In production, Vercel Edge Config will override this with Statsig values
+    return false; // Default to disabled for safety
   },
 });
 

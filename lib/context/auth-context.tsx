@@ -54,31 +54,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Centralized usage data fetching with proper caching
   const fetchUsageData = useCallback(async () => {
-    // Skip if no user or data is fresh (< 5 minutes old)
-    if (!session?.user?.id || (usageData?.lastFetched && usageData.lastFetched > Date.now() - 300000)) {
+    // Skip if no user
+    if (!session?.user?.id) {
       return;
     }
 
-    try {
-      const response = await fetch('/api/usage/messages');
-      if (response.ok) {
-        const data = await response.json();
-        setUsageData({
-          limit: data.limit,
-          used: data.limit - data.remaining,
-          remaining: data.remaining,
-          credits: data.credits || 0,
-          hasCredits: data.hasCredits || false,
-          usedCredits: data.usedCredits || false,
-          lastFetched: Date.now(),
-        });
+    // Check if data is fresh (< 5 minutes old) using current state
+    setUsageData(currentUsageData => {
+      if (currentUsageData?.lastFetched && currentUsageData.lastFetched > Date.now() - 300000) {
+        return currentUsageData; // Return current data if still fresh
       }
-    } catch (error) {
-      console.error('Failed to fetch usage data:', error);
-    }
-  }, [session?.user?.id, usageData?.lastFetched]);
 
-  // Single effect to manage auth state
+      // If data is stale or doesn't exist, fetch new data
+      (async () => {
+        try {
+          const response = await fetch('/api/usage/messages');
+          if (response.ok) {
+            const data = await response.json();
+            setUsageData({
+              limit: data.limit,
+              used: data.limit - data.remaining,
+              remaining: data.remaining,
+              credits: data.credits || 0,
+              hasCredits: data.hasCredits || false,
+              usedCredits: data.usedCredits || false,
+              lastFetched: Date.now(),
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch usage data:', error);
+        }
+      })();
+
+      return currentUsageData; // Return current data while fetching
+    });
+  }, [session?.user?.id]);
+
+  // Effect to manage auth state (without circular dependency)
   useEffect(() => {
     if (isPending) {
       setStatus('loading');
@@ -104,15 +116,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setStatus(isAnonymous ? 'anonymous' : 'authenticated');
       setError(null);
-      
-      // Fetch usage data when user is available
-      fetchUsageData();
     } else {
       setUser(null);
       setUsageData(null);
       setStatus('unauthenticated');
     }
-  }, [session, isPending, fetchUsageData, usageData]);
+  }, [session, isPending, usageData]);
+
+  // Separate effect to fetch usage data when user changes
+  useEffect(() => {
+    if (session?.user?.id && status !== 'loading') {
+      fetchUsageData();
+    }
+  }, [session?.user?.id, status, fetchUsageData]);
 
   // Sign in with Google
   const handleSignIn = useCallback(async () => {
