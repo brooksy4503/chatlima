@@ -66,7 +66,9 @@ const processChildrenForCitations = (children: React.ReactNode, onScrollToCitati
   
   if (React.isValidElement(children)) {
     // If it's a React element, clone it and process its children
-    return React.cloneElement(children, children.props, 
+    return React.cloneElement(
+      children as React.ReactElement<any>,
+      undefined,
       processChildrenForCitations(children.props.children, onScrollToCitations)
     );
   }
