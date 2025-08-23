@@ -17,10 +17,62 @@ const CitationNumber = ({ number, onScrollToCitations }: { number: number; onScr
     role="button"
     tabIndex={0}
     aria-label={`Citation ${number}`}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onScrollToCitations?.();
+      }
+    }}
   >
     [{number}]
   </span>
 );
+
+// Helper function to process citation numbers in any text content
+const processTextWithCitations = (text: string, onScrollToCitations?: () => void): React.ReactNode[] => {
+  if (typeof text !== 'string') return [text];
+  
+  // Split text by citation numbers and render them as components
+  const parts = text.split(/(\[\d+\])/g);
+  return parts.map((part, index) => {
+    const citationMatch = part.match(/^\[(\d+)\]$/);
+    if (citationMatch) {
+      return (
+        <CitationNumber 
+          key={`citation-${index}`}
+          number={parseInt(citationMatch[1])} 
+          onScrollToCitations={onScrollToCitations}
+        />
+      );
+    }
+    return part;
+  });
+};
+
+// Helper function to process children recursively for citation numbers
+const processChildrenForCitations = (children: React.ReactNode, onScrollToCitations?: () => void): React.ReactNode => {
+  if (typeof children === 'string') {
+    const processed = processTextWithCitations(children, onScrollToCitations);
+    return processed.length === 1 ? processed[0] : <>{processed}</>;
+  }
+  
+  if (Array.isArray(children)) {
+    return children.map((child, index) => 
+      <React.Fragment key={index}>
+        {processChildrenForCitations(child, onScrollToCitations)}
+      </React.Fragment>
+    );
+  }
+  
+  if (React.isValidElement(children)) {
+    // If it's a React element, clone it and process its children
+    return React.cloneElement(children, children.props, 
+      processChildrenForCitations(children.props.children, onScrollToCitations)
+    );
+  }
+  
+  return children;
+};
 
 const components: Partial<Components> = {
   pre: ({ children, ...props }) => {
@@ -236,10 +288,20 @@ function preprocessMathDelimiters(markdown: string): string {
 
 // Preprocesses text to insert inline citation numbers based on citation data
 function preprocessCitations(text: string, citations?: WebSearchCitation[]): string {
-  if (!citations?.length || !text) return text;
+  if (!citations?.length || !text) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('No citations to process or empty text');
+    }
+    return text;
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Processing citations:', citations.length, 'citations for text length:', text.length);
+  }
   
   // Sort citations by startIndex in reverse order to avoid index shifting when inserting
   const sortedCitations = [...citations]
+    .filter(citation => citation.startIndex >= 0 && citation.endIndex >= citation.startIndex) // Validate citation indices
     .sort((a, b) => b.startIndex - a.startIndex)
     .map((citation, index, array) => ({
       ...citation,
@@ -247,14 +309,34 @@ function preprocessCitations(text: string, citations?: WebSearchCitation[]): str
       number: array.length - index
     }));
   
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Sorted citations:', sortedCitations.map(c => ({ 
+      number: c.number, 
+      startIndex: c.startIndex, 
+      endIndex: c.endIndex,
+      url: c.url,
+      title: c.title?.substring(0, 50) 
+    })));
+  }
+  
   let processedText = text;
   
   // Insert citation numbers at the appropriate positions
   sortedCitations.forEach(citation => {
-    if (citation.endIndex <= processedText.length) {
+    if (citation.endIndex <= processedText.length && citation.startIndex <= citation.endIndex) {
       const beforeText = processedText.slice(0, citation.endIndex);
       const afterText = processedText.slice(citation.endIndex);
-      processedText = beforeText + `[${citation.number}]` + afterText;
+      const citationTag = `[${citation.number}]`;
+      processedText = beforeText + citationTag + afterText;
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Inserted citation ${citation.number} at position ${citation.endIndex}:`, citationTag);
+      }
+    } else {
+      console.warn(`Citation ${citation.number} has invalid indices:`, {
+        startIndex: citation.startIndex,
+        endIndex: citation.endIndex,
+        textLength: processedText.length
+      });
     }
   });
   
@@ -270,49 +352,135 @@ const NonMemoizedMarkdown = ({
   citations?: WebSearchCitation[];
   onScrollToCitations?: () => void;
 }) => {
+  // Debug: Log citation data when present (development only)
+  if (process.env.NODE_ENV === 'development' && citations && citations.length > 0) {
+    console.log('Markdown component received citations:', citations);
+    console.log('Original text:', children.substring(0, 200));
+  }
+  
   // First process math delimiters, then add citations
   const mathProcessed = preprocessMathDelimiters(children);
   const processed = preprocessCitations(mathProcessed, citations);
   
-  // Create components with citation handling
+  // Debug: Log processed content when citations are present (development only)
+  if (process.env.NODE_ENV === 'development' && citations && citations.length > 0) {
+    console.log('Processed text:', processed.substring(0, 200));
+  }
+  
+  // Create components with citation handling that works across all text elements
   const componentsWithCitations: Partial<Components> = {
     ...components,
-    // Override text handling to render citation numbers as components
-    p: ({ node, children, ...props }) => {
-      const processChildren = (children: React.ReactNode): React.ReactNode => {
-        if (typeof children === 'string') {
-          // Split text by citation numbers and render them as components
-          const parts = children.split(/(\[\d+\])/g);
-          return parts.map((part, index) => {
-            const citationMatch = part.match(/^\[(\d+)\]$/);
-            if (citationMatch) {
-              return (
-                <CitationNumber 
-                  key={index} 
-                  number={parseInt(citationMatch[1])} 
-                  onScrollToCitations={onScrollToCitations}
-                />
-              );
-            }
-            return part;
-          });
-        }
-        if (Array.isArray(children)) {
-          return children.map((child, index) => 
-            React.cloneElement(
-              <span key={index}>{processChildren(child)}</span>
-            )
-          );
-        }
-        return children;
-      };
-
+    // Override all text-containing elements to process citations
+    p: ({ node, children, ...props }) => (
+      <p className="leading-relaxed my-1" {...props}>
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </p>
+    ),
+    h1: ({ node, children, ...props }) => (
+      <h1
+        className="text-2xl font-semibold mt-3 mb-1.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+        {...props}
+      >
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </h1>
+    ),
+    h2: ({ node, children, ...props }) => (
+      <h2
+        className="text-xl font-semibold mt-2.5 mb-1.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+        {...props}
+      >
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </h2>
+    ),
+    h3: ({ node, children, ...props }) => (
+      <h3
+        className="text-lg font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+        {...props}
+      >
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </h3>
+    ),
+    h4: ({ node, children, ...props }) => (
+      <h4
+        className="text-base font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+        {...props}
+      >
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </h4>
+    ),
+    h5: ({ node, children, ...props }) => (
+      <h5
+        className="text-sm font-semibold mt-2 mb-1 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+        {...props}
+      >
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </h5>
+    ),
+    h6: ({ node, children, ...props }) => (
+      <h6
+        className="text-xs font-semibold mt-2 mb-0.5 text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100"
+        {...props}
+      >
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </h6>
+    ),
+    li: ({ node, children, ...props }) => (
+      <li className="leading-normal" {...props}>
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </li>
+    ),
+    strong: ({ node, children, ...props }) => (
+      <strong className="font-semibold" {...props}>
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </strong>
+    ),
+    em: ({ node, children, ...props }) => (
+      <em className="italic" {...props}>
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </em>
+    ),
+    blockquote: ({ node, children, ...props }) => (
+      <blockquote
+        className="border-l-2 border-zinc-200 dark:border-zinc-700 black:border-zinc-700 pl-3 my-1.5 italic text-zinc-600 dark:text-zinc-400 black:text-zinc-400"
+        {...props}
+      >
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </blockquote>
+    ),
+    td: ({ node, children, ...props }) => (
+      <td className="px-3 py-1.5 text-sm" {...props}>
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </td>
+    ),
+    th: ({ node, children, ...props }) => (
+      <th
+        className="px-3 py-1.5 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 black:text-zinc-400 uppercase tracking-wider"
+        {...props}
+      >
+        {processChildrenForCitations(children, onScrollToCitations)}
+      </th>
+    ),
+    a: ({ node, href, children, ...props }) => {
+      const isInternal = href && (href.startsWith("/") || href.startsWith("#"));
+      if (isInternal) {
+        return (
+          <Link href={href} {...props}>
+            {processChildrenForCitations(children, onScrollToCitations)}
+          </Link>
+        );
+      }
       return (
-        <p className="leading-relaxed my-1" {...props}>
-          {processChildren(children)}
-        </p>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          {...props}
+          className="text-blue-500 hover:underline hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 black:text-blue-400 black:hover:text-blue-300 transition-colors"
+        >
+          {processChildrenForCitations(children, onScrollToCitations)}
+        </a>
       );
-    }
+    },
   };
   
   return (

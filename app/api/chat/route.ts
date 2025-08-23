@@ -1663,13 +1663,19 @@ export async function POST(req: Request) {
 
             const citations = response.annotations
               .filter((a: Annotation) => a.type === 'url_citation')
-              .map((c: Annotation) => ({
-                url: c.url_citation.url,
-                title: c.url_citation.title,
-                content: c.url_citation.content,
-                startIndex: c.url_citation.start_index,
-                endIndex: c.url_citation.end_index
-              }));
+              .map((c: Annotation, index: number) => {
+                const citation = {
+                  url: c.url_citation.url,
+                  title: c.url_citation.title,
+                  content: c.url_citation.content,
+                  startIndex: c.url_citation.start_index,
+                  endIndex: c.url_citation.end_index
+                };
+                if (process.env.NODE_ENV === 'development') {
+                  console.log(`[Chat ${id}] Processing citation ${index + 1}:`, citation);
+                }
+                return citation;
+              });
 
             console.log(`[Chat ${id}] Processed citations:`, citations);
 
