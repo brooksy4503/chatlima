@@ -253,9 +253,18 @@ const PurePreviewMessage = ({
                         <Markdown 
                           citations={textPart.citations}
                           onScrollToCitations={() => {
-                            // Scroll to citations section
-                            const citationsElement = document.querySelector(`[data-message-id="${message.id}"] .citations-container`);
-                            citationsElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            // Scroll to citations section with more robust selector
+                            const messageElement = document.querySelector(`[data-message-id="${message.id}"]`);
+                            const citationsElement = messageElement?.querySelector('.citations-container');
+                            if (citationsElement) {
+                              citationsElement.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'nearest',
+                                inline: 'nearest' 
+                              });
+                            } else {
+                              console.log('Citations container not found for message:', message.id);
+                            }
                           }}
                         >
                           {textPart.text}

@@ -20,7 +20,17 @@ interface CitationProps {
 export function Citations({ citations }: CitationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  if (!citations?.length) return null;
+  // Debug: Log when citations component receives data (development only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Citations component received:', citations?.length || 0, 'citations');
+  }
+  
+  if (!citations?.length) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Citations component: No citations to display');
+    }
+    return null;
+  }
 
   const handleToggle = () => setIsExpanded(!isExpanded);
 
