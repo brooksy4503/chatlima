@@ -196,7 +196,21 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
                 } : undefined,
                 // Legacy compatibility
                 enabled: true,
-                supportsWebSearch: true,
+                supportsWebSearch: (() => {
+                    // Detect web search capability based on model ID
+                    const modelId = model.id.toLowerCase();
+                    // Treat Gemini models as supporting OpenRouter :online (web search) variant
+                    if (modelId.includes('gemini')) {
+                        return true;
+                    }
+
+                    return modelId.includes('search') ||
+                        modelId.includes('web') ||
+                        modelId.includes('online') ||
+                        modelId.includes('gpt-4') && (modelId.includes('search') || modelId.includes('web')) ||
+                        modelId.includes('sonar') ||
+                        modelId.includes('claude') && modelId.includes('search');
+                })(),
                 supportsTemperature: true,
                 supportsMaxTokens: true,
                 supportsSystemInstruction: true,

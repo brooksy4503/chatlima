@@ -1,8 +1,31 @@
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 
+// Unified citation interface for all providers
+export interface WebSearchCitation {
+    url: string;
+    title: string;
+    content?: string;
+    startIndex: number;
+    endIndex: number;
+    source?: 'openrouter' | 'openai' | 'perplexity'; // Track source for debugging
+}
+
+// Provider-specific response interfaces
+export interface OpenRouterCitationAnnotation {
+    type: "url_citation";
+    url_citation: {
+        url: string;
+        title: string;
+        content?: string;
+        start_index: number;
+        end_index: number;
+    };
+}
+
 export interface TextUIPart {
     type: "text";
     text: string;
+    citations?: WebSearchCitation[];
 }
 
 export interface ToolInvocationUIPart {

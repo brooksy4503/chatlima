@@ -125,7 +125,7 @@ describe('Message', () => {
     type: 'tool-invocation' as const,
     toolInvocation: {
       toolName: 'web_search',
-      state: 'result',
+      state: 'result' as const,
       args: { query: 'test query' },
       result: { results: [] },
     },
@@ -135,7 +135,7 @@ describe('Message', () => {
     type: 'image_url' as const,
     image_url: {
       url: 'data:image/png;base64,test-image-data',
-      detail: 'high',
+      detail: 'high' as const,
     },
     metadata: {
       filename: 'test-image.png',
@@ -147,6 +147,7 @@ describe('Message', () => {
 
   const reasoningPart = {
     type: 'reasoning' as const,
+    reasoning: 'First thought process',
     details: [
       { type: 'text' as const, text: 'First thought process' },
       { type: 'text' as const, text: 'Second thought process' },
@@ -621,6 +622,7 @@ describe('Message', () => {
         type: 'image_url' as const,
         image_url: {
           url: 'data:image/png;base64,test-image-data',
+          detail: 'auto' as const,
         },
       };
 
@@ -867,6 +869,7 @@ describe('Message', () => {
 describe('ReasoningMessagePart', () => {
   const reasoningPart = {
     type: 'reasoning' as const,
+    reasoning: 'First reasoning step',
     details: [
       { type: 'text' as const, text: 'First reasoning step' },
       { type: 'text' as const, text: 'Second reasoning step' },

@@ -17,6 +17,7 @@ import { formatFileSize } from "@/lib/image-utils";
 import { WebSearchSuggestion } from "./web-search-suggestion";
 import { ImageModal } from "./image-modal";
 import { CompactMessageTokenMetrics, StreamingTokenMetrics } from "./token-metrics/MessageTokenMetrics";
+import { Citations } from "./citations";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -252,6 +253,12 @@ const PurePreviewMessage = ({
                         <Markdown>
                           {textPart.text}
                         </Markdown>
+                        {textPart.citations && textPart.citations.length > 0 && (
+                          <Citations 
+                            citations={textPart.citations} 
+                            source={textPart.citations[0]?.source}
+                          />
+                        )}
                         {message.role === 'user' && shouldShowCopyButton && (
                           <CopyButton text={getMessageText()} className="ml-auto" />
                         )}

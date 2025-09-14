@@ -29,6 +29,14 @@ export interface SnapshotMessage {
     content: string;
     createdAt: string;
     hasWebSearch?: boolean;
+    citations?: Array<{
+        url: string;
+        title: string;
+        content?: string;
+        startIndex: number;
+        endIndex: number;
+        source?: string;
+    }>;
 }
 
 // Generate secure share ID
@@ -69,12 +77,18 @@ class RedactionService {
             return null;
         }
 
-        // Extract text content from parts
+        // Extract text content and citations from parts
         let content = '';
+        const citations: any[] = [];
+
         if (message.parts && Array.isArray(message.parts)) {
             for (const part of message.parts) {
                 if (part.type === 'text' && part.text) {
                     content += part.text;
+                    // Extract citations from text parts
+                    if (part.citations && Array.isArray(part.citations)) {
+                        citations.push(...part.citations);
+                    }
                 }
                 // Skip media/attachments (images, files, etc.)
             }
@@ -89,6 +103,7 @@ class RedactionService {
             content,
             createdAt: message.createdAt.toISOString(),
             hasWebSearch: message.hasWebSearch || false,
+            citations: citations.length > 0 ? citations : undefined,
         };
     }
 }

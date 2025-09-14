@@ -228,7 +228,11 @@ describe('Textarea', () => {
     });
 
     test('changes placeholder when images are present', () => {
-      const images: ImageAttachment[] = [{ id: '1', url: 'test.jpg', detail: 'auto' }];
+      const images: ImageAttachment[] = [{ 
+        dataUrl: 'data:image/jpeg;base64,test', 
+        metadata: { filename: 'test.jpg', size: 1000, mimeType: 'image/jpeg', width: 100, height: 100 },
+        detail: 'auto' 
+      }];
       render(<Textarea {...defaultProps} images={images} />);
       
       const textarea = screen.getByTestId('textarea');
@@ -250,7 +254,11 @@ describe('Textarea', () => {
     });
 
     test('enables submit button when images are present', () => {
-      const images: ImageAttachment[] = [{ id: '1', url: 'test.jpg', detail: 'auto' }];
+      const images: ImageAttachment[] = [{ 
+        dataUrl: 'data:image/jpeg;base64,test', 
+        metadata: { filename: 'test.jpg', size: 1000, mimeType: 'image/jpeg', width: 100, height: 100 },
+        detail: 'auto' 
+      }];
       render(<Textarea {...defaultProps} images={images} />);
       
       const submitButton = screen.getByRole('button', { name: /send/i });
@@ -343,8 +351,16 @@ describe('Textarea', () => {
 
     test('displays image preview when images are present', () => {
       const images: ImageAttachment[] = [
-        { id: '1', url: 'test1.jpg', detail: 'auto' },
-        { id: '2', url: 'test2.jpg', detail: 'auto' }
+        { 
+          dataUrl: 'data:image/jpeg;base64,test1', 
+          metadata: { filename: 'test1.jpg', size: 1000, mimeType: 'image/jpeg', width: 100, height: 100 },
+          detail: 'auto' 
+        },
+        { 
+          dataUrl: 'data:image/jpeg;base64,test2', 
+          metadata: { filename: 'test2.jpg', size: 1000, mimeType: 'image/jpeg', width: 100, height: 100 },
+          detail: 'auto' 
+        }
       ];
       render(<Textarea {...defaultProps} images={images} />);
       
@@ -368,7 +384,11 @@ describe('Textarea', () => {
 
     test('handles image removal', () => {
       const images: ImageAttachment[] = [
-        { id: '1', url: 'test.jpg', detail: 'auto' }
+        { 
+          dataUrl: 'data:image/jpeg;base64,test', 
+          metadata: { filename: 'test.jpg', size: 1000, mimeType: 'image/jpeg', width: 100, height: 100 },
+          detail: 'auto' 
+        }
       ];
       render(<Textarea {...defaultProps} images={images} />);
       
@@ -380,8 +400,14 @@ describe('Textarea', () => {
 
     test('disables image upload when at maximum limit', () => {
       const images: ImageAttachment[] = Array(5).fill(null).map((_, i) => ({
-        id: `${i}`,
-        url: `test${i}.jpg`,
+        dataUrl: `data:image/jpeg;base64,test${i}`,
+        metadata: { 
+          filename: `test${i}.jpg`, 
+          size: 1000, 
+          mimeType: 'image/jpeg', 
+          width: 100, 
+          height: 100 
+        },
         detail: 'auto' as const
       }));
       
@@ -811,7 +837,7 @@ describe('Textarea', () => {
 
     test('handles invalid model IDs gracefully', () => {
       expect(() => {
-        render(<Textarea {...defaultProps} selectedModel="invalid-model" as modelID />);
+        render(<Textarea {...defaultProps} selectedModel="invalid-model" />);
       }).not.toThrow();
     });
 

@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { Markdown } from "./markdown";
 import { CopyButton } from "./copy-button";
+import { Citations } from "./citations";
 import { cn } from "@/lib/utils";
 import { BotIcon, UserIcon, SearchIcon } from "lucide-react";
 import type { SnapshotMessage } from "@/lib/services/chat-sharing";
@@ -63,7 +64,15 @@ function SharedMessageComponent({ message, isLast }: SharedMessageProps) {
         {/* Message content */}
         <div className="prose prose-sm max-w-none dark:prose-invert">
           {isAssistant ? (
-            <Markdown>{message.content}</Markdown>
+            <>
+              <Markdown>{message.content}</Markdown>
+              {message.citations && message.citations.length > 0 && (
+                <Citations 
+                  citations={message.citations as any} 
+                  source={message.citations[0]?.source as any}
+                />
+              )}
+            </>
           ) : (
             <div className="whitespace-pre-wrap break-words">
               {message.content}

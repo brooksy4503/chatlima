@@ -25,6 +25,7 @@ import { UsageLimitsService } from '@/lib/services/usageLimits';
 import { OptimizedUsageLimitsService } from '@/lib/services/optimizedUsageLimits';
 import type { ImageUIPart } from '@/lib/types';
 import { convertToOpenRouterFormat } from '@/lib/openrouter-utils';
+import { extractCitationsFromResponse, normalizeCitations, detectWebSearchProvider, cleanCitationText } from '@/lib/utils/citation-extraction';
 
 import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
@@ -87,6 +88,16 @@ interface WebSearchOptions {
 interface OpenRouterResponse extends LanguageModelResponseMetadata {
   readonly messages: Message[];
   body?: unknown;
+  annotations?: Array<{
+    type: string;
+    url_citation?: {
+      url: string;
+      title: string;
+      content?: string;
+      start_index: number;
+      end_index: number;
+    };
+  }>;
 }
 
 // Helper to create standardized error responses
@@ -1158,8 +1169,19 @@ export async function POST(req: Request) {
     if (secureWebSearch.enabled) {
       console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
     }
+
+    // Special handling for Perplexity Sonar models - they need OpenRouter client with :online variant even when web search is disabled
+    const isPerplexitySonarModel = selectedModel.includes('sonar') || selectedModel.includes('perplexity/');
+    if (isPerplexitySonarModel && selectedModel.startsWith("openrouter/")) {
+      console.log(`[Web Search] Perplexity Sonar model detected: ${selectedModel}. Using OpenRouter client with :online variant to ensure citation annotations.`);
+      const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
+      const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY'], openRouterUserId);
+      modelInstance = openrouterClient(openrouterModelId);
+      console.log(`[Web Search] Using Perplexity Sonar model: ${openrouterModelId}`);
+    } else {
+      modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openRouterUserId);
+    }
     effectiveWebSearchEnabled = false;
-    modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openRouterUserId);
   }
 
   const modelOptions: { // Add type for clarity and to allow logprobs
@@ -1448,9 +1470,12 @@ export async function POST(req: Request) {
 
           // Save individual messages using the same approach as onFinish
           try {
+            // Check if this is a Perplexity Sonar model (which always has built-in search)
+            const isPerplexitySonarModel = selectedModel.includes('sonar') || selectedModel.includes('perplexity/');
+
             const dbMessages = (convertToDBMessages(allMessages as any, id) as any[]).map(msg => ({
               ...msg,
-              hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant',
+              hasWebSearch: (effectiveWebSearchEnabled || isPerplexitySonarModel) && msg.role === 'assistant',
               webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined
             }));
 
@@ -1574,6 +1599,11 @@ export async function POST(req: Request) {
     async onFinish(event: any) {
       console.log(`[Chat ${id}][onFinish] Stream finished, processing and saving...`);
 
+      // Check if there are sources in the event data
+      if (event.sources) {
+        console.log(`[Chat ${id}][onFinish] Event sources found:`, event.sources);
+      }
+
       // Track whether messages are saved successfully for background cost tracking
       let messagesSavedSuccessfully = false;
 
@@ -1631,10 +1661,62 @@ export async function POST(req: Request) {
           return;
         }
 
+        // Enhanced debugging: Log the entire response structure for Perplexity Sonar models
+        if (selectedModel.includes('sonar') || selectedModel.includes('perplexity/')) {
+          console.log(`[Chat ${id}][onFinish] Perplexity Sonar model - full response structure:`, {
+            hasAnnotations: !!response.annotations,
+            annotationsCount: response.annotations?.length || 0,
+            responseKeys: Object.keys(response || {}),
+            messagesCount: response.messages?.length || 0,
+            lastMessageKeys: response.messages?.[response.messages.length - 1] ? Object.keys(response.messages[response.messages.length - 1]) : [],
+            fullResponse: JSON.stringify(response, null, 2)
+          });
+        }
+
         console.log(`[Chat ${id}][onFinish] Response has annotations:`, !!response.annotations);
         if (response.annotations) {
           console.log(`[Chat ${id}][onFinish] Annotation count:`, response.annotations.length);
-          console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map(a => a.type));
+          console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map((a: any) => a.type));
+
+          // Enhanced logging for Perplexity Sonar models
+          if (selectedModel.includes('sonar') || selectedModel.includes('perplexity/')) {
+            console.log(`[Chat ${id}][onFinish] Perplexity Sonar model detected - full annotations:`, JSON.stringify(response.annotations, null, 2));
+          }
+        }
+
+        // Extract citations from response
+        let citations: any[] = [];
+
+        // Always try to extract citations for Perplexity Sonar models, regardless of web search setting
+        const isPerplexitySonarModel = selectedModel.includes('sonar') || selectedModel.includes('perplexity/');
+        const hasAnnotations = response.annotations && response.annotations.length > 0;
+        const shouldProcessCitations = hasAnnotations || isPerplexitySonarModel; // Try for Perplexity even without annotations
+
+        console.log(`[Chat ${id}][onFinish] Citation processing check:`, {
+          modelId: selectedModel,
+          isPerplexitySonar: isPerplexitySonarModel,
+          hasAnnotations: !!response.annotations,
+          annotationCount: response.annotations?.length || 0,
+          effectiveWebSearchEnabled,
+          shouldProcess: shouldProcessCitations,
+          willTryTextExtraction: isPerplexitySonarModel && !hasAnnotations
+        });
+
+        if (shouldProcessCitations) {
+          const provider = detectWebSearchProvider(selectedModel) || 'openrouter';
+          console.log(`[Chat ${id}][onFinish] Detected provider: ${provider} for model: ${selectedModel}`);
+          citations = extractCitationsFromResponse(response, provider as any);
+          citations = normalizeCitations(citations);
+          console.log(`[Chat ${id}][onFinish] Extracted ${citations.length} citations from ${provider}`);
+
+          if (citations.length > 0) {
+            console.log(`[Chat ${id}][onFinish] Citation details:`, citations.map(c => ({ url: c.url, title: c.title })));
+          } else if (response.annotations && response.annotations.length > 0) {
+            console.warn(`[Chat ${id}][onFinish] No citations extracted despite ${response.annotations.length} annotations present`);
+            console.warn(`[Chat ${id}][onFinish] Raw annotations for debugging:`, JSON.stringify(response.annotations, null, 2));
+          }
+        } else {
+          console.log(`[Chat ${id}][onFinish] No annotations to process for citations`);
         }
 
         const allMessages = appendResponseMessages({
@@ -1642,7 +1724,24 @@ export async function POST(req: Request) {
           responseMessages: response.messages as any, // Cast to any to bypass type error
         });
 
-        const processedMessages = allMessages;
+        // Clean citation text in all assistant messages for display
+        const processedMessages = allMessages.map(msg => {
+          if (msg.role === 'assistant' && msg.parts) {
+            return {
+              ...msg,
+              parts: msg.parts.map(part => {
+                if (part.type === 'text') {
+                  return {
+                    ...part,
+                    text: cleanCitationText(part.text)
+                  };
+                }
+                return part;
+              })
+            };
+          }
+          return msg;
+        });
 
         // Update the chat with the full message history
         // Note: saveChat here acts as an upsert based on how it's likely implemented
@@ -1667,11 +1766,43 @@ export async function POST(req: Request) {
         let assistantMessageId: string | undefined;
 
         try {
-          dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
-            ...msg,
-            hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0, // Only set true if web search was actually used
-            webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
-          }));
+          dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => {
+            // Add citations to the last assistant message
+            if (msg.role === 'assistant' && citations.length > 0) {
+              // Clean citation text and add citations to message parts
+              if (msg.parts && msg.parts.length > 0) {
+                // Clean all text parts to convert [1](url) to [1]
+                msg.parts.forEach((part: any) => {
+                  if (part.type === 'text') {
+                    part.text = cleanCitationText(part.text);
+                  }
+                });
+
+                // Add citations to the last text part
+                const lastPart = msg.parts[msg.parts.length - 1];
+                if (lastPart.type === 'text') {
+                  lastPart.citations = citations;
+                  console.log(`[Chat ${id}][onFinish] Added ${citations.length} citations to text part:`, {
+                    textPreview: lastPart.text.substring(0, 100) + '...',
+                    citationsAttached: citations.map(c => ({ url: c.url, title: c.title }))
+                  });
+                }
+              }
+            }
+
+            // Check if this is a Perplexity Sonar model (which always has built-in search)
+            const isPerplexitySonarModel = selectedModel.includes('sonar') || selectedModel.includes('perplexity/');
+            // For Perplexity Sonar models, check if citations were extracted (even without annotations)
+            const hasExtractedCitations = citations.length > 0;
+            const hasActualWebSearch = (effectiveWebSearchEnabled || isPerplexitySonarModel) && msg.role === 'assistant' &&
+              ((response.annotations?.length || 0) > 0 || (isPerplexitySonarModel && hasExtractedCitations));
+
+            return {
+              ...msg,
+              hasWebSearch: hasActualWebSearch, // Set true if web search was actually used (either through UI setting or Perplexity Sonar built-in)
+              webSearchContextSize: secureWebSearch.enabled ? secureWebSearch.contextSize : undefined // Store original request if needed, or effective
+            };
+          });
 
           // Extract the assistant message ID from the converted messages to ensure consistency
           const assistantMessage = dbMessages.find(msg => msg.role === 'assistant');
