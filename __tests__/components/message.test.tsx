@@ -23,17 +23,7 @@ jest.mock('../../components/copy-button', () => ({
   ),
 }));
 
-jest.mock('../../components/citation', () => ({
-  Citations: ({ citations }: any) => (
-    <div data-testid="citations">
-      {citations.map((citation: any, i: number) => (
-        <span key={i} data-testid={`citation-${i}`}>
-          {citation.title}
-        </span>
-      ))}
-    </div>
-  ),
-}));
+
 
 jest.mock('../../components/tool-invocation', () => ({
   ToolInvocation: ({ toolName, state, args, result, isLatestMessage, status }: any) => (
@@ -129,14 +119,7 @@ describe('Message', () => {
     text: 'Hello world',
   };
 
-  const textPartWithCitations = {
-    type: 'text' as const,
-    text: 'Hello with citations',
-    citations: [
-      { title: 'Source 1', url: 'https://example.com/1' },
-      { title: 'Source 2', url: 'https://example.com/2' },
-    ],
-  };
+
 
   const toolInvocationPart = {
     type: 'tool-invocation' as const,
@@ -284,26 +267,7 @@ describe('Message', () => {
   });
 
   describe('Message Parts Rendering', () => {
-    test('renders text parts with citations', () => {
-      const message = {
-        ...baseMessage,
-        parts: [textPartWithCitations],
-      };
 
-      render(
-        <Message 
-          message={message}
-          isLoading={false}
-          status="ready"
-          isLatestMessage={false}
-        />
-      );
-
-      expect(screen.getByTestId('markdown')).toHaveTextContent('Hello with citations');
-      expect(screen.getByTestId('citations')).toBeInTheDocument();
-      expect(screen.getByTestId('citation-0')).toHaveTextContent('Source 1');
-      expect(screen.getByTestId('citation-1')).toHaveTextContent('Source 2');
-    });
 
     test('renders tool invocation parts', () => {
       const message = {
@@ -533,23 +497,7 @@ describe('Message', () => {
       expect(screen.getByTestId('web-search-suggestion')).toBeInTheDocument();
     });
 
-    test('detects web search results from citations', () => {
-      const message = {
-        ...baseMessage,
-        parts: [textPartWithCitations],
-      };
 
-      render(
-        <Message 
-          message={message}
-          isLoading={false}
-          status="ready"
-          isLatestMessage={false}
-        />
-      );
-
-      expect(screen.getByTestId('web-search-suggestion')).toBeInTheDocument();
-    });
 
     test('does not show web search suggestion when streaming', () => {
       const message = {
@@ -831,7 +779,7 @@ describe('Message', () => {
       const message = {
         ...baseMessage,
         hasWebSearch: true,
-        parts: [textPartWithCitations, toolInvocationPart, imagePart, reasoningPart],
+        parts: [textPart, toolInvocationPart, imagePart, reasoningPart],
       };
 
       render(
@@ -845,7 +793,6 @@ describe('Message', () => {
 
       // All parts should be rendered
       expect(screen.getByTestId('markdown')).toBeInTheDocument();
-      expect(screen.getByTestId('citations')).toBeInTheDocument();
       expect(screen.getByTestId('tool-invocation')).toBeInTheDocument();
       expect(screen.getByRole('img')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /reasoning/i })).toBeInTheDocument();

@@ -3,7 +3,7 @@ import { chats, messages, chatShares, type Chat, type ChatWithShareInfo, type Me
 import { eq, desc, and, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateTitle } from "@/app/actions";
-import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation } from "./types";
+import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "./types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 
 type AIMessage = {

@@ -10,7 +10,7 @@ import { ChevronDownIcon, ChevronUpIcon, LightbulbIcon, BrainIcon } from "lucide
 import { SpinnerIcon } from "./icons";
 import { ToolInvocation } from "./tool-invocation";
 import { CopyButton } from "./copy-button";
-import { Citations } from "./citation";
+
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import { formatFileSize } from "@/lib/image-utils";
@@ -183,7 +183,6 @@ const PurePreviewMessage = ({
 
   // Check if message has web search results - use hasWebSearch flag if available, otherwise detect from parts
   const hasWebSearchResults = message.hasWebSearch || message.parts?.some(part => 
-    (part.type === "text" && (part as TextUIPart).citations && (part as TextUIPart).citations!.length > 0) ||
     (part.type === "tool-invocation" && (part as ToolInvocationUIPart).toolInvocation.toolName === "web_search")
   );
   
@@ -250,30 +249,9 @@ const PurePreviewMessage = ({
                             message.role === "user",
                         })}
                       >
-                        <Markdown 
-                          citations={textPart.citations}
-                          onScrollToCitations={() => {
-                            // Scroll to citations section with more robust selector
-                            const messageElement = document.querySelector(`[data-message-id="${message.id}"]`);
-                            const citationsElement = messageElement?.querySelector('.citations-container');
-                            if (citationsElement) {
-                              citationsElement.scrollIntoView({ 
-                                behavior: 'smooth', 
-                                block: 'nearest',
-                                inline: 'nearest' 
-                              });
-                            } else {
-                              console.log('Citations container not found for message:', message.id);
-                            }
-                          }}
-                        >
+                        <Markdown>
                           {textPart.text}
                         </Markdown>
-                        {textPart.citations && (
-                          <div className="citations-container">
-                            <Citations citations={textPart.citations} />
-                          </div>
-                        )}
                         {message.role === 'user' && shouldShowCopyButton && (
                           <CopyButton text={getMessageText()} className="ml-auto" />
                         )}

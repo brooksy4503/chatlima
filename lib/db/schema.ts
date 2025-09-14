@@ -35,7 +35,7 @@ export type MessagePart = {
   toolName?: string;
   args?: any;
   result?: any;
-  citations?: WebSearchCitation[];
+
   [key: string]: any;
 };
 
@@ -137,13 +137,7 @@ export type AuthSession = typeof sessions.$inferSelect;
 // export type AuthVerificationToken = typeof verificationTokens.$inferSelect; // Removed old type export
 export type AuthVerification = typeof verification.$inferSelect; // Added new type export
 
-export type WebSearchCitation = {
-  url: string;
-  title: string;
-  content?: string;
-  startIndex: number;
-  endIndex: number;
-};
+
 
 // --- Polar Usage Events Schema ---
 

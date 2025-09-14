@@ -82,22 +82,10 @@ interface WebSearchOptions {
   contextSize: 'low' | 'medium' | 'high';
 }
 
-interface UrlCitation {
-  url: string;
-  title: string;
-  content?: string;
-  start_index: number;
-  end_index: number;
-}
 
-interface Annotation {
-  type: string;
-  url_citation: UrlCitation;
-}
 
 interface OpenRouterResponse extends LanguageModelResponseMetadata {
   readonly messages: Message[];
-  annotations?: Annotation[];
   body?: unknown;
 }
 
@@ -1237,10 +1225,8 @@ export async function POST(req: Request) {
     ${effectiveWebSearchEnabled ? `
     ## Web Search Enabled:
     You have web search capabilities enabled. When you use web search:
-    1. Cite your sources using markdown links
-    2. Use the format [domain.com](full-url) for citations
-    3. Only cite reliable and relevant sources
-    4. Integrate the information naturally into your responses
+    1. Use reliable and relevant sources
+    2. Integrate the information naturally into your responses
     ` : ''}
 
     ## How to Respond:
@@ -1656,45 +1642,7 @@ export async function POST(req: Request) {
           responseMessages: response.messages as any, // Cast to any to bypass type error
         });
 
-        // Extract citations from response messages
-        const processedMessages = allMessages.map(msg => {
-          if (msg.role === 'assistant' && (response.annotations?.length)) {
-            console.log(`[Chat ${id}] Found ${response.annotations.length} annotations:`, response.annotations);
-
-            const citations = response.annotations
-              .filter((a: Annotation) => a.type === 'url_citation')
-              .map((c: Annotation, index: number) => {
-                const citation = {
-                  url: c.url_citation.url,
-                  title: c.url_citation.title,
-                  content: c.url_citation.content,
-                  startIndex: c.url_citation.start_index,
-                  endIndex: c.url_citation.end_index
-                };
-                if (process.env.NODE_ENV === 'development') {
-                  console.log(`[Chat ${id}] Processing citation ${index + 1}:`, citation);
-                }
-                return citation;
-              });
-
-            console.log(`[Chat ${id}] Processed citations:`, citations);
-
-            // Add citations to message parts if they exist
-            if (citations.length > 0 && msg.parts) {
-              console.log(`[Chat ${id}] Adding citations to ${msg.parts.length} message parts`);
-              msg.parts = (msg.parts as any[]).map(part => {
-                if (part.type === 'text') {
-                  return {
-                    ...part,
-                    citations
-                  };
-                }
-                return part;
-              });
-            }
-          }
-          return msg;
-        });
+        const processedMessages = allMessages;
 
         // Update the chat with the full message history
         // Note: saveChat here acts as an upsert based on how it's likely implemented
