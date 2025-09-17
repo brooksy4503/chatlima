@@ -342,23 +342,6 @@ export async function POST(req: Request) {
 
                     // Save chat and messages
                     if (chatId) {
-                        // Ensure chat exists before saving messages
-                        const existingChat = await db.query.chats.findFirst({
-                            where: and(
-                                eq(chats.id, chatId),
-                                eq(chats.userId, userId)
-                            )
-                        });
-
-                        if (!existingChat) {
-                            // Chat doesn't exist, create it first
-                            await saveChat({
-                                id: chatId,
-                                userId,
-                                title: processedMessages[0]?.content?.substring(0, 50) || 'New Chat'
-                            });
-                        }
-
                         await saveMessages({
                             messages: convertToDBMessages([...processedMessages, {
                                 id,
