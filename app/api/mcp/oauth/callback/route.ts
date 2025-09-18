@@ -89,13 +89,20 @@ export async function GET(req: NextRequest) {
             }).execute();
         }
 
-        // Render a minimal page that tells the user to close the window
+        // Render a minimal page that notifies the opener and closes the window
         return new Response(`<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>MCP Authorized</title></head>
 <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 24px;">
   <h1>Connected</h1>
   <p>You can close this window and return to ChatLima.</p>
-  <script>window.close && window.close();</script>
+  <script>
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'MCP_OAUTH_CONNECTED', serverUrl: ${JSON.stringify(session.serverUrl)} }, '*');
+      }
+    } catch (e) { /* no-op */ }
+    setTimeout(function(){ if (window.close) window.close(); }, 200);
+  </script>
 </body></html>`, { status: 200, headers: { 'Content-Type': 'text/html' } });
     } catch (err) {
         console.error('[MCP OAuth] callback error', err);

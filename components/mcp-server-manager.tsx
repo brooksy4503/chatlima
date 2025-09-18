@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -51,7 +51,14 @@ async function fetchOauthStatus(serverUrl: string): Promise<{ connected: boolean
 
 function startOauthFlow(serverUrl: string) {
     const url = `/api/mcp/oauth/start?serverUrl=${encodeURIComponent(serverUrl)}`;
-    window.open(url, '_blank', 'width=480,height=720');
+    // Open popup with same-site cookies enabled
+    const popup = window.open(url, '_blank', 'width=480,height=720,location=yes,scrollbars=yes,status=yes');
+    
+    // Check if popup was blocked
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        // Fallback: use current window if popup is blocked
+        window.location.href = url;
+    }
 }
 
 // Default template for a new MCP server
@@ -118,6 +125,32 @@ export const MCPServerManager = ({
     const [testingServerId, setTestingServerId] = useState<string | null>(null);
     const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
     const [oauthStatusByServer, setOauthStatusByServer] = useState<Record<string, { connected: boolean; expiresIn: number | null }>>({});
+
+    // Listen for OAuth completion from popup
+    useEffect(() => {
+        const handler = (event: MessageEvent) => {
+            const data = event?.data as any;
+            if (!data || typeof data !== 'object') return;
+            if (data.type === 'MCP_OAUTH_CONNECTED') {
+                const serverUrl = data.serverUrl as string | undefined;
+                if (!serverUrl) return;
+                // Find matching server by URL and refresh its status
+                const server = servers.find(s => (s.type === 'sse' || s.type === 'streamable-http') && s.url === serverUrl);
+                if (server) {
+                    void refreshOauthStatus(server);
+                } else {
+                    // Fallback: refresh all http-based servers
+                    servers.forEach(s => {
+                        if ((s.type === 'sse' || s.type === 'streamable-http') && s.url) {
+                            void refreshOauthStatus(s);
+                        }
+                    });
+                }
+            }
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
+    }, [servers]);
 
     const refreshOauthStatus = async (server: MCPServer) => {
         if (!(server.type === 'sse' || server.type === 'streamable-http') || !server.url) return;

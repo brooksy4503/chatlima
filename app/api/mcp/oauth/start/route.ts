@@ -124,6 +124,12 @@ export async function GET(req: NextRequest) {
         let clientId: string | undefined;
         let clientSecret: string | undefined;
         const redirectUri = `${origin}/api/mcp/oauth/callback`;
+        console.log('[MCP OAuth] Attempting dynamic client registration:', {
+            registrationEndpoint,
+            redirectUri,
+            origin
+        });
+
         if (registrationEndpoint) {
             try {
                 const regResp = await fetch(registrationEndpoint, {
@@ -136,18 +142,28 @@ export async function GET(req: NextRequest) {
                         application_type: 'web'
                     })
                 });
+                console.log('[MCP OAuth] Registration response status:', regResp.status);
+
                 if (regResp.ok) {
                     const reg = await regResp.json();
                     clientId = reg.client_id;
                     clientSecret = reg.client_secret || undefined;
+                    console.log('[MCP OAuth] Dynamic registration successful:', {
+                        clientId,
+                        hasClientSecret: !!clientSecret
+                    });
+                } else {
+                    const errorText = await regResp.text();
+                    console.log('[MCP OAuth] Registration failed:', regResp.status, errorText);
                 }
-            } catch {
-                // Ignore registration failures; some servers require manual client IDs
+            } catch (error) {
+                console.log('[MCP OAuth] Registration error:', error);
             }
         }
         if (!clientId) {
             // As a fallback, try using a public client identifier
             clientId = 'chatlima-public';
+            console.log('[MCP OAuth] Using fallback client ID:', clientId);
         }
 
         // 4) Create PKCE + state and persist session
@@ -179,6 +195,17 @@ export async function GET(req: NextRequest) {
         authUrl.searchParams.set('state', state);
         authUrl.searchParams.set('resource', resource);
         if (scope) authUrl.searchParams.set('scope', scope);
+
+        console.log('[MCP OAuth] Authorization flow details:', {
+            serverUrl,
+            authorizationEndpoint,
+            clientId,
+            redirectUri,
+            resource,
+            state,
+            scope,
+            finalAuthUrl: authUrl.toString()
+        });
 
         return Response.redirect(authUrl.toString(), 302);
     } catch (err) {
