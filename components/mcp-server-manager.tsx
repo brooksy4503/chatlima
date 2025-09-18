@@ -38,6 +38,22 @@ import {
 } from "./ui/accordion";
 import { KeyValuePair, MCPServer } from "@/lib/context/mcp-context";
 
+// Simple hook to check OAuth status for a server URL
+async function fetchOauthStatus(serverUrl: string): Promise<{ connected: boolean; expiresIn: number | null } | null> {
+    try {
+        const res = await fetch(`/api/mcp/oauth/status?serverUrl=${encodeURIComponent(serverUrl)}`, { cache: 'no-store' });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch {
+        return null;
+    }
+}
+
+function startOauthFlow(serverUrl: string) {
+    const url = `/api/mcp/oauth/start?serverUrl=${encodeURIComponent(serverUrl)}`;
+    window.open(url, '_blank', 'width=480,height=720');
+}
+
 // Default template for a new MCP server
 const INITIAL_NEW_SERVER: Omit<MCPServer, 'id'> = {
     name: '',
@@ -101,6 +117,13 @@ export const MCPServerManager = ({
     const [editedHeaderValue, setEditedHeaderValue] = useState<string>('');
     const [testingServerId, setTestingServerId] = useState<string | null>(null);
     const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
+    const [oauthStatusByServer, setOauthStatusByServer] = useState<Record<string, { connected: boolean; expiresIn: number | null }>>({});
+
+    const refreshOauthStatus = async (server: MCPServer) => {
+        if (!(server.type === 'sse' || server.type === 'streamable-http') || !server.url) return;
+        const status = await fetchOauthStatus(server.url);
+        if (status) setOauthStatusByServer(prev => ({ ...prev, [server.id]: status }));
+    };
 
     const resetAndClose = () => {
         setView('list');
@@ -569,6 +592,26 @@ export const MCPServerManager = ({
                                                             : `${server.command} ${server.args?.join(' ')}`
                                                         }
                                                     </p>
+
+                                                    {(server.type === 'sse' || server.type === 'streamable-http') && server.url && (
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {oauthStatusByServer[server.id]?.connected ? (
+                                                                    <span>OAuth: Connected{typeof oauthStatusByServer[server.id].expiresIn === 'number' ? ` (expires in ${oauthStatusByServer[server.id].expiresIn}s)` : ''}</span>
+                                                                ) : (
+                                                                    <span>OAuth: Not connected</span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <Button size="sm" variant="outline" onClick={() => refreshOauthStatus(server)}>
+                                                                    Check
+                                                                </Button>
+                                                                <Button size="sm" onClick={() => startOauthFlow(server.url!)}>
+                                                                    Connect (OAuth)
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )}
 
                                                     {/* Test Result */}
                                                     {testResults[server.id] && (

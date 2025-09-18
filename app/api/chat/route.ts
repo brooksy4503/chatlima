@@ -177,16 +177,41 @@ export async function POST(req: Request) {
             modelInfo: selectedModelInfo
         });
 
-        if (!creditResult.hasCredits) {
-            logDiagnostic('INSUFFICIENT_CREDITS', `Insufficient credits`, {
+        const { hasCredits, actualCredits, isUsingOwnApiKeys, isFreeModel } = creditResult;
+
+        // 4.1 BLOCK NEGATIVE CREDIT BALANCE (skip for own keys or free models)
+        if (CreditService.shouldBlockNegativeCredits(isUsingOwnApiKeys, isFreeModel, isAnonymous, actualCredits)) {
+            logDiagnostic('NEGATIVE_CREDITS', `Blocking due to negative credit balance`, {
                 requestId,
-                actualCredits: creditResult.actualCredits,
-                isUsingOwnApiKeys: creditResult.isUsingOwnApiKeys,
-                isFreeModel: creditResult.isFreeModel
+                actualCredits
             });
-            return ErrorHandlerService.createCreditError(
-                `Insufficient credits. Available: ${creditResult.actualCredits || 0}`,
-                `Required credits for model ${selectedModel}`
+            return ErrorHandlerService.createNegativeCreditsError(
+                `Your account has a negative credit balance (${actualCredits}). Please purchase more credits to continue.`
+            );
+        }
+
+        // 4.2 ENFORCE ACCESS RULES WHEN USER LACKS CREDITS (server-side barrier)
+        if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits) {
+            // Premium model restriction for users without credits
+            if (selectedModelInfo?.premium) {
+                logDiagnostic('PREMIUM_MODEL_RESTRICTED', `Blocking premium model without credits`, {
+                    requestId,
+                    selectedModel
+                });
+                return ErrorHandlerService.createPremiumModelError(
+                    `${AuthService.getUserTypeDescription(isAnonymous)} cannot access premium models. Please purchase credits to use ${selectedModelInfo.name || selectedModel}.`
+                );
+            }
+
+            // Free-model-only enforcement for users without credits (anonymous or no-credits)
+            logDiagnostic('FREE_MODEL_ONLY', `Blocking non-free model for user without credits`, {
+                requestId,
+                selectedModel
+            });
+            return ErrorHandlerService.createErrorResponse(
+                'FREE_MODEL_ONLY',
+                `${AuthService.getUserTypeDescription(isAnonymous)} can only use free models. Please purchase credits to access other models.`,
+                403
             );
         }
 
@@ -213,10 +238,24 @@ export async function POST(req: Request) {
         const processedMessages = processedMessagesResult.messages;
 
         // 7. MCP SERVER INITIALIZATION - Use MCPService
+        logDiagnostic('MCP_INIT_START', `Initializing MCP servers`, {
+            requestId,
+            serverCount: initialMcpServers.length,
+            serverTypes: initialMcpServers.map(s => s.type)
+        });
+
         const mcpResult = await MCPService.initializeMCPServers(
             initialMcpServers,
-            req.signal
+            req.signal,
+            userId
         );
+
+        logDiagnostic('MCP_INIT_SUCCESS', `MCP servers initialized`, {
+            requestId,
+            toolCount: Object.keys(mcpResult.tools).length,
+            toolNames: Object.keys(mcpResult.tools),
+            clientCount: mcpResult.clients.length
+        });
 
         // 8. WEB SEARCH VALIDATION - Use WebSearchService
         const webSearchResult = WebSearchService.validateWebSearch(
@@ -233,7 +272,7 @@ export async function POST(req: Request) {
         }
 
         // 9. MODEL INSTANCE CREATION
-        const modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys);
+        const modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openRouterUserId);
         const effectiveWebSearchEnabled = webSearchResult.shouldEnable;
 
         // 10. PRESET PARAMETER VALIDATION
@@ -265,10 +304,20 @@ export async function POST(req: Request) {
 
         // 13. STREAMING CONFIGURATION
         const id = nanoid();
+
+        logDiagnostic('STREAMING_CONFIG_SETUP', `Setting up streaming configuration`, {
+            requestId,
+            toolsAvailable: Object.keys(mcpResult.tools).length > 0,
+            toolNames: Object.keys(mcpResult.tools),
+            modelInstance: typeof modelInstance,
+            messageCount: modelMessages.length
+        });
+
         const streamingConfig = {
             model: modelInstance,
             messages: modelMessages,
             tools: mcpResult.tools,
+            maxSteps: 20,
             maxTokens: maxTokens ?? modelDefaults.maxTokens,
             temperature: temperature ?? modelDefaults.temperature,
             system: systemInstruction ? sanitizeSystemInstruction(systemInstruction) : modelDefaults.systemInstruction,
@@ -306,28 +355,6 @@ export async function POST(req: Request) {
                         timeToFirstTokenMs,
                         tokensPerSecond
                     });
-
-                    // Track token usage
-                    if (firstTokenTime && streamingStartTime) {
-                        const totalTime = Date.now() - requestStartTime;
-                        const streamingTime = Date.now() - streamingStartTime.getTime();
-
-                        await TokenTrackingService.trackTokenUsage({
-                            userId,
-                            chatId: chatId || 'unknown',
-                            messageId: id,
-                            modelId: selectedModel,
-                            provider: selectedModel.split('/')[0],
-                            tokenUsage: {
-                                inputTokens: 0,
-                                outputTokens: 0,
-                                totalTokens: 0
-                            },
-                            timeToFirstTokenMs: timeToFirstTokenMs || undefined,
-                            tokensPerSecond: tokensPerSecond || undefined,
-                            streamingStartTime: streamingStartTime
-                        });
-                    }
                 } catch (error) {
                     logError('ON_STOP_ERROR', error, requestId);
                 }
@@ -337,8 +364,31 @@ export async function POST(req: Request) {
                     logDiagnostic('STREAM_FINISHED', `Stream finished`, {
                         requestId,
                         finishReason: result.finishReason,
-                        usage: result.usage
+                        usage: result.usage,
+                        toolCalls: result.toolCalls ? result.toolCalls.length : 0,
+                        toolResults: result.toolResults ? result.toolResults.length : 0,
+                        steps: result.steps ? result.steps.length : 0
                     });
+
+                    // Log detailed tool information if tools were used
+                    if (result.toolCalls && result.toolCalls.length > 0) {
+                        logDiagnostic('TOOL_CALLS_DETECTED', `Tool calls detected in result`, {
+                            requestId,
+                            toolCalls: result.toolCalls.map((call: any) => ({
+                                toolName: call.toolName,
+                                args: call.args,
+                                result: call.result ? 'present' : 'missing'
+                            }))
+                        });
+                    }
+
+                    if (result.steps && result.steps.length > 0) {
+                        logDiagnostic('STEPS_DETECTED', `Execution steps detected`, {
+                            requestId,
+                            stepCount: result.steps.length,
+                            stepTypes: result.steps.map((step: any) => step.type)
+                        });
+                    }
 
                     // Save chat and messages
                     if (chatId) {
@@ -366,6 +416,20 @@ export async function POST(req: Request) {
                                 content: result.text
                             }], chatId)
                         });
+
+                        // Track token usage with actual usage data
+                        await TokenTrackingService.trackTokenUsage({
+                            userId,
+                            chatId,
+                            messageId: id,
+                            modelId: selectedModel,
+                            provider: selectedModel.split('/')[0],
+                            tokenUsage: result.usage || {},
+                            timeToFirstTokenMs: timeToFirstTokenMs || undefined,
+                            tokensPerSecond: tokensPerSecond || undefined,
+                            streamingStartTime: streamingStartTime || undefined,
+                            processingTimeMs: Date.now() - requestStartTime
+                        });
                     } else {
                         const newChatId = nanoid();
                         await saveChat({
@@ -379,6 +443,20 @@ export async function POST(req: Request) {
                                 role: 'assistant',
                                 content: result.text
                             }], newChatId)
+                        });
+
+                        // Track token usage with actual usage data for new chat
+                        await TokenTrackingService.trackTokenUsage({
+                            userId,
+                            chatId: newChatId,
+                            messageId: id,
+                            modelId: selectedModel,
+                            provider: selectedModel.split('/')[0],
+                            tokenUsage: result.usage || {},
+                            timeToFirstTokenMs: timeToFirstTokenMs || undefined,
+                            tokensPerSecond: tokensPerSecond || undefined,
+                            streamingStartTime: streamingStartTime || undefined,
+                            processingTimeMs: Date.now() - requestStartTime
                         });
                     }
 
@@ -397,7 +475,26 @@ export async function POST(req: Request) {
         // 14. INCREMENT DAILY USAGE
         await NewUsageLimitsService.incrementDailyUsage(userId, isAnonymous);
 
-        // 15. START STREAMING
+        // 15. ADDITIONAL MCP CLEANUP REGISTRATION
+        // Add additional cleanup as a safeguard in case the MCPService cleanup doesn't trigger
+        if (mcpResult.clients.length > 0) {
+            req.signal.addEventListener('abort', async () => {
+                logDiagnostic('MCP_CLEANUP_TRIGGERED', `Route-level MCP cleanup triggered`, {
+                    requestId,
+                    clientCount: mcpResult.clients.length
+                });
+
+                for (const client of mcpResult.clients) {
+                    try {
+                        await client.close();
+                    } catch (error) {
+                        logError('MCP_CLEANUP_ERROR', error, requestId);
+                    }
+                }
+            });
+        }
+
+        // 16. START STREAMING
         logDiagnostic('STREAMING_START', `Starting stream`, {
             requestId,
             selectedModel,

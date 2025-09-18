@@ -482,3 +482,51 @@ export const dailyMessageUsage = pgTable('daily_message_usage', {
 export type DailyMessageUsage = typeof dailyMessageUsage.$inferSelect;
 export type DailyMessageUsageInsert = typeof dailyMessageUsage.$inferInsert;
 
+// --- MCP OAuth Schema ---
+
+export const mcpOauthSessions = pgTable('mcp_oauth_sessions', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // The MCP server URL the user is connecting to (transport endpoint)
+  serverUrl: text('server_url').notNull(),
+  // Canonical resource URI used in OAuth resource parameter
+  resource: text('resource').notNull(),
+  // OAuth state and PKCE fields
+  state: text('state').notNull().unique(),
+  codeVerifier: text('code_verifier').notNull(),
+  // Discovered/derived endpoints
+  resourceMetadataUrl: text('resource_metadata_url'),
+  authorizationServer: text('authorization_server'),
+  authorizationEndpoint: text('authorization_endpoint'),
+  tokenEndpoint: text('token_endpoint'),
+  registrationEndpoint: text('registration_endpoint'),
+  // Client details after dynamic registration (if used)
+  clientId: text('client_id'),
+  clientSecret: text('client_secret'),
+  scope: text('scope'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const mcpOauthTokens = pgTable('mcp_oauth_tokens', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  serverUrl: text('server_url').notNull(),
+  resource: text('resource').notNull(),
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token'),
+  tokenType: text('token_type').default('Bearer'),
+  scope: text('scope'),
+  expiresAt: timestamp('expires_at', { mode: 'date' }),
+  // Store endpoints and client info used for refresh
+  tokenEndpoint: text('token_endpoint'),
+  clientId: text('client_id'),
+  clientSecret: text('client_secret'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  // Ensure single token record per user+server
+  uniqueUserServer: unique('mcp_oauth_tokens_user_server_unique').on(table.userId, table.serverUrl),
+  userIdIdx: index('idx_mcp_oauth_tokens_user_id').on(table.userId),
+  serverUrlIdx: index('idx_mcp_oauth_tokens_server_url').on(table.serverUrl),
+}));
+

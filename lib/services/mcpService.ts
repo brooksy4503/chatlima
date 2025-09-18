@@ -2,6 +2,9 @@ import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'a
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn } from 'child_process';
+import { db } from '@/lib/db';
+import { mcpOauthTokens } from '@/lib/db/schema';
+import { and, eq } from 'drizzle-orm';
 
 export interface KeyValuePair {
     key: string;
@@ -28,8 +31,12 @@ export class MCPService {
      */
     static async initializeMCPServers(
         mcpServers: MCPServerConfig[],
-        requestSignal?: AbortSignal
+        requestSignal?: AbortSignal,
+        userId?: string
     ): Promise<MCPClientResult> {
+        const initStartTime = Date.now();
+        console.log(`[MCPService] Starting initialization of ${mcpServers.length} MCP servers at ${new Date().toISOString()}`);
+
         const mcpClients: any[] = [];
         let tools: Record<string, any> = {};
 
@@ -45,6 +52,11 @@ export class MCPService {
                             if (header.key) headers[header.key] = header.value || '';
                         });
                     }
+                    // Inject OAuth token if available
+                    if (userId && mcpServer.url) {
+                        const authHeader = await MCPService.getAuthorizationHeaderFor(userId, mcpServer.url);
+                        if (authHeader) headers['Authorization'] = authHeader;
+                    }
                     finalTransportForClient = {
                         type: 'sse' as const,
                         url: mcpServer.url!,
@@ -56,6 +68,11 @@ export class MCPService {
                         mcpServer.headers.forEach(header => {
                             if (header.key) headers[header.key] = header.value || '';
                         });
+                    }
+                    // Inject OAuth token if available
+                    if (userId && mcpServer.url) {
+                        const authHeader = await MCPService.getAuthorizationHeaderFor(userId, mcpServer.url);
+                        if (authHeader) headers['Authorization'] = authHeader;
                     }
                     // Use StreamableHTTPClientTransport from @modelcontextprotocol/sdk
                     const transportUrl = new URL(mcpServer.url!);
@@ -130,10 +147,116 @@ export class MCPService {
             });
         }
 
+        const initDuration = Date.now() - initStartTime;
+        console.log(`[MCPService] Initialization completed in ${initDuration}ms. Created ${mcpClients.length} clients with ${Object.keys(tools).length} tools: [${Object.keys(tools).join(', ')}]`);
+
         return {
             clients: mcpClients,
             tools
         };
+    }
+
+    /**
+     * Returns an Authorization header value (e.g., `Bearer <token>`) for the given user and serverUrl
+     * If the token is expired and a refresh token is available, attempts to refresh it.
+     */
+    private static async getAuthorizationHeaderFor(userId: string, serverUrl: string): Promise<string | null> {
+        try {
+            const existing = await db.query.mcpOauthTokens.findFirst({
+                where: and(eq(mcpOauthTokens.userId, userId), eq(mcpOauthTokens.serverUrl, serverUrl))
+            });
+
+            if (!existing) return null;
+
+            const now = Date.now();
+            const expiresAtMs = existing.expiresAt ? new Date(existing.expiresAt as any).getTime() : undefined;
+
+            // If not expired, return as-is
+            if (expiresAtMs && expiresAtMs - now > 30_000) {
+                return `${existing.tokenType || 'Bearer'} ${existing.accessToken}`;
+            }
+
+            // Try refresh if we have a refresh token and token endpoint
+            if (existing.refreshToken && existing.tokenEndpoint && existing.clientId) {
+                const refreshed = await MCPService.refreshAccessToken({
+                    tokenEndpoint: existing.tokenEndpoint,
+                    clientId: existing.clientId,
+                    clientSecret: existing.clientSecret || undefined,
+                    refreshToken: existing.refreshToken,
+                    resource: existing.resource,
+                });
+
+                if (refreshed) {
+                    // Persist updated tokens
+                    await db.update(mcpOauthTokens)
+                        .set({
+                            accessToken: refreshed.accessToken,
+                            refreshToken: refreshed.refreshToken || existing.refreshToken,
+                            tokenType: refreshed.tokenType || existing.tokenType,
+                            scope: refreshed.scope || existing.scope,
+                            expiresAt: refreshed.expiresAt ? new Date(refreshed.expiresAt) : null,
+                            updatedAt: new Date(),
+                        })
+                        .where(and(eq(mcpOauthTokens.userId, userId), eq(mcpOauthTokens.serverUrl, serverUrl)));
+
+                    return `${refreshed.tokenType || 'Bearer'} ${refreshed.accessToken}`;
+                }
+            }
+
+            // Otherwise, fall back to existing access token if present
+            if (existing.accessToken) {
+                return `${existing.tokenType || 'Bearer'} ${existing.accessToken}`;
+            }
+
+            return null;
+        } catch (err) {
+            console.error('[MCPService] getAuthorizationHeaderFor error', err);
+            return null;
+        }
+    }
+
+    private static async refreshAccessToken(params: {
+        tokenEndpoint: string;
+        clientId: string;
+        clientSecret?: string;
+        refreshToken: string;
+        resource: string;
+    }): Promise<{ accessToken: string; refreshToken?: string; tokenType?: string; scope?: string; expiresAt?: number } | null> {
+        try {
+            const body = new URLSearchParams();
+            body.set('grant_type', 'refresh_token');
+            body.set('refresh_token', params.refreshToken);
+            body.set('client_id', params.clientId);
+            if (params.clientSecret) body.set('client_secret', params.clientSecret);
+            body.set('resource', params.resource);
+
+            const resp = await fetch(params.tokenEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: body.toString()
+            });
+
+            if (!resp.ok) {
+                console.warn('[MCPService] refresh token failed', resp.status, await resp.text());
+                return null;
+            }
+
+            const json = await resp.json();
+            const expiresIn = json.expires_in as number | undefined;
+            const expiresAt = expiresIn ? Date.now() + expiresIn * 1000 : undefined;
+            return {
+                accessToken: json.access_token as string,
+                refreshToken: (json.refresh_token as string | undefined) || undefined,
+                tokenType: (json.token_type as string | undefined) || 'Bearer',
+                scope: json.scope as string | undefined,
+                expiresAt
+            };
+        } catch (err) {
+            console.error('[MCPService] refreshAccessToken error', err);
+            return null;
+        }
     }
 
     /**
