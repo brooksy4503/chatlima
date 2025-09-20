@@ -4,18 +4,46 @@ import { getModelDetails } from '@/lib/models/fetch-models';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import type { modelID } from '@/ai/providers';
 
-// Helper to create standardized error responses
-const createErrorResponse = (
-    code: string,
-    message: string,
-    status: number,
-    details?: string
-) => {
-    return new Response(
-        JSON.stringify({ error: { code, message, details } }),
-        { status, headers: { "Content-Type": "application/json" } }
-    );
-};
+// Domain-specific error classes for credit validation
+export class CreditValidationError extends Error {
+    constructor(
+        public code: string,
+        message: string,
+        public status: number,
+        public details?: string
+    ) {
+        super(message);
+        this.name = 'CreditValidationError';
+    }
+}
+
+export class InsufficientCreditsError extends CreditValidationError {
+    constructor(message: string, details?: string) {
+        super('INSUFFICIENT_CREDITS', message, 402, details);
+        this.name = 'InsufficientCreditsError';
+    }
+}
+
+export class FeatureRestrictedError extends CreditValidationError {
+    constructor(message: string, details?: string) {
+        super('FEATURE_RESTRICTED', message, 403, details);
+        this.name = 'FeatureRestrictedError';
+    }
+}
+
+export class FreeModelOnlyError extends CreditValidationError {
+    constructor(message: string, details?: string) {
+        super('FREE_MODEL_ONLY', message, 403, details);
+        this.name = 'FreeModelOnlyError';
+    }
+}
+
+export class PremiumModelRestrictedError extends CreditValidationError {
+    constructor(message: string, details?: string) {
+        super('PREMIUM_MODEL_RESTRICTED', message, 403, details);
+        this.name = 'PremiumModelRestrictedError';
+    }
+}
 
 export interface CreditValidationContext {
     userId: string;
@@ -141,10 +169,8 @@ export class ChatCreditValidationService {
         // Check for negative credit balance - block if user has negative credits (skip if using own API keys or free model)
         if (!isUsingOwnApiKeys && !isFreeModel && !isAnonymous && actualCredits !== null && actualCredits < 0) {
             console.log(`[Debug] User ${userId} has negative credits (${actualCredits}), blocking request`);
-            throw createErrorResponse(
-                "INSUFFICIENT_CREDITS",
+            throw new InsufficientCreditsError(
                 `Your account has a negative credit balance (${actualCredits}). Please purchase more credits to continue.`,
-                402,
                 `User has ${actualCredits} credits`
             );
         }
@@ -162,20 +188,16 @@ export class ChatCreditValidationService {
         if (webSearchEnabled && !canUseWebSearch) {
             if (isAnonymous) {
                 console.log(`[Security] Anonymous user ${userId} tried to use Web Search, blocking request`);
-                throw createErrorResponse(
-                    "FEATURE_RESTRICTED",
+                throw new FeatureRestrictedError(
                     "Web Search is only available to signed-in users with credits. Please sign in and purchase credits to use this feature.",
-                    403,
                     "Anonymous users cannot use Web Search"
                 );
             }
 
             if (actualCredits !== null && actualCredits < WEB_SEARCH_COST) {
                 console.log(`[Security] User ${userId} tried to bypass Web Search payment (${actualCredits} < ${WEB_SEARCH_COST})`);
-                throw createErrorResponse(
-                    "INSUFFICIENT_CREDITS",
+                throw new InsufficientCreditsError(
                     `You need at least ${WEB_SEARCH_COST} credits to use Web Search. Your balance is ${actualCredits}.`,
-                    402,
                     `User attempted to bypass Web Search payment with ${actualCredits} credits`
                 );
             }
@@ -201,10 +223,8 @@ export class ChatCreditValidationService {
             const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
 
             console.log(`[SECURITY] ${userType} attempted non-free model: ${context.selectedModel}`);
-            throw createErrorResponse(
-                'FREE_MODEL_ONLY',
+            throw new FreeModelOnlyError(
                 `${userType} can only use free models. ${actionRequired} to access other models.`,
-                403,
                 `Free-model-only enforcement for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
             );
         }
@@ -224,10 +244,8 @@ export class ChatCreditValidationService {
             const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
 
             console.log(`[SECURITY] ${userType} attempted to access premium model: ${selectedModel}`);
-            throw createErrorResponse(
-                "PREMIUM_MODEL_RESTRICTED",
+            throw new PremiumModelRestrictedError(
                 `${userType} cannot access premium models. ${actionRequired} to use ${modelInfo.name || selectedModel}.`,
-                403,
                 `Premium model access denied for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
             );
         }

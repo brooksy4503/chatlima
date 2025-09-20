@@ -33,7 +33,16 @@ import { spawn } from "child_process";
 
 // Import our new services
 import { ChatAuthenticationService, type AuthenticatedUser } from '@/lib/services/chatAuthenticationService';
-import { ChatCreditValidationService, type CreditValidationContext, type CreditValidationResult } from '@/lib/services/chatCreditValidationService';
+import {
+    ChatCreditValidationService,
+    type CreditValidationContext,
+    type CreditValidationResult,
+    CreditValidationError,
+    InsufficientCreditsError,
+    FeatureRestrictedError,
+    FreeModelOnlyError,
+    PremiumModelRestrictedError
+} from '@/lib/services/chatCreditValidationService';
 import { ChatMessageProcessingService, type MessageProcessingContext } from '@/lib/services/chatMessageProcessingService';
 import { ChatModelValidationService, type ModelValidationContext, type ModelValidationResult } from '@/lib/services/chatModelValidationService';
 import { ChatMCPServerService, type MCPServerContext, type MCPServerResult } from '@/lib/services/chatMCPServerService';
@@ -1636,6 +1645,20 @@ You have web search capabilities enabled. When you use web search:
 
         if (error instanceof Response) {
             return error; // Already a proper error response
+        }
+
+        // Handle domain-specific credit validation errors
+        if (error instanceof CreditValidationError) {
+            return new Response(
+                JSON.stringify({
+                    error: {
+                        code: error.code,
+                        message: error.message,
+                        details: error.details
+                    }
+                }),
+                { status: error.status, headers: { "Content-Type": "application/json" } }
+            );
         }
 
         return new Response(
