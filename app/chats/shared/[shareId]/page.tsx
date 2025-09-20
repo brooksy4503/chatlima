@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { SharedChatMessages } from '@/components/shared-chat-messages';
+import { SharingButtons } from '@/components/sharing-buttons';
 import { ChatSharingService } from '@/lib/services/chat-sharing';
 import type { ChatSnapshot } from '@/lib/services/chat-sharing';
 
@@ -42,6 +43,7 @@ export default async function SharedChatPage({ params }: PageProps) {
               <div className="px-2 py-1 bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-200 text-xs rounded-full">
                 Read-only
               </div>
+              <SharingButtons shareId={shareId} title={snapshot.chat.title} />
             </div>
           </div>
         </div>
