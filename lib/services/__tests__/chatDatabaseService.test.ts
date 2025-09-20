@@ -1,66 +1,8 @@
 import { ChatDatabaseService, ChatCreationContext, MessageSavingContext } from '../chatDatabaseService';
+import type { UIMessage } from 'ai';
+import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from '@ai-sdk/ui-utils';
 
-// Define types locally for testing
-type TextUIPart = {
-    type: "text";
-    text: string;
-};
-
-type ToolInvocationUIPart = {
-    type: "tool-invocation";
-    toolInvocation: {
-        toolName: string;
-        state: string;
-        args: any;
-        result?: any;
-    };
-};
-
-type ImageUIPart = {
-    type: "image_url";
-    image_url: {
-        url: string;
-        detail?: "low" | "high" | "auto";
-    };
-    metadata?: {
-        filename?: string;
-        size?: number;
-        mimeType?: string;
-        width?: number;
-        height?: number;
-    };
-};
-
-type ReasoningUIPart = {
-    type: "reasoning";
-    reasoning: string;
-};
-
-type SourceUIPart = {
-    type: "source";
-    source: any;
-};
-
-type FileUIPart = {
-    type: "file";
-    file: any;
-};
-
-type StepStartUIPart = {
-    type: "step-start";
-    step: any;
-};
-
-type UIMessage = {
-    id: string;
-    role: 'user' | 'assistant' | 'system' | 'data';
-    content: string;
-    parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
-    createdAt?: Date;
-    hasWebSearch?: boolean;
-    webSearchContextSize?: 'low' | 'medium' | 'high';
-};
-
+// Define DBMessage type for testing
 type DBMessage = {
     id: string;
     chatId: string;
