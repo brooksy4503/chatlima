@@ -1,6 +1,7 @@
 import Link from "next/link";
 import React, { memo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
+import type { PluggableList } from "unified";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -217,21 +218,115 @@ const components: Partial<Components> = {
   ),
 };
 
-const remarkPlugins = [remarkGfm, remarkMath];
-const rehypePlugins = [rehypeKatex];
+// Configure math to ignore single-dollar inline delimiters so currency like $100 isn't treated as math
+const remarkPlugins: PluggableList = [remarkGfm, [remarkMath, { singleDollarTextMath: false }]];
+const rehypePlugins: PluggableList = [rehypeKatex];
 
 // Preprocesses markdown to convert \(...\) to $...$ and \[...\] to $$...$$
 function preprocessMathDelimiters(markdown: string): string {
-  // Handle null, undefined, or non-string input
-  if (!markdown || typeof markdown !== 'string') {
-    return '';
-  }
-  
-  // Convert block math: \[...\] => $$...$$
-  markdown = markdown.replace(/\\\[([\s\S]+?)\\\]/g, (match, p1) => `$$${p1}$$`);
-  // Convert inline math: \(...\) => $...$
-  markdown = markdown.replace(/\\\(([\s\S]+?)\\\)/g, (match, p1) => `$${p1}$`);
-  return markdown;
+   // Handle null, undefined, or non-string input
+   if (markdown === null || markdown === undefined) {
+      return '';
+   }
+
+   if (typeof markdown !== 'string') {
+      return String(markdown);
+   }
+
+   if (markdown.trim() === '') {
+      return markdown;
+   }
+
+   try {
+      // Check for incomplete math expressions at the end of content (streaming safeguard)
+      const hasIncompleteBlockMath = /\\\[[\s\S]*$/.test(markdown) && !/\\\[[\s\S]*\\\]/.test(markdown);
+      const hasIncompleteInlineMath = /\\\([\s\S]*$/.test(markdown) && !/\\\([\s\S]*\\\)/.test(markdown);
+
+      // If content ends with incomplete math expressions, don't process them
+      // This prevents malformed KaTeX rendering during streaming
+      if (hasIncompleteBlockMath || hasIncompleteInlineMath) {
+         console.debug('Detected incomplete math expression at end of content, skipping math processing');
+         return markdown;
+      }
+
+      // Convert block math: \[...\] => $$...$$
+      // Use a more robust regex that handles nested brackets and multiline content
+      markdown = markdown.replace(/\\\[([\s\S]*?)\\\]/g, (match, p1) => {
+         // Only convert if the content doesn't contain unbalanced brackets
+         const openBrackets = (p1.match(/\[/g) || []).length;
+         const closeBrackets = (p1.match(/\]/g) || []).length;
+         if (openBrackets === closeBrackets) {
+            return `$$${p1}$$`;
+         }
+         return match; // Return original if unbalanced
+      });
+
+      // Convert inline math: \(...\) => $...$
+      // Use a more robust regex that handles nested parentheses
+      markdown = markdown.replace(/\\\(([\s\S]*?)\\\)/g, (match, p1) => {
+         // Only convert if the content doesn't contain unbalanced parentheses
+         const openParens = (p1.match(/\(/g) || []).length;
+         const closeParens = (p1.match(/\)/g) || []).length;
+         if (openParens === closeParens) {
+            return `$${p1}$`;
+         }
+         return match; // Return original if unbalanced
+      });
+
+      // Escape solitary leading $ at the start of lines (e.g., shell prompts or currency)
+      // to avoid interfering with math parsing. Skip fenced code blocks.
+      {
+         const lines = markdown.split('\n');
+         let inFence = false;
+         for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            // Toggle fenced code blocks (``` or ~~~)
+            if (/^\s*(```|~~~)/.test(line)) {
+               inFence = !inFence;
+               continue;
+            }
+            if (inFence) continue;
+
+            const leadingWhitespaceMatch = line.match(/^\s*/);
+            const leadingWhitespace = leadingWhitespaceMatch ? leadingWhitespaceMatch[0] : '';
+            const afterWs = line.slice(leadingWhitespace.length);
+
+            // If the visible line starts with a single $ and has no closing $ on the same line,
+            // escape it so it's treated as a literal character, not math.
+            if (afterWs.startsWith('$') && !afterWs.startsWith('$$')) {
+               const rest = afterWs.slice(1);
+               if (!rest.includes('$')) {
+                  lines[i] = `${leadingWhitespace}\\${afterWs}`;
+               }
+            }
+         }
+         markdown = lines.join('\n');
+      }
+
+      // Temporarily disable $...$ math conversion to fix currency rendering issues
+      // TODO: Implement more sophisticated math detection that doesn't interfere with currency
+      // markdown = markdown.replace(/\$([^$\n]+?)\$/g, (match, p1) => {
+      //    // Check if this looks like math (contains operators, functions, or mathematical symbols)
+      //    const mathPattern = /[+\-*/=<>()\[\]{}^_\\]|\\[a-zA-Z]+|frac|sqrt|sum|int|lim|sin|cos|tan|log|ln|exp|pi|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|sigma|tau|phi|omega/i;
+      //    
+      //    // Check if it's currency (starts with a number followed by space and common currency words)
+      //    const isCurrency = /^\d+\.?\d*\s*(billion|million|thousand|dollars?|cents?|euros?|pounds?|yen|yuan)/i.test(p1);
+      //    
+      //    // Check if it's a simple number with currency symbol (like $3.5 billion)
+      //    const isSimpleCurrency = /^\d+\.?\d*\s*(billion|million|thousand|dollars?|cents?|euros?|pounds?|yen|yuan)/i.test(p1);
+      //    
+      //    // Only convert to math if it looks like math AND is not currency
+      //    if (mathPattern.test(p1) && !isCurrency && !isSimpleCurrency) {
+      //       return `$${p1}$`;
+      //    }
+      //    return match; // Return original if it doesn't look like math or is currency
+      // });
+
+      return markdown;
+   } catch (error) {
+      console.warn('Error preprocessing math delimiters:', error);
+      return markdown; // Return original content on error
+   }
 }
 
 // Preprocesses text to insert inline citation numbers based on citation data
@@ -261,71 +356,121 @@ function preprocessCitations(text: string, citations?: WebSearchCitation[]): str
   return processedText;
 }
 
-const NonMemoizedMarkdown = ({ 
-  children, 
-  citations, 
-  onScrollToCitations 
-}: { 
-  children: string; 
-  citations?: WebSearchCitation[];
-  onScrollToCitations?: () => void;
+const NonMemoizedMarkdown = ({
+   children,
+   citations,
+   onScrollToCitations
+}: {
+   children: string;
+   citations?: WebSearchCitation[];
+   onScrollToCitations?: () => void;
 }) => {
-  // First process math delimiters, then add citations
-  const mathProcessed = preprocessMathDelimiters(children);
-  const processed = preprocessCitations(mathProcessed, citations);
-  
-  // Create components with citation handling
-  const componentsWithCitations: Partial<Components> = {
-    ...components,
-    // Override text handling to render citation numbers as components
-    p: ({ node, children, ...props }) => {
-      const processChildren = (children: React.ReactNode): React.ReactNode => {
-        if (typeof children === 'string') {
-          // Split text by citation numbers and render them as components
-          const parts = children.split(/(\[\d+\])/g);
-          return parts.map((part, index) => {
-            const citationMatch = part.match(/^\[(\d+)\]$/);
-            if (citationMatch) {
-              return (
-                <CitationNumber 
-                  key={index} 
-                  number={parseInt(citationMatch[1])} 
-                  onScrollToCitations={onScrollToCitations}
-                />
-              );
-            }
-            return part;
-          });
-        }
-        if (Array.isArray(children)) {
-          return children.map((child, index) => 
-            React.cloneElement(
-              <span key={index}>{processChildren(child)}</span>
-            )
-          );
-        }
-        return children;
+   // Handle null, undefined, or non-string content
+   if (children === null || children === undefined) {
+      return (
+         <div className="overflow-x-auto max-w-full">
+            <ReactMarkdown
+               remarkPlugins={remarkPlugins}
+               rehypePlugins={rehypePlugins}
+               components={components}
+            >
+               {''}
+            </ReactMarkdown>
+         </div>
+      );
+   }
+
+   if (typeof children !== 'string') {
+      console.warn('Markdown component received non-string children:', typeof children);
+      const stringContent = String(children);
+      return (
+         <div className="overflow-x-auto max-w-full">
+            <ReactMarkdown
+               remarkPlugins={remarkPlugins}
+               rehypePlugins={rehypePlugins}
+               components={components}
+            >
+               {stringContent}
+            </ReactMarkdown>
+         </div>
+      );
+   }
+
+   try {
+      // First process math delimiters, then add citations
+      const mathProcessed = preprocessMathDelimiters(children);
+      const processed = preprocessCitations(mathProcessed, citations);
+
+      // Create components with citation handling
+      const componentsWithCitations: Partial<Components> = {
+         ...components,
+         // Override text handling to render citation numbers as components
+         p: ({ node, children, ...props }) => {
+            const processChildren = (children: React.ReactNode): React.ReactNode => {
+               if (typeof children === 'string') {
+                  // Split text by citation numbers and render them as components
+                  const parts = children.split(/(\[\d+\])/g);
+                  const elements = parts.map((part, index) => {
+                     const citationMatch = part.match(/^\[(\d+)\]$/);
+                     if (citationMatch) {
+                        const citationNumber = parseInt(citationMatch[1]);
+                        if (!isNaN(citationNumber) && citationNumber > 0) {
+                           return (
+                              <CitationNumber
+                                 key={index}
+                                 number={citationNumber}
+                                 onScrollToCitations={onScrollToCitations}
+                              />
+                           );
+                        }
+                     }
+                     // Return non-citation text as-is to preserve original formatting
+                     return part;
+                  });
+                  
+                  // Wrap all elements in a fragment to ensure proper rendering
+                  return <>{elements}</>;
+               }
+               if (Array.isArray(children)) {
+                  return children.map((child, index) =>
+                     React.cloneElement(
+                        <span key={index}>{processChildren(child)}</span>
+                     )
+                  );
+               }
+               return children;
+            };
+
+            return (
+               <p className="leading-relaxed my-1" {...props}>
+                  {processChildren(children)}
+               </p>
+            );
+         }
       };
 
       return (
-        <p className="leading-relaxed my-1" {...props}>
-          {processChildren(children)}
-        </p>
+         <div className="overflow-x-auto max-w-full">
+            <ReactMarkdown
+               remarkPlugins={remarkPlugins}
+               rehypePlugins={rehypePlugins}
+               components={componentsWithCitations}
+            >
+               {processed}
+            </ReactMarkdown>
+         </div>
       );
-    }
-  };
-  
-  return (
-    <div className="overflow-x-auto max-w-full">
-      <ReactMarkdown 
-        remarkPlugins={remarkPlugins} 
-        rehypePlugins={rehypePlugins}
-        components={componentsWithCitations}
-      >
-        {processed}
-      </ReactMarkdown>
-    </div>
-  );
+   } catch (error) {
+      console.error('Error rendering markdown:', error);
+      // Fallback: render as plain text if markdown processing fails
+      return (
+         <div className="overflow-x-auto max-w-full">
+            <pre className="whitespace-pre-wrap break-words text-sm">
+               {children}
+            </pre>
+         </div>
+      );
+   }
 };
 
 export const Markdown = memo(

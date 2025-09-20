@@ -267,9 +267,9 @@ describe('PresetSelector Component', () => {
       
       const tooltipContents = screen.getAllByTestId('tooltip-content');
       const selectTooltip = tooltipContents.find(tooltip => 
-        tooltip.textContent?.includes('Web Search: 5 results')
+        tooltip.textContent?.includes('Web Search: high results')
       );
-      expect(selectTooltip).toHaveTextContent('Web Search: 5 results');
+      expect(selectTooltip).toHaveTextContent('Web Search: high results');
     });
 
     test('displays manual mode tooltip when no active preset', () => {

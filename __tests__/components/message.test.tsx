@@ -150,9 +150,11 @@ describe('Message', () => {
   };
 
   const imagePart = {
-    type: 'file' as const,
-    data: 'data:image/png;base64,test-image-data',
-    mimeType: 'image/png',
+    type: 'image_url' as const,
+    image_url: {
+      url: 'data:image/png;base64,test-image-data',
+      detail: 'high' as const,
+    },
     metadata: {
       filename: 'test-image.png',
       size: 2048,
@@ -670,9 +672,11 @@ describe('Message', () => {
   describe('Error Handling', () => {
     test('handles missing image metadata gracefully', () => {
       const imagePartWithoutMetadata = {
-        type: 'file' as const,
-        data: 'data:image/png;base64,test-image-data',
-        mimeType: 'image/png',
+        type: 'image_url' as const,
+        image_url: {
+          url: 'data:image/png;base64,test-image-data',
+          detail: 'auto' as const,
+        },
       };
 
       const message = {
