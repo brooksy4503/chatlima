@@ -228,9 +228,19 @@ describe('Textarea', () => {
     });
 
     test('changes placeholder when images are present', () => {
-      const images: ImageAttachment[] = [{ id: '1', url: 'test.jpg', detail: 'auto' }];
+      const images: ImageAttachment[] = [{
+        dataUrl: 'data:image/jpeg;base64,test-image-data',
+        metadata: {
+          filename: 'test.jpg',
+          size: 1024,
+          mimeType: 'image/jpeg',
+          width: 100,
+          height: 100,
+        },
+        detail: 'auto'
+      }];
       render(<Textarea {...defaultProps} images={images} />);
-      
+
       const textarea = screen.getByTestId('textarea');
       expect(textarea).toHaveAttribute('placeholder', 'Describe these images or ask questions...');
     });
@@ -250,9 +260,19 @@ describe('Textarea', () => {
     });
 
     test('enables submit button when images are present', () => {
-      const images: ImageAttachment[] = [{ id: '1', url: 'test.jpg', detail: 'auto' }];
+      const images: ImageAttachment[] = [{
+        dataUrl: 'data:image/jpeg;base64,test-image-data',
+        metadata: {
+          filename: 'test.jpg',
+          size: 1024,
+          mimeType: 'image/jpeg',
+          width: 100,
+          height: 100,
+        },
+        detail: 'auto'
+      }];
       render(<Textarea {...defaultProps} images={images} />);
-      
+
       const submitButton = screen.getByRole('button', { name: /send/i });
       expect(submitButton).not.toBeDisabled();
     });
@@ -343,11 +363,31 @@ describe('Textarea', () => {
 
     test('displays image preview when images are present', () => {
       const images: ImageAttachment[] = [
-        { id: '1', url: 'test1.jpg', detail: 'auto' },
-        { id: '2', url: 'test2.jpg', detail: 'auto' }
+        {
+          dataUrl: 'data:image/jpeg;base64,test-image-1',
+          metadata: {
+            filename: 'test1.jpg',
+            size: 1024,
+            mimeType: 'image/jpeg',
+            width: 100,
+            height: 100,
+          },
+          detail: 'auto'
+        },
+        {
+          dataUrl: 'data:image/jpeg;base64,test-image-2',
+          metadata: {
+            filename: 'test2.jpg',
+            size: 1024,
+            mimeType: 'image/jpeg',
+            width: 100,
+            height: 100,
+          },
+          detail: 'auto'
+        }
       ];
       render(<Textarea {...defaultProps} images={images} />);
-      
+
       expect(screen.getByTestId('image-preview')).toBeInTheDocument();
       expect(screen.getByTestId('image-0')).toBeInTheDocument();
       expect(screen.getByTestId('image-1')).toBeInTheDocument();
@@ -368,25 +408,41 @@ describe('Textarea', () => {
 
     test('handles image removal', () => {
       const images: ImageAttachment[] = [
-        { id: '1', url: 'test.jpg', detail: 'auto' }
+        {
+          dataUrl: 'data:image/jpeg;base64,test-image-data',
+          metadata: {
+            filename: 'test.jpg',
+            size: 1024,
+            mimeType: 'image/jpeg',
+            width: 100,
+            height: 100,
+          },
+          detail: 'auto'
+        }
       ];
       render(<Textarea {...defaultProps} images={images} />);
-      
+
       const removeButton = screen.getByTestId('remove-image-0');
       fireEvent.click(removeButton);
-      
+
       expect(mockOnImagesChange).toHaveBeenCalledWith([]);
     });
 
     test('disables image upload when at maximum limit', () => {
       const images: ImageAttachment[] = Array(5).fill(null).map((_, i) => ({
-        id: `${i}`,
-        url: `test${i}.jpg`,
+        dataUrl: `data:image/jpeg;base64,test-image-${i}`,
+        metadata: {
+          filename: `test${i}.jpg`,
+          size: 1024,
+          mimeType: 'image/jpeg',
+          width: 100,
+          height: 100,
+        },
         detail: 'auto' as const
       }));
-      
+
       render(<Textarea {...defaultProps} images={images} selectedModel="openrouter/test-model" />);
-      
+
       const uploadButton = screen.getByTestId('button-ghost');
       expect(uploadButton).toBeDisabled();
     });
@@ -811,7 +867,7 @@ describe('Textarea', () => {
 
     test('handles invalid model IDs gracefully', () => {
       expect(() => {
-        render(<Textarea {...defaultProps} selectedModel="invalid-model" as modelID />);
+        render(<Textarea {...defaultProps} selectedModel={"invalid-model" as any} />);
       }).not.toThrow();
     });
 
