@@ -102,7 +102,7 @@ interface OpenRouterResponse extends LanguageModelResponseMetadata {
 }
 
 // Helper to create standardized error responses
-const createErrorResponse = (
+export const createErrorResponse = (
   code: string,
   message: string,
   status: number,

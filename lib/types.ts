@@ -18,9 +18,10 @@ export interface ToolInvocationUIPart {
     type: "tool-invocation";
     toolInvocation: {
         toolName: string;
-        state: string;
+        state: "partial-call" | "call" | "result";
         args: any;
         result?: any;
+        step?: number;
     };
 }
 

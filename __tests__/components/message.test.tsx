@@ -133,27 +133,26 @@ describe('Message', () => {
     type: 'text' as const,
     text: 'Hello with citations',
     citations: [
-      { title: 'Source 1', url: 'https://example.com/1' },
-      { title: 'Source 2', url: 'https://example.com/2' },
+      { title: 'Source 1', url: 'https://example.com/1', startIndex: 0, endIndex: 10 },
+      { title: 'Source 2', url: 'https://example.com/2', startIndex: 11, endIndex: 20 },
     ],
   };
 
   const toolInvocationPart = {
     type: 'tool-invocation' as const,
     toolInvocation: {
+      toolCallId: 'test-tool-call-1',
       toolName: 'web_search',
-      state: 'result',
+      state: 'result' as const,
       args: { query: 'test query' },
       result: { results: [] },
     },
   };
 
   const imagePart = {
-    type: 'image_url' as const,
-    image_url: {
-      url: 'data:image/png;base64,test-image-data',
-      detail: 'high',
-    },
+    type: 'file' as const,
+    data: 'data:image/png;base64,test-image-data',
+    mimeType: 'image/png',
     metadata: {
       filename: 'test-image.png',
       size: 2048,
@@ -164,6 +163,7 @@ describe('Message', () => {
 
   const reasoningPart = {
     type: 'reasoning' as const,
+    reasoning: 'Combined reasoning text',
     details: [
       { type: 'text' as const, text: 'First thought process' },
       { type: 'text' as const, text: 'Second thought process' },
@@ -670,10 +670,9 @@ describe('Message', () => {
   describe('Error Handling', () => {
     test('handles missing image metadata gracefully', () => {
       const imagePartWithoutMetadata = {
-        type: 'image_url' as const,
-        image_url: {
-          url: 'data:image/png;base64,test-image-data',
-        },
+        type: 'file' as const,
+        data: 'data:image/png;base64,test-image-data',
+        mimeType: 'image/png',
       };
 
       const message = {
@@ -920,6 +919,7 @@ describe('Message', () => {
 describe('ReasoningMessagePart', () => {
   const reasoningPart = {
     type: 'reasoning' as const,
+    reasoning: 'Combined reasoning text',
     details: [
       { type: 'text' as const, text: 'First reasoning step' },
       { type: 'text' as const, text: 'Second reasoning step' },
@@ -1004,6 +1004,7 @@ describe('ReasoningMessagePart', () => {
     test('handles empty details array', () => {
       const emptyReasoningPart = {
         type: 'reasoning' as const,
+        reasoning: 'Empty reasoning',
         details: [],
       };
 
@@ -1019,6 +1020,7 @@ describe('ReasoningMessagePart', () => {
     test('handles non-text detail types', () => {
       const mixedReasoningPart = {
         type: 'reasoning' as const,
+        reasoning: 'Mixed reasoning content',
         details: [
           { type: 'text' as const, text: 'Text detail' },
           { type: 'other' as any, data: 'some data' },
