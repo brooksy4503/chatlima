@@ -130,6 +130,8 @@ describe('ModelPicker', () => {
       description: 'Advanced reasoning model',
       apiVersion: 'v1',
       isFavorite: false,
+      status: 'available',
+      lastChecked: new Date(),
     },
     {
       id: 'claude-3-opus',
@@ -143,6 +145,8 @@ describe('ModelPicker', () => {
       description: 'Most capable Claude model',
       apiVersion: 'v1',
       isFavorite: true,
+      status: 'available',
+      lastChecked: new Date(),
     },
     {
       id: 'grok-2',
@@ -156,6 +160,8 @@ describe('ModelPicker', () => {
       description: 'Fast and creative model',
       apiVersion: 'v1',
       isFavorite: true,
+      status: 'available',
+      lastChecked: new Date(),
     },
   ];
 
