@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TwitterShareButton,
   FacebookShareButton,
@@ -17,8 +17,14 @@ interface SharingButtonsProps {
 
 export function SharingButtons({ shareId, title }: SharingButtonsProps) {
   const [copied, setCopied] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
 
-  const shareUrl = `${window.location.origin}/chats/shared/${shareId}`;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setShareUrl(`${window.location.origin}/chats/shared/${shareId}`);
+    }
+  }, [shareId]);
+
   const shareTitle = `${title} - Shared Chat`;
 
   const handleCopyLink = async () => {
@@ -32,40 +38,47 @@ export function SharingButtons({ shareId, title }: SharingButtonsProps) {
     }
   };
 
+  if (!shareUrl) {
+    return null; // Or a loading state if preferred
+  }
+
   return (
     <div className="flex items-center gap-1">
-      <TwitterShareButton url={shareUrl} title={shareTitle}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-          aria-label="Share on Twitter"
-        >
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        aria-label="Share on Twitter"
+      >
+        <TwitterShareButton url={shareUrl} title={shareTitle}>
           <Twitter className="h-4 w-4 text-blue-500" />
-        </Button>
-      </TwitterShareButton>
+        </TwitterShareButton>
+      </Button>
 
-      <FacebookShareButton url={shareUrl} title={shareTitle}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-          aria-label="Share on Facebook"
-        >
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        aria-label="Share on Facebook"
+      >
+        <FacebookShareButton url={shareUrl} title={shareTitle}>
           <Facebook className="h-4 w-4 text-blue-600" />
-        </Button>
-      </FacebookShareButton>
+        </FacebookShareButton>
+      </Button>
 
-      <LinkedinShareButton url={shareUrl} title={shareTitle}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-          aria-label="Share on LinkedIn"
-        >
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        aria-label="Share on LinkedIn"
+      >
+        <LinkedinShareButton url={shareUrl} title={shareTitle}>
           <Linkedin className="h-4 w-4 text-blue-700" />
-        </Button>
-      </LinkedinShareButton>
+        </LinkedinShareButton>
+      </Button>
 
       <Button
         variant="ghost"
