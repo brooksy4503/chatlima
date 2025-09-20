@@ -1,5 +1,3 @@
-import { ChatAuthenticationService, AuthenticatedUser } from '../chatAuthenticationService';
-
 // Mock dependencies
 jest.mock('@/lib/auth', () => ({
     auth: {
@@ -13,18 +11,19 @@ jest.mock('@/lib/utils/performantLogging', () => ({
     logDiagnostic: jest.fn()
 }));
 
+jest.mock('@/app/api/chat/route', () => ({
+    createErrorResponse: jest.fn()
+}), { virtual: true });
+
+import { ChatAuthenticationService, AuthenticatedUser } from '../chatAuthenticationService';
 import { auth } from '@/lib/auth';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
-
-// Mock createErrorResponse function
-const mockCreateErrorResponse = jest.fn();
-jest.mock('@/app/api/chat/route', () => ({
-    createErrorResponse: mockCreateErrorResponse
-}), { virtual: true });
+import { createErrorResponse } from '@/app/api/chat/route';
 
 describe('ChatAuthenticationService', () => {
     const mockAuth = auth.api.getSession as jest.MockedFunction<typeof auth.api.getSession>;
     const mockLogDiagnostic = logDiagnostic as jest.MockedFunction<typeof logDiagnostic>;
+    const mockCreateErrorResponse = createErrorResponse as jest.MockedFunction<typeof createErrorResponse>;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -169,16 +168,9 @@ describe('ChatAuthenticationService', () => {
             } as any;
 
             mockAuth.mockResolvedValue(mockSession);
-            mockCreateErrorResponse.mockReturnValue(new Response('Auth required', { status: 401 }));
 
             await expect(ChatAuthenticationService.authenticateUser(mockRequest))
-                .rejects.toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                "AUTHENTICATION_REQUIRED",
-                "Authentication required. Please log in.",
-                401
-            );
+                .rejects.toThrow("Authentication required. Please log in.");
         });
 
         it('should throw error when session exists but user has no id', async () => {
@@ -199,16 +191,9 @@ describe('ChatAuthenticationService', () => {
             } as any;
 
             mockAuth.mockResolvedValue(mockSession);
-            mockCreateErrorResponse.mockReturnValue(new Response('Auth required', { status: 401 }));
 
             await expect(ChatAuthenticationService.authenticateUser(mockRequest))
-                .rejects.toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                "AUTHENTICATION_REQUIRED",
-                "Authentication required. Please log in.",
-                401
-            );
+                .rejects.toThrow("Authentication required. Please log in.");
         });
 
         it('should handle auth API errors', async () => {

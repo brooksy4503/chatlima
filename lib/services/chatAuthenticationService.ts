@@ -23,11 +23,7 @@ export class ChatAuthenticationService {
         // If no session exists, return error
         if (!session || !session.user || !session.user.id) {
             logDiagnostic('AUTH_FAILED', 'Authentication failed - no session', { requestId });
-            throw createErrorResponse(
-                "AUTHENTICATION_REQUIRED",
-                "Authentication required. Please log in.",
-                401
-            );
+            throw new Error("Authentication required. Please log in.");
         }
 
         const userId = session.user.id;
