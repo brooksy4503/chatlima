@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getChatById } from "@/lib/chat-store";
 import { auth } from "@/lib/auth";
-import { createPDF, addWrappedText, setTypography, addPageIfNeeded } from "@/lib/pdf-utils";
+import { createPDF, addWrappedText, setTypography, addPageIfNeeded, renderMarkdownToPDF } from "@/lib/pdf-utils";
 import { getTextContent } from "@/lib/chat-store";
 import type { Message } from "@/lib/db/schema";
 
@@ -79,8 +79,8 @@ function generateChatPDF(chat: any): Buffer {
             console.log(`PDF Debug: Message ${index + 1} textContent length: ${textContent.length}, first 100 chars: "${textContent.substring(0, 100)}"`);
             if (textContent.trim()) {
                 const beforeY = y;
-                y = addWrappedText(doc, textContent, margin + 10, y, maxWidth - 10, 6, 280);
-                console.log(`PDF Debug: addWrappedText returned y=${y} (was ${beforeY}), pages=${doc.getNumberOfPages()}`);
+                y = renderMarkdownToPDF(doc, textContent, margin + 10, y, { maxWidth: maxWidth - 10, lineHeight: 6, pageHeight: 280 });
+                console.log(`PDF Debug: renderMarkdownToPDF returned y=${y} (was ${beforeY}), pages=${doc.getNumberOfPages()}`);
             } else {
                 y = addWrappedText(doc, '[No text content]', margin + 10, y, maxWidth - 10, 6, 280);
             }
