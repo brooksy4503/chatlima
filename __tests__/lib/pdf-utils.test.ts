@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { createPDF, addWrappedText, setTypography, addPageIfNeeded } from '../../lib/pdf-utils';
+import { createPDF, addWrappedText, setTypography, addPageIfNeeded, renderMarkdownToPDF } from '../../lib/pdf-utils';
 
 // Mock jsPDF
 jest.mock('jspdf', () => {
@@ -339,6 +339,131 @@ describe('PDF Utils', () => {
 
             expect(endTime - startTime).toBeLessThan(50); // Should complete in less than 50ms
             expect(mockDoc.addPage).toHaveBeenCalledTimes(100);
+        });
+    });
+
+    describe('renderMarkdownToPDF', () => {
+        beforeEach(() => {
+            // Reset splitTextToSize mock to return the input text as-is for testing
+            mockDoc.splitTextToSize.mockImplementation((text: string) => [text]);
+        });
+
+        it('should render bold text with bold font style', () => {
+            const markdownText = 'This is **bold** text';
+            const x = 20;
+            const y = 30;
+
+            renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
+
+            expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'normal');
+            expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'bold');
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(12);
+        });
+
+        it('should render italic text with italic font style', () => {
+            const markdownText = 'This is *italic* text';
+            const x = 20;
+            const y = 30;
+
+            renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
+
+            expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'normal');
+            expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'italic');
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(12);
+        });
+
+        it('should render code text with courier font', () => {
+            const markdownText = 'This is `code` text';
+            const x = 20;
+            const y = 30;
+
+            renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
+
+            expect(mockDoc.setFont).toHaveBeenCalledWith('courier', 'normal');
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(12);
+        });
+
+        it('should render headers with larger font sizes and bold', () => {
+            const markdownText = '# Main Header\n## Sub Header';
+            const x = 20;
+            const y = 30;
+
+            renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
+
+            expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'bold');
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(16); // H1
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(14); // H2
+        });
+
+        it('should render list items with bullet points', () => {
+            const markdownText = '- First item\n- Second item';
+            const x = 20;
+            const y = 30;
+
+            renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
+
+            expect(mockDoc.text).toHaveBeenCalledWith('• First item', x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('• Second item', x, expect.any(Number));
+        });
+
+        it('should handle mixed markdown elements', () => {
+            const markdownText = '# Title\nThis is **bold** and *italic* with `code`.';
+            const x = 20;
+            const y = 30;
+
+            renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
+
+            // Should call setFont for different styles
+            expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'bold');
+            expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'italic');
+            expect(mockDoc.setFont).toHaveBeenCalledWith('courier', 'normal');
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(16); // Header
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(12); // Normal text
+        });
+
+        it('should handle text wrapping and pagination', () => {
+            const markdownText = 'Long text that should wrap and potentially cause pagination';
+            const x = 20;
+            const y = 270; // Near page bottom
+            const pageHeight = 280;
+
+            mockDoc.splitTextToSize.mockReturnValue(['Long text that should wrap', 'and potentially cause pagination']);
+
+            const newY = renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150, pageHeight });
+
+            expect(mockDoc.addPage).toHaveBeenCalled();
+            // After pagination, y resets to top of new page, so newY should be small
+            expect(newY).toBeLessThan(50); // Should be around 30 + 6 + 6 = 42
+        });
+
+        it('should strip links to plain text', () => {
+            const markdownText = 'Check out [this link](https://example.com)';
+            const x = 20;
+            const y = 30;
+
+            renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
+
+            expect(mockDoc.text).toHaveBeenCalledWith('Check out this link', x, y);
+        });
+
+        it('should handle empty markdown text', () => {
+            const markdownText = '';
+            const x = 20;
+            const y = 30;
+
+            const newY = renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
+
+            expect(newY).toBe(y); // Should return same y if no text
+        });
+
+        it('should use default options when not provided', () => {
+            const markdownText = 'Simple text';
+            const x = 20;
+            const y = 30;
+
+            renderMarkdownToPDF(mockDoc, markdownText, x, y);
+
+            expect(mockDoc.splitTextToSize).toHaveBeenCalledWith('Simple text', 170); // default maxWidth
         });
     });
 });

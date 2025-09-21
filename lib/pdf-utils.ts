@@ -1,6 +1,125 @@
 import jsPDF from 'jspdf';
 
 /**
+ * Parses markdown text into segments with style information.
+ * @param text - The markdown text to parse.
+ * @returns Array of text segments with style info.
+ */
+function parseMarkdown(text: string): Array<{ text: string, style: string, size?: number }> {
+    // Preprocess inline markdown
+    let processed = text;
+    processed = processed.replace(/\*\*(.*?)\*\*/g, '<bold>$1</bold>');
+    processed = processed.replace(/\*(.*?)\*/g, '<italic>$1</italic>');
+    processed = processed.replace(/`(.*?)`/g, '<code>$1</code>');
+    processed = processed.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1'); // Strip links to plain text
+
+    const lines = processed.split('\n');
+    const segments: Array<{ text: string, style: string, size?: number }> = [];
+
+    for (const line of lines) {
+        if (line.startsWith('# ')) {
+            const headerText = line.substring(2);
+            const inlineSegments = parseInline(headerText);
+            for (const seg of inlineSegments) {
+                segments.push({ text: seg.text, style: 'bold', size: 16 });
+            }
+        } else if (line.startsWith('## ')) {
+            const headerText = line.substring(3);
+            const inlineSegments = parseInline(headerText);
+            for (const seg of inlineSegments) {
+                segments.push({ text: seg.text, style: 'bold', size: 14 });
+            }
+        } else if (line.startsWith('- ')) {
+            const listText = line.substring(2);
+            const inlineSegments = parseInline(listText);
+            for (let i = 0; i < inlineSegments.length; i++) {
+                const prefix = i === 0 ? '• ' : '';
+                segments.push({ text: prefix + inlineSegments[i].text, style: inlineSegments[i].style });
+            }
+        } else {
+            // Parse inline styles
+            const inlineSegments = parseInline(line);
+            segments.push(...inlineSegments);
+        }
+    }
+
+    return segments;
+}
+
+/**
+ * Parses inline markdown tags into segments.
+ * @param text - The text with inline tags.
+ * @returns Array of text segments.
+ */
+function parseInline(text: string): Array<{ text: string, style: string }> {
+    const segments: Array<{ text: string, style: string }> = [];
+    const regex = /<(bold|italic|code)>(.*?)<\/\1>/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            segments.push({ text: text.substring(lastIndex, match.index), style: 'normal' });
+        }
+        segments.push({ text: match[2], style: match[1] });
+        lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+        segments.push({ text: text.substring(lastIndex), style: 'normal' });
+    }
+
+    return segments;
+}
+
+/**
+ * Renders markdown text to PDF with formatting.
+ * @param doc - The jsPDF document instance.
+ * @param markdownText - The markdown text to render.
+ * @param x - The x-coordinate.
+ * @param y - The y-coordinate.
+ * @param options - Options for rendering.
+ * @returns The new y-coordinate after rendering.
+ */
+export function renderMarkdownToPDF(
+    doc: jsPDF,
+    markdownText: string,
+    x: number,
+    y: number,
+    options: { maxWidth: number, lineHeight?: number, pageHeight?: number } = { maxWidth: 170, lineHeight: 6, pageHeight: 280 }
+): number {
+    const segments = parseMarkdown(markdownText);
+    let currentY = y;
+    const lineHeight = options.lineHeight || 6;
+    const pageHeight = options.pageHeight || 280;
+
+    for (const segment of segments) {
+        // Set font style
+        const fontStyle = segment.style === 'bold' ? 'bold' : segment.style === 'italic' ? 'italic' : 'normal';
+        const fontFamily = segment.style === 'code' ? 'courier' : 'helvetica';
+        doc.setFont(fontFamily, fontStyle);
+
+        // Set font size
+        doc.setFontSize(segment.size || 12);
+
+        // Split text into lines
+        const lines = doc.splitTextToSize(segment.text, options.maxWidth);
+        const lineArray = Array.isArray(lines) ? lines : [lines];
+
+        for (const line of lineArray) {
+            if (currentY + lineHeight > pageHeight) {
+                doc.addPage();
+                currentY = 30; // Reset to top margin
+            }
+            doc.text(line, x, currentY);
+            currentY += lineHeight;
+        }
+    }
+
+    return currentY;
+}
+
+/**
  * Creates a new jsPDF document with default settings.
  * @param options - Optional configuration for the PDF document.
  * @returns A new jsPDF instance.
