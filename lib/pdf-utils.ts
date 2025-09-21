@@ -29,6 +29,18 @@ function parseMarkdown(text: string): Array<{ text: string, style: string, size?
             for (const seg of inlineSegments) {
                 segments.push({ text: seg.text, style: 'bold', size: 14 });
             }
+        } else if (line.startsWith('### ')) {
+            const headerText = line.substring(4);
+            const inlineSegments = parseInline(headerText);
+            for (const seg of inlineSegments) {
+                segments.push({ text: seg.text, style: 'bold', size: 12 });
+            }
+        } else if (line.startsWith('#### ')) {
+            const headerText = line.substring(5);
+            const inlineSegments = parseInline(headerText);
+            for (const seg of inlineSegments) {
+                segments.push({ text: seg.text, style: 'bold', size: 11 });
+            }
         } else if (line.startsWith('- ')) {
             const listText = line.substring(2);
             const inlineSegments = parseInline(listText);

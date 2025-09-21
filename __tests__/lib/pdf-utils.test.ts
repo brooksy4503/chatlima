@@ -384,7 +384,7 @@ describe('PDF Utils', () => {
         });
 
         it('should render headers with larger font sizes and bold', () => {
-            const markdownText = '# Main Header\n## Sub Header';
+            const markdownText = '# Main Header\n## Sub Header\n### Third Level\n#### Fourth Level';
             const x = 20;
             const y = 30;
 
@@ -393,6 +393,8 @@ describe('PDF Utils', () => {
             expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'bold');
             expect(mockDoc.setFontSize).toHaveBeenCalledWith(16); // H1
             expect(mockDoc.setFontSize).toHaveBeenCalledWith(14); // H2
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(12); // H3
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(11); // H4
         });
 
         it('should render list items with bullet points', () => {
