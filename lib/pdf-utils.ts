@@ -466,22 +466,17 @@ export function addWrappedText(
 ): number {
     const lines = doc.splitTextToSize(text, maxWidth);
     if (!lines || lines.length === 0) {
-        console.log(`PDF Debug: addWrappedText - No lines to add for text: "${text.substring(0, 50)}..."`);
         return y;
     }
     const lineArray = Array.isArray(lines) ? lines : [lines];
-    console.log(`PDF Debug: addWrappedText - Starting y=${y}, numLines=${lineArray.length}, pageHeight=${pageHeight}`);
 
     let currentY = y;
 
     for (let i = 0; i < lineArray.length; i++) {
         const line = lineArray[i];
-        console.log(`PDF Debug: addWrappedText - Processing line ${i + 1}/${lineArray.length}, currentY=${currentY}, lineHeight=${lineHeight}, wouldEndAt=${currentY + lineHeight}`);
 
         // Check if adding this line would exceed the page height
         if (currentY + lineHeight > pageHeight) {
-            console.log(`PDF Debug: addWrappedText - Line ${i + 1} would exceed page, adding new page`);
-
             // Add footer to current page before creating new page
             addFooter(doc);
 
@@ -492,7 +487,6 @@ export function addWrappedText(
             addFooter(doc);
 
             currentY = 30; // Reset to top margin
-            console.log(`PDF Debug: addWrappedText - After page break, currentY=${currentY}, pages=${doc.getNumberOfPages()}`);
         }
 
         // Add the line
@@ -500,7 +494,6 @@ export function addWrappedText(
         currentY += lineHeight;
     }
 
-    console.log(`PDF Debug: addWrappedText - Finished, final y=${currentY}, pages=${doc.getNumberOfPages()}`);
     return currentY;
 }
 
@@ -516,10 +509,7 @@ export function addPageIfNeeded(
     y: number,
     pageHeight: number = 280
 ): number {
-    console.log(`PDF Debug: addPageIfNeeded called with y=${y}, pageHeight=${pageHeight}, needsNewPage=${y > pageHeight}`);
     if (y > pageHeight) {
-        console.log(`PDF Debug: Adding new page at y=${y}, pageHeight=${pageHeight}`);
-
         // Add footer to current page before creating new page
         addFooter(doc);
 
