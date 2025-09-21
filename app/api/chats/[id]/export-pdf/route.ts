@@ -61,9 +61,11 @@ function generateChatPDF(chat: any): Buffer {
 
     // Messages
     if (chat.messages && chat.messages.length > 0) {
-        chat.messages.forEach((message: Message) => {
-            // Add page if needed
-            addPageIfNeeded(doc, y, 280);
+        chat.messages.forEach((message: Message, index: number) => {
+            console.log(`PDF Debug: Processing message ${index + 1}/${chat.messages.length}, current y=${y}`);
+
+            // Add page if needed before role label
+            y = addPageIfNeeded(doc, y, 280);
 
             // Role label
             const role = message.role === 'user' ? 'User:' : 'Assistant:';
@@ -74,17 +76,27 @@ function generateChatPDF(chat: any): Buffer {
             // Message content
             doc.setFont('helvetica', 'normal');
             const textContent = extractMessageText(message);
+            console.log(`PDF Debug: Message ${index + 1} textContent length: ${textContent.length}, first 100 chars: "${textContent.substring(0, 100)}"`);
             if (textContent.trim()) {
-                y = addWrappedText(doc, textContent, margin + 10, y, maxWidth - 10, 6);
+                const beforeY = y;
+                y = addWrappedText(doc, textContent, margin + 10, y, maxWidth - 10, 6, 280);
+                console.log(`PDF Debug: addWrappedText returned y=${y} (was ${beforeY}), pages=${doc.getNumberOfPages()}`);
             } else {
-                y = addWrappedText(doc, '[No text content]', margin + 10, y, maxWidth - 10, 6);
+                y = addWrappedText(doc, '[No text content]', margin + 10, y, maxWidth - 10, 6, 280);
             }
 
+            // Check for page break after content
+            y = addPageIfNeeded(doc, y, 280);
+
             y += 10; // Space between messages
+
+            console.log(`PDF Debug: After message ${index + 1}, y=${y}, pages=${doc.getNumberOfPages()}`);
         });
     } else {
         doc.text('No messages found in this chat.', margin, y);
     }
+
+    console.log(`PDF Debug: Final PDF has ${doc.getNumberOfPages()} pages`);
 
     // Return PDF as buffer
     return Buffer.from(doc.output('arraybuffer'));
