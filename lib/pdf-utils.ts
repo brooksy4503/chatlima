@@ -5,7 +5,7 @@ import jsPDF from 'jspdf';
  * @param text - The markdown text to parse.
  * @returns Array of text segments with style info.
  */
-function parseMarkdown(text: string): Array<{ text: string, style: string, size?: number }> {
+function parseMarkdown(text: string): Array<{ text: string, style: string, size?: number, isListItem?: boolean, listLevel?: number, isListItemStart?: boolean }> {
     // Preprocess inline markdown
     let processed = text;
     processed = processed.replace(/\*\*(.*?)\*\*/g, '<bold>$1</bold>');
@@ -14,46 +14,188 @@ function parseMarkdown(text: string): Array<{ text: string, style: string, size?
     processed = processed.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1'); // Strip links to plain text
 
     const lines = processed.split('\n');
-    const segments: Array<{ text: string, style: string, size?: number }> = [];
+    const segments: Array<{ text: string, style: string, size?: number, isListItem?: boolean, listLevel?: number, isListItemStart?: boolean }> = [];
+    let currentListLevel = 0;
+    let pendingOrderedPrefix: { prefix: string, level: number } | null = null;
+    let inFence = false;
 
-    for (const line of lines) {
-        if (line.startsWith('# ')) {
-            const headerText = line.substring(2);
+    // Buffer to join soft-wrapped lines into a single paragraph like the chat renderer
+    const paragraphBuffer: string[] = [];
+    const flushParagraph = (addSpacing: boolean) => {
+        if (paragraphBuffer.length === 0) return;
+        const paragraphText = paragraphBuffer.join(' ');
+        const inlineSegments = parseInline(paragraphText);
+        for (const seg of inlineSegments) {
+            segments.push({ text: seg.text, style: seg.style });
+        }
+        if (addSpacing) {
+            segments.push({ text: '', style: 'normal', size: 12 });
+        }
+        paragraphBuffer.length = 0;
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmedLine = line.trim();
+
+        // Toggle fenced code blocks
+        if (/^\s*(```|~~~)/.test(line)) {
+            inFence = !inFence;
+        }
+
+        // Handle empty lines - flush paragraph and reset list state (match chat renderer)
+        if (trimmedLine === '') {
+            flushParagraph(true);
+            if (!inFence) {
+                currentListLevel = 0;
+                pendingOrderedPrefix = null;
+            }
+            continue;
+        }
+
+        // If a bare ordered prefix was captured on previous line, use it now
+        if (pendingOrderedPrefix && !trimmedLine.match(/^[-*+]/)) {
+            flushParagraph(true);
+            const indent = '  '.repeat(pendingOrderedPrefix.level);
+            const inlineSegments = parseInline(trimmedLine);
+            for (let j = 0; j < inlineSegments.length; j++) {
+                const maybePrefix = j === 0 ? pendingOrderedPrefix.prefix + ' ' : '';
+                segments.push({
+                    text: indent + maybePrefix + inlineSegments[j].text,
+                    style: inlineSegments[j].style,
+                    isListItem: true,
+                    listLevel: pendingOrderedPrefix.level
+                });
+            }
+            pendingOrderedPrefix = null;
+            continue;
+        }
+
+        // Handle headers
+        if (trimmedLine.startsWith('# ')) {
+            flushParagraph(true);
+            currentListLevel = 0; // Reset list level for headers
+            const headerText = trimmedLine.substring(2);
+            const inlineSegments = parseInline(headerText);
+            for (const seg of inlineSegments) {
+                segments.push({ text: seg.text, style: 'bold', size: 18 });
+            }
+            segments.push({ text: '', style: 'normal', size: 12 }); // Add spacing after header
+            continue;
+        }
+
+        if (trimmedLine.startsWith('## ')) {
+            flushParagraph(true);
+            currentListLevel = 0;
+            const headerText = trimmedLine.substring(3);
             const inlineSegments = parseInline(headerText);
             for (const seg of inlineSegments) {
                 segments.push({ text: seg.text, style: 'bold', size: 16 });
             }
-        } else if (line.startsWith('## ')) {
-            const headerText = line.substring(3);
+            segments.push({ text: '', style: 'normal', size: 12 });
+            continue;
+        }
+
+        if (trimmedLine.startsWith('### ')) {
+            flushParagraph(true);
+            currentListLevel = 0;
+            const headerText = trimmedLine.substring(4);
             const inlineSegments = parseInline(headerText);
             for (const seg of inlineSegments) {
                 segments.push({ text: seg.text, style: 'bold', size: 14 });
             }
-        } else if (line.startsWith('### ')) {
-            const headerText = line.substring(4);
+            segments.push({ text: '', style: 'normal', size: 12 });
+            continue;
+        }
+
+        if (trimmedLine.startsWith('#### ')) {
+            flushParagraph(true);
+            currentListLevel = 0;
+            const headerText = trimmedLine.substring(5);
             const inlineSegments = parseInline(headerText);
             for (const seg of inlineSegments) {
-                segments.push({ text: seg.text, style: 'bold', size: 12 });
+                segments.push({ text: seg.text, style: 'bold', size: 13 });
             }
-        } else if (line.startsWith('#### ')) {
-            const headerText = line.substring(5);
-            const inlineSegments = parseInline(headerText);
-            for (const seg of inlineSegments) {
-                segments.push({ text: seg.text, style: 'bold', size: 11 });
-            }
-        } else if (line.startsWith('- ')) {
-            const listText = line.substring(2);
+            segments.push({ text: '', style: 'normal', size: 12 });
+            continue;
+        }
+
+        // Handle unordered list items: -, *, +
+        if (/^[-*+]\s+/.test(trimmedLine)) {
+            flushParagraph(true);
+            const listText = trimmedLine.replace(/^[-*+]\s+/, '');
             const inlineSegments = parseInline(listText);
-            for (let i = 0; i < inlineSegments.length; i++) {
-                const prefix = i === 0 ? '• ' : '';
-                segments.push({ text: prefix + inlineSegments[i].text, style: inlineSegments[i].style });
+            const leadingSpaces = line.length - line.trimStart().length;
+            const listLevel = Math.floor(leadingSpaces / 2);
+            currentListLevel = listLevel;
+
+            for (let j = 0; j < inlineSegments.length; j++) {
+                const prefix = j === 0 ? '• ' : '';
+                const indent = '  '.repeat(listLevel);
+                segments.push({
+                    text: indent + prefix + inlineSegments[j].text,
+                    style: inlineSegments[j].style,
+                    isListItem: true,
+                    listLevel: listLevel,
+                    isListItemStart: j === 0
+                });
+            }
+            continue;
+        }
+
+        // Handle ordered list items: "1. foo" or "1) foo"
+        const orderedMatch = trimmedLine.match(/^(\d+)[\.)]\s*(.*)$/);
+        if (orderedMatch) {
+            flushParagraph(true);
+            const num = orderedMatch[1];
+            const listText = orderedMatch[2];
+            const leadingSpaces = line.length - line.trimStart().length;
+            const listLevel = Math.floor(leadingSpaces / 2);
+            currentListLevel = listLevel;
+
+            // If the item has no following text (e.g., line is just "1."), capture prefix for next line
+            if (!listText) {
+                pendingOrderedPrefix = { prefix: `${num}.`, level: listLevel };
+            } else {
+                const inlineSegments = parseInline(listText);
+                for (let j = 0; j < inlineSegments.length; j++) {
+                    const prefix = j === 0 ? `${num}. ` : '';
+                    const indent = '  '.repeat(listLevel);
+                    segments.push({
+                        text: indent + prefix + inlineSegments[j].text,
+                        style: inlineSegments[j].style,
+                        isListItem: true,
+                        listLevel: listLevel,
+                        isListItemStart: j === 0
+                    });
+                }
+            }
+            continue;
+        }
+
+        // Regular paragraph or continuation of list item
+        const inlineSegments = parseInline(trimmedLine);
+        if (currentListLevel > 0 && trimmedLine.length > 0) {
+            // This is a continuation of a list item
+            for (const seg of inlineSegments) {
+                const indent = '  '.repeat(currentListLevel) + '  ';
+                segments.push({
+                    text: indent + seg.text,
+                    style: seg.style,
+                    isListItem: true,
+                    listLevel: currentListLevel,
+                    isListItemStart: false
+                });
             }
         } else {
-            // Parse inline styles
-            const inlineSegments = parseInline(line);
-            segments.push(...inlineSegments);
+            // Regular paragraph (accumulate soft-wrapped lines)
+            currentListLevel = 0;
+            paragraphBuffer.push(trimmedLine);
         }
     }
+
+    // Flush any trailing paragraph without adding extra spacing at the end
+    flushParagraph(false);
 
     return segments;
 }
@@ -102,30 +244,188 @@ export function renderMarkdownToPDF(
 ): number {
     const segments = parseMarkdown(markdownText);
     let currentY = y;
-    const lineHeight = options.lineHeight || 6;
+    const baseLineHeight = options.lineHeight || 6;
     const pageHeight = options.pageHeight || 280;
 
-    for (const segment of segments) {
-        // Set font style
-        const fontStyle = segment.style === 'bold' ? 'bold' : segment.style === 'italic' ? 'italic' : 'normal';
-        const fontFamily = segment.style === 'code' ? 'courier' : 'helvetica';
+    // Helper to set font by style
+    const applyStyle = (style: string | undefined, size: number = 12) => {
+        const fontFamily = style === 'code' ? 'courier' : 'helvetica';
+        const fontStyle = style === 'bold' ? 'bold' : style === 'italic' ? 'italic' : 'normal';
         doc.setFont(fontFamily, fontStyle);
+        doc.setFontSize(size);
+    };
 
-        // Set font size
-        doc.setFontSize(segment.size || 12);
+    // Render a group of inline segments as a single wrapped paragraph, preserving inline styles
+    const renderInlineGroup = (
+        group: Array<{ text: string, style: string }>,
+        startX: number,
+        startY: number,
+        lineHeight: number,
+        rightLimitX: number,
+    ): number => {
+        let cx = startX;
+        let cy = startY;
+        const maxX = rightLimitX;
 
-        // Split text into lines
-        const lines = doc.splitTextToSize(segment.text, options.maxWidth);
-        const lineArray = Array.isArray(lines) ? lines : [lines];
+        // Tokenize segments while preserving spaces
+        for (const seg of group) {
+            const tokens = seg.text.match(/\S+|\s+/g) || [seg.text];
+            for (let t of tokens) {
+                // Normalize tabs to two spaces to avoid width spikes
+                if (t === '\t') t = '  ';
 
-        for (const line of lineArray) {
-            if (currentY + lineHeight > pageHeight) {
-                doc.addPage();
-                currentY = 30; // Reset to top margin
+                applyStyle(seg.style, 12);
+                let token = t;
+                // Avoid leading spaces at the start of lines
+                if ((/\s+/.test(token)) && cx === startX) {
+                    continue;
+                }
+
+                const tokenWidth = doc.getTextWidth(token);
+
+                // New line if token doesn't fit
+                if (cx + tokenWidth > maxX) {
+                    // Move to next line
+                    cy += lineHeight;
+                    if (cy + lineHeight > pageHeight) {
+                        doc.addPage();
+                        cy = 30;
+                    }
+                    cx = startX;
+                    // Skip leading spaces at new line
+                    if (/\s+/.test(token)) {
+                        continue;
+                    }
+                }
+
+                // Draw token at current position
+                doc.text(token, cx, cy);
+                cx += tokenWidth;
             }
-            doc.text(line, x, currentY);
-            currentY += lineHeight;
         }
+
+        // Return the Y position for the next baseline
+        return cy + lineHeight;
+    };
+
+    // Iterate and group segments into paragraphs/list blocks
+    let i = 0;
+    while (i < segments.length) {
+        const seg = segments[i];
+
+        // Spacing markers
+        if (!seg.text) {
+            currentY += baseLineHeight * 0.5;
+            i++;
+            continue;
+        }
+
+        // Headers (size > 12)
+        if (seg.size && seg.size > 12) {
+            let headerText = '';
+            let headerSize = seg.size;
+            // Collect contiguous header segments
+            while (i < segments.length && segments[i].size === headerSize) {
+                headerText += segments[i].text;
+                i++;
+            }
+
+            applyStyle('bold', headerSize);
+            // Add extra spacing before headers for visual separation
+            if (currentY > 30) {
+                const preSpacing = baseLineHeight * 0.9;
+                if (currentY + preSpacing + baseLineHeight * 1.5 > pageHeight) {
+                    doc.addPage();
+                    currentY = 30;
+                } else {
+                    currentY += preSpacing;
+                }
+            }
+
+            // Page break if needed after adding pre-spacing
+            if (currentY + baseLineHeight * 1.5 > pageHeight) {
+                doc.addPage();
+                currentY = 30;
+            }
+            doc.text(headerText, x, currentY);
+            currentY += baseLineHeight * 1.5;
+            continue;
+        }
+
+        // Helper to detect the beginning of a new list item by its text prefix
+        const isNewListItemText = (text: string): boolean => {
+            return /^\s*(•|\d+[\.)])\s+/.test(text);
+        };
+
+        if (seg.isListItem) {
+            // Render ONE list item at a time to keep bullets on their own lines
+            let group: Array<{ text: string, style: string }> = [];
+            let localLineHeight = baseLineHeight * 1.1;
+            const startIndex = i;
+
+            // Collect segments that belong to the same list item (continuations don't start with a bullet/number)
+            while (i < segments.length) {
+                const s = segments[i];
+                if (!s.text) break;
+                if (!s.isListItem) break;
+                if (group.length > 0 && (s as any).isListItemStart) break; // next list item starts
+                if (s.size && s.size > 12) break;
+                group.push({ text: s.text, style: s.style });
+                i++;
+            }
+
+            if (currentY + localLineHeight > pageHeight) {
+                doc.addPage();
+                currentY = 30;
+            }
+
+            // Compute indentation and bullet label from the first segment's original text
+            const firstSeg = segments[startIndex];
+            const level = (firstSeg as any).listLevel || 0;
+            const baseX = x + doc.getTextWidth('  ') * level; // two spaces per nesting level
+            const firstTextOriginal = (firstSeg && firstSeg.text) || '';
+            const afterSpaces = firstTextOriginal.replace(/^\s+/, '');
+            const bulletMatch = afterSpaces.match(/^((?:•)|(?:\d+[\.)]))\s+/);
+            const bulletLabel = bulletMatch ? bulletMatch[1] : '•';
+
+            // Remove the bullet and any leading spaces from the first content fragment
+            if (group.length > 0) {
+                group[0] = {
+                    ...group[0],
+                    text: group[0].text.replace(/^\s*((?:•)|(?:\d+[\.)]))\s+/, ''),
+                };
+            }
+
+            // Draw bullet/number at the base indent
+            applyStyle('normal', 12);
+            doc.text(bulletLabel, baseX, currentY);
+
+            // Render the rest with hanging indent
+            const gapWidth = doc.getTextWidth('  ');
+            const startXForText = baseX + doc.getTextWidth(bulletLabel) + gapWidth;
+            const rightLimitX = x + options.maxWidth;
+            currentY = renderInlineGroup(group, startXForText, currentY, localLineHeight, rightLimitX);
+            continue;
+        }
+
+        // Paragraph block (non-list)
+        const group: Array<{ text: string, style: string }> = [];
+        let localLineHeight = baseLineHeight;
+        while (i < segments.length) {
+            const s = segments[i];
+            if (!s.text) break;
+            if (s.isListItem) break;
+            if (s.size && s.size > 12) break;
+            group.push({ text: s.text, style: s.style });
+            i++;
+        }
+
+        if (currentY + localLineHeight > pageHeight) {
+            doc.addPage();
+            currentY = 30;
+        }
+
+        currentY = renderInlineGroup(group, x, currentY, localLineHeight, x + options.maxWidth);
     }
 
     return currentY;
