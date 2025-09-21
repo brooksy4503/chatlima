@@ -2,7 +2,7 @@
 
 import { useState, useRef, ChangeEvent, KeyboardEvent, FocusEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, CheckIcon, XIcon, Loader2, Pencil, Share2 } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, CheckIcon, XIcon, Loader2, Pencil, Share2, Download } from "lucide-react";
 import {
     SidebarGroupContent,
     SidebarMenuItem,
@@ -39,6 +39,7 @@ interface ChatListProps {
     isLoading: boolean;
     isCollapsed: boolean;
     isUpdatingChatTitle: boolean;
+    userId?: string | null;
     onNewChat: () => void;
     onDeleteChat: (chatId: string, e: React.MouseEvent) => void;
     onUpdateChatTitle: (params: { chatId: string, title: string }, options: { onSuccess: () => void, onError: () => void }) => void;
@@ -53,6 +54,7 @@ export function ChatList({
     isLoading,
     isCollapsed,
     isUpdatingChatTitle,
+    userId,
     onNewChat,
     onDeleteChat,
     onUpdateChatTitle,
@@ -68,6 +70,7 @@ export function ChatList({
     const [editingChatTitle, setEditingChatTitle] = useState<string>("");
     const [sharingChatId, setSharingChatId] = useState<string | null>(null);
     const [sharingChatTitle, setSharingChatTitle] = useState<string>("");
+    const [downloadingChatId, setDownloadingChatId] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const filteredChats = chats?.filter(chat =>
@@ -100,6 +103,48 @@ export function ChatList({
     const handleCloseShare = () => {
         setSharingChatId(null);
         setSharingChatTitle("");
+    };
+
+    const handleDownloadPDF = async (chatId: string, chatTitle: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        setDownloadingChatId(chatId);
+
+        try {
+            const response = await fetch(`/api/chats/${chatId}/export-pdf`);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Failed to export PDF (${response.status})`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            // Create a temporary link element to trigger download
+            const link = document.createElement('a');
+            link.href = url;
+            const sanitizedTitle = chatTitle
+                .replace(/[^a-zA-Z0-9\s\-_]/g, '_') // Replace special chars with underscores
+                .replace(/\s+/g, '_') // Replace spaces with underscores
+                .substring(0, 50) // Limit length
+                .toLowerCase();
+            link.download = `chat-${sanitizedTitle}-${chatId.slice(0, 8)}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up the URL object
+            window.URL.revokeObjectURL(url);
+
+            toast.success('PDF downloaded successfully');
+        } catch (error) {
+            console.error('Error downloading PDF:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to download PDF');
+        } finally {
+            setDownloadingChatId(null);
+        }
     };
 
     const handleSaveEdit = () => {
@@ -300,6 +345,22 @@ export function ChatList({
                                                                         )}
                                                                     </Link>
                                                                     <div className="ml-2 flex items-center gap-1 opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
+                                                                        {userId === chat.userId && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-6 w-6 hover:text-purple-500"
+                                                                                onClick={(e) => handleDownloadPDF(chat.id, chat.title, e)}
+                                                                                title="Download as PDF"
+                                                                                disabled={downloadingChatId === chat.id}
+                                                                            >
+                                                                                {downloadingChatId === chat.id ? (
+                                                                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                                                                ) : (
+                                                                                    <Download className="h-3 w-3" />
+                                                                                )}
+                                                                            </Button>
+                                                                        )}
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="icon"
