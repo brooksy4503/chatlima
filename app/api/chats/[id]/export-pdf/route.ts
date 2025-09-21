@@ -65,8 +65,6 @@ function generateChatPDF(chat: any): Buffer {
     // Messages
     if (chat.messages && chat.messages.length > 0) {
         chat.messages.forEach((message: Message, index: number) => {
-            console.log(`PDF Debug: Processing message ${index + 1}/${chat.messages.length}, current y=${y}`);
-
             // Add page if needed before role label
             y = addPageIfNeeded(doc, y, 280);
 
@@ -79,11 +77,8 @@ function generateChatPDF(chat: any): Buffer {
             // Message content
             doc.setFont('helvetica', 'normal');
             const textContent = extractMessageText(message);
-            console.log(`PDF Debug: Message ${index + 1} textContent length: ${textContent.length}, first 100 chars: "${textContent.substring(0, 100)}"`);
             if (textContent.trim()) {
-                const beforeY = y;
                 y = renderMarkdownToPDF(doc, textContent, margin + 10, y, { maxWidth: maxWidth - 10, lineHeight: 6, pageHeight: 280 });
-                console.log(`PDF Debug: renderMarkdownToPDF returned y=${y} (was ${beforeY}), pages=${doc.getNumberOfPages()}`);
             } else {
                 y = addWrappedText(doc, '[No text content]', margin + 10, y, maxWidth - 10, 6, 280);
             }
@@ -92,14 +87,10 @@ function generateChatPDF(chat: any): Buffer {
             y = addPageIfNeeded(doc, y, 280);
 
             y += 10; // Space between messages
-
-            console.log(`PDF Debug: After message ${index + 1}, y=${y}, pages=${doc.getNumberOfPages()}`);
         });
     } else {
         doc.text('No messages found in this chat.', margin, y);
     }
-
-    console.log(`PDF Debug: Final PDF has ${doc.getNumberOfPages()} pages`);
 
     // Add footer to the final page (and first page if it's the only page)
     addFooter(doc, pageWidth);
