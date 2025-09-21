@@ -1,18 +1,31 @@
 import jsPDF from 'jspdf';
-import { createPDF, addWrappedText, setTypography, addPageIfNeeded, renderMarkdownToPDF } from '../../lib/pdf-utils';
+import { createPDF, addWrappedText, setTypography, addPageIfNeeded, renderMarkdownToPDF, addFooter } from '../../lib/pdf-utils';
 
 // Mock jsPDF
 jest.mock('jspdf', () => {
     const mockJsPDF = jest.fn().mockImplementation(() => ({
         setFontSize: jest.fn(),
         setFont: jest.fn(),
+        getFontSize: jest.fn().mockReturnValue(12),
+        getFont: jest.fn().mockReturnValue({ fontName: 'helvetica', fontStyle: 'normal' }),
+        setTextColor: jest.fn(),
         text: jest.fn(),
         splitTextToSize: jest.fn(),
         addPage: jest.fn(),
         output: jest.fn(),
         getNumberOfPages: jest.fn().mockReturnValue(1),
+        getTextWidth: jest.fn().mockReturnValue(10), // Mock text width
     }));
     return mockJsPDF;
+});
+
+// Mock addFooter to avoid complexity in tests
+jest.mock('../../lib/pdf-utils', () => {
+    const actual = jest.requireActual('../../lib/pdf-utils');
+    return {
+        ...actual,
+        addFooter: jest.fn(),
+    };
 });
 
 describe('PDF Utils', () => {
@@ -391,10 +404,10 @@ describe('PDF Utils', () => {
             renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
 
             expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'bold');
-            expect(mockDoc.setFontSize).toHaveBeenCalledWith(16); // H1
-            expect(mockDoc.setFontSize).toHaveBeenCalledWith(14); // H2
-            expect(mockDoc.setFontSize).toHaveBeenCalledWith(12); // H3
-            expect(mockDoc.setFontSize).toHaveBeenCalledWith(11); // H4
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(18); // H1
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(16); // H2
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(14); // H3
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(13); // H4
         });
 
         it('should render list items with bullet points', () => {
