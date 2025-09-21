@@ -275,7 +275,7 @@ export function renderMarkdownToPDF(
                 if (t === '\t') t = '  ';
 
                 applyStyle(seg.style, 12);
-                let token = t;
+                const token = t;
                 // Avoid leading spaces at the start of lines
                 if ((/\s+/.test(token)) && cx === startX) {
                     continue;
@@ -323,7 +323,7 @@ export function renderMarkdownToPDF(
         // Headers (size > 12)
         if (seg.size && seg.size > 12) {
             let headerText = '';
-            let headerSize = seg.size;
+            const headerSize = seg.size;
             // Collect contiguous header segments
             while (i < segments.length && segments[i].size === headerSize) {
                 headerText += segments[i].text;
@@ -359,8 +359,8 @@ export function renderMarkdownToPDF(
 
         if (seg.isListItem) {
             // Render ONE list item at a time to keep bullets on their own lines
-            let group: Array<{ text: string, style: string }> = [];
-            let localLineHeight = baseLineHeight * 1.1;
+            const group: Array<{ text: string, style: string }> = [];
+            const localLineHeight = baseLineHeight * 1.1;
             const startIndex = i;
 
             // Collect segments that belong to the same list item (continuations don't start with a bullet/number)
@@ -410,7 +410,7 @@ export function renderMarkdownToPDF(
 
         // Paragraph block (non-list)
         const group: Array<{ text: string, style: string }> = [];
-        let localLineHeight = baseLineHeight;
+        const localLineHeight = baseLineHeight;
         while (i < segments.length) {
             const s = segments[i];
             if (!s.text) break;
