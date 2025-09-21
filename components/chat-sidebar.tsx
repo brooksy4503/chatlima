@@ -379,9 +379,10 @@ export function ChatSidebar() {
                         </SidebarGroupLabel>
                         <ChatList
                             chats={chats ?? []}
-                            isLoading={isChatsLoading} 
+                            isLoading={isChatsLoading}
                             isCollapsed={isLayoutCollapsed}
                             isUpdatingChatTitle={isUpdatingChatTitle}
+                            userId={userId}
                             onNewChat={handleNewChat}
                             onDeleteChat={handleDeleteChat}
                             onUpdateChatTitle={updateChatTitle}
