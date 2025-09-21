@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getChatById } from '@/lib/chat-store';
 import { auth } from '@/lib/auth';
-import { createPDF, addWrappedText, setTypography, addPageIfNeeded } from '@/lib/pdf-utils';
+import { createPDF, addWrappedText, setTypography, addPageIfNeeded, addFooter, addHeaderBranding } from '@/lib/pdf-utils';
 
 // Mock dependencies
 jest.mock('@/lib/chat-store', () => ({
@@ -21,6 +21,8 @@ jest.mock('@/lib/pdf-utils', () => ({
     addWrappedText: jest.fn(),
     setTypography: jest.fn(),
     addPageIfNeeded: jest.fn(),
+    addFooter: jest.fn(),
+    addHeaderBranding: jest.fn(),
 }));
 
 // Mock jsPDF
@@ -45,6 +47,8 @@ describe('/api/chats/[id]/export-pdf', () => {
     const mockAddWrappedText = addWrappedText as jest.MockedFunction<typeof addWrappedText>;
     const mockSetTypography = setTypography as jest.MockedFunction<typeof setTypography>;
     const mockAddPageIfNeeded = addPageIfNeeded as jest.MockedFunction<typeof addPageIfNeeded>;
+    const mockAddFooter = addFooter as jest.MockedFunction<typeof addFooter>;
+    const mockAddHeaderBranding = addHeaderBranding as jest.MockedFunction<typeof addHeaderBranding>;
 
     beforeEach(() => {
         jest.clearAllMocks();

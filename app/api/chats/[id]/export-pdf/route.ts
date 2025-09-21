@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getChatById } from "@/lib/chat-store";
 import { auth } from "@/lib/auth";
-import { createPDF, addWrappedText, setTypography, addPageIfNeeded, renderMarkdownToPDF } from "@/lib/pdf-utils";
+import { createPDF, addWrappedText, setTypography, addPageIfNeeded, renderMarkdownToPDF, addFooter, addHeaderBranding } from "@/lib/pdf-utils";
 import { getTextContent } from "@/lib/chat-store";
 import type { Message } from "@/lib/db/schema";
 
@@ -47,6 +47,9 @@ function generateChatPDF(chat: any): Buffer {
     const margin = 20;
     const maxWidth = pageWidth - 2 * margin;
     let y = 30;
+
+    // Add ChatLima.com branding to top-right corner of first page
+    addHeaderBranding(doc, pageWidth, margin);
 
     // Header
     doc.setFontSize(16);
@@ -97,6 +100,9 @@ function generateChatPDF(chat: any): Buffer {
     }
 
     console.log(`PDF Debug: Final PDF has ${doc.getNumberOfPages()} pages`);
+
+    // Add footer to the final page (and first page if it's the only page)
+    addFooter(doc, pageWidth);
 
     // Return PDF as buffer
     return Buffer.from(doc.output('arraybuffer'));
