@@ -10,6 +10,7 @@ jest.mock('jspdf', () => {
         splitTextToSize: jest.fn(),
         addPage: jest.fn(),
         output: jest.fn(),
+        getNumberOfPages: jest.fn().mockReturnValue(1),
     }));
     return mockJsPDF;
 });
@@ -69,7 +70,8 @@ describe('PDF Utils', () => {
             const newY = addWrappedText(mockDoc, text, x, y, maxWidth, lineHeight);
 
             expect(mockDoc.splitTextToSize).toHaveBeenCalledWith(text, maxWidth);
-            expect(mockDoc.text).toHaveBeenCalledWith(['This is a long text', 'that should be wrapped'], x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('This is a long text', x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('that should be wrapped', x, y + lineHeight);
             expect(newY).toBe(y + 2 * lineHeight); // 2 lines * 5 lineHeight
         });
 
@@ -84,7 +86,7 @@ describe('PDF Utils', () => {
             const newY = addWrappedText(mockDoc, text, x, y, maxWidth);
 
             expect(mockDoc.splitTextToSize).toHaveBeenCalledWith(text, maxWidth);
-            expect(mockDoc.text).toHaveBeenCalledWith(['Short text'], x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('Short text', x, y);
             expect(newY).toBe(y + 1 * 5); // 1 line * default lineHeight (5)
         });
 
@@ -99,7 +101,7 @@ describe('PDF Utils', () => {
             const newY = addWrappedText(mockDoc, text, x, y, maxWidth);
 
             expect(mockDoc.splitTextToSize).toHaveBeenCalledWith(text, maxWidth);
-            expect(mockDoc.text).toHaveBeenCalledWith(['Single line'], x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('Single line', x, y);
             expect(newY).toBe(y + 5);
         });
 
@@ -114,7 +116,7 @@ describe('PDF Utils', () => {
             const newY = addWrappedText(mockDoc, text, x, y, maxWidth);
 
             expect(mockDoc.splitTextToSize).toHaveBeenCalledWith(text, maxWidth);
-            expect(mockDoc.text).toHaveBeenCalledWith([''], x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('', x, y);
             expect(newY).toBe(y + 5);
         });
 
@@ -131,7 +133,10 @@ describe('PDF Utils', () => {
             const newY = addWrappedText(mockDoc, text, x, y, maxWidth, lineHeight);
 
             expect(mockDoc.splitTextToSize).toHaveBeenCalledWith(text, maxWidth);
-            expect(mockDoc.text).toHaveBeenCalledWith(lines, x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('Very long text', x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('that will be', x, y + lineHeight);
+            expect(mockDoc.text).toHaveBeenCalledWith('split into', x, y + 2 * lineHeight);
+            expect(mockDoc.text).toHaveBeenCalledWith('multiple lines', x, y + 3 * lineHeight);
             expect(newY).toBe(y + 4 * lineHeight); // 4 lines * 6 lineHeight
         });
     });
@@ -234,7 +239,8 @@ describe('PDF Utils', () => {
             (doc.splitTextToSize as jest.MockedFunction<any>).mockReturnValue(['First line', 'Second line']);
             const newY = addWrappedText(doc, 'Test content', 20, 30, 150, 7);
             expect(doc.splitTextToSize).toHaveBeenCalledWith('Test content', 150);
-            expect(doc.text).toHaveBeenCalledWith(['First line', 'Second line'], 20, 30);
+            expect(doc.text).toHaveBeenCalledWith('First line', 20, 30);
+            expect(doc.text).toHaveBeenCalledWith('Second line', 20, 30 + 7);
             expect(newY).toBe(30 + 2 * 7); // 30 + 14
 
             // Check page addition - should trigger because 250 > 270 is false, so no page added
