@@ -5,6 +5,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { getApiKey, model, titleGenerationModel, getTitleGenerationModel, type modelID } from "@/ai/providers";
 import { type MessagePart } from "@/lib/db/schema";
+import { repairJSON } from "@/lib/utils/json-repair";
 
 // Helper to extract text content from a message regardless of format
 function getMessageText(message: any): string {
@@ -85,6 +86,8 @@ export async function generateTitle(messages: any[], selectedModel?: string, api
       schema: z.object({
         title: z.string().min(1).max(100),
       }),
+      // Automatically repair malformed JSON from cost-efficient models
+      experimental_repairText: repairJSON,
       system: `
       You are a helpful assistant that generates short, concise titles for chat conversations based *only* on the user's first message.
       The title should summarize the main topic or request of the user's message.
