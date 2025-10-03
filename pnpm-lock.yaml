@@ -122,6 +122,9 @@ importers:
       groq-sdk:
         specifier: ^0.19.0
         version: 0.19.0
+      jsonrepair:
+        specifier: ^3.13.1
+        version: 3.13.1
       jspdf:
         specifier: ^3.0.3
         version: 3.0.3
@@ -4494,6 +4497,10 @@ packages:
 
   jsonp@0.2.1:
     resolution: {integrity: sha512-pfog5gdDxPdV4eP7Kg87M8/bHgshlZ5pybl+yKxAnCZ5O7lCIn7Ixydj03wOlnDQesky2BPyA91SQ+5Y/mNwzw==}
+
+  jsonrepair@3.13.1:
+    resolution: {integrity: sha512-WJeiE0jGfxYmtLwBTEk8+y/mYcaleyLXWaqp5bJu0/ZTSeG0KQq/wWQ8pmnkKenEdN6pdnn6QtcoSUkbqDHWNw==}
+    hasBin: true
 
   jspdf@3.0.3:
     resolution: {integrity: sha512-eURjAyz5iX1H8BOYAfzvdPfIKK53V7mCpBTe7Kb16PaM8JSXEcUQNBQaiWMI8wY5RvNOPj4GccMjTlfwRBd+oQ==}
@@ -10852,6 +10859,8 @@ snapshots:
       debug: 2.6.9
     transitivePeerDependencies:
       - supports-color
+
+  jsonrepair@3.13.1: {}
 
   jspdf@3.0.3:
     dependencies:
