@@ -69,6 +69,9 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Google OAuth Integration**: Seamless sign-in with Google accounts
 - **Anonymous Users**: Support for anonymous usage with unique tracking (10 messages/day)
 - **Daily Message Limits**: 10 messages/day for anonymous users, 20 for Google users
+- **Enhanced Daily Message Tracking**: Tamper-proof daily message usage tracking that prevents limit bypass vulnerabilities
+- **Automated User Cleanup**: Intelligent system to remove inactive anonymous users for optimal database performance
+- **Admin Cleanup Dashboard**: Comprehensive interface with preview, configuration, and monitoring capabilities
 - **Credit System**: Integrated billing and credit management with Polar
 - **Better Auth Integration**: Modern authentication with session management
 - **Robust Credit Management**: Enhanced validation to prevent negative credit balance issues
@@ -103,8 +106,9 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Smart Title Generation**: Dynamic model selection for AI-powered conversation titles
 - **Enhanced Post-Checkout Navigation**: Better user flow after successful checkout completion
 - **Enhanced Mathematical Display**: Improved KaTeX styling for consistent mathematical expressions
-- **Advanced Model Picker**: Search functionality across models with keyboard navigation and provider icons
+- **Advanced Model Picker**: Search functionality across models with keyboard navigation, provider icons, and improved responsive design with collision handling
 - **Real-time Streaming Status**: Visual indicators for chat generation progress with timing information
+- **PDF Download Button**: One-click access to export conversations from chat list
 
 ### 📝 Smart Code Input
 ChatLima automatically detects when you paste code and wraps it in proper markdown code blocks for better formatting:
@@ -126,6 +130,16 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 - C/C++
 - And more...
 
+### 📄 PDF Export & Sharing
+- **One-Click PDF Download**: Export entire chat conversations as professional PDF documents
+- **Professional PDF Formatting**: Clean layout with ChatLima.com branding, headers, and page numbers
+- **Full Markdown Support**: PDFs preserve all markdown formatting including code blocks, headers, and lists
+- **Automatic Pagination**: Smart page breaks for long conversations
+- **Social Sharing**: Built-in sharing buttons for Twitter, Facebook, and LinkedIn
+- **Direct Link Copying**: Copy share URLs with one click for easy distribution
+- **Client-Side Processing**: All PDF generation happens locally for complete privacy
+- **Cross-Platform Export**: PDFs work seamlessly across all devices and operating systems
+
 ### 🔍 Advanced Capabilities
 - **Web-Enabled Search**: Enhanced search capabilities via OpenRouter with premium billing
 - **Reasoning Model Support**: Support for advanced reasoning models with thinking capabilities
@@ -139,10 +153,15 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 - **Intelligent Error Recovery**: Comprehensive error handling with automatic recovery mechanisms
 - **Enhanced UI Resilience**: Error boundary components with graceful error isolation
 - **Smart Error Detection**: Automatic detection and recovery from stuck or failed requests
+- **Automatic JSON Repair**: Integrated JSON repair functionality to handle malformed JSON from AI models gracefully
+- **PDF Export**: One-click PDF generation for chat conversations with professional formatting and markdown support
+- **Social Sharing**: Built-in sharing buttons for Twitter, Facebook, LinkedIn, and direct link copying
 
 ### 🛡️ Security & Privacy
 - **Secure API Key Management**: Environment-based credential storage with runtime flexibility and show/hide toggles
 - **Privacy-First Design**: User data protection and anonymous usage support
+- **Tamper-Proof Daily Limits**: Security patch preventing daily message limit bypass through atomic tracking
+- **Automated Security Monitoring**: Admin dashboard for user activity monitoring and cleanup management
 - **SEO Optimization**: Dynamic sitemap generation with privacy protection
 - **Secure Authentication**: Better Auth with multiple provider support
 - **Credit Validation**: Robust access control and usage tracking with negative balance prevention
@@ -150,37 +169,46 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 - **Image Privacy**: Client-side image processing with secure transmission to AI providers
 - **API Key Privacy**: Show/hide toggles for sensitive API key management
 - **Input Validation**: Enhanced validation for all preset and configuration inputs
+- **Audit Trails**: Comprehensive logging for cleanup operations and usage tracking
 
 ### 🚀 Developer Tools
 - **Real-time Pricing Analysis**: Cost planning and model comparison tools using actual usage data
 - **Usage Analytics**: Token and cost tracking based on real usage data from 1,254+ API requests
 - **Debugging Tools**: Enhanced logging and error tracking with comprehensive debugging capabilities
 - **Development Scripts**: Automated analysis and optimization tools including OpenRouter pricing analysis
-- **TypeScript Support**: Full TypeScript implementation
-- **Testing Infrastructure**: Comprehensive Playwright testing suite with multiple configuration options
+- **TypeScript Support**: Full TypeScript implementation with comprehensive type definitions
+- **Testing Infrastructure**: Comprehensive Playwright testing suite with Jest unit tests for services
+- **Service Test Coverage**: Extensive unit test coverage for all 8 specialized services
 - **Enhanced Error Boundaries**: Comprehensive error handling with graceful error isolation
 - **Provider Health Monitoring**: Comprehensive provider status tracking and health checks
 - **Dynamic Model Architecture**: Extensible provider registry supporting OpenRouter and Requesty with unified interfaces
+- **Admin CLI Tools**: Command-line utilities for user cleanup and database maintenance
+- **Health Check APIs**: System monitoring and diagnostics endpoints for operational excellence
 
 ### 📊 Business Features
 - **Polar Integration**: Credit purchase and subscription management with production environment
-- **Usage Monitoring**: Daily/monthly usage tracking and limits
+- **Usage Monitoring**: Daily/monthly usage tracking and limits with tamper-proof atomic tracking
 - **Cost Optimization**: Data-driven model selection and pricing analysis with real usage insights
 - **Webhook Support**: Real-time payment and subscription updates
 - **Customer Management**: Automated customer creation and management with advanced retrieval logic
 - **Premium Feature Access**: Intelligent access control for paid features including image processing
 - **Dynamic Pricing Integration**: Real-time pricing information from provider APIs
+- **Database Performance Optimization**: Automated user cleanup for optimal database performance and storage efficiency
+- **Admin Operations Dashboard**: Comprehensive monitoring and management tools for system health
 
 ### 🔧 Technical Enhancements
-- **Enhanced Error Handling**: Improved error handling across chat API and credit management
-- **Debugging & Traceability**: Enhanced debugging capabilities with comprehensive logging
+- **Modular Service-Oriented Architecture**: Clean, maintainable architecture with 8 specialized services (Authentication, Credit Validation, Database, MCP Server, Message Processing, Model Validation, Token Tracking, Web Search)
+- **Enhanced Error Handling**: Improved error handling across chat API and credit management with domain-specific error classes
+- **JSON Repair Utility**: Automatic detection and correction of malformed JSON from AI models using jsonrepair library
+- **Debugging & Traceability**: Enhanced debugging capabilities with comprehensive logging and performant logging utilities
 - **Smart User Flow Handling**: Seamless experience for both anonymous and authenticated users
-- **Token Usage Tracking**: Refined credit deduction logic for accurate billing
+- **Token Usage Tracking**: Refined credit deduction logic for accurate billing with dedicated tracking service
 - **Mathematical Content**: Enhanced KaTeX styling for technical discussions
 - **Progressive Web App**: iOS homescreen shortcut support with native app-like experience
 - **Advanced Client Instantiation**: Optimized dynamic client creation with helper functions
 - **Model Transformation Pipeline**: Standardized parsing and transformation of external API responses to internal format
 - **Intelligent Caching**: Multi-layer caching with 1-hour model list TTL and 24-hour detail caching
+- **Pre-emptive Operations**: Race condition prevention through pre-emptive chat creation
 
 ## Technical Architecture
 
@@ -191,11 +219,15 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 - **Payments**: Polar integration for credits and subscriptions with production environment
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **Type Safety**: Full TypeScript implementation
-- **Testing**: Comprehensive Playwright testing suite
+- **Testing**: Comprehensive Playwright testing suite with Jest for unit tests
 - **Image Processing**: Client-side image validation and compression with multimodal AI integration
 - **Presets System**: Database-backed configuration management with template support
 - **MCP Integration**: Latest Model Context Protocol 1.13.0 with enhanced server management
 - **Dynamic Model Loading**: Real-time model fetching with intelligent caching and provider health monitoring
+- **Service Architecture**: Modular service-oriented design with 8 specialized services for maintainability
+- **PDF Generation**: jsPDF library for client-side PDF export with markdown rendering
+- **User Management**: Automated cleanup system with admin dashboard for database optimization
+- **Error Resilience**: JSON repair utility with jsonrepair library for malformed data handling
 
 ## MCP Server Configuration
 
