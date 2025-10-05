@@ -123,31 +123,39 @@ export async function GET(request: NextRequest) {
                 }
             }
 
-            // Filter models: only allow OpenRouter :free models for users without credits AND without their own API keys
-            // Users with credits OR their own provider API keys can see all models from that provider
-            const shouldRestrictToFreeModels = isAnonymous || !hasCredits;
+            // Filter models based on user status and API key availability
+            // - Users with credits: can access all models (platform pays using environment keys)
+            // - Users without credits: can only access free models OR models from providers where they provide their own key (BYOK)
+            // - Anonymous users: same as users without credits
 
-            // Check which providers the user has API keys for
-            const hasOpenRouterKey = userKeys['OPENROUTER_API_KEY']?.trim().length > 0;
-            const hasRequestyKey = userKeys['REQUESTY_API_KEY']?.trim().length > 0;
+            // Check if user has provided their own API keys (BYOK - Bring Your Own Key)
+            const hasUserProvidedOpenRouterKey = userKeys['OPENROUTER_API_KEY']?.trim().length > 0;
+            const hasUserProvidedRequestyKey = userKeys['REQUESTY_API_KEY']?.trim().length > 0;
+
+            // Determine if we should restrict to free models
+            const shouldRestrictToFreeModels = isAnonymous || !hasCredits;
 
             const models = shouldRestrictToFreeModels
                 ? response.models.filter(m => {
-                    // Allow OpenRouter :free models for everyone
+                    // Allow OpenRouter :free models for everyone (these don't consume credits or require keys)
                     if (m.id.startsWith('openrouter/') && m.id.endsWith(':free')) {
                         return true;
                     }
-                    // Allow all OpenRouter models if user has their own OpenRouter key
-                    if (m.id.startsWith('openrouter/') && hasOpenRouterKey) {
+                    // Allow Requesty :free models for everyone (if they exist)
+                    if (m.id.startsWith('requesty/') && m.id.endsWith(':free')) {
                         return true;
                     }
-                    // Allow all Requesty models if user has their own Requesty key
-                    if (m.id.startsWith('requesty/') && hasRequestyKey) {
+                    // Allow all OpenRouter models if user provided their own OpenRouter key (BYOK)
+                    if (m.id.startsWith('openrouter/') && hasUserProvidedOpenRouterKey) {
+                        return true;
+                    }
+                    // Allow all Requesty models if user provided their own Requesty key (BYOK)
+                    if (m.id.startsWith('requesty/') && hasUserProvidedRequestyKey) {
                         return true;
                     }
                     return false;
                 })
-                : response.models;
+                : response.models; // Users with credits get all models
 
             const filteredResponse = {
                 ...response,

@@ -114,6 +114,9 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
         }
       });
       
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new Event('apiKeysChanged'));
+      
       toast.success("API keys saved successfully");
       onOpenChange(false);
     } catch (error) {
@@ -130,6 +133,10 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
       });
       
       setApiKeys({});
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new Event('apiKeysChanged'));
+      
       toast.success("All API keys cleared");
     } catch (error) {
       console.error("Error clearing API keys:", error);

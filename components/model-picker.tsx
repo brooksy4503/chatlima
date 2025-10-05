@@ -60,8 +60,25 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     error: modelsError,
     refresh: refreshModels,
     favorites = [],
-    favoriteCount = 0
+    favoriteCount = 0,
+    userApiKeys = {}
   } = useModel();
+  
+  // Helper function to check if user has API key for a model's provider
+  const hasApiKeyForProvider = useCallback((modelId: string) => {
+    // Extract provider from model ID (e.g., "requesty/..." -> REQUESTY_API_KEY)
+    const provider = modelId.split('/')[0];
+    const keyMap: Record<string, string> = {
+      'openai': 'OPENAI_API_KEY',
+      'anthropic': 'ANTHROPIC_API_KEY',
+      'groq': 'GROQ_API_KEY',
+      'xai': 'XAI_API_KEY',
+      'openrouter': 'OPENROUTER_API_KEY',
+      'requesty': 'REQUESTY_API_KEY',
+    };
+    const requiredKey = keyMap[provider?.toLowerCase()];
+    return requiredKey && userApiKeys[requiredKey]?.trim().length > 0;
+  }, [userApiKeys]);
   
   // Function to get the appropriate icon for each provider
   const getProviderIcon = (provider: string) => {
@@ -515,7 +532,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
               <div ref={modelListRef} className="space-y-1 p-1">
                 {filteredAndSortedModels.length > 0 ? (
                   filteredAndSortedModels.map((model, index) => {
-                    const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels());
+                    // Users with BYOK (Bring Your Own Key) can use premium models from that provider
+                    const userHasApiKey = hasApiKeyForProvider(model.id);
+                    const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels() && !userHasApiKey);
                     const isSelected = selectedModel === model.id;
                     const isKeyboardFocused = keyboardFocusedIndex === index;
                     const isTouchFocused = focusedModel === model.id;

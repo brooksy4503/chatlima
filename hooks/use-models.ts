@@ -67,13 +67,20 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
     } = options;
 
     // Create a stable key that includes user API keys
+    // IMPORTANT: The key MUST change when API keys change to force SWR to refetch
     const swrKey = useMemo(() => {
         if (!enabled) return null;
 
         const baseKey = '/api/models';
-        const keyHash = userApiKeys ? JSON.stringify(userApiKeys) : '';
-        return keyHash ? `${baseKey}?keys=${btoa(keyHash)}` : baseKey;
+        const keyHash = userApiKeys ? JSON.stringify(Object.keys(userApiKeys).sort().map(k => `${k}:${userApiKeys[k].substring(0, 10)}`)) : '';
+        return keyHash ? `${baseKey}?keys=${encodeURIComponent(keyHash)}` : baseKey;
     }, [enabled, userApiKeys]);
+
+    // Create a stable fetcher that uses current userApiKeys
+    // This ensures SWR always uses the latest API keys when refetching
+    const fetcher = useCallback(() => {
+        return modelsFetcher('/api/models', userApiKeys);
+    }, [userApiKeys]);
 
     // SWR hook with custom fetcher
     const {
@@ -84,7 +91,7 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
         mutate
     } = useSWR<ModelsResponse>(
         swrKey,
-        () => modelsFetcher('/api/models', userApiKeys),
+        fetcher,
         {
             ...SWR_CONFIG,
             refreshInterval,

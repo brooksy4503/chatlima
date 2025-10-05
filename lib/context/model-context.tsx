@@ -22,6 +22,8 @@ interface ModelContextType {
   toggleFavorite?: (modelId: string) => Promise<boolean>;
   isFavorite?: (modelId: string) => boolean;
   favoriteCount?: number;
+  // User API keys for BYOK functionality
+  userApiKeys?: Record<string, string>;
 }
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
@@ -49,9 +51,80 @@ const FALLBACK_MODELS = [
 ];
 
 export function ModelProvider({ children }: { children: ReactNode }) {
-  // Dynamic models from the API
-  const { models, isLoading, isValidating, error, refresh, forceRefresh } = useModels();
+  // Get user API keys from localStorage
+  const [userApiKeys, setUserApiKeys] = useState<Record<string, string>>({});
+  const [previousKeysHash, setPreviousKeysHash] = useState<string>('');
+  const [keysLoaded, setKeysLoaded] = useState(false);
+
+  // Load API keys from localStorage
+  useEffect(() => {
+    const loadApiKeys = () => {
+      if (typeof window === 'undefined') return {};
+      
+      const apiKeys: Record<string, string> = {};
+      const keyNames = [
+        'OPENAI_API_KEY',
+        'ANTHROPIC_API_KEY', 
+        'GROQ_API_KEY',
+        'XAI_API_KEY',
+        'OPENROUTER_API_KEY',
+        'REQUESTY_API_KEY'
+      ];
+      
+      keyNames.forEach(keyName => {
+        const value = localStorage.getItem(keyName);
+        if (value && value.trim()) {
+          apiKeys[keyName] = value.trim();
+        }
+      });
+      
+      return apiKeys;
+    };
+    
+    // Load initially
+    const initialKeys = loadApiKeys();
+    setUserApiKeys(initialKeys);
+    setPreviousKeysHash(JSON.stringify(initialKeys));
+    setKeysLoaded(true);
+    
+    // Listen for storage changes (when API keys are saved in another tab or by API Key Manager)
+    const handleStorageChange = () => {
+      const newKeys = loadApiKeys();
+      setUserApiKeys(newKeys);
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    // Also listen for custom event when keys are saved in same window
+    window.addEventListener('apiKeysChanged', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('apiKeysChanged', handleStorageChange);
+    };
+  }, []);
+  
+  // Dynamic models from the API - pass user API keys
+  // Wait for keys to load before enabling the fetcher
+  const { models, isLoading, isValidating, error, refresh, forceRefresh } = useModels({ 
+    userApiKeys: Object.keys(userApiKeys).length > 0 ? userApiKeys : undefined,
+    enabled: keysLoaded  // Only start fetching after keys are loaded
+  });
   const { isAnonymous } = useAuth();
+  
+  // Trigger model refresh when API keys actually change (not on initial load)
+  useEffect(() => {
+    const currentKeysHash = JSON.stringify(userApiKeys);
+    
+    // Only refresh if keys actually changed AND we have keys AND this isn't the initial load
+    if (previousKeysHash && currentKeysHash !== previousKeysHash && Object.keys(userApiKeys).length > 0) {
+      console.log('API keys changed, refreshing models...');
+      if (forceRefresh) {
+        forceRefresh().catch(err => console.error('Failed to refresh models after API key change:', err));
+      }
+    }
+    
+    setPreviousKeysHash(currentKeysHash);
+  }, [userApiKeys]);
   
   // Favorites functionality
   const { 
@@ -181,19 +254,21 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   };
   
   // Enhance models with favorite status
-  const visibleModels = isAnonymous
+  // Users with API keys should see models from those providers, even if anonymous
+  const hasAnyApiKeys = Object.keys(userApiKeys).length > 0;
+  const visibleModels = (isAnonymous && !hasAnyApiKeys)
     ? models.filter(m => m.id.startsWith('openrouter/') && m.id.endsWith(':free'))
     : models;
 
-  // Ensure selected model is valid for anonymous users
+  // Ensure selected model is valid for anonymous users (without API keys)
   useEffect(() => {
     if (!isInitialized) return;
-    if (!isAnonymous) return;
+    if (!isAnonymous || hasAnyApiKeys) return; // Users with API keys can use any model
     if (!selectedModel.startsWith('openrouter/') || !selectedModel.endsWith(':free')) {
       const fallback = visibleModels[0]?.id || FALLBACK_MODELS.find(id => id.endsWith(':free')) || selectedModel;
       setSelectedModelState(fallback);
     }
-  }, [isAnonymous, isInitialized, selectedModel, visibleModels]);
+  }, [isAnonymous, hasAnyApiKeys, isInitialized, selectedModel, visibleModels]);
 
   const modelsWithFavorites = visibleModels.map(model => ({
     ...model,
@@ -212,6 +287,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     toggleFavorite,
     isFavorite,
     favoriteCount,
+    userApiKeys, // Expose user API keys so components can check BYOK status
   };
   
 
