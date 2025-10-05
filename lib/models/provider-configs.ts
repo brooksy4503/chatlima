@@ -207,14 +207,17 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
 
 // Requesty model parser - Dynamic parser for Requesty API
 export function parseRequestyModels(data: any): ModelInfo[] {
-    if (!data || !Array.isArray(data)) {
+    // Handle OpenAI-style response format: {object: "list", data: [...]}
+    const modelsArray = data?.data || data;
+
+    if (!modelsArray || !Array.isArray(modelsArray)) {
         throw new Error('Invalid Requesty API response format');
     }
 
-    return data
+    return modelsArray
         .filter((model: any) => {
             // Filter out blocked models
-            const modelId = `${model.provider}/${model.model}`;
+            const modelId = model.id; // New format uses 'id' field directly
             const blockedModels = getBlockedModels();
             if (blockedModels.has(modelId)) {
                 console.warn(`Filtering out blocked model: ${modelId}`);
@@ -223,8 +226,7 @@ export function parseRequestyModels(data: any): ModelInfo[] {
             return true;
         })
         .map((model: any): ModelInfo => {
-            const providerId = `${model.provider}/${model.model}`;
-            const id = `requesty/${providerId}`;
+            const id = `requesty/${model.id}`; // Use the id field directly
 
             // Parse capabilities from model properties
             const capabilities: string[] = [];
@@ -234,17 +236,18 @@ export function parseRequestyModels(data: any): ModelInfo[] {
             if (model.supports_caching) capabilities.push('Caching');
             if (model.supports_computer_use) capabilities.push('Tools');
 
-            // Determine if it's coding-related based on model name
-            if (model.model?.toLowerCase().includes('code') ||
-                model.model?.toLowerCase().includes('coder') ||
+            // Determine if it's coding-related based on model id
+            if (model.id?.toLowerCase().includes('code') ||
+                model.id?.toLowerCase().includes('coder') ||
+                model.id?.toLowerCase().includes('coding') ||
                 model.description?.toLowerCase().includes('coding')) {
                 capabilities.push('Coding');
             }
 
-            // Determine if it's fast based on model name
-            if (model.model?.toLowerCase().includes('fast') ||
-                model.model?.toLowerCase().includes('turbo') ||
-                model.model?.toLowerCase().includes('flash')) {
+            // Determine if it's fast based on model id
+            if (model.id?.toLowerCase().includes('fast') ||
+                model.id?.toLowerCase().includes('turbo') ||
+                model.id?.toLowerCase().includes('flash')) {
                 capabilities.push('Fast');
             }
 
@@ -252,13 +255,17 @@ export function parseRequestyModels(data: any): ModelInfo[] {
             if (capabilities.length === 0) capabilities.push('General Purpose');
 
             // Determine if premium based on pricing (threshold of $3+ per million input tokens OR $5+ per million output tokens)
-            const inputPrice = parseFloat(model.input_tokens_price_per_million || '0');
-            const outputPrice = parseFloat(model.output_tokens_price_per_million || '0');
-            const isPremium = inputPrice >= 3.0 || outputPrice >= 5.0;
+            // New format uses input_price and output_price (already per-token)
+            const inputPricePerToken = parseFloat(model.input_price || '0');
+            const outputPricePerToken = parseFloat(model.output_price || '0');
+            const inputPricePerMillion = inputPricePerToken * 1000000;
+            const outputPricePerMillion = outputPricePerToken * 1000000;
+            const isPremium = inputPricePerMillion >= 3.0 || outputPricePerMillion >= 5.0;
 
-            // Generate a user-friendly name
-            const providerName = model.provider.charAt(0).toUpperCase() + model.provider.slice(1);
-            const modelName = model.model.split('/').pop() || model.model; // Get last part after slash
+            // Generate a user-friendly name from the id
+            const idParts = model.id.split('/');
+            const providerName = idParts[0]?.charAt(0).toUpperCase() + idParts[0]?.slice(1) || 'Unknown';
+            const modelName = idParts.slice(1).join('/') || model.id;
             const displayName = `${providerName} ${modelName}`;
 
             return {
@@ -270,23 +277,13 @@ export function parseRequestyModels(data: any): ModelInfo[] {
                 premium: isPremium,
                 vision: model.supports_vision || false,
                 contextMax: model.context_window || undefined,
-                apiVersion: model.model,
+                apiVersion: model.id,
                 status: 'available',
                 lastChecked: new Date(),
                 pricing: {
-                    // Requesty provides pricing per million tokens, convert to per token for consistency
-                    input: model.input_tokens_price_per_million !== undefined && model.input_tokens_price_per_million !== null && model.input_tokens_price_per_million !== ''
-                        ? (() => {
-                            const parsed = parseFloat(model.input_tokens_price_per_million);
-                            return !isNaN(parsed) ? parsed / 1000000 : undefined; // Convert from per-million to per-token
-                        })()
-                        : undefined,
-                    output: model.output_tokens_price_per_million !== undefined && model.output_tokens_price_per_million !== null && model.output_tokens_price_per_million !== ''
-                        ? (() => {
-                            const parsed = parseFloat(model.output_tokens_price_per_million);
-                            return !isNaN(parsed) ? parsed / 1000000 : undefined; // Convert from per-million to per-token
-                        })()
-                        : undefined,
+                    // New format already provides per-token pricing
+                    input: inputPricePerToken || undefined,
+                    output: outputPricePerToken || undefined,
                     currency: 'USD'
                 },
                 // Legacy compatibility
@@ -317,7 +314,7 @@ export const PROVIDERS: Record<string, ProviderConfig> = {
     requesty: {
         name: 'Requesty',
         envKey: 'REQUESTY_API_KEY',
-        endpoint: 'https://api.requesty.ai/router/models', // Updated to use the actual models API
+        endpoint: 'https://router.requesty.ai/v1/models', // Correct endpoint as of 2025
         healthCheck: undefined, // Requesty doesn't have a specific health check endpoint
         parse: parseRequestyModels,
         rateLimit: { requestsPerMinute: 120, burstLimit: 20 },
