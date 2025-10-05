@@ -123,11 +123,30 @@ export async function GET(request: NextRequest) {
                 }
             }
 
-            // Filter models: only allow OpenRouter :free models for users without credits
-            // This applies to both anonymous users AND Google users without credits
+            // Filter models: only allow OpenRouter :free models for users without credits AND without their own API keys
+            // Users with credits OR their own provider API keys can see all models from that provider
             const shouldRestrictToFreeModels = isAnonymous || !hasCredits;
+
+            // Check which providers the user has API keys for
+            const hasOpenRouterKey = userKeys['OPENROUTER_API_KEY']?.trim().length > 0;
+            const hasRequestyKey = userKeys['REQUESTY_API_KEY']?.trim().length > 0;
+
             const models = shouldRestrictToFreeModels
-                ? response.models.filter(m => m.id.startsWith('openrouter/') && m.id.endsWith(':free'))
+                ? response.models.filter(m => {
+                    // Allow OpenRouter :free models for everyone
+                    if (m.id.startsWith('openrouter/') && m.id.endsWith(':free')) {
+                        return true;
+                    }
+                    // Allow all OpenRouter models if user has their own OpenRouter key
+                    if (m.id.startsWith('openrouter/') && hasOpenRouterKey) {
+                        return true;
+                    }
+                    // Allow all Requesty models if user has their own Requesty key
+                    if (m.id.startsWith('requesty/') && hasRequestyKey) {
+                        return true;
+                    }
+                    return false;
+                })
                 : response.models;
 
             const filteredResponse = {
