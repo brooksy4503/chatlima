@@ -2,7 +2,7 @@
 
 import { useState, useRef, ChangeEvent, KeyboardEvent, FocusEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, CheckIcon, XIcon, Loader2, Pencil, Share2, Download } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, CheckIcon, XIcon, Loader2, Pencil, Share2, Download, MoreVertical } from "lucide-react";
 import {
     SidebarGroupContent,
     SidebarMenuItem,
@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/tooltip";
 import { SidebarMenu } from "@/components/ui/sidebar";
 import { ChatShareDialog } from "@/components/chat-share-dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface Chat {
     id: string;
@@ -331,7 +338,7 @@ export function ChatList({
                                                                     isActive && "bg-primary/10 dark:bg-primary/20 text-primary hover:text-primary"
                                                                 )}
                                                             >
-                                                                <div className="flex items-center w-full min-w-0">
+                                                                <div className="relative flex items-center w-full min-w-0 pr-8" data-testid="chat-row">
                                                                     <Link
                                                                         href={`/chat/${chat.id}`}
                                                                         className="flex items-center min-w-0 flex-1 gap-2"
@@ -344,50 +351,61 @@ export function ChatList({
                                                                             <Share2 className="h-3 w-3 text-muted-foreground/60 flex-shrink-0" />
                                                                         )}
                                                                     </Link>
-                                                                    <div className="ml-2 flex items-center gap-1 opacity-0 group-hover/menu-item:opacity-100 group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
-                                                                        {userId === chat.userId && (
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-6 w-6 hover:text-purple-500"
-                                                                                onClick={(e) => handleDownloadPDF(chat.id, chat.title, e)}
-                                                                                title="Download as PDF"
-                                                                                disabled={downloadingChatId === chat.id}
-                                                                            >
-                                                                                {downloadingChatId === chat.id ? (
-                                                                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                                                                ) : (
-                                                                                    <Download className="h-3 w-3" />
+                                                                    <div
+                                                                        data-testid="chat-actions"
+                                                                        className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center opacity-100 lg:opacity-0 lg:group-hover/menu-item:opacity-100 lg:group-focus-within/menu-item:opacity-100 transition-opacity duration-150">
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-6 w-6 hover:text-foreground"
+                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                    aria-label="Chat options"
+                                                                                    title="Chat options"
+                                                                                >
+                                                                                    <MoreVertical className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent align="end" className="w-48">
+                                                                                {userId === chat.userId && (
+                                                                                    <>
+                                                                                        <DropdownMenuItem
+                                                                                            onClick={(e) => handleDownloadPDF(chat.id, chat.title, e)}
+                                                                                            disabled={downloadingChatId === chat.id}
+                                                                                        >
+                                                                                            {downloadingChatId === chat.id ? (
+                                                                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                                                            ) : (
+                                                                                                <Download className="h-4 w-4 mr-2" />
+                                                                                            )}
+                                                                                            Download as PDF
+                                                                                        </DropdownMenuItem>
+                                                                                        <DropdownMenuSeparator />
+                                                                                    </>
                                                                                 )}
-                                                                            </Button>
-                                                                        )}
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 hover:text-green-500"
-                                                                            onClick={(e) => handleStartShare(chat.id, chat.title, e)}
-                                                                            title="Share chat"
-                                                                        >
-                                                                            <Share2 className="h-3 w-3" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 hover:text-blue-500"
-                                                                            onClick={(e) => handleStartEdit(chat.id, chat.title, e)}
-                                                                            title="Edit title"
-                                                                        >
-                                                                            <Pencil className="h-3 w-3" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-6 w-6 hover:text-red-500"
-                                                                            onClick={(e) => onDeleteChat(chat.id, e)}
-                                                                            title="Delete chat"
-                                                                        >
-                                                                            <Trash2 className="h-3 w-3" />
-                                                                        </Button>
+                                                                                <DropdownMenuItem
+                                                                                    onClick={(e) => handleStartShare(chat.id, chat.title, e)}
+                                                                                >
+                                                                                    <Share2 className="h-4 w-4 mr-2" />
+                                                                                    Share chat
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuItem
+                                                                                    onClick={(e) => handleStartEdit(chat.id, chat.title, e)}
+                                                                                >
+                                                                                    <Pencil className="h-4 w-4 mr-2" />
+                                                                                    Edit title
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuSeparator />
+                                                                                <DropdownMenuItem
+                                                                                    onClick={(e) => onDeleteChat(chat.id, e)}
+                                                                                    className="text-red-500 focus:text-red-600"
+                                                                                >
+                                                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                                                    Delete chat
+                                                                                </DropdownMenuItem>
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
                                                                     </div>
                                                                 </div>
                                                             </SidebarMenuButton>

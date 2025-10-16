@@ -3,10 +3,6 @@
         {
             "name": "chatlima",
             "path": "."
-        },
-        {
-            "name": "chatlima-docs",
-            "path": "../chatlima-docs"
         }
     ],
     "settings": {
