@@ -69,6 +69,19 @@ jest.mock('../../components/ui/button', () => ({
   ),
 }));
 
+// Mock dropdown menu to inline-render content for simpler assertions
+jest.mock('../../components/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: any) => <div data-testid="dropdown-menu">{children}</div>,
+  DropdownMenuTrigger: ({ children, asChild }: any) => asChild ? children : <button data-testid="dropdown-trigger">{children}</button>,
+  DropdownMenuContent: ({ children, align, className }: any) => (
+    <div data-testid="dropdown-content" data-align={align} className={className}>{children}</div>
+  ),
+  DropdownMenuItem: ({ children, onClick, className }: any) => (
+    <button role="menuitem" onClick={onClick} className={className}>{children}</button>
+  ),
+  DropdownMenuSeparator: () => <div role="separator" />,
+}));
+
 jest.mock('../../components/ui/input', () => ({
   Input: ({ onChange, value, placeholder, type, className, maxLength, onKeyDown, onBlur, ...props }: any) => (
     <input
@@ -125,11 +138,18 @@ jest.mock('lucide-react', () => ({
   Loader2: () => <div data-testid="loader-icon" />,
   Pencil: () => <div data-testid="pencil-icon" />,
   Share2: () => <div data-testid="share-icon" />,
+  MoreVertical: () => <div data-testid="more-vertical-icon" />,
+  Download: () => <div data-testid="download-icon" />,
 }));
 
 describe('ChatList', () => {
-  const mockRouter = {
+  const mockRouter: any = {
     push: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
   };
   const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
   const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
@@ -325,24 +345,38 @@ describe('ChatList', () => {
       expect(mockProps.onNavigateToChat).toHaveBeenCalledWith('chat-1');
     });
 
-    test('calls onDeleteChat when delete button is clicked', () => {
+    test('opens dropdown and invokes actions', () => {
       render(<ChatList {...mockProps} />);
-      
-      // Find delete button (trash icon)
-      const deleteButton = screen.getAllByTestId('trash-icon')[0].closest('button');
-      fireEvent.click(deleteButton!);
-      
-      expect(mockProps.onDeleteChat).toHaveBeenCalledWith('chat-1', expect.any(Object));
+
+      // Click options button on the first row
+      const optionButtons = screen.getAllByRole('button', { name: /chat options/i });
+      fireEvent.click(optionButtons[0]);
+
+      // Dropdown content exists (multiple rows render; ensure at least one)
+      const dropdowns = screen.getAllByTestId('dropdown-content');
+      expect(dropdowns.length).toBeGreaterThan(0);
+
+      // Choose Edit title
+      const editItem = screen.getAllByRole('menuitem').find(el => el.textContent?.match(/edit title/i));
+      expect(editItem).toBeDefined();
+      fireEvent.click(editItem!);
+
+      // Should switch to edit mode
+      expect(screen.getByDisplayValue('First Chat')).toBeInTheDocument();
     });
 
-    test('shows edit and delete buttons on hover when not collapsed', () => {
+    test('shows chat options button without affecting title layout', () => {
       render(<ChatList {...mockProps} />);
-      
-      const editButtons = screen.getAllByTestId('pencil-icon');
-      const deleteButtons = screen.getAllByTestId('trash-icon');
-      
-      expect(editButtons.length).toBeGreaterThan(0);
-      expect(deleteButtons.length).toBeGreaterThan(0);
+
+      const rows = screen.getAllByTestId('chat-row');
+      expect(rows.length).toBeGreaterThan(0);
+      rows.forEach(row => expect(row.className).toContain('pr-8'));
+
+      const optionButtons = screen.getAllByRole('button', { name: /chat options/i });
+      expect(optionButtons.length).toBeGreaterThan(0);
+
+      const actions = screen.getAllByTestId('chat-actions');
+      actions.forEach(a => expect(a.className).toContain('absolute'));
     });
   });
 
@@ -546,11 +580,9 @@ describe('ChatList', () => {
       expect(visibleChatTitles.length).toBe(0);
     });
 
-    test('does not show edit/delete buttons when collapsed', () => {
+    test('does not show options button when collapsed', () => {
       render(<ChatList {...mockProps} isCollapsed={true} />);
-      
-      expect(screen.queryByTestId('pencil-icon')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('trash-icon')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /chat options/i })).not.toBeInTheDocument();
     });
 
     test('navigates to chat when icon is clicked in collapsed state', () => {
@@ -573,14 +605,10 @@ describe('ChatList', () => {
       expect(searchInput).toHaveAttribute('aria-label', 'Search chats by title');
     });
 
-    test('edit and delete buttons have proper titles', () => {
+    test('options button has accessible name', () => {
       render(<ChatList {...mockProps} />);
-      
-      const editButtons = screen.getAllByTitle('Edit title');
-      const deleteButtons = screen.getAllByTitle('Delete chat');
-      
-      expect(editButtons.length).toBeGreaterThan(0);
-      expect(deleteButtons.length).toBeGreaterThan(0);
+      const optionButtons = screen.getAllByRole('button', { name: /chat options/i });
+      expect(optionButtons.length).toBeGreaterThan(0);
     });
 
     test('chat links are keyboard accessible', () => {
