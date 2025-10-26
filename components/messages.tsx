@@ -1,4 +1,4 @@
-import type { UIMessage as TMessage } from "ai";
+import type { UIMessage as TMessage } from "@ai-sdk/react";
 import { Message } from "./message";
 import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
 

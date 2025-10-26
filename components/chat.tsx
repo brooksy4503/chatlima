@@ -1,7 +1,8 @@
 "use client";
 
 import { type modelID } from "@/ai/providers";
-import { useChat, type UIMessage } from "@ai-sdk/react"; // Message type removed in AI SDK v6
+import { useChat } from "@ai-sdk/react"; 
+import { type UIMessage } from "ai";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
@@ -177,11 +178,10 @@ export default function Chat() {
     const uiMessages = convertToUIMessages(chatData.messages);
     return uiMessages.map(msg => ({
       id: msg.id,
-      role: msg.role as any, // Message type removed in AI SDK v6
-      content: msg.content,
+      role: msg.role,
       parts: msg.parts,
       hasWebSearch: msg.hasWebSearch,
-    } as any)); // Message type removed in AI SDK v6
+    })) as UIMessage[];
   }, [chatData]);
   
   // Function to get API keys from localStorage
@@ -252,33 +252,19 @@ export default function Chat() {
 
   // Note: No longer creating attachments array since we use message parts directly
 
-  // Manual input management for AI SDK v6
+  // Manage input state manually since AI SDK v6 useChat doesn't provide input/handleInputChange
   const [input, setInput] = useState('');
   
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
   }, []);
-  
-  // Manual submit handler for AI SDK v6
-  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    // This will need to be implemented to send messages to the API
-    // For now, we'll clear the input
-    setInput('');
-  }, []);
-  
-  // Manual append function for AI SDK v6  
-  const append = useCallback(async (message: any) => {
-    // This will need to be implemented to send messages to the API
-    console.log('Manual append:', message);
-  }, []);
-  
-  const { messages, status, stop: originalStop } =
-    useChat({
+
+  const { 
+    messages: newMessages, 
+    status, 
+    stop: originalStop 
+  } = useChat({
       id: chatId || generatedChatId,
-      // In AI SDK v6, we need to handle data passing differently
-      // Let's start with minimal configuration and see what works
-      experimental_throttle: 500,
       onFinish: (message) => {
         // Clear images and reset UI state after successful submission
         clearImages();
@@ -432,6 +418,82 @@ export default function Chat() {
         setLastToastTimestamp(now);
       },
     });
+
+  // Combine existing messages with new messages from useChat
+  const messages = useMemo(() => {
+    if (initialMessages.length > 0 && newMessages.length === 0) {
+      // If we have initial messages but no new messages, show initial messages
+      return initialMessages as UIMessage[];
+    } else if (newMessages.length > 0) {
+      // If we have new messages, they should take precedence
+      return newMessages;
+    }
+    return [];
+  }, [initialMessages, newMessages]);
+
+  // Handle message submission by calling the API directly with AI SDK v6 format
+  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!input.trim()) return;
+    
+    const messageContent = input.trim();
+    setInput(''); // Clear input immediately
+    
+    // Hide images in UI immediately after submitting
+    setHideImagesInUI(true);
+    
+    try {
+      // Call the API directly to send the message
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, {
+            id: nanoid(),
+            role: 'user',
+            parts: [{ type: 'text', text: messageContent }]
+          } as UIMessage],
+          chatId: chatId || generatedChatId,
+          selectedModel: activePreset?.modelId || selectedModel,
+          mcpServers: mcpServersForApi,
+          webSearch: {
+            enabled: webSearchEnabled,
+            contextSize: webSearchContextSize
+          },
+          apiKeys: getClientApiKeys(),
+          attachments: selectedImages.map(image => ({
+            name: image.metadata.filename,
+            contentType: image.metadata.mimeType,
+            url: image.dataUrl
+          })),
+          temperature: activePreset?.temperature,
+          maxTokens: activePreset?.maxTokens,
+          systemInstruction: activePreset?.systemInstruction
+        })
+      });
+      
+      if (response.ok) {
+        // Refresh chat data after successful submission
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+        queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+        
+        if (!chatId && generatedChatId) {
+          if (window.location.pathname !== `/chat/${generatedChatId}`) {
+             router.push(`/chat/${generatedChatId}`, { scroll: false }); 
+          }
+        }
+        
+        // Clear images after successful submission
+        clearImages();
+        setHideImagesInUI(false);
+      }
+    } catch (error) {
+      console.error('Error submitting message:', error);
+      // Reset UI state on error
+      setHideImagesInUI(false);
+      setInput(messageContent); // Restore input on error
+    }
+  }, [input, selectedImages, messages, chatId, generatedChatId, activePreset, selectedModel, mcpServersForApi, webSearchEnabled, webSearchContextSize, getClientApiKeys, queryClient, router, clearImages]);
 
   // Custom stop function that handles both stopping the stream and refreshing data
   const stop = useCallback(() => {
@@ -614,30 +676,31 @@ export default function Chat() {
         }
       }));
       
-      // Use append to create message with image parts
-      append({
-        role: 'user',
-        content: input,
-        parts: [textPart, ...imageParts] as any
-      });
-      
-      // Clear the input field manually since append doesn't do it automatically
-      handleInputChange({ target: { value: '' } } as any);
+      // Use regular handleSubmit for both text and images
+      handleSubmit(e);
     } else {
       // No images, use regular handleSubmit
       handleSubmit(e);
     }
-  }, [handleSubmit, append, input, selectedImages, handleInputChange]);
+  }, [handleSubmit, input, selectedImages, handleInputChange]);
 
   const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat;
 
-  // Function to send a message from suggested prompts
-  const sendSuggestedMessage = useCallback((message: string) => {
-    append({
-      role: 'user',
-      content: message
-    });
-  }, [append]);
+  // Function to send a message from suggested prompts  
+  const sendSuggestedMessage = useCallback(async (message: string) => {
+    try {
+      // Set the input and trigger submit
+      setInput(message);
+      
+      // Use a small timeout to ensure the input state is updated
+      setTimeout(() => {
+        handleSubmit();
+      }, 10);
+      
+    } catch (error) {
+      console.error('Error sending suggested message:', error);
+    }
+  }, [handleSubmit]);
 
   const isOpenRouterModel = effectiveModel.startsWith("openrouter/");
 

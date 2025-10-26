@@ -5,6 +5,7 @@ import { nanoid } from "nanoid";
 import { generateTitle } from "@/app/actions";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation } from "./types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
+import type { UIMessage } from "ai";
 
 type AIMessage = {
   role: string;
@@ -15,12 +16,8 @@ type AIMessage = {
   webSearchContextSize?: 'low' | 'medium' | 'high';
 };
 
-type UIMessage = {
-  id: string;
-  role: string;
-  content: string;
-  parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
-  createdAt?: Date;
+// Extend UIMessage with our custom properties
+type ExtendedUIMessage = UIMessage & {
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
 };
@@ -112,17 +109,16 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
   });
 }
 
-// Convert DB messages to UI format
-export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage> {
+// Convert DB messages to UI format - using AI SDK v6 UIMessage structure
+export function convertToUIMessages(dbMessages: Array<Message>): Array<ExtendedUIMessage> {
   return dbMessages.map((message) => ({
     id: message.id,
-    parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
-    role: message.role as string,
-    content: getTextContent(message), // For backward compatibility
+    role: message.role as 'user' | 'assistant' | 'system',
+    parts: message.parts as any, // Type assertion for AI SDK v6 compatibility
     createdAt: message.createdAt,
     hasWebSearch: message.hasWebSearch || false,
     webSearchContextSize: (message.webSearchContextSize || 'medium') as 'low' | 'medium' | 'high'
-  }));
+  })) as Array<ExtendedUIMessage>;
 }
 
 export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys, isAnonymous }: SaveChatParams) {
@@ -335,8 +331,8 @@ export function processImageParts(parts: Array<TextUIPart | ToolInvocationUIPart
   });
 }
 
-export function hasImageAttachments(messages: UIMessage[]): boolean {
+export function hasImageAttachments(messages: ExtendedUIMessage[]): boolean {
   return messages.some(message =>
-    message.parts?.some(part => part.type === "image_url")
+    message.parts?.some((part: any) => part.type === "image_url" || part.type === "image")
   );
 } 
