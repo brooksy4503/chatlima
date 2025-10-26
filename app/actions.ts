@@ -68,17 +68,12 @@ export async function generateTitle(messages: any[], selectedModel?: string, api
     : undefined;
 
   // Determine the title generation model to use
-  let titleModel;
-  if (selectedModel && apiKeys) {
-    // Use dynamic model selection with API keys
-    titleModel = getTitleGenerationModel(selectedModel as modelID, apiKeys, userId);
-  } else if (selectedModel) {
-    // Use dynamic model selection without API keys
-    titleModel = getTitleGenerationModel(selectedModel as modelID, undefined, userId);
-  } else {
-    // Fallback to static model
-    titleModel = titleGenerationModel;
-  }
+  // For AI SDK v6 compatibility, use native models only
+  
+  // Temporarily use static models for AI SDK v6 compatibility
+  // TODO: Restore dynamic model selection when OpenRouter provider is v6 compatible
+  console.log(`[AI SDK v6 Migration] Using fallback title model due to provider compatibility`);
+  const titleModel = titleGenerationModel;
 
   try {
     const { object } = await generateObject({

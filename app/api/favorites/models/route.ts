@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return createErrorResponse(`Invalid request: ${error.errors[0]?.message}`, 400);
+            return createErrorResponse(`Invalid request: ${error.issues[0]?.message}`, 400);
         }
 
         console.error('Error adding favorite model:', error);

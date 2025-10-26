@@ -164,29 +164,32 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
 
   // Check if the specific model exists and create only the needed client
 
-  // Handle dynamic Requesty models first (before static cases)
+  // Handle dynamic Requesty models - TEMPORARILY DISABLED FOR AI SDK V6 MIGRATION
+  // TODO: Re-enable when @requesty/ai-sdk supports AI SDK v6 LanguageModelV3 interface
   if (modelId.startsWith('requesty/')) {
-    const requestyModelId = modelId.replace('requesty/', '');
-    console.log(`[getLanguageModelWithKeys] Creating dynamic Requesty client for: ${requestyModelId}`);
+    console.warn(`[AI SDK v6 Migration] Requesty models temporarily disabled: ${modelId}`);
+    throw new Error(`Requesty models are temporarily disabled during AI SDK v6 migration. Model: ${modelId}`);
+    // const requestyModelId = modelId.replace('requesty/', '');
+    // console.log(`[getLanguageModelWithKeys] Creating dynamic Requesty client for: ${requestyModelId}`);
 
-    // Check if this is a reasoning model that needs special middleware
-    const isReasoningModel = (
-      requestyModelId.includes('deepseek-r1') ||
-      requestyModelId.includes('DeepSeek-R1') ||
-      requestyModelId.includes('deepseek-reasoner') ||
-      requestyModelId.includes('thinking') ||
-      requestyModelId.includes('parasail-deepseek-r1')
-    );
+    // // Check if this is a reasoning model that needs special middleware
+    // const isReasoningModel = (
+    //   requestyModelId.includes('deepseek-r1') ||
+    //   requestyModelId.includes('DeepSeek-R1') ||
+    //   requestyModelId.includes('deepseek-reasoner') ||
+    //   requestyModelId.includes('thinking') ||
+    //   requestyModelId.includes('parasail-deepseek-r1')
+    // );
 
-    if (isReasoningModel) {
-      return wrapLanguageModel({
-        model: getRequestyClient()(requestyModelId, { logprobs: false }),
-        middleware: deepseekR1Middleware,
-      });
-    }
+    // if (isReasoningModel) {
+    //   return wrapLanguageModel({
+    //     model: getRequestyClient()(requestyModelId, { logprobs: false }),
+    //     middleware: deepseekR1Middleware,
+    //   });
+    // }
 
-    // Regular model without special middleware
-    return getRequestyClient()(requestyModelId);
+    // // Regular model without special middleware
+    // return getRequestyClient()(requestyModelId);
   }
 
   // Handle dynamic OpenRouter models
@@ -207,16 +210,22 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     if (isReasoningModel) {
       // Handle special reasoning parameters for specific models
       if (openrouterModelId === 'x-ai/grok-3-mini-beta' && modelId.includes('reasoning-high')) {
-        return wrapLanguageModel({
-          model: getOpenRouterClient()('x-ai/grok-3-mini-beta', { reasoning: { effort: "high" }, logprobs: false }),
-          middleware: deepseekR1Middleware,
-        });
+        console.warn(`[AI SDK v6 Migration] OpenRouter reasoning models temporarily disabled: ${modelId}`);
+        // Use basic model without reasoning for now
+        return getOpenRouterClient()(openrouterModelId);
+        // return wrapLanguageModel({
+        //   model: getOpenRouterClient()('x-ai/grok-3-mini-beta', { reasoning: { effort: "high" }, logprobs: false }),
+        //   middleware: deepseekR1Middleware,
+        // });
       }
 
-      return wrapLanguageModel({
-        model: getOpenRouterClient()(openrouterModelId, { logprobs: false }),
-        middleware: deepseekR1Middleware,
-      });
+      // Temporarily disable reasoning middleware for AI SDK v6 compatibility
+      console.warn(`[AI SDK v6 Migration] Reasoning middleware temporarily disabled for: ${modelId}`);
+      return getOpenRouterClient()(openrouterModelId);
+      // return wrapLanguageModel({
+      //   model: getOpenRouterClient()(openrouterModelId, { logprobs: false }),
+      //   middleware: deepseekR1Middleware,
+      // });
     }
 
     // Regular model without special middleware

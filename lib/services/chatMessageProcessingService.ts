@@ -56,7 +56,7 @@ export class ChatMessageProcessingService {
             const lastMessage = processedMessages[lastMessageIndex];
             console.log('[DEBUG] Last message:', {
                 role: lastMessage.role,
-                content: lastMessage.content?.substring(0, 100),
+                content: (lastMessage as any).content?.substring(0, 100),
                 hasExistingParts: !!lastMessage.parts,
                 existingPartsCount: lastMessage.parts?.length || 0
             });
@@ -89,7 +89,7 @@ export class ChatMessageProcessingService {
             console.log('[DEBUG] Created image parts:', imageParts.length);
 
             // Create new parts array with type assertion
-            const existingParts = lastMessage.parts || [{ type: 'text', text: lastMessage.content }];
+            const existingParts = lastMessage.parts || [{ type: 'text', text: (lastMessage as any).content }];
             const newParts = [...existingParts, ...imageParts] as any;
 
             console.log('[DEBUG] Combined parts:', {
@@ -127,9 +127,8 @@ export class ChatMessageProcessingService {
             modelMessages.unshift({
                 role: "system",
                 id: `system_${Date.now()}`,
-                content: systemContent,
                 parts: [{ type: "text", text: systemContent }]
-            });
+            } as any);
         }
 
         return modelMessages;
@@ -148,7 +147,7 @@ export class ChatMessageProcessingService {
                 throw new Error(`Invalid message role: ${message.role}`);
             }
 
-            if (!message.content && !message.parts) {
+            if (!(message as any).content && !message.parts) {
                 throw new Error('Message must have either content or parts');
             }
         }

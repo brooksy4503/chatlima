@@ -77,9 +77,8 @@ async function testRequestyUsage() {
 
             // Make the request using generateText (similar to streamText but simpler for testing)
             const result = await generateText({
-                model: requestyClient(testConfig.model),
+                model: requestyClient(testConfig.model) as any,
                 prompt: testConfig.prompt,
-                maxTokens: testConfig.maxTokens,
             });
 
             const endTime = Date.now();
@@ -94,9 +93,9 @@ async function testRequestyUsage() {
 
             if (result.usage) {
                 console.log('\n🔍 Usage field breakdown:');
-                console.log(`- promptTokens: ${result.usage.promptTokens}`);
-                console.log(`- completionTokens: ${result.usage.completionTokens}`);
-                console.log(`- totalTokens: ${result.usage.totalTokens}`);
+                console.log(`- promptTokens: ${(result.usage as any).promptTokens || 'N/A'}`);
+                console.log(`- completionTokens: ${(result.usage as any).completionTokens || 'N/A'}`);
+                console.log(`- totalTokens: ${(result.usage as any).totalTokens || 'N/A'}`);
 
                 // Check for alternative field names
                 const usage = result.usage as any;
@@ -123,14 +122,14 @@ async function testRequestyUsage() {
             console.log('\n🧮 TOKEN EXTRACTION TEST (simulating main app logic):');
             const usageAny = result.usage as any;
             const extractedInputTokens =
-                result.usage?.promptTokens ||
+                (result.usage as any)?.promptTokens ||
                 usageAny?.inputTokens ||
                 usageAny?.prompt_tokens ||
                 usageAny?.input_tokens ||
                 0;
 
             const extractedOutputTokens =
-                result.usage?.completionTokens ||
+                (result.usage as any)?.completionTokens ||
                 usageAny?.outputTokens ||
                 usageAny?.completion_tokens ||
                 usageAny?.output_tokens ||

@@ -1,5 +1,6 @@
-import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
-import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
+// MCP functionality removed in AI SDK v6 - temporarily disabled for migration
+// import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
+// import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn } from "child_process";
 import { logDiagnostic } from '@/lib/utils/performantLogging';
@@ -59,40 +60,47 @@ export class ChatMCPServerService {
         const tools: Record<string, any> = {};
         const mcpClients: any[] = [];
 
-        // Process each MCP server configuration
-        for (const mcpServer of filteredMcpServers) {
-            try {
-                logDiagnostic('MCP_SERVER_PROCESS', `Processing MCP server`, {
-                    requestId,
-                    type: mcpServer.type,
-                    url: mcpServer.url
-                });
+        // MCP functionality temporarily disabled in AI SDK v6 migration
+        // TODO: Convert MCP servers to native AI SDK v6 tools in Phase 2
+        logDiagnostic('MCP_DISABLED', 'MCP functionality temporarily disabled during AI SDK v6 migration', {
+            requestId,
+            serverCount: filteredMcpServers.length
+        });
 
-                // Create appropriate transport based on type
-                const transport = await this.createTransport(mcpServer, requestId);
+        // // Process each MCP server configuration - DISABLED FOR V6 MIGRATION
+        // for (const mcpServer of filteredMcpServers) {
+        //     try {
+        //         logDiagnostic('MCP_SERVER_PROCESS', `Processing MCP server`, {
+        //             requestId,
+        //             type: mcpServer.type,
+        //             url: mcpServer.url
+        //         });
 
-                const mcpClient = await createMCPClient({ transport: transport });
-                mcpClients.push(mcpClient);
+        //         // Create appropriate transport based on type
+        //         const transport = await this.createTransport(mcpServer, requestId);
 
-                const mcptools = await mcpClient.tools();
+        //         const mcpClient = await createMCPClient({ transport: transport });
+        //         mcpClients.push(mcpClient);
 
-                logDiagnostic('MCP_TOOLS_LOADED', `MCP tools loaded from ${mcpServer.type} transport`, {
-                    requestId,
-                    toolCount: Object.keys(mcptools).length,
-                    toolNames: Object.keys(mcptools)
-                });
+        //         const mcptools = await mcpClient.tools();
 
-                // Add MCP tools to tools object
-                Object.assign(tools, mcptools);
-            } catch (error) {
-                logDiagnostic('MCP_SERVER_ERROR', `Failed to initialize MCP client`, {
-                    requestId,
-                    type: mcpServer.type,
-                    error: error instanceof Error ? error.message : String(error)
-                });
-                // Continue with other servers instead of failing the entire request
-            }
-        }
+        //         logDiagnostic('MCP_TOOLS_LOADED', `MCP tools loaded from ${mcpServer.type} transport`, {
+        //             requestId,
+        //             toolCount: Object.keys(mcptools).length,
+        //             toolNames: Object.keys(mcptools)
+        //         });
+
+        //         // Add MCP tools to tools object
+        //         Object.assign(tools, mcptools);
+        //     } catch (error) {
+        //         logDiagnostic('MCP_SERVER_ERROR', `Failed to initialize MCP client`, {
+        //             requestId,
+        //             type: mcpServer.type,
+        //             error: error instanceof Error ? error.message : String(error)
+        //         });
+        //         // Continue with other servers instead of failing the entire request
+        //     }
+        // }
 
         // Create cleanup function
         const cleanup = async () => {
@@ -149,7 +157,7 @@ export class ChatMCPServerService {
     /**
      * Creates the appropriate transport for an MCP server
      */
-    private static async createTransport(mcpServer: MCPServerConfig, requestId: string): Promise<MCPTransport | { type: 'sse', url: string, headers?: Record<string, string> }> {
+    private static async createTransport(mcpServer: MCPServerConfig, requestId: string): Promise<any> {
         switch (mcpServer.type) {
             case 'sse':
                 return this.createSSETransport(mcpServer, requestId);
@@ -189,7 +197,7 @@ export class ChatMCPServerService {
     /**
      * Creates Stdio transport with package installation if needed
      */
-    private static async createStdioTransport(mcpServer: MCPServerConfig, requestId: string): Promise<MCPTransport> {
+    private static async createStdioTransport(mcpServer: MCPServerConfig, requestId: string): Promise<any> {
         if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
             throw new Error("Missing command or args for stdio MCP server");
         }
@@ -217,17 +225,18 @@ export class ChatMCPServerService {
             envCount: Object.keys(env).length
         });
 
-        return new StdioMCPTransport({
-            command: mcpServer.command,
-            args: mcpServer.args,
-            env: Object.keys(env).length > 0 ? env : undefined
-        });
+        // return new StdioMCPTransport({ // DISABLED FOR AI SDK V6 MIGRATION
+        //     command: mcpServer.command,
+        //     args: mcpServer.args,
+        //     env: Object.keys(env).length > 0 ? env : undefined
+        // });
+        throw new Error("StdioMCPTransport disabled during AI SDK v6 migration");
     }
 
     /**
      * Creates StreamableHTTP transport
      */
-    private static createStreamableHTTPTransport(mcpServer: MCPServerConfig, requestId: string): MCPTransport {
+    private static createStreamableHTTPTransport(mcpServer: MCPServerConfig, requestId: string): any {
         const headers: Record<string, string> = {};
         if (mcpServer.headers && mcpServer.headers.length > 0) {
             mcpServer.headers.forEach(header => {

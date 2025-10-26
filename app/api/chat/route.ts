@@ -1,5 +1,5 @@
-import { streamText, generateText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
-import { appendResponseMessages } from 'ai';
+import { streamText, generateText, type UIMessage, type LanguageModelResponseMetadata } from "ai";
+import { pruneMessages } from 'ai';
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
@@ -26,8 +26,9 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { validatePresetParameters, getModelDefaults, sanitizeSystemInstruction } from "@/lib/parameter-validation";
 
-import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
-import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
+// MCP functionality removed in AI SDK v6 - will need to migrate to native tools
+// import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
+// import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn } from "child_process";
 
@@ -115,7 +116,7 @@ interface Annotation {
 }
 
 interface OpenRouterResponse extends LanguageModelResponseMetadata {
-    readonly messages: Message[];
+    readonly messages: UIMessage[];
     annotations?: Annotation[];
     body?: unknown;
 }
@@ -547,7 +548,7 @@ export async function POST(req: Request) {
                 const lastMessage = processedMessages[lastMessageIndex];
                 console.log('[DEBUG] Last message:', {
                     role: lastMessage.role,
-                    content: lastMessage.content?.substring(0, 100),
+                    // content: lastMessage.content?.substring(0, 100), // content structure changed in v6
                     hasExistingParts: !!lastMessage.parts,
                     existingPartsCount: lastMessage.parts?.length || 0
                 });
@@ -580,7 +581,7 @@ export async function POST(req: Request) {
                 console.log('[DEBUG] Created image parts:', imageParts.length);
 
                 // Create new parts array with type assertion
-                const existingParts = lastMessage.parts || [{ type: 'text', text: lastMessage.content }];
+                const existingParts = lastMessage.parts || [];
                 const newParts = [...existingParts, ...imageParts] as any;
 
                 console.log('[DEBUG] Combined parts:', {
@@ -622,148 +623,34 @@ export async function POST(req: Request) {
             modelMessagesFinal.unshift({
                 role: "system",
                 id: nanoid(),
-                content: systemContent,
+                // content: systemContent, // content property removed in AI SDK v6
                 parts: [{ type: "text", text: systemContent }]
-            });
+            } as UIMessage);
         }
 
         // Initialize tools
-        let tools = {};
+        const tools = {}; // Changed to const since MCP functionality is disabled
         const mcpClients: any[] = [];
 
-        // Process each MCP server configuration
-        for (const mcpServer of initialMcpServers) {
-            try {
-                // Create appropriate transport based on type
-                let finalTransportForClient: any;
+        // MCP functionality temporarily disabled during AI SDK v6 migration
+        // TODO: Convert to native AI SDK v6 tools in Phase 2
+        console.log(`[AI SDK v6 Migration] MCP functionality temporarily disabled. ${initialMcpServers.length} servers configured but not loaded.`);
 
-                if (mcpServer.type === 'sse') {
-                    const headers: Record<string, string> = {};
-                    if (mcpServer.headers && mcpServer.headers.length > 0) {
-                        mcpServer.headers.forEach(header => {
-                            if (header.key) headers[header.key] = header.value || '';
-                        });
-                    }
-                    finalTransportForClient = {
-                        type: 'sse' as const,
-                        url: mcpServer.url,
-                        headers: Object.keys(headers).length > 0 ? headers : undefined
-                    };
-                } else if (mcpServer.type === 'streamable-http') {
-                    const headers: Record<string, string> = {};
-                    if (mcpServer.headers && mcpServer.headers.length > 0) {
-                        mcpServer.headers.forEach(header => {
-                            if (header.key) headers[header.key] = header.value || '';
-                        });
-                    }
-                    const transportUrl = new URL(mcpServer.url);
-                    finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
-                        requestInit: {
-                            headers: {
-                                'MCP-Protocol-Version': '2025-06-18',
-                                ...headers
-                            }
-                        }
-                    });
-                } else if (mcpServer.type === 'stdio') {
-                    if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
-                        console.warn("Skipping stdio MCP server due to missing command or args");
-                        continue;
-                    }
-                    const env: Record<string, string> = {};
-                    if (mcpServer.env && mcpServer.env.length > 0) {
-                        mcpServer.env.forEach(envVar => {
-                            if (envVar.key) env[envVar.key] = envVar.value || '';
-                        });
-                    }
+        // MCP loop completely disabled for AI SDK v6 migration
+        // Original MCP functionality will be restored in Phase 2 with native AI SDK v6 tools
 
-                    if (mcpServer.command === 'uvx') {
-                        console.log("Ensuring uv (for uvx) is installed...");
-                        let uvInstalled = false;
-                        const installUvSubprocess = spawn('pip3', ['install', 'uv']);
-                        installUvSubprocess.stdout.on('data', (data) => { });
-                        installUvSubprocess.stderr.on('data', (data) => { });
-
-                        await new Promise<void>((resolve) => {
-                            installUvSubprocess.on('close', (code: number) => {
-                                if (code !== 0) {
-                                    console.error(`Failed to install uv using pip3: exit code ${code}`);
-                                } else {
-                                    console.log("uv installed or already present.");
-                                    uvInstalled = true;
-                                }
-                                resolve();
-                            });
-                            installUvSubprocess.on('error', (err) => {
-                                console.error("Error spawning pip3 to install uv:", err);
-                                resolve();
-                            });
-                        });
-
-                        if (!uvInstalled) {
-                            console.warn("Skipping uvx command: Failed to ensure uv installation.");
-                            continue;
-                        }
-                    }
-
-                    if (mcpServer.command.includes('python3')) {
-                        const packageName = mcpServer.args[mcpServer.args.indexOf('-m') + 1];
-                        console.log("Attempting to install python package using uv:", packageName);
-                        const subprocess = spawn('uv', ['pip', 'install', packageName]);
-                        subprocess.on('close', (code: number) => {
-                            if (code !== 0) {
-                                console.error(`Failed to install python package ${packageName} using uv: ${code}`);
-                            } else {
-                                console.log(`Successfully installed python package ${packageName} using uv.`);
-                            }
-                        });
-                        await new Promise<void>((resolve) => {
-                            subprocess.on('close', () => resolve());
-                            subprocess.on('error', (err) => {
-                                console.error(`Error spawning uv command for package ${packageName}:`, err);
-                                resolve();
-                            });
-                        });
-                    }
-
-                    console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
-
-                    finalTransportForClient = new StdioMCPTransport({
-                        command: mcpServer.command!,
-                        args: mcpServer.args!,
-                        env: Object.keys(env).length > 0 ? env : undefined
-                    });
-                } else {
-                    console.warn(`Skipping MCP server with unsupported transport type: ${(mcpServer as any).type}`);
-                    continue;
-                }
-
-                const mcpClient = await createMCPClient({ transport: finalTransportForClient });
-                mcpClients.push(mcpClient);
-
-                const mcptools = await mcpClient.tools();
-
-                console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(mcptools));
-
-                // Add MCP tools to tools object
-                tools = { ...tools, ...mcptools };
-            } catch (error) {
-                console.error("Failed to initialize MCP client:", error);
-            }
-        }
-
-        // Register cleanup for all clients
-        if (mcpClients.length > 0) {
-            req.signal.addEventListener('abort', async () => {
-                for (const client of mcpClients) {
-                    try {
-                        await client.close();
-                    } catch (error) {
-                        console.error("Error closing MCP client:", error);
-                    }
-                }
-            });
-        }
+        // MCP cleanup disabled during AI SDK v6 migration
+        // if (mcpClients.length > 0) {
+        //     req.signal.addEventListener('abort', async () => {
+        //         for (const client of mcpClients) {
+        //             try {
+        //                 await client.close();
+        //             } catch (error) {
+        //                 console.error("Error closing MCP client:", error);
+        //             }
+        //         }
+        //     });
+        // }
 
         console.log("messages", messages);
         console.log("parts", messages.map(m => m.parts.map(p => p)));
@@ -1073,10 +960,8 @@ You have web search capabilities enabled. When you use web search:
                         console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map(a => a.type));
                     }
 
-                    const allMessages = appendResponseMessages({
-                        messages: modelMessagesFinal,
-                        responseMessages: response.messages as any,
-                    });
+                    // appendResponseMessages replaced with manual concatenation in AI SDK v6
+                    const allMessages = [...modelMessagesFinal, ...(response.messages as any)];
 
                     const processedMessages = allMessages.map(msg => {
                         if (msg.role === 'assistant' && (response.annotations?.length)) {
@@ -1300,15 +1185,11 @@ You have web search capabilities enabled. When you use web search:
                                 modelMessagesFinal.forEach((message, index) => {
                                     let messageContentLength = 0;
 
-                                    if (message.content) {
-                                        if (Array.isArray(message.content)) {
-                                            messageContentLength = message.content
-                                                .filter((part: any) => part.type === 'text')
-                                                .map((part: any) => part.text || '')
-                                                .join('').length;
-                                        } else if (typeof message.content === 'string') {
-                                            messageContentLength = message.content.length;
-                                        }
+                                    // In AI SDK v6, use parts instead of content
+                                    if (message.parts) {
+                                        messageContentLength = message.parts
+                                            .filter((part: any) => part.type === 'text')
+                                            .reduce((acc: number, part: any) => acc + (part.text?.length || 0), 0);
                                     }
 
                                     totalInputContentLength += messageContentLength;
@@ -1603,42 +1484,13 @@ You have web search capabilities enabled. When you use web search:
         console.log(`[Chat ${id}] Using model: ${selectedModel}, effectiveWebSearchEnabled: ${webSearchConfig.enabled}`);
         console.log(`[Chat ${id}] OpenRouter user tracking: ${authenticatedUser.isAnonymous ? `chatlima_anon_${authenticatedUser.userId}` : `chatlima_user_${authenticatedUser.userId}`}`);
 
-        const result = streamText(openRouterPayload);
-
-        return result.toDataStreamResponse({
-            sendReasoning: true,
-            getErrorMessage: (error: any) => {
-                console.error(`[API Error][Chat ${id}] Error in stream processing:`, JSON.stringify(error, null, 2));
-
-                if (error?.name === 'AI_TypeValidationError') {
-                    let errorMessage = "The AI provider returned an unexpected response format. Please try again.";
-                    if (error?.value?.error?.message) {
-                        errorMessage = `API Error: ${error.value.error.message}`;
-                    }
-                    return JSON.stringify({ error: { code: "PROVIDER_ERROR", message: errorMessage, details: "Type validation error" } });
-                }
-
-                let errorCode = "STREAM_ERROR";
-                let errorMessage = "An error occurred while processing your request.";
-                let errorDetails;
-
-                if (error && typeof error.responseBody === 'string') {
-                    try {
-                        const parsedBody = JSON.parse(error.responseBody);
-                        if (parsedBody.error && typeof parsedBody.error.message === 'string') {
-                            errorMessage = parsedBody.error.message;
-                            if (parsedBody.error.code) {
-                                errorCode = String(parsedBody.error.code);
-                            }
-                        }
-                    } catch (e) {
-                        console.warn(`[API Error][Chat ${id}] Failed to parse error.responseBody`);
-                    }
-                }
-
-                return JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } });
-            },
+        const result = streamText({
+            ...openRouterPayload,
+            model: openRouterPayload.model as any // Type cast for AI SDK v6 compatibility
         });
+
+        // In AI SDK v6, toTextStreamResponse has a simpler API
+        return result.toTextStreamResponse();
 
     } catch (error: any) {
         console.error(`[API Route Error][Chat ${requestId}] Error in refactored route:`, JSON.stringify(error, null, 2));

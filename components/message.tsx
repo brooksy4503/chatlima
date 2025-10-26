@@ -1,6 +1,6 @@
 "use client";
 
-import type { Message as TMessage } from "ai";
+import type { UIMessage as TMessage } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
 import { memo, useCallback, useEffect, useState } from "react";
 import equal from "fast-deep-equal";
@@ -184,7 +184,7 @@ const PurePreviewMessage = ({
   // Check if message has web search results - use hasWebSearch flag if available, otherwise detect from parts
   const hasWebSearchResults = message.hasWebSearch || message.parts?.some(part => 
     (part.type === "text" && (part as TextUIPart).citations && (part as TextUIPart).citations!.length > 0) ||
-    (part.type === "tool-invocation" && (part as ToolInvocationUIPart).toolInvocation.toolName === "web_search")
+    (part.type === "tool-invocation" && (part as any).toolInvocation?.toolName === "web_search")
   );
   
 
@@ -214,7 +214,7 @@ const PurePreviewMessage = ({
             {/* Render reasoning parts first */}
             {message.parts?.map((part, i) => {
               if ((part as any).type === "reasoning") {
-                const reasoningPart = part as ReasoningUIPart;
+                const reasoningPart = part as any; // ReasoningUIPart in AI SDK v6
                 return (
                   <ReasoningMessagePart
                     key={`message-${message.id}-reasoning-${i}`}
@@ -272,7 +272,7 @@ const PurePreviewMessage = ({
                     </motion.div>
                   );
                 case "tool-invocation":
-                  const toolPart = part as ToolInvocationUIPart;
+                  const toolPart = part as any; // ToolInvocationUIPart in AI SDK v6
                   const { toolName, state, args } = toolPart.toolInvocation;
                   const result = 'result' in toolPart.toolInvocation ? toolPart.toolInvocation.result : null;
                   
@@ -407,7 +407,7 @@ const PurePreviewMessage = ({
 
 export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
-  if (prevProps.message.annotations !== nextProps.message.annotations)
+  if ((prevProps.message as any).annotations !== (nextProps.message as any).annotations)
     return false;
   if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
   return true;

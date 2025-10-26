@@ -142,7 +142,7 @@ function getTextContent(message: UIMessage): string {
             .join('\n\n');
     }
 
-    return message.content || '';
+    return (message as any).content || '';
 }
 
 // Helper function to check if message contains images

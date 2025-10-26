@@ -145,7 +145,7 @@ export class ChatDatabaseService {
      */
     static convertMessagesForDatabase(messages: UIMessage[], chatId: string): any[] {
         try {
-            return convertToDBMessages(messages, chatId);
+            return convertToDBMessages(messages as any, chatId);
         } catch (error) {
             logDiagnostic('MESSAGE_CONVERSION_ERROR', 'Error converting messages for database', {
                 chatId,
