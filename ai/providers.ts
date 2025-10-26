@@ -281,7 +281,30 @@ export const model = customProvider({
 });
 
 // Get the actual model instance for title generation
-export const titleGenerationModel = languageModels[titleGenerationModelId as keyof typeof languageModels];
+// Dynamically create the title generation model to avoid undefined errors
+export const titleGenerationModel = (() => {
+  // Check if it's in static models first
+  if (titleGenerationModelId in languageModels) {
+    return languageModels[titleGenerationModelId as keyof typeof languageModels];
+  }
+  
+  // If it's an OpenRouter model, create it dynamically
+  if (titleGenerationModelId.startsWith('openrouter/')) {
+    const openrouterModelId = titleGenerationModelId.replace('openrouter/', '');
+    const openRouterClient = createOpenRouter({
+      apiKey: getApiKey('OPENROUTER_API_KEY'),
+      headers: {
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+        'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+      }
+    });
+    return openRouterClient(openrouterModelId);
+  }
+  
+  // Fallback to gpt-5-nano if available
+  console.warn(`Title generation model ${titleGenerationModelId} not found, falling back to gpt-5-nano`);
+  return languageModels['gpt-5-nano'];
+})();
 
 // Function to get the appropriate title generation model based on the provider of the selected model
 export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => {

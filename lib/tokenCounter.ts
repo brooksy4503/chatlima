@@ -53,7 +53,12 @@ export async function trackTokenUsage(
         if (!isAnonymous && shouldDeductCredits) {
             // Report the usage to Polar and log it in our database
             // Pass totalCreditsToConsume for actual billing, original completionTokens for logging
-            await reportAIUsage(userId, totalCreditsToConsume, polarCustomerId, additionalProperties);
+            try {
+                await reportAIUsage(userId, totalCreditsToConsume, polarCustomerId, additionalProperties);
+            } catch (polarError) {
+                console.error(`Error reporting AI usage to Polar:`, polarError);
+                // Continue execution - this is logged but not critical to the chat flow
+            }
         } else {
             // For anonymous users or users using free daily messages, just log locally without reporting to Polar
             const reason = isAnonymous ? 'anonymous user' : 'user using free daily messages';

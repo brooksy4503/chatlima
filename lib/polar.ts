@@ -52,15 +52,21 @@ export async function reportAIUsage(
 
         // 2. Report to Polar (if we have a customer ID)
         if (customerId) {
-            await polarClient.events.ingest({
-                events: [
-                    {
-                        name: eventName,
-                        customerId: customerId,
-                        metadata: eventPayload
-                    }
-                ]
-            });
+            try {
+                await polarClient.events.ingest({
+                    events: [
+                        {
+                            name: eventName,
+                            customerId: customerId,
+                            // Ensure metadata is properly serializable
+                            metadata: JSON.parse(JSON.stringify(eventPayload))
+                        }
+                    ]
+                });
+            } catch (polarIngestError) {
+                console.error(`Failed to ingest event to Polar (non-blocking):`, polarIngestError);
+                // Continue execution - this is not critical
+            }
         }
 
         // 3. Log the event in our database regardless
