@@ -89,12 +89,13 @@ export async function generateTitle(messages: any[], selectedModel?: string, api
       The title should be no more than 30 characters.
       The title should be unique and not generic like "Chat Title".
       Focus on keywords from the user's message.
+      Return your response as JSON with a "title" field.
       `,
       messages: [
         ...titleGenMessages,
         {
           role: "user",
-          content: "Generate a concise title based on my first message.",
+          content: "Generate a concise title based on my first message and return it as JSON.",
         },
       ],
       // Add user tracking for OpenRouter models
