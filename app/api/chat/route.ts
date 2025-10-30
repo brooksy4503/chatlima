@@ -750,10 +750,37 @@ export async function POST(req: Request) {
                 const toolsList = await mcpClient.listTools();
                 const mcptools = toolsList.tools || [];
 
-                console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(mcptools));
+                // Convert MCP tools array to AI SDK tool format
+                const toolsObject = Array.isArray(mcptools) 
+                    ? mcptools.reduce((acc: Record<string, any>, tool: any) => {
+                        if (tool && tool.name) {
+                            // Convert MCP tool format to AI SDK tool format
+                            acc[tool.name] = {
+                                description: tool.description || '',
+                                parameters: tool.inputSchema || { type: 'object', properties: {} },
+                                // Store MCP client reference for execution
+                                execute: async (params: any) => {
+                                    try {
+                                        const result = await mcpClient.callTool({
+                                            name: tool.name,
+                                            arguments: params
+                                        });
+                                        return result.content;
+                                    } catch (error) {
+                                        console.error(`Error executing MCP tool ${tool.name}:`, error);
+                                        throw error;
+                                    }
+                                }
+                            };
+                        }
+                        return acc;
+                    }, {})
+                    : mcptools;
+
+                console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(toolsObject));
 
                 // Add MCP tools to tools object
-                tools = { ...tools, ...mcptools };
+                Object.assign(tools, toolsObject);
             } catch (error) {
                 console.error("Failed to initialize MCP client:", error);
             }
@@ -1615,7 +1642,14 @@ You have web search capabilities enabled. When you use web search:
         return result.toDataStreamResponse({
             sendReasoning: true,
             getErrorMessage: (error: any) => {
-                console.error(`[API Error][Chat ${id}] Error in stream processing:`, JSON.stringify(error, null, 2));
+                console.error(`[API Error][Chat ${id}] Error in stream processing:`, {
+                    error: error,
+                    message: error?.message,
+                    stack: error?.stack,
+                    responseBody: error?.responseBody,
+                    name: error?.name,
+                    cause: error?.cause,
+                });
 
                 if (error?.name === 'AI_TypeValidationError') {
                     let errorMessage = "The AI provider returned an unexpected response format. Please try again.";
@@ -1627,11 +1661,21 @@ You have web search capabilities enabled. When you use web search:
 
                 let errorCode = "STREAM_ERROR";
                 let errorMessage = "An error occurred while processing your request.";
-                let errorDetails;
+                let errorDetails: any = {};
+
+                // Try to extract error details from various sources
+                if (error?.message) {
+                    errorDetails.rawMessage = error.message;
+                }
+
+                if (error?.cause) {
+                    errorDetails.cause = error.cause;
+                }
 
                 if (error && typeof error.responseBody === 'string') {
                     try {
                         const parsedBody = JSON.parse(error.responseBody);
+                        errorDetails.responseBody = parsedBody;
                         if (parsedBody.error && typeof parsedBody.error.message === 'string') {
                             errorMessage = parsedBody.error.message;
                             if (parsedBody.error.code) {
@@ -1640,8 +1684,22 @@ You have web search capabilities enabled. When you use web search:
                         }
                     } catch (e) {
                         console.warn(`[API Error][Chat ${id}] Failed to parse error.responseBody`);
+                        errorDetails.responseBody = error.responseBody;
                     }
                 }
+
+                // Check if error has standard properties
+                if (error?.code) {
+                    errorCode = String(error.code);
+                }
+
+                // Use error message if available
+                if (error?.message && !errorDetails.responseBody) {
+                    errorMessage = error.message;
+                }
+
+                // Log the final error for debugging
+                console.error(`[API Error][Chat ${id}] Final error response:`, { errorCode, errorMessage, errorDetails });
 
                 return JSON.stringify({ error: { code: errorCode, message: errorMessage, details: errorDetails } });
             },
