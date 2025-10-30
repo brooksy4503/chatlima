@@ -5,6 +5,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { spawn } from "child_process";
 import { logDiagnostic } from '@/lib/utils/performantLogging';
+import { tool, jsonSchema } from 'ai';
 
 interface KeyValuePair {
     key: string;
@@ -82,26 +83,25 @@ export class ChatMCPServerService {
 
                 // Convert MCP tools array to AI SDK tool format
                 const toolsObject = Array.isArray(mcptools) 
-                    ? mcptools.reduce((acc: Record<string, any>, tool: any) => {
-                        if (tool && tool.name) {
-                            // Convert MCP tool format to AI SDK tool format
-                            acc[tool.name] = {
-                                description: tool.description || '',
-                                parameters: tool.inputSchema || { type: 'object', properties: {} },
-                                // Store MCP client reference for execution
+                    ? mcptools.reduce((acc: Record<string, any>, mcpTool: any) => {
+                        if (mcpTool && mcpTool.name) {
+                            // Convert MCP tool format to AI SDK tool format using the tool() helper
+                            acc[mcpTool.name] = tool({
+                                description: mcpTool.description || '',
+                                parameters: jsonSchema(mcpTool.inputSchema || { type: 'object', properties: {} }),
                                 execute: async (params: any) => {
                                     try {
                                         const result = await mcpClient.callTool({
-                                            name: tool.name,
+                                            name: mcpTool.name,
                                             arguments: params
                                         });
                                         return result.content;
                                     } catch (error) {
-                                        console.error(`Error executing MCP tool ${tool.name}:`, error);
+                                        console.error(`Error executing MCP tool ${mcpTool.name}:`, error);
                                         throw error;
                                     }
                                 }
-                            };
+                            });
                         }
                         return acc;
                     }, {})
