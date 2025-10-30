@@ -74,10 +74,14 @@ export class ChatMCPServerService {
                 // Create appropriate transport based on type
                 const transport = await this.createTransport(mcpServer, requestId);
 
+                logDiagnostic('MCP_CLIENT_CREATE', 'Creating MCP client', { requestId });
                 const mcpClient = new MCPClient({ name: 'chatlima-client', version: '1.0.0' }, { capabilities: {} });
+                
+                logDiagnostic('MCP_CLIENT_CONNECT', 'Connecting MCP client', { requestId, url: mcpServer.url });
                 await mcpClient.connect(transport);
                 mcpClients.push(mcpClient);
 
+                logDiagnostic('MCP_LIST_TOOLS', 'Listing MCP tools', { requestId });
                 const toolsList = await mcpClient.listTools();
                 const mcptools = toolsList.tools || [];
 
@@ -116,10 +120,13 @@ export class ChatMCPServerService {
                 // Add MCP tools to tools object
                 Object.assign(tools, toolsObject);
             } catch (error) {
+                console.error(`[MCP_SERVER_ERROR] Failed to initialize MCP client:`, error);
                 logDiagnostic('MCP_SERVER_ERROR', `Failed to initialize MCP client`, {
                     requestId,
                     type: mcpServer.type,
-                    error: error instanceof Error ? error.message : String(error)
+                    url: mcpServer.url,
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined
                 });
                 // Continue with other servers instead of failing the entire request
             }
@@ -279,14 +286,14 @@ export class ChatMCPServerService {
         });
 
         const transportUrl = new URL(mcpServer.url);
-        return new StreamableHTTPClientTransport(transportUrl, {
-            requestInit: {
-                headers: {
-                    'MCP-Protocol-Version': '2025-06-18',
-                    ...headers
+        // Let the SDK handle protocol version negotiation automatically
+        return new StreamableHTTPClientTransport(transportUrl, 
+            Object.keys(headers).length > 0 ? {
+                requestInit: {
+                    headers: headers
                 }
-            }
-        });
+            } : undefined
+        );
     }
 
     /**
