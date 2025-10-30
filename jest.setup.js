@@ -57,8 +57,86 @@ if (typeof global.structuredClone !== 'function') {
 
 // Mock modern browser APIs that React 19 might use
 global.Request = global.Request || class Request {};
-global.Response = global.Response || class Response {};
-global.Headers = global.Headers || class Headers {};
+global.Response = global.Response || class Response {
+  static json(data, init) {
+    return new Response(JSON.stringify(data), {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...init?.headers,
+      },
+    });
+  }
+};
+global.Headers = global.Headers || class Headers {
+  constructor(init) {
+    this._headers = new Map();
+    if (init) {
+      Object.entries(init).forEach(([key, value]) => {
+        this.set(key, value);
+      });
+    }
+  }
+  get(name) {
+    return this._headers.get(name.toLowerCase());
+  }
+  set(name, value) {
+    this._headers.set(name.toLowerCase(), value);
+  }
+  has(name) {
+    return this._headers.has(name.toLowerCase());
+  }
+  delete(name) {
+    this._headers.delete(name.toLowerCase());
+  }
+  entries() {
+    return this._headers.entries();
+  }
+  keys() {
+    return this._headers.keys();
+  }
+  values() {
+    return this._headers.values();
+  }
+};
+
+// Mock Next.js edge runtime cookies for NextRequest
+jest.mock('next/dist/compiled/@edge-runtime/cookies', () => ({
+  RequestCookies: class RequestCookies {
+    constructor() {
+      this._cookies = new Map();
+    }
+    get(name) {
+      return this._cookies.get(name);
+    }
+    set(name, value) {
+      this._cookies.set(name, value);
+    }
+    delete(name) {
+      this._cookies.delete(name);
+    }
+    has(name) {
+      return this._cookies.has(name);
+    }
+    clear() {
+      this._cookies.clear();
+    }
+  },
+  ResponseCookies: class ResponseCookies {
+    constructor() {
+      this._cookies = new Map();
+    }
+    get(name) {
+      return this._cookies.get(name);
+    }
+    set(name, value) {
+      this._cookies.set(name, value);
+    }
+    delete(name) {
+      this._cookies.delete(name);
+    }
+  }
+}));
 
 // Silence specific React 19 warnings in tests
 const originalError = console.error;

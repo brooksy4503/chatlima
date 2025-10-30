@@ -1,5 +1,4 @@
 import { streamText, generateText, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
-import { appendResponseMessages } from 'ai';
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
@@ -26,9 +25,10 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { validatePresetParameters, getModelDefaults, sanitizeSystemInstruction } from "@/lib/parameter-validation";
 
-import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
-import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
+import { Client as MCPClient } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { spawn } from "child_process";
 
 // Import our new services
@@ -726,9 +726,9 @@ export async function POST(req: Request) {
                         });
                     }
 
-                    console.log(`Spawning StdioMCPTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
+                    console.log(`Spawning StdioClientTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
 
-                    finalTransportForClient = new StdioMCPTransport({
+                    finalTransportForClient = new StdioClientTransport({
                         command: mcpServer.command!,
                         args: mcpServer.args!,
                         env: Object.keys(env).length > 0 ? env : undefined
@@ -738,10 +738,12 @@ export async function POST(req: Request) {
                     continue;
                 }
 
-                const mcpClient = await createMCPClient({ transport: finalTransportForClient });
+                const mcpClient = new MCPClient({ name: 'chatlima-client', version: '1.0.0' }, { capabilities: {} });
+                await mcpClient.connect(finalTransportForClient);
                 mcpClients.push(mcpClient);
 
-                const mcptools = await mcpClient.tools();
+                const toolsList = await mcpClient.listTools();
+                const mcptools = toolsList.tools || [];
 
                 console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(mcptools));
 
@@ -848,7 +850,9 @@ export async function POST(req: Request) {
             selectedModel === "openrouter/x-ai/grok-3-beta" ||
             selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
             selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-            selectedModel === "openrouter/qwen/qwq-32b"
+            selectedModel === "openrouter/qwen/qwq-32b" ||
+            selectedModel.includes("openrouter/minimax/m2") ||
+            selectedModel.includes("openrouter/minimax-m2")
         ) {
             modelOptions.logprobs = false;
         }
@@ -1073,10 +1077,8 @@ You have web search capabilities enabled. When you use web search:
                         console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map(a => a.type));
                     }
 
-                    const allMessages = appendResponseMessages({
-                        messages: modelMessagesFinal,
-                        responseMessages: response.messages as any,
-                    });
+                    // Manually concatenate request and response messages
+                    const allMessages = [...modelMessagesFinal, ...(response.messages || [])];
 
                     const processedMessages = allMessages.map(msg => {
                         if (msg.role === 'assistant' && (response.annotations?.length)) {

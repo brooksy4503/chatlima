@@ -1,6 +1,8 @@
-import { experimental_createMCPClient as createMCPClient, MCPTransport } from 'ai';
-import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
+import { Client as MCPClient } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { spawn } from "child_process";
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 
@@ -71,10 +73,12 @@ export class ChatMCPServerService {
                 // Create appropriate transport based on type
                 const transport = await this.createTransport(mcpServer, requestId);
 
-                const mcpClient = await createMCPClient({ transport: transport });
+                const mcpClient = new MCPClient({ name: 'chatlima-client', version: '1.0.0' }, { capabilities: {} });
+                await mcpClient.connect(transport);
                 mcpClients.push(mcpClient);
 
-                const mcptools = await mcpClient.tools();
+                const toolsList = await mcpClient.listTools();
+                const mcptools = toolsList.tools || [];
 
                 logDiagnostic('MCP_TOOLS_LOADED', `MCP tools loaded from ${mcpServer.type} transport`, {
                     requestId,
@@ -149,7 +153,7 @@ export class ChatMCPServerService {
     /**
      * Creates the appropriate transport for an MCP server
      */
-    private static async createTransport(mcpServer: MCPServerConfig, requestId: string): Promise<MCPTransport | { type: 'sse', url: string, headers?: Record<string, string> }> {
+    private static async createTransport(mcpServer: MCPServerConfig, requestId: string): Promise<Transport> {
         switch (mcpServer.type) {
             case 'sse':
                 return this.createSSETransport(mcpServer, requestId);
@@ -165,7 +169,7 @@ export class ChatMCPServerService {
     /**
      * Creates SSE transport
      */
-    private static createSSETransport(mcpServer: MCPServerConfig, requestId: string): { type: 'sse', url: string, headers?: Record<string, string> } {
+    private static createSSETransport(mcpServer: MCPServerConfig, requestId: string): Transport {
         const headers: Record<string, string> = {};
         if (mcpServer.headers && mcpServer.headers.length > 0) {
             mcpServer.headers.forEach(header => {
@@ -179,17 +183,18 @@ export class ChatMCPServerService {
             headerCount: Object.keys(headers).length
         });
 
-        return {
-            type: 'sse' as const,
-            url: mcpServer.url,
-            headers: Object.keys(headers).length > 0 ? headers : undefined
-        };
+        return new SSEClientTransport(
+            new URL(mcpServer.url),
+            Object.keys(headers).length > 0 ? {
+                requestInit: { headers }
+            } : undefined
+        );
     }
 
     /**
      * Creates Stdio transport with package installation if needed
      */
-    private static async createStdioTransport(mcpServer: MCPServerConfig, requestId: string): Promise<MCPTransport> {
+    private static async createStdioTransport(mcpServer: MCPServerConfig, requestId: string): Promise<Transport> {
         if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
             throw new Error("Missing command or args for stdio MCP server");
         }
@@ -217,7 +222,7 @@ export class ChatMCPServerService {
             envCount: Object.keys(env).length
         });
 
-        return new StdioMCPTransport({
+        return new StdioClientTransport({
             command: mcpServer.command,
             args: mcpServer.args,
             env: Object.keys(env).length > 0 ? env : undefined
@@ -227,7 +232,7 @@ export class ChatMCPServerService {
     /**
      * Creates StreamableHTTP transport
      */
-    private static createStreamableHTTPTransport(mcpServer: MCPServerConfig, requestId: string): MCPTransport {
+    private static createStreamableHTTPTransport(mcpServer: MCPServerConfig, requestId: string): Transport {
         const headers: Record<string, string> = {};
         if (mcpServer.headers && mcpServer.headers.length > 0) {
             mcpServer.headers.forEach(header => {
