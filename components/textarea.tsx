@@ -43,7 +43,20 @@ export const Textarea = ({
   images = [],
   onImagesChange,
 }: InputProps) => {
+  // Guard against undefined input prop
+  const safeInput = input ?? "";
   const isStreaming = status === "streaming" || status === "submitted";
+  
+  // Memoize handleInputChange to ensure stable reference
+  // This should always be provided from useChat hook
+  const safeHandleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (typeof handleInputChange === 'function') {
+      handleInputChange(e);
+    } else {
+      // This should never happen - useChat always provides handleInputChange
+      console.error('handleInputChange is not a function');
+    }
+  }, [handleInputChange]);
   const iconButtonRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
@@ -99,12 +112,12 @@ export const Textarea = ({
       setDetectedLanguage(null);
       
       // Unwrap code blocks from the current input
-      const unwrappedText = unwrapCodeBlocks(input);
-      if (unwrappedText !== input) {
+      const unwrappedText = unwrapCodeBlocks(safeInput);
+      if (unwrappedText !== safeInput) {
         const syntheticEvent = {
           target: { value: unwrappedText }
         } as React.ChangeEvent<HTMLTextAreaElement>;
-        handleInputChange(syntheticEvent);
+        safeHandleInputChange(syntheticEvent);
         
         // Show feedback that code blocks were automatically unwrapped
         setShowAutoUnwrapFeedback(true);
@@ -112,8 +125,8 @@ export const Textarea = ({
       }
     } else {
       // Enabling auto detection: analyze current text and potentially wrap it
-      if (input.trim().length > 20) {
-        const processed = processTextInput(input, { autoWrapCode: true });
+      if (safeInput.trim().length > 20) {
+        const processed = processTextInput(safeInput, { autoWrapCode: true });
         
         if (processed.isCode && processed.confidence > 60) {
           // Update code mode state
@@ -122,11 +135,11 @@ export const Textarea = ({
           setDetectedLanguage(processed.language || null);
           
           // If the text was wrapped, update the input
-          if (processed.wasWrapped && processed.processedText !== input) {
+          if (processed.wasWrapped && processed.processedText !== safeInput) {
             const syntheticEvent = {
               target: { value: processed.processedText }
             } as React.ChangeEvent<HTMLTextAreaElement>;
-            handleInputChange(syntheticEvent);
+            safeHandleInputChange(syntheticEvent);
             
             // Show feedback that code was automatically wrapped
             setShowAutoWrapFeedback(true);
@@ -189,7 +202,7 @@ export const Textarea = ({
   };
 
   const estimatedCost = getEstimatedCost();
-  const shouldShowCostWarning = getEffectiveWebSearchEnabled() && canUseWebSearch && input.trim();
+  const shouldShowCostWarning = getEffectiveWebSearchEnabled() && canUseWebSearch && safeInput.trim();
 
   // Focus textarea after model selection
   const handleModelSelected = () => {
@@ -305,7 +318,7 @@ export const Textarea = ({
         target: { value: newValue }
       } as React.ChangeEvent<HTMLTextAreaElement>;
       
-      handleInputChange(syntheticEvent);
+      safeHandleInputChange(syntheticEvent);
       
       // Restore cursor position
       requestAnimationFrame(() => {
@@ -337,14 +350,14 @@ export const Textarea = ({
     }
     
     setLastProcessedLength(processed.processedText.length);
-  }, [handleInputChange]);
+  }, [safeHandleInputChange]);
 
   // Enhanced input change handler with dynamic code detection
   const handleEnhancedInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     
     // Call the original handler first
-    handleInputChange(e);
+    safeHandleInputChange(e);
     
     // Dynamic code detection for longer content (> 50 characters) - only if auto detection is enabled
     if (autoDetectionEnabled && newValue.length > 50 && newValue.length % 20 === 0) {
@@ -370,7 +383,7 @@ export const Textarea = ({
       setCodeConfidence(0);
       setDetectedLanguage(null);
     }
-  }, [handleInputChange, isCodeMode, detectLanguage, autoDetectionEnabled]);
+  }, [safeHandleInputChange, isCodeMode, detectLanguage, autoDetectionEnabled]);
 
   // Enhanced keyboard handler with smart input processing
   const handleEnhancedKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -381,7 +394,7 @@ export const Textarea = ({
     const key = e.key;
 
     // Handle Enter submission (preserve existing behavior)
-    if (key === "Enter" && !e.shiftKey && !isLoading && (input.trim() || hasImages)) {
+    if (key === "Enter" && !e.shiftKey && !isLoading && (safeInput.trim() || hasImages)) {
       e.preventDefault();
       e.currentTarget.form?.requestSubmit();
       return;
@@ -396,19 +409,19 @@ export const Textarea = ({
       
       if (selectionStart !== selectionEnd) {
         // Wrap selected text
-        const selectedText = input.slice(selectionStart, selectionEnd);
+        const selectedText = safeInput.slice(selectionStart, selectionEnd);
         const processed = processTextInput(selectedText, { forceCodeWrapping: true });
         
         const newValue = 
-          input.slice(0, selectionStart) + 
+          safeInput.slice(0, selectionStart) + 
           processed.processedText + 
-          input.slice(selectionEnd);
+          safeInput.slice(selectionEnd);
         
         const syntheticEvent = {
           target: { value: newValue }
         } as React.ChangeEvent<HTMLTextAreaElement>;
         
-        handleInputChange(syntheticEvent);
+        safeHandleInputChange(syntheticEvent);
         
         // Show feedback
         if (processed.wasWrapped) {
@@ -424,14 +437,14 @@ export const Textarea = ({
         });
       } else {
         // No selection - wrap entire input if it looks like code
-        const processed = processTextInput(input, { forceCodeWrapping: true });
+        const processed = processTextInput(safeInput, { forceCodeWrapping: true });
         
         if (processed.wasWrapped) {
           const syntheticEvent = {
             target: { value: processed.processedText }
           } as React.ChangeEvent<HTMLTextAreaElement>;
           
-          handleInputChange(syntheticEvent);
+          safeHandleInputChange(syntheticEvent);
           setShowAutoWrapFeedback(true);
           setTimeout(() => setShowAutoWrapFeedback(false), 3000);
           
@@ -455,7 +468,7 @@ export const Textarea = ({
     }
 
     // Process keyboard input with smart enhancements
-    const processed = processKeyboardInput(key, input, cursorPosition, detectedLanguage);
+    const processed = processKeyboardInput(key, safeInput, cursorPosition, detectedLanguage);
 
     if (processed.shouldPreventDefault) {
       e.preventDefault();
@@ -466,7 +479,7 @@ export const Textarea = ({
           target: { value: processed.newText }
         } as React.ChangeEvent<HTMLTextAreaElement>;
 
-        handleInputChange(syntheticEvent);
+        safeHandleInputChange(syntheticEvent);
 
         // Set cursor position after React updates
         requestAnimationFrame(() => {
@@ -477,7 +490,7 @@ export const Textarea = ({
 
     // Handle code snippet expansion on space or tab
     if ((key === ' ' || key === 'Tab') && isCodeMode && detectedLanguage) {
-      const words = input.slice(0, cursorPosition).split(/\s+/);
+      const words = safeInput.slice(0, cursorPosition).split(/\s+/);
       const lastWord = words[words.length - 1];
       
       if (lastWord && lastWord.length > 1) {
@@ -486,8 +499,8 @@ export const Textarea = ({
           e.preventDefault();
           
           // Replace the trigger word with the snippet
-          const beforeWord = input.slice(0, cursorPosition - lastWord.length);
-          const afterCursor = input.slice(cursorPosition);
+          const beforeWord = safeInput.slice(0, cursorPosition - lastWord.length);
+          const afterCursor = safeInput.slice(cursorPosition);
           
           // Simple snippet expansion (remove ${} placeholders for now)
           const expandedSnippet = snippet.replace(/\$\{\d+:?([^}]*)\}/g, '$1');
@@ -497,7 +510,7 @@ export const Textarea = ({
             target: { value: newText }
           } as React.ChangeEvent<HTMLTextAreaElement>;
           
-          handleInputChange(syntheticEvent);
+          safeHandleInputChange(syntheticEvent);
           
           // Position cursor at first placeholder or end of snippet
           const newCursorPos = beforeWord.length + expandedSnippet.indexOf('// ');
@@ -509,7 +522,7 @@ export const Textarea = ({
         }
       }
     }
-  }, [input, isLoading, hasImages, handleInputChange, isCodeMode, detectedLanguage]);
+  }, [safeInput, isLoading, hasImages, safeHandleInputChange, isCodeMode, detectedLanguage]);
 
   // Determine tooltip message based on credit status
   const getWebSearchTooltipMessage = () => {
@@ -569,7 +582,7 @@ export const Textarea = ({
               ? 'font-mono ring-2 ring-blue-500/20 border-blue-500/30 bg-blue-50/10 dark:bg-blue-950/10 text-sm leading-relaxed' 
               : 'font-sans text-base leading-normal'
           }`}
-          value={input}
+          value={safeInput}
           autoFocus
           placeholder={hasImages ? "Describe these images or ask questions..." : "Send a message..."}
           onChange={handleEnhancedInputChange}
@@ -577,13 +590,13 @@ export const Textarea = ({
           onKeyDown={handleEnhancedKeyDown}
           onBlur={(e) => {
             // Clean up code structure when user finishes editing
-            if (isCodeMode && input.length > 50) {
-              const cleaned = cleanupCodeStructure(input);
-              if (cleaned !== input) {
+            if (isCodeMode && safeInput.length > 50) {
+              const cleaned = cleanupCodeStructure(safeInput);
+              if (cleaned !== safeInput) {
                 const syntheticEvent = {
                   target: { value: cleaned }
                 } as React.ChangeEvent<HTMLTextAreaElement>;
-                handleInputChange(syntheticEvent);
+                safeHandleInputChange(syntheticEvent);
               }
             }
           }}
@@ -686,7 +699,7 @@ export const Textarea = ({
       )}
 
       {/* Auto-detection disabled indicator */}
-      {!autoDetectionEnabled && !isCodeMode && input.length > 20 && (
+      {!autoDetectionEnabled && !isCodeMode && safeInput.length > 20 && (
         <div className={`absolute top-2 z-10 ${shouldShowCostWarning ? 'right-32' : 'right-4'}`}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -830,7 +843,7 @@ export const Textarea = ({
                 <button
                   type={isStreaming ? "button" : "submit"}
                   onClick={isStreaming ? stop : undefined}
-                  disabled={(!isStreaming && !(input.trim() || hasImages)) || (isStreaming && status === "submitted")}
+                  disabled={(!isStreaming && !(safeInput.trim() || hasImages)) || (isStreaming && status === "submitted")}
                   className={`${
                     isMobileScreen 
                       ? 'flex-1 h-8 px-3 text-sm' 
@@ -848,7 +861,7 @@ export const Textarea = ({
                     <>
                       <ArrowUp className={`${
                         isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'
-                      } ${(!isStreaming && !(input.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                      } ${(!isStreaming && !(safeInput.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
                       <span className={isMobileScreen ? 'text-xs font-medium' : 'text-sm'}>
                         Send
                       </span>

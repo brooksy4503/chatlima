@@ -39,7 +39,10 @@ jest.mock('@/lib/db', () => ({
 }));
 
 jest.mock('@/lib/db/schema', () => ({
-    chats: 'mockChatsTable'
+    chats: {
+        id: 'chats.id',
+        userId: 'chats.userId'
+    }
 }));
 
 jest.mock('drizzle-orm', () => ({
@@ -140,7 +143,6 @@ describe('ChatDatabaseService', () => {
             const context = createMockChatContext();
             const error = new Error('Database connection failed');
             mockSaveChat.mockRejectedValue(error);
-            mockSaveChat.mockResolvedValue({ id: 'chat123' });
 
             const result = await ChatDatabaseService.saveChatToDatabase(context);
 
@@ -190,7 +192,7 @@ describe('ChatDatabaseService', () => {
 
             expect(mockSaveMessages).toHaveBeenCalledWith({
                 messages: [
-                    { id: 'msg1', role: 'user', content: 'Hello', hasWebSearch: false },
+                    { id: 'msg1', role: 'user', content: 'Hello', hasWebSearch: false, webSearchContextSize: 'medium' },
                     {
                         id: 'msg2',
                         role: 'assistant',
@@ -317,7 +319,8 @@ describe('ChatDatabaseService', () => {
             expect(mockFindFirst).toHaveBeenCalledWith({
                 where: 'and_mock'
             });
-            expect(mockEq).toHaveBeenCalledWith(chats, chatId);
+            expect(mockEq).toHaveBeenCalledWith(chats.id, chatId);
+            expect(mockEq).toHaveBeenCalledWith(chats.userId, userId);
             expect(mockAnd).toHaveBeenCalledWith('eq_mock', 'eq_mock');
 
             expect(mockLogDiagnostic).toHaveBeenCalledWith(

@@ -34,24 +34,21 @@ describe('ProjectOverview', () => {
   });
 
   describe('Basic Rendering and Props', () => {
-    test('renders welcome header without sendMessage prop', () => {
+    test('renders welcome text without sendMessage prop', () => {
       render(<ProjectOverview />);
       
-      expect(screen.getByRole('heading', { name: /welcome to chatlima/i })).toBeInTheDocument();
       expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
     });
 
-    test('renders welcome header with sendMessage prop', () => {
+    test('renders welcome text with sendMessage prop', () => {
       render(<ProjectOverview sendMessage={mockSendMessage} />);
       
-      expect(screen.getByRole('heading', { name: /welcome to chatlima/i })).toBeInTheDocument();
       expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
     });
 
-    test('renders welcome header with both sendMessage and selectedModel props', () => {
+    test('renders welcome text with both sendMessage and selectedModel props', () => {
       render(<ProjectOverview sendMessage={mockSendMessage} selectedModel="gpt-4" />);
       
-      expect(screen.getByRole('heading', { name: /welcome to chatlima/i })).toBeInTheDocument();
       expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
     });
   });
@@ -111,15 +108,9 @@ describe('ProjectOverview', () => {
     test('applies correct CSS classes to main container', () => {
       render(<ProjectOverview sendMessage={mockSendMessage} />);
       
-      const mainContainer = screen.getByRole('heading', { name: /welcome to chatlima/i }).closest('div')?.parentElement;
+      const description = screen.getByText(/your ai-powered chat assistant/i);
+      const mainContainer = description.closest('div')?.parentElement;
       expect(mainContainer).toHaveClass('flex', 'flex-col', 'items-center', 'justify-center', 'space-y-6', 'p-4');
-    });
-
-    test('applies gradient styling to welcome header', () => {
-      render(<ProjectOverview />);
-      
-      const heading = screen.getByRole('heading', { name: /welcome to chatlima/i });
-      expect(heading).toHaveClass('text-2xl', 'sm:text-3xl', 'font-bold', 'bg-gradient-to-r', 'from-primary', 'to-primary/70', 'bg-clip-text', 'text-transparent');
     });
 
     test('applies correct styling to description text', () => {
@@ -138,13 +129,6 @@ describe('ProjectOverview', () => {
   });
 
   describe('Accessibility', () => {
-    test('has proper heading hierarchy', () => {
-      render(<ProjectOverview sendMessage={mockSendMessage} />);
-      
-      const heading = screen.getByRole('heading', { level: 1 });
-      expect(heading).toHaveTextContent('Welcome to ChatLima');
-    });
-
     test('provides descriptive text for screen readers', () => {
       render(<ProjectOverview />);
       
@@ -155,8 +139,8 @@ describe('ProjectOverview', () => {
     test('maintains semantic structure without interactive elements when sendMessage is not provided', () => {
       render(<ProjectOverview />);
       
-      // Should only have heading and text, no interactive elements
-      expect(screen.getByRole('heading')).toBeInTheDocument();
+      // Should only have text, no interactive elements
+      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
       expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
@@ -166,7 +150,7 @@ describe('ProjectOverview', () => {
     test('handles undefined sendMessage prop gracefully', () => {
       render(<ProjectOverview sendMessage={undefined} />);
       
-      expect(screen.getByRole('heading', { name: /welcome to chatlima/i })).toBeInTheDocument();
+      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
       expect(screen.queryByTestId('suggested-prompts')).not.toBeInTheDocument();
     });
 
@@ -190,8 +174,7 @@ describe('ProjectOverview', () => {
       const selectedModel = 'claude-3-opus';
       render(<ProjectOverview sendMessage={mockSendMessage} selectedModel={selectedModel} />);
       
-      // Verify main header is present
-      expect(screen.getByRole('heading', { name: /welcome to chatlima/i })).toBeInTheDocument();
+      // Verify welcome text is present
       expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
       
       // Verify SuggestedPrompts is rendered with correct props
@@ -207,12 +190,8 @@ describe('ProjectOverview', () => {
       render(<ProjectOverview />);
       
       // Should render basic welcome without interactive elements
-      expect(screen.getByRole('heading', { name: /welcome to chatlima/i })).toBeInTheDocument();
       expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
       expect(screen.queryByTestId('suggested-prompts')).not.toBeInTheDocument();
-      
-      // Should have proper semantic structure
-      expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
     });
   });
 });

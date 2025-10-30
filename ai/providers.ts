@@ -142,12 +142,7 @@ const languageModels = {
   "claude-3-7-sonnet": anthropicClient('claude-3-7-sonnet-20250219'),
   "gpt-5-nano": openaiClient("gpt-5-nano"),
   "grok-3-mini": xaiClient("grok-3-mini-latest"),
-  "qwen-qwq": wrapLanguageModel(
-    {
-      model: groqClient("qwen-qwq-32b"),
-      middleware
-    }
-  ),
+  "qwen-qwq": groqClient("qwen-qwq-32b"),
   // Note: Requesty models are now handled dynamically via getLanguageModelWithKeys()
   // Only keeping essential non-Requesty models for fallback purposes
 };
@@ -179,10 +174,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     );
 
     if (isReasoningModel) {
-      return wrapLanguageModel({
-        model: getRequestyClient()(requestyModelId, { logprobs: false }),
-        middleware: deepseekR1Middleware,
-      });
+      // Note: Reasoning extraction is now handled natively by the AI SDK in v6
+      return getRequestyClient()(requestyModelId, { logprobs: false });
     }
 
     // Regular model without special middleware
@@ -201,22 +194,26 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       openrouterModelId.includes('thinking') ||
       openrouterModelId.includes('qwq') ||
       openrouterModelId.includes('grok-3-beta') ||
-      openrouterModelId.includes('grok-3-mini-beta')
+      openrouterModelId.includes('grok-3-mini-beta') ||
+      openrouterModelId.includes('minimax/m2') ||
+      openrouterModelId.includes('minimax-m2')
     );
 
     if (isReasoningModel) {
       // Handle special reasoning parameters for specific models
       if (openrouterModelId === 'x-ai/grok-3-mini-beta' && modelId.includes('reasoning-high')) {
-        return wrapLanguageModel({
-          model: getOpenRouterClient()('x-ai/grok-3-mini-beta', { reasoning: { effort: "high" }, logprobs: false }),
-          middleware: deepseekR1Middleware,
-        });
+        // Note: Reasoning extraction is now handled natively by the AI SDK in v6
+        return getOpenRouterClient()('x-ai/grok-3-mini-beta', { reasoning: { effort: "high" }, logprobs: false });
       }
 
-      return wrapLanguageModel({
-        model: getOpenRouterClient()(openrouterModelId, { logprobs: false }),
-        middleware: deepseekR1Middleware,
-      });
+      // MiniMax M2 uses OpenRouter's native reasoning field format, not tag-based reasoning
+      // The AI SDK handles this automatically with sendReasoning: true, so no middleware needed
+      if (openrouterModelId.includes('minimax/m2') || openrouterModelId.includes('minimax-m2')) {
+        return getOpenRouterClient()(openrouterModelId);
+      }
+
+      // Note: Reasoning extraction is now handled natively by the AI SDK in v6
+      return getOpenRouterClient()(openrouterModelId, { logprobs: false });
     }
 
     // Regular model without special middleware
@@ -234,10 +231,8 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
 
     // Groq models
     case "qwen-qwq":
-      return wrapLanguageModel({
-        model: getGroqClient()("qwen-qwq-32b"),
-        middleware
-      });
+      // Note: Reasoning extraction is now handled natively by the AI SDK in v6
+      return getGroqClient()("qwen-qwq-32b");
 
     // XAI models
     case "grok-3-mini":
