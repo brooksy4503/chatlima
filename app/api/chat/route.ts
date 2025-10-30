@@ -25,12 +25,6 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { validatePresetParameters, getModelDefaults, sanitizeSystemInstruction } from "@/lib/parameter-validation";
 
-import { Client as MCPClient } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
-import { spawn } from "child_process";
-
 // Import our new services
 import { ChatAuthenticationService, type AuthenticatedUser } from '@/lib/services/chatAuthenticationService';
 import {
@@ -484,6 +478,13 @@ export async function POST(req: Request) {
             selectedModel
         });
 
+        // Register cleanup for MCP clients
+        if (mcpResult.cleanup) {
+            req.signal.addEventListener('abort', async () => {
+                await mcpResult.cleanup();
+            });
+        }
+
         // 9. Prepare chat ID
         const id = chatId || nanoid();
         const isNewChat = !chatId || !(await ChatDatabaseService.checkChatExists({
@@ -627,176 +628,8 @@ export async function POST(req: Request) {
             });
         }
 
-        // Initialize tools
-        let tools = {};
-        const mcpClients: any[] = [];
-
-        // Process each MCP server configuration
-        for (const mcpServer of initialMcpServers) {
-            try {
-                // Create appropriate transport based on type
-                let finalTransportForClient: any;
-
-                if (mcpServer.type === 'sse') {
-                    const headers: Record<string, string> = {};
-                    if (mcpServer.headers && mcpServer.headers.length > 0) {
-                        mcpServer.headers.forEach(header => {
-                            if (header.key) headers[header.key] = header.value || '';
-                        });
-                    }
-                    finalTransportForClient = {
-                        type: 'sse' as const,
-                        url: mcpServer.url,
-                        headers: Object.keys(headers).length > 0 ? headers : undefined
-                    };
-                } else if (mcpServer.type === 'streamable-http') {
-                    const headers: Record<string, string> = {};
-                    if (mcpServer.headers && mcpServer.headers.length > 0) {
-                        mcpServer.headers.forEach(header => {
-                            if (header.key) headers[header.key] = header.value || '';
-                        });
-                    }
-                    const transportUrl = new URL(mcpServer.url);
-                    finalTransportForClient = new StreamableHTTPClientTransport(transportUrl, {
-                        requestInit: {
-                            headers: {
-                                'MCP-Protocol-Version': '2025-06-18',
-                                ...headers
-                            }
-                        }
-                    });
-                } else if (mcpServer.type === 'stdio') {
-                    if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
-                        console.warn("Skipping stdio MCP server due to missing command or args");
-                        continue;
-                    }
-                    const env: Record<string, string> = {};
-                    if (mcpServer.env && mcpServer.env.length > 0) {
-                        mcpServer.env.forEach(envVar => {
-                            if (envVar.key) env[envVar.key] = envVar.value || '';
-                        });
-                    }
-
-                    if (mcpServer.command === 'uvx') {
-                        console.log("Ensuring uv (for uvx) is installed...");
-                        let uvInstalled = false;
-                        const installUvSubprocess = spawn('pip3', ['install', 'uv']);
-                        installUvSubprocess.stdout.on('data', (data) => { });
-                        installUvSubprocess.stderr.on('data', (data) => { });
-
-                        await new Promise<void>((resolve) => {
-                            installUvSubprocess.on('close', (code: number) => {
-                                if (code !== 0) {
-                                    console.error(`Failed to install uv using pip3: exit code ${code}`);
-                                } else {
-                                    console.log("uv installed or already present.");
-                                    uvInstalled = true;
-                                }
-                                resolve();
-                            });
-                            installUvSubprocess.on('error', (err) => {
-                                console.error("Error spawning pip3 to install uv:", err);
-                                resolve();
-                            });
-                        });
-
-                        if (!uvInstalled) {
-                            console.warn("Skipping uvx command: Failed to ensure uv installation.");
-                            continue;
-                        }
-                    }
-
-                    if (mcpServer.command.includes('python3')) {
-                        const packageName = mcpServer.args[mcpServer.args.indexOf('-m') + 1];
-                        console.log("Attempting to install python package using uv:", packageName);
-                        const subprocess = spawn('uv', ['pip', 'install', packageName]);
-                        subprocess.on('close', (code: number) => {
-                            if (code !== 0) {
-                                console.error(`Failed to install python package ${packageName} using uv: ${code}`);
-                            } else {
-                                console.log(`Successfully installed python package ${packageName} using uv.`);
-                            }
-                        });
-                        await new Promise<void>((resolve) => {
-                            subprocess.on('close', () => resolve());
-                            subprocess.on('error', (err) => {
-                                console.error(`Error spawning uv command for package ${packageName}:`, err);
-                                resolve();
-                            });
-                        });
-                    }
-
-                    console.log(`Spawning StdioClientTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
-
-                    // Ensure child process inherits PATH and other important env vars
-                    const spawnEnv = Object.keys(env).length > 0 
-                        ? { ...process.env, ...env } 
-                        : process.env;
-
-                    finalTransportForClient = new StdioClientTransport({
-                        command: mcpServer.command!,
-                        args: mcpServer.args!,
-                        env: spawnEnv as Record<string, string>
-                    });
-                } else {
-                    console.warn(`Skipping MCP server with unsupported transport type: ${(mcpServer as any).type}`);
-                    continue;
-                }
-
-                const mcpClient = new MCPClient({ name: 'chatlima-client', version: '1.0.0' }, { capabilities: {} });
-                await mcpClient.connect(finalTransportForClient);
-                mcpClients.push(mcpClient);
-
-                const toolsList = await mcpClient.listTools();
-                const mcptools = toolsList.tools || [];
-
-                // Convert MCP tools array to AI SDK tool format
-                const toolsObject = Array.isArray(mcptools) 
-                    ? mcptools.reduce((acc: Record<string, any>, mcpTool: any) => {
-                        if (mcpTool && mcpTool.name) {
-                            // Convert MCP tool format to AI SDK tool format using the tool() helper
-                            acc[mcpTool.name] = tool({
-                                description: mcpTool.description || '',
-                                parameters: jsonSchema(mcpTool.inputSchema || { type: 'object', properties: {} }),
-                                execute: async (params: any) => {
-                                    try {
-                                        const result = await mcpClient.callTool({
-                                            name: mcpTool.name,
-                                            arguments: params
-                                        });
-                                        return result.content;
-                                    } catch (error) {
-                                        console.error(`Error executing MCP tool ${mcpTool.name}:`, error);
-                                        throw error;
-                                    }
-                                }
-                            });
-                        }
-                        return acc;
-                    }, {})
-                    : mcptools;
-
-                console.log(`MCP tools from ${mcpServer.type} transport:`, Object.keys(toolsObject));
-
-                // Add MCP tools to tools object
-                Object.assign(tools, toolsObject);
-            } catch (error) {
-                console.error("Failed to initialize MCP client:", error);
-            }
-        }
-
-        // Register cleanup for all clients
-        if (mcpClients.length > 0) {
-            req.signal.addEventListener('abort', async () => {
-                for (const client of mcpClients) {
-                    try {
-                        await client.close();
-                    } catch (error) {
-                        console.error("Error closing MCP client:", error);
-                    }
-                }
-            });
-        }
+        // Use tools from MCP service
+        const tools = mcpResult.tools;
 
         console.log("messages", messages);
         console.log("parts", messages.map(m => m.parts.map(p => p)));
