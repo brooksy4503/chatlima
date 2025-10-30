@@ -80,14 +80,41 @@ export class ChatMCPServerService {
                 const toolsList = await mcpClient.listTools();
                 const mcptools = toolsList.tools || [];
 
+                // Convert MCP tools array to AI SDK tool format
+                const toolsObject = Array.isArray(mcptools) 
+                    ? mcptools.reduce((acc: Record<string, any>, tool: any) => {
+                        if (tool && tool.name) {
+                            // Convert MCP tool format to AI SDK tool format
+                            acc[tool.name] = {
+                                description: tool.description || '',
+                                parameters: tool.inputSchema || { type: 'object', properties: {} },
+                                // Store MCP client reference for execution
+                                execute: async (params: any) => {
+                                    try {
+                                        const result = await mcpClient.callTool({
+                                            name: tool.name,
+                                            arguments: params
+                                        });
+                                        return result.content;
+                                    } catch (error) {
+                                        console.error(`Error executing MCP tool ${tool.name}:`, error);
+                                        throw error;
+                                    }
+                                }
+                            };
+                        }
+                        return acc;
+                    }, {})
+                    : mcptools;
+
                 logDiagnostic('MCP_TOOLS_LOADED', `MCP tools loaded from ${mcpServer.type} transport`, {
                     requestId,
-                    toolCount: Object.keys(mcptools).length,
-                    toolNames: Object.keys(mcptools)
+                    toolCount: Object.keys(toolsObject).length,
+                    toolNames: Object.keys(toolsObject)
                 });
 
                 // Add MCP tools to tools object
-                Object.assign(tools, mcptools);
+                Object.assign(tools, toolsObject);
             } catch (error) {
                 logDiagnostic('MCP_SERVER_ERROR', `Failed to initialize MCP client`, {
                     requestId,

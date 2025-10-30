@@ -350,7 +350,17 @@ export default function Chat() {
         setLastErrorTime(Date.now());
 
         // Log the detailed error for debugging
-        console.error(`Chat Error [Code: ${errorCode}]: ${errorMessage}`, { details: errorDetails, originalError: error });
+        console.error(`Chat Error [Code: ${errorCode}]: ${errorMessage}`, { 
+          details: errorDetails, 
+          originalError: error,
+          parsedError: (() => {
+            try {
+              return JSON.parse(error.message);
+            } catch {
+              return null;
+            }
+          })()
+        });
         console.log(`[Toast Debug] Error handler triggered with message: "${errorMessage}"`);
         console.log(`[Toast Debug] Previous message: "${lastErrorMessage}", Time since last: ${Date.now() - lastToastTimestamp}ms`);
 
@@ -379,7 +389,16 @@ export default function Chat() {
             toastMessage = "Failed to initialize the selected AI model. Please try another model.";
             break;
           case "STREAM_ERROR": // Generic stream error from backend
-            toastMessage = "A problem occurred while getting the response. Please try again.";
+            // Try to provide more specific error message from details if available
+            if (typeof errorDetails === 'object' && errorDetails !== null && 
+                (errorDetails.rawMessage || errorDetails.cause)) {
+              const detailMsg = errorDetails.rawMessage || errorDetails.cause;
+              toastMessage = `Error: ${detailMsg}`;
+            } else if (errorMessage && errorMessage !== "An error occurred while processing your request.") {
+              toastMessage = errorMessage; // Use the specific error message from the API
+            } else {
+              toastMessage = "A problem occurred while getting the response. Please try again.";
+            }
             break;
           // Add more cases as new error codes are defined in the backend
           default:
