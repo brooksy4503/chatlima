@@ -1493,7 +1493,7 @@ You have web search capabilities enabled. When you use web search:
 
                 let errorCode = "STREAM_ERROR";
                 let errorMessage = "An error occurred while processing your request.";
-                let errorDetails: any = {};
+                const errorDetails: any = {};
 
                 // Try to extract error details from various sources
                 if (error?.message) {

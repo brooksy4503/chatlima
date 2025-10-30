@@ -291,7 +291,7 @@ export default function Chat() {
       onError: (error) => {
         let errorMessage = "An error occurred, please try again later."; // Default message
         let errorCode = "UNKNOWN_ERROR";
-        let errorDetails = "No additional details available.";
+        let errorDetails: any = "No additional details available.";
 
         try {
           // The error.message from the Vercel AI SDK is now expected to be a JSON string.
