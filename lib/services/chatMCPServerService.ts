@@ -222,10 +222,15 @@ export class ChatMCPServerService {
             envCount: Object.keys(env).length
         });
 
+        // Ensure child process inherits PATH and other important env vars
+        const spawnEnv = Object.keys(env).length > 0 
+            ? { ...process.env, ...env } 
+            : process.env;
+
         return new StdioClientTransport({
             command: mcpServer.command,
             args: mcpServer.args,
-            env: Object.keys(env).length > 0 ? env : undefined
+            env: spawnEnv as Record<string, string>
         });
     }
 

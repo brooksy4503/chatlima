@@ -728,10 +728,15 @@ export async function POST(req: Request) {
 
                     console.log(`Spawning StdioClientTransport with command: '${mcpServer.command}' and args:`, mcpServer.args);
 
+                    // Ensure child process inherits PATH and other important env vars
+                    const spawnEnv = Object.keys(env).length > 0 
+                        ? { ...process.env, ...env } 
+                        : process.env;
+
                     finalTransportForClient = new StdioClientTransport({
                         command: mcpServer.command!,
                         args: mcpServer.args!,
-                        env: Object.keys(env).length > 0 ? env : undefined
+                        env: spawnEnv as Record<string, string>
                     });
                 } else {
                     console.warn(`Skipping MCP server with unsupported transport type: ${(mcpServer as any).type}`);
