@@ -37,7 +37,7 @@ export default function Chat() {
   const params = useParams();
   const chatId = params?.id as string | undefined;
   const queryClient = useQueryClient();
-  const { session, isPending: isSessionLoading } = useAuth();
+  const { session, isPending: isSessionLoading, refreshMessageUsage } = useAuth();
   const sessionUpdateRef = useRef(false);
   
   const { 
@@ -279,6 +279,9 @@ export default function Chat() {
         // Clear images and reset UI state after successful submission
         clearImages();
         setHideImagesInUI(false);
+        
+        // Refresh usage data to update upgrade button and other UI elements
+        refreshMessageUsage();
         
         queryClient.invalidateQueries({ queryKey: ['chats'] });
         queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });

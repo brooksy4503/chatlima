@@ -3,7 +3,7 @@ import { fetchAllModels, getEnvironmentApiKeys, clearProviderCache, getCacheStat
 import { auth } from '@/lib/auth';
 import { ApiKeyContext } from '@/lib/types/models';
 import { headers } from 'next/headers';
-import { getRemainingCreditsByExternalId } from '@/lib/polar';
+import { getRemainingCreditsByExternalId, hasUnlimitedFreeModels } from '@/lib/polar';
 
 // Helper to extract user API keys from request
 function extractUserApiKeys(request: NextRequest): Record<string, string> {
@@ -110,10 +110,21 @@ export async function GET(request: NextRequest) {
             const isAnonymous = !session?.user?.id || ((session.user as any)?.isAnonymous === true);
             const userId = session?.user?.id;
 
+            // Check for unlimited free models subscription (yearly plan) first
+            // Yearly subscribers don't need credits, so skip credit check for them
+            let hasUnlimitedFreeModelsAccess = false;
+            if (!isAnonymous && userId) {
+                try {
+                    hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
+                } catch (error) {
+                    hasUnlimitedFreeModelsAccess = false;
+                }
+            }
+
             let hasCredits = false;
 
-            // Check for credits (only for authenticated users)
-            if (!isAnonymous && userId) {
+            // Check for credits (only for authenticated users, and only if they don't have yearly subscription)
+            if (!isAnonymous && userId && !hasUnlimitedFreeModelsAccess) {
                 try {
                     const credits = await getRemainingCreditsByExternalId(userId);
                     hasCredits = typeof credits === 'number' && credits > 0;
@@ -133,7 +144,8 @@ export async function GET(request: NextRequest) {
             const hasUserProvidedRequestyKey = userKeys['REQUESTY_API_KEY']?.trim().length > 0;
 
             // Determine if we should restrict to free models
-            const shouldRestrictToFreeModels = isAnonymous || !hasCredits;
+            // Yearly subscribers get all free models, but not premium models
+            const shouldRestrictToFreeModels = isAnonymous || (!hasCredits && !hasUnlimitedFreeModelsAccess);
 
             const models = shouldRestrictToFreeModels
                 ? response.models.filter(m => {
@@ -155,7 +167,24 @@ export async function GET(request: NextRequest) {
                     }
                     return false;
                 })
-                : response.models; // Users with credits get all models
+                : hasUnlimitedFreeModelsAccess
+                    ? response.models.filter(m => {
+                        // Yearly subscribers: show all free models, but filter out premium models
+                        // Allow free models
+                        if (m.id.endsWith(':free')) {
+                            return true;
+                        }
+                        // Allow all models if user provided their own API keys (BYOK)
+                        if (hasUserProvidedOpenRouterKey && m.id.startsWith('openrouter/')) {
+                            return true;
+                        }
+                        if (hasUserProvidedRequestyKey && m.id.startsWith('requesty/')) {
+                            return true;
+                        }
+                        // Block premium models for yearly subscribers without BYOK
+                        return false;
+                    })
+                    : response.models; // Users with credits get all models
 
             const filteredResponse = {
                 ...response,

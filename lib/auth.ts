@@ -6,7 +6,7 @@ import * as schema from './db/schema'; // Assuming your full Drizzle schema is e
 import { Polar } from '@polar-sh/sdk';
 import { polar as polarPlugin } from '@polar-sh/better-auth';
 import { count, eq, and, gte } from 'drizzle-orm';
-import { getRemainingCreditsByExternalId } from './polar';
+import { getRemainingCreditsByExternalId, hasUnlimitedFreeModels } from './polar';
 import { createRequestCreditCache } from './services/creditCache';
 
 // Dynamic Google OAuth configuration based on environment
@@ -58,6 +58,11 @@ if (!process.env.SUCCESS_URL) {
     throw new Error('Missing SUCCESS_URL environment variable');
 }
 
+// Warn if yearly product ID is missing (non-fatal, but checkout for yearly plan will fail)
+if (!process.env.POLAR_PRODUCT_ID_YEARLY) {
+    console.warn('⚠️  POLAR_PRODUCT_ID_YEARLY is not set. Yearly plan checkout will not be available.');
+}
+
 // Polar server environment configuration
 // Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
 const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
@@ -92,6 +97,11 @@ const getTrustedOrigins = () => {
     if (process.env.PREVIEW_DOMAIN) {
         origins.push(`https://${process.env.PREVIEW_DOMAIN}`);
         origins.push(`https://*.${process.env.PREVIEW_DOMAIN}`);
+    }
+
+    // Add ngrok domains for development
+    if (process.env.NGROK_DOMAIN) {
+        origins.push(`https://${process.env.NGROK_DOMAIN}`);
     }
 
     //console.log('🔐 Auth trusted origins configured:', origins);
@@ -258,9 +268,14 @@ export const auth = betterAuth({
                         productId: process.env.POLAR_PRODUCT_ID || '',
                         slug: 'ai-usage',
                         // Remove name and description as they're not part of the expected type
-                    }
+                    },
+                    ...(process.env.POLAR_PRODUCT_ID_YEARLY ? [{
+                        productId: process.env.POLAR_PRODUCT_ID_YEARLY,
+                        slug: 'free-models-unlimited',
+                    }] : [])
                 ],
                 successUrl: process.env.SUCCESS_URL,
+                errorUrl: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/checkout/error?reason=failed` : '/checkout/error?reason=failed',
             },
             webhooks: {
                 secret: process.env.POLAR_WEBHOOK_SECRET || '', // Use empty string if not set yet
@@ -270,6 +285,55 @@ export const auth = betterAuth({
                 // Add specific event handlers
                 onSubscriptionCreated: async (payload) => {
                     console.log('Subscription created:', payload.data.id);
+                    // Update user metadata with subscription type
+                    try {
+                        const subscription = payload.data as any;
+                        const customerId = subscription.customerId;
+                        const productId = subscription.productId || subscription.product?.id;
+
+                        const monthlyProductId = process.env.POLAR_PRODUCT_ID;
+                        const yearlyProductId = process.env.POLAR_PRODUCT_ID_YEARLY;
+
+                        let subscriptionType: 'monthly' | 'yearly' | null = null;
+                        if (productId === yearlyProductId) {
+                            subscriptionType = 'yearly';
+                        } else if (productId === monthlyProductId) {
+                            subscriptionType = 'monthly';
+                        }
+
+                        if (subscriptionType && customerId) {
+                            // Get customer by ID to find external ID (userId)
+                            try {
+                                const customer = await polarClient.customers.get({ id: customerId });
+                                const externalId = (customer as any).externalId;
+
+                                if (externalId) {
+                                    // Update user metadata
+                                    const user = await db.query.users.findFirst({
+                                        where: eq(schema.users.id, externalId)
+                                    });
+
+                                    if (user) {
+                                        await db.update(schema.users)
+                                            .set({
+                                                metadata: {
+                                                    ...(user.metadata as any || {}),
+                                                    hasSubscription: true,
+                                                    subscriptionType,
+                                                },
+                                                updatedAt: new Date()
+                                            })
+                                            .where(eq(schema.users.id, externalId));
+                                        console.log(`Updated user ${externalId} metadata with subscription type: ${subscriptionType}`);
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error updating user metadata on subscription created:', error);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error processing subscription created webhook:', error);
+                    }
                     // Credits will be managed by Polar meter
                 },
                 onOrderCreated: async (payload) => {
@@ -277,9 +341,81 @@ export const auth = betterAuth({
                 },
                 onSubscriptionCanceled: async (payload) => {
                     console.log('Subscription canceled:', payload.data.id);
+                    // Clear subscription type from user metadata
+                    try {
+                        const subscription = payload.data as any;
+                        const customerId = subscription.customerId;
+
+                        if (customerId) {
+                            try {
+                                const customer = await polarClient.customers.get({ id: customerId });
+                                const externalId = (customer as any).externalId;
+
+                                if (externalId) {
+                                    const user = await db.query.users.findFirst({
+                                        where: eq(schema.users.id, externalId)
+                                    });
+
+                                    if (user) {
+                                        await db.update(schema.users)
+                                            .set({
+                                                metadata: {
+                                                    ...(user.metadata as any || {}),
+                                                    hasSubscription: false,
+                                                    subscriptionType: null,
+                                                },
+                                                updatedAt: new Date()
+                                            })
+                                            .where(eq(schema.users.id, externalId));
+                                        console.log(`Cleared subscription type for user ${externalId}`);
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error updating user metadata on subscription canceled:', error);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error processing subscription canceled webhook:', error);
+                    }
                 },
                 onSubscriptionRevoked: async (payload) => {
                     console.log('Subscription revoked:', payload.data.id);
+                    // Clear subscription type from user metadata
+                    try {
+                        const subscription = payload.data as any;
+                        const customerId = subscription.customerId;
+
+                        if (customerId) {
+                            try {
+                                const customer = await polarClient.customers.get({ id: customerId });
+                                const externalId = (customer as any).externalId;
+
+                                if (externalId) {
+                                    const user = await db.query.users.findFirst({
+                                        where: eq(schema.users.id, externalId)
+                                    });
+
+                                    if (user) {
+                                        await db.update(schema.users)
+                                            .set({
+                                                metadata: {
+                                                    ...(user.metadata as any || {}),
+                                                    hasSubscription: false,
+                                                    subscriptionType: null,
+                                                },
+                                                updatedAt: new Date()
+                                            })
+                                            .where(eq(schema.users.id, externalId));
+                                        console.log(`Cleared subscription type for user ${externalId}`);
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error updating user metadata on subscription revoked:', error);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error processing subscription revoked webhook:', error);
+                    }
                 }
             },
         }),
@@ -300,7 +436,27 @@ export async function checkMessageLimit(
     usedCredits?: boolean;
 }> {
     try {
-        // 1. Check Polar credits (for authenticated users only)
+        // 1. Check for yearly subscription (unlimited free models) first
+        // Yearly subscribers don't need credits, so skip credit check for them
+        if (!isAnonymous) {
+            try {
+                const hasUnlimitedAccess = await hasUnlimitedFreeModels(userId);
+                if (hasUnlimitedAccess) {
+                    // Yearly subscribers get unlimited messages (very high limit for display)
+                    return {
+                        hasReachedLimit: false,
+                        limit: 999999, // Very high limit to indicate unlimited
+                        remaining: 999999,
+                        credits: null,
+                        usedCredits: false
+                    };
+                }
+            } catch (error) {
+                console.warn('Error checking unlimited free models access:', error);
+            }
+        }
+
+        // 2. Check Polar credits (for authenticated users only, and only if they don't have yearly subscription)
         if (!isAnonymous) {
             // Use cache if provided, otherwise fall back to original function
             const credits = creditCache
@@ -331,7 +487,7 @@ export async function checkMessageLimit(
             }
         }
 
-        // 2. If no credits (or anonymous), use daily message limit
+        // 3. If no credits (or anonymous), use daily message limit
         // Get user info
         const user = await db.query.users.findFirst({
             where: eq(schema.users.id, userId)

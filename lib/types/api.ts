@@ -317,4 +317,6 @@ export interface AuthContext {
     isAdmin?: boolean;
     isAnonymous?: boolean;
     hasSubscription?: boolean;
+    subscriptionType?: 'monthly' | 'yearly' | null;
+    hasUnlimitedFreeModels?: boolean;
 }

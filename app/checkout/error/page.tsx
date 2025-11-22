@@ -23,9 +23,9 @@ export default function CheckoutErrorPage({ searchParams }: CheckoutErrorPagePro
         };
       case 'failed':
         return {
-          title: 'Payment Failed',
-          description: 'There was an issue processing your payment.',
-          suggestion: 'Please check your payment method and try again.'
+          title: 'Checkout Failed',
+          description: 'There was an issue creating your checkout session.',
+          suggestion: 'This may be due to a configuration issue. Please try again or contact support.'
         };
       default:
         return {

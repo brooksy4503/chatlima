@@ -2,28 +2,49 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
 import { CreditCard } from 'lucide-react';
+import { signIn } from '@/lib/auth-client';
 
-export const CheckoutButton = () => {
-  const { user, isAnonymous, isAuthenticated } = useAuth();
-  const router = useRouter();
+interface CheckoutButtonProps {
+  planSlug?: 'ai-usage' | 'free-models-unlimited';
+  children?: React.ReactNode;
+  className?: string;
+  variant?: 'default' | 'outline' | 'destructive' | 'secondary' | 'ghost' | 'link';
+}
 
-  const handleCheckout = () => {
+export const CheckoutButton = ({ 
+  planSlug = 'ai-usage', 
+  children,
+  className = 'w-full',
+  variant = 'default'
+}: CheckoutButtonProps) => {
+  const { isAnonymous, isAuthenticated } = useAuth();
+
+  const handleCheckout = async () => {
     if (isAnonymous || !isAuthenticated) {
-      // Guide anonymous users to sign in first
-      router.push('/api/auth/sign-in/google');
+      try {
+        // Store the plan slug to proceed with checkout after sign-in
+        sessionStorage.setItem('pendingPlanSlug', planSlug);
+        
+        await signIn.social({
+          provider: 'google',
+          callbackURL: '/upgrade',
+        });
+      } catch (error) {
+        console.error('Sign-in error:', error);
+        // Clear pending plan on error to prevent stuck state
+        sessionStorage.removeItem('pendingPlanSlug');
+      }
     } else {
-      // Redirect authenticated users to the Polar checkout page
-      // The slug 'ai-usage' must match the one defined in lib/auth.ts
-      window.location.href = '/api/auth/checkout/ai-usage';
+      // Redirect authenticated users directly to checkout for the specified plan
+      window.location.href = `/api/auth/checkout/${planSlug}`;
     }
   };
 
   return (
-    <Button onClick={handleCheckout} className="w-full">
+    <Button onClick={handleCheckout} className={className} variant={variant}>
       <CreditCard className="mr-2 h-4 w-4" />
-      {isAnonymous || !isAuthenticated ? 'Sign In to Purchase Credits' : 'Purchase More Credits'}
+      {children || (isAnonymous || !isAuthenticated ? 'Sign In to Purchase Credits' : 'Upgrade')}
     </Button>
   );
 }; 
