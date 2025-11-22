@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { useSession as useSessionOriginal, signIn as signInOriginal, signOut as signOutOriginal } from '@/lib/auth-client';
 
 interface AuthUser {
@@ -51,11 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [status, setStatus] = useState<AuthContextType['status']>('loading');
   const [error, setError] = useState<Error | null>(null);
+  const lastFetchedRef = useRef<number | null>(null);
 
   // Centralized usage data fetching with proper caching
   const fetchUsageData = useCallback(async () => {
     // Skip if no user or data is fresh (< 5 minutes old)
-    if (!session?.user?.id || (usageData?.lastFetched && usageData.lastFetched > Date.now() - 300000)) {
+    const now = Date.now();
+    if (!session?.user?.id || (lastFetchedRef.current && lastFetchedRef.current > now - 300000)) {
       return;
     }
 
@@ -63,20 +65,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/usage/messages');
       if (response.ok) {
         const data = await response.json();
-        setUsageData({
+        const fetchedData = {
           limit: data.limit,
           used: data.limit - data.remaining,
           remaining: data.remaining,
           credits: data.credits || 0,
           hasCredits: data.hasCredits || false,
           usedCredits: data.usedCredits || false,
-          lastFetched: Date.now(),
-        });
+          lastFetched: now,
+        };
+        lastFetchedRef.current = now;
+        setUsageData(fetchedData);
       }
     } catch (error) {
       console.error('Failed to fetch usage data:', error);
     }
-  }, [session?.user?.id, usageData?.lastFetched]);
+  }, [session?.user?.id]);
 
   // Single effect to manage auth state
   useEffect(() => {
@@ -105,14 +109,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus(isAnonymous ? 'anonymous' : 'authenticated');
       setError(null);
       
-      // Fetch usage data when user is available
+      // Fetch usage data when user is available (only when session changes)
       fetchUsageData();
     } else {
       setUser(null);
       setUsageData(null);
+      lastFetchedRef.current = null;
       setStatus('unauthenticated');
     }
-  }, [session, isPending, fetchUsageData, usageData]);
+  }, [session, isPending, fetchUsageData]);
+
+  // Separate effect to update user when usageData changes (without triggering fetch)
+  useEffect(() => {
+    if (session?.user?.id && usageData) {
+      setUser((prevUser) => {
+        if (!prevUser) return null;
+        return {
+          ...prevUser,
+          messageRemaining: usageData.remaining || 0,
+          credits: usageData.credits,
+          hasCredits: usageData.hasCredits,
+          usedCredits: usageData.usedCredits,
+        };
+      });
+    }
+  }, [usageData, session?.user?.id]);
 
   // Sign in with Google
   const handleSignIn = useCallback(async () => {

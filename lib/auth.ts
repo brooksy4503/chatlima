@@ -94,6 +94,11 @@ const getTrustedOrigins = () => {
         origins.push(`https://*.${process.env.PREVIEW_DOMAIN}`);
     }
 
+    // Add ngrok domains for development
+    if (process.env.NGROK_DOMAIN) {
+        origins.push(`https://${process.env.NGROK_DOMAIN}`);
+    }
+
     //console.log('🔐 Auth trusted origins configured:', origins);
 
     return origins;
@@ -279,29 +284,29 @@ export const auth = betterAuth({
                         const subscription = payload.data as any;
                         const customerId = subscription.customerId;
                         const productId = subscription.productId || subscription.product?.id;
-                        
+
                         const monthlyProductId = process.env.POLAR_PRODUCT_ID;
                         const yearlyProductId = process.env.POLAR_PRODUCT_ID_YEARLY;
-                        
+
                         let subscriptionType: 'monthly' | 'yearly' | null = null;
                         if (productId === yearlyProductId) {
                             subscriptionType = 'yearly';
                         } else if (productId === monthlyProductId) {
                             subscriptionType = 'monthly';
                         }
-                        
+
                         if (subscriptionType && customerId) {
                             // Get customer by ID to find external ID (userId)
                             try {
                                 const customer = await polarClient.customers.get({ id: customerId });
                                 const externalId = (customer as any).externalId;
-                                
+
                                 if (externalId) {
                                     // Update user metadata
                                     const user = await db.query.users.findFirst({
                                         where: eq(schema.users.id, externalId)
                                     });
-                                    
+
                                     if (user) {
                                         await db.update(schema.users)
                                             .set({
@@ -334,17 +339,17 @@ export const auth = betterAuth({
                     try {
                         const subscription = payload.data as any;
                         const customerId = subscription.customerId;
-                        
+
                         if (customerId) {
                             try {
                                 const customer = await polarClient.customers.get({ id: customerId });
                                 const externalId = (customer as any).externalId;
-                                
+
                                 if (externalId) {
                                     const user = await db.query.users.findFirst({
                                         where: eq(schema.users.id, externalId)
                                     });
-                                    
+
                                     if (user) {
                                         await db.update(schema.users)
                                             .set({
@@ -373,17 +378,17 @@ export const auth = betterAuth({
                     try {
                         const subscription = payload.data as any;
                         const customerId = subscription.customerId;
-                        
+
                         if (customerId) {
                             try {
                                 const customer = await polarClient.customers.get({ id: customerId });
                                 const externalId = (customer as any).externalId;
-                                
+
                                 if (externalId) {
                                     const user = await db.query.users.findFirst({
                                         where: eq(schema.users.id, externalId)
                                     });
-                                    
+
                                     if (user) {
                                         await db.update(schema.users)
                                             .set({
