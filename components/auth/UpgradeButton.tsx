@@ -79,32 +79,24 @@ export function UpgradeButton({ isCollapsed }: UpgradeButtonProps) {
   };
 
   return (
-    <div className="flex flex-col gap-1">
-      <Button
-        onClick={handleUpgrade}
-        className={cn(
-          "bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center justify-center gap-2 transition-colors duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50",
-          isHighUsage && remaining <= 2 && "animate-pulse",
-          isCollapsed ? "w-auto h-auto p-2 aspect-square rounded-lg" : "w-full py-2 px-4 rounded-lg"
-        )}
-        title={isCollapsed ? getTooltipText() : undefined}
-        disabled={isLoading}
-      >
-        {isHighUsage ? (
-          <ArrowUp className={cn("shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
-        ) : (
-          <Sparkles className={cn("shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
-        )}
-        {!isCollapsed && (
-          <span className="truncate">{getButtonText()}</span>
-        )}
-      </Button>
-      {/* DEBUG: Show usage values */}
-      {!isCollapsed && (
-        <div className="text-xs text-muted-foreground px-1">
-          DEBUG: {used}/{limit} ({Math.round(usagePercentage)}%) - Remaining: {remaining}
-        </div>
+    <Button
+      onClick={handleUpgrade}
+      className={cn(
+        "bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center justify-center gap-2 transition-colors duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50",
+        isHighUsage && remaining <= 2 && "animate-pulse",
+        isCollapsed ? "w-auto h-auto p-2 aspect-square rounded-lg" : "w-full py-2 px-4 rounded-lg"
       )}
-    </div>
+      title={isCollapsed ? getTooltipText() : undefined}
+      disabled={isLoading}
+    >
+      {isHighUsage ? (
+        <ArrowUp className={cn("shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
+      ) : (
+        <Sparkles className={cn("shrink-0", isCollapsed ? "h-5 w-5" : "h-4 w-4")} />
+      )}
+      {!isCollapsed && (
+        <span className="truncate">{getButtonText()}</span>
+      )}
+    </Button>
   );
 }
