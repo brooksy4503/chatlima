@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { CreditCard } from 'lucide-react';
 import { signIn } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
 
 interface CheckoutButtonProps {
   planSlug?: 'ai-usage' | 'free-models-unlimited';
@@ -18,7 +19,8 @@ export const CheckoutButton = ({
   className = 'w-full',
   variant = 'default'
 }: CheckoutButtonProps) => {
-  const { isAnonymous, isAuthenticated } = useAuth();
+  const { isAnonymous, isAuthenticated, usageData } = useAuth();
+  const router = useRouter();
 
   const handleCheckout = async () => {
     if (isAnonymous || !isAuthenticated) {
@@ -36,8 +38,14 @@ export const CheckoutButton = ({
         sessionStorage.removeItem('pendingPlanSlug');
       }
     } else {
-      // Redirect authenticated users directly to checkout for the specified plan
-      window.location.href = `/api/auth/checkout/${planSlug}`;
+      // If user has yearly subscription, redirect to upgrade page instead of direct checkout
+      // This allows them to see upgrade options (e.g., upgrade to monthly plan)
+      if (usageData?.subscriptionType === 'yearly') {
+        router.push('/upgrade');
+      } else {
+        // Redirect authenticated users directly to checkout for the specified plan
+        window.location.href = `/api/auth/checkout/${planSlug}`;
+      }
     }
   };
 
