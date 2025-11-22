@@ -2,8 +2,8 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
 import { CreditCard } from 'lucide-react';
+import { signIn } from '@/lib/auth-client';
 
 interface CheckoutButtonProps {
   planSlug?: 'ai-usage' | 'free-models-unlimited';
@@ -18,16 +18,26 @@ export const CheckoutButton = ({
   className = 'w-full',
   variant = 'default'
 }: CheckoutButtonProps) => {
-  const { user, isAnonymous, isAuthenticated } = useAuth();
-  const router = useRouter();
+  const { isAnonymous, isAuthenticated } = useAuth();
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (isAnonymous || !isAuthenticated) {
-      // Guide anonymous users to sign in first
-      router.push('/api/auth/sign-in/google');
+      try {
+        // Store the plan slug to proceed with checkout after sign-in
+        sessionStorage.setItem('pendingPlanSlug', planSlug);
+        
+        await signIn.social({
+          provider: 'google',
+          callbackURL: '/upgrade',
+        });
+      } catch (error) {
+        console.error('Sign-in error:', error);
+        // Clear pending plan on error to prevent stuck state
+        sessionStorage.removeItem('pendingPlanSlug');
+      }
     } else {
-      // Redirect authenticated users to the upgrade page
-      router.push('/upgrade');
+      // Redirect authenticated users directly to checkout for the specified plan
+      window.location.href = `/api/auth/checkout/${planSlug}`;
     }
   };
 
