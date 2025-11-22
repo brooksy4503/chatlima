@@ -58,6 +58,11 @@ if (!process.env.SUCCESS_URL) {
     throw new Error('Missing SUCCESS_URL environment variable');
 }
 
+// Warn if yearly product ID is missing (non-fatal, but checkout for yearly plan will fail)
+if (!process.env.POLAR_PRODUCT_ID_YEARLY) {
+    console.warn('⚠️  POLAR_PRODUCT_ID_YEARLY is not set. Yearly plan checkout will not be available.');
+}
+
 // Polar server environment configuration
 // Use POLAR_SERVER_ENV if explicitly set, otherwise default to sandbox for safety
 const polarServerEnv = process.env.POLAR_SERVER_ENV === "production" ? "production" : "sandbox";
@@ -270,6 +275,7 @@ export const auth = betterAuth({
                     }] : [])
                 ],
                 successUrl: process.env.SUCCESS_URL,
+                errorUrl: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/checkout/error?reason=failed` : '/checkout/error?reason=failed',
             },
             webhooks: {
                 secret: process.env.POLAR_WEBHOOK_SECRET || '', // Use empty string if not set yet
@@ -430,7 +436,27 @@ export async function checkMessageLimit(
     usedCredits?: boolean;
 }> {
     try {
-        // 1. Check Polar credits (for authenticated users only)
+        // 1. Check for yearly subscription (unlimited free models) first
+        // Yearly subscribers don't need credits, so skip credit check for them
+        if (!isAnonymous) {
+            try {
+                const hasUnlimitedAccess = await hasUnlimitedFreeModels(userId);
+                if (hasUnlimitedAccess) {
+                    // Yearly subscribers get unlimited messages (very high limit for display)
+                    return {
+                        hasReachedLimit: false,
+                        limit: 999999, // Very high limit to indicate unlimited
+                        remaining: 999999,
+                        credits: null,
+                        usedCredits: false
+                    };
+                }
+            } catch (error) {
+                console.warn('Error checking unlimited free models access:', error);
+            }
+        }
+
+        // 2. Check Polar credits (for authenticated users only, and only if they don't have yearly subscription)
         if (!isAnonymous) {
             // Use cache if provided, otherwise fall back to original function
             const credits = creditCache
@@ -458,25 +484,6 @@ export async function checkMessageLimit(
                     };
                 }
                 // If credits === 0, fall through to daily message limit
-            }
-        }
-
-        // 2. Check for yearly subscription (unlimited free models)
-        if (!isAnonymous) {
-            try {
-                const hasUnlimitedAccess = await hasUnlimitedFreeModels(userId);
-                if (hasUnlimitedAccess) {
-                    // Yearly subscribers get unlimited messages (very high limit for display)
-                    return {
-                        hasReachedLimit: false,
-                        limit: 999999, // Very high limit to indicate unlimited
-                        remaining: 999999,
-                        credits: null,
-                        usedCredits: false
-                    };
-                }
-            } catch (error) {
-                console.warn('Error checking unlimited free models access:', error);
             }
         }
 

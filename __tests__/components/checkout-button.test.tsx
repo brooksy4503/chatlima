@@ -144,23 +144,20 @@ describe('CheckoutButton Component', () => {
       });
     });
 
-    it('renders with purchase credits text for authenticated users', () => {
+    it('renders with upgrade text for authenticated users', () => {
       render(<CheckoutButton />);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveTextContent('Purchase More Credits');
+      expect(button).toHaveTextContent('Upgrade');
     });
 
-    it('does not call router.push when clicked (uses window.location)', () => {
+    it('navigates to upgrade page when clicked', () => {
       render(<CheckoutButton />);
       
       const button = screen.getByRole('button');
-      
-      // Since window.location.href is difficult to test in JSDOM,
-      // we'll just verify that router.push is NOT called for authenticated users
       fireEvent.click(button);
       
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockPush).toHaveBeenCalledWith('/upgrade');
     });
 
     it('displays credit card icon', () => {

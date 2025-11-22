@@ -110,10 +110,21 @@ export async function GET(request: NextRequest) {
             const isAnonymous = !session?.user?.id || ((session.user as any)?.isAnonymous === true);
             const userId = session?.user?.id;
 
+            // Check for unlimited free models subscription (yearly plan) first
+            // Yearly subscribers don't need credits, so skip credit check for them
+            let hasUnlimitedFreeModelsAccess = false;
+            if (!isAnonymous && userId) {
+                try {
+                    hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
+                } catch (error) {
+                    hasUnlimitedFreeModelsAccess = false;
+                }
+            }
+
             let hasCredits = false;
 
-            // Check for credits (only for authenticated users)
-            if (!isAnonymous && userId) {
+            // Check for credits (only for authenticated users, and only if they don't have yearly subscription)
+            if (!isAnonymous && userId && !hasUnlimitedFreeModelsAccess) {
                 try {
                     const credits = await getRemainingCreditsByExternalId(userId);
                     hasCredits = typeof credits === 'number' && credits > 0;
@@ -131,16 +142,6 @@ export async function GET(request: NextRequest) {
             // Check if user has provided their own API keys (BYOK - Bring Your Own Key)
             const hasUserProvidedOpenRouterKey = userKeys['OPENROUTER_API_KEY']?.trim().length > 0;
             const hasUserProvidedRequestyKey = userKeys['REQUESTY_API_KEY']?.trim().length > 0;
-
-            // Check for unlimited free models subscription (yearly plan)
-            let hasUnlimitedFreeModelsAccess = false;
-            if (!isAnonymous && userId) {
-                try {
-                    hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
-                } catch (error) {
-                    hasUnlimitedFreeModelsAccess = false;
-                }
-            }
 
             // Determine if we should restrict to free models
             // Yearly subscribers get all free models, but not premium models

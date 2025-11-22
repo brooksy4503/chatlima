@@ -54,6 +54,7 @@ import { Label } from "@/components/ui/label";
 import { useMCP } from "@/lib/context/mcp-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SignInButton } from "@/components/auth/SignInButton";
+import { UpgradeButton } from "@/components/auth/UpgradeButton";
 import { UserAccountMenu } from "@/components/auth/UserAccountMenu";
 import { useAuth, signOut } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -128,7 +129,7 @@ export function ChatSidebar() {
     // On mobile, always show expanded layout
     const isLayoutCollapsed = isCollapsed && !isMobile;
 
-    const { session, isPending: isSessionLoading } = useAuth();
+    const { session, isPending: isSessionLoading, usageData, user } = useAuth();
     const authenticatedUserId = session?.user?.id;
     const previousSessionRef = useRef(session);
     const invalidationRef = useRef(false);
@@ -502,12 +503,28 @@ export function ChatSidebar() {
                         </div>
                     ) : session?.user?.isAnonymous === true ? (
                         <div className={cn(
-                            "flex items-center mt-2", 
-                            isLayoutCollapsed ? "justify-center px-1 py-2" : "px-3 py-2 gap-2" 
+                            "flex flex-col gap-2 mt-2", 
+                            isLayoutCollapsed ? "px-1 py-2" : "px-3 py-2" 
                         )}>
+                            <UpgradeButton isCollapsed={isLayoutCollapsed} />
                             <SignInButton isCollapsed={isLayoutCollapsed} />
                         </div>
+                    ) : session?.user && !usageData?.subscriptionType && !user?.hasSubscription ? (
+                        // Authenticated user without subscription - show upgrade button + account menu
+                        <div className={cn(
+                            "flex flex-col gap-2 mt-2", 
+                            isLayoutCollapsed ? "px-1 py-2" : "px-3 py-2" 
+                        )}>
+                            <UpgradeButton isCollapsed={isLayoutCollapsed} />
+                            <div className={cn(
+                                "flex items-center", 
+                                isLayoutCollapsed ? "justify-center" : ""
+                            )}>
+                                <UserAccountMenu />
+                            </div>
+                        </div>
                     ) : (
+                        // Authenticated user with subscription - show only account menu
                         <div className={cn(
                             "flex items-center mt-2", 
                             isLayoutCollapsed ? "justify-center px-1 py-2" : "px-3 py-2" 

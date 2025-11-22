@@ -25,12 +25,34 @@ export async function GET(req: Request) {
         // Get daily message usage using new secure tracking
         const dailyUsage = await DailyMessageUsageService.getDailyUsage(userId);
 
-        // Also check for credits (for authenticated users)
+        // Get subscription type and unlimited free models access from Polar customer state
+        // Subscription type comes from customer state, not webhooks
+        let subscriptionType: 'monthly' | 'yearly' | null = null;
+        let hasUnlimitedFreeModelsAccess = false;
+        let hasSubscription = false;
+
+        if (!isAnonymous && userId) {
+            try {
+                // Get subscription type directly from Polar customer state
+                // Pass email as fallback in case customer was created during checkout
+                const userEmail = session.user.email || undefined;
+                subscriptionType = await getSubscriptionTypeByExternalId(userId, userEmail);
+                hasSubscription = subscriptionType !== null;
+
+                // Yearly subscription means unlimited free models
+                hasUnlimitedFreeModelsAccess = subscriptionType === 'yearly';
+            } catch (error) {
+                console.warn('Failed to get subscription info:', error);
+            }
+        }
+
+        // Also check for credits (for authenticated users, but skip if they have yearly subscription)
         let credits = 0;
         let hasCredits = false;
         let usedCredits = false;
 
-        if (!isAnonymous) {
+        // Only check credits if user doesn't have unlimited free models and has a subscription
+        if (!isAnonymous && !hasUnlimitedFreeModelsAccess && hasSubscription) {
             try {
                 const userCredits = await getRemainingCreditsByExternalId(userId);
                 if (typeof userCredits === 'number') {
@@ -43,26 +65,13 @@ export async function GET(req: Request) {
             }
         }
 
-        // Get subscription type and unlimited free models access
-        let subscriptionType: 'monthly' | 'yearly' | null = null;
-        let hasUnlimitedFreeModelsAccess = false;
-        
-        if (!isAnonymous && userId) {
-            try {
-                subscriptionType = await getSubscriptionTypeByExternalId(userId);
-                hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
-            } catch (error) {
-                console.warn('Failed to get subscription info:', error);
-            }
-        }
-
         return NextResponse.json({
             limit: dailyUsage.limit,
             used: dailyUsage.messageCount,
             remaining: dailyUsage.remaining,
             isAnonymous: dailyUsage.isAnonymous,
-            // Check if user has a Polar subscription
-            hasSubscription: (session.user as any)?.metadata?.hasSubscription || false,
+            // Check if user has a Polar subscription (from customer state)
+            hasSubscription,
             subscriptionType,
             hasUnlimitedFreeModels: hasUnlimitedFreeModelsAccess,
             // Include credit information

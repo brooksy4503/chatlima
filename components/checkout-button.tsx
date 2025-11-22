@@ -26,16 +26,15 @@ export const CheckoutButton = ({
       // Guide anonymous users to sign in first
       router.push('/api/auth/sign-in/google');
     } else {
-      // Redirect authenticated users to the Polar checkout page
-      // The slug must match the one defined in lib/auth.ts
-      window.location.href = `/api/auth/checkout/${planSlug}`;
+      // Redirect authenticated users to the upgrade page
+      router.push('/upgrade');
     }
   };
 
   return (
     <Button onClick={handleCheckout} className={className} variant={variant}>
       <CreditCard className="mr-2 h-4 w-4" />
-      {children || (isAnonymous || !isAuthenticated ? 'Sign In to Purchase Credits' : 'Purchase More Credits')}
+      {children || (isAnonymous || !isAuthenticated ? 'Sign In to Purchase Credits' : 'Upgrade')}
     </Button>
   );
 }; 

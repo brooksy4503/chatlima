@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
+import { getRemainingCredits, getRemainingCreditsByExternalId, hasUnlimitedFreeModels } from '@/lib/polar';
 
 /**
  * API endpoint to get credit information for the current user
@@ -33,6 +33,25 @@ export async function GET(req: Request) {
                 credits: null,
                 isAnonymous: true
             });
+        }
+
+        // Check if user has yearly subscription (unlimited free models)
+        // Yearly subscribers don't need credits, so skip the credit check
+        if (userId) {
+            try {
+                const hasUnlimitedAccess = await hasUnlimitedFreeModels(userId);
+                if (hasUnlimitedAccess) {
+                    // Yearly subscribers don't need credits - they have unlimited access to free models
+                    return NextResponse.json({
+                        credits: null,
+                        isAnonymous: false,
+                        hasUnlimitedFreeModels: true
+                    });
+                }
+            } catch (error) {
+                // If check fails, continue with normal credit check
+                console.warn('Error checking unlimited free models access:', error);
+            }
         }
 
         let credits: number | null = null;

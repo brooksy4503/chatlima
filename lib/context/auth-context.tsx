@@ -24,6 +24,7 @@ interface UsageData {
   credits: number;
   hasCredits: boolean;
   usedCredits: boolean;
+  subscriptionType: 'monthly' | 'yearly' | null;
   lastFetched: number;
 }
 
@@ -52,12 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthContextType['status']>('loading');
   const [error, setError] = useState<Error | null>(null);
   const lastFetchedRef = useRef<number | null>(null);
+  const lastUserIdRef = useRef<string | null>(null);
 
   // Centralized usage data fetching with proper caching
-  const fetchUsageData = useCallback(async () => {
-    // Skip if no user or data is fresh (< 5 minutes old)
+  const fetchUsageData = useCallback(async (userId: string) => {
+    // Skip if data is fresh (< 5 minutes old) and same user
     const now = Date.now();
-    if (!session?.user?.id || (lastFetchedRef.current && lastFetchedRef.current > now - 300000)) {
+    if (lastFetchedRef.current && lastFetchedRef.current > now - 300000 && lastUserIdRef.current === userId) {
       return;
     }
 
@@ -72,25 +74,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           credits: data.credits || 0,
           hasCredits: data.hasCredits || false,
           usedCredits: data.usedCredits || false,
+          subscriptionType: data.subscriptionType || null,
           lastFetched: now,
         };
         lastFetchedRef.current = now;
+        lastUserIdRef.current = userId;
         setUsageData(fetchedData);
       }
     } catch (error) {
       console.error('Failed to fetch usage data:', error);
     }
-  }, [session?.user?.id]);
+  }, []);
 
-  // Single effect to manage auth state
+  // Single effect to manage auth state - only runs when session changes
   useEffect(() => {
     if (isPending) {
       setStatus('loading');
       return;
     }
 
-    if (session?.user?.id) {
+    const userId = session?.user?.id;
+    
+    if (userId) {
       const isAnonymous = (session.user as any).isAnonymous === true;
+      
+      // Only fetch usage data if userId changed
+      if (lastUserIdRef.current !== userId) {
+        fetchUsageData(userId);
+      }
       
       setUser({
         id: session.user.id,
@@ -108,16 +119,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setStatus(isAnonymous ? 'anonymous' : 'authenticated');
       setError(null);
-      
-      // Fetch usage data when user is available (only when session changes)
-      fetchUsageData();
     } else {
       setUser(null);
       setUsageData(null);
       lastFetchedRef.current = null;
+      lastUserIdRef.current = null;
       setStatus('unauthenticated');
     }
-  }, [session, isPending, fetchUsageData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, isPending]); // Only depend on session and isPending, not fetchUsageData or usageData
 
   // Separate effect to update user when usageData changes (without triggering fetch)
   useEffect(() => {
@@ -158,14 +168,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Wrapper for refetchUsage that uses current userId
+  const refetchUsage = useCallback(async () => {
+    if (session?.user?.id) {
+      // Force fetch by clearing the cache
+      lastFetchedRef.current = null;
+      await fetchUsageData(session.user.id);
+    }
+  }, [session?.user?.id, fetchUsageData]);
+
   const value: AuthContextType = {
     user,
     session,
     isPending,
     status,
     usageData,
-    refetchUsage: fetchUsageData,
-    refreshMessageUsage: fetchUsageData, // Alias for backward compatibility
+    refetchUsage,
+    refreshMessageUsage: refetchUsage, // Alias for backward compatibility
     error,
     signIn: handleSignIn,
     signOut: handleSignOut,

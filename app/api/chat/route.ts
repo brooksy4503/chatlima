@@ -437,6 +437,28 @@ export async function POST(req: Request) {
             estimatedTokens: 30 // Basic estimate
         });
 
+        // 5a. Increment daily message usage for users without credits (using free daily messages)
+        // Users with credits are using credits instead, so don't increment daily usage
+        if (!creditValidation.hasCredits) {
+            try {
+                const incrementResult = await DailyMessageUsageService.incrementDailyUsage(
+                    authenticatedUser.userId,
+                    authenticatedUser.isAnonymous
+                );
+                console.log(`[Chat] Incremented daily message usage:`, {
+                    userId: authenticatedUser.userId,
+                    isAnonymous: authenticatedUser.isAnonymous,
+                    newCount: incrementResult.newCount,
+                    date: incrementResult.date
+                });
+            } catch (error) {
+                console.error(`[Chat] Failed to increment daily usage:`, error);
+                // Don't block the request if incrementing fails
+            }
+        } else {
+            console.log(`[Chat] Skipping daily usage increment - user has credits (${creditValidation.actualCredits})`);
+        }
+
         // 6. Validate free model and premium model access
         await ChatCreditValidationService.validateFreeModelAccess({
             userId: authenticatedUser.userId,
