@@ -124,13 +124,16 @@ describe('CheckoutButton Component', () => {
       expect(button).toHaveTextContent('Sign In to Purchase Credits');
     });
 
-        it('calls router.push when clicked', () => {
+        it('calls signIn.social when clicked', () => {
       render(<CheckoutButton />);
       
       const button = screen.getByRole('button');
       fireEvent.click(button);
       
-      expect(mockPush).toHaveBeenCalledWith('/api/auth/sign-in/google');
+      expect(mockSignIn.social).toHaveBeenCalledWith({
+        provider: 'google',
+        callbackURL: '/upgrade',
+      });
     });
   });
 
@@ -211,7 +214,10 @@ describe('CheckoutButton Component', () => {
       expect(button).toHaveTextContent('Sign In to Purchase Credits');
       
       fireEvent.click(button);
-      expect(mockPush).toHaveBeenCalledWith('/api/auth/sign-in/google');
+      expect(mockSignIn.social).toHaveBeenCalledWith({
+        provider: 'google',
+        callbackURL: '/upgrade',
+      });
     });
 
     it('handles loading state gracefully', () => {

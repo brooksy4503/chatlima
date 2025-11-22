@@ -168,7 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-<<<<<<< HEAD
   // Wrapper for refetchUsage that uses current userId
   const refetchUsage = useCallback(async () => {
     if (session?.user?.id) {
@@ -178,21 +177,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session?.user?.id, fetchUsageData]);
 
-=======
->>>>>>> origin/main
   const value: AuthContextType = {
     user,
     session,
     isPending,
     status,
     usageData,
-<<<<<<< HEAD
     refetchUsage,
     refreshMessageUsage: refetchUsage, // Alias for backward compatibility
-=======
-    refetchUsage: fetchUsageData,
-    refreshMessageUsage: fetchUsageData, // Alias for backward compatibility
->>>>>>> origin/main
     error,
     signIn: handleSignIn,
     signOut: handleSignOut,
