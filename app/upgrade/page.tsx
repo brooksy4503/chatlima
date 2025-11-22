@@ -5,9 +5,9 @@ import { signIn } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Check, Sparkles } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
-export default function UpgradePage() {
+function UpgradeContent() {
   const { user, isAuthenticated, isAnonymous, usageData, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -238,6 +238,22 @@ export default function UpgradePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UpgradePage() {
+  return (
+    <Suspense fallback={
+      <div className="h-full overflow-y-auto">
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <UpgradeContent />
+    </Suspense>
   );
 }
 
