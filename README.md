@@ -68,19 +68,30 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 ### 🔐 Authentication & User Management
 - **Google OAuth Integration**: Seamless sign-in with Google accounts
 - **Anonymous Users**: Support for anonymous usage with unique tracking (10 messages/day)
-- **Daily Message Limits**: 10 messages/day for anonymous users, 20 for Google users
+- **Flexible Message Limits**: 
+  - Anonymous users: 10 messages/day
+  - Free Google users: 20 messages/day
+  - Monthly subscribers: 1,000 messages/month
+  - Yearly subscribers: Unlimited messages (free models only)
 - **Enhanced Daily Message Tracking**: Tamper-proof daily message usage tracking that prevents limit bypass vulnerabilities
 - **Automated User Cleanup**: Intelligent system to remove inactive anonymous users for optimal database performance
 - **Admin Cleanup Dashboard**: Comprehensive interface with preview, configuration, and monitoring capabilities
-- **Credit System**: Integrated billing and credit management with Polar
+- **Credit System**: Integrated billing and credit management with Polar (for monthly plan users)
 - **Better Auth Integration**: Modern authentication with session management
 - **Robust Credit Management**: Enhanced validation to prevent negative credit balance issues
+- **Subscription Type Detection**: Automatic detection of monthly vs yearly subscriptions for proper access control
 
 ### 💳 Billing & Payment System
+- **Flexible Subscription Plans**: Choose the plan that fits your usage pattern
+  - **Monthly Plan ($10/month)**: 1,000 messages per month with access to all models (premium + free)
+  - **Yearly Plan ($10/year)**: Unlimited messages with unlimited access to free models - save 92% vs monthly
 - **Polar Integration**: Complete integration with Polar billing platform for customer management
-- **Production Checkout System**: User-friendly purchase flow with smart user handling
+- **Production Checkout System**: User-friendly purchase flow with smart user handling and seamless sign-in
+- **Upgrade Page**: Beautiful side-by-side plan comparison with clear benefits and pricing
 - **Customer Portal Access**: Direct access to Polar customer portal for subscription management
-- **Credit Purchase Workflow**: Streamlined process for purchasing AI usage credits
+- **Credit Purchase Workflow**: Streamlined process for purchasing AI usage credits (for monthly plan users)
+- **Subscription-Based Access Control**: Intelligent model filtering based on subscription type
+- **Unlimited Free Models**: Yearly subscribers get unlimited access to all OpenRouter `:free` models
 - **Paid Web Search**: Premium web search feature with credit-based billing and usage tracking
 - **Comprehensive Error Handling**: Dedicated error pages for failed, canceled, and problematic transactions
 - **Environment-Based Configuration**: Secure Polar server environment selection
@@ -186,12 +197,15 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 - **Health Check APIs**: System monitoring and diagnostics endpoints for operational excellence
 
 ### 📊 Business Features
+- **Dual Subscription Tiers**: Monthly and yearly subscription options for different user segments
 - **Polar Integration**: Credit purchase and subscription management with production environment
 - **Usage Monitoring**: Daily/monthly usage tracking and limits with tamper-proof atomic tracking
+- **Subscription Analytics**: Track subscription types, conversions, and user behavior
 - **Cost Optimization**: Data-driven model selection and pricing analysis with real usage insights
-- **Webhook Support**: Real-time payment and subscription updates
+- **Webhook Support**: Real-time payment and subscription updates for both plan types
 - **Customer Management**: Automated customer creation and management with advanced retrieval logic
 - **Premium Feature Access**: Intelligent access control for paid features including image processing
+- **Model Access Control**: Subscription-based filtering for free vs premium models
 - **Dynamic Pricing Integration**: Real-time pricing information from provider APIs
 - **Database Performance Optimization**: Automated user cleanup for optimal database performance and storage efficiency
 - **Admin Operations Dashboard**: Comprehensive monitoring and management tools for system health
