@@ -5,7 +5,19 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { CreditCard } from 'lucide-react';
 
-export const CheckoutButton = () => {
+interface CheckoutButtonProps {
+  planSlug?: 'ai-usage' | 'free-models-unlimited';
+  children?: React.ReactNode;
+  className?: string;
+  variant?: 'default' | 'outline' | 'destructive' | 'secondary' | 'ghost' | 'link';
+}
+
+export const CheckoutButton = ({ 
+  planSlug = 'ai-usage', 
+  children,
+  className = 'w-full',
+  variant = 'default'
+}: CheckoutButtonProps) => {
   const { user, isAnonymous, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -15,15 +27,15 @@ export const CheckoutButton = () => {
       router.push('/api/auth/sign-in/google');
     } else {
       // Redirect authenticated users to the Polar checkout page
-      // The slug 'ai-usage' must match the one defined in lib/auth.ts
-      window.location.href = '/api/auth/checkout/ai-usage';
+      // The slug must match the one defined in lib/auth.ts
+      window.location.href = `/api/auth/checkout/${planSlug}`;
     }
   };
 
   return (
-    <Button onClick={handleCheckout} className="w-full">
+    <Button onClick={handleCheckout} className={className} variant={variant}>
       <CreditCard className="mr-2 h-4 w-4" />
-      {isAnonymous || !isAuthenticated ? 'Sign In to Purchase Credits' : 'Purchase More Credits'}
+      {children || (isAnonymous || !isAuthenticated ? 'Sign In to Purchase Credits' : 'Purchase More Credits')}
     </Button>
   );
 }; 

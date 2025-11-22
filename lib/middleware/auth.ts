@@ -30,11 +30,14 @@ export class AuthMiddleware {
             let isAdmin = false;
             let isAnonymous = false;
             let hasSubscription = false;
+            let subscriptionType: 'monthly' | 'yearly' | null = null;
+            let hasUnlimitedFreeModels = false;
 
             try {
                 const { db } = await import('@/lib/db');
                 const { users } = await import('@/lib/db/schema');
                 const { eq } = await import('drizzle-orm');
+                const { hasUnlimitedFreeModels: checkUnlimited } = await import('@/lib/polar');
 
                 const userResult = await db
                     .select()
@@ -46,14 +49,27 @@ export class AuthMiddleware {
                     const dbUser = userResult[0];
                     isAdmin = dbUser.role === 'admin' || dbUser.isAdmin === true;
                     isAnonymous = dbUser.isAnonymous === true;
-                    hasSubscription = (dbUser.metadata as any)?.hasSubscription || false;
+                    const metadata = (dbUser.metadata as any) || {};
+                    hasSubscription = metadata.hasSubscription || false;
+                    subscriptionType = metadata.subscriptionType || null;
+                    
+                    // Check for unlimited free models access (yearly subscription)
+                    if (!isAnonymous && subscriptionType === 'yearly') {
+                        try {
+                            hasUnlimitedFreeModels = await checkUnlimited(user.id);
+                        } catch (error) {
+                            console.warn('[AuthMiddleware] Error checking unlimited free models:', error);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('[AuthMiddleware] Error querying user admin status:', error);
                 // Fallback to session fields
                 isAdmin = (user as any)?.role === 'admin' || (user as any)?.isAdmin === true;
                 isAnonymous = (user as any)?.isAnonymous === true;
-                hasSubscription = (user as any)?.metadata?.hasSubscription || false;
+                const metadata = (user as any)?.metadata || {};
+                hasSubscription = metadata.hasSubscription || false;
+                subscriptionType = metadata.subscriptionType || null;
             }
 
             return {
@@ -62,6 +78,8 @@ export class AuthMiddleware {
                 isAdmin,
                 isAnonymous,
                 hasSubscription,
+                subscriptionType,
+                hasUnlimitedFreeModels,
             };
         } catch (error) {
             console.error('[AuthMiddleware] Authentication error:', error);

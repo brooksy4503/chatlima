@@ -2,6 +2,7 @@ import { db } from '@/lib/db';
 import { dailyMessageUsage, users } from '@/lib/db/schema';
 import type { DailyMessageUsage, DailyMessageUsageInsert } from '@/lib/db/schema';
 import { sql, eq, and, desc, lt } from 'drizzle-orm';
+import { hasUnlimitedFreeModels } from '@/lib/polar';
 
 export class DailyMessageUsageService {
     /**
@@ -84,9 +85,20 @@ export class DailyMessageUsageService {
 
             const isAnonymous = currentUsage[0]?.isAnonymous ?? user[0]?.isAnonymous ?? false;
             const messageCount = currentUsage[0]?.messageCount ?? 0;
-            const limit = this.getDailyMessageLimit(isAnonymous, user[0]);
-            const remaining = Math.max(0, limit - messageCount);
-            const hasReachedLimit = messageCount >= limit;
+            
+            // Check for yearly subscription (unlimited free models)
+            let hasUnlimitedAccess = false;
+            if (!isAnonymous && userId) {
+                try {
+                    hasUnlimitedAccess = await hasUnlimitedFreeModels(userId);
+                } catch (error) {
+                    console.warn('Error checking unlimited free models access:', error);
+                }
+            }
+            
+            const limit = hasUnlimitedAccess ? 999999 : this.getDailyMessageLimit(isAnonymous, user[0]);
+            const remaining = hasUnlimitedAccess ? 999999 : Math.max(0, limit - messageCount);
+            const hasReachedLimit = hasUnlimitedAccess ? false : messageCount >= limit;
 
             return {
                 messageCount,

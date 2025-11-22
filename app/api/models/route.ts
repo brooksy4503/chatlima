@@ -3,7 +3,7 @@ import { fetchAllModels, getEnvironmentApiKeys, clearProviderCache, getCacheStat
 import { auth } from '@/lib/auth';
 import { ApiKeyContext } from '@/lib/types/models';
 import { headers } from 'next/headers';
-import { getRemainingCreditsByExternalId } from '@/lib/polar';
+import { getRemainingCreditsByExternalId, hasUnlimitedFreeModels } from '@/lib/polar';
 
 // Helper to extract user API keys from request
 function extractUserApiKeys(request: NextRequest): Record<string, string> {
@@ -132,8 +132,19 @@ export async function GET(request: NextRequest) {
             const hasUserProvidedOpenRouterKey = userKeys['OPENROUTER_API_KEY']?.trim().length > 0;
             const hasUserProvidedRequestyKey = userKeys['REQUESTY_API_KEY']?.trim().length > 0;
 
+            // Check for unlimited free models subscription (yearly plan)
+            let hasUnlimitedFreeModelsAccess = false;
+            if (!isAnonymous && userId) {
+                try {
+                    hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
+                } catch (error) {
+                    hasUnlimitedFreeModelsAccess = false;
+                }
+            }
+
             // Determine if we should restrict to free models
-            const shouldRestrictToFreeModels = isAnonymous || !hasCredits;
+            // Yearly subscribers get all free models, but not premium models
+            const shouldRestrictToFreeModels = isAnonymous || (!hasCredits && !hasUnlimitedFreeModelsAccess);
 
             const models = shouldRestrictToFreeModels
                 ? response.models.filter(m => {
@@ -155,7 +166,24 @@ export async function GET(request: NextRequest) {
                     }
                     return false;
                 })
-                : response.models; // Users with credits get all models
+                : hasUnlimitedFreeModelsAccess
+                    ? response.models.filter(m => {
+                        // Yearly subscribers: show all free models, but filter out premium models
+                        // Allow free models
+                        if (m.id.endsWith(':free')) {
+                            return true;
+                        }
+                        // Allow all models if user provided their own API keys (BYOK)
+                        if (hasUserProvidedOpenRouterKey && m.id.startsWith('openrouter/')) {
+                            return true;
+                        }
+                        if (hasUserProvidedRequestyKey && m.id.startsWith('requesty/')) {
+                            return true;
+                        }
+                        // Block premium models for yearly subscribers without BYOK
+                        return false;
+                    })
+                    : response.models; // Users with credits get all models
 
             const filteredResponse = {
                 ...response,

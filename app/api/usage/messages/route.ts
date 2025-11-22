@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { DailyMessageUsageService } from '@/lib/services/dailyMessageUsageService';
-import { getRemainingCreditsByExternalId } from '@/lib/polar';
+import { getRemainingCreditsByExternalId, getSubscriptionTypeByExternalId, hasUnlimitedFreeModels } from '@/lib/polar';
 
 /**
  * API endpoint to get message usage information for the current user
@@ -43,6 +43,19 @@ export async function GET(req: Request) {
             }
         }
 
+        // Get subscription type and unlimited free models access
+        let subscriptionType: 'monthly' | 'yearly' | null = null;
+        let hasUnlimitedFreeModelsAccess = false;
+        
+        if (!isAnonymous && userId) {
+            try {
+                subscriptionType = await getSubscriptionTypeByExternalId(userId);
+                hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
+            } catch (error) {
+                console.warn('Failed to get subscription info:', error);
+            }
+        }
+
         return NextResponse.json({
             limit: dailyUsage.limit,
             used: dailyUsage.messageCount,
@@ -50,6 +63,8 @@ export async function GET(req: Request) {
             isAnonymous: dailyUsage.isAnonymous,
             // Check if user has a Polar subscription
             hasSubscription: (session.user as any)?.metadata?.hasSubscription || false,
+            subscriptionType,
+            hasUnlimitedFreeModels: hasUnlimitedFreeModelsAccess,
             // Include credit information
             credits,
             hasCredits,

@@ -435,3 +435,73 @@ export async function associatePolarCustomer(userId: string, polarCustomerId: st
     }
 }
 
+/**
+ * Gets the subscription type for a user by their external ID
+ * 
+ * @param userId The user's ID in our application (used as external ID in Polar)
+ * @returns A promise that resolves to the subscription type ('monthly' | 'yearly' | null)
+ */
+export async function getSubscriptionTypeByExternalId(userId: string): Promise<'monthly' | 'yearly' | null> {
+    try {
+        const monthlyProductId = process.env.POLAR_PRODUCT_ID;
+        const yearlyProductId = process.env.POLAR_PRODUCT_ID_YEARLY;
+
+        if (!monthlyProductId || !yearlyProductId) {
+            console.warn('Missing POLAR_PRODUCT_ID or POLAR_PRODUCT_ID_YEARLY environment variables');
+            return null;
+        }
+
+        // Get customer state by external ID
+        const customerState = await polarClient.customers.getStateExternal({
+            externalId: userId
+        });
+
+        if (!customerState) {
+            return null;
+        }
+
+        // Check active subscriptions from customer state
+        // The customer state should contain subscription information
+        const activeSubscriptions = (customerState as any).activeSubscriptions || [];
+        
+        for (const subscription of activeSubscriptions) {
+            // Check if subscription object has product info directly
+            const productId = subscription.productId || subscription.product?.id || (subscription as any).product_id;
+            
+            if (productId === yearlyProductId) {
+                return 'yearly';
+            } else if (productId === monthlyProductId) {
+                return 'monthly';
+            }
+        }
+        
+        // Also check subscriptions array if it exists
+        const subscriptions = (customerState as any).subscriptions || [];
+        for (const subscription of subscriptions) {
+            const productId = subscription.productId || subscription.product?.id || (subscription as any).product_id;
+            
+            if (productId === yearlyProductId) {
+                return 'yearly';
+            } else if (productId === monthlyProductId) {
+                return 'monthly';
+            }
+        }
+
+        return null;
+    } catch (error) {
+        console.error(`Error getting subscription type for external ID ${userId}:`, error);
+        return null;
+    }
+}
+
+/**
+ * Checks if a user has unlimited access to free models (yearly subscription)
+ * 
+ * @param userId The user's ID in our application
+ * @returns A promise that resolves to true if user has yearly subscription, false otherwise
+ */
+export async function hasUnlimitedFreeModels(userId: string): Promise<boolean> {
+    const subscriptionType = await getSubscriptionTypeByExternalId(userId);
+    return subscriptionType === 'yearly';
+}
+
