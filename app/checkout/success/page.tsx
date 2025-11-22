@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { CheckCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 type PurchaseType = 'credits' | 'subscription' | 'yearly' | 'monthly' | null;
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const { user, isAuthenticated, isAnonymous } = useAuth();
   const [purchaseType, setPurchaseType] = useState<PurchaseType>(null);
@@ -142,5 +142,21 @@ export default function CheckoutSuccessPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="container flex items-center justify-center min-h-[calc(100vh-80px)]">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardContent className="text-center py-8">
+            <p className="text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 } 
