@@ -52,7 +52,7 @@ export class AuthMiddleware {
                     const metadata = (dbUser.metadata as any) || {};
                     hasSubscription = metadata.hasSubscription || false;
                     subscriptionType = metadata.subscriptionType || null;
-                    
+
                     // Check for unlimited free models access (yearly subscription)
                     if (!isAnonymous && subscriptionType === 'yearly') {
                         try {

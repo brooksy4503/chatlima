@@ -85,7 +85,7 @@ export class DailyMessageUsageService {
 
             const isAnonymous = currentUsage[0]?.isAnonymous ?? user[0]?.isAnonymous ?? false;
             const messageCount = currentUsage[0]?.messageCount ?? 0;
-            
+
             // Check for yearly subscription (unlimited free models)
             let hasUnlimitedAccess = false;
             if (!isAnonymous && userId) {
@@ -95,7 +95,7 @@ export class DailyMessageUsageService {
                     console.warn('Error checking unlimited free models access:', error);
                 }
             }
-            
+
             const limit = hasUnlimitedAccess ? 999999 : this.getDailyMessageLimit(isAnonymous, user[0]);
             const remaining = hasUnlimitedAccess ? 999999 : Math.max(0, limit - messageCount);
             const hasReachedLimit = hasUnlimitedAccess ? false : messageCount >= limit;

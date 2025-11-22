@@ -626,6 +626,7 @@ export async function POST(req: Request) {
             return processedMessages;
         }
 
+>>>>>>> origin/main
         // Process messages with attachments
         const processedMessagesWithAttachments = await processMessagesWithAttachments(messages, attachments, selectedModelInfo);
 

@@ -3,18 +3,19 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { CheckoutButton } from '../../components/checkout-button';
 
 // Mock the useAuth hook
-const mockPush = jest.fn();
 const mockUseAuth = jest.fn();
 
 jest.mock('../../hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-// Mock Next.js navigation
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
+// Mock auth-client signIn
+const mockSignIn = {
+  social: jest.fn(),
+};
+
+jest.mock('../../lib/auth-client', () => ({
+  signIn: mockSignIn,
 }));
 
 // Mock the Button component
@@ -94,13 +95,16 @@ describe('CheckoutButton Component', () => {
       expect(button).toHaveClass('w-full');
     });
 
-        it('calls router.push when clicked', () => {
+        it('calls signIn.social when clicked', () => {
       render(<CheckoutButton />);
       
       const button = screen.getByRole('button');
       fireEvent.click(button);
       
-      expect(mockPush).toHaveBeenCalledWith('/api/auth/sign-in/google');
+      expect(mockSignIn.social).toHaveBeenCalledWith({
+        provider: 'google',
+        callbackURL: '/upgrade',
+      });
     });
   });
 
@@ -151,13 +155,15 @@ describe('CheckoutButton Component', () => {
       expect(button).toHaveTextContent('Upgrade');
     });
 
-    it('navigates to upgrade page when clicked', () => {
+    it('navigates to checkout when clicked', () => {
       render(<CheckoutButton />);
       
       const button = screen.getByRole('button');
       fireEvent.click(button);
       
-      expect(mockPush).toHaveBeenCalledWith('/upgrade');
+      // Component uses window.location.href for authenticated users
+      expect(mockLocation.href).toBe('/api/auth/checkout/ai-usage');
+      expect(mockSignIn.social).not.toHaveBeenCalled();
     });
 
     it('displays credit card icon', () => {
