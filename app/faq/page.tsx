@@ -23,7 +23,7 @@ export default function FAQPage() {
                   What are free models?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  Free models are powerful AI models that don't require additional credits or fees to use. 
+                  Free models are powerful AI models that don&apos;t require additional credits or fees to use. 
                   These models are provided through OpenRouter and are perfect for most everyday tasks like 
                   writing emails, brainstorming ideas, answering questions, and general conversation.
                 </p>
@@ -33,14 +33,14 @@ export default function FAQPage() {
                 <div className="bg-muted p-4 rounded-lg">
                   <ul className="space-y-2 text-card-foreground">
                     <li>• Grok 4.1 Fast - Fast and capable for general tasks</li>
-                    <li>• GPT-OSS-20B - OpenAI's open-source model</li>
+                    <li>• GPT-OSS-20B - OpenAI&apos;s open-source model</li>
                     <li>• Kimi K2 - Great for reasoning and analysis</li>
                     <li>• DeepSeek R1 - Advanced reasoning capabilities</li>
                     <li>• GLM-4.5 Air - Efficient and versatile</li>
                     <li>• Dolphin Mistral 24B - Strong performance for various tasks</li>
                     <li>• Qwen3-235B - Large-scale model for complex queries</li>
                     <li>• DeepSeek Chat V3 - Conversational AI specialist</li>
-                    <li>• Gemma 3-27B - Google's efficient model</li>
+                    <li>• Gemma 3-27B - Google&apos;s efficient model</li>
                   </ul>
                 </div>
                 <p className="text-card-foreground leading-relaxed mt-4">
@@ -63,10 +63,10 @@ export default function FAQPage() {
                 </p>
                 <div className="bg-muted p-4 rounded-lg">
                   <ul className="space-y-2 text-card-foreground">
-                    <li>• GPT-5.1 Chat - OpenAI's latest flagship model</li>
-                    <li>• Claude Sonnet 4.5 - Anthropic's advanced reasoning model</li>
-                    <li>• Grok 4.1 Fast - X.AI's premium offering</li>
-                    <li>• Gemini 3 Pro Preview - Google's most capable model</li>
+                    <li>• GPT-5.1 Chat - OpenAI&apos;s latest flagship model</li>
+                    <li>• Claude Sonnet 4.5 - Anthropic&apos;s advanced reasoning model</li>
+                    <li>• Grok 4.1 Fast - X.AI&apos;s premium offering</li>
+                    <li>• Gemini 3 Pro Preview - Google&apos;s most capable model</li>
                     <li>• Kimi K2 Thinking - Advanced reasoning capabilities</li>
                     <li>• MiniMax M2 - High-performance model</li>
                     <li>• GLM-4.6 - Latest from Z-AI</li>
@@ -74,13 +74,13 @@ export default function FAQPage() {
                 </div>
                 <p className="text-card-foreground leading-relaxed mt-4">
                   Premium models are ideal for complex analysis, advanced problem-solving, creative writing, 
-                  and tasks that require deep reasoning. They're available with the monthly subscription plan.
+                  and tasks that require deep reasoning. They&apos;re available with the monthly subscription plan.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">
-                  What's the difference between yearly and monthly plans?
+                  What&apos;s the difference between yearly and monthly plans?
                 </h2>
                 <div className="space-y-4">
                   <div className="bg-muted p-4 rounded-lg">
@@ -118,7 +118,7 @@ export default function FAQPage() {
                 </div>
                 <p className="text-card-foreground leading-relaxed mt-4">
                   <strong>Key insight:</strong> Free models power about 80% of typical chats and are 
-                  excellent for most tasks. The monthly plan is your "flex pass" if you need heavy premium 
+                  excellent for most tasks. The monthly plan is your &quot;flex pass&quot; if you need heavy premium 
                   model usage or advanced capabilities.
                 </p>
               </section>
@@ -128,7 +128,7 @@ export default function FAQPage() {
                   What are MCP tools?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  MCP (Model Context Protocol) tools extend ChatLima's capabilities beyond basic chat. 
+                  MCP (Model Context Protocol) tools extend ChatLima&apos;s capabilities beyond basic chat. 
                   These integrations allow the AI to interact with external services and perform real-world actions.
                 </p>
                 <p className="text-card-foreground leading-relaxed mb-4">
@@ -146,7 +146,7 @@ export default function FAQPage() {
                 </div>
                 <p className="text-card-foreground leading-relaxed mt-4">
                   MCP tools make ChatLima more powerful by allowing the AI to take actions, not just answer 
-                  questions. For example, you can ask "Show me directions to the nearest coffee shop" and the 
+                  questions. For example, you can ask &quot;Show me directions to the nearest coffee shop&quot; and the 
                   AI can use Google Maps to provide real directions.
                 </p>
               </section>
@@ -156,13 +156,13 @@ export default function FAQPage() {
                   Do I need an OpenRouter account?
                 </h2>
                 <p className="text-card-foreground leading-relaxed">
-                  No! ChatLima handles everything for you. You don't need to sign up for OpenRouter, manage 
+                  No! ChatLima handles everything for you. You don&apos;t need to sign up for OpenRouter, manage 
                   API keys, or purchase credits separately. When you subscribe to ChatLima, we handle all the 
                   technical setup and provide you with a seamless experience. Just sign in and start chatting—we 
                   take care of the rest.
                 </p>
                 <p className="text-card-foreground leading-relaxed mt-4">
-                  ChatLima provides additional features and a polished interface that you won't find on OpenRouter 
+                  ChatLima provides additional features and a polished interface that you won&apos;t find on OpenRouter 
                   directly, including MCP tool integrations, preset management, and a user-friendly chat interface.
                 </p>
               </section>
@@ -172,7 +172,7 @@ export default function FAQPage() {
                   Can I switch plans?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  Yes! You can switch between plans at any time. Here's how it works:
+                  Yes! You can switch between plans at any time. Here&apos;s how it works:
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-card-foreground ml-4">
                   <li>If you have a yearly plan and want premium models, you can upgrade to monthly</li>
@@ -182,7 +182,7 @@ export default function FAQPage() {
                 </ul>
                 <p className="text-card-foreground leading-relaxed mt-4">
                   To switch plans, visit the <a href="/upgrade" className="text-primary hover:text-primary/80 underline">upgrade page</a> and select your preferred plan. 
-                  You'll be guided through the checkout process.
+                  You&apos;ll be guided through the checkout process.
                 </p>
               </section>
 
@@ -194,9 +194,9 @@ export default function FAQPage() {
                   You can cancel your subscription at any time with no penalties or fees. Your subscription will 
                   remain active until the end of your current billing period. After cancellation:
                 </p>
-                <ul className="list-disc list-inside space-y-2 text-card-foreground ml-4 mt-4">
-                  <li>You'll continue to have access to all features until your current period ends</li>
-                  <li>You won't be charged for the next billing cycle</li>
+                  <ul className="list-disc list-inside space-y-2 text-card-foreground ml-4 mt-4">
+                  <li>You&apos;ll continue to have access to all features until your current period ends</li>
+                  <li>You won&apos;t be charged for the next billing cycle</li>
                   <li>Your account and chat history will be preserved</li>
                   <li>You can resubscribe anytime</li>
                 </ul>
@@ -213,8 +213,8 @@ export default function FAQPage() {
                   Managing your subscription is easy:
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-card-foreground ml-4">
-                  <li>Visit the <a href="/upgrade" className="text-primary hover:text-primary/80 underline">upgrade page</a> and click "Manage your subscription"</li>
-                  <li>You'll be taken to your subscription portal where you can:</li>
+                  <li>Visit the <a href="/upgrade" className="text-primary hover:text-primary/80 underline">upgrade page</a> and click &quot;Manage your subscription&quot;</li>
+                  <li>You&apos;ll be taken to your subscription portal where you can:</li>
                   <ul className="list-disc list-inside space-y-1 ml-6 mt-2">
                     <li>View your current plan and billing details</li>
                     <li>Update payment methods</li>
@@ -230,7 +230,7 @@ export default function FAQPage() {
                 </h2>
                 <div className="bg-muted p-6 rounded-lg">
                   <p className="text-card-foreground mb-4">
-                    We're here to help! If you have any other questions, please contact us:
+                    We&apos;re here to help! If you have any other questions, please contact us:
                   </p>
                   <ul className="space-y-2">
                     <li className="flex items-center space-x-2">

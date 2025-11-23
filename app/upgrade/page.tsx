@@ -104,7 +104,7 @@ function UpgradeContent() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-12 max-w-6xl">
+        <div className="w-full px-4 py-12">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               Choose Your Plan
@@ -114,7 +114,7 @@ function UpgradeContent() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 w-full max-w-7xl mx-auto">
             {/* Monthly Plan */}
             <div className="bg-card border border-border rounded-lg shadow-lg p-8">
               <div className="text-center mb-6">
@@ -251,9 +251,9 @@ function UpgradeContent() {
             </div>
           </div>
 
-          <div className="mt-8 max-w-5xl mx-auto text-center">
+          <div className="mt-8 w-full max-w-7xl mx-auto text-center">
             <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
-              Free models power 80% of chats (smart, fast AI like writing helpers). Need heavy premium use? Monthly's your flex pass.
+              Free models power 80% of chats (smart, fast AI like writing helpers). Need heavy premium use? Monthly&apos;s your flex pass.
             </p>
           </div>
 

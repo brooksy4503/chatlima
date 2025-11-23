@@ -1,0 +1,144 @@
+---
+globs: *.tsx,*.jsx
+description: Guidelines for handling unescaped entities (quotes and apostrophes) in JSX to prevent React linting errors
+---
+
+# JSX Unescaped Entities Rule
+
+Always escape quotes and apostrophes in JSX text content to prevent React linting errors (`react/no-unescaped-entities`).
+
+## When to Escape Entities
+
+**Always escape in JSX text content:**
+- Inside JSX elements: `<p>Don't do this</p>` ❌
+- In JSX attributes (when using quotes): `<div title="It's working">` ❌
+- In JSX text nodes: `{`You're welcome`}` ❌
+
+**Don't escape in:**
+- JavaScript string literals: `const text = "Don't worry";` ✅
+- Template strings: ``const msg = `It's fine`;`` ✅
+- Object properties: `{ title: "It's okay" }` ✅
+- Comments: `{/* Don't worry about this */}` ✅
+
+## HTML Entity Escapes
+
+Use these HTML entities for common characters:
+
+| Character | Entity | Usage |
+|-----------|--------|-------|
+| `'` (apostrophe) | `&apos;` | Most common for contractions |
+| `'` (apostrophe) | `&#39;` | Alternative numeric entity |
+| `"` (double quote) | `&quot;` | For quoted text in JSX |
+| `"` (double quote) | `&#34;` | Alternative numeric entity |
+
+## Common Patterns
+
+### Apostrophes in Contractions
+
+```tsx
+// ❌ Bad - unescaped apostrophe
+<p>Don't worry about it</p>
+<p>You're welcome</p>
+<p>It's working</p>
+<p>We'll handle it</p>
+
+// ✅ Good - escaped apostrophes
+<p>Don&apos;t worry about it</p>
+<p>You&apos;re welcome</p>
+<p>It&apos;s working</p>
+<p>We&apos;ll handle it</p>
+```
+
+### Possessive Apostrophes
+
+```tsx
+// ❌ Bad
+<p>OpenAI's latest model</p>
+<p>Google's efficient model</p>
+<p>ChatLima's capabilities</p>
+
+// ✅ Good
+<p>OpenAI&apos;s latest model</p>
+<p>Google&apos;s efficient model</p>
+<p>ChatLima&apos;s capabilities</p>
+```
+
+### Quoted Text in JSX
+
+```tsx
+// ❌ Bad - unescaped quotes
+<p>The monthly plan is your "flex pass" for premium models</p>
+<p>Ask "Show me directions" and the AI will help</p>
+
+// ✅ Good - escaped quotes
+<p>The monthly plan is your &quot;flex pass&quot; for premium models</p>
+<p>Ask &quot;Show me directions&quot; and the AI will help</p>
+```
+
+### Mixed Quotes and Apostrophes
+
+```tsx
+// ❌ Bad
+<p>You can ask "What's the weather?" and get an answer</p>
+<p>It's called "Don't worry" and it works</p>
+
+// ✅ Good
+<p>You can ask &quot;What&apos;s the weather?&quot; and get an answer</p>
+<p>It&apos;s called &quot;Don&apos;t worry&quot; and it works</p>
+```
+
+## Alternative Approaches
+
+### Using Template Strings (for dynamic content)
+
+```tsx
+// ✅ Good - no escaping needed in template strings
+const message = `Don't worry, it's working`;
+<p>{message}</p>
+
+// ✅ Good - template strings with variables
+const name = "ChatLima";
+<p>{`${name}'s features are great`}</p>
+```
+
+### Using String Concatenation
+
+```tsx
+// ✅ Good - no escaping needed in string literals
+const text = "Don't worry";
+<p>{text}</p>
+```
+
+### Using Curly Braces with String Literals
+
+```tsx
+// ✅ Good - JavaScript string, not JSX text
+<p>{"Don't worry about it"}</p>
+<p>{"It's working perfectly"}</p>
+```
+
+## Build-Time Errors
+
+The React linter (`react/no-unescaped-entities`) will fail builds with errors like:
+
+```
+Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.
+Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.
+```
+
+**Always fix these errors before committing** - they will cause production builds to fail.
+
+## Quick Reference
+
+- **Apostrophes**: Use `&apos;` (most common) or `&#39;`
+- **Double quotes**: Use `&quot;` or `&#34;`
+- **In JSX text**: Always escape
+- **In JavaScript strings**: Don't escape
+- **In template strings**: Don't escape
+- **In comments**: Don't escape
+
+## Examples from Codebase
+
+See these files for correct patterns:
+- `app/faq/page.tsx` - Multiple examples of properly escaped entities
+- `app/upgrade/page.tsx` - Escaped apostrophes in JSX content
