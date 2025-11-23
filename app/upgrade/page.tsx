@@ -3,7 +3,9 @@
 import { useAuth } from '@/hooks/useAuth';
 import { signIn } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Check, Sparkles } from 'lucide-react';
+import { CreditCard, Check, Sparkles, MessageSquare, Brain, Search, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 
@@ -129,19 +131,29 @@ function UpgradeContent() {
 
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <MessageSquare className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-card-foreground">1,000 messages per month</span>
                 </li>
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <Brain className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-card-foreground">Access to all models (premium + free)</span>
                 </li>
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-card-foreground">Premium model access</span>
+                  <Sparkles className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-card-foreground">
+                    Premium model access{' '}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 inline-block ml-1 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Access to GPT-5.1 Chat, Claude Sonnet 4.5, Grok 4.1 Fast, Gemini 3 Pro Preview, Kimi K2 Thinking, MiniMax M2, and GLM-4.6</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </span>
                 </li>
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <Search className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-card-foreground">Web search capabilities</span>
                 </li>
               </ul>
@@ -181,25 +193,43 @@ function UpgradeContent() {
                   <span className="text-xl text-muted-foreground ml-2">/year</span>
                 </div>
                 <p className="text-muted-foreground mt-2">Save 92% vs monthly</p>
+                <p className="text-sm text-muted-foreground mt-3 italic">
+                  Perfect for everyday use: Brainstorm ideas, write emails, or explore with AI tools like maps & search
+                </p>
               </div>
 
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <MessageSquare className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-card-foreground font-semibold">Unlimited messages</span>
                 </li>
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-card-foreground">Unlimited access to free models</span>
+                  <Brain className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-card-foreground">
+                    Unlimited chats with top free AI models{' '}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 inline-block ml-1 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Access to powerful free models like Grok 4.1 Fast, GPT-OSS-20B, Kimi K2, DeepSeek R1, GLM-4.5 Air, and more—no setup or extra fees needed</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </span>
                 </li>
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-card-foreground">All OpenRouter :free models</span>
-                </li>
-                <li className="flex items-start">
-                  <Check className="h-5 w-5 text-muted-foreground mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-muted-foreground line-through">Premium models</span>
-                  <span className="text-muted-foreground ml-2 text-sm">(upgrade to monthly for access)</span>
+                  <Sparkles className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-card-foreground">
+                    Premium models available anytime{' '}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 inline-block ml-1 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Easy upgrade to monthly for GPT-5.1, Claude Sonnet 4.5, Grok 4.1 & more</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </span>
                 </li>
               </ul>
 
@@ -221,18 +251,36 @@ function UpgradeContent() {
             </div>
           </div>
 
+          <div className="mt-8 max-w-5xl mx-auto text-center">
+            <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
+              Free models power 80% of chats (smart, fast AI like writing helpers). Need heavy premium use? Monthly's your flex pass.
+            </p>
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className="text-sm text-muted-foreground mb-6">
+              Get started in seconds—no credit card needed for the first chat
+            </p>
+          </div>
+
           <div className="mt-12 text-center">
             <p className="text-muted-foreground mb-4">
               Already have a subscription?{' '}
               <button
                 onClick={handleManageSubscription}
-                className="text-primary hover:text-primary/80 underline"
+                className="text-primary hover:text-primary/80 underline font-medium"
               >
                 Manage your subscription
               </button>
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-4">
               Subscriptions can be canceled at any time. One subscription replaces the other.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Have questions?{' '}
+              <Link href="/faq" className="text-primary hover:text-primary/80 underline">
+                Visit our FAQ
+              </Link>
             </p>
           </div>
         </div>

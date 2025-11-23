@@ -333,7 +333,7 @@ export function ChatSidebar() {
                     </SidebarGroup>
                 </SidebarContent>
                 
-                <SidebarFooter className="flex flex-col gap-2 p-3 border-t border-border/40">
+                <SidebarFooter className="!p-3 flex flex-col gap-2 border-t border-border/40">
                     <Skeleton className="h-10 w-full" />
                     <Skeleton className="h-10 w-full" />
                     
@@ -493,18 +493,18 @@ export function ChatSidebar() {
                     </SidebarGroup>
                 </SidebarContent>
                 
-                <SidebarFooter className="flex flex-col gap-2 p-3 border-t border-border/40">
+                <SidebarFooter className="!p-3 flex flex-col gap-2 border-t border-border/40">
                     
 
                     {isSessionLoading ? (
-                        <div className="flex items-center gap-2 px-3 py-2 mt-2">
+                        <div className="flex items-center gap-2 px-0 py-2 mt-2">
                             <Skeleton className="h-8 w-8 rounded-full" />
                             {!isLayoutCollapsed && <Skeleton className="h-4 w-24" />}
                         </div>
                     ) : session?.user?.isAnonymous === true ? (
                         <div className={cn(
                             "flex flex-col gap-2 mt-2", 
-                            isLayoutCollapsed ? "px-1 py-2" : "px-3 py-2" 
+                            isLayoutCollapsed ? "items-center px-0 py-2" : "px-0 py-2" 
                         )}>
                             <UpgradeButton isCollapsed={isLayoutCollapsed} />
                             <SignInButton isCollapsed={isLayoutCollapsed} />
@@ -513,7 +513,7 @@ export function ChatSidebar() {
                         // Authenticated user without subscription - show upgrade button + account menu
                         <div className={cn(
                             "flex flex-col gap-2 mt-2", 
-                            isLayoutCollapsed ? "px-1 py-2" : "px-3 py-2" 
+                            isLayoutCollapsed ? "items-center px-0 py-2" : "px-0 py-2" 
                         )}>
                             <UpgradeButton isCollapsed={isLayoutCollapsed} />
                             <div className={cn(
@@ -527,7 +527,7 @@ export function ChatSidebar() {
                         // Authenticated user with subscription - show only account menu
                         <div className={cn(
                             "flex items-center mt-2", 
-                            isLayoutCollapsed ? "justify-center px-1 py-2" : "px-3 py-2" 
+                            isLayoutCollapsed ? "justify-center px-0 py-2" : "px-0 py-2" 
                         )}>
                             <UserAccountMenu />
                         </div>
