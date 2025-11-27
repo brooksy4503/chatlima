@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import { TopNav } from "@/components/top-nav";
 import { Providers } from "./providers";
 import "./globals.css";
-import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react";
 import { WebSearchProvider } from "@/lib/context/web-search-context";
 import { cn } from "@/lib/utils";
 import BuildInfo from "@/components/ui/BuildInfo";
@@ -136,7 +136,7 @@ export default function RootLayout({
             <IOSInstallPrompt />
           </WebSearchProvider>
         </Providers>
-        <Script defer src="https://cloud.umami.is/script.js" data-website-id="bd3f8736-1562-47e0-917c-c10fde7ef0d2" />
+        <Analytics />
       </body>
     </html>
   );
