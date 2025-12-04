@@ -1,4 +1,9 @@
-<!-- a5991ae3-9e3c-4809-af3b-db6144f4b20e ea552181-7cc2-4484-b954-984ff70eb07d -->
+---
+name: Add $10/Year Subscription Plan for Unlimited Free Models
+overview: ""
+todos: []
+---
+
 # Add $10/Year Subscription Plan for Unlimited Free Models
 
 ## Overview
