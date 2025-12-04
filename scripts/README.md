@@ -233,6 +233,75 @@ Comprehensive security testing for the chat API to identify potential vulnerabil
 
 ### Development Utilities
 
+#### `release-workflow.ts` 🚀 Release Workflow Automation
+**Automated release process** that handles the complete feature release workflow from merge to deployment.
+
+**Features:**
+- Pre-release checks (tests, build, branch validation)
+- Automatic feature branch merge
+- Version increment (patch/minor/major)
+- Git tag creation and push
+- Feature branch cleanup
+- Dry-run mode for testing
+
+**Usage:**
+```bash
+# Standard release workflow
+pnpm release:workflow --branch feature/my-feature --version minor
+
+# Patch release (bug fixes)
+pnpm release:workflow --branch feature/bugfix --version patch
+
+# Major release (breaking changes)
+pnpm release:workflow --branch feature/major-change --version major
+
+# Skip tests (use with caution)
+pnpm release:workflow --branch feature/quick-fix --version patch --skip-tests
+
+# Dry run to see what would happen
+pnpm release:workflow --branch feature/test --version patch --dry-run
+```
+
+**Workflow Steps:**
+1. ✅ Pre-release checks (working directory, branch existence, tests, build)
+2. 🔄 Merge feature branch into main
+3. 📦 Increment version and create git tag
+4. 📤 Push changes and tags to remote
+5. 🧹 Cleanup feature branch (local and remote)
+
+**Next Steps After Workflow:**
+1. Generate release notes: `pnpm release:notes --version <version> --feature <name>`
+2. Create GitHub release using the generated notes
+3. Monitor Vercel deployment (automatic via GitHub integration)
+
+#### `generate-release-notes.ts` 📝 Release Notes Generator
+**Automated release notes generation** following the ChatLima release notes template.
+
+**Features:**
+- Auto-detects current version from package.json
+- Finds previous version automatically
+- Extracts git commits and file changes
+- Generates comprehensive release notes template
+- Includes statistics and changelog links
+
+**Usage:**
+```bash
+# Generate release notes (auto-detects version)
+pnpm release:notes --version 0.35.0 --feature "New Feature Name"
+
+# With interactive editor
+pnpm release:notes --version 0.35.0 --feature "New Feature" --interactive
+
+# Specify previous version manually
+pnpm release:notes --version 0.35.0 --feature "Feature" --previous-version 0.34.1
+```
+
+**Output:**
+- Creates `releases/RELEASE_NOTES_v<VERSION>.md` file
+- Includes template with all required sections
+- Pre-filled with git statistics and commit history
+- Ready for customization and GitHub release
+
 #### `debug-polar-api.ts` 🔧 Polar API Debug Tool
 Comprehensive debugging tool for Polar API connection issues.
 
@@ -349,6 +418,35 @@ npx tsx scripts/dynamic-api-pricing-analysis.ts
 
 # If you have OpenRouter data
 python scripts/analyze-openrouter-data.py /path/to/data.csv
+```
+
+### Release Workflow
+
+**Complete Feature Release Process:**
+```bash
+# 1. Run the release workflow (merges, versions, pushes)
+pnpm release:workflow --branch feature/my-feature --version minor
+
+# 2. Generate release notes
+pnpm release:notes --version 0.35.0 --feature "My Feature Name" --interactive
+
+# 3. Edit the generated release notes file
+# File location: releases/RELEASE_NOTES_v0.35.0.md
+
+# 4. Create GitHub release
+# Go to: https://github.com/brooksy4503/chatlima/releases/new
+# Use the generated release notes content
+```
+
+**Version Bump Guidelines:**
+- **Patch** (0.34.1): Bug fixes, small improvements, security patches
+- **Minor** (0.35.0): New features, significant improvements, new capabilities
+- **Major** (1.0.0): Breaking changes, major rewrites, API changes
+
+**Dry Run Testing:**
+```bash
+# Test the workflow without making changes
+pnpm release:workflow --branch feature/test --version patch --dry-run
 ```
 
 ### Security Testing
