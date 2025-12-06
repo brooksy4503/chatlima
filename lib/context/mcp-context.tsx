@@ -3,6 +3,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { MCPOAuthProvider } from "@/lib/services/mcpOAuthProvider";
 
 // Define types for MCP server
 export interface KeyValuePair {
@@ -21,6 +22,7 @@ export interface MCPServer {
   env?: KeyValuePair[];
   headers?: KeyValuePair[];
   description?: string;
+  useOAuth?: boolean;  // Enable OAuth flow instead of static headers
   _meta?: Record<string, any>;
 }
 
@@ -33,6 +35,14 @@ export interface MCPServerApi {
   env?: KeyValuePair[];
   headers?: KeyValuePair[];
   title?: string;
+  useOAuth?: boolean;
+  id?: string;  // Include ID so server can look up OAuth tokens
+  oauthTokens?: {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+    token_type?: string;
+  };
   _meta?: Record<string, any>;
 }
 
@@ -76,21 +86,48 @@ export function MCPProvider(props: { children: React.ReactNode }) {
       return;
     }
     
-    const processedServers: MCPServerApi[] = effectiveSelectedMcpServers
-      .map(id => effectiveMcpServers.find(server => server.id === id))
-      .filter((server): server is MCPServer => Boolean(server))
-      .map(server => ({
-        type: server.type,
-        url: server.url,
-        command: server.command,
-        args: server.args,
-        env: server.env,
-        headers: server.headers,
-        title: server.title,
-        _meta: server._meta
-      }));
-    
-    setMcpServersForApi(processedServers);
+    const processServers = async () => {
+      const servers = effectiveSelectedMcpServers
+        .map(id => effectiveMcpServers.find(server => server.id === id))
+        .filter((server): server is MCPServer => Boolean(server));
+
+      const processedServers: MCPServerApi[] = await Promise.all(
+        servers.map(async (server) => {
+          const baseConfig: MCPServerApi = {
+            type: server.type,
+            url: server.url,
+            command: server.command,
+            args: server.args,
+            env: server.env,
+            headers: server.headers,
+            title: server.title,
+            useOAuth: server.useOAuth,
+            id: server.id,
+            _meta: server._meta
+          };
+
+          // If OAuth is enabled, retrieve tokens from localStorage
+          if (server.useOAuth && server.id) {
+            const authProvider = new MCPOAuthProvider(server.url, server.id);
+            const tokens = await authProvider.tokens();
+            if (tokens) {
+              baseConfig.oauthTokens = {
+                access_token: tokens.access_token,
+                refresh_token: tokens.refresh_token,
+                expires_in: tokens.expires_in,
+                token_type: tokens.token_type
+              };
+            }
+          }
+
+          return baseConfig;
+        })
+      );
+
+      setMcpServersForApi(processedServers);
+    };
+
+    processServers();
   }, [effectiveMcpServers, effectiveSelectedMcpServers]);
 
   return (
