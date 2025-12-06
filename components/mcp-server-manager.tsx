@@ -41,6 +41,7 @@ import { KeyValuePair, MCPServer } from "@/lib/context/mcp-context";
 import { MCPOAuthProvider } from "@/lib/services/mcpOAuthProvider";
 import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
 import { useRouter } from 'next/navigation';
+import { installOAuthFetchInterceptor } from '@/lib/utils/mcpOAuthProxy';
 
 // Default template for a new MCP server
 const INITIAL_NEW_SERVER: Omit<MCPServer, 'id'> = {
@@ -426,61 +427,69 @@ export const MCPServerManager = ({
             console.log(`[MCP OAuth] Redirect URL: ${authProvider.redirectUrl}`);
             console.log(`[MCP OAuth] Client metadata:`, authProvider.clientMetadata);
             
-            // Check if client info exists before calling auth()
-            const existingClientInfo = await authProvider.clientInformation();
-            if (existingClientInfo) {
-                console.log(`[MCP OAuth] Found existing client info:`, existingClientInfo);
-            } else {
-                console.log(`[MCP OAuth] No existing client info, will register client`);
-            }
+            // Install fetch interceptor to proxy OAuth requests through our API
+            const cleanupInterceptor = installOAuthFetchInterceptor();
             
-            let result;
             try {
-                console.log(`[MCP OAuth] Calling MCP SDK auth() function...`);
-                result = await auth(authProvider, { serverUrl: new URL(server.url) });
-                console.log(`[MCP OAuth] Auth function returned: ${result}`);
-            } catch (authError) {
-                console.error(`[MCP OAuth] Auth function threw error:`, authError);
-                
-                // Check if this is a registration failure
-                const errorMsg = authError instanceof Error ? authError.message.toLowerCase() : String(authError).toLowerCase();
-                if (errorMsg.includes('fetch') || errorMsg.includes('failed to fetch') || errorMsg.includes('cors')) {
-                    console.error(`[MCP OAuth] This appears to be a client registration failure (likely CORS).`);
-                    console.error(`[MCP OAuth] The MCP SDK tried to register the OAuth client but the request was blocked.`);
-                    console.error(`[MCP OAuth] Check the Network tab for a POST request to the registration endpoint.`);
+                // Check if client info exists before calling auth()
+                const existingClientInfo = await authProvider.clientInformation();
+                if (existingClientInfo) {
+                    console.log(`[MCP OAuth] Found existing client info:`, existingClientInfo);
+                } else {
+                    console.log(`[MCP OAuth] No existing client info, will register client`);
                 }
                 
-                // Re-throw to be caught by outer catch block
-                throw authError;
-            }
+                let result;
+                try {
+                    console.log(`[MCP OAuth] Calling MCP SDK auth() function...`);
+                    result = await auth(authProvider, { serverUrl: new URL(server.url) });
+                    console.log(`[MCP OAuth] Auth function returned: ${result}`);
+                } catch (authError) {
+                    console.error(`[MCP OAuth] Auth function threw error:`, authError);
+                    
+                    // Check if this is a registration failure
+                    const errorMsg = authError instanceof Error ? authError.message.toLowerCase() : String(authError).toLowerCase();
+                    if (errorMsg.includes('fetch') || errorMsg.includes('failed to fetch') || errorMsg.includes('cors')) {
+                        console.error(`[MCP OAuth] This appears to be a client registration failure (likely CORS).`);
+                        console.error(`[MCP OAuth] The MCP SDK tried to register the OAuth client but the request was blocked.`);
+                        console.error(`[MCP OAuth] Check the Network tab for a POST request to the registration endpoint.`);
+                    }
+                    
+                    // Re-throw to be caught by outer catch block
+                    throw authError;
+                }
             
-            // If auth() didn't return REDIRECT or AUTHORIZED, something went wrong
-            if (result !== 'REDIRECT' && result !== 'AUTHORIZED') {
-                console.error(`[MCP OAuth] Unexpected result from auth(): ${result}`);
-                throw new Error(`Unexpected authorization result: ${result}`);
-            }
+                // If auth() didn't return REDIRECT or AUTHORIZED, something went wrong
+                if (result !== 'REDIRECT' && result !== 'AUTHORIZED') {
+                    console.error(`[MCP OAuth] Unexpected result from auth(): ${result}`);
+                    throw new Error(`Unexpected authorization result: ${result}`);
+                }
 
-            if (result === 'REDIRECT') {
-                // The redirectToAuthorization method will be called by the SDK
-                // which will redirect the browser
-                console.log(`[MCP OAuth] Auth returned REDIRECT - redirectToAuthorization should be called next`);
-                console.log(`[MCP OAuth] If you don't see redirectToAuthorization logs, the SDK may not be calling it`);
-                toast.info("Redirecting to authorization page...");
-                // Keep sessionStorage keys for callback page
-                // Note: The actual redirect happens in redirectToAuthorization() which is called by the SDK
-            } else if (result === 'AUTHORIZED') {
-                // Clean up sessionStorage keys since we don't need them (no redirect)
-                sessionStorage.removeItem('mcp_oauth_server_id');
-                sessionStorage.removeItem('mcp_oauth_server_url');
-                sessionStorage.removeItem('mcp_oauth_return_url');
-                toast.success("Authorization successful!");
-                setOauthStatus(prev => ({ ...prev, [server.id]: true }));
-            } else {
-                // Clean up sessionStorage on unexpected result
-                sessionStorage.removeItem('mcp_oauth_server_id');
-                sessionStorage.removeItem('mcp_oauth_server_url');
-                sessionStorage.removeItem('mcp_oauth_return_url');
-                throw new Error("Unexpected authorization result");
+                if (result === 'REDIRECT') {
+                    // The redirectToAuthorization method will be called by the SDK
+                    // which will redirect the browser
+                    console.log(`[MCP OAuth] Auth returned REDIRECT - redirectToAuthorization should be called next`);
+                    console.log(`[MCP OAuth] If you don't see redirectToAuthorization logs, the SDK may not be calling it`);
+                    toast.info("Redirecting to authorization page...");
+                    // Keep sessionStorage keys for callback page
+                    // Note: The actual redirect happens in redirectToAuthorization() which is called by the SDK
+                } else if (result === 'AUTHORIZED') {
+                    // Clean up sessionStorage keys since we don't need them (no redirect)
+                    sessionStorage.removeItem('mcp_oauth_server_id');
+                    sessionStorage.removeItem('mcp_oauth_server_url');
+                    sessionStorage.removeItem('mcp_oauth_return_url');
+                    toast.success("Authorization successful!");
+                    setOauthStatus(prev => ({ ...prev, [server.id]: true }));
+                } else {
+                    // Clean up sessionStorage on unexpected result
+                    sessionStorage.removeItem('mcp_oauth_server_id');
+                    sessionStorage.removeItem('mcp_oauth_server_url');
+                    sessionStorage.removeItem('mcp_oauth_return_url');
+                    throw new Error("Unexpected authorization result");
+                }
+            } finally {
+                // Always cleanup the fetch interceptor
+                cleanupInterceptor();
             }
         } catch (error) {
             // Clean up sessionStorage on error
