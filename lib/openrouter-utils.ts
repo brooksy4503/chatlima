@@ -35,7 +35,8 @@ export function convertToOpenRouterFormat(messages: UIMessage[]): any[] {
         .filter(message => {
             // Filter out tool messages - they should not be sent to AI SDK as input
             // Tool messages are only used in responses, not in conversation history
-            return message.role !== "tool";
+            // Use type assertion since UIMessage type doesn't include "tool" but runtime data may have it
+            return (message.role as string) !== "tool";
         })
         .map(message => {
             if (message.role === "user" && message.parts) {
