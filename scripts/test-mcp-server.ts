@@ -110,7 +110,7 @@ async function testOAuthClientRegistration(serverUrl: string, redirectUrl: strin
             token_endpoint_auth_method: 'none', // PKCE
         };
 
-        logInfo(`Registering client with metadata:`, clientMetadata);
+        logInfo(`Registering client with metadata: ${JSON.stringify(clientMetadata, null, 2)}`);
         logInfo(`Registration endpoint: ${registrationEndpoint}`);
 
         const registrationResponse = await fetch(registrationEndpoint, {

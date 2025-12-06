@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { usePresets, type Preset, type CreatePresetData } from '@/lib/context/preset-context';
 import { PRESET_TEMPLATES, getTemplateCategories, getTemplatesByCategory, type PresetTemplate } from '@/lib/preset-templates';
 import { validatePresetParameters, getModelParameterConstraints } from '@/lib/parameter-validation';
@@ -72,9 +72,9 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   const { models, isLoading: modelsLoading } = useModels();
 
   // Helper function to get model info from dynamic models
-  const getModelInfo = (modelId: string) => {
+  const getModelInfo = useCallback((modelId: string) => {
     return models.find(model => model.id === modelId);
-  };
+  }, [models]);
 
   // Helper function to get provider name
   const getModelProvider = (modelId: string): string => {
@@ -89,7 +89,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
   };
 
   // Function to check if a model supports web search
-  const supportsWebSearch = (modelId: string): boolean => {
+  const supportsWebSearch = useCallback((modelId: string): boolean => {
     // OpenRouter models support web search (except specific exclusions)
     if (modelId.startsWith('openrouter/')) {
       // Specific exclusions
@@ -112,7 +112,7 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
     
     // Default to true for other models
     return true;
-  };
+  }, [getModelInfo]);
 
   // Helper function to get web search restriction message
   const getWebSearchRestrictionMessage = (modelId: string): string | null => {

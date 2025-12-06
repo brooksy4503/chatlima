@@ -61,6 +61,7 @@ function ImagePreviewItem({
   return (
     <div className="image-preview-item">
       <div className="relative">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image.dataUrl}
           alt={image.metadata.filename}

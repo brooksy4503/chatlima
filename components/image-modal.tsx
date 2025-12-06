@@ -102,6 +102,7 @@ export function ImageModal({
 
             {/* Image container */}
             <div className="flex-1 flex items-center justify-center p-4 min-h-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageUrl}
                 alt={displayFilename}

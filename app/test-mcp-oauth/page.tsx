@@ -154,7 +154,7 @@ export default function TestMCPOAuthPage() {
                 <h2 className="font-bold mb-2">Logs:</h2>
                 <div className="font-mono text-sm space-y-1 max-h-96 overflow-y-auto">
                     {logs.length === 0 ? (
-                        <div className="text-gray-500">No logs yet. Click "Test OAuth Flow" to start.</div>
+                        <div className="text-gray-500">No logs yet. Click &quot;Test OAuth Flow&quot; to start.</div>
                     ) : (
                         logs.map((log, i) => (
                             <div key={i} className="whitespace-pre-wrap break-words">{log}</div>
@@ -168,10 +168,10 @@ export default function TestMCPOAuthPage() {
                 <ol className="list-decimal list-inside space-y-1 text-sm">
                     <li>Enter the MCP server URL (e.g., https://api.supermemory.ai/mcp)</li>
                     <li>Enter a unique server ID (used for localStorage keys)</li>
-                    <li>Click "Test OAuth Flow"</li>
+                    <li>Click &quot;Test OAuth Flow&quot;</li>
                     <li>Watch the logs to see each step</li>
                     <li>Check the Network tab in DevTools to see HTTP requests</li>
-                    <li>If redirect doesn't happen, check for errors in logs or Network tab</li>
+                    <li>If redirect doesn&apos;t happen, check for errors in logs or Network tab</li>
                 </ol>
             </div>
             

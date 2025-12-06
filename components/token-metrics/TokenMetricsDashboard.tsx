@@ -318,7 +318,7 @@ export function TokenMetricsDashboard({
     } finally {
       setLoading(false);
     }
-  }, [timeRange, currency, provider]);
+  }, [currency]);
 
   // Initial data fetch
   React.useEffect(() => {

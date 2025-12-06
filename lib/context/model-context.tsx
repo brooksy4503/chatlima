@@ -124,7 +124,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     }
     
     setPreviousKeysHash(currentKeysHash);
-  }, [userApiKeys]);
+  }, [userApiKeys, previousKeysHash, forceRefresh]);
   
   // Favorites functionality
   const { 

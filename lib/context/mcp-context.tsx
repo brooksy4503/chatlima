@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { MCPOAuthProvider } from "@/lib/services/mcpOAuthProvider";
@@ -76,8 +76,8 @@ export function MCPProvider(props: { children: React.ReactNode }) {
   }, []);
 
   // Use default values during SSR and initial render to prevent hydration mismatch
-  const effectiveMcpServers = isMounted ? mcpServers : [];
-  const effectiveSelectedMcpServers = isMounted ? selectedMcpServers : [];
+  const effectiveMcpServers = useMemo(() => isMounted ? mcpServers : [], [isMounted, mcpServers]);
+  const effectiveSelectedMcpServers = useMemo(() => isMounted ? selectedMcpServers : [], [isMounted, selectedMcpServers]);
 
   // Process MCP servers for API consumption whenever server data changes
   useEffect(() => {

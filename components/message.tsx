@@ -300,6 +300,7 @@ const PurePreviewMessage = ({
                         "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl":
                           message.role === "user",
                       })}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={imagePart.image_url.url}
                           alt={imagePart.metadata?.filename || "Uploaded image"}

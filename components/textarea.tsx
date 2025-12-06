@@ -350,7 +350,7 @@ export const Textarea = ({
     }
     
     setLastProcessedLength(processed.processedText.length);
-  }, [safeHandleInputChange]);
+  }, [safeHandleInputChange, autoDetectionEnabled]);
 
   // Enhanced input change handler with dynamic code detection
   const handleEnhancedInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -383,7 +383,7 @@ export const Textarea = ({
       setCodeConfidence(0);
       setDetectedLanguage(null);
     }
-  }, [safeHandleInputChange, isCodeMode, detectLanguage, autoDetectionEnabled]);
+  }, [safeHandleInputChange, isCodeMode, autoDetectionEnabled]);
 
   // Enhanced keyboard handler with smart input processing
   const handleEnhancedKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {

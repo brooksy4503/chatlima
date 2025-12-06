@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { 
@@ -107,14 +107,7 @@ export function ChatShareDialog({
     }
   });
 
-  // Check for existing share when dialog opens
-  useEffect(() => {
-    if (isOpen && !shareData) {
-      checkExistingShare();
-    }
-  }, [isOpen, chatId]);
-
-  const checkExistingShare = async () => {
+  const checkExistingShare = useCallback(async () => {
     setIsCheckingExisting(true);
     try {
       const response = await fetch(`/api/chats/${chatId}/share`, {
@@ -139,7 +132,14 @@ export function ChatShareDialog({
     } finally {
       setIsCheckingExisting(false);
     }
-  };
+  }, [chatId]);
+
+  // Check for existing share when dialog opens
+  useEffect(() => {
+    if (isOpen && !shareData) {
+      checkExistingShare();
+    }
+  }, [isOpen, chatId, shareData, checkExistingShare]);
 
 
 
