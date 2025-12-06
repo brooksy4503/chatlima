@@ -33,6 +33,7 @@
     "test:endpoints:quick": "npx tsx scripts/test-model-endpoints.ts --max-models 5",
     "test:endpoints:summary": "npx tsx scripts/test-model-endpoints.ts --summary --verbose",
     "test:endpoints:retest": "npx tsx scripts/test-model-endpoints.ts --retest-blocked",
+    "test:mcp": "npx tsx scripts/test-mcp-server.ts",
     "cache:clear": "./scripts/clear-cache.sh",
     "dev:fresh": "pnpm cache:clear && pnpm dev",
     "release:workflow": "tsx scripts/release-workflow.ts",

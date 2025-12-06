@@ -45,10 +45,15 @@ function OAuthCallbackContent() {
                 // Create OAuth provider
                 const authProvider = new MCPOAuthProvider(serverUrl, serverId);
 
+                console.log(`[MCP OAuth] Callback received code, exchanging for tokens...`);
+                console.log(`[MCP OAuth] Server: ${serverUrl}, Server ID: ${serverId}`);
+
                 // Exchange the authorization code for tokens
                 // We do NOT call auth() here because that function initiates the flow,
                 // not completes it. Calling it would cause a redirect loop.
                 await authProvider.exchangeCodeForTokens(code);
+                
+                console.log(`[MCP OAuth] Token exchange successful!`);
 
                 setStatus('success');
                 setMessage('Authorization successful! Redirecting...');
@@ -58,8 +63,11 @@ function OAuthCallbackContent() {
                 sessionStorage.removeItem('mcp_oauth_server_url');
 
                 // Redirect back to chat (or previous page)
-                const returnUrl = sessionStorage.getItem('mcp_oauth_return_url') || '/chat';
+                // Default to root '/' since that's where the main chat page is
+                const returnUrl = sessionStorage.getItem('mcp_oauth_return_url') || '/';
                 sessionStorage.removeItem('mcp_oauth_return_url');
+                
+                console.log(`[MCP OAuth] OAuth successful, redirecting to: ${returnUrl}`);
                 
                 setTimeout(() => {
                     router.push(returnUrl);
@@ -78,14 +86,18 @@ function OAuthCallbackContent() {
                 setStatus('error');
                 setMessage(errorMessage);
 
+                // Get return URL before clearing session storage
+                const returnUrl = sessionStorage.getItem('mcp_oauth_return_url') || '/';
+
                 // Clear session storage on error
                 sessionStorage.removeItem('mcp_oauth_server_id');
                 sessionStorage.removeItem('mcp_oauth_server_url');
                 sessionStorage.removeItem('mcp_oauth_return_url');
-
-                // Redirect after showing error
+                
+                console.log(`[MCP OAuth] OAuth failed, redirecting to: ${returnUrl}`);
+                
                 setTimeout(() => {
-                    router.push('/chat');
+                    router.push(returnUrl);
                 }, 3000);
             }
         };

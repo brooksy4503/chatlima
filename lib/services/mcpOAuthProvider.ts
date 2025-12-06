@@ -57,7 +57,9 @@ export class MCPOAuthProvider implements OAuthClientProvider {
             redirect_uris: [this.redirectUrl],
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
-            scope: 'read write',
+            // Use standard OAuth scopes - servers can request specific scopes during authorization
+            // Common scopes: openid, profile, email, offline_access
+            scope: 'openid profile email offline_access',
             token_endpoint_auth_method: 'none', // PKCE is used instead
         };
     }
@@ -138,9 +140,27 @@ export class MCPOAuthProvider implements OAuthClientProvider {
             throw new Error('Cannot redirect to authorization on server side');
         }
 
+        console.log(`[MCP OAuth] ===== redirectToAuthorization CALLED =====`);
+        console.log(`[MCP OAuth] Authorization URL: ${authorizationUrl.toString()}`);
+        console.log(`[MCP OAuth] URL hostname: ${authorizationUrl.hostname}`);
+        console.log(`[MCP OAuth] URL pathname: ${authorizationUrl.pathname}`);
+        console.log(`[MCP OAuth] Server ID: ${this.serverId}, Server URL: ${this.serverUrl}`);
+
+        // Validate that we're redirecting to the MCP server, not ChatLima
+        const expectedHost = new URL(this.serverUrl).hostname;
+        const actualHost = authorizationUrl.hostname;
+
+        if (actualHost !== expectedHost && !actualHost.includes('supermemory')) {
+            console.error(`[MCP OAuth] ⚠️ WARNING: Authorization URL hostname (${actualHost}) doesn't match server hostname (${expectedHost})!`);
+            console.error(`[MCP OAuth] This might redirect to the wrong server!`);
+        }
+
         // Store the server ID in sessionStorage so callback knows which server to complete auth for
         sessionStorage.setItem('mcp_oauth_server_id', this.serverId);
         sessionStorage.setItem('mcp_oauth_server_url', this.serverUrl);
+
+        console.log(`[MCP OAuth] About to redirect browser to: ${authorizationUrl.toString()}`);
+        console.log(`[MCP OAuth] ===========================================`);
 
         // Redirect to authorization URL
         window.location.href = authorizationUrl.toString();
@@ -155,6 +175,7 @@ export class MCPOAuthProvider implements OAuthClientProvider {
         }
 
         localStorage.removeItem(`${this.storagePrefix}_tokens`);
+        localStorage.removeItem(`${this.storagePrefix}_tokens_stored_at`);
         localStorage.removeItem(`${this.storagePrefix}_client_info`);
         localStorage.removeItem(`${this.storagePrefix}_code_verifier`);
     }
@@ -194,6 +215,8 @@ export class MCPOAuthProvider implements OAuthClientProvider {
         // Try well-known endpoint first (RFC 8414)
         try {
             const metadataUrl = `${baseUrl}/.well-known/oauth-authorization-server`;
+            console.log(`[MCP OAuth] Attempting to discover OAuth endpoints from: ${metadataUrl}`);
+
             const response = await fetch(metadataUrl, {
                 method: 'GET',
                 headers: {
@@ -201,23 +224,54 @@ export class MCPOAuthProvider implements OAuthClientProvider {
                 },
             });
 
+            console.log(`[MCP OAuth] Well-known endpoint response: ${response.status} ${response.statusText}`);
+
             if (response.ok) {
                 const metadata = await response.json();
+                console.log(`[MCP OAuth] Discovered OAuth metadata:`, metadata);
+
                 if (metadata.token_endpoint && metadata.authorization_endpoint) {
+                    console.log(`[MCP OAuth] Using discovered endpoints:`);
+                    console.log(`[MCP OAuth]   Token: ${metadata.token_endpoint}`);
+                    console.log(`[MCP OAuth]   Authorization: ${metadata.authorization_endpoint}`);
+
                     return {
                         token_endpoint: metadata.token_endpoint,
                         authorization_endpoint: metadata.authorization_endpoint,
                     };
+                } else {
+                    console.warn(`[MCP OAuth] Metadata missing required endpoints, using fallback`);
                 }
+            } else {
+                const errorText = await response.text().catch(() => '');
+                console.warn(`[MCP OAuth] Well-known endpoint returned ${response.status}: ${errorText.substring(0, 200)}`);
             }
         } catch (error) {
-            console.warn('Failed to discover OAuth endpoints via well-known:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.warn(`[MCP OAuth] Failed to discover OAuth endpoints via well-known:`, errorMessage);
+
+            // Provide helpful error context
+            if (errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch')) {
+                console.warn(`[MCP OAuth] This might be a CORS issue. The server may not allow cross-origin requests to the well-known endpoint.`);
+                console.warn(`[MCP OAuth] Falling back to default endpoints at domain root.`);
+            }
+
+            if (error instanceof TypeError && errorMessage.includes('network')) {
+                console.warn(`[MCP OAuth] Network error detected. Check your internet connection and server availability.`);
+            }
         }
 
         // Fallback to default endpoints at domain root (MCP spec)
+        const fallbackToken = `${baseUrl}/token`;
+        const fallbackAuth = `${baseUrl}/authorize`;
+
+        console.log(`[MCP OAuth] Using fallback endpoints:`);
+        console.log(`[MCP OAuth]   Token: ${fallbackToken}`);
+        console.log(`[MCP OAuth]   Authorization: ${fallbackAuth}`);
+
         return {
-            token_endpoint: `${baseUrl}/token`,
-            authorization_endpoint: `${baseUrl}/authorize`,
+            token_endpoint: fallbackToken,
+            authorization_endpoint: fallbackAuth,
         };
     }
 

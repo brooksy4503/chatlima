@@ -304,6 +304,10 @@ ChatLima supports OAuth 2.1 authorization for MCP servers that require user auth
 - Each MCP server's tokens are stored separately and securely
 - Tokens persist across browser sessions
 - You can re-authorize at any time if tokens become invalid
+- **Clear Auth Button**: When a server is authorized, a "Clear Auth" button appears next to the status indicator
+  - Click "Clear Auth" to manually remove all stored OAuth tokens for that specific server
+  - This is useful if you need to switch accounts or reset authentication
+  - After clearing, you'll need to authorize again to use the server
 
 ### Enhanced MCP Features
 
@@ -311,6 +315,7 @@ ChatLima supports OAuth 2.1 authorization for MCP servers that require user auth
 - **Server Metadata**: Add titles and descriptions for better server organization
 - **Protocol Compliance**: Full MCP 1.13.0 specification support with proper headers
 - **OAuth Integration**: Seamless OAuth 2.1 flow with automatic token management
+- **Manual Token Management**: Clear Auth button to manually remove OAuth tokens for individual servers
 - **Enhanced UI**: Improved server management interface with validation and OAuth status indicators
 
 ### Available MCP Servers

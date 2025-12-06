@@ -27,7 +27,8 @@ import {
     EyeOff,
     Check,
     AlertCircle,
-    Wifi
+    Wifi,
+    LogOut
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -399,7 +400,9 @@ export const MCPServerManager = ({
 
         try {
             // Store return URL and server info for callback
-            sessionStorage.setItem('mcp_oauth_return_url', window.location.pathname);
+            // Always return to root '/' (main chat page) after OAuth, not the current page
+            // This prevents redirecting to test pages or other temporary pages
+            sessionStorage.setItem('mcp_oauth_return_url', '/');
             sessionStorage.setItem('mcp_oauth_server_id', server.id);
             sessionStorage.setItem('mcp_oauth_server_url', server.url);
             
@@ -419,13 +422,52 @@ export const MCPServerManager = ({
             }
 
             // Initiate OAuth flow
-            const result = await auth(authProvider, { serverUrl: new URL(server.url) });
+            console.log(`[MCP OAuth] Starting OAuth flow for server: ${server.url}`);
+            console.log(`[MCP OAuth] Redirect URL: ${authProvider.redirectUrl}`);
+            console.log(`[MCP OAuth] Client metadata:`, authProvider.clientMetadata);
+            
+            // Check if client info exists before calling auth()
+            const existingClientInfo = await authProvider.clientInformation();
+            if (existingClientInfo) {
+                console.log(`[MCP OAuth] Found existing client info:`, existingClientInfo);
+            } else {
+                console.log(`[MCP OAuth] No existing client info, will register client`);
+            }
+            
+            let result;
+            try {
+                console.log(`[MCP OAuth] Calling MCP SDK auth() function...`);
+                result = await auth(authProvider, { serverUrl: new URL(server.url) });
+                console.log(`[MCP OAuth] Auth function returned: ${result}`);
+            } catch (authError) {
+                console.error(`[MCP OAuth] Auth function threw error:`, authError);
+                
+                // Check if this is a registration failure
+                const errorMsg = authError instanceof Error ? authError.message.toLowerCase() : String(authError).toLowerCase();
+                if (errorMsg.includes('fetch') || errorMsg.includes('failed to fetch') || errorMsg.includes('cors')) {
+                    console.error(`[MCP OAuth] This appears to be a client registration failure (likely CORS).`);
+                    console.error(`[MCP OAuth] The MCP SDK tried to register the OAuth client but the request was blocked.`);
+                    console.error(`[MCP OAuth] Check the Network tab for a POST request to the registration endpoint.`);
+                }
+                
+                // Re-throw to be caught by outer catch block
+                throw authError;
+            }
+            
+            // If auth() didn't return REDIRECT or AUTHORIZED, something went wrong
+            if (result !== 'REDIRECT' && result !== 'AUTHORIZED') {
+                console.error(`[MCP OAuth] Unexpected result from auth(): ${result}`);
+                throw new Error(`Unexpected authorization result: ${result}`);
+            }
 
             if (result === 'REDIRECT') {
                 // The redirectToAuthorization method will be called by the SDK
                 // which will redirect the browser
+                console.log(`[MCP OAuth] Auth returned REDIRECT - redirectToAuthorization should be called next`);
+                console.log(`[MCP OAuth] If you don't see redirectToAuthorization logs, the SDK may not be calling it`);
                 toast.info("Redirecting to authorization page...");
                 // Keep sessionStorage keys for callback page
+                // Note: The actual redirect happens in redirectToAuthorization() which is called by the SDK
             } else if (result === 'AUTHORIZED') {
                 // Clean up sessionStorage keys since we don't need them (no redirect)
                 sessionStorage.removeItem('mcp_oauth_server_id');
@@ -445,10 +487,53 @@ export const MCPServerManager = ({
             sessionStorage.removeItem('mcp_oauth_server_id');
             sessionStorage.removeItem('mcp_oauth_server_url');
             sessionStorage.removeItem('mcp_oauth_return_url');
+            
             console.error("OAuth authorization error:", error);
-            toast.error(error instanceof Error ? error.message : "Authorization failed");
+            
+            // Provide more helpful error messages
+            let errorMessage = "Authorization failed";
+            if (error instanceof Error) {
+                const errorMsg = error.message.toLowerCase();
+                
+                if (errorMsg.includes('fetch') || errorMsg.includes('failed to fetch')) {
+                    errorMessage = `Failed to connect to ${server.url}. This might be a CORS issue or the server may be unreachable. Check the browser console for details.`;
+                } else if (errorMsg.includes('cors')) {
+                    errorMessage = "CORS error: The server doesn't allow cross-origin requests. Contact the server administrator.";
+                } else if (errorMsg.includes('network') || errorMsg.includes('timeout')) {
+                    errorMessage = "Network error: Could not reach the server. Check your internet connection.";
+                } else if (errorMsg.includes('404')) {
+                    errorMessage = "OAuth endpoint not found. Verify the server URL is correct.";
+                } else if (errorMsg.includes('401') || errorMsg.includes('403')) {
+                    errorMessage = "Authentication failed. The server rejected the authorization request.";
+                } else {
+                    errorMessage = error.message;
+                }
+            }
+            
+            toast.error(errorMessage);
         } finally {
             setAuthorizingServerId(null);
+        }
+    };
+
+    // Clear OAuth tokens for a server
+    const clearOAuth = async (server: MCPServer) => {
+        if (!server.useOAuth || !server.id || !server.url) {
+            toast.error("OAuth is not enabled for this server");
+            return;
+        }
+
+        try {
+            const authProvider = new MCPOAuthProvider(server.url, server.id);
+            authProvider.clearAuthData();
+            
+            // Update OAuth status to unauthorized
+            setOauthStatus(prev => ({ ...prev, [server.id]: false }));
+            
+            toast.success(`Authentication cleared for ${server.name}`);
+        } catch (error) {
+            console.error("Error clearing OAuth tokens:", error);
+            toast.error(error instanceof Error ? error.message : "Failed to clear authentication");
         }
     };
 
@@ -685,7 +770,17 @@ export const MCPServerManager = ({
                                                                     </>
                                                                 )}
                                                             </div>
-                                                            {!oauthStatus[server.id] && (
+                                                            {oauthStatus[server.id] ? (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="h-6 px-2 text-xs"
+                                                                    onClick={() => clearOAuth(server)}
+                                                                >
+                                                                    <LogOut className="h-3 w-3 mr-1" />
+                                                                    Clear Auth
+                                                                </Button>
+                                                            ) : (
                                                                 <Button
                                                                     size="sm"
                                                                     variant="outline"
