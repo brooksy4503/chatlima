@@ -3,6 +3,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 import { spawn } from "child_process";
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import { tool, jsonSchema } from 'ai';
@@ -19,6 +20,14 @@ interface MCPServerConfig {
     args?: string[];
     env?: KeyValuePair[];
     headers?: KeyValuePair[];
+    useOAuth?: boolean;
+    id?: string;  // Server ID for OAuth token lookup
+    oauthTokens?: {
+        access_token: string;
+        refresh_token?: string;
+        expires_in?: number;
+        token_type?: string;
+    };
 }
 
 export interface MCPServerContext {
@@ -76,7 +85,7 @@ export class ChatMCPServerService {
 
                 logDiagnostic('MCP_CLIENT_CREATE', 'Creating MCP client', { requestId });
                 const mcpClient = new MCPClient({ name: 'chatlima-client', version: '1.0.0' }, { capabilities: {} });
-                
+
                 logDiagnostic('MCP_CLIENT_CONNECT', 'Connecting MCP client', { requestId, url: mcpServer.url });
                 await mcpClient.connect(transport);
                 mcpClients.push(mcpClient);
@@ -86,7 +95,7 @@ export class ChatMCPServerService {
                 const mcptools = toolsList.tools || [];
 
                 // Convert MCP tools array to AI SDK tool format
-                const toolsObject = Array.isArray(mcptools) 
+                const toolsObject = Array.isArray(mcptools)
                     ? mcptools.reduce((acc: Record<string, any>, mcpTool: any) => {
                         if (mcpTool && mcpTool.name) {
                             // Convert MCP tool format to AI SDK tool format using the tool() helper
@@ -257,8 +266,8 @@ export class ChatMCPServerService {
         });
 
         // Ensure child process inherits PATH and other important env vars
-        const spawnEnv = Object.keys(env).length > 0 
-            ? { ...process.env, ...env } 
+        const spawnEnv = Object.keys(env).length > 0
+            ? { ...process.env, ...env }
             : process.env;
 
         return new StdioClientTransport({
@@ -279,15 +288,29 @@ export class ChatMCPServerService {
             });
         }
 
+        // If OAuth is enabled and tokens are provided, use Bearer token in headers
+        if (mcpServer.useOAuth && mcpServer.oauthTokens?.access_token) {
+            headers['Authorization'] = `Bearer ${mcpServer.oauthTokens.access_token}`;
+            logDiagnostic('MCP_HTTP_TRANSPORT_OAUTH', 'Creating StreamableHTTP transport with OAuth token', {
+                requestId,
+                url: mcpServer.url,
+                hasToken: true
+            });
+        }
+
         logDiagnostic('MCP_HTTP_TRANSPORT', 'Creating StreamableHTTP transport', {
             requestId,
             url: mcpServer.url,
-            headerCount: Object.keys(headers).length
+            headerCount: Object.keys(headers).length,
+            useOAuth: mcpServer.useOAuth || false
         });
 
         const transportUrl = new URL(mcpServer.url);
-        // Let the SDK handle protocol version negotiation automatically
-        return new StreamableHTTPClientTransport(transportUrl, 
+
+        // For OAuth, we use headers with Bearer token instead of authProvider
+        // because authProvider requires browser redirects which don't work server-side
+        // The OAuth flow is handled on the client side, and tokens are passed to the server
+        return new StreamableHTTPClientTransport(transportUrl,
             Object.keys(headers).length > 0 ? {
                 requestInit: {
                     headers: headers

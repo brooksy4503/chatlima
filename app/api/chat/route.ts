@@ -88,6 +88,14 @@ interface MCPServerConfig {
     args?: string[];
     env?: KeyValuePair[];
     headers?: KeyValuePair[];
+    useOAuth?: boolean;
+    id?: string;
+    oauthTokens?: {
+        access_token: string;
+        refresh_token?: string;
+        expires_in?: number;
+        token_type?: string;
+    };
 }
 
 interface WebSearchOptions {

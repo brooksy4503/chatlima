@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -37,6 +37,9 @@ import {
     AccordionTrigger
 } from "./ui/accordion";
 import { KeyValuePair, MCPServer } from "@/lib/context/mcp-context";
+import { MCPOAuthProvider } from "@/lib/services/mcpOAuthProvider";
+import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
+import { useRouter } from 'next/navigation';
 
 // Default template for a new MCP server
 const INITIAL_NEW_SERVER: Omit<MCPServer, 'id'> = {
@@ -47,7 +50,8 @@ const INITIAL_NEW_SERVER: Omit<MCPServer, 'id'> = {
     command: 'node',
     args: [],
     env: [],
-    headers: []
+    headers: [],
+    useOAuth: false
 };
 
 interface MCPServerManagerProps {
@@ -88,6 +92,7 @@ export const MCPServerManager = ({
     open,
     onOpenChange
 }: MCPServerManagerProps) => {
+    const router = useRouter();
     const [newServer, setNewServer] = useState<Omit<MCPServer, 'id'>>(INITIAL_NEW_SERVER);
     const [view, setView] = useState<'list' | 'add'>('list');
     const [newEnvVar, setNewEnvVar] = useState<KeyValuePair>({ key: '', value: '' });
@@ -101,6 +106,8 @@ export const MCPServerManager = ({
     const [editedHeaderValue, setEditedHeaderValue] = useState<string>('');
     const [testingServerId, setTestingServerId] = useState<string | null>(null);
     const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
+    const [oauthStatus, setOauthStatus] = useState<Record<string, boolean>>({});
+    const [authorizingServerId, setAuthorizingServerId] = useState<string | null>(null);
 
     const resetAndClose = () => {
         setView('list');
@@ -373,6 +380,93 @@ export const MCPServerManager = ({
         }));
     };
 
+    // Check OAuth status for servers
+    const checkOAuthStatus = async (serverId: string, serverUrl: string) => {
+        const authProvider = new MCPOAuthProvider(serverUrl, serverId);
+        const hasTokens = await authProvider.hasValidTokens();
+        setOauthStatus(prev => ({ ...prev, [serverId]: hasTokens }));
+        return hasTokens;
+    };
+
+    // Trigger OAuth authorization flow
+    const authorizeOAuth = async (server: MCPServer) => {
+        if (!server.useOAuth || !server.id || !server.url) {
+            toast.error("OAuth is not enabled for this server");
+            return;
+        }
+
+        setAuthorizingServerId(server.id);
+
+        try {
+            // Store return URL and server info for callback
+            sessionStorage.setItem('mcp_oauth_return_url', window.location.pathname);
+            sessionStorage.setItem('mcp_oauth_server_id', server.id);
+            sessionStorage.setItem('mcp_oauth_server_url', server.url);
+            
+            const authProvider = new MCPOAuthProvider(server.url, server.id);
+            
+            // Check if we already have tokens
+            const existingTokens = await authProvider.tokens();
+            if (existingTokens && await authProvider.hasValidTokens()) {
+                // Clean up any stale sessionStorage keys
+                sessionStorage.removeItem('mcp_oauth_server_id');
+                sessionStorage.removeItem('mcp_oauth_server_url');
+                sessionStorage.removeItem('mcp_oauth_return_url');
+                toast.success("Already authorized");
+                setOauthStatus(prev => ({ ...prev, [server.id]: true }));
+                setAuthorizingServerId(null);
+                return;
+            }
+
+            // Initiate OAuth flow
+            const result = await auth(authProvider, { serverUrl: new URL(server.url) });
+
+            if (result === 'REDIRECT') {
+                // The redirectToAuthorization method will be called by the SDK
+                // which will redirect the browser
+                toast.info("Redirecting to authorization page...");
+                // Keep sessionStorage keys for callback page
+            } else if (result === 'AUTHORIZED') {
+                // Clean up sessionStorage keys since we don't need them (no redirect)
+                sessionStorage.removeItem('mcp_oauth_server_id');
+                sessionStorage.removeItem('mcp_oauth_server_url');
+                sessionStorage.removeItem('mcp_oauth_return_url');
+                toast.success("Authorization successful!");
+                setOauthStatus(prev => ({ ...prev, [server.id]: true }));
+            } else {
+                // Clean up sessionStorage on unexpected result
+                sessionStorage.removeItem('mcp_oauth_server_id');
+                sessionStorage.removeItem('mcp_oauth_server_url');
+                sessionStorage.removeItem('mcp_oauth_return_url');
+                throw new Error("Unexpected authorization result");
+            }
+        } catch (error) {
+            // Clean up sessionStorage on error
+            sessionStorage.removeItem('mcp_oauth_server_id');
+            sessionStorage.removeItem('mcp_oauth_server_url');
+            sessionStorage.removeItem('mcp_oauth_return_url');
+            console.error("OAuth authorization error:", error);
+            toast.error(error instanceof Error ? error.message : "Authorization failed");
+        } finally {
+            setAuthorizingServerId(null);
+        }
+    };
+
+    // Check OAuth status for all servers on mount and when servers change
+    useEffect(() => {
+        const checkAllOAuthStatus = async () => {
+            for (const server of servers) {
+                if (server.useOAuth && server.id && server.url) {
+                    await checkOAuthStatus(server.id, server.url);
+                }
+            }
+        };
+        
+        if (open) {
+            checkAllOAuthStatus();
+        }
+    }, [servers, open]);
+
     const hasAdvancedConfig = (server: MCPServer) => {
         return (server.env && server.env.length > 0) ||
             (server.headers && server.headers.length > 0);
@@ -389,7 +483,8 @@ export const MCPServerManager = ({
             command: server.command,
             args: server.args,
             env: server.env,
-            headers: server.headers
+            headers: server.headers,
+            useOAuth: server.useOAuth
         });
         setView('add');
         // Reset sensitive value visibility states
@@ -443,7 +538,7 @@ export const MCPServerManager = ({
             return;
         }
         const updated = servers.map(s =>
-            s.id === editingServerId ? { ...newServer, id: editingServerId! } : s
+            s.id === editingServerId ? { ...newServer, id: editingServerId!, useOAuth: newServer.useOAuth } : s
         );
         onServersChange(updated);
         toast.success(`Updated MCP server: ${newServer.name}`);
@@ -569,6 +664,44 @@ export const MCPServerManager = ({
                                                             : `${server.command} ${server.args?.join(' ')}`
                                                         }
                                                     </p>
+
+                                                    {/* OAuth Status */}
+                                                    {server.useOAuth && (
+                                                        <div className={`text-xs mb-2.5 p-2 rounded-md flex items-center justify-between ${
+                                                            oauthStatus[server.id]
+                                                                ? 'bg-green-500/10 text-green-700 dark:text-green-300' 
+                                                                : 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300'
+                                                        }`}>
+                                                            <div className="flex items-center gap-1.5">
+                                                                {oauthStatus[server.id] ? (
+                                                                    <>
+                                                                        <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                                                                        <span>Authorized</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                                                                        <span>Not authorized</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                            {!oauthStatus[server.id] && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="h-6 px-2 text-xs"
+                                                                    onClick={() => authorizeOAuth(server)}
+                                                                    disabled={authorizingServerId === server.id}
+                                                                >
+                                                                    {authorizingServerId === server.id ? (
+                                                                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                                    ) : (
+                                                                        'Authorize'
+                                                                    )}
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    )}
 
                                                     {/* Test Result */}
                                                     {testResults[server.id] && (
@@ -748,21 +881,42 @@ export const MCPServerManager = ({
                                     </div>
 
                                     {newServer.type === 'sse' || newServer.type === 'streamable-http' ? (
-                                        <div className="grid gap-1.5">
-                                            <Label htmlFor="url" className="text-sm">
-                                                Server URL
-                                            </Label>
-                                            <Input
-                                                id="url"
-                                                value={newServer.url}
-                                                onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
-                                                placeholder={newServer.type === 'streamable-http' ? "https://mcp.example.com/token/mcp" : "https://mcp.example.com/token/sse"}
-                                                className="relative z-0"
-                                            />
-                                            <p className="text-xs text-muted-foreground">
-                                                Full URL to the {newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint of the MCP server
-                                            </p>
-                                        </div>
+                                        <>
+                                            <div className="grid gap-1.5">
+                                                <Label htmlFor="url" className="text-sm">
+                                                    Server URL
+                                                </Label>
+                                                <Input
+                                                    id="url"
+                                                    value={newServer.url}
+                                                    onChange={(e) => setNewServer({ ...newServer, url: e.target.value })}
+                                                    placeholder={newServer.type === 'streamable-http' ? "https://mcp.example.com/token/mcp" : "https://mcp.example.com/token/sse"}
+                                                    className="relative z-0"
+                                                />
+                                                <p className="text-xs text-muted-foreground">
+                                                    Full URL to the {newServer.type === 'sse' ? 'SSE' : 'Streamable HTTP'} endpoint of the MCP server
+                                                </p>
+                                            </div>
+                                            
+                                            {/* OAuth Toggle */}
+                                            <div className="flex items-center space-x-2 p-3 border rounded-md bg-muted/30">
+                                                <input
+                                                    type="checkbox"
+                                                    id="use-oauth"
+                                                    checked={newServer.useOAuth || false}
+                                                    onChange={(e) => setNewServer({ ...newServer, useOAuth: e.target.checked })}
+                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                                />
+                                                <Label htmlFor="use-oauth" className="text-sm font-normal cursor-pointer flex-1">
+                                                    Use OAuth Authentication
+                                                </Label>
+                                            </div>
+                                            {newServer.useOAuth && (
+                                                <p className="text-xs text-muted-foreground -mt-2">
+                                                    Enable this if the MCP server requires OAuth login. You&apos;ll be prompted to authorize when using the server.
+                                                </p>
+                                            )}
+                                        </>
                                     ) : (
                                         <>
                                             <div className="grid gap-1.5">

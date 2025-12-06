@@ -100,12 +100,15 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Latest MCP 1.13.0 Support**: Full compatibility with the latest Model Context Protocol specification
 - **Enhanced Protocol Headers**: Proper MCP-Protocol-Version headers for HTTP transport
 - **Multiple Transport Types**: Support for SSE, stdio, and HTTP Streamable connections
+- **OAuth 2.1 Authorization**: Built-in OAuth 2.1 support for remote MCP servers requiring user authentication
+- **Secure Token Management**: Automatic token storage and refresh for authenticated MCP servers
+- **Browser-Based Authorization**: Seamless OAuth flow with browser redirects and callback handling
 - **Server Metadata Support**: Title and metadata fields for better MCP server organization
 - **Built-in Tool Integration**: Extend AI capabilities with external tools
 - **Dynamic Server Management**: Add/remove MCP servers through the enhanced UI with connection testing
-- **Popular MCP Servers**: Support for Composio, Zapier, and more with improved configuration validation
+- **Popular MCP Servers**: Support for Composio, Zapier, CogniMemo, and more with improved configuration validation
 - **Connection Testing**: Test MCP server connections with detailed feedback
-- **Enhanced UI**: Improved server management interface with validation
+- **Enhanced UI**: Improved server management interface with validation and OAuth status indicators
 
 ### 🎨 User Interface & Experience
 - **Modern UI**: Built with shadcn/ui components and Tailwind CSS
@@ -259,7 +262,13 @@ This application supports connecting to Model Context Protocol (MCP) servers to 
 
 If you select SSE transport:
 1. Enter the server URL (e.g., `https://mcp.example.com/token/sse`)
-2. Click "Add Server"
+2. **OAuth Authentication** (optional): If the server requires OAuth authentication:
+   - Enable the "Use OAuth Authentication" checkbox
+   - Click "Authorize" to initiate the OAuth flow
+   - You'll be redirected to the server's login page
+   - After successful authentication, tokens will be stored automatically
+   - The server will show an "Authorized" status indicator
+3. Click "Add Server"
 
 #### stdio Configuration
 
@@ -271,12 +280,38 @@ If you select stdio transport:
 
 4. Click "Use" to activate the server for the current chat session.
 
+### OAuth Authorization
+
+ChatLima supports OAuth 2.1 authorization for MCP servers that require user authentication. This enables secure access to remote MCP servers like CogniMemo that need user login.
+
+#### How OAuth Works
+
+1. **Enable OAuth**: When adding an SSE or Streamable HTTP server, check the "Use OAuth Authentication" option
+2. **Authorize**: Click the "Authorize" button to start the OAuth flow
+3. **Login**: You'll be redirected to the MCP server's authorization page to log in
+4. **Callback**: After successful authentication, you'll be redirected back to ChatLima
+5. **Token Storage**: OAuth tokens are securely stored in your browser's localStorage
+6. **Automatic Usage**: Tokens are automatically included in all requests to the authenticated server
+
+#### OAuth Status Indicators
+
+- **Authorized** (green): Server has valid OAuth tokens and is ready to use
+- **Not authorized** (yellow): OAuth is enabled but no valid tokens exist - click "Authorize" to authenticate
+
+#### Token Management
+
+- Tokens are automatically refreshed when they expire
+- Each MCP server's tokens are stored separately and securely
+- Tokens persist across browser sessions
+- You can re-authorize at any time if tokens become invalid
+
 ### Enhanced MCP Features
 
 - **Connection Testing**: Test MCP server connections with detailed feedback
 - **Server Metadata**: Add titles and descriptions for better server organization
 - **Protocol Compliance**: Full MCP 1.13.0 specification support with proper headers
-- **Enhanced UI**: Improved server management interface with validation
+- **OAuth Integration**: Seamless OAuth 2.1 flow with automatic token management
+- **Enhanced UI**: Improved server management interface with validation and OAuth status indicators
 
 ### Available MCP Servers
 
@@ -284,7 +319,9 @@ You can use any MCP-compatible server with this application. Here are some examp
 
 - [Composio](https://composio.dev/mcp) - Provides search, code interpreter, and other tools
 - [Zapier MCP](https://zapier.com/mcp) - Provides access to Zapier tools
+- [CogniMemo](https://cognimemo.com) - Memory management and knowledge storage (requires OAuth)
 - Any MCP server using stdio transport with npx and python3
+- Any MCP server using SSE or Streamable HTTP transport (with optional OAuth support)
 
 ## License
 

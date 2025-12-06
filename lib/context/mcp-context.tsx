@@ -3,6 +3,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { MCPOAuthProvider } from "@/lib/services/mcpOAuthProvider";
 
 // Define types for MCP server
 export interface KeyValuePair {
@@ -21,6 +22,7 @@ export interface MCPServer {
   env?: KeyValuePair[];
   headers?: KeyValuePair[];
   description?: string;
+  useOAuth?: boolean;  // Enable OAuth flow instead of static headers
   _meta?: Record<string, any>;
 }
 
@@ -33,6 +35,14 @@ export interface MCPServerApi {
   env?: KeyValuePair[];
   headers?: KeyValuePair[];
   title?: string;
+  useOAuth?: boolean;
+  id?: string;  // Include ID so server can look up OAuth tokens
+  oauthTokens?: {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+    token_type?: string;
+  };
   _meta?: Record<string, any>;
 }
 
@@ -76,21 +86,81 @@ export function MCPProvider(props: { children: React.ReactNode }) {
       return;
     }
     
-    const processedServers: MCPServerApi[] = effectiveSelectedMcpServers
-      .map(id => effectiveMcpServers.find(server => server.id === id))
-      .filter((server): server is MCPServer => Boolean(server))
-      .map(server => ({
-        type: server.type,
-        url: server.url,
-        command: server.command,
-        args: server.args,
-        env: server.env,
-        headers: server.headers,
-        title: server.title,
-        _meta: server._meta
-      }));
+    // Track if this effect is still valid to prevent stale updates
+    let isCancelled = false;
     
-    setMcpServersForApi(processedServers);
+    const processServers = async () => {
+      // Capture the current server IDs and server data at the start of processing
+      const currentServerIds = new Set(effectiveSelectedMcpServers);
+      const capturedServers = effectiveSelectedMcpServers
+        .map(id => effectiveMcpServers.find(server => server.id === id))
+        .filter((server): server is MCPServer => Boolean(server));
+      
+      // Create a snapshot of server data for comparison
+      const serverSnapshot = new Map(
+        capturedServers.map(server => [server.id, { url: server.url, useOAuth: server.useOAuth }])
+      );
+
+      const processedServers: MCPServerApi[] = await Promise.all(
+        capturedServers.map(async (server) => {
+          const baseConfig: MCPServerApi = {
+            type: server.type,
+            url: server.url,
+            command: server.command,
+            args: server.args,
+            env: server.env,
+            headers: server.headers,
+            title: server.title,
+            useOAuth: server.useOAuth,
+            id: server.id,
+            _meta: server._meta
+          };
+
+          // If OAuth is enabled, retrieve tokens from localStorage
+          if (server.useOAuth && server.id) {
+            const authProvider = new MCPOAuthProvider(server.url, server.id);
+            const tokens = await authProvider.tokens();
+            if (tokens) {
+              baseConfig.oauthTokens = {
+                access_token: tokens.access_token,
+                refresh_token: tokens.refresh_token,
+                expires_in: tokens.expires_in,
+                token_type: tokens.token_type
+              };
+            }
+          }
+
+          return baseConfig;
+        })
+      );
+
+      // Only update state if this effect hasn't been cancelled and the server data hasn't changed
+      if (!isCancelled) {
+        // Verify that the selected servers haven't changed during async processing
+        const currentIdsMatch = currentServerIds.size === effectiveSelectedMcpServers.length &&
+          effectiveSelectedMcpServers.every(id => currentServerIds.has(id));
+        
+        // Verify that the server data hasn't changed (check URL and OAuth status)
+        const serverDataMatch = effectiveSelectedMcpServers.every(id => {
+          const currentServer = effectiveMcpServers.find(s => s.id === id);
+          const snapshot = serverSnapshot.get(id);
+          return currentServer && snapshot &&
+            currentServer.url === snapshot.url &&
+            currentServer.useOAuth === snapshot.useOAuth;
+        });
+        
+        if (currentIdsMatch && serverDataMatch) {
+          setMcpServersForApi(processedServers);
+        }
+      }
+    };
+
+    processServers();
+    
+    // Cleanup function to mark this effect as cancelled if dependencies change
+    return () => {
+      isCancelled = true;
+    };
   }, [effectiveMcpServers, effectiveSelectedMcpServers]);
 
   return (
