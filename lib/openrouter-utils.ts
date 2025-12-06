@@ -31,56 +31,62 @@ type OpenRouterTextContent = StandardTextContent;
 type OpenRouterMessageContent = StandardMessageContent;
 
 export function convertToOpenRouterFormat(messages: UIMessage[]): any[] {
-    return messages.map(message => {
-        if (message.role === "user" && message.parts) {
-            // Convert parts to AI SDK standard content format (used by OpenRouter and Requesty)
-            const content: StandardMessageContent[] = [];
+    return messages
+        .filter(message => {
+            // Filter out tool messages - they should not be sent to AI SDK as input
+            // Tool messages are only used in responses, not in conversation history
+            return message.role !== "tool";
+        })
+        .map(message => {
+            if (message.role === "user" && message.parts) {
+                // Convert parts to AI SDK standard content format (used by OpenRouter and Requesty)
+                const content: StandardMessageContent[] = [];
 
-            (message.parts as any[]).forEach(part => {
-                switch (part.type) {
-                    case "text": {
-                        const textPart = part as TextUIPart;
-                        content.push({
-                            type: "text",
-                            text: textPart.text,
-                        });
-                        break;
-                    }
-                    case "image_url": {
-                        const imagePart = part as ImageUIPart;
-
-                        // Attempt to infer MIME type from the data URL – useful for providers that inspect this field.
-                        let mimeType: string | undefined;
-                        const match = imagePart.image_url.url.match(/^data:(image\/[^;]+);base64,/);
-                        if (match) {
-                            mimeType = match[1];
+                (message.parts as any[]).forEach(part => {
+                    switch (part.type) {
+                        case "text": {
+                            const textPart = part as TextUIPart;
+                            content.push({
+                                type: "text",
+                                text: textPart.text,
+                            });
+                            break;
                         }
+                        case "image_url": {
+                            const imagePart = part as ImageUIPart;
 
-                        content.push({
-                            type: "image",
-                            image: imagePart.image_url.url,
-                            ...(mimeType ? { mimeType } : {}),
-                        });
-                        break;
+                            // Attempt to infer MIME type from the data URL – useful for providers that inspect this field.
+                            let mimeType: string | undefined;
+                            const match = imagePart.image_url.url.match(/^data:(image\/[^;]+);base64,/);
+                            if (match) {
+                                mimeType = match[1];
+                            }
+
+                            content.push({
+                                type: "image",
+                                image: imagePart.image_url.url,
+                                ...(mimeType ? { mimeType } : {}),
+                            });
+                            break;
+                        }
+                        default:
+                            // Skip unsupported part types
+                            break;
                     }
-                    default:
-                        // Skip unsupported part types
-                        break;
-                }
-            });
+                });
 
+                return {
+                    role: message.role,
+                    content: content
+                };
+            }
+
+            // Handle non-multimodal messages (plain text)
             return {
                 role: message.role,
-                content: content
+                content: getTextContent(message)
             };
-        }
-
-        // Handle non-multimodal messages (plain text)
-        return {
-            role: message.role,
-            content: getTextContent(message)
-        };
-    });
+        });
 }
 
 export function validateImageForOpenRouter(imageData: string): {

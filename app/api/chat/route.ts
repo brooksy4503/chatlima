@@ -839,9 +839,14 @@ You have web search capabilities enabled. When you use web search:
         const isRequestyModel = selectedModel.startsWith("requesty/");
         const needsFormatConversion = isOpenRouterModel || isRequestyModel;
 
-        const formattedMessages = needsFormatConversion
+        let formattedMessages = needsFormatConversion
             ? convertToOpenRouterFormat(modelMessagesFinal)
             : modelMessagesFinal;
+
+        // Filter out tool messages - they should not be sent to AI SDK as input
+        // Tool messages are only used in responses, not in conversation history
+        formattedMessages = formattedMessages.filter((msg: any) => msg.role !== "tool");
+
         console.log(`[DEBUG] Using ${needsFormatConversion ? 'converted' : 'raw'} message format for model:`, selectedModel);
         console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
 
