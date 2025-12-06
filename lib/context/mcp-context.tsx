@@ -86,13 +86,23 @@ export function MCPProvider(props: { children: React.ReactNode }) {
       return;
     }
     
+    // Track if this effect is still valid to prevent stale updates
+    let isCancelled = false;
+    
     const processServers = async () => {
-      const servers = effectiveSelectedMcpServers
+      // Capture the current server IDs and server data at the start of processing
+      const currentServerIds = new Set(effectiveSelectedMcpServers);
+      const capturedServers = effectiveSelectedMcpServers
         .map(id => effectiveMcpServers.find(server => server.id === id))
         .filter((server): server is MCPServer => Boolean(server));
+      
+      // Create a snapshot of server data for comparison
+      const serverSnapshot = new Map(
+        capturedServers.map(server => [server.id, { url: server.url, useOAuth: server.useOAuth }])
+      );
 
       const processedServers: MCPServerApi[] = await Promise.all(
-        servers.map(async (server) => {
+        capturedServers.map(async (server) => {
           const baseConfig: MCPServerApi = {
             type: server.type,
             url: server.url,
@@ -124,10 +134,33 @@ export function MCPProvider(props: { children: React.ReactNode }) {
         })
       );
 
-      setMcpServersForApi(processedServers);
+      // Only update state if this effect hasn't been cancelled and the server data hasn't changed
+      if (!isCancelled) {
+        // Verify that the selected servers haven't changed during async processing
+        const currentIdsMatch = currentServerIds.size === effectiveSelectedMcpServers.length &&
+          effectiveSelectedMcpServers.every(id => currentServerIds.has(id));
+        
+        // Verify that the server data hasn't changed (check URL and OAuth status)
+        const serverDataMatch = effectiveSelectedMcpServers.every(id => {
+          const currentServer = effectiveMcpServers.find(s => s.id === id);
+          const snapshot = serverSnapshot.get(id);
+          return currentServer && snapshot &&
+            currentServer.url === snapshot.url &&
+            currentServer.useOAuth === snapshot.useOAuth;
+        });
+        
+        if (currentIdsMatch && serverDataMatch) {
+          setMcpServersForApi(processedServers);
+        }
+      }
     };
 
     processServers();
+    
+    // Cleanup function to mark this effect as cancelled if dependencies change
+    return () => {
+      isCancelled = true;
+    };
   }, [effectiveMcpServers, effectiveSelectedMcpServers]);
 
   return (

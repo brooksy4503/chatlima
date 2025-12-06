@@ -408,6 +408,10 @@ export const MCPServerManager = ({
             // Check if we already have tokens
             const existingTokens = await authProvider.tokens();
             if (existingTokens && await authProvider.hasValidTokens()) {
+                // Clean up any stale sessionStorage keys
+                sessionStorage.removeItem('mcp_oauth_server_id');
+                sessionStorage.removeItem('mcp_oauth_server_url');
+                sessionStorage.removeItem('mcp_oauth_return_url');
                 toast.success("Already authorized");
                 setOauthStatus(prev => ({ ...prev, [server.id]: true }));
                 setAuthorizingServerId(null);
@@ -421,13 +425,26 @@ export const MCPServerManager = ({
                 // The redirectToAuthorization method will be called by the SDK
                 // which will redirect the browser
                 toast.info("Redirecting to authorization page...");
+                // Keep sessionStorage keys for callback page
             } else if (result === 'AUTHORIZED') {
+                // Clean up sessionStorage keys since we don't need them (no redirect)
+                sessionStorage.removeItem('mcp_oauth_server_id');
+                sessionStorage.removeItem('mcp_oauth_server_url');
+                sessionStorage.removeItem('mcp_oauth_return_url');
                 toast.success("Authorization successful!");
                 setOauthStatus(prev => ({ ...prev, [server.id]: true }));
             } else {
+                // Clean up sessionStorage on unexpected result
+                sessionStorage.removeItem('mcp_oauth_server_id');
+                sessionStorage.removeItem('mcp_oauth_server_url');
+                sessionStorage.removeItem('mcp_oauth_return_url');
                 throw new Error("Unexpected authorization result");
             }
         } catch (error) {
+            // Clean up sessionStorage on error
+            sessionStorage.removeItem('mcp_oauth_server_id');
+            sessionStorage.removeItem('mcp_oauth_server_url');
+            sessionStorage.removeItem('mcp_oauth_return_url');
             console.error("OAuth authorization error:", error);
             toast.error(error instanceof Error ? error.message : "Authorization failed");
         } finally {
