@@ -21,6 +21,9 @@ import { join } from 'path';
 
 const GITHUB_REPO = 'brooksy4503/chatlima';
 
+// Protected branches that should never be deleted
+const PROTECTED_BRANCHES = ['main', 'master', 'develop'];
+
 interface ReleaseOptions {
   branch: string;
   version: 'patch' | 'minor' | 'major';
@@ -198,6 +201,14 @@ function pushChanges(options: ReleaseOptions): void {
 function cleanupFeatureBranch(options: ReleaseOptions): void {
   console.log('🧹 Cleaning up feature branch...\n');
 
+  // Safety check: Never delete protected branches
+  if (PROTECTED_BRANCHES.includes(options.branch)) {
+    console.log(`  ⚠️  Skipping cleanup: '${options.branch}' is a protected branch`);
+    console.log('  → Protected branches (main, master, develop) are never deleted for safety');
+    console.log('');
+    return;
+  }
+
   // Delete local branch
   try {
     console.log(`  → Deleting local branch '${options.branch}'...`);
@@ -301,6 +312,14 @@ Examples:
 
   if (!options.version) {
     throw new Error('--version is required. Use --help for usage information.');
+  }
+
+  // Safety check: Warn if trying to use a protected branch as feature branch
+  if (PROTECTED_BRANCHES.includes(options.branch)) {
+    console.warn(`⚠️  Warning: '${options.branch}' is a protected branch.`);
+    console.warn('   This script is designed to merge feature branches into main.');
+    console.warn('   If you want to release from main directly, consider using a different workflow.');
+    console.warn('');
   }
 
   return options as ReleaseOptions;
