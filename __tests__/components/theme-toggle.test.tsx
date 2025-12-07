@@ -4,7 +4,11 @@ import { ThemeToggle } from '../../components/theme-toggle';
 
 // Mock next-themes
 const mockSetTheme = jest.fn();
-const mockUseTheme = {
+const mockUseTheme: {
+  setTheme: jest.Mock;
+  theme: string | undefined;
+  resolvedTheme: string | null | undefined;
+} = {
   setTheme: mockSetTheme,
   theme: 'dark',
   resolvedTheme: 'dark',

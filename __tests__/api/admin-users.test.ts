@@ -41,23 +41,28 @@ describe('Admin Users API', () => {
         ];
 
         // Mock the database query
-        mockDb.select.mockReturnValue({
-            from: jest.fn().mockReturnValue({
-                where: jest.fn().mockReturnValue({
-                    groupBy: jest.fn().mockResolvedValue(mockUserStats),
-                }),
-            }),
+        const mockGroupBy = jest.fn() as jest.MockedFunction<() => Promise<typeof mockUserStats>>;
+        mockGroupBy.mockResolvedValue(mockUserStats);
+        const mockWhere = jest.fn().mockReturnValue({
+            groupBy: mockGroupBy,
+        });
+        const mockFrom = jest.fn().mockReturnValue({
+            where: mockWhere,
         });
 
+        (mockDb.select as jest.Mock).mockReturnValue({
+            from: mockFrom,
+        } as any);
+
         // This simulates the query from the API
-        const userStats = await mockDb
+        const userStats = await (mockDb
             .select({
                 userId: tokenUsageMetrics.userId,
                 totalTokens: sql<number>`COALESCE(SUM(${tokenUsageMetrics.totalTokens}), 0)`,
                 totalCost: sql<number>`COALESCE(SUM(${tokenUsageMetrics.estimatedCost}), 0)`,
                 requestCount: sql<number>`COUNT(*)`,
                 lastActive: sql<string>`MAX(${tokenUsageMetrics.createdAt})`,
-            })
+            }) as any)
             .from(tokenUsageMetrics)
             .where(undefined)
             .groupBy(tokenUsageMetrics.userId);

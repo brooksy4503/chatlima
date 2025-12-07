@@ -51,6 +51,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const modelListRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
+  const [creditCosts, setCreditCosts] = useState<Record<string, number>>({});
   
   // Get dynamic models and state from enhanced context
   const { 
@@ -233,6 +234,37 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   // Main button always shows the selected model (no layout flipping)
   const selectedModelData = availableModels.find(m => m.id === selectedModel);
   const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelData?.premium);
+
+  // Fetch credit cost for the details panel model
+  useEffect(() => {
+    if (!detailsPanelModel?.id) return;
+    
+    // Skip if already fetched
+    if (creditCosts[detailsPanelModel.id] !== undefined) return;
+    
+    // Fetch credit cost from API
+    const fetchCreditCost = async () => {
+      try {
+        const response = await fetch(`/api/models/${encodeURIComponent(detailsPanelModel.id)}/credit-cost`);
+        if (response.ok) {
+          const data = await response.json();
+          setCreditCosts(prev => ({
+            ...prev,
+            [detailsPanelModel.id]: data.creditCost
+          }));
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch credit cost for ${detailsPanelModel.id}:`, error);
+        // Fallback to default based on premium status
+        setCreditCosts(prev => ({
+          ...prev,
+          [detailsPanelModel.id]: detailsPanelModel.premium ? 2 : 1
+        }));
+      }
+    };
+    
+    fetchCreditCost();
+  }, [detailsPanelModel?.id, creditCosts]);
 
   // Handle model change - memoized to prevent re-renders
   const handleModelChange = useCallback((modelId: string) => {
@@ -699,6 +731,22 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                       </code>
                     </div>
                   )}
+                  
+                  {/* Credit Cost */}
+                  {(() => {
+                    const creditCost = creditCosts[detailsPanelModel.id] ?? (detailsPanelModel.premium ? 2 : 1);
+                    return (
+                      <div className="text-[10px] text-muted-foreground flex justify-between items-center">
+                        <span>Credit Cost:</span>
+                        <code className={cn(
+                          "bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono",
+                          creditCost > 1 && "text-yellow-600 dark:text-yellow-500 font-semibold"
+                        )}>
+                          {creditCost} {creditCost === 1 ? 'credit' : 'credits'} per message
+                        </code>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}

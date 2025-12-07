@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { modelID } from '@/ai/providers';
 import { ModelInfo } from '@/lib/types/models';
+import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
 
 /**
  * Cost in credits for enabling Web Search feature
@@ -19,6 +20,7 @@ export const WEB_SEARCH_COST = 5;
  * @param isAnonymous Whether the user is anonymous
  * @param shouldDeductCredits Whether to actually deduct credits (only for users with purchased credits)
  * @param additionalCost Additional credits to deduct (e.g., for premium features like web search)
+ * @param modelInfo Optional model information for calculating variable credit costs
  */
 export async function trackTokenUsage(
     userId: string,
@@ -26,7 +28,8 @@ export async function trackTokenUsage(
     completionTokens: number,
     isAnonymous: boolean = false,
     shouldDeductCredits: boolean = true,
-    additionalCost: number = 0
+    additionalCost: number = 0,
+    modelInfo?: ModelInfo
 ): Promise<void> {
     try {
         // Check if the user exists in the database first
@@ -39,8 +42,9 @@ export async function trackTokenUsage(
             return;
         }
 
-        // Calculate total credits to consume (base 1 credit + additional cost)
-        const totalCreditsToConsume = shouldDeductCredits ? 1 + additionalCost : 0;
+        // Calculate total credits to consume (variable base cost based on model + additional cost)
+        const baseCreditCost = calculateCreditCostPerMessage(modelInfo ?? null);
+        const totalCreditsToConsume = shouldDeductCredits ? baseCreditCost + additionalCost : 0;
 
         // Additional properties we might want to track about this usage event
         const additionalProperties = {
@@ -104,8 +108,8 @@ export async function hasEnoughCredits(
         return false; // Anonymous users cannot access any model requiring credit check, including premium.
     }
 
-    // Check if the selected model is premium
-    const isPremiumModel = modelInfo?.premium === true;
+    // Calculate required credits based on model pricing tier
+    const requiredCredits = calculateCreditCostPerMessage(modelInfo ?? null);
 
     // First, try to get credits via external ID if userId is provided
     if (userId) {
@@ -114,12 +118,8 @@ export async function hasEnoughCredits(
 
             // If we got a valid result (including 0), use it
             if (remainingCreditsByExternal !== null) {
-                // If it's a premium model, user must have more than 0 credits.
-                // For non-premium, the standard check of remainingCredits >= requiredTokens applies.
-                if (isPremiumModel) {
-                    return remainingCreditsByExternal > 0;
-                }
-                return remainingCreditsByExternal >= requiredTokens;
+                // Check if user has enough credits for the model's credit cost
+                return remainingCreditsByExternal >= requiredCredits;
             }
             // If we got null, this means no Polar customer exists (e.g., Google user with no purchase)
             // For these users, we should return false so they fall back to daily message limits
@@ -143,12 +143,8 @@ export async function hasEnoughCredits(
                 return false;
             }
 
-            // If it's a premium model, user must have more than 0 credits.
-            // For non-premium, the standard check of remainingCredits >= requiredTokens applies.
-            if (isPremiumModel) {
-                return remainingCredits > 0;
-            }
-            return remainingCredits >= requiredTokens;
+            // Check if user has enough credits for the model's credit cost
+            return remainingCredits >= requiredCredits;
         } catch (error) {
             // Log the error and fall back to daily message limits
             console.error('Error checking credits by customer ID:', error);

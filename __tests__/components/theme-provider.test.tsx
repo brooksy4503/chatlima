@@ -55,7 +55,7 @@ describe('ThemeProvider', () => {
   describe('Props Handling', () => {
     test('passes all props to NextThemesProvider', () => {
       const testProps = {
-        attribute: 'class',
+        attribute: 'class' as const,
         defaultTheme: 'system',
         enableSystem: true,
         storageKey: 'custom-theme',
@@ -64,7 +64,7 @@ describe('ThemeProvider', () => {
       };
 
       render(
-        <ThemeProvider {...testProps}>
+        <ThemeProvider {...(testProps as any)}>
           <div>Test Child</div>
         </ThemeProvider>
       );
@@ -76,14 +76,14 @@ describe('ThemeProvider', () => {
 
     test('passes custom theme configuration', () => {
       const customConfig = {
-        attribute: 'data-theme',
+        attribute: 'data-theme' as const,
         defaultTheme: 'dark',
         enableSystem: false,
         disableTransitionOnChange: true,
       };
 
       render(
-        <ThemeProvider {...customConfig}>
+        <ThemeProvider {...(customConfig as any)}>
           <div>Test Child</div>
         </ThemeProvider>
       );
@@ -145,11 +145,11 @@ describe('ThemeProvider', () => {
         themes: ['light', 'dark', 'auto'],
         defaultTheme: 'auto',
         enableSystem: true,
-        attribute: 'class',
+        attribute: 'class' as const,
       };
 
       render(
-        <ThemeProvider {...themeConfig}>
+        <ThemeProvider {...(themeConfig as any)}>
           <div>Theme Consumer</div>
         </ThemeProvider>
       );

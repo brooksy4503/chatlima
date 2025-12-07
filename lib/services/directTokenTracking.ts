@@ -11,6 +11,8 @@ import { SimplifiedCostCalculationService } from './simplifiedCostCalculation';
 import { OpenRouterCostExtractor } from './openRouterCostExtractor';
 import { OpenRouterCostTracker } from './openrouterCostTracker';
 import { nanoid } from 'nanoid';
+import { getModelDetails } from '@/lib/models/fetch-models';
+import { ModelInfo } from '@/lib/types/models';
 
 interface DirectTokenTrackingParams {
     userId: string;
@@ -36,6 +38,8 @@ interface DirectTokenTrackingParams {
     additionalCost?: number;
     // For OpenRouter async fetch when the user used their own key
     apiKeyOverride?: string;
+    // Model information for variable credit cost calculation
+    modelInfo?: ModelInfo;
 }
 
 export class DirectTokenTrackingService {
@@ -161,13 +165,24 @@ export class DirectTokenTrackingService {
             // Handle credit tracking if parameters are provided
             if (params.polarCustomerId !== undefined || params.completionTokens !== undefined) {
                 try {
+                    // Fetch modelInfo if not provided (needed for variable credit cost calculation)
+                    let modelInfo = params.modelInfo;
+                    if (!modelInfo && params.modelId) {
+                        try {
+                            modelInfo = (await getModelDetails(params.modelId)) ?? undefined;
+                        } catch (error) {
+                            console.warn(`[DirectTokenTracking] Failed to fetch model info for ${params.modelId}, using default credit cost:`, error);
+                        }
+                    }
+
                     await trackTokenUsage(
                         params.userId,
                         params.polarCustomerId,
                         params.completionTokens || params.outputTokens, // Fallback to outputTokens if completionTokens not provided
                         params.isAnonymous || false,
                         params.shouldDeductCredits || false,
-                        params.additionalCost || 0
+                        params.additionalCost || 0,
+                        modelInfo
                     );
                     console.log(`[DirectTokenTracking] Successfully processed credit tracking for user ${params.userId}`);
                 } catch (creditError) {

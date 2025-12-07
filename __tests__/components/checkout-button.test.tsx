@@ -46,14 +46,14 @@ const originalLocation = window.location;
 // Set up location mock
 beforeAll(() => {
   delete (window as any).location;
-  window.location = mockLocation as any;
+  (window as any).location = mockLocation;
 });
 
 // Restore original location after all tests
 afterAll(() => {
   if (originalLocation) {
     delete (window as any).location;
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
   }
 });
 
@@ -195,7 +195,10 @@ describe('CheckoutButton Component', () => {
       expect(button).toHaveTextContent('Sign In to Purchase Credits');
       
       fireEvent.click(button);
-      expect(mockPush).toHaveBeenCalledWith('/api/auth/sign-in/google');
+      expect(mockSignIn.social).toHaveBeenCalledWith({
+        provider: 'google',
+        callbackURL: '/upgrade',
+      });
     });
 
     it('handles user object present but not authenticated', () => {

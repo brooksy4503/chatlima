@@ -337,7 +337,7 @@ describe('ErrorBoundary', () => {
       const originalUserAgent = navigator.userAgent;
       
       delete (window as any).location;
-      window.location = { href: 'https://example.com/test-page' } as Location;
+      (window as any).location = { href: 'https://example.com/test-page' };
       
       Object.defineProperty(navigator, 'userAgent', {
         value: 'Test User Agent',
@@ -368,7 +368,7 @@ describe('ErrorBoundary', () => {
       });
 
       // Restore original values
-      window.location = originalLocation;
+      (window as any).location = originalLocation;
       Object.defineProperty(navigator, 'userAgent', {
         value: originalUserAgent,
         configurable: true

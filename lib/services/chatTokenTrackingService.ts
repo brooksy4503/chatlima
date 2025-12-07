@@ -1,6 +1,8 @@
 import { DirectTokenTrackingService } from '@/lib/services/directTokenTracking';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import type { LanguageModelResponseMetadata } from 'ai';
+import { getModelDetails } from '@/lib/models/fetch-models';
+import { ModelInfo } from '@/lib/types/models';
 
 // Define the extended response type used in the original route
 interface OpenRouterResponse extends LanguageModelResponseMetadata {
@@ -31,6 +33,7 @@ export interface TokenTrackingContext {
     webSearchEnabled: boolean;
     webSearchCost: number;
     apiKeys?: Record<string, string>;
+    modelInfo?: ModelInfo; // Model information for variable credit cost calculation
 }
 
 export interface TokenTrackingResult {
@@ -103,6 +106,16 @@ export class ChatTokenTrackingService {
             // Calculate additional cost for web search
             const additionalCost = webSearchEnabled && !isUsingOwnApiKeys && shouldDeductCredits ? webSearchCost : 0;
 
+            // Fetch modelInfo if not provided (needed for variable credit cost calculation)
+            let modelInfo = context.modelInfo;
+            if (!modelInfo && selectedModel) {
+                try {
+                    modelInfo = (await getModelDetails(selectedModel)) ?? undefined;
+                } catch (error) {
+                    console.warn(`[ChatTokenTracking] Failed to fetch model info for ${selectedModel}, using default credit cost:`, error);
+                }
+            }
+
             // Process token tracking with DirectTokenTrackingService
             await DirectTokenTrackingService.processTokenUsage({
                 userId,
@@ -124,7 +137,8 @@ export class ChatTokenTrackingService {
                 completionTokens: tokenUsage.outputTokens,
                 isAnonymous,
                 shouldDeductCredits,
-                additionalCost
+                additionalCost,
+                modelInfo
             });
 
             const result: TokenTrackingResult = {

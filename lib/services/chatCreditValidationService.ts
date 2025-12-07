@@ -4,6 +4,8 @@ import { getModelDetails } from '@/lib/models/fetch-models';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import type { modelID } from '@/ai/providers';
 import { hasUnlimitedFreeModels } from '@/lib/polar';
+import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
+import { ModelInfo } from '@/lib/types/models';
 
 // Domain-specific error classes for credit validation
 export class CreditValidationError extends Error {
@@ -98,6 +100,7 @@ export class ChatCreditValidationService {
 
         let hasCredits = false;
         let actualCredits: number | null = null;
+        let modelInfo: ModelInfo | null = null; // Declare modelInfo outside try block
 
         // Check for yearly subscription (unlimited free models)
         let hasUnlimitedFreeModelsAccess = false;
@@ -134,7 +137,7 @@ export class ChatCreditValidationService {
             // DO NOT set hasCredits = true here - let the actual credit check determine this
         } else {
             try {
-                const modelInfo = await getModelDetails(selectedModel);
+                modelInfo = await getModelDetails(selectedModel);
 
                 // Check credits using both the external ID (userId) and legacy polarCustomerId
                 hasCredits = await hasEnoughCreditsWithCache(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined, creditCache);
@@ -189,12 +192,31 @@ export class ChatCreditValidationService {
             }
         }
 
+        // Calculate required credits for this model
+        let requiredCredits = 1; // Default
+        if (modelInfo) {
+            try {
+                requiredCredits = calculateCreditCostPerMessage(modelInfo);
+            } catch (error) {
+                console.warn(`[CreditValidation] Failed to calculate credit cost for ${selectedModel}, using default:`, error);
+            }
+        }
+
         // Check for negative credit balance - block if user has negative credits (skip if using own API keys or free model)
         if (!isUsingOwnApiKeys && !isFreeModel && !isAnonymous && actualCredits !== null && actualCredits < 0) {
             console.log(`[Debug] User ${userId} has negative credits (${actualCredits}), blocking request`);
             throw new InsufficientCreditsError(
                 `Your account has a negative credit balance (${actualCredits}). Please purchase more credits to continue.`,
                 `User has ${actualCredits} credits`
+            );
+        }
+
+        // Check if user has sufficient credits for this model (if we have actual credits info)
+        if (!isUsingOwnApiKeys && !isFreeModel && !isAnonymous && actualCredits !== null && actualCredits < requiredCredits) {
+            console.log(`[SECURITY] User ${userId} has insufficient credits (${actualCredits} < ${requiredCredits}) for model ${selectedModel}`);
+            throw new InsufficientCreditsError(
+                `This model requires ${requiredCredits} credits per message. You have ${actualCredits} credits. Please purchase more credits to use this model.`,
+                `User has ${actualCredits} credits, needs ${requiredCredits}`
             );
         }
 
@@ -283,6 +305,9 @@ export class ChatCreditValidationService {
         // Get model info for premium check
         const modelInfo = await getModelDetails(selectedModel);
 
+        // Calculate required credits for this model
+        const requiredCredits = calculateCreditCostPerMessage(modelInfo);
+
         // Check for yearly subscription
         let hasUnlimitedFreeModelsAccess = false;
         if (!isAnonymous && userId) {
@@ -296,7 +321,7 @@ export class ChatCreditValidationService {
         if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits && modelInfo?.premium) {
             if (hasUnlimitedFreeModelsAccess) {
                 // Yearly subscribers trying to use premium models
-                console.log(`[SECURITY] Yearly subscriber attempted premium model: ${selectedModel}`);
+                console.log(`[SECURITY] Yearly subscriber attempted premium model: ${selectedModel} (requires ${requiredCredits} credits)`);
                 throw new PremiumModelRestrictedError(
                     "Your yearly subscription provides unlimited access to free models only. Please upgrade to the monthly plan to access premium models.",
                     `Yearly subscriber attempted premium model access`
@@ -305,9 +330,9 @@ export class ChatCreditValidationService {
                 const userType = isAnonymous ? "Anonymous users" : "Users without credits";
                 const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
 
-                console.log(`[SECURITY] ${userType} attempted to access premium model: ${selectedModel}`);
+                console.log(`[SECURITY] ${userType} attempted to access premium model: ${selectedModel} (requires ${requiredCredits} credits)`);
                 throw new PremiumModelRestrictedError(
-                    `${userType} cannot access premium models. ${actionRequired} to use ${modelInfo.name || selectedModel}.`,
+                    `${userType} cannot access premium models. ${actionRequired} to use ${modelInfo.name || selectedModel} (${requiredCredits} credits per message).`,
                     `Premium model access denied for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
                 );
             }

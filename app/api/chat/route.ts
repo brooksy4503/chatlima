@@ -1469,7 +1469,8 @@ You have web search capabilities enabled. When you use web search:
                                     completionTokens,
                                     isAnonymous,
                                     shouldDeductCredits,
-                                    additionalCost
+                                    additionalCost,
+                                    modelInfo: modelValidation.modelInfo ?? undefined
                                 });
 
                                 logDiagnostic('DIRECT_TOKEN_TRACKING_COMPLETED', `Completed direct token usage tracking with credit parameters`, {

@@ -85,6 +85,14 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Flexible Subscription Plans**: Choose the plan that fits your usage pattern
   - **Monthly Plan ($10/month)**: 1,000 messages per month with access to all models (premium + free)
   - **Yearly Plan ($10/year)**: Unlimited messages with unlimited access to free models - save 92% vs monthly
+- **Tiered Credit System**: Variable credit costs based on model pricing to protect against expensive model abuse
+  - **Free/Standard Models**: 1 credit per message
+  - **Premium Models ($3-15/M)**: 2 credits per message
+  - **High Premium Models ($15-50/M)**: 5 credits per message
+  - **Very High Premium Models ($50-100/M)**: 15 credits per message
+  - **Ultra Premium Models ($100+/M)**: 30 credits per message (e.g., o1-pro, o3-pro)
+- **Transparent Pricing**: Credit costs displayed in model picker for informed decision-making
+- **Smart Credit Validation**: System automatically checks if you have sufficient credits before allowing expensive model usage
 - **Polar Integration**: Complete integration with Polar billing platform for customer management
 - **Production Checkout System**: User-friendly purchase flow with smart user handling and seamless sign-in
 - **Upgrade Page**: Beautiful side-by-side plan comparison with clear benefits and pricing
@@ -92,7 +100,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Credit Purchase Workflow**: Streamlined process for purchasing AI usage credits (for monthly plan users)
 - **Subscription-Based Access Control**: Intelligent model filtering based on subscription type
 - **Unlimited Free Models**: Yearly subscribers get unlimited access to all OpenRouter `:free` models
-- **Paid Web Search**: Premium web search feature with credit-based billing and usage tracking
+- **Paid Web Search**: Premium web search feature with credit-based billing and usage tracking (5 credits per search)
 - **Comprehensive Error Handling**: Dedicated error pages for failed, canceled, and problematic transactions
 - **Environment-Based Configuration**: Secure Polar server environment selection
 

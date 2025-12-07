@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2019-09/schema",
   "description": "List of AI models that have been tested and found to have non-working endpoints",
-  "lastUpdated": "2025-08-07T09:40:46.587Z",
+  "lastUpdated": "2025-12-07T09:14:09.140Z",
   "models": {
     "google/gemini-2.5-pro-exp-03-25": {
       "provider": "openrouter",
@@ -920,6 +920,422 @@
       "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
       "lastTested": "2025-08-07T09:40:46.587Z",
       "testError": "HTTP 404: {\"error\":{\"message\":\"Provider and/or model not supported\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/gpt-5-image-mini": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Unsupported parameter: 'temperature' is not supported with this model.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"temperature\\\",\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:18:56.341Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Unsupported parameter: 'temperature' is not supported with this model.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"temperature\\\",\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/gpt-5-image": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Unsupported parameter: 'temperature' is not supported with this model.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"temperature\\\",\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:19:08.482Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Unsupported parameter: 'temperature' is not supported with this model.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"temperature\\\",\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/o3-deep-research": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"This model is only supported in v1/responses and not in v1/chat/completions.\"}}\n",
+      "lastTested": "2025-12-07T09:07:27.487Z",
+      "testError": "HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"This model is only supported in v1/responses and not in v1/chat/completions.\"}}\n",
+      "retryCount": 2,
+      "manuallyBlocked": false
+    },
+    "openai/o4-mini-deep-research": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"This model is only supported in v1/responses and not in v1/chat/completions.\"}}\n",
+      "lastTested": "2025-12-07T09:07:40.909Z",
+      "testError": "HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"This model is only supported in v1/responses and not in v1/chat/completions.\"}}\n",
+      "retryCount": 2,
+      "manuallyBlocked": false
+    },
+    "relace/relace-apply-3": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"expected `<code>...</code>` and `<update>...</update>` tags\",\"provider_name\":\"Relace\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:20:14.806Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"expected `<code>...</code>` and `<update>...</update>` tags\",\"provider_name\":\"Relace\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "alibaba/tongyi-deepresearch-30b-a3b:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 502: {\"error\":{\"message\":\"Provider returned error\",\"code\":502,\"metadata\":{\"raw\":\"<html>\\r\\n<head><title>502 Bad Gateway</title></head>\\r\\n<body>\\r\\n<center><h1>502 Bad Gateway</h1></center>\\r\\n<hr><center>nginx</center>\\r\\n</body>\\r\\n</html>\\r\\n\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:20:51.463Z",
+      "testError": "HTTP 502: {\"error\":{\"message\":\"Provider returned error\",\"code\":502,\"metadata\":{\"raw\":\"<html>\\r\\n<head><title>502 Bad Gateway</title></head>\\r\\n<body>\\r\\n<center><h1>502 Bad Gateway</h1></center>\\r\\n<hr><center>nginx</center>\\r\\n</body>\\r\\n</html>\\r\\n\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "meituan/longcat-flash-chat:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"No instances available (yet) for chute_id='2a6173bd-6d60-5ca6-8601-9ece77f055e4'\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:21:05.354Z",
+      "testError": "HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"No instances available (yet) for chute_id='2a6173bd-6d60-5ca6-8601-9ece77f055e4'\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepcogito/cogito-v2-preview-deepseek-671b": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNETnMA-2kFHot-9aa29c13b3c0a943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Unable to access non-serverless model deepcogito/cogito-v2-preview-deepseek-671b. Please visit https://api.together.ai/models/deepcogito/cogito-v2-preview-deepseek-671b to create and start a new dedicated endpoint for the model.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"model_not_available\\\"\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:21:29.542Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNETnMA-2kFHot-9aa29c13b3c0a943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Unable to access non-serverless model deepcogito/cogito-v2-preview-deepseek-671b. Please visit https://api.together.ai/models/deepcogito/cogito-v2-preview-deepseek-671b to create and start a new dedicated endpoint for the model.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"model_not_available\\\"\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/gpt-4o-audio-preview": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"This model requires that either input content or output modality contain audio.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"model\\\",\\n    \\\"code\\\": \\\"invalid_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:40:42.753Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"This model requires that either input content or output modality contain audio.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": \\\"model\\\",\\n    \\\"code\\\": \\\"invalid_value\\\"\\n  }\\n}\",\"provider_name\":\"OpenAI\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "qwen/qwen3-coder:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"message\":\"Internal Server Error\",\"code\":500}}",
+      "lastTested": "2025-12-07T08:42:18.288Z",
+      "testError": "HTTP 500: {\"error\":{\"message\":\"Internal Server Error\",\"code\":500}}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"cognitivecomputations/dolphin-mistral-24b-venice-edition:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:42:46.150Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"cognitivecomputations/dolphin-mistral-24b-venice-edition:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "arcee-ai/spotlight": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNEbQHA-2kFHot-9aa2c05f31b3a943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Service unavailable\\\",\\n    \\\"type\\\": \\\"service_unavailable\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:46:16.264Z",
+      "testError": "HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNEbQHA-2kFHot-9aa2c05f31b3a943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Service unavailable\\\",\\n    \\\"type\\\": \\\"service_unavailable\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "arcee-ai/maestro-reasoning": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNEbQtt-2kFHot-9aa2c06e8504a943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Service unavailable\\\",\\n    \\\"type\\\": \\\"service_unavailable\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:46:18.311Z",
+      "testError": "HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNEbQtt-2kFHot-9aa2c06e8504a943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Service unavailable\\\",\\n    \\\"type\\\": \\\"service_unavailable\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "arcee-ai/virtuoso-large": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNEbRWb-2kFHot-9aa2c07b5028a943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Service unavailable\\\",\\n    \\\"type\\\": \\\"service_unavailable\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:46:20.406Z",
+      "testError": "HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNEbRWb-2kFHot-9aa2c07b5028a943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Service unavailable\\\",\\n    \\\"type\\\": \\\"service_unavailable\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": null\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "arcee-ai/coder-large": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNEbS8X-2kFHot-9aa2c088732da943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Unable to access non-serverless model arcee-ai/coder-large. Please visit https://api.together.ai/models/arcee-ai/coder-large to create and start a new dedicated endpoint for the model.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"model_not_available\\\"\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:46:22.460Z",
+      "testError": "HTTP 400: {\"error\":{\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\n  \\\"id\\\": \\\"oNEbS8X-2kFHot-9aa2c088732da943\\\",\\n  \\\"error\\\": {\\n    \\\"message\\\": \\\"Unable to access non-serverless model arcee-ai/coder-large. Please visit https://api.together.ai/models/arcee-ai/coder-large to create and start a new dedicated endpoint for the model.\\\",\\n    \\\"type\\\": \\\"invalid_request_error\\\",\\n    \\\"param\\\": null,\\n    \\\"code\\\": \\\"model_not_available\\\"\\n  }\\n}\",\"provider_name\":\"Together\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "qwen/qwen3-4b:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"qwen/qwen3-4b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:46:27.894Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"qwen/qwen3-4b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "qwen/qwen3-235b-a22b:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"qwen/qwen3-235b-a22b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:46:47.891Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"qwen/qwen3-235b-a22b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "microsoft/mai-ds-r1": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"No instances available (yet) for chute_id='44e8f7a0-67f3-51a2-bd4a-5f75b88a9132'\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:47:05.244Z",
+      "testError": "HTTP 503: {\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\"detail\\\":\\\"No instances available (yet) for chute_id='44e8f7a0-67f3-51a2-bd4a-5f75b88a9132'\\\"}\",\"provider_name\":\"Chutes\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "eleutherai/llemma_7b": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"eleutherai/llemma_7b is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Featherless\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:47:27.081Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"eleutherai/llemma_7b is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Featherless\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepseek/deepseek-r1-distill-qwen-14b": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: Invalid response format - missing choices array",
+      "lastTested": "2025-12-07T08:52:20.047Z",
+      "testError": "Invalid response format - missing choices array",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "google/gemini-2.0-flash-exp:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"google/gemini-2.0-flash-exp:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Google\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:53:05.187Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"google/gemini-2.0-flash-exp:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Google\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "anthropic/claude-3.5-haiku-20241022": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"anthropic/claude-3.5-haiku-20241022 is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Google\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:53:36.521Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"anthropic/claude-3.5-haiku-20241022 is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Google\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "nousresearch/hermes-3-llama-3.1-405b:free": {
+      "provider": "openrouter",
+      "reason": "Endpoint test failed: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"nousresearch/hermes-3-llama-3.1-405b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "lastTested": "2025-12-07T08:54:39.603Z",
+      "testError": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"nousresearch/hermes-3-llama-3.1-405b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Venice\"}},\"user_id\":\"user_2ly1KOnY3h2wVmQvG7eELOtIaz1\"}",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "azure/gpt-5.1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\"}}\n",
+      "lastTested": "2025-12-07T08:58:15.622Z",
+      "testError": "HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "azure/o4-mini@uksouth": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\"}}\n",
+      "lastTested": "2025-12-07T08:58:34.527Z",
+      "testError": "HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "azure/o4-mini@westus3": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
+      "lastTested": "2025-12-07T08:58:36.534Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "coding/claude-3-7-sonnet-20250219:1024": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "lastTested": "2025-12-07T09:01:15.024Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "coding/claude-3-7-sonnet-20250219:16384": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "lastTested": "2025-12-07T09:01:16.479Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "coding/claude-3-7-sonnet-20250219:64000": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "lastTested": "2025-12-07T09:01:17.918Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "coding/claude-3-7-sonnet-20250219:8192": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "lastTested": "2025-12-07T09:01:19.628Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "coding/claude-3-7-sonnet-20250219:high": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "lastTested": "2025-12-07T09:01:21.046Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "coding/claude-3-7-sonnet-20250219:low": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "lastTested": "2025-12-07T09:01:22.557Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "coding/claude-3-7-sonnet-20250219:max": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "lastTested": "2025-12-07T09:01:24.164Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "coding/claude-3-7-sonnet-20250219:medium": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "lastTested": "2025-12-07T09:01:25.594Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"`max_tokens` must be greater than `thinking.budget_tokens`. Please consult our documentation at https://docs.claude.com/en/docs/build-with-claude/extended-thinking#max-tokens-and-context-window-size\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/deepseek-ai/DeepSeek-V3.1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:02:48.598Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/meta-llama/Llama-3.3-70B-Instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:02:52.443Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/meta-llama/Llama-3.3-70B-Instruct-Turbo": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:02:53.888Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/meta-llama/Meta-Llama-3.1-405B-Instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:02:55.319Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/meta-llama/Meta-Llama-3.1-70B-Instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"[TensorRT-LLM][ERROR] Assertion failed: mMaxNewTokens \\u003e 0 (/home/jenkins/agent/workspace/LLM/helpers/Build-x86_64/llm/cpp/tensorrt_llm/executor/requestImpl.h:382)\\n1       0x7fe43d0975c6 tensorrt_llm::common::throwRuntimeError(char const*, int, std::string const\\u0026) + 102\\n2       0x7fe43f518369 /app/tensorrt_llm/cpp/build/tensorrt_llm/libtensorrt_llm.so(+0x2bfd369) [0x7fe43f518369]\\n3       0x7fe43f5187fa tensorrt_llm::executor::Request::Request(std::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e, int, bool, tensorrt_llm::executor::SamplingConfig const\\u0026, tensorrt_llm::executor::OutputConfig const\\u0026, std::optional\\u003cint\\u003e const\\u0026, std::optional\\u003cint\\u003e const\\u0026, std::optional\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e \\u003e, std::optional\\u003cstd::list\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e, std::allocator\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e \\u003e \\u003e \\u003e, std::optional\\u003cstd::list\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e, std::allocator\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e \\u003e \\u003e \\u003e, std::optional\\u003ctensorrt_llm::executor::Tensor\\u003e, std::optional\\u003ctensorrt_llm::executor::ExternalDraftTokensConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::PromptTuningConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::LoraConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::LookaheadDecodingConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::KvCacheRetentionConfig\\u003e, std::optional\\u003cstd::string\\u003e, std::optional\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e \\u003e, std::optional\\u003cunsigned long\\u003e, bool, float, tensorrt_llm::executor::RequestType, std::optional\\u003ctensorrt_llm::executor::ContextPhaseParams\\u003e, std::optional\\u003ctensorrt_llm::executor::Tensor\\u003e, std::optional\\u003cint\\u003e, std::optional\\u003ctensorrt_llm::executor::Tensor\\u003e, int, std::optional\\u003ctensorrt_llm::executor::EagleConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::Tensor\\u003e) + 202\\n4       0x7fe530550a18 triton::backend::inflight_batcher_llm::utils::createRequestsFromInputTensors(std::vector\\u003cstd::unordered_map\\u003cstd::string, tensorrt_llm::batch_manager::NamedTensor, std::hash\\u003cstd::string\\u003e, std::equal_to\\u003cstd::string\\u003e, std::allocator\\u003cstd::pair\\u003cstd::string const, tensorrt_llm::batch_manager::NamedTensor\\u003e \\u003e \\u003e, std::allocator\\u003cstd::unordered_map\\u003cstd::string, tensorrt_llm::batch_manager::NamedTensor, std::hash\\u003cstd::string\\u003e, std::equal_to\\u003cstd::string\\u003e, std::allocator\\u003cstd::pair\\u003cstd::string const, tensorrt_llm::batch_manager::NamedTensor\\u003e \\u003e \\u003e \\u003e \\u003e const\\u0026, bool, bool, bool, tensorrt_llm::executor::ModelType, tensorrt_llm::executor::RequestType, bool, bool, triton::backend::inflight_batcher_llm::StructuredBatchedLogitProcessor*, std::string const\\u0026, std::vector\\u003cstd::unique_ptr\\u003ctriton::backend::inflight_batcher_llm::FreeStateHolder, std::default_delete\\u003ctriton::backend::inflight_batcher_llm::FreeStateHolder\\u003e \\u003e, std::allocator\\u003cstd::unique_ptr\\u003ctriton::backend::inflight_batcher_llm::FreeStateHolder, std::default_delete\\u003ctriton::backend::inflight_batcher_llm::FreeStateHolder\\u003e \\u003e \\u003e \\u003e\\u0026) + 3384\\n5       0x7fe530503196 /opt/tritonserver/backends/tensorrtllm/libtriton_tensorrtllm.so(+0x28196) [0x7fe530503196]\\n6       0x7fe530515639 /opt/tritonserver/backends/tensorrtllm/libtriton_tensorrtllm.so(+0x3a639) [0x7fe530515639]\\n7       0x7fe5304f8f65 TRITONBACKEND_ModelInstanceExecute + 101\\n8       0x7fe7441070b4 /opt/tritonserver/bin/../lib/libtritonserver.so(+0x1a70b4) [0x7fe7441070b4]\\n9       0x7fe74410742b /opt/tritonserver/bin/../lib/libtritonserver.so(+0x1a742b) [0x7fe74410742b]\\n10      0x7fe744225ccd /opt/tritonserver/bin/../lib/libtritonserver.so(+0x2c5ccd) [0x7fe744225ccd]\\n11      0x7fe74410b864 /opt/tritonserver/bin/../lib/libtritonserver.so(+0x1ab864) [0x7fe74410b864]\\n12      0x7fe7439cc253 /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x7fe7439cc253]\\n13      0x7fe74375bac3 /usr/lib/x86_64-linux-gnu/libc.so.6(+0x94ac3) [0x7fe74375bac3]\\n14      0x7fe7437ed850 /usr/lib/x86_64-linux-gnu/libc.so.6(+0x126850) [0x7fe7437ed850]\"}}\n",
+      "lastTested": "2025-12-07T09:02:57.360Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"[TensorRT-LLM][ERROR] Assertion failed: mMaxNewTokens \\u003e 0 (/home/jenkins/agent/workspace/LLM/helpers/Build-x86_64/llm/cpp/tensorrt_llm/executor/requestImpl.h:382)\\n1       0x7fe43d0975c6 tensorrt_llm::common::throwRuntimeError(char const*, int, std::string const\\u0026) + 102\\n2       0x7fe43f518369 /app/tensorrt_llm/cpp/build/tensorrt_llm/libtensorrt_llm.so(+0x2bfd369) [0x7fe43f518369]\\n3       0x7fe43f5187fa tensorrt_llm::executor::Request::Request(std::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e, int, bool, tensorrt_llm::executor::SamplingConfig const\\u0026, tensorrt_llm::executor::OutputConfig const\\u0026, std::optional\\u003cint\\u003e const\\u0026, std::optional\\u003cint\\u003e const\\u0026, std::optional\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e \\u003e, std::optional\\u003cstd::list\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e, std::allocator\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e \\u003e \\u003e \\u003e, std::optional\\u003cstd::list\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e, std::allocator\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e \\u003e \\u003e \\u003e, std::optional\\u003ctensorrt_llm::executor::Tensor\\u003e, std::optional\\u003ctensorrt_llm::executor::ExternalDraftTokensConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::PromptTuningConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::LoraConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::LookaheadDecodingConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::KvCacheRetentionConfig\\u003e, std::optional\\u003cstd::string\\u003e, std::optional\\u003cstd::vector\\u003cint, std::allocator\\u003cint\\u003e \\u003e \\u003e, std::optional\\u003cunsigned long\\u003e, bool, float, tensorrt_llm::executor::RequestType, std::optional\\u003ctensorrt_llm::executor::ContextPhaseParams\\u003e, std::optional\\u003ctensorrt_llm::executor::Tensor\\u003e, std::optional\\u003cint\\u003e, std::optional\\u003ctensorrt_llm::executor::Tensor\\u003e, int, std::optional\\u003ctensorrt_llm::executor::EagleConfig\\u003e, std::optional\\u003ctensorrt_llm::executor::Tensor\\u003e) + 202\\n4       0x7fe530550a18 triton::backend::inflight_batcher_llm::utils::createRequestsFromInputTensors(std::vector\\u003cstd::unordered_map\\u003cstd::string, tensorrt_llm::batch_manager::NamedTensor, std::hash\\u003cstd::string\\u003e, std::equal_to\\u003cstd::string\\u003e, std::allocator\\u003cstd::pair\\u003cstd::string const, tensorrt_llm::batch_manager::NamedTensor\\u003e \\u003e \\u003e, std::allocator\\u003cstd::unordered_map\\u003cstd::string, tensorrt_llm::batch_manager::NamedTensor, std::hash\\u003cstd::string\\u003e, std::equal_to\\u003cstd::string\\u003e, std::allocator\\u003cstd::pair\\u003cstd::string const, tensorrt_llm::batch_manager::NamedTensor\\u003e \\u003e \\u003e \\u003e \\u003e const\\u0026, bool, bool, bool, tensorrt_llm::executor::ModelType, tensorrt_llm::executor::RequestType, bool, bool, triton::backend::inflight_batcher_llm::StructuredBatchedLogitProcessor*, std::string const\\u0026, std::vector\\u003cstd::unique_ptr\\u003ctriton::backend::inflight_batcher_llm::FreeStateHolder, std::default_delete\\u003ctriton::backend::inflight_batcher_llm::FreeStateHolder\\u003e \\u003e, std::allocator\\u003cstd::unique_ptr\\u003ctriton::backend::inflight_batcher_llm::FreeStateHolder, std::default_delete\\u003ctriton::backend::inflight_batcher_llm::FreeStateHolder\\u003e \\u003e \\u003e \\u003e\\u0026) + 3384\\n5       0x7fe530503196 /opt/tritonserver/backends/tensorrtllm/libtriton_tensorrtllm.so(+0x28196) [0x7fe530503196]\\n6       0x7fe530515639 /opt/tritonserver/backends/tensorrtllm/libtriton_tensorrtllm.so(+0x3a639) [0x7fe530515639]\\n7       0x7fe5304f8f65 TRITONBACKEND_ModelInstanceExecute + 101\\n8       0x7fe7441070b4 /opt/tritonserver/bin/../lib/libtritonserver.so(+0x1a70b4) [0x7fe7441070b4]\\n9       0x7fe74410742b /opt/tritonserver/bin/../lib/libtritonserver.so(+0x1a742b) [0x7fe74410742b]\\n10      0x7fe744225ccd /opt/tritonserver/bin/../lib/libtritonserver.so(+0x2c5ccd) [0x7fe744225ccd]\\n11      0x7fe74410b864 /opt/tritonserver/bin/../lib/libtritonserver.so(+0x1ab864) [0x7fe74410b864]\\n12      0x7fe7439cc253 /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x7fe7439cc253]\\n13      0x7fe74375bac3 /usr/lib/x86_64-linux-gnu/libc.so.6(+0x94ac3) [0x7fe74375bac3]\\n14      0x7fe7437ed850 /usr/lib/x86_64-linux-gnu/libc.so.6(+0x126850) [0x7fe7437ed850]\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:02:58.800Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/microsoft/phi-4": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:03:00.904Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/Qwen/Qwen2.5-72B-Instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:03:02.312Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/Qwen/Qwen2.5-Coder-32B-Instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:03:03.736Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/Qwen/Qwen3-32B": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "lastTested": "2025-12-07T09:03:08.374Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference error\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "deepinfra/Qwen/Qwen3-Coder-480B-A35B-Instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference exception\"}}\n",
+      "lastTested": "2025-12-07T09:03:09.793Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"inference exception\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai/o1-pro": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"This model is only supported in v1/responses and not in v1/chat/completions.\"}}\n",
+      "lastTested": "2025-12-07T09:07:16.584Z",
+      "testError": "HTTP 404: {\"error\":{\"origin\":\"provider\",\"message\":\"This model is only supported in v1/responses and not in v1/chat/completions.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "openai-responses/gpt-5-pro": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: Request timeout",
+      "lastTested": "2025-12-07T09:08:42.294Z",
+      "testError": "Request timeout",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "parasail/parasail-glm-45": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 403: {\"error\":{\"origin\":\"provider\",\"message\":\"Deployment zai-org/GLM-4.5V doesn't exist or isn't accessible.\"}}\n",
+      "lastTested": "2025-12-07T09:09:12.341Z",
+      "testError": "HTTP 403: {\"error\":{\"origin\":\"provider\",\"message\":\"Deployment zai-org/GLM-4.5V doesn't exist or isn't accessible.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "together/Qwen/Qwen2.5-Coder-32B-Instruct": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"Unable to access non-serverless model Qwen/Qwen2.5-Coder-32B-Instruct. Please visit https://api.together.ai/models/Qwen/Qwen2.5-Coder-32B-Instruct to create and start a new dedicated endpoint for the model.\"}}\n",
+      "lastTested": "2025-12-07T09:10:08.955Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"Unable to access non-serverless model Qwen/Qwen2.5-Coder-32B-Instruct. Please visit https://api.together.ai/models/Qwen/Qwen2.5-Coder-32B-Instruct to create and start a new dedicated endpoint for the model.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "together/Qwen/QwQ-32B-Preview": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"Unable to access non-serverless model Qwen/QwQ-32B-Preview. Please visit https://api.together.ai/models/Qwen/QwQ-32B-Preview to create and start a new dedicated endpoint for the model.\"}}\n",
+      "lastTested": "2025-12-07T09:10:11.441Z",
+      "testError": "HTTP 400: {\"error\":{\"origin\":\"provider\",\"message\":\"Unable to access non-serverless model Qwen/QwQ-32B-Preview. Please visit https://api.together.ai/models/Qwen/QwQ-32B-Preview to create and start a new dedicated endpoint for the model.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "vertex/claude-opus-4-1@europe-west1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"Internal error encountered.\"}}\n",
+      "lastTested": "2025-12-07T09:10:46.475Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"Internal error encountered.\"}}\n",
+      "retryCount": 1,
+      "manuallyBlocked": false
+    },
+    "vertex/claude-opus-4@europe-west1": {
+      "provider": "requesty",
+      "reason": "Endpoint test failed: HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"Internal error encountered.\"}}\n",
+      "lastTested": "2025-12-07T09:11:00.769Z",
+      "testError": "HTTP 500: {\"error\":{\"origin\":\"provider\",\"message\":\"Internal error encountered.\"}}\n",
       "retryCount": 1,
       "manuallyBlocked": false
     }

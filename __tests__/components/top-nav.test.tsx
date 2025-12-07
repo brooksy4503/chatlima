@@ -117,7 +117,7 @@ beforeAll(() => {
 afterAll(() => {
   if (originalLocation) {
     delete (window as any).location;
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
   }
 });
 

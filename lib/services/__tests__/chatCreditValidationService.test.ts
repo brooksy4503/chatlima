@@ -19,10 +19,15 @@ jest.mock('@/lib/utils/performantLogging', () => ({
     logDiagnostic: jest.fn()
 }));
 
+jest.mock('@/lib/utils/creditCostCalculator', () => ({
+    calculateCreditCostPerMessage: jest.fn()
+}));
+
 import { createRequestCreditCache, hasEnoughCreditsWithCache } from '@/lib/services/creditCache';
 import { hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
+import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
 
 // Mock createErrorResponse function
 const mockCreateErrorResponse = jest.fn();
@@ -36,6 +41,7 @@ describe('ChatCreditValidationService', () => {
     const mockHasEnoughCredits = hasEnoughCredits as jest.MockedFunction<typeof hasEnoughCredits>;
     const mockGetModelDetails = getModelDetails as jest.MockedFunction<typeof getModelDetails>;
     const mockLogDiagnostic = logDiagnostic as jest.MockedFunction<typeof logDiagnostic>;
+    const mockCalculateCreditCostPerMessage = calculateCreditCostPerMessage as jest.MockedFunction<typeof calculateCreditCostPerMessage>;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -451,6 +457,154 @@ describe('ChatCreditValidationService', () => {
 
             await expect(ChatCreditValidationService.validatePremiumModelAccess(context))
                 .rejects.toThrow('Model fetch failed');
+        });
+    });
+
+    describe('Tiered Credit Costs', () => {
+        beforeEach(() => {
+            mockCalculateCreditCostPerMessage.mockReset();
+        });
+
+        it('should validate credits for free model (1 credit)', async () => {
+            const context = createMockContext({ isFreeModel: false });
+            const mockCache = createMockCreditCache();
+            const mockModelInfo = {
+                id: 'openrouter/meta-llama/llama-3.2-3b-instruct:free',
+                provider: 'OpenRouter',
+                name: 'Llama 3.2 3B Free',
+                premium: false,
+                pricing: { input: 0, output: 0 }
+            } as any;
+
+            mockCreateRequestCreditCache.mockReturnValue(mockCache);
+            mockGetModelDetails.mockResolvedValue(mockModelInfo);
+            mockCalculateCreditCostPerMessage.mockReturnValue(1);
+            mockHasEnoughCreditsWithCache.mockResolvedValue(true);
+            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(10);
+
+            const result = await ChatCreditValidationService.validateCredits(context);
+
+            expect(mockCalculateCreditCostPerMessage).toHaveBeenCalledWith(mockModelInfo);
+            expect(mockHasEnoughCreditsWithCache).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.any(String),
+                expect.any(Number),
+                false,
+                mockModelInfo,
+                expect.any(Object)
+            );
+            expect(result.hasCredits).toBe(true);
+        });
+
+        it('should validate credits for standard premium model (2 credits)', async () => {
+            const context = createMockContext();
+            const mockCache = createMockCreditCache();
+            const mockModelInfo = {
+                id: 'openrouter/anthropic/claude-3-haiku',
+                provider: 'OpenRouter',
+                name: 'Claude 3 Haiku',
+                premium: true,
+                pricing: { input: 0.0000025, output: 0.0000125 } // $2.50/$12.50 per million
+            } as any;
+
+            mockCreateRequestCreditCache.mockReturnValue(mockCache);
+            mockGetModelDetails.mockResolvedValue(mockModelInfo);
+            mockCalculateCreditCostPerMessage.mockReturnValue(2);
+            mockHasEnoughCreditsWithCache.mockResolvedValue(true);
+            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(5);
+
+            const result = await ChatCreditValidationService.validateCredits(context);
+
+            expect(mockCalculateCreditCostPerMessage).toHaveBeenCalledWith(mockModelInfo);
+            expect(result.hasCredits).toBe(true);
+        });
+
+        it('should validate credits for high premium model (5 credits)', async () => {
+            const context = createMockContext();
+            const mockCache = createMockCreditCache();
+            const mockModelInfo = {
+                id: 'openrouter/anthropic/claude-3-opus',
+                provider: 'OpenRouter',
+                name: 'Claude 3 Opus',
+                premium: true,
+                pricing: { input: 0.000015, output: 0.000075 } // $15/$75 per million
+            } as any;
+
+            mockCreateRequestCreditCache.mockReturnValue(mockCache);
+            mockGetModelDetails.mockResolvedValue(mockModelInfo);
+            mockCalculateCreditCostPerMessage.mockReturnValue(5);
+            mockHasEnoughCreditsWithCache.mockResolvedValue(true);
+            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(10);
+
+            const result = await ChatCreditValidationService.validateCredits(context);
+
+            expect(mockCalculateCreditCostPerMessage).toHaveBeenCalledWith(mockModelInfo);
+            expect(result.hasCredits).toBe(true);
+        });
+
+        it('should validate credits for ultra premium model (30 credits)', async () => {
+            const context = createMockContext();
+            const mockCache = createMockCreditCache();
+            const mockModelInfo = {
+                id: 'openrouter/openai/o1-pro',
+                provider: 'OpenRouter',
+                name: 'O1 Pro',
+                premium: true,
+                pricing: { input: 0.00015, output: 0.0006 } // $150/$600 per million
+            } as any;
+
+            mockCreateRequestCreditCache.mockReturnValue(mockCache);
+            mockGetModelDetails.mockResolvedValue(mockModelInfo);
+            mockCalculateCreditCostPerMessage.mockReturnValue(30);
+            mockHasEnoughCreditsWithCache.mockResolvedValue(true);
+            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(50);
+
+            const result = await ChatCreditValidationService.validateCredits(context);
+
+            expect(mockCalculateCreditCostPerMessage).toHaveBeenCalledWith(mockModelInfo);
+            expect(result.hasCredits).toBe(true);
+        });
+
+        it('should block access when user has insufficient credits for premium model', async () => {
+            const context = createMockContext();
+            const mockCache = createMockCreditCache();
+            const mockModelInfo = {
+                id: 'openrouter/openai/o1-pro',
+                provider: 'OpenRouter',
+                name: 'O1 Pro',
+                premium: true,
+                pricing: { input: 0.00015, output: 0.0006 }
+            } as any;
+
+            mockCreateRequestCreditCache.mockReturnValue(mockCache);
+            mockGetModelDetails.mockResolvedValue(mockModelInfo);
+            mockCalculateCreditCostPerMessage.mockReturnValue(30);
+            mockHasEnoughCreditsWithCache.mockResolvedValue(false);
+            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(10); // Only 10 credits, needs 30
+
+            const result = await ChatCreditValidationService.validateCredits(context);
+
+            expect(mockCalculateCreditCostPerMessage).toHaveBeenCalledWith(mockModelInfo);
+            expect(result.hasCredits).toBe(false);
+        });
+
+        it('should include credit cost in premium model access error message', async () => {
+            const context = createMockContext({ hasCredits: false });
+            const mockModelInfo = {
+                id: 'openrouter/openai/o1-pro',
+                provider: 'OpenRouter',
+                name: 'O1 Pro',
+                premium: true,
+                pricing: { input: 0.00015, output: 0.0006 }
+            } as any;
+
+            mockGetModelDetails.mockResolvedValue(mockModelInfo);
+            mockCalculateCreditCostPerMessage.mockReturnValue(30);
+
+            await expect(ChatCreditValidationService.validatePremiumModelAccess(context))
+                .rejects.toThrow();
+
+            expect(mockCalculateCreditCostPerMessage).toHaveBeenCalledWith(mockModelInfo);
         });
     });
 });

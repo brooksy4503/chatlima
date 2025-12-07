@@ -245,7 +245,7 @@ describe('Messages Component', () => {
     test('handles very long messages array', () => {
       const longMessagesList = Array(100).fill(null).map((_, index) => ({
         id: `msg-${index}`,
-        role: (index % 2 === 0 ? 'user' : 'assistant') as const,
+        role: (index % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
         content: `Message number ${index}`,
       }));
       

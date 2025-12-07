@@ -1,4 +1,6 @@
 import { getRemainingCredits as originalGetRemainingCredits, getRemainingCreditsByExternalId as originalGetRemainingCreditsByExternalId } from '@/lib/polar';
+import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
+import { ModelInfo } from '@/lib/types/models';
 
 /**
  * Request-scoped cache for credit balances to prevent redundant API calls within the same request
@@ -115,7 +117,7 @@ export async function hasEnoughCreditsWithCache(
     userId: string | undefined,
     requiredTokens: number = 1,
     isAnonymous: boolean = false,
-    modelInfo?: any, // ModelInfo type
+    modelInfo?: ModelInfo,
     creditCache?: RequestCreditCache
 ): Promise<boolean> {
     // For anonymous users, skip Polar credit checks completely
@@ -123,8 +125,8 @@ export async function hasEnoughCreditsWithCache(
         return false;
     }
 
-    // Check if the selected model is premium
-    const isPremiumModel = modelInfo?.premium === true;
+    // Calculate required credits based on model pricing tier
+    const requiredCredits = calculateCreditCostPerMessage(modelInfo ?? null);
 
     // First, try to get credits via external ID if userId is provided
     if (userId) {
@@ -136,12 +138,8 @@ export async function hasEnoughCreditsWithCache(
 
             // If we got a valid result (including 0), use it
             if (remainingCreditsByExternal !== null) {
-                // If it's a premium model, user must have more than 0 credits.
-                // For non-premium, the standard check of remainingCredits >= requiredTokens applies.
-                if (isPremiumModel) {
-                    return remainingCreditsByExternal > 0;
-                }
-                return remainingCreditsByExternal >= requiredTokens;
+                // Check if user has enough credits for the model's credit cost
+                return remainingCreditsByExternal >= requiredCredits;
             }
             // If we got null, this means no Polar customer exists
             console.log(`No Polar customer found for user ${userId}, falling back to daily message limits`);
@@ -166,11 +164,8 @@ export async function hasEnoughCreditsWithCache(
                 return false;
             }
 
-            // For premium models, user must have more than 0 credits
-            if (isPremiumModel) {
-                return remainingCredits > 0;
-            }
-            return remainingCredits >= requiredTokens;
+            // Check if user has enough credits for the model's credit cost
+            return remainingCredits >= requiredCredits;
         } catch (error) {
             console.warn('Error checking credits by customer ID:', error);
             return false;

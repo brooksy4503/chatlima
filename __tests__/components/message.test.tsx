@@ -2,6 +2,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Message, ReasoningMessagePart } from '../../components/message';
 import type { Message as TMessage } from 'ai';
+import type { ImageUIPart } from '@/lib/types';
 
 // Mock external dependencies
 jest.mock('../../components/markdown', () => ({
@@ -149,7 +150,7 @@ describe('Message', () => {
     },
   };
 
-  const imagePart = {
+  const imagePart: ImageUIPart = {
     type: 'image_url' as const,
     image_url: {
       url: 'data:image/png;base64,test-image-data',
@@ -333,7 +334,7 @@ describe('Message', () => {
       const message = {
         ...baseMessage,
         parts: [imagePart],
-      };
+      } as any;
 
       render(
         <Message 
@@ -426,7 +427,7 @@ describe('Message', () => {
       const message = {
         ...baseMessage,
         parts: [imagePart],
-      };
+      } as any;
 
       render(
         <Message 
@@ -452,7 +453,7 @@ describe('Message', () => {
       const message = {
         ...baseMessage,
         parts: [imagePart],
-      };
+      } as any;
 
       render(
         <Message 
@@ -671,7 +672,7 @@ describe('Message', () => {
 
   describe('Error Handling', () => {
     test('handles missing image metadata gracefully', () => {
-      const imagePartWithoutMetadata = {
+      const imagePartWithoutMetadata: ImageUIPart = {
         type: 'image_url' as const,
         image_url: {
           url: 'data:image/png;base64,test-image-data',
@@ -682,7 +683,7 @@ describe('Message', () => {
       const message = {
         ...baseMessage,
         parts: [imagePartWithoutMetadata],
-      };
+      } as any;
 
       render(
         <Message 
@@ -749,7 +750,7 @@ describe('Message', () => {
       const message = {
         ...baseMessage,
         parts: [imagePart],
-      };
+      } as any;
 
       render(
         <Message 
@@ -765,7 +766,7 @@ describe('Message', () => {
     });
 
     test('provides fallback alt text for images without filename', () => {
-      const imagePartNoFilename = {
+      const imagePartNoFilename: ImageUIPart = {
         ...imagePart,
         metadata: undefined,
       };
@@ -773,7 +774,7 @@ describe('Message', () => {
       const message = {
         ...baseMessage,
         parts: [imagePartNoFilename],
-      };
+      } as any;
 
       render(
         <Message 
@@ -835,7 +836,7 @@ describe('Message', () => {
         ...baseMessage,
         hasWebSearch: true,
         parts: [textPartWithCitations, toolInvocationPart, imagePart, reasoningPart],
-      };
+      } as any;
 
       render(
         <Message 
@@ -864,7 +865,7 @@ describe('Message', () => {
       const message = {
         ...baseMessage,
         parts: [imagePart],
-      };
+      } as any;
 
       render(
         <Message 

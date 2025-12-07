@@ -101,7 +101,10 @@ describe('ToolInvocation', () => {
       render(<ToolInvocation {...defaultProps} />);
       
       const expandButton = screen.getByTestId('chevron-down').closest('div');
-      fireEvent.click(expandButton);
+      expect(expandButton).not.toBeNull();
+      if (expandButton) {
+        fireEvent.click(expandButton);
+      }
       
       expect(screen.getByTestId('chevron-up')).toBeInTheDocument();
       expect(screen.getByText('Arguments')).toBeInTheDocument();
@@ -112,14 +115,20 @@ describe('ToolInvocation', () => {
       render(<ToolInvocation {...defaultProps} />);
       
       const expandButton = screen.getByTestId('chevron-down').closest('div');
+      expect(expandButton).not.toBeNull();
       
       // Expand
-      fireEvent.click(expandButton);
+      if (expandButton) {
+        fireEvent.click(expandButton);
+      }
       expect(screen.getByTestId('chevron-up')).toBeInTheDocument();
       
       // Collapse
       const collapseButton = screen.getByTestId('chevron-up').closest('div');
-      fireEvent.click(collapseButton);
+      expect(collapseButton).not.toBeNull();
+      if (collapseButton) {
+        fireEvent.click(collapseButton);
+      }
       expect(screen.getByTestId('chevron-down')).toBeInTheDocument();
     });
 
@@ -132,12 +141,16 @@ describe('ToolInvocation', () => {
       expect(screen.queryByText('Arguments')).not.toBeInTheDocument();
       
       // Expand
-      fireEvent.click(expandButton);
+      if (expandButton) {
+        fireEvent.click(expandButton);
+      }
       expect(screen.getByText('Arguments')).toBeInTheDocument();
       
       // Collapse
       const collapseButton = screen.getByTestId('chevron-up').closest('div');
-      fireEvent.click(collapseButton);
+      if (collapseButton) {
+        fireEvent.click(collapseButton);
+      }
       expect(screen.queryByText('Arguments')).not.toBeInTheDocument();
     });
   });
@@ -259,7 +272,7 @@ describe('ToolInvocation', () => {
     });
 
     test('handles non-serializable content gracefully', () => {
-      const circularObj = { a: 1 };
+      const circularObj: { a: number; self?: any } = { a: 1 };
       circularObj.self = circularObj; // Create circular reference
       
       render(<ToolInvocation {...defaultProps} args={circularObj} />);
