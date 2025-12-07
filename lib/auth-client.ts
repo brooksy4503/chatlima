@@ -11,5 +11,10 @@ export const { signIn, signOut, useSession } = createAuthClient({
     },
     plugins: [
         anonymousClient()
-    ]
+    ],
+    // Prevent excessive session refetching that causes re-render loops
+    session: {
+        disableDefaultFetching: false,
+        refetchOnWindowFocus: false,
+    },
 }); 

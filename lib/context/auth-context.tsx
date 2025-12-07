@@ -47,7 +47,43 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: session, isPending } = useSessionOriginal(); // Single useSession call
+  // Get session data from better-auth
+  const { data: sessionData, isPending: isPendingOriginal } = useSessionOriginal();
+  const [session, setSession] = useState(sessionData);
+  const [isPending, setIsPending] = useState(isPendingOriginal);
+  
+  // Use refs to track previous values and avoid triggering effects unnecessarily
+  const lastSessionJsonRef = useRef<string>('');
+  const lastPendingRef = useRef<boolean>(isPendingOriginal);
+  const isInitialMountRef = useRef(true);
+  
+  // Stable session update - only update state when actual content changes
+  useEffect(() => {
+    // Always update pending state when it changes
+    if (isPendingOriginal !== lastPendingRef.current) {
+      lastPendingRef.current = isPendingOriginal;
+      setIsPending(isPendingOriginal);
+    }
+    
+    // Skip session comparison if still pending
+    if (isPendingOriginal) {
+      return;
+    }
+    
+    // Compare session content, not object reference
+    const currentSessionJson = JSON.stringify(sessionData);
+    
+    // Only update if session content actually changed
+    if (currentSessionJson !== lastSessionJsonRef.current) {
+      lastSessionJsonRef.current = currentSessionJson;
+      setSession(sessionData);
+      
+      if (isInitialMountRef.current) {
+        isInitialMountRef.current = false;
+      }
+    }
+  }, [sessionData, isPendingOriginal]);
+  
   const [user, setUser] = useState<AuthUser | null>(null);
   const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [status, setStatus] = useState<AuthContextType['status']>('loading');

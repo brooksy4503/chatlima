@@ -112,19 +112,30 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   const { isAnonymous } = useAuth();
   
   // Trigger model refresh when API keys actually change (not on initial load)
+  // Using refs to avoid dependency issues that cause re-render loops
+  const previousKeysHashRef = React.useRef<string>('');
+  const forceRefreshRef = React.useRef(forceRefresh);
+  
+  // Keep forceRefresh ref up to date
+  React.useEffect(() => {
+    forceRefreshRef.current = forceRefresh;
+  }, [forceRefresh]);
+  
   useEffect(() => {
     const currentKeysHash = JSON.stringify(userApiKeys);
+    const prevHash = previousKeysHashRef.current;
     
     // Only refresh if keys actually changed AND we have keys AND this isn't the initial load
-    if (previousKeysHash && currentKeysHash !== previousKeysHash && Object.keys(userApiKeys).length > 0) {
+    if (prevHash && currentKeysHash !== prevHash && Object.keys(userApiKeys).length > 0) {
       console.log('API keys changed, refreshing models...');
-      if (forceRefresh) {
-        forceRefresh().catch(err => console.error('Failed to refresh models after API key change:', err));
+      if (forceRefreshRef.current) {
+        forceRefreshRef.current().catch(err => console.error('Failed to refresh models after API key change:', err));
       }
     }
     
+    previousKeysHashRef.current = currentKeysHash;
     setPreviousKeysHash(currentKeysHash);
-  }, [userApiKeys, previousKeysHash, forceRefresh]);
+  }, [userApiKeys]);
   
   // Favorites functionality
   const { 
