@@ -125,6 +125,15 @@ function mergeFeatureBranch(options: ReleaseOptions): void {
 
   const currentBranch = getCurrentBranch();
 
+  // If branch is main, skip merge (we're already on the target branch)
+  if (options.branch === 'main') {
+    console.log('  → Branch is main, skipping merge step');
+    console.log('  → Pulling latest changes from main...');
+    execCommand('git pull origin main', { dryRun: options.dryRun });
+    console.log('  ✓ Ready for release\n');
+    return;
+  }
+
   // Switch to main if not already there
   if (currentBranch !== 'main' && !options.dryRun) {
     console.log('  → Switching to main branch...');
