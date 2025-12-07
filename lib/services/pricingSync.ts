@@ -84,7 +84,7 @@ export class PricingSyncService {
                     const outputPrice = model.pricing?.output || 0;
 
                     // Check for very small values that might be rounded to zero
-                    const minValidPrice = 0.0000001; // 1e-7 minimum valid price (more conservative)
+                    const minValidPrice = 0.000000001; // 1e-9 minimum valid price for 9 decimal place support
 
                     if (inputPrice <= minValidPrice || outputPrice <= minValidPrice) {
                         console.log(`[PricingSync] Skipping model ${model.id} - pricing too small (input: ${inputPrice}, output: ${outputPrice}) - below threshold ${minValidPrice}`);

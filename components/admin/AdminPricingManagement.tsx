@@ -144,8 +144,8 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      minimumFractionDigits: 6,
-      maximumFractionDigits: 6,
+      minimumFractionDigits: 9,
+      maximumFractionDigits: 9,
     }).format(value);
   };
 
@@ -444,7 +444,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                         <label className="text-sm font-medium">Input Token Price</label>
                         <Input
                           type="number"
-                          step="0.000001"
+                          step="0.000000001"
                           placeholder="0.001"
                           value={formData.inputTokenPrice}
                           onChange={(e) => handleInputChange("inputTokenPrice", parseFloat(e.target.value))}
@@ -456,7 +456,7 @@ export function AdminPricingManagement({ loading = false }: AdminPricingManageme
                         <label className="text-sm font-medium">Output Token Price</label>
                         <Input
                           type="number"
-                          step="0.000001"
+                          step="0.000000001"
                           placeholder="0.002"
                           value={formData.outputTokenPrice}
                           onChange={(e) => handleInputChange("outputTokenPrice", parseFloat(e.target.value))}
