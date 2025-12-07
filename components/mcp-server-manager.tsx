@@ -384,10 +384,18 @@ export const MCPServerManager = ({
 
     // Check OAuth status for servers
     const checkOAuthStatus = async (serverId: string, serverUrl: string) => {
-        const authProvider = new MCPOAuthProvider(serverUrl, serverId);
-        const hasTokens = await authProvider.hasValidTokens();
-        setOauthStatus(prev => ({ ...prev, [serverId]: hasTokens }));
-        return hasTokens;
+        try {
+            const authProvider = new MCPOAuthProvider(serverUrl, serverId);
+            const hasTokens = await authProvider.hasValidTokens();
+            console.log(`[MCP OAuth] Checked status for ${serverId}: ${hasTokens ? 'authorized' : 'not authorized'}`);
+            setOauthStatus(prev => ({ ...prev, [serverId]: hasTokens }));
+            return hasTokens;
+        } catch (error) {
+            console.error(`[MCP OAuth] Error checking status for ${serverId}:`, error);
+            // On error, assume not authorized
+            setOauthStatus(prev => ({ ...prev, [serverId]: false }));
+            return false;
+        }
     };
 
     // Trigger OAuth authorization flow
@@ -546,18 +554,37 @@ export const MCPServerManager = ({
         }
     };
 
-    // Check OAuth status for all servers on mount and when servers change
+    // Check OAuth status for all servers when dialog opens or servers change
     useEffect(() => {
         const checkAllOAuthStatus = async () => {
-            for (const server of servers) {
-                if (server.useOAuth && server.id && server.url) {
-                    await checkOAuthStatus(server.id, server.url);
-                }
+            console.log(`[MCP OAuth] Checking OAuth status for all servers (dialog open: ${open})`);
+            const oauthServers = servers.filter(s => s.useOAuth && s.id && s.url);
+            console.log(`[MCP OAuth] Found ${oauthServers.length} OAuth-enabled servers`);
+            
+            if (oauthServers.length === 0) {
+                console.log(`[MCP OAuth] No OAuth-enabled servers to check`);
+                return;
             }
+            
+            // Check each server's OAuth status
+            const statusChecks = oauthServers.map(server => {
+                if (server.id && server.url) {
+                    return checkOAuthStatus(server.id, server.url);
+                }
+                return Promise.resolve(false);
+            });
+            
+            await Promise.all(statusChecks);
+            console.log(`[MCP OAuth] Completed OAuth status checks for all servers`);
         };
         
         if (open) {
-            checkAllOAuthStatus();
+            // Small delay to ensure dialog is fully rendered
+            const timeoutId = setTimeout(() => {
+                checkAllOAuthStatus();
+            }, 100);
+            
+            return () => clearTimeout(timeoutId);
         }
     }, [servers, open]);
 

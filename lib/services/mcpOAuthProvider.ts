@@ -184,10 +184,16 @@ export class MCPOAuthProvider implements OAuthClientProvider {
      * Check if this server has valid tokens
      */
     async hasValidTokens(): Promise<boolean> {
+        const storageKey = `${this.storagePrefix}_tokens`;
+        console.log(`[MCP OAuth] Checking tokens for server ${this.serverId}, storage key: ${storageKey}`);
+
         const tokens = await this.tokens();
         if (!tokens || !tokens.access_token) {
+            console.log(`[MCP OAuth] No tokens found for server ${this.serverId}`);
             return false;
         }
+
+        console.log(`[MCP OAuth] Found tokens for server ${this.serverId}, checking expiration...`);
 
         // Check if token is expired (if expires_in is provided)
         if (tokens.expires_in) {
@@ -195,12 +201,21 @@ export class MCPOAuthProvider implements OAuthClientProvider {
             if (storedAt) {
                 const storedTime = parseInt(storedAt, 10);
                 const expiresAt = storedTime + (tokens.expires_in * 1000);
-                if (Date.now() >= expiresAt) {
+                const now = Date.now();
+                const isExpired = now >= expiresAt;
+                console.log(`[MCP OAuth] Token expiration check for ${this.serverId}: stored at ${new Date(storedTime).toISOString()}, expires at ${new Date(expiresAt).toISOString()}, now ${new Date(now).toISOString()}, expired: ${isExpired}`);
+                if (isExpired) {
+                    console.log(`[MCP OAuth] Tokens expired for server ${this.serverId}`);
                     return false;
                 }
+            } else {
+                console.log(`[MCP OAuth] No stored_at timestamp for server ${this.serverId}, assuming valid`);
             }
+        } else {
+            console.log(`[MCP OAuth] No expires_in for server ${this.serverId}, assuming valid`);
         }
 
+        console.log(`[MCP OAuth] Tokens are valid for server ${this.serverId}`);
         return true;
     }
 
