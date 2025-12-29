@@ -121,7 +121,7 @@ export default function ModelsPage() {
         </div>
           {searchTerm && (
             <p className="text-sm text-muted-foreground">
-              Found {filteredModels.length} {filteredModels.length === 1 ? 'model' : 'models'} matching "{searchTerm}"
+              Found {filteredModels.length} {filteredModels.length === 1 ? 'model' : 'models'} matching &quot;{searchTerm}&quot;
             </p>
           )}
         </div>
