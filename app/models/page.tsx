@@ -9,11 +9,11 @@ import { Search, Filter, ArrowRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ModelsGrid } from '@/components/models-listing/models-grid';
-import { ModelsFilter } from '@/components/models-listing/models-filter';
+import { ModelsFilter, type FilterType } from '@/components/models-listing/models-filter';
 
 export default function ModelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [models, setModels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -124,7 +124,6 @@ export default function ModelsPage() {
               Found {filteredModels.length} {filteredModels.length === 1 ? 'model' : 'models'} matching &quot;{searchTerm}&quot;
             </p>
           )}
-        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -173,6 +172,7 @@ export default function ModelsPage() {
                 </div>
               ) : (
                 <ModelsGrid
+                  title=""
                   models={filteredModels}
                   showBadges={false}
                 />

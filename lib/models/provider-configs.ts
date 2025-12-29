@@ -1,7 +1,5 @@
 import { ProviderConfig, ModelInfo, RawProviderModel } from '@/lib/types/models';
 import { CACHE_CONFIG } from './client-constants';
-import fs from 'fs';
-import path from 'path';
 
 // Interface for blocked models data
 interface BlockedModelsList {
@@ -15,8 +13,34 @@ interface BlockedModelsList {
     }>;
 }
 
-// Load blocked models from JSON file
+// Helper to safely require Node.js modules (server-side only)
+function safeRequire(module: string): any {
+    if (typeof window !== 'undefined') {
+        return null;
+    }
+    try {
+        // Use Function constructor to prevent bundler from analyzing require
+        const requireFunc = new Function('module', 'return require(module)');
+        return requireFunc(module);
+    } catch {
+        return null;
+    }
+}
+
+// Load blocked models from JSON file (server-side only)
 function loadBlockedModels(): Set<string> {
+    // Only attempt to load blocked models on the server side
+    if (typeof window !== 'undefined') {
+        return new Set();
+    }
+
+    const fs = safeRequire('fs');
+    const path = safeRequire('path');
+    
+    if (!fs || !path) {
+        return new Set();
+    }
+
     try {
         const blockedModelsPath = path.join(process.cwd(), 'lib/models/blocked-models.json');
         if (!fs.existsSync(blockedModelsPath)) {

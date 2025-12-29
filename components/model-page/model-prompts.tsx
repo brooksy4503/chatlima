@@ -48,7 +48,7 @@ export function ModelPrompts({ model }: ModelPromptsProps) {
         Sample Prompts
       </h2>
       <p className="text-muted-foreground text-sm mb-4">
-        Try these prompts to explore {model.name}'s capabilities:
+        Try these prompts to explore {model.name}&apos;s capabilities:
       </p>
       <div className="space-y-3">
         {prompts.map((prompt, index) => (
