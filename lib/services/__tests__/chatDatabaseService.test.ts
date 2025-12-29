@@ -1,12 +1,13 @@
 import { ChatDatabaseService, ChatCreationContext, MessageSavingContext } from '../chatDatabaseService';
 import type { UIMessage } from 'ai';
-import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from '@ai-sdk/ui-utils';
+import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from '@/lib/types';
+import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from '@ai-sdk/ui-utils';
 
 // Define DBMessage type for testing
 type DBMessage = {
     id: string;
     chatId: string;
-    role: string;
+    role: 'user' | 'assistant' | 'system' | 'data';
     parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
     createdAt: Date;
     hasWebSearch?: boolean;
@@ -260,14 +261,14 @@ describe('ChatDatabaseService', () => {
 
     describe('convertMessagesForDatabase', () => {
         it('should convert messages successfully', () => {
-            const messages = [
-                { id: 'msg1', role: 'user', content: 'Hello' },
-                { id: 'msg2', role: 'assistant', content: 'Hi there' }
+            const messages: UIMessage[] = [
+                { id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] },
+                { id: 'msg2', role: 'assistant', content: 'Hi there', parts: [{ type: 'text', text: 'Hi there' } as TextUIPart] }
             ];
             const chatId = 'chat123';
-            const convertedMessages = [
-                { id: 'msg1', chatId: 'chat123', role: 'user', content: 'Hello' },
-                { id: 'msg2', chatId: 'chat123', role: 'assistant', content: 'Hi there' }
+            const convertedMessages: DBMessage[] = [
+                { id: 'msg1', chatId: 'chat123', role: 'user', parts: [], createdAt: new Date() },
+                { id: 'msg2', chatId: 'chat123', role: 'assistant', parts: [], createdAt: new Date() }
             ];
 
             mockConvertToDBMessages.mockReturnValue(convertedMessages);
@@ -279,7 +280,7 @@ describe('ChatDatabaseService', () => {
         });
 
         it('should handle conversion errors', () => {
-            const messages = [{ id: 'msg1', role: 'user', content: 'Hello' }];
+            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
             const chatId = 'chat123';
             const error = new Error('Conversion failed');
 
@@ -307,7 +308,7 @@ describe('ChatDatabaseService', () => {
         it('should return true when chat exists', async () => {
             const chatId = 'chat123';
             const userId = 'user456';
-            const mockChat = { id: chatId, userId };
+            const mockChat: Chat = { id: chatId, userId, title: 'Test Chat', createdAt: new Date(), updatedAt: new Date() };
 
             mockFindFirst.mockResolvedValue(mockChat);
             mockEq.mockReturnValue('eq_mock' as any);
@@ -338,7 +339,7 @@ describe('ChatDatabaseService', () => {
             const chatId = 'chat123';
             const userId = 'user456';
 
-            mockFindFirst.mockResolvedValue(null);
+            mockFindFirst.mockResolvedValue(null as any);
             mockEq.mockReturnValue('eq_mock' as any);
             mockAnd.mockReturnValue('and_mock' as any);
 
@@ -383,7 +384,8 @@ describe('ChatDatabaseService', () => {
     describe('createChatIfNotExists', () => {
         it('should return success when chat already exists', async () => {
             const context = createMockChatContext();
-            mockFindFirst.mockResolvedValue({ id: 'chat123', userId: 'user456' });
+            const mockChat: Chat = { id: 'chat123', userId: 'user456', title: 'Test Chat', createdAt: new Date(), updatedAt: new Date() };
+            mockFindFirst.mockResolvedValue(mockChat);
             mockEq.mockReturnValue('eq_mock' as any);
             mockAnd.mockReturnValue('and_mock' as any);
 
@@ -407,7 +409,7 @@ describe('ChatDatabaseService', () => {
 
         it('should create chat when it does not exist', async () => {
             const context = createMockChatContext();
-            mockFindFirst.mockResolvedValue(null);
+            mockFindFirst.mockResolvedValue(null as any);
             mockSaveChat.mockResolvedValue({ id: 'chat123' });
             mockEq.mockReturnValue('eq_mock' as any);
             mockAnd.mockReturnValue('and_mock' as any);
@@ -511,9 +513,9 @@ describe('ChatDatabaseService', () => {
         it('should update chat with messages successfully', async () => {
             const chatId = 'chat123';
             const userId = 'user456';
-            const messages = [
-                { id: 'msg1', role: 'user', content: 'Hello' },
-                { id: 'msg2', role: 'assistant', content: 'Hi there' }
+            const messages: UIMessage[] = [
+                { id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] },
+                { id: 'msg2', role: 'assistant', content: 'Hi there', parts: [{ type: 'text', text: 'Hi there' } as TextUIPart] }
             ];
             const selectedModel = 'openai/gpt-4';
             const apiKeys = { 'OPENAI_API_KEY': 'sk-test' };
@@ -560,7 +562,7 @@ describe('ChatDatabaseService', () => {
         it('should handle update errors', async () => {
             const chatId = 'chat123';
             const userId = 'user456';
-            const messages = [{ id: 'msg1', role: 'user', content: 'Hello' }];
+            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
             const selectedModel = 'openai/gpt-4';
             const error = new Error('Update failed');
 
@@ -594,7 +596,7 @@ describe('ChatDatabaseService', () => {
         it('should handle default parameters', async () => {
             const chatId = 'chat123';
             const userId = 'user456';
-            const messages = [{ id: 'msg1', role: 'user', content: 'Hello' }];
+            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
             const selectedModel = 'openai/gpt-4';
 
             mockSaveChat.mockResolvedValue({ id: 'chat123' });

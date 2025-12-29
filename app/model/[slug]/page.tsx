@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   // Try direct conversion first
   let modelId = slugToModelId(decodedSlug);
-  let model = findModel(modelId, decodedSlug);
+  const model = findModel(modelId, decodedSlug);
   
   if (!model) {
     if (process.env.NODE_ENV === 'development') {
@@ -206,7 +206,7 @@ export default async function ModelPage({ params }: { params: Promise<{ slug: st
 
   // Try direct conversion first
   let modelId = slugToModelId(decodedSlug);
-  let model = findModel(modelId, decodedSlug);
+  const model = findModel(modelId, decodedSlug);
 
   if (!model) {
     if (process.env.NODE_ENV === 'development') {
