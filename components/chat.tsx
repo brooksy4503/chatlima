@@ -7,7 +7,7 @@ import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
 import { toast } from "sonner";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat-store";
 import { type Message as DBMessage } from "@/lib/db/schema";
@@ -35,10 +35,12 @@ interface ChatData {
 export default function Chat() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const chatId = params?.id as string | undefined;
   const queryClient = useQueryClient();
   const { session, isPending: isSessionLoading, refreshMessageUsage } = useAuth();
   const sessionUpdateRef = useRef(false);
+  const modelFromQueryRef = useRef(false);
   
   const { 
     webSearchEnabled, 
@@ -83,6 +85,26 @@ export default function Chat() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Handle model query parameter from URL (e.g., /chat?model=openrouter/model-name)
+  useEffect(() => {
+    if (isMounted && !modelFromQueryRef.current) {
+      const modelParam = searchParams.get('model');
+      if (modelParam) {
+        // Decode the model ID (handles URL encoding like %3A for :)
+        const decodedModelId = decodeURIComponent(modelParam);
+        setSelectedModel(decodedModelId);
+        modelFromQueryRef.current = true;
+        
+        // Clean up the query parameter from URL after setting the model
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.delete('model');
+        const newQuery = newSearchParams.toString();
+        const newUrl = newQuery ? `${window.location.pathname}?${newQuery}` : window.location.pathname;
+        router.replace(newUrl, { scroll: false });
+      }
+    }
+  }, [isMounted, searchParams, setSelectedModel, router]);
 
   useEffect(() => {
     if (isMounted && !isSessionLoading && !sessionUpdateRef.current) {

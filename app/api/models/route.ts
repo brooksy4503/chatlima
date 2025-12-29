@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         const url = new URL(request.url);
         const forceRefresh = url.searchParams.get('force') === 'true';
         const stats = url.searchParams.get('stats') === 'true';
+        const displayMode = url.searchParams.get('display') === 'true';
 
         // If stats requested, return cache statistics
         if (stats) {
@@ -147,6 +148,51 @@ export async function GET(request: NextRequest) {
             // Yearly subscribers get all free models, but not premium models
             const shouldRestrictToFreeModels = isAnonymous || (!hasCredits && !hasUnlimitedFreeModelsAccess);
 
+            // In display mode, return all models but mark which ones are accessible
+            if (displayMode) {
+                // Helper function to determine if a model is accessible to the user
+                const isModelAccessible = (m: any): boolean => {
+                    // Free models are accessible to everyone:
+                    // - Regular users: accessible with daily message limits
+                    // - Yearly subscribers (hasUnlimitedFreeModelsAccess): accessible with unlimited messages
+                    if (m.id.endsWith(':free')) {
+                        return true;
+                    }
+                    // Models are accessible if user has credits (and not yearly subscriber) or has BYOK
+                    if (!shouldRestrictToFreeModels) {
+                        // User has credits or is premium subscriber
+                        return true;
+                    }
+                    // Check BYOK access
+                    if (m.id.startsWith('openrouter/') && hasUserProvidedOpenRouterKey) {
+                        return true;
+                    }
+                    if (m.id.startsWith('requesty/') && hasUserProvidedRequestyKey) {
+                        return true;
+                    }
+                    return false;
+                };
+
+                // Return all models with accessible flag
+                const modelsWithAccess = response.models.map(m => ({
+                    ...m,
+                    accessible: isModelAccessible(m)
+                }));
+
+                const displayResponse = {
+                    ...response,
+                    models: modelsWithAccess,
+                    metadata: {
+                        ...response.metadata,
+                        totalModels: modelsWithAccess.length,
+                        displayMode: true,
+                    }
+                };
+
+                return NextResponse.json(displayResponse, { headers });
+            }
+
+            // Normal mode: filter models based on user access
             const models = shouldRestrictToFreeModels
                 ? response.models.filter(m => {
                     // Allow OpenRouter :free models for everyone (these don't consume credits or require keys)

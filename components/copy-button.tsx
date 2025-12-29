@@ -1,3 +1,5 @@
+"use client";
+
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCopy } from "@/lib/hooks/use-copy";

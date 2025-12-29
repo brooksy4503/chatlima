@@ -31,6 +31,9 @@ export interface ModelInfo {
     // Favorites support
     isFavorite?: boolean;    // Whether this model is favorited by the current user
 
+    // Display mode support (for showing premium models to free users without access)
+    accessible?: boolean;    // Whether the current user can actually use this model (display mode only)
+
     // Legacy compatibility fields for existing features
     enabled?: boolean;
     supportsWebSearch?: boolean;

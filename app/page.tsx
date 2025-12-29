@@ -2,6 +2,7 @@
 
 import Chat from "@/components/chat";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { Suspense } from "react";
 
 export default function Page() {
   return (
@@ -10,7 +11,9 @@ export default function Page() {
         console.error('Home page error:', error, errorInfo);
       }}
     >
-      <Chat />
+      <Suspense fallback={<div>Loading...</div>}>
+        <Chat />
+      </Suspense>
     </ErrorBoundary>
   );
 }

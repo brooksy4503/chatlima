@@ -24,8 +24,11 @@ Crawl-delay: 1
 User-agent: *
 Disallow: /chat/*
 
-# Allow access to public pages
+# Allow access to public pages and SEO pages
 Allow: /$
+Allow: /model/
+Allow: /models
+Allow: /compare/
 Allow: /docs
 Allow: /docs/*
 

@@ -8,10 +8,10 @@ import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator'
  */
 export async function GET(
     request: NextRequest,
-    { params }: { params: { modelId: string } }
+    { params }: { params: Promise<{ modelId: string }> }
 ) {
     try {
-        const { modelId } = params;
+        const { modelId } = await params;
 
         if (!modelId) {
             return NextResponse.json(
