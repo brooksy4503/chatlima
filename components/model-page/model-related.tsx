@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ModelInfo } from '@/lib/types/models';
+import { modelIdToSlug } from '@/lib/models/slug-utils';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -22,7 +23,7 @@ export function ModelRelated({ models }: ModelRelatedProps) {
       </p>
       <div className="space-y-3">
         {models.map(model => {
-          const slug = model.id.replace(/\//g, '-').toLowerCase();
+          const slug = modelIdToSlug(model.id);
           const isFree = model.id.endsWith(':free');
 
           return (

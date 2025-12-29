@@ -10,13 +10,33 @@ import { ModelPrompts } from '@/components/model-page/model-prompts';
 import { ModelRelated } from '@/components/model-page/model-related';
 import { ModelPremiumBanner } from '@/components/model-page/model-premium-banner';
 import { ModelComparisonLinks } from '@/components/model-page/model-comparison-links';
+import { ModelStructuredData } from '@/components/model-page/model-structured-data';
 import { auth } from '@/lib/auth';
 import { getRemainingCreditsByExternalId, hasUnlimitedFreeModels } from '@/lib/polar';
 import { headers } from 'next/headers';
 
+// Helper to safely get headers, returning null during static generation
+async function safeGetHeaders() {
+  try {
+    return await headers();
+  } catch (error: any) {
+    // During static generation, headers() throws DYNAMIC_SERVER_USAGE
+    // Return null to indicate we're in static generation
+    if (error?.digest === 'DYNAMIC_SERVER_USAGE') {
+      return null;
+    }
+    throw error;
+  }
+}
+
 // Use 'auto' to allow dynamic rendering for models not in top 100
 // while still pre-rendering top models at build time
+// Note: Routes that use headers() will automatically become dynamic
 export const dynamic = 'auto';
+// Allow dynamic params for models not in generateStaticParams
+export const dynamicParams = true;
+// ISR: Revalidate every hour (3600 seconds) for fresh model data
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   try {
@@ -230,37 +250,62 @@ export default async function ModelPage({ params }: { params: Promise<{ slug: st
   // Check if user can access premium models
   let canAccessPremium = true; // Default to true for free models
   if (isPremium) {
-    try {
-      const session = await auth.api.getSession({ headers: await headers() });
-      const isAnonymous = !session?.user?.id || ((session.user as any)?.isAnonymous === true);
-      const userId = session?.user?.id;
+    // During static generation, headers() is not available
+    // Default to false (no access) for security - page will be re-rendered on-demand
+    const headersList = await safeGetHeaders();
+    if (headersList) {
+      try {
+        const session = await auth.api.getSession({ headers: headersList });
+        const isAnonymous = !session?.user?.id || ((session.user as any)?.isAnonymous === true);
+        const userId = session?.user?.id;
 
-      if (isAnonymous) {
-        canAccessPremium = false;
-      } else if (userId) {
-        // Check for unlimited free models subscription (yearly plan)
-        const hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
-        
-        if (hasUnlimitedFreeModelsAccess) {
-          // Yearly subscribers can only access free models, not premium
+        if (isAnonymous) {
           canAccessPremium = false;
+        } else if (userId) {
+          // Check for unlimited free models subscription (yearly plan)
+          const hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
+          
+          if (hasUnlimitedFreeModelsAccess) {
+            // Yearly subscribers can only access free models, not premium
+            canAccessPremium = false;
+          } else {
+            // Check if user has credits
+            const credits = await getRemainingCreditsByExternalId(userId);
+            canAccessPremium = typeof credits === 'number' && credits > 0;
+          }
         } else {
-          // Check if user has credits
-          const credits = await getRemainingCreditsByExternalId(userId);
-          canAccessPremium = typeof credits === 'number' && credits > 0;
+          canAccessPremium = false;
         }
-      } else {
+      } catch (error) {
+        // If check fails, assume no access for security
+        console.warn('Error checking premium access:', error);
         canAccessPremium = false;
       }
-    } catch (error) {
-      // If check fails, assume no access for security
-      console.warn('Error checking premium access:', error);
+    } else {
+      // During static generation, default to no access
+      // Page will be re-rendered on-demand with proper headers
       canAccessPremium = false;
     }
   }
 
+  // Get base URL for structured data
+  // During static generation, use environment variable or default
+  let baseUrl = 'https://chatlima.com';
+  const headersList = await safeGetHeaders();
+  if (headersList) {
+    const host = headersList.get('host') || 'chatlima.com';
+    const protocol = headersList.get('x-forwarded-proto') || 'https';
+    baseUrl = `${protocol}://${host}`;
+  } else {
+    // During static generation, use environment variable or default
+    baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL || 'chatlima.com'}`
+      : 'https://chatlima.com';
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <ModelStructuredData model={model} isFree={isFree} baseUrl={baseUrl} slug={decodedSlug} />
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <ModelHero model={model} isFree={isFree} canAccessPremium={canAccessPremium} />
 
