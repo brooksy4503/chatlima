@@ -445,9 +445,35 @@ export async function POST(req: Request) {
             estimatedTokens: 30 // Basic estimate
         });
 
-        // 5a. Increment daily message usage for users without credits (using free daily messages)
-        // Users with credits are using credits instead, so don't increment daily usage
+        // 5a. Check and increment daily message usage for users without credits (using free daily messages)
+        // Users with credits are using credits instead, so don't check/increment daily usage
         if (!creditValidation.hasCredits) {
+            // First, check if the user has reached their daily limit BEFORE incrementing
+            const limitCheck = await DailyMessageUsageService.checkDailyLimit(
+                authenticatedUser.userId
+            );
+
+            if (limitCheck.hasReachedLimit) {
+                console.log(`[Chat] Daily message limit reached:`, {
+                    userId: authenticatedUser.userId,
+                    isAnonymous: authenticatedUser.isAnonymous,
+                    messageCount: limitCheck.messageCount,
+                    limit: limitCheck.limit,
+                    remaining: limitCheck.remaining
+                });
+                return createErrorResponse(
+                    "MESSAGE_LIMIT_REACHED",
+                    "Message limit reached",
+                    429,
+                    JSON.stringify({
+                        limit: limitCheck.limit,
+                        remaining: limitCheck.remaining,
+                        messageCount: limitCheck.messageCount
+                    })
+                );
+            }
+
+            // Only increment if limit hasn't been reached
             try {
                 const incrementResult = await DailyMessageUsageService.incrementDailyUsage(
                     authenticatedUser.userId,
@@ -457,11 +483,12 @@ export async function POST(req: Request) {
                     userId: authenticatedUser.userId,
                     isAnonymous: authenticatedUser.isAnonymous,
                     newCount: incrementResult.newCount,
-                    date: incrementResult.date
+                    date: incrementResult.date,
+                    remaining: limitCheck.remaining - 1
                 });
             } catch (error) {
                 console.error(`[Chat] Failed to increment daily usage:`, error);
-                // Don't block the request if incrementing fails
+                // Don't block the request if incrementing fails (but log it)
             }
         } else {
             console.log(`[Chat] Skipping daily usage increment - user has credits (${creditValidation.actualCredits})`);
