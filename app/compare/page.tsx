@@ -5,10 +5,6 @@ import Link from 'next/link';
 import { GitCompare, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export async function generateStaticParams() {
-  return getAllPrebuiltComparisonSlugs().map(slug => ({ slug }));
-}
-
 export const dynamic = 'auto';
 
 export async function generateMetadata() {

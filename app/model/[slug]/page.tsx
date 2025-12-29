@@ -126,13 +126,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // Update modelId to the actual found model's ID
   modelId = model.id;
 
-  if (!model) {
-    return {
-      title: 'Model Not Found - ChatLima',
-      description: 'This AI model could not be found. Explore our available models.'
-    };
-  }
-
   const isFree = model.id.endsWith(':free');
 
   return {
@@ -298,9 +291,9 @@ export default async function ModelPage({ params }: { params: Promise<{ slug: st
     baseUrl = `${protocol}://${host}`;
   } else {
     // During static generation, use environment variable or default
-    baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL || 'chatlima.com'}`
-      : 'https://chatlima.com';
+    // Prioritize NEXT_PUBLIC_SITE_URL, then VERCEL_URL, then default
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL || 'chatlima.com';
+    baseUrl = siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`;
   }
 
   return (

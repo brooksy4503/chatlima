@@ -152,7 +152,9 @@ export async function GET(request: NextRequest) {
             if (displayMode) {
                 // Helper function to determine if a model is accessible to the user
                 const isModelAccessible = (m: any): boolean => {
-                    // Free models are always accessible
+                    // Free models are accessible to everyone:
+                    // - Regular users: accessible with daily message limits
+                    // - Yearly subscribers (hasUnlimitedFreeModelsAccess): accessible with unlimited messages
                     if (m.id.endsWith(':free')) {
                         return true;
                     }
@@ -166,10 +168,6 @@ export async function GET(request: NextRequest) {
                         return true;
                     }
                     if (m.id.startsWith('requesty/') && hasUserProvidedRequestyKey) {
-                        return true;
-                    }
-                    // Yearly subscribers can access free models
-                    if (hasUnlimitedFreeModelsAccess && m.id.endsWith(':free')) {
                         return true;
                     }
                     return false;
