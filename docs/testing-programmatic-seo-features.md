@@ -184,13 +184,25 @@ open http://localhost:3000/model/openai-gpt-4o-mini-free
 open http://localhost:3000/compare/openai-gpt-5-pro-vs-anthropic-claude-3-5-sonnet
 ```
 
-### Run Automated Tests (if available)
+### Run Automated Tests
 ```bash
 # Run Playwright tests
 pnpm test:local
 
 # Run unit tests
 pnpm test:unit
+
+# Test SEO pages (quick test - 20 models, 10 comparisons)
+pnpm test:seo
+
+# Test SEO pages on staging/preview
+pnpm test:seo:staging
+
+# Test all SEO pages (100 models, 20 comparisons)
+pnpm test:seo:all
+
+# Test with custom parameters
+MAX_MODELS=50 MAX_COMPARISONS=15 BASE_URL=http://localhost:3000 pnpm test:seo
 ```
 
 ## Common Issues to Watch For
@@ -202,9 +214,73 @@ pnpm test:unit
 5. **Responsive Design**: Verify all pages work on mobile devices
 6. **SEO**: Check that metadata is correct for search engines
 
+## Automated SEO Page Testing
+
+A dedicated test script (`scripts/test-seo-pages.ts`) is available to verify that all programmatic SEO pages exist and are accessible.
+
+### Features
+
+- ✅ Tests static pages (/, /models, /compare)
+- ✅ Tests top model pages (configurable, default: 20)
+- ✅ Tests comparison pages (configurable, default: 10)
+- ✅ Tests sitemap.xml (production only)
+- ✅ Tests robots.txt
+- ✅ Concurrent requests for faster testing
+- ✅ Detailed error reporting
+- ✅ Works on both dev server and staging
+
+### Usage Examples
+
+```bash
+# Quick test on local dev server (default: 20 models, 10 comparisons)
+pnpm test:seo
+
+# Test on staging/preview environment
+pnpm test:seo:staging
+
+# Test all pages (100 models, 20 comparisons)
+pnpm test:seo:all
+
+# Custom configuration
+MAX_MODELS=50 MAX_COMPARISONS=15 BASE_URL=http://localhost:3000 pnpm test:seo
+
+# Test on production (if you have access)
+BASE_URL=https://chatlima.com MAX_MODELS=100 pnpm test:seo
+```
+
+### Environment Variables
+
+- `BASE_URL`: Base URL to test against (default: `http://localhost:3000`)
+- `MAX_MODELS`: Maximum number of model pages to test (default: `20`)
+- `MAX_COMPARISONS`: Maximum number of comparison pages to test (default: `10`)
+- `CONCURRENT_REQUESTS`: Number of concurrent requests (default: `5`)
+
+### Output
+
+The script provides:
+- ✅ Pass/fail status for each page
+- ⚠️ Error details for failed pages
+- 📊 Summary statistics
+- ⏱️ Total execution time
+
+### Testing on Staging
+
+To test on `preview.chatlima.com`:
+
+```bash
+# Quick test
+pnpm test:seo:staging
+
+# Full test
+BASE_URL=https://preview.chatlima.com MAX_MODELS=100 MAX_COMPARISONS=20 pnpm test:seo
+```
+
+**Note**: The script is lightweight and safe to run on staging. It only makes GET requests and doesn't modify any data.
+
 ## Notes
 
 - The sitemap only generates in production (chatlima.com domain)
 - Model pages use static generation for top 100 models
 - Comparison pages use static generation for prebuilt comparisons
 - All pages should be responsive and mobile-friendly
+- The test script can verify page existence but not content quality - manual review is still recommended

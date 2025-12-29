@@ -258,7 +258,7 @@ export const PREBUILT_COMPARISONS: Array<{
   },
   {
     model1Id: 'openai/gpt-5-pro',
-    model2Id: 'z-ai/glm-4.7',
+    model2Id: 'openrouter/z-ai/glm-4.7',
     reason: 'GPT-5 vs GLM-4.7 comparison'
   },
   {
