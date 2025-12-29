@@ -5,6 +5,7 @@
 
 export function modelIdToSlug(modelId: string): string {
   return modelId
+    .replace(/:free$/g, '-free')   // Convert :free suffix to -free (URL-safe)
     .replace(/\//g, '-')           // Replace all slashes with dashes
     .replace(/--+/g, '-')          // Collapse multiple dashes
     .replace(/^-+|-+$/g, '')      // Remove leading/trailing dashes
@@ -46,7 +47,10 @@ export function slugToModelId(slug: string): string {
 
   // For slugs without provider prefix, try to reconstruct
   // This is a best-effort conversion; prefer storing original model IDs
-  const parts = slug.split('-');
+  
+  // Handle backward compatibility: convert :free to -free if present
+  const normalizedSlug = slug.replace(/:free$/g, '-free');
+  const parts = normalizedSlug.split('-');
 
   // Try to identify provider from first part
   const provider = parts[0];

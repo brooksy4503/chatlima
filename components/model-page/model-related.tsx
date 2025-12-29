@@ -29,7 +29,7 @@ export function ModelRelated({ models }: ModelRelatedProps) {
           return (
             <Link
               key={model.id}
-              href={`/model/${slug}`}
+              href={`/model/${encodeURIComponent(slug)}`}
               className="block bg-muted/40 rounded-lg p-4 hover:bg-muted/80 transition-colors"
             >
               <div className="flex items-start justify-between">

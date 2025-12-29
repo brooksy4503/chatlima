@@ -18,7 +18,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const comparison = parseComparisonSlug(slug);
+  // Decode URL-encoded characters (e.g., %3A becomes :) for backward compatibility
+  // Normalize :free to -free for URL safety (handles both old and new formats)
+  const decodedSlug = decodeURIComponent(slug).replace(/:free/g, '-free');
+  const comparison = parseComparisonSlug(decodedSlug);
 
   if (!comparison) {
     return {
@@ -41,7 +44,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ComparisonPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const comparison = parseComparisonSlug(slug);
+  // Decode URL-encoded characters (e.g., %3A becomes :) for backward compatibility
+  // Normalize :free to -free for URL safety (handles both old and new formats)
+  const decodedSlug = decodeURIComponent(slug).replace(/:free/g, '-free');
+  const comparison = parseComparisonSlug(decodedSlug);
 
   if (!comparison) {
     notFound();
@@ -160,13 +166,13 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
 
         <div className="mt-12 pt-12 border-t border-border/40">
           <div className="grid sm:grid-cols-2 gap-6">
-            <Link href={`/model/${comparison.model1Slug}`}>
+            <Link href={`/model/${encodeURIComponent(comparison.model1Slug)}`}>
               <Button variant="outline" className="w-full" size="lg">
                 {model1.name}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href={`/model/${comparison.model2Slug}`}>
+            <Link href={`/model/${encodeURIComponent(comparison.model2Slug)}`}>
               <Button variant="outline" className="w-full" size="lg">
                 {model2.name}
                 <ArrowRight className="ml-2 h-5 w-5" />

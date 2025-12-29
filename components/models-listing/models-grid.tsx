@@ -36,7 +36,7 @@ export function ModelsGrid({ title, models, showBadges, showAccessibleOnly = fal
           return (
             <Link
               key={model.id}
-              href={`/model/${slug}`}
+              href={`/model/${encodeURIComponent(slug)}`}
               className="bg-card rounded-xl p-6 border border-border/50 hover:border-primary/50 transition-all group"
             >
               <div className="space-y-3">
