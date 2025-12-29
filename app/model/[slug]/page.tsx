@@ -41,18 +41,70 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const environmentKeys = getEnvironmentApiKeys();
   const response = await fetchAllModels({ environment: environmentKeys });
   
-  // Try direct conversion first
-  let modelId = slugToModelId(decodedSlug);
-  let model = response.models.find(m => m.id === modelId);
-  
-  // If not found, try to find by matching slug pattern
-  if (!model) {
-    const slugLower = decodedSlug.toLowerCase();
+  // Helper to find model by ID or by matching the model name part
+  const findModel = (targetId: string, targetSlug: string): typeof response.models[0] | undefined => {
+    // Try exact ID match first
+    let model = response.models.find(m => m.id === targetId);
+    if (model) return model;
+
+    // Try matching by slug
+    const targetSlugLower = targetSlug.toLowerCase();
     model = response.models.find(m => {
       const modelSlug = modelIdToSlug(m.id);
-      return modelSlug === slugLower;
+      return modelSlug === targetSlugLower;
     });
+    if (model) return model;
+
+    // Extract model name part (e.g., "claude-3-5-sonnet" from "anthropic/claude-3-5-sonnet")
+    const modelNamePart = targetId.split('/').pop()?.replace(/:free$/, '') || '';
+    if (!modelNamePart) return undefined;
+
+    // Try finding models that end with the model name
+    // Prefer openrouter models first, then requesty, then others
+    const candidates = response.models.filter(m => {
+      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
+      const parts = normalizedId.split('/');
+      const lastPart = parts[parts.length - 1];
+      return lastPart === modelNamePart.toLowerCase() || normalizedId.endsWith(`/${modelNamePart.toLowerCase()}`);
+    });
+
+    if (candidates.length > 0) {
+      // Prefer openrouter models, then requesty, then others
+      const openrouterModel = candidates.find(m => m.id.startsWith('openrouter/'));
+      if (openrouterModel) return openrouterModel;
+      
+      const requestyModel = candidates.find(m => m.id.startsWith('requesty/'));
+      if (requestyModel) return requestyModel;
+      
+      // Return first match
+      return candidates[0];
+    }
+
+    // Last resort: try partial match
+    model = response.models.find(m => {
+      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
+      return normalizedId.includes(modelNamePart.toLowerCase());
+    });
+    return model;
+  };
+
+  // Try direct conversion first
+  let modelId = slugToModelId(decodedSlug);
+  let model = findModel(modelId, decodedSlug);
+  
+  if (!model) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[Model Page Metadata] Model not found for slug: ${decodedSlug}`);
+      console.error(`Tried modelId: ${modelId}`);
+    }
+    return {
+      title: 'Model Not Found - ChatLima',
+      description: 'This AI model could not be found. Explore our available models.'
+    };
   }
+  
+  // Update modelId to the actual found model's ID
+  modelId = model.id;
 
   if (!model) {
     return {
@@ -105,28 +157,71 @@ export default async function ModelPage({ params }: { params: Promise<{ slug: st
     notFound();
   }
   
-  // Try direct conversion first
-  let modelId = slugToModelId(decodedSlug);
-  let model = response.models.find(m => m.id === modelId);
-  
-  // If not found, try to find by matching slug pattern
-  // This handles cases where model IDs have multiple slashes (e.g., openrouter/nvidia/model-name)
-  if (!model) {
-    const slugLower = decodedSlug.toLowerCase();
+  // Helper to find model by ID or by matching the model name part
+  const findModel = (targetId: string, targetSlug: string): typeof response.models[0] | undefined => {
+    // Try exact ID match first
+    let model = response.models.find(m => m.id === targetId);
+    if (model) return model;
+
+    // Try matching by slug
+    const targetSlugLower = targetSlug.toLowerCase();
     model = response.models.find(m => {
       const modelSlug = modelIdToSlug(m.id);
-      return modelSlug === slugLower;
+      return modelSlug === targetSlugLower;
     });
-    
-    if (model) {
-      modelId = model.id;
+    if (model) return model;
+
+    // Extract model name part (e.g., "claude-3-5-sonnet" from "anthropic/claude-3-5-sonnet")
+    const modelNamePart = targetId.split('/').pop()?.replace(/:free$/, '') || '';
+    if (!modelNamePart) return undefined;
+
+    // Try finding models that end with the model name (handles openrouter/anthropic/claude-3-5-sonnet when looking for anthropic/claude-3-5-sonnet)
+    // Prefer openrouter models first, then requesty, then others
+    const candidates = response.models.filter(m => {
+      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
+      const parts = normalizedId.split('/');
+      const lastPart = parts[parts.length - 1];
+      return lastPart === modelNamePart.toLowerCase() || normalizedId.endsWith(`/${modelNamePart.toLowerCase()}`);
+    });
+
+    if (candidates.length > 0) {
+      // Prefer openrouter models, then requesty, then others
+      const openrouterModel = candidates.find(m => m.id.startsWith('openrouter/'));
+      if (openrouterModel) return openrouterModel;
+      
+      const requestyModel = candidates.find(m => m.id.startsWith('requesty/'));
+      if (requestyModel) return requestyModel;
+      
+      // Return first match
+      return candidates[0];
     }
-  }
+
+    // Last resort: try partial match
+    model = response.models.find(m => {
+      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
+      return normalizedId.includes(modelNamePart.toLowerCase());
+    });
+    return model;
+  };
+
+  // Try direct conversion first
+  let modelId = slugToModelId(decodedSlug);
+  let model = findModel(modelId, decodedSlug);
 
   if (!model) {
-    console.error(`Model not found for slug: ${decodedSlug}, tried modelId: ${modelId}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[Model Page] Model not found for slug: ${decodedSlug}`);
+      console.error(`Tried modelId: ${modelId}`);
+      console.error(`Sample available models:`, response.models.slice(0, 10).map(m => m.id));
+      console.error(`Similar models:`, response.models.filter(m => 
+        m.id.toLowerCase().includes(modelId.split('/').pop()?.toLowerCase() || '')
+      ).slice(0, 5).map(m => m.id));
+    }
     notFound();
   }
+  
+  // Update modelId to the actual found model's ID
+  modelId = model.id;
 
   const relatedModels = getRelatedModels(model, response.models, 4);
   const isFree = model.id.endsWith(':free');

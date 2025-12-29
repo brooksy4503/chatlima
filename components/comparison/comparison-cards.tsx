@@ -7,30 +7,32 @@ interface ComparisonCardsProps {
 
 export function ComparisonCards({ model1, model2 }: ComparisonCardsProps) {
   return (
-    <div className="grid sm:grid-cols-2 gap-6">
-      <div className="bg-card rounded-xl p-6 border border-border/50">
-        <div className="flex items-center gap-3 mb-4">
-          <h3 className="text-2xl font-bold text-foreground">
-            {model1.name}
-          </h3>
-          {model1.premium && (
-            <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-medium">
-              Premium
-            </span>
-          )}
-          {model1.id.endsWith(':free') && (
-            <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-sm font-medium">
-              Free
-            </span>
-          )}
+    <div className="grid sm:grid-cols-2 gap-6 w-full">
+      <div className="bg-card rounded-xl p-6 border border-border/50 flex flex-col h-full w-full">
+        <div className="mb-4">
+          <div className="flex items-center flex-wrap gap-2 mb-2">
+            <h3 className="text-2xl font-bold text-foreground break-words">
+              {model1.name}
+            </h3>
+            {model1.premium && (
+              <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0">
+                Premium
+              </span>
+            )}
+            {model1.id.endsWith(':free') && (
+              <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0">
+                Free
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 flex-1">
           <div>
             <h4 className="text-lg font-semibold text-foreground mb-2">
               Description
             </h4>
-            <p className="text-foreground/90 text-sm leading-relaxed">
+            <p className="text-foreground/90 text-sm leading-relaxed break-words">
               {model1.description || 'No description available'}
             </p>
           </div>
@@ -81,29 +83,31 @@ export function ComparisonCards({ model1, model2 }: ComparisonCardsProps) {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl p-6 border border-border/50">
-        <div className="flex items-center gap-3 mb-4">
-          <h3 className="text-2xl font-bold text-foreground">
-            {model2.name}
-          </h3>
-          {model2.premium && (
-            <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-medium">
-              Premium
-            </span>
-          )}
-          {model2.id.endsWith(':free') && (
-            <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-sm font-medium">
-              Free
-            </span>
-          )}
+      <div className="bg-card rounded-xl p-6 border border-border/50 flex flex-col h-full w-full">
+        <div className="mb-4">
+          <div className="flex items-center flex-wrap gap-2 mb-2">
+            <h3 className="text-2xl font-bold text-foreground break-words">
+              {model2.name}
+            </h3>
+            {model2.premium && (
+              <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0">
+                Premium
+              </span>
+            )}
+            {model2.id.endsWith(':free') && (
+              <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0">
+                Free
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 flex-1">
           <div>
             <h4 className="text-lg font-semibold text-foreground mb-2">
               Description
             </h4>
-            <p className="text-foreground/90 text-sm leading-relaxed">
+            <p className="text-foreground/90 text-sm leading-relaxed break-words">
               {model2.description || 'No description available'}
             </p>
           </div>

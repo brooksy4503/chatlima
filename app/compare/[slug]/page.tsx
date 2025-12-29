@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getModelDetails, fetchAllModels, getEnvironmentApiKeys } from '@/lib/models/fetch-models';
-import { parseComparisonSlug, slugToModelId } from '@/lib/models/slug-utils';
+import { parseComparisonSlug, slugToModelId, modelIdToSlug } from '@/lib/models/slug-utils';
 import { ComparisonTable } from '@/components/comparison/comparison-table';
 import { ComparisonCards } from '@/components/comparison/comparison-cards';
 import { ArrowRight } from 'lucide-react';
@@ -51,22 +51,91 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
   const model2Id = slugToModelId(comparison.model2Slug);
 
   const environmentKeys = getEnvironmentApiKeys();
-  const response = await fetchAllModels({ environment: environmentKeys });
-  const model1 = response.models.find(m => m.id === model1Id);
-  const model2 = response.models.find(m => m.id === model2Id);
+  let response;
+  try {
+    response = await fetchAllModels({ environment: environmentKeys });
+  } catch (error) {
+    console.error('Failed to fetch models:', error);
+    notFound();
+  }
+
+  // Helper to find model by ID or by matching the model name part
+  const findModel = (targetId: string, targetSlug: string): typeof response.models[0] | undefined => {
+    // Try exact ID match first
+    let model = response.models.find(m => m.id === targetId);
+    if (model) return model;
+
+    // Try matching by slug
+    const targetSlugLower = targetSlug.toLowerCase();
+    model = response.models.find(m => {
+      const modelSlug = modelIdToSlug(m.id);
+      return modelSlug === targetSlugLower;
+    });
+    if (model) return model;
+
+    // Extract model name part (e.g., "gpt-5-pro" from "openai/gpt-5-pro")
+    const modelNamePart = targetId.split('/').pop()?.replace(/:free$/, '') || '';
+    if (!modelNamePart) return undefined;
+
+    // Try finding models that end with the model name (handles openrouter/openai/gpt-5-pro when looking for openai/gpt-5-pro)
+    // Prefer openrouter models first, then others
+    const candidates = response.models.filter(m => {
+      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
+      const parts = normalizedId.split('/');
+      const lastPart = parts[parts.length - 1];
+      return lastPart === modelNamePart.toLowerCase() || normalizedId.endsWith(`/${modelNamePart.toLowerCase()}`);
+    });
+
+    if (candidates.length > 0) {
+      // Prefer openrouter models, then requesty, then others
+      const openrouterModel = candidates.find(m => m.id.startsWith('openrouter/'));
+      if (openrouterModel) return openrouterModel;
+      
+      const requestyModel = candidates.find(m => m.id.startsWith('requesty/'));
+      if (requestyModel) return requestyModel;
+      
+      // Return first match
+      return candidates[0];
+    }
+
+    // Last resort: try partial match
+    model = response.models.find(m => {
+      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
+      return normalizedId.includes(modelNamePart.toLowerCase());
+    });
+    return model;
+  };
+
+  const model1 = findModel(model1Id, comparison.model1Slug);
+  const model2 = findModel(model2Id, comparison.model2Slug);
 
   if (!model1 || !model2) {
-    // Log for debugging in development
+    // Enhanced logging for debugging
     if (process.env.NODE_ENV === 'development') {
-      console.error('Comparison page - Models not found:', {
+      const debugInfo = {
         slug,
+        parsedComparison: comparison,
+        model1Slug: comparison.model1Slug,
+        model2Slug: comparison.model2Slug,
         model1Id,
         model2Id,
         model1Found: !!model1,
         model2Found: !!model2,
         totalModels: response.models.length,
-        availableModelIds: response.models.slice(0, 10).map(m => m.id)
-      });
+        sampleModelIds: response.models.slice(0, 20).map(m => m.id),
+        // Check for similar model IDs
+        similarModel1: response.models.filter(m => 
+          m.id.includes(model1Id.split('/').pop() || '') || 
+          model1Id.includes(m.id.split('/').pop() || '')
+        ).slice(0, 3).map(m => m.id),
+        similarModel2: response.models.filter(m => 
+          m.id.includes(model2Id.split('/').pop() || '') || 
+          model2Id.includes(m.id.split('/').pop() || '')
+        ).slice(0, 3).map(m => m.id),
+      };
+      // Use console.error with stringified object to ensure it's logged properly
+      console.error('[Comparison Page] Models not found');
+      console.error(JSON.stringify(debugInfo, null, 2));
     }
     notFound();
   }
@@ -83,7 +152,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
+        <div className="mb-12">
           <ComparisonCards model1={model1} model2={model2} />
         </div>
 
