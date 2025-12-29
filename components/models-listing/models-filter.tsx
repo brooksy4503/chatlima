@@ -34,16 +34,6 @@ export function ModelsFilter({ activeFilter, onFilterChange }: ModelsFilterProps
           `}
         >
           {filter.label}
-          {activeFilter === filter.type && (
-            <span className="ml-2 inline-flex items-center gap-1">
-              <span className="font-semibold">
-                {(FILTERS.find(f => f.type === activeFilter)?.label || 'Unknown')}
-              </span>
-              <span className="text-xs opacity-75">
-                ({FILTERS.find(f => f.type !== activeFilter)?.label || 'Other'})
-              </span>
-            </span>
-          )}
         </button>
       ))}
     </div>

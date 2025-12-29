@@ -1,4 +1,6 @@
-import { getAllPrebuiltComparisonSlugs } from '@/lib/models/model-priority';
+import { getAllPrebuiltComparisonSlugs, PREBUILT_COMPARISONS } from '@/lib/models/model-priority';
+import { fetchAllModels, getEnvironmentApiKeys } from '@/lib/models/fetch-models';
+import { modelIdToSlug } from '@/lib/models/slug-utils';
 import Link from 'next/link';
 import { GitCompare, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +9,7 @@ export async function generateStaticParams() {
   return getAllPrebuiltComparisonSlugs().map(slug => ({ slug }));
 }
 
-export const dynamic = 'force-static';
+export const dynamic = 'auto';
 
 export async function generateMetadata() {
   return {
@@ -22,7 +24,24 @@ export async function generateMetadata() {
   };
 }
 
-export default function ComparePage() {
+export default async function ComparePage() {
+  // Fetch models to get display names
+  const environmentKeys = getEnvironmentApiKeys();
+  const response = await fetchAllModels({ environment: environmentKeys });
+  
+  // Get the first 7 popular comparisons with their display names
+  const popularComparisons = PREBUILT_COMPARISONS.slice(0, 7).map(comp => {
+    const model1 = response.models.find(m => m.id === comp.model1Id);
+    const model2 = response.models.find(m => m.id === comp.model2Id);
+    const slug = modelIdToSlug(comp.model1Id) + '-vs-' + modelIdToSlug(comp.model2Id);
+    
+    return {
+      model1Name: model1?.name || comp.model1Id.split('/').pop() || 'Unknown',
+      model2Name: model2?.name || comp.model2Id.split('/').pop() || 'Unknown',
+      slug,
+    };
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -43,15 +62,7 @@ export default function ComparePage() {
             Popular Comparisons
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
-            {[
-              { model1: 'GPT-5 Pro', model2: 'Claude 4', slug: 'openai-gpt-5-pro-vs-anthropic-claude-3-5-sonnet' },
-              { model1: 'GPT-5 Pro', model2: 'Gemini 3', slug: 'openai-gpt-5-pro-vs-google-gemini-3-flash-preview' },
-              { model1: 'Claude 4', model2: 'Gemini 3', slug: 'anthropic-claude-3-5-sonnet-vs-google-gemini-3-flash-preview' },
-              { model1: 'GPT-5 Chat', model2: 'Claude 3.5', slug: 'openai-gpt-5-chat-vs-anthropic-claude-3-5-sonnet' },
-              { model1: 'Devstral', model2: 'Olmo 3.1', slug: 'mistralai-devstral-2512-vs-allenai-olmo-3-1-32b-think-free' },
-              { model1: 'MiMo V2', model2: 'Olmo 3.1', slug: 'openrouter-xiaomi-mimo-v2-flash-free-vs-allenai-olmo-3-1-32b-think-free' },
-              { model1: 'GPT-5 Pro', model2: 'Gemini 2.5', slug: 'openai-gpt-5-pro-vs-openrouter-gemini-2-5-flash' },
-            ].map(comp => (
+            {popularComparisons.map(comp => (
               <Link
                 key={comp.slug}
                 href={`/compare/${comp.slug}`}
@@ -60,11 +71,11 @@ export default function ComparePage() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="text-lg font-semibold text-foreground mb-1">
-                      {comp.model1}
+                      {comp.model1Name}
                     </h3>
                     <span className="text-muted-foreground">vs</span>
                     <h3 className="text-lg font-semibold text-foreground">
-                      {comp.model2}
+                      {comp.model2Name}
                     </h3>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />

@@ -1,13 +1,15 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getModelDetails, fetchAllModels } from '@/lib/models/fetch-models';
+import { getModelDetails, fetchAllModels, getEnvironmentApiKeys } from '@/lib/models/fetch-models';
 import { parseComparisonSlug, slugToModelId } from '@/lib/models/slug-utils';
 import { ComparisonTable } from '@/components/comparison/comparison-table';
 import { ComparisonCards } from '@/components/comparison/comparison-cards';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export const dynamic = 'force-static';
+// Use 'auto' instead of 'force-static' to allow dynamic generation in development
+// Pages will still be statically generated at build time when possible
+export const dynamic = 'auto';
 
 export async function generateStaticParams() {
   const { getAllPrebuiltComparisonSlugs } = await import('@/lib/models/model-priority');
@@ -48,11 +50,24 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
   const model1Id = slugToModelId(comparison.model1Slug);
   const model2Id = slugToModelId(comparison.model2Slug);
 
-  const response = await fetchAllModels({ environment: {} });
+  const environmentKeys = getEnvironmentApiKeys();
+  const response = await fetchAllModels({ environment: environmentKeys });
   const model1 = response.models.find(m => m.id === model1Id);
   const model2 = response.models.find(m => m.id === model2Id);
 
   if (!model1 || !model2) {
+    // Log for debugging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Comparison page - Models not found:', {
+        slug,
+        model1Id,
+        model2Id,
+        model1Found: !!model1,
+        model2Found: !!model2,
+        totalModels: response.models.length,
+        availableModelIds: response.models.slice(0, 10).map(m => m.id)
+      });
+    }
     notFound();
   }
 

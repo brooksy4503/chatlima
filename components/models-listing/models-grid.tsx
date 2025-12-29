@@ -1,17 +1,23 @@
 import Link from 'next/link';
 import { ModelInfo } from '@/lib/types/models';
 import { modelIdToSlug } from '@/lib/models/slug-utils';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ModelsGridProps {
   title: string;
   models: ModelInfo[];
   showBadges: boolean;
+  showAccessibleOnly?: boolean; // If true, only show accessible models (for filtered lists)
 }
 
-export function ModelsGrid({ title, models, showBadges }: ModelsGridProps) {
-  if (models.length === 0) {
+export function ModelsGrid({ title, models, showBadges, showAccessibleOnly = false }: ModelsGridProps) {
+  // Filter models if showAccessibleOnly is true (for filtered lists)
+  const displayModels = showAccessibleOnly 
+    ? models.filter(m => m.accessible !== false) // Show all models where accessible is not explicitly false
+    : models;
+
+  if (displayModels.length === 0) {
     return null;
   }
 
@@ -21,9 +27,11 @@ export function ModelsGrid({ title, models, showBadges }: ModelsGridProps) {
         {title}
       </h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {models.map(model => {
+        {displayModels.map(model => {
           const slug = modelIdToSlug(model.id);
           const isFree = model.id.endsWith(':free');
+          const isAccessible = model.accessible !== false; // Default to true if not specified (backward compatibility)
+          const isPremium = model.premium && !isFree;
 
           return (
             <Link
@@ -55,6 +63,16 @@ export function ModelsGrid({ title, models, showBadges }: ModelsGridProps) {
                         Free
                       </span>
                     )}
+                    {isPremium && (
+                      <span className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
+                        isAccessible 
+                          ? 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' 
+                          : 'bg-yellow-500/10 text-yellow-600/70 dark:text-yellow-400/70'
+                      }`}>
+                        {!isAccessible && <Lock className="h-3 w-3" />}
+                        Premium
+                      </span>
+                    )}
                     {model.vision && (
                       <span className="bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-1 rounded-md text-xs font-medium">
                         Vision
@@ -80,9 +98,11 @@ export function ModelsGrid({ title, models, showBadges }: ModelsGridProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full group-hover:bg-primary/10"
+                  className={`w-full group-hover:bg-primary/10 ${
+                    isPremium && !isAccessible ? 'opacity-75' : ''
+                  }`}
                 >
-                  {isFree ? 'Chat Free' : 'View Details'}
+                  {isFree ? 'Chat Free' : isPremium && !isAccessible ? 'Upgrade to Access' : 'View Details'}
                   <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </div>

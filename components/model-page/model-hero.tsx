@@ -1,14 +1,18 @@
 import Link from 'next/link';
-import { Sparkles, Zap, ArrowRight } from 'lucide-react';
+import { Sparkles, Zap, ArrowRight, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ModelInfo } from '@/lib/types/models';
 
 interface ModelHeroProps {
   model: ModelInfo;
   isFree: boolean;
+  canAccessPremium?: boolean; // Whether user can access premium models (for premium models only)
 }
 
-export function ModelHero({ model, isFree }: ModelHeroProps) {
+export function ModelHero({ model, isFree, canAccessPremium = true }: ModelHeroProps) {
+  const isPremium = model.premium && !isFree;
+  const canAccess = isFree || (isPremium && canAccessPremium);
+
   return (
     <div className="bg-gradient-to-br from-primary/10 via-background to-primary/5 rounded-2xl p-8 border border-primary/20">
       <div className="flex items-start justify-between mb-6">
@@ -22,8 +26,11 @@ export function ModelHero({ model, isFree }: ModelHeroProps) {
                 Free
               </span>
             )}
-            {model.premium && (
-              <span className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+            {isPremium && (
+              <span className={`bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${
+                !canAccessPremium ? 'opacity-75' : ''
+              }`}>
+                {!canAccessPremium && <Lock className="h-4 w-4" />}
                 <Sparkles className="h-4 w-4" />
                 Premium
               </span>
@@ -39,12 +46,22 @@ export function ModelHero({ model, isFree }: ModelHeroProps) {
         {model.description}
       </p>
 
-      <Link href={`/chat?model=${model.id}`}>
-        <Button size="lg" className="w-full sm:w-auto group">
-          {isFree ? 'Chat Now' : 'Start Chat'}
-          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-        </Button>
-      </Link>
+      {canAccess ? (
+        <Link href={`/?model=${encodeURIComponent(model.id)}`}>
+          <Button size="lg" className="w-full sm:w-auto group">
+            {isFree ? 'Chat Now' : 'Start Chat'}
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Button>
+        </Link>
+      ) : (
+        <Link href="/upgrade">
+          <Button size="lg" className="w-full sm:w-auto group" variant="default">
+            <Lock className="mr-2 h-4 w-4" />
+            Upgrade to Access
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }

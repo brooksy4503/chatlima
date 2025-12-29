@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { fetchAllModels } from '@/lib/models/fetch-models';
+import { useModels } from '@/hooks/use-models';
 import { modelIdToSlug } from '@/lib/models/slug-utils';
 import { getModelsByCategory } from '@/lib/models/model-priority';
 import { Search, Filter, ArrowRight } from 'lucide-react';
@@ -11,29 +11,27 @@ import { Button } from '@/components/ui/button';
 import { ModelsGrid } from '@/components/models-listing/models-grid';
 import { ModelsFilter, type FilterType } from '@/components/models-listing/models-filter';
 
+const FILTER_LABELS: Record<FilterType, string> = {
+  all: 'All Models',
+  free: 'Free Models',
+  premium: 'Premium Models',
+  vision: 'Vision Models',
+  coding: 'Coding Models',
+  reasoning: 'Reasoning Models',
+};
+
 export default function ModelsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [models, setModels] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadModels() {
-      try {
-        const response = await fetchAllModels({ environment: {} });
-        setModels(response.models);
-      } catch (error) {
-        console.error('Failed to load models:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadModels();
-  }, []);
+  // Fetch filtered models for actual usage (security enforced)
+  const { models, isLoading } = useModels();
+  // Fetch all models for display (marketing/upsell) - includes premium models with accessible flag
+  const { models: allModelsForDisplay, isLoading: isLoadingDisplay } = useModels({ displayMode: true });
 
   const categories = useMemo(() => {
-    if (models.length === 0) {
+    // Use all models for display to show premium models in featured sections
+    const modelsForCategories = allModelsForDisplay.length > 0 ? allModelsForDisplay : models;
+    if (modelsForCategories.length === 0) {
       return {
         premium: [],
         free: [],
@@ -42,32 +40,34 @@ export default function ModelsPage() {
         reasoning: []
       };
     }
-    return getModelsByCategory(models);
-  }, [models]);
+    return getModelsByCategory(modelsForCategories);
+  }, [allModelsForDisplay, models]);
 
   const filteredModels = useMemo(() => {
-    let filtered = models;
+    // Use all models for display so users can see all available models
+    const modelsToFilter = allModelsForDisplay.length > 0 ? allModelsForDisplay : models;
+    let filtered = modelsToFilter;
 
     if (activeFilter !== 'all') {
       switch (activeFilter) {
         case 'free':
-          filtered = models.filter((m: any) => m.id.endsWith(':free'));
+          filtered = modelsToFilter.filter((m: any) => m.id.endsWith(':free'));
           break;
         case 'premium':
-          filtered = models.filter((m: any) => m.premium);
+          filtered = modelsToFilter.filter((m: any) => m.premium);
           break;
         case 'vision':
-          filtered = models.filter((m: any) => m.vision);
+          filtered = modelsToFilter.filter((m: any) => m.vision);
           break;
         case 'coding':
-          filtered = models.filter((m: any) =>
+          filtered = modelsToFilter.filter((m: any) =>
             m.capabilities.some((c: string) =>
               c.toLowerCase().includes('coding') || c.toLowerCase().includes('code')
             )
           );
           break;
         case 'reasoning':
-          filtered = models.filter((m: any) =>
+          filtered = modelsToFilter.filter((m: any) =>
             m.capabilities.some((c: string) =>
               c.toLowerCase().includes('reasoning') || c.toLowerCase().includes('thinking')
             )
@@ -79,15 +79,17 @@ export default function ModelsPage() {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter((m: any) =>
-        m.name.toLowerCase().includes(term) ||
-        m.provider.toLowerCase().includes(term) ||
-        m.capabilities.some((c: string) => c.toLowerCase().includes(term)) ||
+        m.name?.toLowerCase().includes(term) ||
+        m.id?.toLowerCase().includes(term) ||
+        m.apiVersion?.toLowerCase().includes(term) ||
+        m.provider?.toLowerCase().includes(term) ||
+        m.capabilities?.some((c: string) => c.toLowerCase().includes(term)) ||
         (m.description && m.description.toLowerCase().includes(term))
       );
     }
 
     return filtered;
-  }, [models, searchTerm, activeFilter]);
+  }, [allModelsForDisplay, models, searchTerm, activeFilter]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -125,7 +127,7 @@ export default function ModelsPage() {
             </p>
           )}
 
-        {loading ? (
+        {(isLoading || isLoadingDisplay) ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
           </div>
@@ -136,18 +138,20 @@ export default function ModelsPage() {
                 title="Featured Premium Models"
                 models={categories.premium.slice(0, 6)}
                 showBadges={true}
+                showAccessibleOnly={false}
               />
               <ModelsGrid
                 title="Featured Free Models"
                 models={categories.free.slice(0, 6)}
                 showBadges={true}
+                showAccessibleOnly={false}
               />
             </div>
 
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-semibold text-foreground">
-                  All Models ({filteredModels.length})
+                  {FILTER_LABELS[activeFilter]} ({filteredModels.length})
                 </h2>
                 <Link href="/compare">
                   <Button variant="outline">
@@ -175,6 +179,7 @@ export default function ModelsPage() {
                   title=""
                   models={filteredModels}
                   showBadges={false}
+                  showAccessibleOnly={false}
                 />
               )}
             </div>

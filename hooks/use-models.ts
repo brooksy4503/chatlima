@@ -17,7 +17,8 @@ const SWR_CONFIG = {
 // Custom fetcher with API key support
 async function modelsFetcher(
     url: string,
-    userApiKeys?: Record<string, string>
+    userApiKeys?: Record<string, string>,
+    displayMode?: boolean
 ): Promise<ModelsResponse> {
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -28,7 +29,10 @@ async function modelsFetcher(
         headers['x-api-keys'] = JSON.stringify(userApiKeys);
     }
 
-    const response = await fetch(url, { headers });
+    // Add display mode parameter if requested
+    const urlWithParams = displayMode ? `${url}${url.includes('?') ? '&' : '?'}display=true` : url;
+
+    const response = await fetch(urlWithParams, { headers });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -45,6 +49,7 @@ interface UseModelsOptions {
     userApiKeys?: Record<string, string>;
     enabled?: boolean;
     refreshInterval?: number;
+    displayMode?: boolean; // If true, returns all models with accessible flag
 }
 
 interface UseModelsReturn {
@@ -64,23 +69,25 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
         userApiKeys,
         enabled = true,
         refreshInterval = SWR_CONFIG.refreshInterval,
+        displayMode = false,
     } = options;
 
-    // Create a stable key that includes user API keys
+    // Create a stable key that includes user API keys and display mode
     // IMPORTANT: The key MUST change when API keys change to force SWR to refetch
     const swrKey = useMemo(() => {
         if (!enabled) return null;
 
         const baseKey = '/api/models';
         const keyHash = userApiKeys ? JSON.stringify(Object.keys(userApiKeys).sort().map(k => `${k}:${userApiKeys[k].substring(0, 10)}`)) : '';
-        return keyHash ? `${baseKey}?keys=${encodeURIComponent(keyHash)}` : baseKey;
-    }, [enabled, userApiKeys]);
+        const displayParam = displayMode ? '&display=true' : '';
+        return keyHash ? `${baseKey}?keys=${encodeURIComponent(keyHash)}${displayParam}` : `${baseKey}${displayMode ? '?display=true' : ''}`;
+    }, [enabled, userApiKeys, displayMode]);
 
-    // Create a stable fetcher that uses current userApiKeys
+    // Create a stable fetcher that uses current userApiKeys and displayMode
     // This ensures SWR always uses the latest API keys when refetching
     const fetcher = useCallback(() => {
-        return modelsFetcher('/api/models', userApiKeys);
-    }, [userApiKeys]);
+        return modelsFetcher('/api/models', userApiKeys, displayMode);
+    }, [userApiKeys, displayMode]);
 
     // SWR hook with custom fetcher
     const {
@@ -114,7 +121,7 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
         try {
             // Clear cache and force fresh fetch
             const result = await mutate(
-                modelsFetcher('/api/models?force=true', userApiKeys),
+                modelsFetcher('/api/models?force=true', userApiKeys, displayMode),
                 { revalidate: false }
             );
             return result;
@@ -122,7 +129,7 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
             console.error('Error during force refresh:', error);
             throw error;
         }
-    }, [mutate, userApiKeys]);
+    }, [mutate, userApiKeys, displayMode]);
 
     return {
         models: data?.models || [],

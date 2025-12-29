@@ -1,3 +1,5 @@
+"use client";
+
 import { ModelInfo } from '@/lib/types/models';
 import { CopyButton } from '@/components/copy-button';
 
