@@ -159,12 +159,77 @@ export default function FAQPage() {
                   No! ChatLima handles everything for you. You don&apos;t need to sign up for OpenRouter, manage 
                   API keys, or purchase credits separately. When you subscribe to ChatLima, we handle all the 
                   technical setup and provide you with a seamless experience. Just sign in and start chatting—we 
-                  take care of the rest.
+                  take care of rest.
                 </p>
                 <p className="text-card-foreground leading-relaxed mt-4">
                   ChatLima provides additional features and a polished interface that you won&apos;t find on OpenRouter 
                   directly, including MCP tool integrations, preset management, and a user-friendly chat interface.
                 </p>
+              </section>
+
+              <section id="openrouter-api-keys">
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  How do I use my own OpenRouter API key?
+                </h2>
+                <p className="text-card-foreground leading-relaxed mb-4">
+                  ChatLima supports Bring Your Own Key (BYOK) functionality, allowing you to use your own OpenRouter 
+                  API key if you prefer. This gives you full control over your AI usage and billing through OpenRouter directly.
+                </p>
+                <div className="bg-muted p-4 rounded-lg mb-4">
+                  <h3 className="text-xl font-medium text-foreground mb-3">
+                    Benefits of using your own API key:
+                  </h3>
+                  <ul className="space-y-2 text-card-foreground">
+                    <li>• Direct billing through your OpenRouter account</li>
+                    <li>• Access to all models you&apos;ve purchased or have access to</li>
+                    <li>• Bypasses ChatLima credit system and message limits</li>
+                    <li>• Full control over your API usage and spending</li>
+                    <li>• Real-time model availability based on your OpenRouter account</li>
+                  </ul>
+                </div>
+                <p className="text-card-foreground leading-relaxed mb-4">
+                  <strong>How to configure your OpenRouter API key in ChatLima:</strong>
+                </p>
+                <ol className="list-decimal list-inside space-y-3 text-card-foreground ml-4">
+                  <li>
+                    <strong>Get your OpenRouter API key:</strong>
+                    <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                      <li>Sign up or log in to <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline">OpenRouter</a></li>
+                      <li>Navigate to the &quot;Keys&quot; section in your dashboard</li>
+                      <li>Click &quot;Create Key&quot; and give it a name like &quot;ChatLima&quot;</li>
+                      <li>Copy the API key (starts with <code className="bg-muted px-2 py-1 rounded text-sm">sk-or-v1-</code>)</li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>Add the key to ChatLima:</strong>
+                    <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                      <li>Open ChatLima and click the settings icon (⚙️) near the model selector</li>
+                      <li>Find the &quot;OpenRouter API Key&quot; field</li>
+                      <li>Paste your API key</li>
+                      <li>Click &quot;Save&quot;</li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>Start using your models:</strong>
+                    <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                      <li>The model list will automatically refresh to show all available models</li>
+                      <li>Models you have access to will be marked as available</li>
+                      <li>Your usage will be billed directly to your OpenRouter account</li>
+                    </ul>
+                  </li>
+                </ol>
+                <div className="bg-muted p-4 rounded-lg mt-4">
+                  <h3 className="text-xl font-medium text-foreground mb-3">
+                    Notes and Tips:
+                  </h3>
+                  <ul className="space-y-2 text-card-foreground">
+                    <li>• Your API key is stored locally in your browser and is never sent to ChatLima servers</li>
+                    <li>• You can remove or replace your API key at any time from the settings</li>
+                    <li>• The key is only used to make requests directly to OpenRouter</li>
+                    <li>• If you remove the key, you&apos;ll revert to ChatLima&apos;s subscription-based access</li>
+                    <li>• Model availability updates instantly when you add or remove your API key</li>
+                  </ul>
+                </div>
               </section>
 
               <section>
