@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen, Activity } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen, Activity, HelpCircle } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -566,6 +566,20 @@ export function ChatSidebar() {
                             </TooltipTrigger>
                             <TooltipContent side="top" sideOffset={5}>
                                 ChatLima on GitHub
+                            </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Link
+                                    href="/faq"
+                                    className="flex items-center justify-center w-8 h-8 text-muted-foreground/70 hover:text-muted-foreground transition-colors rounded-md hover:bg-secondary/50"
+                                >
+                                    <HelpCircle className="h-4 w-4" />
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={5}>
+                                FAQ
                             </TooltipContent>
                         </Tooltip>
 
