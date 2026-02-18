@@ -24,6 +24,9 @@ import { type ModelInfo } from "@/lib/types/models";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { validatePresetParameters, getModelDefaults, sanitizeSystemInstruction } from "@/lib/parameter-validation";
+import { z } from "zod";
+import { parseFile } from "@/lib/file-reader";
+import { fetchFileContent } from "@/lib/file-upload";
 
 // Import our new services
 import { ChatAuthenticationService, type AuthenticatedUser } from '@/lib/services/chatAuthenticationService';
@@ -688,6 +691,44 @@ export async function POST(req: Request) {
         // Use tools from MCP service
         const tools = mcpResult.tools;
 
+        // Add read_file tool for file analysis
+        const read_file = tool({
+            description: `Read contents of a file uploaded by the user. Supports: CSV, Excel, PDF, text files, code files. Returns parsed content based on file type.`,
+            parameters: z.object({
+                filepath: z.string().describe('Path to file (e.g., "uploads/data-2024-02-06-143022.csv")'),
+            }),
+            execute: async ({ filepath }) => {
+                try {
+                    const blobUrl = `https://${process.env.BLOB_READ_WRITE_TOKEN?.split('_').slice(0, 3).join('_')}.public.blob.vercel-storage.com/${filepath}`;
+                    
+                    const result = await fetchFileContent(blobUrl);
+                    if (!result.success || !result.content) {
+                        return JSON.stringify({ success: false, error: result.error || 'Failed to fetch file' });
+                    }
+
+                    const buffer = Buffer.from(result.content);
+                    const filename = filepath.split('/').pop() || filepath;
+                    const parseResult = await parseFile(buffer, filename);
+
+                    if (!parseResult.success) {
+                        return JSON.stringify({ success: false, error: parseResult.error || 'Failed to parse file' });
+                    }
+
+                    return JSON.stringify({ success: true, content: parseResult.content }, null, 2);
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : 'Unknown error';
+                    console.error('[read_file] Error:', error);
+                    return JSON.stringify({ success: false, error: message });
+                }
+            },
+        });
+
+        // Merge read_file tool with MCP tools
+        const allTools = {
+            ...tools,
+            read_file,
+        };
+
         console.log("messages", messages);
         console.log("parts", messages.map(m => m.parts.map(p => p)));
 
@@ -820,9 +861,9 @@ export async function POST(req: Request) {
             console.log(`[GOOGLE MODEL DETECTED] ${selectedModel} - Will clean $schema from tools`);
         }
 
-        const toolsToUse = isGoogleModel && Object.keys(tools).length > 0
-            ? cleanToolsForGoogleModels(tools)
-            : tools;
+        const toolsToUse = isGoogleModel && Object.keys(allTools).length > 0
+            ? cleanToolsForGoogleModels(allTools)
+            : allTools;
 
         // Get default parameters and apply preset overrides
         const modelDefaults = getModelDefaults(selectedModelInfo);

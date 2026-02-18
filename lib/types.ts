@@ -60,6 +60,24 @@ export interface ImageAttachment {
     detail?: "low" | "high" | "auto";
 }
 
+export interface FileAttachment {
+    file?: File;
+    type: 'image' | 'document' | 'code' | 'other';
+    uploadedFilePath?: string;
+    uploadedFileUrl?: string;
+    dataUrl?: string;
+    metadata: {
+        filename: string;
+        size: number;
+        mimeType: string;
+        width?: number;
+        height?: number;
+        originalSize?: number;
+        compressedSize?: number;
+    };
+    detail?: "low" | "high" | "auto";
+}
+
 export interface ImageMetadata {
     width: number;
     height: number;

@@ -20,7 +20,7 @@ import { MCPServerManager } from "./mcp-server-manager";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { ErrorBoundary } from "./error-boundary";
 import { useCredits } from "@/hooks/useCredits";
-import type { ImageAttachment } from "@/lib/types";
+import type { FileAttachment } from "@/lib/types";
 import { useModels } from "@/hooks/use-models";
 import { ChatTokenSummary } from "./token-metrics/ChatTokenSummary";
 
@@ -56,8 +56,10 @@ export default function Chat() {
   const [userId, setUserId] = useState<string | null>(null);
   const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
-  const [selectedImages, setSelectedImages] = useState<ImageAttachment[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([]);
   const [hideImagesInUI, setHideImagesInUI] = useState(false);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const [isErrorRecoveryNeeded, setIsErrorRecoveryNeeded] = useState(false);
   const [lastErrorTime, setLastErrorTime] = useState<number | null>(null);
   const [lastStreamingActivity, setLastStreamingActivity] = useState<number | null>(null);
@@ -143,7 +145,7 @@ export default function Chat() {
       setIsErrorRecoveryNeeded(false);
       setLastErrorTime(null);
       setHideImagesInUI(false);
-      setSelectedImages([]);
+      setSelectedFiles([]);
       
       // Clear any lingering toast state
       if (lastToastId) {
@@ -238,38 +240,37 @@ export default function Chat() {
     return modelInfo?.vision === true;
   }, [models, effectiveModel]);
 
-  // Handle image selection
-  const handleImageSelect = useCallback((newImages: ImageAttachment[]) => {
-    console.log('[DEBUG] handleImageSelect called with:', newImages.length, 'images');
-    console.log('[DEBUG] New images details:', newImages.map(img => ({
-      filename: img.metadata.filename,
-      size: img.metadata.size,
-      mimeType: img.metadata.mimeType,
-      detail: img.detail,
-      dataUrlLength: img.dataUrl.length
+  const handleFileSelect = useCallback((newFiles: FileAttachment[]) => {
+    console.log('[DEBUG] handleFileSelect called with:', newFiles.length, 'files');
+    console.log('[DEBUG] New files details:', newFiles.map(f => ({
+      filename: f.metadata.filename,
+      size: f.metadata.size,
+      mimeType: f.metadata.mimeType,
+      detail: f.detail,
+      type: f.type,
+      dataUrlLength: f.dataUrl?.length
     })));
     
-    setSelectedImages(prev => {
-      const updated = [...prev, ...newImages];
-      console.log('[DEBUG] Updated selectedImages count:', updated.length);
+    setSelectedFiles((prev: FileAttachment[]) => {
+      const updated = [...prev, ...newFiles];
+      console.log('[DEBUG] Updated selectedFiles count:', updated.length);
       return updated;
     });
   }, []);
 
-  // Handle image removal
-  const handleImageRemove = useCallback((index: number) => {
-    console.log('[DEBUG] handleImageRemove called for index:', index);
-    setSelectedImages(prev => {
-      const updated = prev.filter((_, i) => i !== index);
-      console.log('[DEBUG] After removal, selectedImages count:', updated.length);
+  const handleFileRemove = useCallback((index: number) => {
+    console.log('[DEBUG] handleFileRemove called for index:', index);
+    setSelectedFiles((prev: FileAttachment[]) => {
+      const updated = prev.filter((_: FileAttachment, i: number) => i !== index);
+      console.log('[DEBUG] After removal, selectedFiles count:', updated.length);
       return updated;
     });
   }, []);
 
-  // Clear images after successful submission
-  const clearImages = useCallback(() => {
-    console.log('[DEBUG] clearImages called');
-    setSelectedImages([]);
+  const clearFiles = useCallback(() => {
+    console.log('[DEBUG] clearFiles called');
+    setSelectedFiles([]);
+    setUploadErrors([]);
   }, []);
 
   // Note: No longer creating attachments array since we use message parts directly
@@ -299,7 +300,7 @@ export default function Chat() {
       experimental_throttle: 500,
       onFinish: (message) => {
         // Clear images and reset UI state after successful submission
-        clearImages();
+        clearFiles();
         setHideImagesInUI(false);
         
         // Refresh usage data to update upgrade button and other UI elements
@@ -612,53 +613,120 @@ export default function Chat() {
     }
   }, [status, lastStreamingActivity, lastErrorMessage, lastToastId, lastToastTimestamp]);
     
-  const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Don't submit if no content and no images
-    if (!input.trim() && selectedImages.length === 0) {
+    // Don't submit if no content and no files
+    if (!input.trim() && selectedFiles.length === 0) {
+      return;
+    }
+
+    // Don't submit if already uploading
+    if (isUploadingFiles) {
       return;
     }
     
-    // Hide images from UI immediately when form is submitted
-    if (selectedImages.length > 0) {
+    // Hide files from UI immediately when form is submitted
+    if (selectedFiles.length > 0) {
       setHideImagesInUI(true);
     }
-    
-    // If we have images, use append to create a message with parts
-    if (selectedImages.length > 0) {
-      const textPart = { type: 'text' as const, text: input };
-      const imageParts = selectedImages.map((img) => ({
+
+    // Separate images from other files
+    const imageFiles = selectedFiles.filter(f => f.type === 'image' && f.dataUrl);
+    const nonImageFiles = selectedFiles.filter(f => f.type !== 'image' || !f.dataUrl);
+
+    // Upload non-image files first
+    let uploadedFiles: Array<{ filepath: string; url: string; filename: string }> = [];
+    if (nonImageFiles.length > 0) {
+      setIsUploadingFiles(true);
+      setUploadErrors([]);
+
+      try {
+        const formData = new FormData();
+        nonImageFiles.forEach(f => {
+          if (f.file) {
+            formData.append('files', f.file);
+          }
+        });
+
+        const response = await fetch('/api/upload-files', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!result.success || result.errors?.length > 0) {
+          setUploadErrors(result.errors || ['Upload failed']);
+          setHideImagesInUI(false);
+          setIsUploadingFiles(false);
+          toast.error('Failed to upload files: ' + (result.errors?.join(', ') || 'Unknown error'));
+          return;
+        }
+
+        uploadedFiles = result.files || [];
+      } catch (error) {
+        console.error('[Chat] Error uploading files:', error);
+        setUploadErrors(['Network error during upload']);
+        setHideImagesInUI(false);
+        setIsUploadingFiles(false);
+        toast.error('Failed to upload files. Please try again.');
+        return;
+      }
+
+      setIsUploadingFiles(false);
+    }
+
+    // Build enhanced message content with file context
+    let messageContent = input;
+    if (uploadedFiles.length > 0) {
+      const fileList = uploadedFiles.map(f => `- ${f.filename} (${f.url})`).join('\n');
+      messageContent = `${input}\n\n[Attached files:]\n${fileList}`;
+    }
+
+    // If we have image files with dataUrl, use append to create a message with parts
+    if (imageFiles.length > 0) {
+      const textPart = { type: 'text' as const, text: messageContent };
+      const imageParts = imageFiles.map((file) => ({
         type: 'image_url' as const,
         image_url: {
-          url: img.dataUrl,
-          detail: img.detail as 'auto' | 'low' | 'high'
+          url: file.dataUrl!,
+          detail: file.detail as 'auto' | 'low' | 'high'
         },
         metadata: {
-          filename: img.metadata.filename,
-          mimeType: img.metadata.mimeType,
-          size: img.metadata.size,
-          width: img.metadata.width,
-          height: img.metadata.height
+          filename: file.metadata.filename,
+          mimeType: file.metadata.mimeType,
+          size: file.metadata.size,
+          width: file.metadata.width,
+          height: file.metadata.height
         }
       }));
       
       // Use append to create message with image parts
       append({
         role: 'user',
-        content: input,
+        content: messageContent,
         parts: [textPart, ...imageParts] as any
       });
       
       // Clear the input field manually since append doesn't do it automatically
       handleInputChange({ target: { value: '' } } as any);
     } else {
-      // No images, use regular handleSubmit
-      handleSubmit(e);
+      // No images, use regular handleSubmit with enhanced content
+      // We need to update the input value temporarily
+      const syntheticEvent = {
+        target: { value: messageContent }
+      } as React.ChangeEvent<HTMLTextAreaElement>;
+      handleInputChange(syntheticEvent);
+      
+      // Submit with a slight delay to ensure the input is updated
+      setTimeout(() => {
+        handleSubmit(e);
+      }, 0);
     }
-  }, [handleSubmit, append, input, selectedImages, handleInputChange]);
+  }, [handleSubmit, append, input, selectedFiles, handleInputChange, isUploadingFiles]);
 
-  const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat;
+  const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat || isUploadingFiles;
 
   // Function to send a message from suggested prompts
   const sendSuggestedMessage = useCallback((message: string) => {
@@ -918,6 +986,35 @@ export default function Chat() {
         </div>
       )}
 
+      {/* Upload Progress Banner */}
+      {isUploadingFiles && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+            <div className="text-blue-800 dark:text-blue-200 text-sm">
+              Uploading files...
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Errors Banner */}
+      {uploadErrors.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="text-red-800 dark:text-red-200 text-sm">
+              <strong>Upload failed:</strong> {uploadErrors.join(', ')}
+            </div>
+            <button
+              onClick={() => setUploadErrors([])}
+              className="px-3 py-1 text-xs bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 rounded hover:bg-red-300 dark:hover:bg-red-700 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main content area: Either ProjectOverview or Messages */}
       <div className={`flex-1 min-h-0 pb-2 ${messages.length === 0 && !isLoadingChat ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {messages.length === 0 && !isLoadingChat ? (
@@ -978,8 +1075,8 @@ export default function Chat() {
             isLoading={isLoading}
             status={status}
             stop={stop}
-            images={hideImagesInUI ? [] : selectedImages}
-            onImagesChange={setSelectedImages}
+            files={hideImagesInUI ? [] : selectedFiles}
+            onFilesChange={setSelectedFiles}
           />
         </form>
       </div>

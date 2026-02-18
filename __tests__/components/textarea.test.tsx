@@ -2,14 +2,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Textarea } from '../../components/textarea';
 import type { modelID } from '@/ai/providers';
-import type { ImageAttachment } from '@/lib/types';
+import type { FileAttachment } from '@/lib/types';
 
 // Mock external dependencies
 const mockSetWebSearchEnabled = jest.fn();
 const mockSetSelectedModel = jest.fn();
 const mockHandleInputChange = jest.fn();
 const mockStop = jest.fn();
-const mockOnImagesChange = jest.fn();
+const mockOnFilesChange = jest.fn();
 
 // Mock context hooks with proper hoisting
 jest.mock('@/lib/context/web-search-context', () => ({
@@ -178,7 +178,7 @@ describe('Textarea', () => {
     selectedModel: 'openrouter/test-model' as modelID,
     setSelectedModel: mockSetSelectedModel,
     images: [],
-    onImagesChange: mockOnImagesChange,
+    onFilesChange: mockOnFilesChange,
   };
 
   beforeEach(() => {
@@ -228,7 +228,8 @@ describe('Textarea', () => {
     });
 
     test('changes placeholder when images are present', () => {
-      const images: ImageAttachment[] = [{
+      const files: FileAttachment[] = [{
+        type: 'image',
         dataUrl: 'data:image/jpeg;base64,test-image-data',
         metadata: {
           filename: 'test.jpg',
@@ -239,7 +240,7 @@ describe('Textarea', () => {
         },
         detail: 'auto'
       }];
-      render(<Textarea {...defaultProps} images={images} />);
+      render(<Textarea {...defaultProps} files={files} />);
 
       const textarea = screen.getByTestId('textarea');
       expect(textarea).toHaveAttribute('placeholder', 'Describe these images or ask questions...');
@@ -260,7 +261,8 @@ describe('Textarea', () => {
     });
 
     test('enables submit button when images are present', () => {
-      const images: ImageAttachment[] = [{
+      const files: FileAttachment[] = [{
+        type: 'image',
         dataUrl: 'data:image/jpeg;base64,test-image-data',
         metadata: {
           filename: 'test.jpg',
@@ -271,7 +273,7 @@ describe('Textarea', () => {
         },
         detail: 'auto'
       }];
-      render(<Textarea {...defaultProps} images={images} />);
+      render(<Textarea {...defaultProps} files={files} />);
 
       const submitButton = screen.getByRole('button', { name: /send/i });
       expect(submitButton).not.toBeDisabled();
@@ -362,8 +364,9 @@ describe('Textarea', () => {
     });
 
     test('displays image preview when images are present', () => {
-      const images: ImageAttachment[] = [
+      const files: FileAttachment[] = [
         {
+          type: 'image',
           dataUrl: 'data:image/jpeg;base64,test-image-1',
           metadata: {
             filename: 'test1.jpg',
@@ -375,6 +378,7 @@ describe('Textarea', () => {
           detail: 'auto'
         },
         {
+          type: 'image',
           dataUrl: 'data:image/jpeg;base64,test-image-2',
           metadata: {
             filename: 'test2.jpg',
@@ -386,12 +390,12 @@ describe('Textarea', () => {
           detail: 'auto'
         }
       ];
-      render(<Textarea {...defaultProps} images={images} />);
+      render(<Textarea {...defaultProps} files={files} />);
 
       expect(screen.getByTestId('image-preview')).toBeInTheDocument();
       expect(screen.getByTestId('image-0')).toBeInTheDocument();
       expect(screen.getByTestId('image-1')).toBeInTheDocument();
-      expect(screen.getByText('2/5 images • Click images to remove')).toBeInTheDocument();
+      expect(screen.getByText('2/5 files • Click to remove')).toBeInTheDocument();
     });
 
     test('handles image selection', () => {
@@ -403,12 +407,13 @@ describe('Textarea', () => {
       const selectButton = screen.getByTestId('image-upload-button');
       fireEvent.click(selectButton);
       
-      expect(mockOnImagesChange).toHaveBeenCalledWith([{ id: '1', url: 'test.jpg' }]);
+      expect(mockOnFilesChange).toHaveBeenCalledWith([{ id: '1', url: 'test.jpg' }]);
     });
 
     test('handles image removal', () => {
-      const images: ImageAttachment[] = [
+      const files: FileAttachment[] = [
         {
+          type: 'image',
           dataUrl: 'data:image/jpeg;base64,test-image-data',
           metadata: {
             filename: 'test.jpg',
@@ -420,16 +425,17 @@ describe('Textarea', () => {
           detail: 'auto'
         }
       ];
-      render(<Textarea {...defaultProps} images={images} />);
+      render(<Textarea {...defaultProps} files={files} />);
 
       const removeButton = screen.getByTestId('remove-image-0');
       fireEvent.click(removeButton);
 
-      expect(mockOnImagesChange).toHaveBeenCalledWith([]);
+      expect(mockOnFilesChange).toHaveBeenCalledWith([]);
     });
 
     test('disables image upload when at maximum limit', () => {
-      const images: ImageAttachment[] = Array(5).fill(null).map((_, i) => ({
+      const files: FileAttachment[] = Array(5).fill(null).map((_, i) => ({
+        type: 'image' as const,
         dataUrl: `data:image/jpeg;base64,test-image-${i}`,
         metadata: {
           filename: `test${i}.jpg`,
@@ -441,7 +447,7 @@ describe('Textarea', () => {
         detail: 'auto' as const
       }));
 
-      render(<Textarea {...defaultProps} images={images} selectedModel="openrouter/test-model" />);
+      render(<Textarea {...defaultProps} files={files} selectedModel="openrouter/test-model" />);
 
       const uploadButton = screen.getByTestId('button-ghost');
       expect(uploadButton).toBeDisabled();
@@ -543,9 +549,9 @@ describe('Textarea', () => {
   });
 
   describe('Error Handling', () => {
-    test('handles missing onImagesChange gracefully', () => {
-      const { onImagesChange, ...propsWithoutImageHandler } = defaultProps;
-      render(<Textarea {...propsWithoutImageHandler} selectedModel="openrouter/test-model" />);
+    test('handles missing onFilesChange gracefully', () => {
+      const { onFilesChange, ...propsWithoutFileHandler } = defaultProps;
+      render(<Textarea {...propsWithoutFileHandler} selectedModel="openrouter/test-model" />);
       
       const uploadButton = screen.getByTestId('button-ghost');
       fireEvent.click(uploadButton);
@@ -936,7 +942,7 @@ describe('Textarea', () => {
       expect(submitButton).not.toBeDisabled();
       
       // Verify the flow completed
-      expect(mockOnImagesChange).toHaveBeenCalled();
+      expect(mockOnFilesChange).toHaveBeenCalled();
     });
 
     test('handles model switching and maintains state', () => {
