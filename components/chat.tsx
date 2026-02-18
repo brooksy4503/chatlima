@@ -23,6 +23,7 @@ import { useCredits } from "@/hooks/useCredits";
 import type { FileAttachment } from "@/lib/types";
 import { useModels } from "@/hooks/use-models";
 import { ChatTokenSummary } from "./token-metrics/ChatTokenSummary";
+import { getLocalStorageItem, isLocalStorageAvailable } from "@/lib/browser-storage";
 
 // Type for chat data from DB
 interface ChatData {
@@ -208,9 +209,9 @@ export default function Chat() {
     } as Message & { hasWebSearch?: boolean }));
   }, [chatData]);
   
-  // Function to get API keys from localStorage
+  // Function to get API keys from localStorage (uses safe helper for SSR/broken Node env)
   const getClientApiKeys = () => {
-    if (typeof window === 'undefined') return {};
+    if (!isLocalStorageAvailable()) return {};
     
     const apiKeys: Record<string, string> = {};
     const keyNames = [
@@ -223,7 +224,7 @@ export default function Chat() {
     ];
     
     keyNames.forEach(keyName => {
-      const value = localStorage.getItem(keyName);
+      const value = getLocalStorageItem(keyName);
       if (value) {
         apiKeys[keyName] = value;
       }

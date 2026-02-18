@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Key, Eye, EyeOff } from "lucide-react";
+import { getLocalStorageItem, setLocalStorageItem, removeLocalStorageItem } from "@/lib/browser-storage";
 
 // API key configuration
 interface ApiKeyConfig {
@@ -76,7 +77,7 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
     const storedKeys: Record<string, string> = {};
     
     API_KEYS_CONFIG.forEach(config => {
-      const value = localStorage.getItem(config.storageKey);
+      const value = getLocalStorageItem(config.storageKey);
       if (value) {
         storedKeys[config.key] = value;
       }
@@ -108,9 +109,9 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
         const value = apiKeys[config.key];
         
         if (value && value.trim()) {
-          localStorage.setItem(config.storageKey, value.trim());
+          setLocalStorageItem(config.storageKey, value.trim());
         } else {
-          localStorage.removeItem(config.storageKey);
+          removeLocalStorageItem(config.storageKey);
         }
       });
       
@@ -129,7 +130,7 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
   const handleClearApiKeys = () => {
     try {
       API_KEYS_CONFIG.forEach(config => {
-        localStorage.removeItem(config.storageKey);
+        removeLocalStorageItem(config.storageKey);
       });
       
       setApiKeys({});

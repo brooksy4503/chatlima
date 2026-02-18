@@ -1,4 +1,5 @@
 import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
+import { getLocalStorageItem, setLocalStorageItem, removeLocalStorageItem, isLocalStorageAvailable } from '@/lib/browser-storage';
 
 // Define OAuth types locally since they may not be exported from the SDK
 interface OAuthClientMetadata {
@@ -65,11 +66,11 @@ export class MCPOAuthProvider implements OAuthClientProvider {
     }
 
     async tokens(): Promise<OAuthTokens | undefined> {
-        if (typeof window === 'undefined') {
+        if (!isLocalStorageAvailable()) {
             return undefined;
         }
 
-        const stored = localStorage.getItem(`${this.storagePrefix}_tokens`);
+        const stored = getLocalStorageItem(`${this.storagePrefix}_tokens`);
         if (!stored) {
             return undefined;
         }
@@ -82,21 +83,21 @@ export class MCPOAuthProvider implements OAuthClientProvider {
     }
 
     async saveTokens(tokens: OAuthTokens): Promise<void> {
-        if (typeof window === 'undefined') {
+        if (!isLocalStorageAvailable()) {
             return;
         }
 
-        localStorage.setItem(`${this.storagePrefix}_tokens`, JSON.stringify(tokens));
+        setLocalStorageItem(`${this.storagePrefix}_tokens`, JSON.stringify(tokens));
         // Store timestamp for expiration checking
-        localStorage.setItem(`${this.storagePrefix}_tokens_stored_at`, Date.now().toString());
+        setLocalStorageItem(`${this.storagePrefix}_tokens_stored_at`, Date.now().toString());
     }
 
     async clientInformation(): Promise<OAuthClientInformation | undefined> {
-        if (typeof window === 'undefined') {
+        if (!isLocalStorageAvailable()) {
             return undefined;
         }
 
-        const stored = localStorage.getItem(`${this.storagePrefix}_client_info`);
+        const stored = getLocalStorageItem(`${this.storagePrefix}_client_info`);
         if (!stored) {
             return undefined;
         }
@@ -109,30 +110,30 @@ export class MCPOAuthProvider implements OAuthClientProvider {
     }
 
     async saveClientInformation(clientInformation: OAuthClientInformation): Promise<void> {
-        if (typeof window === 'undefined') {
+        if (!isLocalStorageAvailable()) {
             return;
         }
 
-        localStorage.setItem(
+        setLocalStorageItem(
             `${this.storagePrefix}_client_info`,
             JSON.stringify(clientInformation)
         );
     }
 
     async codeVerifier(): Promise<string> {
-        if (typeof window === 'undefined') {
+        if (!isLocalStorageAvailable()) {
             return '';
         }
 
-        return localStorage.getItem(`${this.storagePrefix}_code_verifier`) || '';
+        return getLocalStorageItem(`${this.storagePrefix}_code_verifier`) || '';
     }
 
     async saveCodeVerifier(verifier: string): Promise<void> {
-        if (typeof window === 'undefined') {
+        if (!isLocalStorageAvailable()) {
             return;
         }
 
-        localStorage.setItem(`${this.storagePrefix}_code_verifier`, verifier);
+        setLocalStorageItem(`${this.storagePrefix}_code_verifier`, verifier);
     }
 
     async redirectToAuthorization(authorizationUrl: URL): Promise<void> {
@@ -170,14 +171,14 @@ export class MCPOAuthProvider implements OAuthClientProvider {
      * Clear all stored OAuth data for this server
      */
     clearAuthData(): void {
-        if (typeof window === 'undefined') {
+        if (!isLocalStorageAvailable()) {
             return;
         }
 
-        localStorage.removeItem(`${this.storagePrefix}_tokens`);
-        localStorage.removeItem(`${this.storagePrefix}_tokens_stored_at`);
-        localStorage.removeItem(`${this.storagePrefix}_client_info`);
-        localStorage.removeItem(`${this.storagePrefix}_code_verifier`);
+        removeLocalStorageItem(`${this.storagePrefix}_tokens`);
+        removeLocalStorageItem(`${this.storagePrefix}_tokens_stored_at`);
+        removeLocalStorageItem(`${this.storagePrefix}_client_info`);
+        removeLocalStorageItem(`${this.storagePrefix}_code_verifier`);
     }
 
     /**
@@ -197,7 +198,7 @@ export class MCPOAuthProvider implements OAuthClientProvider {
 
         // Check if token is expired (if expires_in is provided)
         if (tokens.expires_in) {
-            const storedAt = localStorage.getItem(`${this.storagePrefix}_tokens_stored_at`);
+            const storedAt = getLocalStorageItem(`${this.storagePrefix}_tokens_stored_at`);
             if (storedAt) {
                 const storedTime = parseInt(storedAt, 10);
                 const expiresAt = storedTime + (tokens.expires_in * 1000);

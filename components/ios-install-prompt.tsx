@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Share, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { getLocalStorageItem, setLocalStorageItem } from '@/lib/browser-storage';
 
 interface IOSInstallPromptProps {
   onDismiss?: () => void;
@@ -26,7 +27,7 @@ export function IOSInstallPrompt({ onDismiss }: IOSInstallPromptProps) {
     setIsStandalone(isStandaloneMode);
 
     // Check if user has previously dismissed the prompt
-    const dismissed = localStorage.getItem('chatlima-ios-install-dismissed');
+    const dismissed = getLocalStorageItem('chatlima-ios-install-dismissed');
     
     // Only show if: iOS Safari, not in standalone mode, not previously dismissed
     if (isiOS && !isStandaloneMode && !dismissed) {
@@ -41,13 +42,13 @@ export function IOSInstallPrompt({ onDismiss }: IOSInstallPromptProps) {
 
   const handleDismiss = () => {
     setIsVisible(false);
-    localStorage.setItem('chatlima-ios-install-dismissed', 'true');
+    setLocalStorageItem('chatlima-ios-install-dismissed', 'true');
     onDismiss?.();
   };
 
   const handleNeverShow = () => {
     setIsVisible(false);
-    localStorage.setItem('chatlima-ios-install-dismissed', 'permanent');
+    setLocalStorageItem('chatlima-ios-install-dismissed', 'permanent');
     onDismiss?.();
   };
 

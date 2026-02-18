@@ -12,8 +12,7 @@ import {
 } from "ai";
 
 import { titleGenerationModelId } from '@/lib/constants';
-
-
+import { getLocalStorageItem, isLocalStorageAvailable } from '@/lib/browser-storage';
 
 const middleware = extractReasoningMiddleware({
   tagName: 'think',
@@ -30,9 +29,9 @@ export const getApiKey = (key: string): string | undefined => {
     return process.env[key] || undefined;
   }
 
-  // Fall back to localStorage if available
-  if (typeof window !== 'undefined') {
-    return window.localStorage.getItem(key) || undefined;
+  // Fall back to localStorage only when it's the real browser API (SSR/Node may have a broken one)
+  if (isLocalStorageAvailable()) {
+    return getLocalStorageItem(key) || undefined;
   }
 
   return undefined;
@@ -253,7 +252,7 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
 };
 
 // Update API keys when localStorage changes (for runtime updates)
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && isLocalStorageAvailable()) {
   window.addEventListener('storage', (event) => {
     // Reload the page if any API key changed to refresh the providers
     if (event.key?.includes('API_KEY')) {

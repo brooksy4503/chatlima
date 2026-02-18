@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getLocalStorageItem, setLocalStorageItem, removeLocalStorageItem, isLocalStorageAvailable } from '@/lib/browser-storage';
 
 type SetValue<T> = T | ((val: T) => T);
 
@@ -14,24 +15,21 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Check if we're in the browser environment
-  const isBrowser = typeof window !== 'undefined';
-
-  // Initialize state from localStorage or use initialValue
+  // Initialize state from localStorage or use initialValue (only when storage is actually available)
   useEffect(() => {
     setIsMounted(true);
 
-    if (!isBrowser) return;
+    if (!isLocalStorageAvailable()) return;
 
     try {
-      const item = window.localStorage.getItem(key);
+      const item = getLocalStorageItem(key);
       if (item) {
         setStoredValue(parseJSON(item));
       }
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
     }
-  }, [key, isBrowser]);
+  }, [key]);
 
   // Prevent hydration mismatch by ensuring we only use localStorage values after mounting
   const effectiveValue = isMounted ? storedValue : initialValue;
@@ -39,7 +37,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   // Return a wrapped version of useState's setter function that
   // persists the new value to localStorage.
   const setValue = useCallback((value: SetValue<T>) => {
-    if (!isBrowser) return;
+    if (!isLocalStorageAvailable()) return;
 
     try {
       // Allow value to be a function so we have same API as useState
@@ -51,14 +49,14 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
       // Save to localStorage
       if (valueToStore === undefined) {
-        window.localStorage.removeItem(key);
+        removeLocalStorageItem(key);
       } else {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        setLocalStorageItem(key, JSON.stringify(valueToStore));
       }
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);
     }
-  }, [key, storedValue, isBrowser]);
+  }, [key, storedValue]);
 
   return [effectiveValue, setValue] as const;
 }
