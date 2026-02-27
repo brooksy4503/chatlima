@@ -691,24 +691,58 @@ export async function POST(req: Request) {
         // Use tools from MCP service
         const tools = mcpResult.tools;
 
+        // Build a lookup from the user-visible attached files section:
+        // "- name | filepath: uploads/... | url: https://..."
+        const attachedFileUrlByPath = new Map<string, string>();
+        for (const msg of messages) {
+            if (msg.role !== 'user' || typeof msg.content !== 'string') continue;
+            const lines = msg.content.split('\n');
+            for (const line of lines) {
+                const match = line.match(/filepath:\s*([^\s|]+)\s*\|\s*url:\s*(https?:\/\/\S+)/i);
+                if (match) {
+                    const filepath = match[1].trim();
+                    const fileUrl = match[2].trim();
+                    attachedFileUrlByPath.set(filepath, fileUrl);
+                }
+            }
+        }
+
         // Add read_file tool for file analysis
         const read_file = tool({
             description: `Read contents of a file uploaded by the user. Supports: CSV, Excel, PDF, text files, code files. Returns parsed content based on file type.`,
             parameters: z.object({
-                filepath: z.string().describe('Path to file (e.g., "uploads/data-2024-02-06-143022.csv")'),
+                filepath: z.string().describe('File path or full URL (e.g., "uploads/data-2024-02-06-143022.csv" or "https://...")'),
             }),
             execute: async ({ filepath }) => {
                 try {
-                    const blobUrl = `https://${process.env.BLOB_READ_WRITE_TOKEN?.split('_').slice(0, 3).join('_')}.public.blob.vercel-storage.com/${filepath}`;
-                    
+                    const isFullUrl = /^https?:\/\//i.test(filepath);
+                    const blobBaseUrl = process.env.BLOB_PUBLIC_URL || process.env.NEXT_PUBLIC_BLOB_URL;
+                    const mappedUrl = attachedFileUrlByPath.get(filepath);
+                    const blobUrl = isFullUrl
+                        ? filepath
+                        : mappedUrl
+                            ? mappedUrl
+                        : blobBaseUrl
+                            ? `${blobBaseUrl.replace(/\/$/, '')}/${filepath.replace(/^\//, '')}`
+                            : filepath;
+
+                    if (!/^https?:\/\//i.test(blobUrl)) {
+                        return JSON.stringify({
+                            success: false,
+                            error: 'Invalid file reference. Expected an absolute URL or a filepath with BLOB_PUBLIC_URL configured.'
+                        });
+                    }
+
                     const result = await fetchFileContent(blobUrl);
                     if (!result.success || !result.content) {
                         return JSON.stringify({ success: false, error: result.error || 'Failed to fetch file' });
                     }
 
                     const buffer = Buffer.from(result.content);
-                    const filename = filepath.split('/').pop() || filepath;
-                    const parseResult = await parseFile(buffer, filename);
+                    const cleanPath = (result.finalUrl || filepath).split('?')[0].split('#')[0];
+                    const filename = cleanPath.split('/').pop() || filepath;
+                    const responseMimeType = result.contentType?.split(';')[0]?.trim();
+                    const parseResult = await parseFile(buffer, filename, responseMimeType);
 
                     if (!parseResult.success) {
                         return JSON.stringify({ success: false, error: parseResult.error || 'Failed to parse file' });
@@ -728,9 +762,6 @@ export async function POST(req: Request) {
             ...tools,
             read_file,
         };
-
-        console.log("messages", messages);
-        console.log("parts", messages.map(m => m.parts.map(p => p)));
 
         // Log web search status
         if (webSearchConfig.enabled) {
@@ -874,6 +905,12 @@ export async function POST(req: Request) {
             : `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
 
 You have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.
+
+## File Attachments:
+When a user message contains an "[Attached files:]" section with "filepath" and/or "url":
+1. Use the \`read_file\` tool to inspect the relevant file(s) before answering questions about file contents.
+2. Prefer using the \`filepath\` value when provided; if unavailable, use the file URL.
+3. If reading a file fails, clearly explain what failed and what the user can retry.
 
 ${effectiveWebSearchEnabled ? `
 ## Web Search Enabled:

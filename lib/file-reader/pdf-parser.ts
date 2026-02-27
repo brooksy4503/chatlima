@@ -9,23 +9,37 @@ export async function parsePDF(buffer: Buffer): Promise<{
   error?: string;
 }> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse');
-    const data = await pdfParse(buffer, {
-      max: 0,
-    });
+    // unpdf has no pdf worker dependency and works in server runtimes.
+    const { extractText, getMeta } = await import('unpdf');
+    const uint8Array = new Uint8Array(buffer);
+    const { text, totalPages } = await extractText(uint8Array, { mergePages: true });
 
-    const text = data.text
+    const normalizedText = (text || '')
       .replace(/\s+/g, ' ')
       .trim();
 
+    let metaInfo: any = null;
+    try {
+      const meta = await getMeta(uint8Array);
+      metaInfo = meta?.info;
+    } catch {
+      // Metadata extraction is optional.
+    }
+
+    if (!normalizedText) {
+      return {
+        success: false,
+        error: 'No extractable text found in PDF. The file may be scanned or image-based and require OCR.',
+      };
+    }
+
     return {
       success: true,
-      text,
+      text: normalizedText,
       info: {
-        pages: data.numpages,
-        title: data.info?.Title,
-        author: data.info?.Author,
+        pages: totalPages,
+        title: metaInfo?.Title,
+        author: metaInfo?.Author,
       },
     };
   } catch (error) {

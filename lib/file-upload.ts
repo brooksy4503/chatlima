@@ -267,6 +267,8 @@ export async function deleteUploadedFile(filepath: string): Promise<{
 export async function fetchFileContent(url: string): Promise<{
   success: boolean;
   content?: ArrayBuffer;
+  contentType?: string;
+  finalUrl?: string;
   error?: string;
 }> {
   try {
@@ -276,7 +278,12 @@ export async function fetchFileContent(url: string): Promise<{
     }
 
     const content = await response.arrayBuffer();
-    return { success: true, content };
+    return {
+      success: true,
+      content,
+      contentType: response.headers.get('content-type') || undefined,
+      finalUrl: response.url || url,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Fetch failed';
     console.error('[FileUpload] Error fetching file:', error);

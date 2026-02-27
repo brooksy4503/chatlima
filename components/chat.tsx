@@ -627,14 +627,20 @@ export default function Chat() {
       return;
     }
     
+    // Separate images from other files
+    const imageFiles = selectedFiles.filter(f => f.type === 'image' && f.dataUrl);
+    const nonImageFiles = selectedFiles.filter(f => f.type !== 'image' || !f.dataUrl);
+
+    // Images require a vision-capable model. Non-image files can still be submitted.
+    if (imageFiles.length > 0 && !modelSupportsVision) {
+      toast.error('The selected model does not support images. Remove image files or switch to a vision model.');
+      return;
+    }
+
     // Hide files from UI immediately when form is submitted
     if (selectedFiles.length > 0) {
       setHideImagesInUI(true);
     }
-
-    // Separate images from other files
-    const imageFiles = selectedFiles.filter(f => f.type === 'image' && f.dataUrl);
-    const nonImageFiles = selectedFiles.filter(f => f.type !== 'image' || !f.dataUrl);
 
     // Upload non-image files first
     let uploadedFiles: Array<{ filepath: string; url: string; filename: string }> = [];
@@ -681,8 +687,10 @@ export default function Chat() {
     // Build enhanced message content with file context
     let messageContent = input;
     if (uploadedFiles.length > 0) {
-      const fileList = uploadedFiles.map(f => `- ${f.filename} (${f.url})`).join('\n');
-      messageContent = `${input}\n\n[Attached files:]\n${fileList}`;
+      const fileList = uploadedFiles
+        .map(f => `- ${f.filename} | filepath: ${f.filepath} | url: ${f.url}`)
+        .join('\n');
+      messageContent = `${input}\n\n[Attached files:]\n${fileList}\n\n[Instruction: Use the read_file tool with filepath values before answering.]`;
     }
 
     // If we have image files with dataUrl, use append to create a message with parts
@@ -713,19 +721,14 @@ export default function Chat() {
       // Clear the input field manually since append doesn't do it automatically
       handleInputChange({ target: { value: '' } } as any);
     } else {
-      // No images, use regular handleSubmit with enhanced content
-      // We need to update the input value temporarily
-      const syntheticEvent = {
-        target: { value: messageContent }
-      } as React.ChangeEvent<HTMLTextAreaElement>;
-      handleInputChange(syntheticEvent);
-      
-      // Submit with a slight delay to ensure the input is updated
-      setTimeout(() => {
-        handleSubmit(e);
-      }, 0);
+      // No images: append directly to avoid racing input state updates.
+      append({
+        role: 'user',
+        content: messageContent
+      });
+      handleInputChange({ target: { value: '' } } as any);
     }
-  }, [handleSubmit, append, input, selectedFiles, handleInputChange, isUploadingFiles]);
+  }, [append, input, selectedFiles, handleInputChange, isUploadingFiles, modelSupportsVision]);
 
   const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat || isUploadingFiles;
 

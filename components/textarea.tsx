@@ -1,6 +1,6 @@
 import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Globe, AlertCircle, ImageIcon, Code2, X, Eye, EyeOff } from "lucide-react";
+import { ArrowUp, Square, Globe, AlertCircle, Paperclip, Code2, Eye, EyeOff } from "lucide-react";
 import { ModelPicker } from "./model-picker";
 import { PresetSelector } from "./preset-selector";
 import { useRef, useState, useCallback } from "react";
@@ -545,13 +545,13 @@ export const Textarea = ({
   return (
     <div className="w-full space-y-3">
       {/* File Upload Interface */}
-      {effectiveModelSupportsVision() && showImageUpload && (
+      {showImageUpload && (
         <div className="bg-card border border-border rounded-xl p-4">
           <FileUpload
             onFileSelect={handleFileSelect}
             maxFiles={5 - files.length}
             disabled={isLoading || !canUploadMore}
-            showDetailSelector={true}
+            showDetailSelector={effectiveModelSupportsVision()}
           />
         </div>
       )}
@@ -777,34 +777,36 @@ export const Textarea = ({
           <div className={`flex items-center ${isMobileScreen ? 'w-full justify-between' : 'gap-2'}`}>
             {/* Action buttons group */}
             <div className="flex items-center gap-1.5">
-              {/* Image Upload Button */}
-              {effectiveModelSupportsVision() && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowImageUpload(!showImageUpload)}
-                      disabled={isLoading || !canUploadMore}
-                      className={`${
-                        isMobileScreen ? 'h-8 w-8' : 'h-9 w-9'
-                      } flex items-center justify-center rounded-full border transition-colors duration-150 ${
-                        !canUploadMore
-                          ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
-                          : showImageUpload
-                            ? 'bg-primary text-primary-foreground border-primary shadow'
-                            : 'bg-background border-border text-muted-foreground hover:bg-accent'
-                      } focus:outline-none focus:ring-2 focus:ring-primary/30`}
-                    >
-                      <ImageIcon className={isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={8}>
-                    {showImageUpload ? 'Hide image upload' : 'Upload images'}
-                  </TooltipContent>
-                </Tooltip>
-              )}
+              {/* File Upload Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowImageUpload(!showImageUpload)}
+                    disabled={isLoading || !canUploadMore}
+                    className={`${
+                      isMobileScreen ? 'h-8 w-8' : 'h-9 w-9'
+                    } flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                      !canUploadMore
+                        ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                        : showImageUpload
+                          ? 'bg-primary text-primary-foreground border-primary shadow'
+                          : 'bg-background border-border text-muted-foreground hover:bg-accent'
+                    } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                  >
+                    <Paperclip className={isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={8}>
+                  {showImageUpload
+                    ? 'Hide file upload'
+                    : effectiveModelSupportsVision()
+                      ? 'Upload files'
+                      : 'Upload files (images require a vision model)'}
+                </TooltipContent>
+              </Tooltip>
               
               {/* Only show web search button when no preset is active and model supports it */}
               {isMounted && !activePreset && getEffectiveModel().startsWith("openrouter/") && (

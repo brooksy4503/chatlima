@@ -34,6 +34,11 @@ export function ReasoningMessagePart({
   isReasoning,
 }: ReasoningMessagePartProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const reasoningDetails = Array.isArray((part as any).details)
+    ? (part as any).details
+    : (typeof (part as any).reasoning === "string" && (part as any).reasoning.trim().length > 0
+        ? [{ type: "text", text: (part as any).reasoning }]
+        : []);
 
   const memoizedSetIsExpanded = useCallback((value: boolean) => {
     setIsExpanded(value);
@@ -115,7 +120,7 @@ export function ReasoningMessagePart({
             <div className="text-xs text-muted-foreground/70 pl-1 font-medium">
               The assistant&apos;s thought process:
             </div>
-            {part.details.map((detail, detailIndex) =>
+            {reasoningDetails.map((detail: any, detailIndex: number) =>
               detail.type === "text" ? (
                 <div key={detailIndex} className="px-2 py-1.5 bg-muted/10 rounded-md border border-border/30">
                   <Markdown>{detail.text}</Markdown>
