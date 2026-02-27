@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/context/auth-context";
 import { ModelInfo } from "@/lib/types/models";
 import { MODEL_MIGRATIONS } from "@/lib/models/client-constants";
 import { useFavorites } from "@/hooks/useFavorites";
+import { getLocalStorageItem, setLocalStorageItem, isLocalStorageAvailable } from "@/lib/browser-storage";
 
 // Legacy compatibility - keep the same interface
 interface ModelContextType {
@@ -59,7 +60,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   // Load API keys from localStorage
   useEffect(() => {
     const loadApiKeys = () => {
-      if (typeof window === 'undefined') return {};
+      if (!isLocalStorageAvailable()) return {};
       
       const apiKeys: Record<string, string> = {};
       const keyNames = [
@@ -72,7 +73,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
       ];
       
       keyNames.forEach(keyName => {
-        const value = localStorage.getItem(keyName);
+        const value = getLocalStorageItem(keyName);
         if (value && value.trim()) {
           apiKeys[keyName] = value.trim();
         }
@@ -169,8 +170,8 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     // Get stored model from localStorage
     let storedModel: string | null = null;
     try {
-      if (typeof window !== 'undefined') {
-        storedModel = localStorage.getItem('selected_ai_model');
+      if (isLocalStorageAvailable()) {
+        storedModel = getLocalStorageItem('selected_ai_model');
       }
     } catch (error) {
       console.error("Error reading selected model from localStorage:", error);
@@ -221,8 +222,8 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     if (!isInitialized) return;
     
     try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('selected_ai_model', selectedModel);
+      if (isLocalStorageAvailable()) {
+        setLocalStorageItem('selected_ai_model', selectedModel);
       }
     } catch (error) {
       console.error("Error saving selected model to localStorage:", error);

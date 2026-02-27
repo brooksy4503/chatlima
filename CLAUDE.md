@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Spec Compliance
+
+**SPEC.md is the source of truth for this application's architecture.**
+
+Before implementing features or making architectural changes:
+1. Consult SPEC.md to ensure alignment with documented architecture, database schema, and API contracts
+2. If a change would deviate from the spec, flag it for discussion first
+3. After implementing significant changes, update SPEC.md to keep it current
+
+Key sections to reference:
+- Section 3: Database Schema (before schema changes)
+- Section 5: AI Provider Integration (before adding providers)
+- Section 7: Credit & Billing System (before modifying billing)
+- Section 9: API Reference (before adding/modifying endpoints)
+
 ## Development Commands
 
 ### Build and Development

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MCPOAuthProvider } from '@/lib/services/mcpOAuthProvider';
 import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
+import { removeLocalStorageItem } from '@/lib/browser-storage';
 
 export default function TestMCPOAuthPage() {
     const [serverUrl, setServerUrl] = useState('https://api.supermemory.ai/mcp');
@@ -97,10 +98,10 @@ export default function TestMCPOAuthPage() {
 
     const clearStorage = () => {
         // Clear all MCP OAuth storage for this server
-        localStorage.removeItem(`mcp_oauth_${serverId}_tokens`);
-        localStorage.removeItem(`mcp_oauth_${serverId}_client_info`);
-        localStorage.removeItem(`mcp_oauth_${serverId}_code_verifier`);
-        localStorage.removeItem(`mcp_oauth_${serverId}_tokens_stored_at`);
+        removeLocalStorageItem(`mcp_oauth_${serverId}_tokens`);
+        removeLocalStorageItem(`mcp_oauth_${serverId}_client_info`);
+        removeLocalStorageItem(`mcp_oauth_${serverId}_code_verifier`);
+        removeLocalStorageItem(`mcp_oauth_${serverId}_tokens_stored_at`);
         addLog('Cleared all OAuth storage for this server');
         setStatus('Storage cleared');
     };

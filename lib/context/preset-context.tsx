@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { type modelID } from '@/ai/providers';
 import { PresetTemplate } from '@/lib/preset-templates';
+import { getLocalStorageItem, setLocalStorageItem, removeLocalStorageItem } from '@/lib/browser-storage';
 
 // Types
 export interface Preset {
@@ -132,9 +133,9 @@ export function PresetProvider({ children }: PresetProviderProps) {
     setActivePresetState(preset);
     // Store in localStorage for persistence across sessions
     if (preset) {
-      localStorage.setItem('activePresetId', preset.id);
+      setLocalStorageItem('activePresetId', preset.id);
     } else {
-      localStorage.removeItem('activePresetId');
+      removeLocalStorageItem('activePresetId');
     }
   }, []);
 
@@ -221,7 +222,7 @@ export function PresetProvider({ children }: PresetProviderProps) {
       // Clear active preset if it's the one being deleted
       if (activePreset?.id === id) {
         setActivePresetState(null);
-        localStorage.removeItem('activePresetId');
+        removeLocalStorageItem('activePresetId');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete preset';
@@ -358,7 +359,7 @@ export function PresetProvider({ children }: PresetProviderProps) {
 
   // Restore active preset from localStorage on mount
   useEffect(() => {
-    const storedActivePresetId = localStorage.getItem('activePresetId');
+    const storedActivePresetId = getLocalStorageItem('activePresetId');
     if (storedActivePresetId && presets.length > 0 && !activePreset) {
       const storedPreset = presets.find(preset => preset.id === storedActivePresetId);
       if (storedPreset) {

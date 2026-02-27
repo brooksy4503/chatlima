@@ -1,6 +1,6 @@
 import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Globe, AlertCircle, ImageIcon, Code2, X, Eye, EyeOff } from "lucide-react";
+import { ArrowUp, Square, Globe, AlertCircle, Paperclip, Code2, Eye, EyeOff } from "lucide-react";
 import { ModelPicker } from "./model-picker";
 import { PresetSelector } from "./preset-selector";
 import { useRef, useState, useCallback } from "react";
@@ -10,9 +10,9 @@ import { usePresets } from "@/lib/context/preset-context";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
-import { ImageUpload } from "./image-upload";
-import { ImagePreview } from "./image-preview";
-import type { ImageAttachment } from "@/lib/types";
+import { FileUpload } from "./file-upload";
+import { FilePreview } from "./file-preview";
+import type { FileAttachment } from "@/lib/types";
 import { Button } from "./ui/button";
 import { useModels } from "@/hooks/use-models";
 import { processTextInput } from "@/lib/text-utils";
@@ -27,9 +27,8 @@ interface InputProps {
   stop: () => void;
   selectedModel: modelID;
   setSelectedModel: (model: modelID) => void;
-  // Image upload props
-  images?: ImageAttachment[];
-  onImagesChange?: (images: ImageAttachment[]) => void;
+  files?: FileAttachment[];
+  onFilesChange?: (files: FileAttachment[]) => void;
 }
 
 export const Textarea = ({
@@ -40,8 +39,8 @@ export const Textarea = ({
   stop,
   selectedModel,
   setSelectedModel,
-  images = [],
-  onImagesChange,
+  files = [],
+  onFilesChange,
 }: InputProps) => {
   // Guard against undefined input prop
   const safeInput = input ?? "";
@@ -211,23 +210,23 @@ export const Textarea = ({
     }, 100);
   };
 
-  // Image handling functions
-  const handleImageSelect = (newImages: ImageAttachment[]) => {
-    if (onImagesChange) {
-      onImagesChange([...images, ...newImages]);
+  // File handling functions
+  const handleFileSelect = (newFiles: FileAttachment[]) => {
+    if (onFilesChange) {
+      onFilesChange([...files, ...newFiles]);
     }
     setShowImageUpload(false);
   };
 
-  const handleImageRemove = (index: number) => {
-    if (onImagesChange) {
-      const updatedImages = images.filter((_, i) => i !== index);
-      onImagesChange(updatedImages);
+  const handleFileRemove = (index: number) => {
+    if (onFilesChange) {
+      const updatedFiles = files.filter((_: FileAttachment, i: number) => i !== index);
+      onFilesChange(updatedFiles);
     }
   };
 
-  const canUploadMore = images.length < 5;
-  const hasImages = images.length > 0;
+  const canUploadMore = files.length < 5;
+  const hasFiles = files.length > 0;
 
   // Detect programming language from content
   const detectLanguage = useCallback((text: string): string | null => {
@@ -394,7 +393,7 @@ export const Textarea = ({
     const key = e.key;
 
     // Handle Enter submission (preserve existing behavior)
-    if (key === "Enter" && !e.shiftKey && !isLoading && (safeInput.trim() || hasImages)) {
+    if (key === "Enter" && !e.shiftKey && !isLoading && (safeInput.trim() || hasFiles)) {
       e.preventDefault();
       e.currentTarget.form?.requestSubmit();
       return;
@@ -522,7 +521,7 @@ export const Textarea = ({
         }
       }
     }
-  }, [safeInput, isLoading, hasImages, safeHandleInputChange, isCodeMode, detectedLanguage]);
+  }, [safeInput, isLoading, hasFiles, safeHandleInputChange, isCodeMode, detectedLanguage]);
 
   // Determine tooltip message based on credit status
   const getWebSearchTooltipMessage = () => {
@@ -545,30 +544,30 @@ export const Textarea = ({
 
   return (
     <div className="w-full space-y-3">
-      {/* Image Upload Interface */}
-      {effectiveModelSupportsVision() && showImageUpload && (
+      {/* File Upload Interface */}
+      {showImageUpload && (
         <div className="bg-card border border-border rounded-xl p-4">
-          <ImageUpload
-            onImageSelect={handleImageSelect}
-            maxFiles={3 - images.length}
+          <FileUpload
+            onFileSelect={handleFileSelect}
+            maxFiles={5 - files.length}
             disabled={isLoading || !canUploadMore}
-            showDetailSelector={true}
+            showDetailSelector={effectiveModelSupportsVision()}
           />
         </div>
       )}
 
-      {/* Image Preview */}
-      {hasImages && (
+      {/* File Preview */}
+      {hasFiles && (
         <div className="bg-card border border-border rounded-xl p-3">
-          <ImagePreview
-            images={images}
-            onRemove={handleImageRemove}
+          <FilePreview
+            files={files}
+            onRemove={handleFileRemove}
             maxWidth={120}
             maxHeight={120}
             className="mb-2"
           />
           <div className="text-xs text-muted-foreground">
-            {images.length}/5 images • Click images to remove
+            {files.length}/5 files • Click to remove
           </div>
         </div>
       )}
@@ -584,7 +583,7 @@ export const Textarea = ({
           }`}
           value={safeInput}
           autoFocus
-          placeholder={hasImages ? "Describe these images or ask questions..." : "Send a message..."}
+          placeholder={hasFiles ? "Describe these files or ask questions..." : "Send a message..."}
           onChange={handleEnhancedInputChange}
           onPaste={handlePaste}
           onKeyDown={handleEnhancedKeyDown}
@@ -778,34 +777,36 @@ export const Textarea = ({
           <div className={`flex items-center ${isMobileScreen ? 'w-full justify-between' : 'gap-2'}`}>
             {/* Action buttons group */}
             <div className="flex items-center gap-1.5">
-              {/* Image Upload Button */}
-              {effectiveModelSupportsVision() && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowImageUpload(!showImageUpload)}
-                      disabled={isLoading || !canUploadMore}
-                      className={`${
-                        isMobileScreen ? 'h-8 w-8' : 'h-9 w-9'
-                      } flex items-center justify-center rounded-full border transition-colors duration-150 ${
-                        !canUploadMore
-                          ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
-                          : showImageUpload
-                            ? 'bg-primary text-primary-foreground border-primary shadow'
-                            : 'bg-background border-border text-muted-foreground hover:bg-accent'
-                      } focus:outline-none focus:ring-2 focus:ring-primary/30`}
-                    >
-                      <ImageIcon className={isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent sideOffset={8}>
-                    {showImageUpload ? 'Hide image upload' : 'Upload images'}
-                  </TooltipContent>
-                </Tooltip>
-              )}
+              {/* File Upload Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowImageUpload(!showImageUpload)}
+                    disabled={isLoading || !canUploadMore}
+                    className={`${
+                      isMobileScreen ? 'h-8 w-8' : 'h-9 w-9'
+                    } flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                      !canUploadMore
+                        ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                        : showImageUpload
+                          ? 'bg-primary text-primary-foreground border-primary shadow'
+                          : 'bg-background border-border text-muted-foreground hover:bg-accent'
+                    } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                  >
+                    <Paperclip className={isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={8}>
+                  {showImageUpload
+                    ? 'Hide file upload'
+                    : effectiveModelSupportsVision()
+                      ? 'Upload files'
+                      : 'Upload files (images require a vision model)'}
+                </TooltipContent>
+              </Tooltip>
               
               {/* Only show web search button when no preset is active and model supports it */}
               {isMounted && !activePreset && getEffectiveModel().startsWith("openrouter/") && (
@@ -843,7 +844,7 @@ export const Textarea = ({
                 <button
                   type={isStreaming ? "button" : "submit"}
                   onClick={isStreaming ? stop : undefined}
-                  disabled={(!isStreaming && !(safeInput.trim() || hasImages)) || (isStreaming && status === "submitted")}
+                  disabled={(!isStreaming && !(safeInput.trim() || hasFiles)) || (isStreaming && status === "submitted")}
                   className={`${
                     isMobileScreen 
                       ? 'flex-1 h-8 px-3 text-sm' 
@@ -861,7 +862,7 @@ export const Textarea = ({
                     <>
                       <ArrowUp className={`${
                         isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'
-                      } ${(!isStreaming && !(safeInput.trim() || hasImages)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                      } ${(!isStreaming && !(safeInput.trim() || hasFiles)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
                       <span className={isMobileScreen ? 'text-xs font-medium' : 'text-sm'}>
                         Send
                       </span>
