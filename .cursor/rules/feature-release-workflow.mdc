@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description: "Use when releasing features, merging to main, bumping version (npm version), creating GitHub release notes, or deploying to production. Follow this workflow for merge → version → push → release notes → deploy."
+globs:
 alwaysApply: false
 ---
 # Feature Release Workflow

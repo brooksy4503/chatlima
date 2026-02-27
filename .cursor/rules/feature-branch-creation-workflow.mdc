@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description: "Use when creating a new feature branch, choosing branch names, setting up git workflow for features, syncing with main, or deploying feature branches to Vercel (preview only). Follow this rule for branch naming (feature/, fix/, enhance/, docs/), initial branch setup, conventional commits, and safe Vercel preview deployment—never use --prod on feature branches."
+globs:
 alwaysApply: false
 ---
 # Feature Branch Creation Workflow
