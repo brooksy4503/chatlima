@@ -225,7 +225,7 @@ export function ChatList({
             {!isCollapsed && (
                 <div className="px-3 pt-1 pb-2 border-b border-border/40">
                     <Button
-                        variant="outline"
+                        variant="default"
                         className="w-full mb-2"
                         onClick={onNewChat}
                     >

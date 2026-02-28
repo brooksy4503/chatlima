@@ -1,6 +1,6 @@
 # ChatLima - Full Application Specification
 
-**Version:** 0.36.1  
+**Version:** 0.37.0  
 **Last Updated:** February 2026
 
 ---
@@ -47,6 +47,7 @@ chatlima/
 │   │   ├── presets/         # Preset CRUD
 │   │   ├── models/          # Dynamic model fetching
 │   │   ├── favorites/       # Favorite models
+│   │   ├── upload-files/    # Multipart upload → Vercel Blob
 │   │   ├── admin/           # Admin endpoints
 │   │   └── ...
 │   ├── chat/[id]/           # Chat page
@@ -60,6 +61,8 @@ chatlima/
 │   ├── auth/                # Auth components
 │   ├── admin/               # Admin components
 │   ├── token-metrics/       # Usage analytics
+│   ├── file-upload.tsx      # Upload UI (drag-drop, picker)
+│   ├── file-preview.tsx    # Preview for images & document metadata
 │   └── ...
 ├── lib/                      # Shared utilities
 │   ├── db/                  # Database config & schema
@@ -67,6 +70,9 @@ chatlima/
 │   ├── models/              # Model fetching & config
 │   ├── auth.ts              # Better Auth config
 │   ├── polar.ts             # Polar integration
+│   ├── file-upload.ts       # Upload validation & Blob helpers
+│   ├── file-reader/         # PDF, CSV, Excel, text parsers (read_file tool)
+│   ├── browser-storage.ts   # Browser storage utilities
 │   └── ...
 ├── ai/                       # AI provider config
 │   └── providers.ts         # Multi-provider setup
@@ -476,8 +482,7 @@ Based on model pricing ($/M tokens):
 ### 8.1 Chat Features
 
 - **Streaming Responses**: Real-time AI response streaming with visual indicators
-- **Multi-Image Support**: Up to 5 images per message (JPEG, PNG, WebP, 20MB limit)
-- **File Uploads**: Documents, code files with content extraction
+- **Dual-Path File Upload**: Up to 5 files per message, 30 MB max per file. Images (JPEG, PNG, WebP) sent as base64 for vision; documents (PDF, CSV, Excel) and text/code files uploaded to Vercel Blob and exposed to the AI via a `read_file` tool (content parsed on demand). Parser limits: Excel 1,000 rows/sheet, CSV 10,000 rows.
 - **Web Search**: Premium web search via OpenRouter with citations
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
 - **Smart Title Generation**: Dynamic model selection for conversation titles
@@ -498,13 +503,10 @@ Based on model pricing ($/M tokens):
 - Web search toggle
 - API key preferences
 
-### 8.3 Image Processing
+### 8.3 Image & File Processing
 
-- Drag-and-drop upload
-- Client-side validation & compression
-- Preview with full-screen modal
-- Metadata display (dimensions, size)
-- Detail level control (low/high/auto)
+- **Images**: Drag-and-drop upload, client-side validation and compression, preview with full-screen modal, metadata (dimensions, size), detail level (low/high/auto).
+- **Documents**: File preview component for images and document metadata; client-side validation for type and size before upload. Document content is fetched and parsed only when the AI calls the `read_file` tool.
 
 ### 8.4 PDF Export & Sharing
 
@@ -531,7 +533,15 @@ Based on model pricing ($/M tokens):
 ```
 POST /api/chat
 - Main chat endpoint with streaming
-- Handles MCP tools, web search, images
+- Handles MCP tools, web search, images (base64), file references (Blob URLs)
+- Integrates read_file tool for uploaded documents
+```
+
+#### Upload API
+```
+POST /api/upload-files
+- Multipart upload; stores files in Vercel Blob Storage
+- Returns blob URLs for use in chat (documents); images may be sent inline as base64
 ```
 
 #### Models API
@@ -707,6 +717,7 @@ NEXT_PUBLIC_APP_URL=           # App URL for callbacks
 NEXT_PUBLIC_APP_TITLE=         # App title
 PREVIEW_DOMAIN=                # Custom preview domain
 NGROK_DOMAIN=                  # Ngrok for local dev
+BLOB_READ_WRITE_TOKEN=         # Vercel Blob Storage (for document uploads)
 ```
 
 ---
@@ -773,8 +784,9 @@ npm run test:anonymous  # Anonymous user tests
 
 ### 13.4 Data Privacy
 
-- Client-side image processing
-- No server storage of uploaded images
+- Client-side image processing; images sent as base64, not stored on server
+- Document uploads stored in Vercel Blob with timestamp-based unique names to avoid collisions
+- Document content parsed only when the AI uses the `read_file` tool
 - Anonymous user support
 - User data cleanup system
 

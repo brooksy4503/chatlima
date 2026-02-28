@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { type modelID } from '@/ai/providers';
 import { PresetTemplate } from '@/lib/preset-templates';
 import { getLocalStorageItem, setLocalStorageItem, removeLocalStorageItem } from '@/lib/browser-storage';
+import { useAuth } from '@/lib/context/auth-context';
 
 // Types
 export interface Preset {
@@ -77,6 +78,8 @@ interface PresetProviderProps {
 }
 
 export function PresetProvider({ children }: PresetProviderProps) {
+  const { isPending, user } = useAuth();
+
   // State
   const [presets, setPresets] = useState<Preset[]>([]);
   const [activePreset, setActivePresetState] = useState<Preset | null>(null);
@@ -352,10 +355,19 @@ export function PresetProvider({ children }: PresetProviderProps) {
     await loadPresets();
   }, [loadPresets]);
 
-  // Load presets on mount
+  // Load presets only when auth has resolved and user has a session; clear on sign-out
   useEffect(() => {
-    loadPresets();
-  }, [loadPresets]);
+    if (isPending) return;
+
+    if (user) {
+      loadPresets();
+    } else {
+      setPresets([]);
+      setActivePresetState(null);
+      setError(null);
+      removeLocalStorageItem('activePresetId');
+    }
+  }, [isPending, user, loadPresets]);
 
   // Restore active preset from localStorage on mount
   useEffect(() => {

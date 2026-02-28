@@ -4,6 +4,11 @@ import { PresetManager } from '../../components/preset-manager';
 import { usePresets } from '@/lib/context/preset-context';
 import { useModels } from '@/hooks/use-models';
 
+// Mock auth so preset-context can load (it uses useAuth)
+jest.mock('@/lib/context/auth-context', () => ({
+  useAuth: jest.fn(() => ({ isPending: false, user: { id: 'test-user' } })),
+}));
+
 // Mock external dependencies
 jest.mock('@/lib/context/preset-context');
 jest.mock('@/hooks/use-models');

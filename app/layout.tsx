@@ -9,10 +9,7 @@ import { cn } from "@/lib/utils";
 import BuildInfo from "@/components/ui/BuildInfo";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
 import { SidebarInset } from "@/components/ui/sidebar";
-import { Suspense, lazy } from "react";
-
-// Lazy load the ChatSidebar to improve initial page load performance
-const ChatSidebar = lazy(() => import("@/components/chat-sidebar").then(module => ({ default: module.ChatSidebar })));
+import { ChatSidebar } from "@/components/chat-sidebar";
 
 // Import auth performance monitor in development
 if (process.env.NODE_ENV === 'development') {
@@ -87,44 +84,8 @@ export default function RootLayout({
         <Providers>
           <WebSearchProvider>
             <div className="flex h-dvh w-full">
-              {/* Sidebar - lazy loaded to improve initial page performance */}
-              <Suspense fallback={
-                <div
-                  className="group peer text-sidebar-foreground hidden md:block"
-                  data-state="expanded"
-                  data-collapsible=""
-                  data-variant="sidebar"
-                  data-side="left"
-                  data-slot="sidebar"
-                >
-                  <div
-                    data-slot="sidebar-gap"
-                    className="relative w-[16rem] bg-transparent transition-[width] duration-200 ease-linear"
-                  />
-                  <div
-                    data-slot="sidebar-container"
-                    className="fixed inset-y-0 z-10 hidden h-svh w-[16rem] transition-[left,right,width] duration-200 ease-linear md:flex left-0 group-data-[side=left]:border-r group-data-[side=right]:border-l shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md"
-                  >
-                    <div
-                      data-sidebar="sidebar"
-                      data-slot="sidebar-inner"
-                      className="bg-sidebar flex h-full w-full flex-col animate-pulse"
-                    >
-                      <div className="p-4 border-b border-border/40 h-[72px] flex items-center">
-                        <div className="h-8 w-8 bg-muted rounded-full"></div>
-                        <div className="ml-2 h-4 w-20 bg-muted rounded"></div>
-                      </div>
-                      <div className="p-4 space-y-2 flex-1">
-                        {[...Array(5)].map((_, i) => (
-                          <div key={i} className="h-8 bg-muted rounded"></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              }>
-                <ChatSidebar />
-              </Suspense>
+              {/* Sidebar - rendered directly to avoid hydration mismatch (lazy + Suspense caused server fallback to differ from client Sidebar) */}
+              <ChatSidebar />
               {/* Main content area - SidebarInset handles responsive peer classes */}
               <SidebarInset className="flex flex-col min-w-0">
                 <TopNav />

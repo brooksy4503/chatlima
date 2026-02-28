@@ -306,12 +306,12 @@ export function MiniChatTokenSummary({
 
   return (
     <div className={cn("flex items-center gap-3 text-xs text-muted-foreground", className)}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" title="Total tokens">
         <Coins className="h-3 w-3" />
         <span>{formatNumber(totalTokens)}</span>
       </div>
-              {showCost && totalEstimatedCost > 0 && (
-        <span>{formatCost(totalEstimatedCost)}</span>
+      {showCost && totalEstimatedCost > 0 && (
+        <span title="Estimated cost">{formatCost(totalEstimatedCost)}</span>
       )}
       <div className="flex items-center gap-1" title="AI Requests">
         <BarChart3 className="h-3 w-3" />
