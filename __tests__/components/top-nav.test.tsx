@@ -3,9 +3,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TopNav } from '../../components/top-nav';
 
-// Mock Next.js navigation
+// Mock Next.js navigation (pathname '/' = welcome view shows tagline)
 jest.mock('next/navigation', () => ({
   useParams: jest.fn(() => ({ id: undefined })),
+  usePathname: jest.fn(() => '/'),
 }));
 
 // Mock Next.js Link component
@@ -164,13 +165,22 @@ describe('TopNav', () => {
       expect(nav).toHaveClass('sticky', 'top-0', 'z-50');
     });
 
-    test('renders ChatLima title', () => {
+    test('renders tagline on welcome view (pathname /)', () => {
       renderWithProviders(<TopNav />);
       
       const title = screen.getByRole('heading', { level: 1 });
       expect(title).toBeInTheDocument();
-      expect(title).toHaveTextContent('ChatLima');
+      expect(title).toHaveTextContent('Start a conversation');
       expect(title).toHaveClass('text-3xl', 'font-semibold');
+    });
+
+    test('renders ChatLima title on chat view (pathname /chat/[id])', () => {
+      const { usePathname } = require('next/navigation');
+      (usePathname as jest.Mock).mockReturnValueOnce('/chat/abc123');
+      renderWithProviders(<TopNav />);
+      
+      const title = screen.getByRole('heading', { level: 1 });
+      expect(title).toHaveTextContent('ChatLima');
     });
 
     test('renders sidebar trigger with menu icon', () => {
@@ -300,7 +310,7 @@ describe('TopNav', () => {
       
       const heading = screen.getByRole('heading', { level: 1 });
       expect(heading).toBeInTheDocument();
-      expect(heading).toHaveTextContent('ChatLima');
+      expect(heading).toHaveTextContent('Start a conversation');
     });
   });
 
@@ -364,7 +374,7 @@ describe('TopNav', () => {
       
       // User sees the navigation bar
       expect(screen.getByRole('navigation')).toBeInTheDocument();
-      expect(screen.getByText('ChatLima')).toBeInTheDocument();
+      expect(screen.getByText('Start a conversation')).toBeInTheDocument();
       
       // User can interact with sidebar trigger
       const menuButton = screen.getByRole('button', { name: /open sidebar/i });

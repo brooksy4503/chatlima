@@ -8,10 +8,10 @@ interface ProjectOverviewProps {
 export const ProjectOverview = ({ sendMessage, selectedModel }: ProjectOverviewProps) => {
   return (
     <div className="flex flex-col items-center justify-center space-y-6 p-4">
-      {/* Welcome header */}
+      {/* Welcome hero - clear value and one primary action */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <p className="text-base sm:text-lg text-muted-foreground">
-          Your AI-powered chat assistant. Choose a suggestion below or start typing your own message.
+        <p className="text-base sm:text-lg text-muted-foreground">
+          Ask anything. Pick a prompt idea below or type your own—your AI assistant is ready.
         </p>
       </div>
 

@@ -189,7 +189,7 @@ describe('SuggestedPrompts Component', () => {
         />
       );
       
-      expect(screen.getByText(/Suggestions optimized for claude-3-opus/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Why these\?/i })).toBeInTheDocument();
     });
   });
 
@@ -200,7 +200,7 @@ describe('SuggestedPrompts Component', () => {
       
       const searchInput = screen.getByTestId('search-input');
       expect(searchInput).toHaveAttribute('type', 'text');
-      expect(searchInput).toHaveAttribute('placeholder', 'Search suggestions...');
+      expect(searchInput).toHaveAttribute('placeholder', 'Search prompt ideas');
     });
 
     test('filters suggestions based on search query', () => {
@@ -329,7 +329,7 @@ describe('SuggestedPrompts Component', () => {
         />
       );
       
-      expect(screen.getByRole('button', { name: /Show More \(3 more\)/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Show 3 more suggestions/i })).toBeInTheDocument();
     });
 
     test('does not show "Show More" button when suggestions are within limit', () => {

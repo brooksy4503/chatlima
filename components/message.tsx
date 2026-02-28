@@ -216,29 +216,24 @@ const PurePreviewMessage = ({
           )}
         >
           <div className="flex flex-col w-full space-y-3">
-            {/* Render reasoning parts first */}
-            {message.parts?.map((part, i) => {
-              if ((part as any).type === "reasoning") {
-                const reasoningPart = part as ReasoningUIPart;
-                return (
-                  <ReasoningMessagePart
-                    key={`message-${message.id}-reasoning-${i}`}
-                    part={reasoningPart}
-                    isReasoning={
-                      (message.parts &&
-                        status === "streaming" &&
-                        i === message.parts.length - 1) ??
-                      false
-                    }
-                  />
-                );
-              }
-              return null;
-            })}
-            
-            {/* Render all other parts after reasoning */}
+            {/* Render all parts in chronological order (reasoning interleaved with text/tools) */}
             {message.parts?.map((part, i) => {
               switch ((part as any).type) {
+                case "reasoning": {
+                  const reasoningPart = part as ReasoningUIPart;
+                  return (
+                    <ReasoningMessagePart
+                      key={`message-${message.id}-reasoning-${i}`}
+                      part={reasoningPart}
+                      isReasoning={
+                        (message.parts &&
+                          status === "streaming" &&
+                          i === message.parts.length - 1) ??
+                        false
+                      }
+                    />
+                  );
+                }
                 case "text":
                   const textPart = part as TextUIPart;
                   return (
@@ -336,9 +331,6 @@ const PurePreviewMessage = ({
                       </div>
                     </motion.div>
                   );
-                case "reasoning":
-                  // Skip reasoning parts as they are rendered above
-                  return null;
                 default:
                   return null;
               }

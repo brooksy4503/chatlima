@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen, Activity, HelpCircle } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen, Activity, HelpCircle, LayoutDashboard } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -60,6 +60,8 @@ import { useAuth, signOut } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
+import { useLocalStorage } from "@/lib/hooks/use-local-storage";
+import { STORAGE_KEYS } from "@/lib/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     Tooltip,
@@ -126,6 +128,7 @@ export function ChatSidebar() {
     const [isHydrated, setIsHydrated] = useState(false);
     const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
+    const [showWelcomeScreen, setShowWelcomeScreen] = useLocalStorage(STORAGE_KEYS.SHOW_WELCOME_SCREEN, true);
     // On mobile, always show expanded layout
     const isLayoutCollapsed = isCollapsed && !isMobile;
 
@@ -454,6 +457,12 @@ export function ChatSidebar() {
                                             <DropdownMenuItem onClick={() => setProviderHealthOpen(true)}>
                                                 <Activity className="h-4 w-4 mr-2 text-muted-foreground" />
                                                 Provider Health
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => setShowWelcomeScreen(!showWelcomeScreen)}>
+                                                <LayoutDashboard className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                Show welcome screen
+                                                {showWelcomeScreen && <span className="ml-auto text-xs">✓</span>}
                                             </DropdownMenuItem>
                                             {webSearchEnabled && (
                                                 <>

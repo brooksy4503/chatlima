@@ -471,7 +471,12 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
             ) : isModelUnavailable ? (
               <p>This model requires premium access. Please check your credits.</p>
             ) : (
-              <p>Select an AI model for this conversation. Each model has different capabilities and costs.</p>
+              <div className="space-y-1.5">
+                <p className="font-medium">{selectedModelData.name}</p>
+                <p className="text-muted-foreground text-xs">
+                  Model – Select an AI model for this conversation. Each model has different capabilities and costs.
+                </p>
+              </div>
             )}
           </TooltipContent>
         </Tooltip>

@@ -7,7 +7,8 @@ export const STORAGE_KEYS = {
   MCP_SERVERS: "mcpServers",
   SELECTED_MCP_SERVERS: "selectedMcpServers",
   SIDEBAR_STATE: "sidebarState",
-  WEB_SEARCH: "webSearch"
+  WEB_SEARCH: "webSearch",
+  SHOW_WELCOME_SCREEN: "showWelcomeScreen",
 } as const;
 
 // Configurable model IDs

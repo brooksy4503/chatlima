@@ -24,6 +24,8 @@ import type { FileAttachment } from "@/lib/types";
 import { useModels } from "@/hooks/use-models";
 import { ChatTokenSummary } from "./token-metrics/ChatTokenSummary";
 import { getLocalStorageItem, isLocalStorageAvailable } from "@/lib/browser-storage";
+import { useLocalStorage } from "@/lib/hooks/use-local-storage";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 // Type for chat data from DB
 interface ChatData {
@@ -54,6 +56,7 @@ export default function Chat() {
   
   const { selectedModel, setSelectedModel } = useModel();
   const { activePreset } = usePresets();
+  const [showWelcomeScreen] = useLocalStorage(STORAGE_KEYS.SHOW_WELCOME_SCREEN, true);
   const [userId, setUserId] = useState<string | null>(null);
   const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
@@ -1019,17 +1022,25 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Main content area: Either ProjectOverview or Messages */}
+      {/* Main content area: Either ProjectOverview, minimal empty state, or Messages */}
       <div className={`flex-1 min-h-0 pb-2 ${messages.length === 0 && !isLoadingChat ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {messages.length === 0 && !isLoadingChat ? (
-          <div className="h-full overflow-y-auto no-scrollbar">
-            <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
-              <ProjectOverview 
-                sendMessage={sendSuggestedMessage}
-                selectedModel={selectedModel}
-              />
+          showWelcomeScreen ? (
+            <div className="h-full overflow-y-auto no-scrollbar">
+              <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
+                <ProjectOverview 
+                  sendMessage={sendSuggestedMessage}
+                  selectedModel={selectedModel}
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center px-4">
+              <p className="text-sm text-muted-foreground text-center max-w-sm">
+                Type a message below to get started. Turn on &quot;Show welcome screen&quot; in Settings to see prompt ideas.
+              </p>
+            </div>
+          )
         ) : (
           <Messages
             messages={enhancedMessages}

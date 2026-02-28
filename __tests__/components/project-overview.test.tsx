@@ -37,19 +37,19 @@ describe('ProjectOverview', () => {
     test('renders welcome text without sendMessage prop', () => {
       render(<ProjectOverview />);
       
-      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
+      expect(screen.getByText(/ask anything/i)).toBeInTheDocument();
     });
 
     test('renders welcome text with sendMessage prop', () => {
       render(<ProjectOverview sendMessage={mockSendMessage} />);
       
-      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
+      expect(screen.getByText(/ask anything/i)).toBeInTheDocument();
     });
 
     test('renders welcome text with both sendMessage and selectedModel props', () => {
       render(<ProjectOverview sendMessage={mockSendMessage} selectedModel="gpt-4" />);
       
-      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
+      expect(screen.getByText(/ask anything/i)).toBeInTheDocument();
     });
   });
 
@@ -108,7 +108,7 @@ describe('ProjectOverview', () => {
     test('applies correct CSS classes to main container', () => {
       render(<ProjectOverview sendMessage={mockSendMessage} />);
       
-      const description = screen.getByText(/your ai-powered chat assistant/i);
+      const description = screen.getByText(/ask anything/i);
       const mainContainer = description.closest('div')?.parentElement;
       expect(mainContainer).toHaveClass('flex', 'flex-col', 'items-center', 'justify-center', 'space-y-6', 'p-4');
     });
@@ -116,7 +116,7 @@ describe('ProjectOverview', () => {
     test('applies correct styling to description text', () => {
       render(<ProjectOverview />);
       
-      const description = screen.getByText(/your ai-powered chat assistant/i);
+      const description = screen.getByText(/ask anything/i);
       expect(description).toHaveClass('text-base', 'sm:text-lg', 'text-muted-foreground');
     });
 
@@ -132,15 +132,15 @@ describe('ProjectOverview', () => {
     test('provides descriptive text for screen readers', () => {
       render(<ProjectOverview />);
       
-      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
-      expect(screen.getByText(/choose a suggestion below or start typing/i)).toBeInTheDocument();
+      expect(screen.getByText(/ask anything/i)).toBeInTheDocument();
+      expect(screen.getByText(/pick a prompt idea below or type your own/i)).toBeInTheDocument();
     });
 
     test('maintains semantic structure without interactive elements when sendMessage is not provided', () => {
       render(<ProjectOverview />);
       
       // Should only have text, no interactive elements
-      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
+      expect(screen.getByText(/ask anything/i)).toBeInTheDocument();
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
       expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     });
@@ -150,7 +150,7 @@ describe('ProjectOverview', () => {
     test('handles undefined sendMessage prop gracefully', () => {
       render(<ProjectOverview sendMessage={undefined} />);
       
-      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
+      expect(screen.getByText(/ask anything/i)).toBeInTheDocument();
       expect(screen.queryByTestId('suggested-prompts')).not.toBeInTheDocument();
     });
 
@@ -175,7 +175,7 @@ describe('ProjectOverview', () => {
       render(<ProjectOverview sendMessage={mockSendMessage} selectedModel={selectedModel} />);
       
       // Verify welcome text is present
-      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
+      expect(screen.getByText(/ask anything/i)).toBeInTheDocument();
       
       // Verify SuggestedPrompts is rendered with correct props
       const suggestedPrompts = screen.getByTestId('suggested-prompts');
@@ -190,7 +190,7 @@ describe('ProjectOverview', () => {
       render(<ProjectOverview />);
       
       // Should render basic welcome without interactive elements
-      expect(screen.getByText(/your ai-powered chat assistant/i)).toBeInTheDocument();
+      expect(screen.getByText(/ask anything/i)).toBeInTheDocument();
       expect(screen.queryByTestId('suggested-prompts')).not.toBeInTheDocument();
     });
   });

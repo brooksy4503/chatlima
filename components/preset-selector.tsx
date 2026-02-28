@@ -42,7 +42,7 @@ export function PresetSelector({ className }: PresetSelectorProps) {
       >
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
-            <SelectTrigger className="h-8 w-auto min-w-[40px] text-xs border-border max-w-full">
+            <SelectTrigger className="h-8 w-auto min-w-[40px] text-xs border-border max-w-full" aria-label="Preset">
               <div className="flex items-center gap-1">
                 {loading ? (
                   <Loader className="w-3 h-3 animate-spin" />
@@ -65,6 +65,7 @@ export function PresetSelector({ className }: PresetSelectorProps) {
           <TooltipContent side="top" className="max-w-[280px] text-xs p-3">
             {activePreset ? (
               <div className="space-y-2">
+                <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">Preset</div>
                 <div className="font-semibold text-foreground truncate text-sm">
                   {activePreset.name}
                 </div>
@@ -98,6 +99,7 @@ export function PresetSelector({ className }: PresetSelectorProps) {
               </div>
             ) : (
               <div className="space-y-1">
+                <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">Preset</div>
                 <div className="font-medium text-foreground">Manual Mode</div>
                 <div className="text-muted-foreground text-xs">
                   Configure settings manually without a preset

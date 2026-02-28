@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { PlusCircle, Menu, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -11,7 +11,9 @@ import { useQuery } from "@tanstack/react-query";
 
 export function TopNav() {
   const params = useParams();
+  const pathname = usePathname();
   const chatId = params?.id as string | undefined;
+  const isWelcomeView = pathname === "/";
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   // Fetch chat title for sharing - only when actually needed
@@ -51,9 +53,11 @@ export function TopNav() {
           </SidebarTrigger>
         </div>
         
-        {/* ChatLima title - Truly centered */}
+        {/* Title or tagline - avoid duplicating "ChatLima" on welcome view */}
         <div className="flex-1 flex justify-center">
-          <h1 className="text-3xl font-semibold">ChatLima</h1>
+          <h1 className="text-3xl font-semibold">
+            {isWelcomeView ? "Start a conversation" : "ChatLima"}
+          </h1>
         </div>
         
         {/* Action buttons - Right side */}

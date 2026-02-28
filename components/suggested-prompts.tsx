@@ -33,6 +33,12 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Textarea } from "./ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 export interface SuggestedAction {
   title: string;
@@ -618,8 +624,8 @@ function PureSuggestedPrompts({
         <Input
           type="text"
           placeholder={isMobile 
-            ? (isSearchFocused ? "Search suggestions..." : "Search or choose categories...")
-            : "Search suggestions..."
+            ? (isSearchFocused ? "Search prompt ideas" : "Prompt ideas or categories...")
+            : "Search prompt ideas"
           }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -929,20 +935,37 @@ function PureSuggestedPrompts({
             onClick={() => setShowMore(!showMore)}
             className="text-xs px-4 py-2"
           >
-            {showMore ? "Show Less" : `Show More (${filteredSuggestions.length - maxSuggestions} more)`}
+            {showMore ? "Show Less" : `Show ${filteredSuggestions.length - maxSuggestions} more suggestions`}
           </Button>
         </div>
       )}
 
-      {/* Model context hint */}
+      {/* Model context hint - compact "Why these?" with tooltip */}
       {selectedModel && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center text-xs text-muted-foreground"
+          className="text-center"
         >
-          <Brain className="h-3 w-3 inline mr-1" />
-          Suggestions optimized for {selectedModel}
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                  aria-label="Why these suggestions?"
+                >
+                  <Brain className="h-3 w-3" />
+                  Why these?
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[280px] text-center">
+                <p className="text-xs">
+                  Suggestions are tailored for <strong>{selectedModel}</strong>. Try a different model to see other prompt ideas.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </motion.div>
       )}
 

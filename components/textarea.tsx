@@ -576,7 +576,7 @@ export const Textarea = ({
       <div className="relative w-full">
         <ShadcnTextarea
           ref={textareaRef}
-          className={`resize-y bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl px-4 py-4 border-input focus-visible:ring-ring placeholder:text-muted-foreground transition-all duration-300 ease-in-out ${
+          className={`resize-y bg-background/50 dark:bg-muted/50 backdrop-blur-sm w-full rounded-2xl px-4 py-4 border-input focus-visible:ring-2 focus-visible:ring-primary/20 placeholder:text-muted-foreground transition-all duration-300 ease-in-out ${
             isCodeMode 
               ? 'font-mono ring-2 ring-blue-500/20 border-blue-500/30 bg-blue-50/10 dark:bg-blue-950/10 text-sm leading-relaxed' 
               : 'font-sans text-base leading-normal'
@@ -803,8 +803,8 @@ export const Textarea = ({
                   {showImageUpload
                     ? 'Hide file upload'
                     : effectiveModelSupportsVision()
-                      ? 'Upload files'
-                      : 'Upload files (images require a vision model)'}
+                      ? 'Attach file'
+                      : 'Attach file (images require a vision model)'}
                 </TooltipContent>
               </Tooltip>
               
