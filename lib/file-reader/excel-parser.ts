@@ -18,7 +18,6 @@ export async function parseExcel(buffer: Buffer): Promise<{
 
     const sheets = workbook.SheetNames;
     const sheetData: Record<string, Record<string, unknown>[]> = {};
-    const maxRowsPerSheet = 1000;
 
     for (const sheetName of sheets) {
       const worksheet = workbook.Sheets[sheetName];
@@ -27,7 +26,7 @@ export async function parseExcel(buffer: Buffer): Promise<{
         raw: false,
       });
 
-      sheetData[sheetName] = jsonData.slice(0, maxRowsPerSheet);
+      sheetData[sheetName] = jsonData;
     }
 
     const summary = generateExcelSummary(sheets, sheetData);
@@ -45,6 +44,44 @@ export async function parseExcel(buffer: Buffer): Promise<{
     console.error('[ExcelParser] Error:', error);
     return { success: false, error: message };
   }
+}
+
+export function excelToFullContent(
+  sheets: string[],
+  sheetData: Record<string, Record<string, unknown>[]>
+): string {
+  const parts: string[] = [];
+
+  for (const sheetName of sheets) {
+    const data = sheetData[sheetName];
+    if (!data || data.length === 0) {
+      parts.push(`## Sheet: "${sheetName}"\n(empty)\n`);
+      continue;
+    }
+
+    const headers = Object.keys(data[0]);
+    parts.push(`## Sheet: "${sheetName}"`);
+    parts.push(`Rows: ${data.length}, Columns: ${headers.length}`);
+    parts.push('');
+
+    // Header row
+    parts.push(headers.join('\t'));
+
+    // Data rows
+    for (const row of data) {
+      const values = headers.map(header => {
+        const value = row[header];
+        // Convert to string, handle null/undefined, and escape tabs/newlines
+        const str = String(value ?? '');
+        return str.replace(/\t/g, ' ').replace(/\n/g, ' ');
+      });
+      parts.push(values.join('\t'));
+    }
+
+    parts.push('');
+  }
+
+  return parts.join('\n');
 }
 
 function generateExcelSummary(

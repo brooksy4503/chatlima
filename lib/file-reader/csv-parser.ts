@@ -21,9 +21,8 @@ export async function parseCSV(buffer: Buffer): Promise<{
     }
 
     const data: Record<string, unknown>[] = [];
-    const maxRows = 10000;
 
-    for (let i = 1; i < Math.min(lines.length, maxRows + 1); i++) {
+    for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i], delimiter);
       if (values.length > 0) {
         const row: Record<string, unknown> = {};
@@ -89,6 +88,35 @@ function parseCSVLine(line: string, delimiter: string): string[] {
   values.push(current.trim());
 
   return values;
+}
+
+function escapeCSVValue(value: string): string {
+  // If value contains comma, newline, or quote, wrap in quotes and escape quotes
+  if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+export function csvToFullContent(data: Record<string, unknown>[], headers: string[]): string {
+  if (data.length === 0) {
+    return 'CSV file is empty';
+  }
+
+  // Header line
+  const headerLine = headers.map(h => escapeCSVValue(String(h))).join(',');
+  const rows: string[] = [headerLine];
+
+  // Data rows
+  for (const row of data) {
+    const values = headers.map(header => {
+      const value = row[header];
+      return escapeCSVValue(String(value ?? ''));
+    });
+    rows.push(values.join(','));
+  }
+
+  return rows.join('\n');
 }
 
 export function csvToSummary(data: Record<string, unknown>[], headers: string[]): string {
