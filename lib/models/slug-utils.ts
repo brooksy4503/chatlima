@@ -52,11 +52,7 @@ export function slugToModelId(slug: string): string {
   const normalizedSlug = slug.replace(/:free$/g, '-free');
   const parts = normalizedSlug.split('-');
 
-  // Try to identify provider from first part
-  const provider = parts[0];
-  const modelName = parts.slice(1).join('-');
-
-  // Handle common providers
+  // Handle common providers (including multi-word providers like x-ai, meta-llama, etc.)
   const providerMap: Record<string, string> = {
     'openrouter': 'openrouter',
     'requesty': 'requesty',
@@ -69,8 +65,29 @@ export function slugToModelId(slug: string): string {
     'minimax': 'minimax',
     'nvidia': 'nvidia',
     'z-ai': 'z-ai',
+    'x-ai': 'x-ai',
+    'meta-llama': 'meta-llama',
+    'deepseek': 'deepseek',
     'bytedance-seed': 'bytedance-seed',
   };
+
+  // Try multi-word providers first (e.g., x-ai, meta-llama)
+  if (parts.length >= 2) {
+    const twoWordProvider = `${parts[0]}-${parts[1]}`;
+    if (twoWordProvider in providerMap) {
+      const modelName = parts.slice(2).join('-');
+      const modelParts = modelName.split('-');
+      if (modelParts.length > 1 && modelParts[modelParts.length - 1] === 'free') {
+        const baseModelName = modelParts.slice(0, -1).join('-');
+        return `${providerMap[twoWordProvider]}/${baseModelName}:free`;
+      }
+      return `${providerMap[twoWordProvider]}/${modelName}`;
+    }
+  }
+
+  // Try to identify provider from first part
+  const provider = parts[0];
+  const modelName = parts.slice(1).join('-');
 
   if (provider in providerMap) {
     // Check if model name ends with "-free" (converted from ":free" suffix)
