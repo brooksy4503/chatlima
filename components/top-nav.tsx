@@ -55,7 +55,7 @@ export function TopNav() {
         
         {/* Title or tagline - avoid duplicating "ChatLima" on welcome view */}
         <div className="flex-1 flex justify-center">
-          <h1 className="text-3xl font-semibold">
+          <h1 className="text-xl md:text-3xl font-semibold">
             {isWelcomeView ? "Start a conversation" : "ChatLima"}
           </h1>
         </div>
