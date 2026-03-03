@@ -172,24 +172,24 @@ export const PREBUILT_COMPARISONS: Array<{
   reason: string;
 }> = [
   {
-    model1Id: 'openai/gpt-5-pro',
-    model2Id: 'anthropic/claude-3-5-sonnet',
+    model1Id: 'openai/gpt-5.2-pro',
+    model2Id: 'anthropic/claude-opus-4.6',
     reason: 'Two top frontier models compared'
   },
   {
-    model1Id: 'openai/gpt-5-pro',
-    model2Id: 'google/gemini-3-flash-preview',
+    model1Id: 'openai/gpt-5.2-pro',
+    model2Id: 'google/gemini-3.1-pro-preview',
     reason: 'Latest OpenAI vs Google flagship'
   },
   {
-    model1Id: 'anthropic/claude-3-5-sonnet',
-    model2Id: 'google/gemini-3-flash-preview',
+    model1Id: 'anthropic/claude-opus-4.6',
+    model2Id: 'google/gemini-3.1-pro-preview',
     reason: 'Best reasoning models comparison'
   },
   {
-    model1Id: 'openai/gpt-5-chat',
-    model2Id: 'openai/gpt-5-pro',
-    reason: 'GPT-5 Chat vs Pro comparison'
+    model1Id: 'openai/gpt-5.2-chat',
+    model2Id: 'openai/gpt-5.2-pro',
+    reason: 'GPT-5.2 Chat vs Pro comparison'
   },
   {
     model1Id: 'mistralai/devstral-2512',
@@ -202,33 +202,33 @@ export const PREBUILT_COMPARISONS: Array<{
     reason: 'Best free coding models'
   },
   {
-    model1Id: 'openai/gpt-5-pro',
-    model2Id: 'openrouter/gemini-2.5-flash',
+    model1Id: 'openai/gpt-5.2-pro',
+    model2Id: 'google/gemini-3.1-flash',
     reason: 'Frontier model comparison'
   },
   {
-    model1Id: 'anthropic/claude-3-5-sonnet',
-    model2Id: 'openai/gpt-4o',
-    reason: 'Claude vs GPT-4o comparison'
+    model1Id: 'anthropic/claude-sonnet-4.6',
+    model2Id: 'openai/gpt-5.1',
+    reason: 'Claude Sonnet 4.6 vs GPT-5.1 comparison'
   },
   {
-    model1Id: 'google/gemini-3-flash-preview',
+    model1Id: 'google/gemini-3.1-flash',
     model2Id: 'xiaomi/mimo-v2-flash:free',
     reason: 'Free vs paid vision models'
   },
   {
-    model1Id: 'openai/gpt-5-pro',
+    model1Id: 'openai/gpt-5.2-pro',
     model2Id: 'mistralai/devstral-2512',
     reason: 'Best models for agentic coding'
   },
   {
-    model1Id: 'anthropic/claude-3-5-sonnet',
+    model1Id: 'anthropic/claude-opus-4.6',
     model2Id: 'mistralai/devstral-2512',
     reason: 'Reasoning vs agentic coding'
   },
   {
-    model1Id: 'openai/gpt-5-chat',
-    model2Id: 'google/gemini-3-flash-preview',
+    model1Id: 'openai/gpt-5.2-chat',
+    model2Id: 'google/gemini-3.1-flash',
     reason: 'Fast chat models comparison'
   },
   {
@@ -238,28 +238,28 @@ export const PREBUILT_COMPARISONS: Array<{
   },
   {
     model1Id: 'openrouter/z-ai/glm-4.7',
-    model2Id: 'openrouter/google/gemini-2.5-flash',
+    model2Id: 'google/gemini-3.1-flash',
     reason: 'Z.AI vs Google comparison'
   },
   {
-    model1Id: 'openai/gpt-5-pro',
+    model1Id: 'openai/gpt-5.2-pro',
     model2Id: 'minimax/minimax-m2.1',
     reason: 'OpenAI vs MiniMax comparison'
   },
   {
-    model1Id: 'anthropic/claude-3-5-sonnet',
+    model1Id: 'anthropic/claude-opus-4.6',
     model2Id: 'xiaomi/mimo-v2-flash:free',
     reason: 'Premium vs free reasoning models'
   },
   {
     model1Id: 'openrouter/bytedance-seed/seed-1.6-flash',
-    model2Id: 'google/gemini-3-flash-preview',
+    model2Id: 'google/gemini-3.1-flash',
     reason: 'ByteDance vs Google flash models'
   },
   {
-    model1Id: 'openai/gpt-5-pro',
+    model1Id: 'openai/gpt-5.2-pro',
     model2Id: 'openrouter/z-ai/glm-4.7',
-    reason: 'GPT-5 vs GLM-4.7 comparison'
+    reason: 'GPT-5.2 vs GLM-4.7 comparison'
   },
   {
     model1Id: 'mistralai/devstral-2512',
@@ -267,9 +267,59 @@ export const PREBUILT_COMPARISONS: Array<{
     reason: 'Top agentic coding models'
   },
   {
-    model1Id: 'openrouter/openai/gpt-4o',
-    model2Id: 'openrouter/anthropic/claude-3-5-sonnet',
+    model1Id: 'openai/gpt-5.1',
+    model2Id: 'anthropic/claude-opus-4.6',
     reason: 'Most popular models comparison'
+  },
+  {
+    model1Id: 'x-ai/grok-4',
+    model2Id: 'openai/gpt-5.2-pro',
+    reason: 'Grok 4 vs GPT-5.2 Pro comparison'
+  },
+  {
+    model1Id: 'meta-llama/llama-4-maverick',
+    model2Id: 'google/gemini-3.1-pro-preview',
+    reason: 'Llama 4 Maverick vs Gemini 3.1 Pro'
+  },
+  {
+    model1Id: 'deepseek/deepseek-v3.2',
+    model2Id: 'openai/gpt-5.1',
+    reason: 'DeepSeek V3.2 vs GPT-5.1 comparison'
+  },
+  {
+    model1Id: 'x-ai/grok-4.1-fast',
+    model2Id: 'google/gemini-3.1-flash',
+    reason: 'Fastest models from X AI and Google'
+  },
+  {
+    model1Id: 'openai/gpt-5.3-codex',
+    model2Id: 'anthropic/claude-sonnet-4.6',
+    reason: 'Best coding models compared'
+  },
+  {
+    model1Id: 'meta-llama/llama-4-scout',
+    model2Id: 'google/gemini-3.1-flash',
+    reason: 'Llama 4 Scout vs Gemini 3.1 Flash'
+  },
+  {
+    model1Id: 'anthropic/claude-opus-4.6',
+    model2Id: 'anthropic/claude-sonnet-4.6',
+    reason: 'Claude Opus 4.6 vs Sonnet 4.6'
+  },
+  {
+    model1Id: 'openai/gpt-5.2',
+    model2Id: 'openai/gpt-5.1',
+    reason: 'GPT-5.2 vs GPT-5.1 comparison'
+  },
+  {
+    model1Id: 'deepseek/deepseek-v3.1-terminus',
+    model2Id: 'deepseek/deepseek-v3.2',
+    reason: 'DeepSeek variants compared'
+  },
+  {
+    model1Id: 'x-ai/grok-3',
+    model2Id: 'x-ai/grok-4',
+    reason: 'Grok evolution: Grok 3 vs Grok 4'
   }
 ];
 

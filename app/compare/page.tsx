@@ -53,7 +53,7 @@ export default async function ComparePage() {
   };
 
   // Get popular comparisons - show all, using fallback names if models don't exist
-  const popularComparisons = PREBUILT_COMPARISONS.slice(0, 7)
+  const popularComparisons = PREBUILT_COMPARISONS
     .map(comp => {
       const slug = modelIdToSlug(comp.model1Id) + '-vs-' + modelIdToSlug(comp.model2Id);
       
