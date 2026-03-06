@@ -254,14 +254,50 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 - **User Management**: Automated cleanup system with admin dashboard for database optimization
 - **Error Resilience**: JSON repair utility with jsonrepair library for malformed data handling
 
+## Settings Panel
+
+ChatLima features a unified settings panel accessible from the sidebar. Click the "Settings" button in the sidebar to manage all your configuration options in one place.
+
+### Settings Tabs
+
+The settings panel includes four main sections:
+
+#### API Keys
+- Manage API keys for 6 AI providers: OpenAI, Anthropic, Groq, XAI, OpenRouter, Requesty
+- Keys are stored securely in your browser's local storage
+- Show/hide password toggle for each key
+- Clear all keys option
+- Use personal keys to bypass credit system
+
+#### MCP Servers
+- Configure Model Context Protocol servers for extended AI capabilities
+- Add/edit/delete servers with SSE, stdio, or streamable-http transports
+- OAuth 2.1 authorization support
+- Connection testing
+- Server selection and activation
+- View active server count badge
+
+#### Provider Health
+- Real-time health monitoring of AI providers
+- Status indicators: healthy/degraded/down/unknown
+- Model count per provider
+- API key source tracking (ENV vs User)
+- Refresh functionality
+
+#### Preferences
+- Toggle welcome screen visibility
+- Configure web search context size (Low/Medium/High)
+
 ## MCP Server Configuration
 
-This application supports connecting to Model Context Protocol (MCP) servers to access their tools. You can add and manage MCP servers through the settings icon in the chat interface.
+This application supports connecting to Model Context Protocol (MCP) servers to access their tools. You can add and manage MCP servers through the **Settings → MCP Servers** tab.
 
 ### Adding an MCP Server
 
-1. Click the settings icon (⚙️) next to the model selector in the chat interface.
-2. Enter a name for your MCP server and optionally a display title for better organization.
+1. Open Settings from the sidebar
+2. Navigate to the "MCP Servers" tab
+3. Click "Manage Servers"
+4. Enter a name for your MCP server and optionally a display title for better organization.
 3. Select the transport type:
    - **SSE (Server-Sent Events)**: For HTTP-based remote servers
    - **stdio (Standard I/O)**: For local servers running on the same machine

@@ -130,7 +130,11 @@ npm run pricing:analysis  # Analyze OpenRouter pricing with tsx
 - `components/chat.tsx` - Main chat interface
 - `components/message.tsx` - Message display
 - `components/model-picker.tsx` - AI model selection
+- `components/settings-sheet.tsx` - Unified settings panel with horizontal tabs
+- `components/settings/` - Settings tab components (API Keys, MCP Servers, Provider Health, Preferences)
 - `components/mcp-server-manager.tsx` - MCP server management
+- `components/api-key-manager.tsx` - API key management with embedded mode support
+- `components/api-key-manager.tsx` - API key management with embedded mode support
 
 ### Environment Configuration
 
