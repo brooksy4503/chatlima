@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, ChevronsUpDown, Copy, Github, Key, LogOut, Globe, BookOpen, Activity, HelpCircle, LayoutDashboard } from "lucide-react";
+import { MessageSquare, PlusCircle, Trash2, ServerIcon, Settings, Sparkles, Copy, Github, Key, Globe, BookOpen, Activity, HelpCircle } from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -22,33 +22,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import Image from "next/image";
-import { MCPServerManager } from "./mcp-server-manager";
-import { ApiKeyManager } from "./api-key-manager";
+import { SettingsSheet } from "./settings-sheet";
 import { ThemeToggle } from "./theme-toggle";
-import { ProviderHealthDashboard } from "./provider-health-dashboard";
 import { MiniChatTokenSummary } from "./token-metrics/ChatTokenSummary";
 import { useQuery } from "@tanstack/react-query";
 import { useChats } from "@/lib/hooks/use-chats";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMCP } from "@/lib/context/mcp-context";
@@ -62,7 +43,6 @@ import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     Tooltip,
     TooltipContent,
@@ -122,9 +102,7 @@ export function ChatSidebar() {
     const router = useRouter();
     const pathname = usePathname();
     const [userId, setUserId] = useState<string | null>(null);
-    const [mcpSettingsOpen, setMcpSettingsOpen] = useState(false);
-    const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
-    const [providerHealthOpen, setProviderHealthOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
     const [isHydrated, setIsHydrated] = useState(false);
     const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
@@ -414,88 +392,26 @@ export function ChatSidebar() {
                         <SidebarGroupContent className="pt-2">
                            <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <SidebarMenuButton
-                                                className="w-full flex items-center gap-2 transition-all"
-                                                tooltip={isCollapsed ? "Settings" : undefined}
-                                            >
-                                                <Settings className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                                                {!isCollapsed && (
-                                                    <>
-                                                        <span className="flex-grow text-sm text-foreground/80 text-left">Settings</span>
-                                                        <ChevronsUpDown className="h-3 w-3 text-muted-foreground ml-auto" />
-                                                    </>
-                                                )}
-                                            </SidebarMenuButton>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent 
-                                            align="start" 
-                                            side={isCollapsed ? "right" : "bottom"} 
-                                            sideOffset={8} 
-                                            className="min-w-[200px]"
-                                        >
-                                            <DropdownMenuItem onClick={() => setMcpSettingsOpen(true)}>
-                                                <ServerIcon className={cn(
-                                                    "h-4 w-4 mr-2",
-                                                    activeServersCount > 0 ? "text-primary" : "text-muted-foreground"
-                                                )} />
-                                                MCP Servers
+                                    <SidebarMenuButton
+                                        onClick={() => setSettingsOpen(true)}
+                                        className="w-full flex items-center gap-2 transition-all"
+                                        tooltip={isCollapsed ? "Settings" : undefined}
+                                    >
+                                        <Settings className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                        {!isCollapsed && (
+                                            <>
+                                                <span className="flex-grow text-sm text-foreground/80 text-left">Settings</span>
                                                 {activeServersCount > 0 && (
                                                     <Badge 
                                                         variant="secondary" 
-                                                        className="ml-auto text-[10px] px-1.5 py-0 h-5 bg-secondary/80"
+                                                        className="text-[10px] px-1.5 py-0 h-5 bg-secondary/80"
                                                     >
                                                         {activeServersCount}
                                                     </Badge>
                                                 )}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setApiKeySettingsOpen(true)}>
-                                                <Key className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                API Keys
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setProviderHealthOpen(true)}>
-                                                <Activity className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                Provider Health
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => setShowWelcomeScreen(!showWelcomeScreen)}>
-                                                <LayoutDashboard className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                Show welcome screen
-                                                {showWelcomeScreen && <span className="ml-auto text-xs">✓</span>}
-                                            </DropdownMenuItem>
-                                            {webSearchEnabled && (
-                                                <>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuLabel className="text-xs">Web Search</DropdownMenuLabel>
-                                                    <DropdownMenuItem 
-                                                        onClick={() => setWebSearchContextSize('low')}
-                                                        className={cn(webSearchContextSize === 'low' && "bg-secondary")}
-                                                    >
-                                                        <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                        Context: Low
-                                                        {webSearchContextSize === 'low' && <span className="ml-auto text-xs">✓</span>}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem 
-                                                        onClick={() => setWebSearchContextSize('medium')}
-                                                        className={cn(webSearchContextSize === 'medium' && "bg-secondary")}
-                                                    >
-                                                        <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                        Context: Medium
-                                                        {webSearchContextSize === 'medium' && <span className="ml-auto text-xs">✓</span>}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem 
-                                                        onClick={() => setWebSearchContextSize('high')}
-                                                        className={cn(webSearchContextSize === 'high' && "bg-secondary")}
-                                                    >
-                                                        <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                        Context: High
-                                                        {webSearchContextSize === 'high' && <span className="ml-auto text-xs">✓</span>}
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                            </>
+                                        )}
+                                    </SidebarMenuButton>
                                 </SidebarMenuItem>
                            </SidebarMenu>
                         </SidebarGroupContent>
@@ -611,36 +527,20 @@ export function ChatSidebar() {
                 </SidebarFooter>
             </Sidebar>
 
-            <MCPServerManager
-                servers={mcpServers}
-                onServersChange={setMcpServers}
-                selectedServers={selectedMcpServers}
-                onSelectedServersChange={setSelectedMcpServers}
-                open={mcpSettingsOpen}
-                onOpenChange={setMcpSettingsOpen}
+            <SettingsSheet
+                open={settingsOpen}
+                onOpenChange={setSettingsOpen}
+                defaultTab="api-keys"
+                mcpServers={mcpServers}
+                onMcpServersChange={setMcpServers}
+                selectedMcpServers={selectedMcpServers}
+                onSelectedMcpServersChange={setSelectedMcpServers}
+                showWelcomeScreen={showWelcomeScreen}
+                onShowWelcomeScreenChange={setShowWelcomeScreen}
+                webSearchEnabled={webSearchEnabled}
+                webSearchContextSize={webSearchContextSize}
+                onWebSearchContextSizeChange={setWebSearchContextSize}
             />
-
-            <ApiKeyManager
-                open={apiKeySettingsOpen}
-                onOpenChange={setApiKeySettingsOpen}
-            />
-
-            <Dialog open={providerHealthOpen} onOpenChange={setProviderHealthOpen}>
-                <DialogContent className="max-w-[95vw] sm:max-w-xl lg:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-4 sm:p-6">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-                            <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
-                            Provider Health Dashboard
-                        </DialogTitle>
-                        <DialogDescription className="text-xs sm:text-sm">
-                            Monitor the status and availability of AI model providers
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex-1 overflow-y-auto">
-                        <ProviderHealthDashboard dialogMode={true} compact={false} showRefreshButton={true} />
-                    </div>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }

@@ -63,16 +63,15 @@ const API_KEYS_CONFIG: ApiKeyConfig[] = [
 ];
 
 interface ApiKeyManagerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  embedded?: boolean;
 }
 
-export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
-  // State to store API keys
+function ApiKeyManagerContent({ embedded = false, onOpenChange }: ApiKeyManagerProps) {
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 
-  // Load API keys from localStorage on initial mount
   useEffect(() => {
     const storedKeys: Record<string, string> = {};
     
@@ -86,7 +85,6 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
     setApiKeys(storedKeys);
   }, []);
 
-  // Update API key in state
   const handleApiKeyChange = (key: string, value: string) => {
     setApiKeys(prev => ({
       ...prev,
@@ -94,7 +92,6 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
     }));
   };
 
-  // Toggle visibility of API key
   const toggleKeyVisibility = (key: string) => {
     setShowKeys(prev => ({
       ...prev,
@@ -102,7 +99,6 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
     }));
   };
 
-  // Save API keys to localStorage
   const handleSaveApiKeys = () => {
     try {
       API_KEYS_CONFIG.forEach(config => {
@@ -115,18 +111,16 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
         }
       });
       
-      // Dispatch custom event to notify other components
       window.dispatchEvent(new Event('apiKeysChanged'));
       
       toast.success("API keys saved successfully");
-      onOpenChange(false);
+      onOpenChange?.(false);
     } catch (error) {
       console.error("Error saving API keys:", error);
       toast.error("Failed to save API keys");
     }
   };
 
-  // Clear all API keys
   const handleClearApiKeys = () => {
     try {
       API_KEYS_CONFIG.forEach(config => {
@@ -135,7 +129,6 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
       
       setApiKeys({});
       
-      // Dispatch custom event to notify other components
       window.dispatchEvent(new Event('apiKeysChanged'));
       
       toast.success("All API keys cleared");
@@ -144,6 +137,92 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
       toast.error("Failed to clear API keys");
     }
   };
+
+  const formContent = (
+    <>
+      <div className="space-y-3 sm:space-y-4 py-2 sm:py-2">
+        {API_KEYS_CONFIG.map(config => (
+          <div key={config.key} className="space-y-1.5 sm:space-y-2">
+            <Label 
+              htmlFor={config.key}
+              className="text-xs sm:text-sm font-medium"
+            >
+              {config.label}
+            </Label>
+            <div className="relative">
+              <Input
+                id={config.key}
+                type={showKeys[config.key] ? "text" : "password"}
+                value={apiKeys[config.key] || ""}
+                onChange={(e) => handleApiKeyChange(config.key, e.target.value)}
+                placeholder={config.placeholder}
+                className="text-sm pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => toggleKeyVisibility(config.key)}
+              >
+                {showKeys[config.key] ? (
+                  <EyeOff className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
+        <Button
+          variant="destructive"
+          onClick={handleClearApiKeys}
+          className="w-full sm:w-auto text-xs sm:text-sm"
+        >
+          Clear All Keys
+        </Button>
+        <div className="flex gap-2 sm:gap-3 w-full sm:w-auto ml-auto">
+          {!embedded && (
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange?.(false)}
+              className="flex-1 sm:flex-none text-xs sm:text-sm"
+            >
+              Cancel
+            </Button>
+          )}
+          <Button 
+            onClick={handleSaveApiKeys}
+            className="flex-1 sm:flex-none text-xs sm:text-sm"
+          >
+            Save Keys
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+
+  if (embedded) {
+    return formContent;
+  }
+
+  return (
+    <div className="space-y-2 sm:space-y-3 mb-4">
+      <p className="text-xs sm:text-sm text-muted-foreground">
+        Enter your own API keys for different AI providers. Keys are stored securely in your browser&apos;s local storage.
+      </p>
+      {formContent}
+    </div>
+  );
+}
+
+export function ApiKeyManager({ open, onOpenChange, embedded = false }: ApiKeyManagerProps) {
+  if (embedded) {
+    return <ApiKeyManagerContent embedded onOpenChange={onOpenChange} />;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,71 +238,8 @@ export function ApiKeyManager({ open, onOpenChange }: ApiKeyManagerProps) {
               </DialogTitle>
             </div>
           </div>
-          <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-            Enter your own API keys for different AI providers. Keys are stored securely in your browser&apos;s local storage.
-          </DialogDescription>
         </DialogHeader>
-        
-        <div className="max-h-[40vh] sm:max-h-[50vh] overflow-y-auto space-y-3 sm:space-y-4 py-2 sm:py-4 pr-2">
-          {API_KEYS_CONFIG.map(config => (
-            <div key={config.key} className="space-y-1.5 sm:space-y-2">
-              <Label 
-                htmlFor={config.key}
-                className="text-xs sm:text-sm font-medium"
-              >
-                {config.label}
-              </Label>
-              <div className="relative">
-                <Input
-                  id={config.key}
-                  type={showKeys[config.key] ? "text" : "password"}
-                  value={apiKeys[config.key] || ""}
-                  onChange={(e) => handleApiKeyChange(config.key, e.target.value)}
-                  placeholder={config.placeholder}
-                  className="text-sm pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => toggleKeyVisibility(config.key)}
-                >
-                  {showKeys[config.key] ? (
-                    <EyeOff className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <DialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2 sm:pt-4">
-          <Button
-            variant="destructive"
-            onClick={handleClearApiKeys}
-            className="w-full sm:w-auto text-xs sm:text-sm"
-          >
-            Clear All Keys
-          </Button>
-          <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1 sm:flex-none text-xs sm:text-sm"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveApiKeys}
-              className="flex-1 sm:flex-none text-xs sm:text-sm"
-            >
-              Save Keys
-            </Button>
-          </div>
-        </DialogFooter>
+        <ApiKeyManagerContent onOpenChange={onOpenChange} />
       </DialogContent>
     </Dialog>
   );
