@@ -247,6 +247,53 @@ export const chatShares = pgTable('chat_shares', {
 export type ChatShare = typeof chatShares.$inferSelect;
 export type ChatShareInsert = typeof chatShares.$inferInsert;
 
+// --- Projects Schema ---
+
+export const projects = pgTable('projects', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  instructions: text('instructions').default('').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+}, (table) => ({
+  uniqueNamePerUser: unique('unique_project_name_per_user').on(table.userId, table.name),
+  checkNameLength: check('check_project_name_length', sql`char_length(${table.name}) >= 1 AND char_length(${table.name}) <= 100`),
+  checkInstructionsLength: check('check_project_instructions_length', sql`char_length(${table.instructions}) <= 8000`),
+  userIdIdx: index('idx_projects_user_id').on(table.userId),
+  userIdCreatedAtIdx: index('idx_projects_user_id_created_at').on(table.userId, table.createdAt),
+}));
+
+export const projectFiles = pgTable('project_files', {
+  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  filepath: text('filepath'),
+  url: text('url'),
+  filename: text('filename').notNull(),
+  mimeType: text('mime_type'),
+  size: integer('size'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  projectIdIdx: index('idx_project_files_project_id').on(table.projectId),
+  projectIdCreatedAtIdx: index('idx_project_files_project_id_created_at').on(table.projectId, table.createdAt),
+}));
+
+export const chatProjects = pgTable('chat_projects', {
+  chatId: text('chat_id').primaryKey().notNull().references(() => chats.id, { onDelete: 'cascade' }),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  attachedAt: timestamp('attached_at').defaultNow().notNull(),
+}, (table) => ({
+  projectIdIdx: index('idx_chat_projects_project_id').on(table.projectId),
+}));
+
+export type Project = typeof projects.$inferSelect;
+export type ProjectInsert = typeof projects.$inferInsert;
+export type ProjectFile = typeof projectFiles.$inferSelect;
+export type ProjectFileInsert = typeof projectFiles.$inferInsert;
+export type ChatProject = typeof chatProjects.$inferSelect;
+export type ChatProjectInsert = typeof chatProjects.$inferInsert;
+
 // --- Token Usage Metrics Schema ---
 
 export const tokenUsageMetrics = pgTable('token_usage_metrics', {
