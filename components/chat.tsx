@@ -26,6 +26,7 @@ import { ChatTokenSummary } from "./token-metrics/ChatTokenSummary";
 import { getLocalStorageItem, isLocalStorageAvailable } from "@/lib/browser-storage";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { ChatProjectSelector } from "./projects/chat-project-selector";
 
 // Type for chat data from DB
 interface ChatData {
@@ -1075,6 +1076,12 @@ export default function Chat() {
 
       {/* Input area: Always rendered at the bottom */}
       <div className="mt-2 w-full max-w-3xl mx-auto mb-4 sm:mb-auto shrink-0">
+        {chatId && session?.user && (
+          <ChatProjectSelector
+            chatId={chatId}
+            userId={userId ?? session.user.id}
+          />
+        )}
         {/* Conditionally render ProjectOverview above input only when no messages and not loading */}
         {messages.length === 0 && !isLoadingChat && (
           <div className="max-w-3xl mx-auto w-full mb-4 sm:hidden"> {/* Hidden on sm+, shown on mobile */}

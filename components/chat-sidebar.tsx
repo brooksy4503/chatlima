@@ -50,6 +50,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ChatList } from "./chat-list";
+import { ProjectsSidebarSection } from "./projects/projects-sidebar-section";
 
 // Token Usage Summary component for the sidebar
 function TokenUsageSummary({ userId }: { userId: string | null }) {
@@ -181,6 +182,7 @@ export function ChatSidebar() {
             setTimeout(() => {
                 queryClient.invalidateQueries({ queryKey: ['chats'] });
                 queryClient.invalidateQueries({ queryKey: ['chat'] });
+                queryClient.invalidateQueries({ queryKey: ['projects'] });
                 invalidationRef.current = false;
             }, 100);
             
@@ -194,6 +196,7 @@ export function ChatSidebar() {
             setTimeout(() => {
                 queryClient.invalidateQueries({ queryKey: ['chats'] });
                 queryClient.invalidateQueries({ queryKey: ['chat'] });
+                queryClient.invalidateQueries({ queryKey: ['projects'] });
                 invalidationRef.current = false;
             }, 100);
         }
@@ -374,6 +377,12 @@ export function ChatSidebar() {
                             isLoadingMore={isLoadingMore}
                         />
                     </SidebarGroup>
+
+                    <ProjectsSidebarSection
+                        userId={userId}
+                        isCollapsed={isLayoutCollapsed}
+                        setOpenMobile={setOpenMobile}
+                    />
                     
                     {/* Token Usage Summary - only show when not collapsed */}
                     {!isLayoutCollapsed && (
