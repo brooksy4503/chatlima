@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -8,13 +8,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Loader2, Trash2, Upload, ExternalLink, FolderKanban } from "lucide-react";
+import { Loader2, Trash2, Upload, ExternalLink, FolderKanban, Link2, MessageSquarePlus } from "lucide-react";
 import { useProjectDetail, useInvalidateProjects, type ApiProjectFile } from "@/lib/hooks/use-projects";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
+  const router = useRouter();
   const [createdId, setCreatedId] = useState<string | null>(null);
   const effectiveId = projectId ?? createdId;
 
@@ -42,6 +44,10 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+  const [creatingChat, setCreatingChat] = useState(false);
+  const [linkingChatId, setLinkingChatId] = useState<string | null>(null);
+  const [availableChats, setAvailableChats] = useState<Array<{ id: string; title: string }>>([]);
+  const [loadingAvailableChats, setLoadingAvailableChats] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -61,6 +67,44 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
   }, [open, detail?.project?.id]);
 
   const files = detail?.files ?? [];
+  const linkedChats = detail?.linkedChats ?? [];
+
+  const linkedChatIds = useMemo(() => new Set(linkedChats.map((chat) => chat.id)), [linkedChats]);
+
+  useEffect(() => {
+    if (!open || !effectiveId) return;
+
+    const controller = new AbortController();
+    const loadChats = async () => {
+      setLoadingAvailableChats(true);
+      try {
+        const res = await fetch('/api/chats?limit=200', { signal: controller.signal });
+        const body = await res.json().catch(() => []);
+        if (!res.ok) {
+          throw new Error(body.error || 'Failed to load chats');
+        }
+
+        const rows = Array.isArray(body) ? body : [];
+        setAvailableChats(
+          rows.map((chat: { id: string; title?: string }) => ({
+            id: chat.id,
+            title: chat.title?.trim() || 'Untitled chat',
+          }))
+        );
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          console.error(error);
+          toast.error('Failed to load chats for linking');
+        }
+      } finally {
+        setLoadingAvailableChats(false);
+      }
+    };
+
+    loadChats();
+
+    return () => controller.abort();
+  }, [open, effectiveId]);
 
   const handleCreate = async () => {
     const trimmed = name.trim();
@@ -198,6 +242,65 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
     }
   };
 
+  const handleCreateChatInProject = async () => {
+    if (!effectiveId) return;
+    setCreatingChat(true);
+
+    try {
+      const res = await fetch(`/api/projects/${effectiveId}/chats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(body.error || 'Failed to create chat in project');
+      }
+
+      await invalidateList();
+      await invalidateProject(effectiveId);
+      toast.success('New chat created in project');
+      onOpenChange(false);
+      router.push(`/chat/${body.chat.id}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to create chat in project');
+    } finally {
+      setCreatingChat(false);
+    }
+  };
+
+  const handleLinkExistingChat = async (chatId: string) => {
+    if (!effectiveId || !chatId) return;
+
+    setLinkingChatId(chatId);
+    try {
+      const res = await fetch(`/api/chats/${chatId}/project`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: effectiveId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error || 'Failed to link existing chat');
+      }
+
+      await invalidateList();
+      await invalidateProject(effectiveId);
+      await refetch();
+      toast.success('Existing chat linked to project');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to link existing chat');
+    } finally {
+      setLinkingChatId(null);
+    }
+  };
+
+  const unlinkedChats = useMemo(
+    () => availableChats.filter((chat) => !linkedChatIds.has(chat.id)),
+    [availableChats, linkedChatIds]
+  );
+
   const isCreateMode = open && !effectiveId;
   const title = isCreateMode ? "New project" : detailLoading ? "Project" : detail?.project.name || "Project";
 
@@ -308,12 +411,89 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
                   </Button>
                 </div>
 
-                {typeof detail.linkedChatsCount === "number" && (
-                  <p className="text-sm text-muted-foreground">
-                    <strong>{detail.linkedChatsCount}</strong> chat
-                    {detail.linkedChatsCount === 1 ? "" : "s"} linked to this project.
-                  </p>
-                )}
+                <div className="space-y-4 border-t border-border pt-6">
+                  {typeof detail.linkedChatsCount === "number" && (
+                    <p className="text-sm text-muted-foreground">
+                      <strong>{detail.linkedChatsCount}</strong> chat
+                      {detail.linkedChatsCount === 1 ? "" : "s"} linked to this project.
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleCreateChatInProject} disabled={creatingChat}>
+                      {creatingChat ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <MessageSquarePlus className="h-4 w-4 mr-2" />
+                          New Chat in Project
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Linked chats</p>
+                    {linkedChats.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No chats linked yet.</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {linkedChats.map((chat) => (
+                          <li key={chat.id} className="flex items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-sm">
+                            <span className="truncate" title={chat.title}>{chat.title}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                onOpenChange(false);
+                                router.push(`/chat/${chat.id}`);
+                              }}
+                            >
+                              Open
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Link Existing Chat</p>
+                    {loadingAvailableChats ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading chats…
+                      </div>
+                    ) : unlinkedChats.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No unlinked chats available.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {unlinkedChats.slice(0, 8).map((chat) => (
+                          <div key={chat.id} className="flex items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-sm">
+                            <span className="truncate" title={chat.title}>{chat.title}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleLinkExistingChat(chat.id)}
+                              disabled={linkingChatId === chat.id}
+                            >
+                              {linkingChatId === chat.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Link2 className="h-4 w-4 mr-1" />
+                                  Link
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 <div className="space-y-3 border-t border-border pt-6">
                   <div className="flex items-center justify-between gap-2">

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, count, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { chatProjects, projectFiles, projects } from '@/lib/db/schema';
+import { chatProjects, chats, projectFiles, projects } from '@/lib/db/schema';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -33,10 +33,24 @@ export async function GET(request: NextRequest, { params }: Params) {
     .from(chatProjects)
     .where(eq(chatProjects.projectId, id));
 
+  const linkedChatRows = await db
+    .select({
+      id: chats.id,
+      title: chats.title,
+      createdAt: chats.createdAt,
+      updatedAt: chats.updatedAt,
+      attachedAt: chatProjects.attachedAt,
+    })
+    .from(chatProjects)
+    .innerJoin(chats, eq(chatProjects.chatId, chats.id))
+    .where(and(eq(chatProjects.projectId, id), eq(chats.userId, userId)))
+    .orderBy(desc(chatProjects.attachedAt));
+
   return NextResponse.json({
     project: project[0],
     files,
     linkedChatsCount: Number(linkedChats[0]?.value || 0),
+    linkedChats: linkedChatRows,
   });
 }
 
