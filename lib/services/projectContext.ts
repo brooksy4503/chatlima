@@ -72,6 +72,6 @@ export function formatProjectContextForSystemPrompt(context: ProjectContext): st
     '### Project Files',
     fileLines,
     '',
-    'When relevant, prioritize project instructions and use read_file with filepath/url before answering file-specific questions.',
+    'When relevant, prioritize project instructions and use read_file with filepath/url before answering file-specific questions. Prefer url when filepath looks malformed.',
   ].join('\n');
 }

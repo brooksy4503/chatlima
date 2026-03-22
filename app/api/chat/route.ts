@@ -716,16 +716,26 @@ export async function POST(req: Request) {
             }),
             execute: async ({ filepath }) => {
                 try {
-                    const isFullUrl = /^https?:\/\//i.test(filepath);
+                    const rawPath = (filepath || '').trim();
+                    const normalizedPath = rawPath.startsWith('://')
+                        ? `https${rawPath}`
+                        : rawPath.startsWith('//')
+                            ? `https:${rawPath}`
+                            : rawPath;
+
+                    const isFullUrl = /^https?:\/\//i.test(normalizedPath);
                     const blobBaseUrl = process.env.BLOB_PUBLIC_URL || process.env.NEXT_PUBLIC_BLOB_URL;
-                    const mappedUrl = attachedFileUrlByPath.get(filepath);
+                    const mappedUrl = attachedFileUrlByPath.get(rawPath) || attachedFileUrlByPath.get(normalizedPath);
+                    const projectMappedUrl = projectFileUrlByPath.get(rawPath) || projectFileUrlByPath.get(normalizedPath);
                     const blobUrl = isFullUrl
-                        ? filepath
+                        ? normalizedPath
                         : mappedUrl
                             ? mappedUrl
+                        : projectMappedUrl
+                            ? projectMappedUrl
                         : blobBaseUrl
-                            ? `${blobBaseUrl.replace(/\/$/, '')}/${filepath.replace(/^\//, '')}`
-                            : filepath;
+                            ? `${blobBaseUrl.replace(/\/$/, '')}/${normalizedPath.replace(/^\//, '')}`
+                            : normalizedPath;
 
                     if (!/^https?:\/\//i.test(blobUrl)) {
                         return JSON.stringify({
@@ -934,13 +944,21 @@ You have web search capabilities enabled. When you use web search:
 - Base your response on the results from any tools used, or on your own reasoning and knowledge.
 `;
 
+        let projectContext: Awaited<ReturnType<typeof buildProjectContext>> = null;
+        const projectFileUrlByPath = new Map<string, string>();
+
         try {
-            const projectContext = await buildProjectContext({
+            projectContext = await buildProjectContext({
                 chatId: id,
                 userId: authenticatedUser.userId,
             });
 
             if (projectContext) {
+                for (const file of projectContext.files) {
+                    if (file.filepath && file.url) {
+                        projectFileUrlByPath.set(file.filepath, file.url);
+                    }
+                }
                 effectiveSystemInstruction = `${effectiveSystemInstruction}\n\n${formatProjectContextForSystemPrompt(projectContext)}`;
             }
         } catch (projectContextError) {
