@@ -381,7 +381,6 @@ export function ChatSidebar() {
                     <ProjectsSidebarSection
                         userId={userId}
                         isCollapsed={isLayoutCollapsed}
-                        setOpenMobile={setOpenMobile}
                     />
                     
                     {/* Token Usage Summary - only show when not collapsed */}

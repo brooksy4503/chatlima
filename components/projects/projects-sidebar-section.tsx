@@ -24,13 +24,11 @@ import { ProjectDetailSheet } from "./project-detail-sheet";
 type Props = {
   userId: string | null;
   isCollapsed: boolean;
-  setOpenMobile?: (open: boolean) => void;
 };
 
 export function ProjectsSidebarSection({
   userId,
   isCollapsed,
-  setOpenMobile,
 }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetProjectId, setSheetProjectId] = useState<string | null>(null);
@@ -40,13 +38,11 @@ export function ProjectsSidebarSection({
   const openNew = () => {
     setSheetProjectId(null);
     setSheetOpen(true);
-    setOpenMobile?.(false);
   };
 
   const openEdit = (id: string) => {
     setSheetProjectId(id);
     setSheetOpen(true);
-    setOpenMobile?.(false);
   };
 
   if (!userId) {
