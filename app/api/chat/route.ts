@@ -46,6 +46,7 @@ import { ChatMCPServerService, type MCPServerContext, type MCPServerResult } fro
 import { ChatWebSearchService, type WebSearchContext, type WebSearchResult } from '@/lib/services/chatWebSearchService';
 import { ChatTokenTrackingService, type TokenTrackingContext, type TokenTrackingResult } from '@/lib/services/chatTokenTrackingService';
 import { ChatDatabaseService, type ChatCreationContext, type MessageSavingContext } from '@/lib/services/chatDatabaseService';
+import { buildProjectContext, formatProjectContextForSystemPrompt } from '@/lib/services/projectContext';
 
 // Use optimized logging - only logs in development and uses efficient patterns
 const logDiagnostic = originalLogDiagnostic;
@@ -900,7 +901,7 @@ export async function POST(req: Request) {
         const modelDefaults = getModelDefaults(selectedModelInfo);
         const effectiveTemperature = temperature !== undefined ? temperature : modelDefaults.temperature;
         const effectiveMaxTokens = maxTokens !== undefined ? maxTokens : modelDefaults.maxTokens;
-        const effectiveSystemInstruction = systemInstruction !== undefined
+        let effectiveSystemInstruction = systemInstruction !== undefined
             ? sanitizeSystemInstruction(systemInstruction)
             : `You are a helpful AI assistant. Today's date is ${new Date().toISOString().split('T')[0]}.
 
@@ -932,6 +933,19 @@ You have web search capabilities enabled. When you use web search:
 - Use Markdown for formatting.
 - Base your response on the results from any tools used, or on your own reasoning and knowledge.
 `;
+
+        try {
+            const projectContext = await buildProjectContext({
+                chatId: id,
+                userId: authenticatedUser.userId,
+            });
+
+            if (projectContext) {
+                effectiveSystemInstruction = `${effectiveSystemInstruction}\n\n${formatProjectContextForSystemPrompt(projectContext)}`;
+            }
+        } catch (projectContextError) {
+            console.warn(`[Chat ${id}] Failed to build project context:`, projectContextError);
+        }
 
         console.log('[DEBUG] Effective parameters:', {
             temperature: effectiveTemperature,
