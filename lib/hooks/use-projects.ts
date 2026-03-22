@@ -43,6 +43,14 @@ export function useProjectsList(enabled: boolean) {
   });
 }
 
+export type ApiLinkedChat = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  attachedAt: string;
+};
+
 export function useProjectDetail(projectId: string | null, enabled: boolean) {
   return useQuery({
     queryKey: ["project", projectId],
@@ -57,6 +65,7 @@ export function useProjectDetail(projectId: string | null, enabled: boolean) {
         project: ApiProject;
         files: ApiProjectFile[];
         linkedChatsCount: number;
+        linkedChats: ApiLinkedChat[];
       }>;
     },
     enabled: enabled && !!projectId,
