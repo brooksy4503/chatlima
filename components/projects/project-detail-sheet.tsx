@@ -383,7 +383,7 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
                     onChange={(e) => setInstructions(e.target.value)}
                     rows={8}
                     maxLength={8000}
-                    className="resize-y min-h-[120px]"
+                    className="resize-y min-h-[120px] w-full max-w-full min-w-0 overflow-x-hidden break-words [overflow-wrap:anywhere]"
                   />
                   <p className="text-xs text-muted-foreground">
                     {instructions.length}/8000 characters
