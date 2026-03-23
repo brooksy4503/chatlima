@@ -4,139 +4,125 @@ import { useState } from "react";
 import {
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { FolderKanban, PlusCircle } from "lucide-react";
+import { FolderKanban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProjectsList } from "@/lib/hooks/use-projects";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { ProjectDetailSheet } from "./project-detail-sheet";
+import { ProjectsBrowserSheet } from "./projects-browser-sheet";
 
 type Props = {
   userId: string | null;
   isCollapsed: boolean;
 };
 
-export function ProjectsSidebarSection({
-  userId,
-  isCollapsed,
-}: Props) {
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [sheetProjectId, setSheetProjectId] = useState<string | null>(null);
+export function ProjectsSidebarSection({ userId, isCollapsed }: Props) {
+  const [browserOpen, setBrowserOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailProjectId, setDetailProjectId] = useState<string | null>(null);
 
   const { data: projects, isLoading } = useProjectsList(!!userId);
 
+  const count = projects?.length ?? 0;
+
   const openNew = () => {
-    setSheetProjectId(null);
-    setSheetOpen(true);
+    setDetailProjectId(null);
+    setDetailOpen(true);
   };
 
   const openEdit = (id: string) => {
-    setSheetProjectId(id);
-    setSheetOpen(true);
+    setDetailProjectId(id);
+    setDetailOpen(true);
   };
 
   if (!userId) {
     return null;
   }
 
+  const rowButton = (
+    <SidebarMenuButton
+      type="button"
+      className={cn(
+        "w-full gap-2",
+        isCollapsed ? "justify-center" : "justify-start"
+      )}
+      onClick={() => setBrowserOpen(true)}
+      aria-label={
+        isCollapsed
+          ? count > 0
+            ? `Projects, ${count} total`
+            : "Projects"
+          : undefined
+      }
+      data-testid="projects-sidebar-open-browser"
+    >
+      <FolderKanban
+        className={cn(
+          "h-4 w-4 shrink-0 text-muted-foreground",
+          isCollapsed && "text-foreground"
+        )}
+      />
+      {!isCollapsed && (
+        <>
+          <span className="min-w-0 flex-1 truncate text-left text-sm text-foreground/80">
+            Projects
+          </span>
+          {count > 0 ? (
+            <Badge
+              variant="secondary"
+              className="h-5 shrink-0 px-1.5 text-[10px] tabular-nums"
+            >
+              {count}
+            </Badge>
+          ) : null}
+        </>
+      )}
+    </SidebarMenuButton>
+  );
+
   return (
     <>
       <SidebarGroup className="flex-shrink-0 border-t border-border/40 pt-2">
-        <SidebarGroupLabel
-          className={cn(
-            "px-4 text-xs font-medium text-muted-foreground/80 uppercase tracking-wider",
-            isCollapsed ? "sr-only" : ""
-          )}
-        >
-          Projects
-        </SidebarGroupLabel>
         <SidebarGroupContent>
-          {!isCollapsed && (
-            <div className="px-3 pb-2">
-              <Button variant="outline" className="w-full" size="sm" onClick={openNew}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New project
-              </Button>
-            </div>
-          )}
           <SidebarMenu className={cn(isCollapsed ? "gap-0" : "")}>
-            {isLoading ? (
-              !isCollapsed &&
-              [0, 1].map((i) => (
-                <SidebarMenuItem key={i} className="px-3 py-1">
-                  <Skeleton className="h-8 w-full" />
-                </SidebarMenuItem>
-              ))
-            ) : !projects?.length ? (
-              !isCollapsed && (
-                <SidebarMenuItem>
-                  <p className="px-3 py-2 text-xs text-muted-foreground">
-                    No projects yet. Create one to attach instructions and files to chats.
-                  </p>
-                </SidebarMenuItem>
-              )
-            ) : (
-              projects.map((p) =>
-                isCollapsed ? (
-                  <SidebarMenuItem key={p.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <SidebarMenuButton
-                          className="justify-center"
-                          onClick={() => openEdit(p.id)}
-                        >
-                          <FolderKanban className="h-4 w-4" />
-                        </SidebarMenuButton>
-                      </TooltipTrigger>
-                      <TooltipContent side="right">{p.name}</TooltipContent>
-                    </Tooltip>
-                  </SidebarMenuItem>
-                ) : (
-                  <SidebarMenuItem key={p.id}>
-                    <SidebarMenuButton
-                      className="w-full justify-start gap-2"
-                      onClick={() => openEdit(p.id)}
-                    >
-                      <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate">{p.name}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              )
-            )}
-            {isCollapsed && (
-              <SidebarMenuItem>
+            <SidebarMenuItem>
+              {isCollapsed ? (
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <SidebarMenuButton
-                      className="justify-center"
-                      onClick={openNew}
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                    </SidebarMenuButton>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">New project</TooltipContent>
+                  <TooltipTrigger asChild>{rowButton}</TooltipTrigger>
+                  <TooltipContent side="right">
+                    {count > 0 ? `Projects (${count})` : "Projects"}
+                  </TooltipContent>
                 </Tooltip>
-              </SidebarMenuItem>
-            )}
+              ) : (
+                rowButton
+              )}
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
 
+      <ProjectsBrowserSheet
+        open={browserOpen}
+        onOpenChange={setBrowserOpen}
+        projects={projects}
+        isLoading={isLoading}
+        onSelectProject={openEdit}
+        onCreateProject={openNew}
+      />
+
       <ProjectDetailSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        projectId={sheetProjectId}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        projectId={detailProjectId}
       />
     </>
   );
