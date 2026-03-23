@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Loader2, Trash2, Upload, ExternalLink, FolderKanban, Link2, MessageSquarePlus } from "lucide-react";
 import { useProjectDetail, useInvalidateProjects, type ApiProjectFile } from "@/lib/hooks/use-projects";
@@ -320,7 +319,7 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="min-h-0 min-w-0 flex-1">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           <div className="min-w-0 max-w-full p-6 space-y-6">
             {isCreateMode ? (
               <>
@@ -383,7 +382,7 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
                     onChange={(e) => setInstructions(e.target.value)}
                     rows={8}
                     maxLength={8000}
-                    className="resize-y min-h-[120px] w-full max-w-full min-w-0 overflow-x-hidden break-words [overflow-wrap:anywhere]"
+                    className="resize-y min-h-[120px] w-full max-w-full min-w-0 overflow-x-hidden [overflow-wrap:anywhere]"
                   />
                   <p className="text-xs text-muted-foreground">
                     {instructions.length}/8000 characters
@@ -568,7 +567,7 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
               <p className="text-sm text-muted-foreground">Project could not be loaded.</p>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
   );
