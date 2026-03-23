@@ -526,10 +526,10 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
                         <li
                           key={f.id}
                           className={cn(
-                            "flex items-center gap-2 rounded-md border border-border/60 px-3 py-2 text-sm"
+                            "flex min-w-0 items-center gap-2 overflow-hidden rounded-md border border-border/60 px-3 py-2 text-sm"
                           )}
                         >
-                          <span className="truncate flex-1 min-w-0" title={f.filename}>
+                          <span className="block min-w-0 flex-1 truncate" title={f.filename}>
                             {f.filename}
                           </span>
                           {f.url && (
