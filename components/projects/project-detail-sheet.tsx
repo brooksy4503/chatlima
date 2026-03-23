@@ -308,7 +308,7 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-lg flex flex-col p-0 gap-0"
+        className="w-full min-w-0 sm:max-w-lg flex flex-col p-0 gap-0 overflow-x-hidden"
       >
         <SheetHeader className="p-6 pb-4 border-b border-border shrink-0 text-left">
           <SheetTitle className="flex items-center gap-2 pr-8">
@@ -320,8 +320,8 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="p-6 space-y-6">
+        <ScrollArea className="min-h-0 min-w-0 flex-1">
+          <div className="min-w-0 max-w-full p-6 space-y-6">
             {isCreateMode ? (
               <>
                 <div className="space-y-2">
@@ -439,8 +439,8 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
                     ) : (
                       <ul className="space-y-2">
                         {linkedChats.map((chat) => (
-                          <li key={chat.id} className="flex items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-sm">
-                            <span className="truncate" title={chat.title}>{chat.title}</span>
+                          <li key={chat.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-sm">
+                            <span className="min-w-0 flex-1 truncate" title={chat.title}>{chat.title}</span>
                             <Button
                               type="button"
                               variant="ghost"
@@ -470,8 +470,8 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
                     ) : (
                       <div className="space-y-2">
                         {unlinkedChats.slice(0, 8).map((chat) => (
-                          <div key={chat.id} className="flex items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-sm">
-                            <span className="truncate" title={chat.title}>{chat.title}</span>
+                          <div key={chat.id} className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2 text-sm">
+                            <span className="min-w-0 flex-1 truncate" title={chat.title}>{chat.title}</span>
                             <Button
                               type="button"
                               variant="outline"
@@ -529,7 +529,7 @@ export function ProjectDetailSheet({ open, onOpenChange, projectId }: Props) {
                             "flex min-w-0 items-center gap-2 overflow-hidden rounded-md border border-border/60 px-3 py-2 text-sm"
                           )}
                         >
-                          <span className="block min-w-0 flex-1 truncate" title={f.filename}>
+                          <span className="block min-w-0 max-w-full flex-1 truncate" title={f.filename}>
                             {f.filename}
                           </span>
                           {f.url && (
