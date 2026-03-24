@@ -36,6 +36,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { hasProviderByokForModel } from "@/lib/services/accessGateService";
+import { Check, MessageSquare, Search, Sparkles } from "lucide-react";
 
 // Type for chat data from DB
 interface ChatData {
@@ -1177,49 +1178,84 @@ export default function Chat() {
       </div>
 
       <Dialog open={accessGateDialogOpen} onOpenChange={setAccessGateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Unlock this model</DialogTitle>
-            <DialogDescription>
-              This model needs paid access or a matching BYOK provider key.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="rounded-md border bg-muted/40 p-3 text-sm">
-            <p className="font-medium text-foreground">Selected model</p>
-            <p className="text-muted-foreground">{accessGateModelId || "Current model"}</p>
-            {accessGateReason === 'PAYWALL_BYOK_REQUIRED' ? (
-              <p className="mt-2 text-muted-foreground">
-                Add a BYOK key for this provider, or start a subscription.
-              </p>
-            ) : (
-              <p className="mt-2 text-muted-foreground">
-                Sign in and subscribe to continue with this model while billing enforcement is enabled.
-              </p>
-            )}
+        <DialogContent className="overflow-hidden border-primary/30 p-0 sm:max-w-[560px]">
+          <div className="bg-gradient-to-br from-primary/10 via-background to-background p-6 pb-4">
+            <div className="mb-2 inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+              Premium model access
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Unlock this model</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Keep the conversation flowing with full model access, or connect your own provider key.
+              </DialogDescription>
+            </DialogHeader>
           </div>
 
-          <DialogFooter className="gap-2 sm:justify-start">
-            <Button
-              type="button"
-              onClick={() => {
-                setAccessGateDialogOpen(false);
-                router.push('/upgrade');
-              }}
-            >
-              Unlock from $9/month
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setAccessGateDialogOpen(false);
-                router.push('/faq#byok-api-keys');
-              }}
-            >
-              Set up BYOK
-            </Button>
-          </DialogFooter>
+          <div className="space-y-4 px-6 pb-6">
+            <div className="rounded-lg border border-border bg-card p-4 text-sm">
+              <p className="font-medium text-foreground">Selected model</p>
+              <p className="mt-1 break-all text-muted-foreground">
+                {accessGateModelId || "Current model"}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
+              <p className="font-medium text-foreground">Why you are seeing this</p>
+            {accessGateReason === 'PAYWALL_BYOK_REQUIRED' ? (
+              <p className="mt-1 text-muted-foreground">
+                This model needs either an active plan or a BYOK key for the matching provider.
+              </p>
+            ) : (
+              <p className="mt-1 text-muted-foreground">
+                Sign in and pick a plan to continue chatting with this model.
+              </p>
+            )}
+            </div>
+
+            <div className="grid gap-2 rounded-lg border bg-muted/30 p-4 text-sm text-foreground">
+              <p className="font-medium">What you get with a plan</p>
+              <p className="flex items-center text-muted-foreground">
+                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <MessageSquare className="mr-1.5 h-4 w-4" />
+                1,000 messages monthly or 12,000 yearly
+              </p>
+              <p className="flex items-center text-muted-foreground">
+                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Sparkles className="mr-1.5 h-4 w-4" />
+                Premium and free model catalog access
+              </p>
+              <p className="flex items-center text-muted-foreground">
+                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Search className="mr-1.5 h-4 w-4" />
+                Web search and advanced tools
+              </p>
+            </div>
+
+            <DialogFooter className="mt-1 flex flex-col items-center justify-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
+              <Button
+                type="button"
+                className="w-full max-w-xs sm:w-auto sm:min-w-[220px]"
+                onClick={() => {
+                  setAccessGateDialogOpen(false);
+                  router.push('/upgrade');
+                }}
+              >
+                See plans from $9/month
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full max-w-xs sm:w-auto sm:min-w-[220px]"
+                onClick={() => {
+                  setAccessGateDialogOpen(false);
+                  router.push('/faq#byok-api-keys');
+                }}
+              >
+                Connect BYOK key
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

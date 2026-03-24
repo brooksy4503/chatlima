@@ -455,6 +455,15 @@ export async function getSubscriptionTypeByExternalId(userId: string, userEmail?
     try {
         const monthlyProductId = process.env.POLAR_PRODUCT_ID;
         const yearlyProductId = process.env.POLAR_PRODUCT_ID_YEARLY;
+        const parseProductIdAliases = (value?: string): string[] =>
+            (value || '')
+                .split(',')
+                .map(id => id.trim())
+                .filter(Boolean);
+        const monthlyAliases = parseProductIdAliases(process.env.POLAR_PRODUCT_ID_MONTHLY_ALIASES);
+        const yearlyAliases = parseProductIdAliases(process.env.POLAR_PRODUCT_ID_YEARLY_ALIASES);
+        const monthlyProductIds = new Set([monthlyProductId, ...monthlyAliases].filter(Boolean) as string[]);
+        const yearlyProductIds = new Set([yearlyProductId, ...yearlyAliases].filter(Boolean) as string[]);
         const debugSubscriptionLogging = process.env.VERBOSE_LOGGING === 'true';
         const debugLog = (...args: any[]) => {
             if (debugSubscriptionLogging) console.log(...args);
@@ -468,6 +477,8 @@ export async function getSubscriptionTypeByExternalId(userId: string, userEmail?
         debugLog(`[getSubscriptionType] Checking subscription for userId: ${userId}`);
         debugLog(`[getSubscriptionType] Monthly product ID: ${monthlyProductId}`);
         debugLog(`[getSubscriptionType] Yearly product ID: ${yearlyProductId}`);
+        debugLog(`[getSubscriptionType] Monthly aliases: ${monthlyAliases.join(', ') || 'none'}`);
+        debugLog(`[getSubscriptionType] Yearly aliases: ${yearlyAliases.join(', ') || 'none'}`);
 
         // Get customer state by external ID
         let customerState;
@@ -571,10 +582,10 @@ export async function getSubscriptionTypeByExternalId(userId: string, userEmail?
             const productId = subscription.productId || subscription.product?.id || (subscription as any).product_id;
             debugLog(`[getSubscriptionType] Checking subscription with productId: ${productId}`);
 
-            if (productId === yearlyProductId) {
+            if (productId && yearlyProductIds.has(productId)) {
                 debugLog(`[getSubscriptionType] Found yearly subscription!`);
                 return 'yearly';
-            } else if (productId === monthlyProductId) {
+            } else if (productId && monthlyProductIds.has(productId)) {
                 debugLog(`[getSubscriptionType] Found monthly subscription!`);
                 return 'monthly';
             }
@@ -587,34 +598,38 @@ export async function getSubscriptionTypeByExternalId(userId: string, userEmail?
             const productId = subscription.productId || subscription.product?.id || (subscription as any).product_id;
             debugLog(`[getSubscriptionType] Checking subscription in subscriptions array with productId: ${productId}`);
 
-            if (productId === yearlyProductId) {
+            if (productId && yearlyProductIds.has(productId)) {
                 debugLog(`[getSubscriptionType] Found yearly subscription in subscriptions array!`);
                 return 'yearly';
-            } else if (productId === monthlyProductId) {
+            } else if (productId && monthlyProductIds.has(productId)) {
                 debugLog(`[getSubscriptionType] Found monthly subscription in subscriptions array!`);
                 return 'monthly';
             }
         }
 
-        // Fallback: infer type from recurring interval when product IDs drift between environments.
-        // This prevents false negatives when a legacy/rotated product ID is active in Polar.
+        // Fallback: infer type from recurring interval only when product IDs are missing.
+        // Do NOT infer for unknown product IDs, or unrelated subscriptions may be misclassified.
         for (const subscription of activeSubscriptions) {
+            const productId = subscription.productId || subscription.product?.id || (subscription as any).product_id;
+            if (productId) continue;
             const inferred = inferFromInterval(subscription);
             if (inferred) {
                 console.warn(
                     `[getSubscriptionType] Falling back to interval-based type (${inferred}) for userId ${userId} ` +
-                    `because active subscription productId did not match configured env IDs.`
+                    `because active subscription productId was missing.`
                 );
                 return inferred;
             }
         }
 
         for (const subscription of subscriptions) {
+            const productId = subscription.productId || subscription.product?.id || (subscription as any).product_id;
+            if (productId) continue;
             const inferred = inferFromInterval(subscription);
             if (inferred) {
                 console.warn(
                     `[getSubscriptionType] Falling back to interval-based type (${inferred}) for userId ${userId} ` +
-                    `because subscription productId did not match configured env IDs.`
+                    `because subscription productId was missing.`
                 );
                 return inferred;
             }
