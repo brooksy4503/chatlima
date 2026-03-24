@@ -1,5 +1,4 @@
 import { auth } from '@/lib/auth';
-import { createErrorResponse } from '@/app/api/chat/route';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 
 export interface AuthenticatedUser {
@@ -7,6 +6,18 @@ export interface AuthenticatedUser {
     isAnonymous: boolean;
     polarCustomerId?: string;
     openRouterUserId: string;
+}
+
+export class ChatAuthenticationError extends Error {
+    code: string;
+    status: number;
+
+    constructor(code: string, message: string, status: number) {
+        super(message);
+        this.name = 'ChatAuthenticationError';
+        this.code = code;
+        this.status = status;
+    }
 }
 
 export class ChatAuthenticationService {
@@ -23,7 +34,21 @@ export class ChatAuthenticationService {
         // If no session exists, return error
         if (!session || !session.user || !session.user.id) {
             logDiagnostic('AUTH_FAILED', 'Authentication failed - no session', { requestId });
-            throw new Error("Authentication required. Please log in.");
+            const billingEnforced = process.env.BILLING_ENFORCED === 'true';
+            if (billingEnforced) {
+                // Surface paywall code so the UI can show the access gate funnel.
+                throw new ChatAuthenticationError(
+                    'PAYWALL_SUBSCRIPTION_REQUIRED',
+                    'Paid subscription required to chat.',
+                    402
+                );
+            }
+
+            throw new ChatAuthenticationError(
+                'AUTHENTICATION_REQUIRED',
+                'Authentication required. Please log in.',
+                401
+            );
         }
 
         const userId = session.user.id;

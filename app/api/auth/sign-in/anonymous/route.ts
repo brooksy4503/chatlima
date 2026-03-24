@@ -4,6 +4,15 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export async function POST(request: Request) {
+    if (process.env.BILLING_ENFORCED === 'true') {
+        return new Response(
+            JSON.stringify({
+                error: 'Anonymous access is disabled while billing enforcement is enabled.'
+            }),
+            { status: 403, headers: { 'Content-Type': 'application/json' } }
+        );
+    }
+
     console.log('Anonymous sign-in endpoint called');
 
     try {

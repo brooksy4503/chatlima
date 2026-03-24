@@ -3,7 +3,6 @@ import { hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import type { modelID } from '@/ai/providers';
-import { hasUnlimitedFreeModels } from '@/lib/polar';
 import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
 import { ModelInfo } from '@/lib/types/models';
 
@@ -19,6 +18,7 @@ export class CreditValidationError extends Error {
         this.name = 'CreditValidationError';
     }
 }
+
 
 export class InsufficientCreditsError extends CreditValidationError {
     constructor(message: string, details?: string) {
@@ -102,31 +102,9 @@ export class ChatCreditValidationService {
         let actualCredits: number | null = null;
         let modelInfo: ModelInfo | null = null; // Declare modelInfo outside try block
 
-        // Check for yearly subscription (unlimited free models)
-        let hasUnlimitedFreeModelsAccess = false;
-        if (!isAnonymous && userId) {
-            try {
-                hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
-            } catch (error) {
-                logDiagnostic('UNLIMITED_CHECK_ERROR', 'Error checking unlimited free models access', {
-                    requestId,
-                    userId,
-                    error: error instanceof Error ? error.message : String(error)
-                });
-            }
-        }
-
         // Skip credit checks entirely if user is using their own API keys
         if (isUsingOwnApiKeys) {
             logDiagnostic('CREDIT_CHECK_SKIP', 'User is using own API keys, skipping credit checks', { requestId, userId });
-            hasCredits = true;
-        } else if (isFreeModel && hasUnlimitedFreeModelsAccess) {
-            logDiagnostic('CREDIT_CHECK_SKIP', 'Yearly subscriber using free model, skipping credit checks', {
-                requestId,
-                userId,
-                selectedModel
-            });
-            // Yearly subscribers using free models don't need credits
             hasCredits = true;
         } else if (isFreeModel) {
             logDiagnostic('CREDIT_CHECK_SKIP', 'User is using a free model, but still checking for actual credits for limit purposes', {
@@ -260,39 +238,18 @@ export class ChatCreditValidationService {
      * Validates free model access restrictions
      */
     static async validateFreeModelAccess(context: CreditValidationContext): Promise<void> {
-        const { isUsingOwnApiKeys, isFreeModel, hasCredits, isAnonymous, userId } = context;
+        const { isUsingOwnApiKeys, isFreeModel, hasCredits, isAnonymous } = context;
 
-        // Check for yearly subscription
-        let hasUnlimitedFreeModelsAccess = false;
-        if (!isAnonymous && userId) {
-            try {
-                hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
-            } catch (error) {
-                // Ignore error, assume no unlimited access
-            }
-        }
-
-        // Block non-free model access for users without credits (unless they have yearly subscription)
-        // Yearly subscribers can only use free models, so block premium models
+        // Block non-free model access for users without credits
         if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits) {
-            if (hasUnlimitedFreeModelsAccess) {
-                // Yearly subscribers trying to use premium models
-                console.log(`[SECURITY] Yearly subscriber attempted premium model: ${context.selectedModel}`);
-                throw new PremiumModelRestrictedError(
-                    "Your yearly subscription provides unlimited access to free models only. Please upgrade to the monthly plan to access premium models.",
-                    `Yearly subscriber attempted premium model access`
-                );
-            } else {
-                // Regular users without credits
-                const userType = isAnonymous ? "Anonymous users" : "Users without credits";
-                const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
+            const userType = isAnonymous ? "Anonymous users" : "Users without credits";
+            const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
 
-                console.log(`[SECURITY] ${userType} attempted non-free model: ${context.selectedModel}`);
-                throw new FreeModelOnlyError(
-                    `${userType} can only use free models. ${actionRequired} to access other models.`,
-                    `Free-model-only enforcement for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
-                );
-            }
+            console.log(`[SECURITY] ${userType} attempted non-free model: ${context.selectedModel}`);
+            throw new FreeModelOnlyError(
+                `${userType} can only use free models. ${actionRequired} to access other models.`,
+                `Free-model-only enforcement for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
+            );
         }
     }
 
@@ -300,7 +257,7 @@ export class ChatCreditValidationService {
      * Validates premium model access
      */
     static async validatePremiumModelAccess(context: CreditValidationContext): Promise<void> {
-        const { isUsingOwnApiKeys, isFreeModel, hasCredits, isAnonymous, selectedModel, userId } = context;
+        const { isUsingOwnApiKeys, isFreeModel, hasCredits, isAnonymous, selectedModel } = context;
 
         // Get model info for premium check
         const modelInfo = await getModelDetails(selectedModel);
@@ -308,34 +265,15 @@ export class ChatCreditValidationService {
         // Calculate required credits for this model
         const requiredCredits = calculateCreditCostPerMessage(modelInfo);
 
-        // Check for yearly subscription
-        let hasUnlimitedFreeModelsAccess = false;
-        if (!isAnonymous && userId) {
-            try {
-                hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
-            } catch (error) {
-                // Ignore error, assume no unlimited access
-            }
-        }
-
         if (!isUsingOwnApiKeys && !isFreeModel && !hasCredits && modelInfo?.premium) {
-            if (hasUnlimitedFreeModelsAccess) {
-                // Yearly subscribers trying to use premium models
-                console.log(`[SECURITY] Yearly subscriber attempted premium model: ${selectedModel} (requires ${requiredCredits} credits)`);
-                throw new PremiumModelRestrictedError(
-                    "Your yearly subscription provides unlimited access to free models only. Please upgrade to the monthly plan to access premium models.",
-                    `Yearly subscriber attempted premium model access`
-                );
-            } else {
-                const userType = isAnonymous ? "Anonymous users" : "Users without credits";
-                const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
+            const userType = isAnonymous ? "Anonymous users" : "Users without credits";
+            const actionRequired = isAnonymous ? "Please sign in and purchase credits" : "Please purchase credits";
 
-                console.log(`[SECURITY] ${userType} attempted to access premium model: ${selectedModel} (requires ${requiredCredits} credits)`);
-                throw new PremiumModelRestrictedError(
-                    `${userType} cannot access premium models. ${actionRequired} to use ${modelInfo.name || selectedModel} (${requiredCredits} credits per message).`,
-                    `Premium model access denied for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
-                );
-            }
+            console.log(`[SECURITY] ${userType} attempted to access premium model: ${selectedModel} (requires ${requiredCredits} credits)`);
+            throw new PremiumModelRestrictedError(
+                `${userType} cannot access premium models. ${actionRequired} to use ${modelInfo.name || selectedModel} (${requiredCredits} credits per message).`,
+                `Premium model access denied for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
+            );
         }
     }
 }

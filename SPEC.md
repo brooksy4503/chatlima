@@ -708,6 +708,10 @@ GROQ_API_KEY=
 XAI_API_KEY=
 OPENROUTER_API_KEY=
 REQUESTY_API_KEY=
+
+# Access gating feature flags
+BILLING_ENFORCED=false
+ALLOW_BYOK_BYPASS=true
 ```
 
 ### 11.5 Optional

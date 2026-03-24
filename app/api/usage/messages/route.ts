@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { DailyMessageUsageService } from '@/lib/services/dailyMessageUsageService';
-import { getRemainingCreditsByExternalId, getSubscriptionTypeByExternalId, hasUnlimitedFreeModels } from '@/lib/polar';
+import { getRemainingCreditsByExternalId, getSubscriptionTypeByExternalId } from '@/lib/polar';
 
 /**
  * API endpoint to get message usage information for the current user
@@ -25,10 +25,9 @@ export async function GET(req: Request) {
         // Get daily message usage using new secure tracking
         const dailyUsage = await DailyMessageUsageService.getDailyUsage(userId);
 
-        // Get subscription type and unlimited free models access from Polar customer state
+        // Get subscription type from Polar customer state
         // Subscription type comes from customer state, not webhooks
         let subscriptionType: 'monthly' | 'yearly' | null = null;
-        let hasUnlimitedFreeModelsAccess = false;
         let hasSubscription = false;
 
         if (!isAnonymous && userId) {
@@ -39,8 +38,6 @@ export async function GET(req: Request) {
                 subscriptionType = await getSubscriptionTypeByExternalId(userId, userEmail);
                 hasSubscription = subscriptionType !== null;
 
-                // Yearly subscription means unlimited free models
-                hasUnlimitedFreeModelsAccess = subscriptionType === 'yearly';
             } catch (error) {
                 console.warn('Failed to get subscription info:', error);
             }
@@ -51,8 +48,8 @@ export async function GET(req: Request) {
         let hasCredits = false;
         let usedCredits = false;
 
-        // Only check credits if user doesn't have unlimited free models and has a subscription
-        if (!isAnonymous && !hasUnlimitedFreeModelsAccess && hasSubscription) {
+        // Check credits for subscribed, authenticated users
+        if (!isAnonymous && hasSubscription) {
             try {
                 const userCredits = await getRemainingCreditsByExternalId(userId);
                 if (typeof userCredits === 'number') {
@@ -73,7 +70,7 @@ export async function GET(req: Request) {
             // Check if user has a Polar subscription (from customer state)
             hasSubscription,
             subscriptionType,
-            hasUnlimitedFreeModels: hasUnlimitedFreeModelsAccess,
+            hasUnlimitedFreeModels: false,
             // Include credit information
             credits,
             hasCredits,

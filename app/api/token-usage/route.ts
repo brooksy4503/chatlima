@@ -5,6 +5,8 @@ import { nanoid } from 'nanoid';
 
 // Diagnostic logging helper
 const logDiagnostic = (category: string, message: string, data?: any) => {
+  const isVerboseLogging = process.env.VERBOSE_LOGGING === 'true';
+  if (!isVerboseLogging) return;
   const timestamp = new Date().toISOString();
   console.log(`[TokenUsageAPI:${category}] ${timestamp} - ${message}`, data || '');
 };

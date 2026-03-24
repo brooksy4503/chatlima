@@ -4,12 +4,19 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth, signIn } from '@/hooks/useAuth';
 
 export function AnonymousAuth() {
+  const billingEnforced =
+    process.env.NEXT_PUBLIC_BILLING_ENFORCED === 'true' ||
+    process.env.BILLING_ENFORCED === 'true';
   const { session, isPending } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isAttemptingSignIn, setIsAttemptingSignIn] = useState(false);
   const attemptedRef = useRef(false);
 
   useEffect(() => {
+    if (billingEnforced) {
+      return;
+    }
+
     // Prevent multiple simultaneous sign-in attempts
     if (isAttemptingSignIn || attemptedRef.current) {
       return;
@@ -56,7 +63,7 @@ export function AnonymousAuth() {
 
       attemptSignIn();
     }
-  }, [session, isPending, isAttemptingSignIn]);
+  }, [session, isPending, isAttemptingSignIn, billingEnforced]);
 
   // This component doesn't render anything - it just handles the authentication logic
   return null;

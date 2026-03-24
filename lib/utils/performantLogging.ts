@@ -14,23 +14,24 @@ const chunkCounts = new Map<string, number>();
  * Uses lazy evaluation to avoid JSON.stringify in production
  */
 export const logDiagnostic = (type: string, message: string, data?: any | (() => any)) => {
-    if (!isDevelopment) return;
+    if (!isDevelopment || !isVerboseLogging) return;
 
     const timestamp = new Date().toISOString();
 
-    if (data && isVerboseLogging) {
+    if (data) {
         const dataToLog = typeof data === 'function' ? data() : data;
         console.log(`[${timestamp}][${type}] ${message}`, JSON.stringify(dataToLog, null, 2));
-    } else {
-        console.log(`[${timestamp}][${type}] ${message}`);
+        return;
     }
+
+    console.log(`[${timestamp}][${type}] ${message}`);
 };
 
 /**
  * Optimized chunk logging that only logs first few chunks and then summarizes
  */
 export const logChunk = (chatId: string, chunk: any, firstTokenTime: number | null, requestId: string) => {
-    if (!isDevelopment) return;
+    if (!isDevelopment || !isVerboseLogging) return;
 
     const chunkKey = `${chatId}-${requestId}`;
     const currentCount = chunkCounts.get(chunkKey) || 0;
@@ -59,7 +60,7 @@ export const logPerformanceMetrics = (requestId: string, metrics: {
     firstTokenTime: number | null;
     timeToFirstTokenMs: number | null;
 }) => {
-    if (!isDevelopment) return;
+    if (!isDevelopment || !isVerboseLogging) return;
 
     const totalTime = Date.now() - metrics.requestStartTime;
     console.log(`[PERF][${requestId}] Total: ${totalTime}ms, FirstToken: ${metrics.timeToFirstTokenMs}ms`);
@@ -77,7 +78,7 @@ export const logError = (context: string, error: any, requestId?: string) => {
  * Request-level logging (start/end only)
  */
 export const logRequestBoundary = (type: 'START' | 'END', requestId: string, data?: any) => {
-    if (!isDevelopment) return;
+    if (!isDevelopment || !isVerboseLogging) return;
 
     const timestamp = new Date().toISOString();
     if (data) {

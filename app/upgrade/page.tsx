@@ -123,7 +123,7 @@ function UpgradeContent() {
                   <p className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">✓ Active</p>
                 )}
                 <div className="flex items-baseline justify-center">
-                  <span className="text-5xl font-bold text-card-foreground">$10</span>
+                  <span className="text-5xl font-bold text-card-foreground">$9</span>
                   <span className="text-xl text-muted-foreground ml-2">/month</span>
                 </div>
                 <p className="text-muted-foreground mt-2">Billed monthly</p>
@@ -189,10 +189,10 @@ function UpgradeContent() {
                   <p className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">✓ Active</p>
                 )}
                 <div className="flex items-baseline justify-center">
-                  <span className="text-5xl font-bold text-card-foreground">$10</span>
+                  <span className="text-5xl font-bold text-card-foreground">$90</span>
                   <span className="text-xl text-muted-foreground ml-2">/year</span>
                 </div>
-                <p className="text-muted-foreground mt-2">Save 92% vs monthly</p>
+                <p className="text-muted-foreground mt-2">Save 17% vs monthly</p>
                 <p className="text-sm text-muted-foreground mt-3 italic">
                   Perfect for everyday use: Brainstorm ideas, write emails, or explore with AI tools like maps & search
                 </p>
@@ -201,18 +201,18 @@ function UpgradeContent() {
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start">
                   <MessageSquare className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-card-foreground font-semibold">Unlimited messages</span>
+                  <span className="text-card-foreground font-semibold">12,000 messages per year</span>
                 </li>
                 <li className="flex items-start">
                   <Brain className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-card-foreground">
-                    Unlimited chats with top free AI models{' '}
+                    Access to all models (premium + free){' '}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-3 w-3 inline-block ml-1 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>Access to powerful free models like Grok 4.1 Fast, GPT-OSS-20B, Kimi K2, DeepSeek R1, GLM-4.5 Air, and more—no setup or extra fees needed</p>
+                        <p>Use the same premium and free model catalog as monthly, including GPT, Claude, Grok, Gemini, and more.</p>
                       </TooltipContent>
                     </Tooltip>
                   </span>
@@ -220,13 +220,13 @@ function UpgradeContent() {
                 <li className="flex items-start">
                   <Sparkles className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-card-foreground">
-                    Premium models available anytime{' '}
+                    Web search capabilities{' '}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-3 w-3 inline-block ml-1 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>Easy upgrade to monthly for GPT-5.1, Claude Sonnet 4.5, Grok 4.1 & more</p>
+                        <p>Search-enabled models can browse the web for fresher answers when supported.</p>
                       </TooltipContent>
                     </Tooltip>
                   </span>
@@ -253,13 +253,13 @@ function UpgradeContent() {
 
           <div className="mt-8 w-full max-w-7xl mx-auto text-center">
             <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
-              Free models power 80% of chats (smart, fast AI like writing helpers). Need heavy premium use? Monthly&apos;s your flex pass.
+              Both plans include access to premium and free models. Choose monthly for flexibility, or yearly for lower total cost across 12 months.
             </p>
           </div>
 
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground mb-6">
-              Get started in seconds—no credit card needed for the first chat
+              Sign in and choose a plan, or add your own provider API key to use BYOK access.
             </p>
           </div>
 

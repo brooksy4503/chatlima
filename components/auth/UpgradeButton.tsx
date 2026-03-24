@@ -58,23 +58,23 @@ export function UpgradeButton({ isCollapsed }: UpgradeButtonProps) {
     if (isHighUsage && remaining > 0) {
       return `Only ${remaining} left - Upgrade`;
     } else if (isHighUsage && remaining === 0) {
-      return "Upgrade for unlimited";
+      return "Upgrade for more usage";
     } else if (isMediumUsage) {
-      return `Unlimited for $10/year`;
+      return `Plans from $9/month`;
     } else {
-      return `Upgrade - $10/year`;
+      return `Upgrade - from $9/month`;
     }
   };
 
   const getTooltipText = () => {
     if (isHighUsage && remaining > 0) {
-      return `Only ${remaining} message${remaining === 1 ? '' : 's'} remaining. Upgrade to unlimited for $10/year`;
+      return `Only ${remaining} message${remaining === 1 ? '' : 's'} remaining. Upgrade with plans from $9/month`;
     } else if (isHighUsage && remaining === 0) {
-      return "You've reached your limit. Upgrade to unlimited messages for $10/year";
+      return "You've reached your limit. Upgrade with plans from $9/month";
     } else if (isMediumUsage) {
-      return `Get unlimited messages for just $10/year`;
+      return `Get more usage with plans from $9/month`;
     } else {
-      return `Upgrade to unlimited messages for $10/year`;
+      return `Upgrade with plans from $9/month`;
     }
   };
 

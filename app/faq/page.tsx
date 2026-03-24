@@ -85,23 +85,22 @@ export default function FAQPage() {
                 <div className="space-y-4">
                   <div className="bg-muted p-4 rounded-lg">
                     <h3 className="text-xl font-medium text-foreground mb-3">
-                      Yearly Plan ($10/year)
+                      Yearly Plan ($90/year)
                     </h3>
                     <ul className="space-y-2 text-card-foreground">
-                      <li>✓ Unlimited messages</li>
-                      <li>✓ Unlimited access to all free models</li>
+                      <li>✓ 12,000 messages per year</li>
+                      <li>✓ Access to all models (premium + free)</li>
                       <li>✓ Perfect for everyday use</li>
-                      <li>✓ Save 92% compared to monthly</li>
+                      <li>✓ Save 17% compared to monthly</li>
                       <li>✓ Access to MCP tools (maps, search, etc.)</li>
                     </ul>
                     <p className="text-card-foreground mt-3 italic">
-                      Best for: Casual users, students, and anyone who primarily uses free models for 
-                      writing, brainstorming, and general AI assistance.
+                      Best for: Regular users who want full access all year and the best annual value.
                     </p>
                   </div>
                   <div className="bg-muted p-4 rounded-lg">
                     <h3 className="text-xl font-medium text-foreground mb-3">
-                      Monthly Plan ($10/month)
+                      Monthly Plan ($9/month)
                     </h3>
                     <ul className="space-y-2 text-card-foreground">
                       <li>✓ 1,000 messages per month</li>
@@ -117,9 +116,7 @@ export default function FAQPage() {
                   </div>
                 </div>
                 <p className="text-card-foreground leading-relaxed mt-4">
-                  <strong>Key insight:</strong> Free models power about 80% of typical chats and are 
-                  excellent for most tasks. The monthly plan is your &quot;flex pass&quot; if you need heavy premium 
-                  model usage or advanced capabilities.
+                  <strong>Key insight:</strong> Both plans include premium and free models. Choose yearly for best value, or monthly for flexible pay-as-you-go billing.
                 </p>
               </section>
 
@@ -167,28 +164,28 @@ export default function FAQPage() {
                 </p>
               </section>
 
-              <section id="openrouter-api-keys">
+              <section id="byok-api-keys">
                 <h2 className="text-2xl font-semibold text-foreground mb-4">
-                  How do I use my own OpenRouter API key?
+                  How do I use my own API keys (BYOK)?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  ChatLima supports Bring Your Own Key (BYOK) functionality, allowing you to use your own OpenRouter 
-                  API key if you prefer. This gives you full control over your AI usage and billing through OpenRouter directly.
+                  ChatLima supports Bring Your Own Key (BYOK) functionality across supported providers. You can add your own
+                  provider API keys and use models from those providers with your own billing relationship.
                 </p>
                 <div className="bg-muted p-4 rounded-lg mb-4">
                   <h3 className="text-xl font-medium text-foreground mb-3">
                     Benefits of using your own API key:
                   </h3>
                   <ul className="space-y-2 text-card-foreground">
-                    <li>• Direct billing through your OpenRouter account</li>
+                    <li>• Direct billing through your provider account</li>
                     <li>• Access to all models you&apos;ve purchased or have access to</li>
                     <li>• Bypasses ChatLima credit system and message limits</li>
                     <li>• Full control over your API usage and spending</li>
-                    <li>• Real-time model availability based on your OpenRouter account</li>
+                    <li>• Real-time model availability based on your provider account access</li>
                   </ul>
                 </div>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  <strong>How to configure your OpenRouter API key in ChatLima:</strong>
+                  <strong>How to configure BYOK in ChatLima:</strong>
                 </p>
                 <ol className="list-decimal list-inside space-y-3 text-card-foreground ml-4">
                   <li>

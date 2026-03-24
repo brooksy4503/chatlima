@@ -455,48 +455,50 @@ export async function getSubscriptionTypeByExternalId(userId: string, userEmail?
     try {
         const monthlyProductId = process.env.POLAR_PRODUCT_ID;
         const yearlyProductId = process.env.POLAR_PRODUCT_ID_YEARLY;
+        const debugSubscriptionLogging = process.env.VERBOSE_LOGGING === 'true';
+        const debugLog = (...args: any[]) => {
+            if (debugSubscriptionLogging) console.log(...args);
+        };
 
         if (!monthlyProductId || !yearlyProductId) {
             console.warn('[getSubscriptionType] Missing POLAR_PRODUCT_ID or POLAR_PRODUCT_ID_YEARLY environment variables');
             return null;
         }
 
-        console.log(`[getSubscriptionType] Checking subscription for userId: ${userId}`);
-        console.log(`[getSubscriptionType] Monthly product ID: ${monthlyProductId}`);
-        console.log(`[getSubscriptionType] Yearly product ID: ${yearlyProductId}`);
+        debugLog(`[getSubscriptionType] Checking subscription for userId: ${userId}`);
+        debugLog(`[getSubscriptionType] Monthly product ID: ${monthlyProductId}`);
+        debugLog(`[getSubscriptionType] Yearly product ID: ${yearlyProductId}`);
 
         // Get customer state by external ID
         let customerState;
-        let customerFoundByEmail = false;
         try {
             customerState = await polarClient.customers.getStateExternal({
                 externalId: userId
             });
-            console.log(`[getSubscriptionType] Customer state retrieved by externalId:`, JSON.stringify(customerState, null, 2));
+            debugLog(`[getSubscriptionType] Customer state retrieved by externalId:`, JSON.stringify(customerState, null, 2));
         } catch (error: any) {
             // Handle ResourceNotFound gracefully - customer doesn't exist in Polar yet
             if (error?.error === 'ResourceNotFound' || error?.statusCode === 404) {
-                console.log(`[getSubscriptionType] Customer not found by externalId: ${userId}`);
+                debugLog(`[getSubscriptionType] Customer not found by externalId: ${userId}`);
 
                 // Try to find by email as fallback (customer might have been created during checkout)
                 if (userEmail) {
-                    console.log(`[getSubscriptionType] Attempting to find customer by email: ${userEmail}`);
+                    debugLog(`[getSubscriptionType] Attempting to find customer by email: ${userEmail}`);
                     try {
                         const customerByEmail = await getCustomerByEmail(userEmail);
                         if (customerByEmail) {
-                            console.log(`[getSubscriptionType] Found customer by email:`, customerByEmail);
+                            debugLog(`[getSubscriptionType] Found customer by email:`, customerByEmail);
                             const existingExternalId = (customerByEmail as any).externalId;
 
                             if (existingExternalId) {
                                 // Customer already has an externalId - use it to get customer state
                                 // (Polar doesn't allow updating externalId once set)
-                                console.log(`[getSubscriptionType] Customer has existing externalId: ${existingExternalId}, using it to get state`);
+                                debugLog(`[getSubscriptionType] Customer has existing externalId: ${existingExternalId}, using it to get state`);
                                 try {
                                     customerState = await polarClient.customers.getStateExternal({
                                         externalId: existingExternalId
                                     });
-                                    customerFoundByEmail = true;
-                                    console.log(`[getSubscriptionType] Customer state retrieved using existing externalId:`, JSON.stringify(customerState, null, 2));
+                                    debugLog(`[getSubscriptionType] Customer state retrieved using existing externalId:`, JSON.stringify(customerState, null, 2));
                                 } catch (stateError: any) {
                                     console.warn(`[getSubscriptionType] Could not get customer state with existing externalId:`, stateError);
                                     return null;
@@ -507,25 +509,24 @@ export async function getSubscriptionTypeByExternalId(userId: string, userEmail?
                                 if (customerId) {
                                     try {
                                         await updateCustomerExternalId(customerId, userId);
-                                        console.log(`[getSubscriptionType] Set customer ${customerId} externalId to ${userId}`);
+                                        debugLog(`[getSubscriptionType] Set customer ${customerId} externalId to ${userId}`);
 
                                         // Now get state by the new externalId
                                         customerState = await polarClient.customers.getStateExternal({
                                             externalId: userId
                                         });
-                                        customerFoundByEmail = true;
-                                        console.log(`[getSubscriptionType] Customer state retrieved after setting externalId:`, JSON.stringify(customerState, null, 2));
+                                        debugLog(`[getSubscriptionType] Customer state retrieved after setting externalId:`, JSON.stringify(customerState, null, 2));
                                     } catch (updateError: any) {
                                         console.warn(`[getSubscriptionType] Could not set externalId:`, updateError);
                                         return null;
                                     }
                                 } else {
-                                    console.log(`[getSubscriptionType] Customer found but missing ID field`);
+                                    debugLog(`[getSubscriptionType] Customer found but missing ID field`);
                                     return null;
                                 }
                             }
                         } else {
-                            console.log(`[getSubscriptionType] Customer not found by email either`);
+                            debugLog(`[getSubscriptionType] Customer not found by email either`);
                             return null;
                         }
                     } catch (emailError) {
@@ -543,46 +544,83 @@ export async function getSubscriptionTypeByExternalId(userId: string, userEmail?
         }
 
         if (!customerState) {
-            console.log(`[getSubscriptionType] Customer state is null for userId: ${userId}`);
+            debugLog(`[getSubscriptionType] Customer state is null for userId: ${userId}`);
             return null;
         }
+
+        const inferFromInterval = (subscription: any): 'monthly' | 'yearly' | null => {
+            const interval = String(
+                subscription?.recurringInterval ||
+                subscription?.recurring_interval ||
+                subscription?.interval ||
+                ''
+            ).toLowerCase();
+
+            if (interval === 'month' || interval === 'monthly') return 'monthly';
+            if (interval === 'year' || interval === 'yearly') return 'yearly';
+            return null;
+        };
 
         // Check active subscriptions from customer state
         // The customer state should contain subscription information
         const activeSubscriptions = (customerState as any).activeSubscriptions || [];
-        console.log(`[getSubscriptionType] Found ${activeSubscriptions.length} active subscriptions`);
+        debugLog(`[getSubscriptionType] Found ${activeSubscriptions.length} active subscriptions`);
 
         for (const subscription of activeSubscriptions) {
             // Check if subscription object has product info directly
             const productId = subscription.productId || subscription.product?.id || (subscription as any).product_id;
-            console.log(`[getSubscriptionType] Checking subscription with productId: ${productId}`);
+            debugLog(`[getSubscriptionType] Checking subscription with productId: ${productId}`);
 
             if (productId === yearlyProductId) {
-                console.log(`[getSubscriptionType] Found yearly subscription!`);
+                debugLog(`[getSubscriptionType] Found yearly subscription!`);
                 return 'yearly';
             } else if (productId === monthlyProductId) {
-                console.log(`[getSubscriptionType] Found monthly subscription!`);
+                debugLog(`[getSubscriptionType] Found monthly subscription!`);
                 return 'monthly';
             }
         }
 
         // Also check subscriptions array if it exists
         const subscriptions = (customerState as any).subscriptions || [];
-        console.log(`[getSubscriptionType] Found ${subscriptions.length} subscriptions in subscriptions array`);
+        debugLog(`[getSubscriptionType] Found ${subscriptions.length} subscriptions in subscriptions array`);
         for (const subscription of subscriptions) {
             const productId = subscription.productId || subscription.product?.id || (subscription as any).product_id;
-            console.log(`[getSubscriptionType] Checking subscription in subscriptions array with productId: ${productId}`);
+            debugLog(`[getSubscriptionType] Checking subscription in subscriptions array with productId: ${productId}`);
 
             if (productId === yearlyProductId) {
-                console.log(`[getSubscriptionType] Found yearly subscription in subscriptions array!`);
+                debugLog(`[getSubscriptionType] Found yearly subscription in subscriptions array!`);
                 return 'yearly';
             } else if (productId === monthlyProductId) {
-                console.log(`[getSubscriptionType] Found monthly subscription in subscriptions array!`);
+                debugLog(`[getSubscriptionType] Found monthly subscription in subscriptions array!`);
                 return 'monthly';
             }
         }
 
-        console.log(`[getSubscriptionType] No matching subscription found for userId: ${userId}`);
+        // Fallback: infer type from recurring interval when product IDs drift between environments.
+        // This prevents false negatives when a legacy/rotated product ID is active in Polar.
+        for (const subscription of activeSubscriptions) {
+            const inferred = inferFromInterval(subscription);
+            if (inferred) {
+                console.warn(
+                    `[getSubscriptionType] Falling back to interval-based type (${inferred}) for userId ${userId} ` +
+                    `because active subscription productId did not match configured env IDs.`
+                );
+                return inferred;
+            }
+        }
+
+        for (const subscription of subscriptions) {
+            const inferred = inferFromInterval(subscription);
+            if (inferred) {
+                console.warn(
+                    `[getSubscriptionType] Falling back to interval-based type (${inferred}) for userId ${userId} ` +
+                    `because subscription productId did not match configured env IDs.`
+                );
+                return inferred;
+            }
+        }
+
+        debugLog(`[getSubscriptionType] No matching subscription found for userId: ${userId}`);
         return null;
     } catch (error) {
         console.error(`[getSubscriptionType] Error getting subscription type for external ID ${userId}:`, error);

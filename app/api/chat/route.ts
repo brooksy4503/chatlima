@@ -9,7 +9,7 @@ import { TokenTrackingService } from '@/lib/tokenTracking';
 import { CostCalculationService } from '@/lib/services/costCalculation';
 import { SimpleCostEstimationService } from '@/lib/services/simpleCostEstimation';
 import { DirectTokenTrackingService } from '@/lib/services/directTokenTracking';
-import { getRemainingCredits, getRemainingCreditsByExternalId } from '@/lib/polar';
+import { getRemainingCredits, getRemainingCreditsByExternalId, getSubscriptionTypeByExternalId } from '@/lib/polar';
 import { createRequestCreditCache, hasEnoughCreditsWithCache } from '@/lib/services/creditCache';
 import { auth } from '@/lib/auth';
 import { logDiagnostic as originalLogDiagnostic, logChunk, logPerformanceMetrics, logError, logRequestBoundary } from '@/lib/utils/performantLogging';
@@ -29,7 +29,7 @@ import { parseFile } from "@/lib/file-reader";
 import { fetchFileContent } from "@/lib/file-upload";
 
 // Import our new services
-import { ChatAuthenticationService, type AuthenticatedUser } from '@/lib/services/chatAuthenticationService';
+import { ChatAuthenticationService, ChatAuthenticationError, type AuthenticatedUser } from '@/lib/services/chatAuthenticationService';
 import {
     ChatCreditValidationService,
     type CreditValidationContext,
@@ -47,6 +47,8 @@ import { ChatWebSearchService, type WebSearchContext, type WebSearchResult } fro
 import { ChatTokenTrackingService, type TokenTrackingContext, type TokenTrackingResult } from '@/lib/services/chatTokenTrackingService';
 import { ChatDatabaseService, type ChatCreationContext, type MessageSavingContext } from '@/lib/services/chatDatabaseService';
 import { buildProjectContext, formatProjectContextForSystemPrompt } from '@/lib/services/projectContext';
+import { getAccessPolicyFlags } from '@/lib/config/access-policy';
+import { canUserChat, hasProviderByokForModel } from '@/lib/services/accessGateService';
 
 // Use optimized logging - only logs in development and uses efficient patterns
 const logDiagnostic = originalLogDiagnostic;
@@ -56,28 +58,7 @@ export const maxDuration = 300;
 
 // Helper function to check if user is using their own API keys for the selected model
 function checkIfUsingOwnApiKeys(selectedModel: string, apiKeys: Record<string, string> = {}): boolean {
-    // Map model providers to their API key names
-    const providerKeyMap: Record<string, string> = {
-        'openai': 'OPENAI_API_KEY',
-        'anthropic': 'ANTHROPIC_API_KEY',
-        'groq': 'GROQ_API_KEY',
-        'xai': 'XAI_API_KEY',
-        'openrouter': 'OPENROUTER_API_KEY',
-        'requesty': 'REQUESTY_API_KEY'
-    };
-
-    // Extract provider from model ID
-    const provider = selectedModel.split('/')[0];
-    const requiredApiKey = providerKeyMap[provider];
-
-    if (!requiredApiKey) {
-        return false; // Unknown provider
-    }
-
-    // Check if user has provided their own API key for this provider
-    const hasApiKey = Boolean(apiKeys[requiredApiKey] && apiKeys[requiredApiKey].trim().length > 0);
-
-    return hasApiKey;
+    return hasProviderByokForModel(selectedModel, apiKeys);
 }
 
 interface KeyValuePair {
@@ -437,6 +418,42 @@ export async function POST(req: Request) {
             selectedModel
         );
 
+        const accessPolicyFlags = getAccessPolicyFlags();
+        let hasPaidSubscription = false;
+
+        if (!authenticatedUser.isAnonymous) {
+            try {
+                const subscriptionType = await getSubscriptionTypeByExternalId(authenticatedUser.userId);
+                hasPaidSubscription = subscriptionType === 'monthly' || subscriptionType === 'yearly';
+            } catch (error) {
+                console.warn('[AccessGate] Failed to resolve subscription type, treating as unsubscribed:', error);
+            }
+        }
+
+        const gateResult = canUserChat({
+            isAnonymous: authenticatedUser.isAnonymous,
+            hasPaidSubscription,
+            selectedModel,
+            apiKeys,
+            flags: accessPolicyFlags
+        });
+
+        if (!gateResult.allowed) {
+            console.warn('[AccessGate] Chat request blocked', {
+                reason: gateResult.reason,
+                userId: authenticatedUser.userId,
+                isAnonymous: authenticatedUser.isAnonymous,
+                selectedModel
+            });
+            return createErrorResponse(
+                gateResult.reason,
+                gateResult.reason === 'PAYWALL_BYOK_REQUIRED'
+                    ? "Paid subscription required, or add a BYOK API key for this model's provider."
+                    : "Paid subscription required to chat.",
+                402
+            );
+        }
+
         // 5. Validate credits and permissions
         const creditValidation = await ChatCreditValidationService.validateCredits({
             userId: authenticatedUser.userId,
@@ -451,7 +468,7 @@ export async function POST(req: Request) {
 
         // 5a. Check and increment daily message usage for users without credits (using free daily messages)
         // Users with credits are using credits instead, so don't check/increment daily usage
-        if (!creditValidation.hasCredits) {
+        if (!accessPolicyFlags.billingEnforced && !creditValidation.hasCredits) {
             // First, check if the user has reached their daily limit BEFORE incrementing
             const limitCheck = await DailyMessageUsageService.checkDailyLimit(
                 authenticatedUser.userId
@@ -1715,6 +1732,10 @@ You have web search capabilities enabled. When you use web search:
 
         if (error instanceof Response) {
             return error; // Already a proper error response
+        }
+
+        if (error instanceof ChatAuthenticationError) {
+            return createErrorResponse(error.code, error.message, error.status);
         }
 
         // Handle domain-specific credit validation errors

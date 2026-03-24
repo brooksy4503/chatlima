@@ -1,6 +1,5 @@
 "use client";
 
-import { type modelID } from "@/ai/providers";
 import { Message, useChat } from "@ai-sdk/react";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Textarea } from "./textarea";
@@ -27,6 +26,16 @@ import { getLocalStorageItem, isLocalStorageAvailable } from "@/lib/browser-stor
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { ChatProjectSelector } from "./projects/chat-project-selector";
+import { Button } from "./ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { hasProviderByokForModel } from "@/lib/services/accessGateService";
 
 // Type for chat data from DB
 interface ChatData {
@@ -42,7 +51,7 @@ export default function Chat() {
   const searchParams = useSearchParams();
   const chatId = params?.id as string | undefined;
   const queryClient = useQueryClient();
-  const { session, isPending: isSessionLoading, refreshMessageUsage } = useAuth();
+  const { session, isPending: isSessionLoading, refreshMessageUsage, usageData, user } = useAuth();
   const sessionUpdateRef = useRef(false);
   const modelFromQueryRef = useRef(false);
   
@@ -72,6 +81,9 @@ export default function Chat() {
   const [lastToastId, setLastToastId] = useState<string | null>(null);
   const [lastErrorMessage, setLastErrorMessage] = useState<string>("");
   const [lastToastTimestamp, setLastToastTimestamp] = useState<number>(0);
+  const [accessGateDialogOpen, setAccessGateDialogOpen] = useState(false);
+  const [accessGateReason, setAccessGateReason] = useState<'PAYWALL_SUBSCRIPTION_REQUIRED' | 'PAYWALL_BYOK_REQUIRED'>('PAYWALL_SUBSCRIPTION_REQUIRED');
+  const [accessGateModelId, setAccessGateModelId] = useState<string>("");
   // NEW: Enhanced timing tracking for Phase 2
   const [timeToFirstToken, setTimeToFirstToken] = useState<number | null>(null);
   const [tokensPerSecond, setTokensPerSecond] = useState<number | null>(null);
@@ -245,6 +257,19 @@ export default function Chat() {
     return modelInfo?.vision === true;
   }, [models, effectiveModel]);
 
+  const billingEnforced =
+    process.env.NEXT_PUBLIC_BILLING_ENFORCED === 'true' ||
+    process.env.BILLING_ENFORCED === 'true';
+
+  const openAccessGateDialog = useCallback((
+    reason: 'PAYWALL_SUBSCRIPTION_REQUIRED' | 'PAYWALL_BYOK_REQUIRED',
+    modelId: string
+  ) => {
+    setAccessGateReason(reason);
+    setAccessGateModelId(modelId);
+    setAccessGateDialogOpen(true);
+  }, []);
+
   const handleFileSelect = useCallback((newFiles: FileAttachment[]) => {
     console.log('[DEBUG] handleFileSelect called with:', newFiles.length, 'files');
     console.log('[DEBUG] New files details:', newFiles.map(f => ({
@@ -371,6 +396,23 @@ export default function Chat() {
             errorMessage = error.message;
           }
           console.warn("Failed to parse error message as JSON:", e, "Raw error message:", error.message);
+        }
+
+        // Handle access-gate errors with conversion UI, not error recovery toasts.
+        const isPaywallError =
+          errorCode === "PAYWALL_SUBSCRIPTION_REQUIRED" ||
+          errorCode === "PAYWALL_BYOK_REQUIRED";
+        if (isPaywallError) {
+          const paywallReason: 'PAYWALL_SUBSCRIPTION_REQUIRED' | 'PAYWALL_BYOK_REQUIRED' =
+            errorCode === "PAYWALL_SUBSCRIPTION_REQUIRED"
+              ? "PAYWALL_SUBSCRIPTION_REQUIRED"
+              : "PAYWALL_BYOK_REQUIRED";
+          setHideImagesInUI(false);
+          openAccessGateDialog(
+            paywallReason,
+            activePreset?.modelId || selectedModel
+          );
+          return;
         }
 
         // Reset UI state on error so images reappear
@@ -630,6 +672,23 @@ export default function Chat() {
     if (isUploadingFiles) {
       return;
     }
+
+    // Conversion funnel pre-check: block with actionable UI before server returns a paywall error.
+    const effectiveSelectedModel = activePreset?.modelId || selectedModel;
+    const hasPaidSubscription = Boolean(
+      usageData?.subscriptionType === 'monthly' ||
+      usageData?.subscriptionType === 'yearly' ||
+      user?.hasSubscription
+    );
+    const hasByokForSelectedModel = hasProviderByokForModel(effectiveSelectedModel, getClientApiKeys());
+
+    if (billingEnforced && !hasPaidSubscription && !hasByokForSelectedModel) {
+      openAccessGateDialog(
+        session?.user?.isAnonymous ? 'PAYWALL_SUBSCRIPTION_REQUIRED' : 'PAYWALL_BYOK_REQUIRED',
+        effectiveSelectedModel
+      );
+      return;
+    }
     
     // Separate images from other files
     const imageFiles = selectedFiles.filter(f => f.type === 'image' && f.dataUrl);
@@ -732,7 +791,21 @@ export default function Chat() {
       });
       handleInputChange({ target: { value: '' } } as any);
     }
-  }, [append, input, selectedFiles, handleInputChange, isUploadingFiles, modelSupportsVision]);
+  }, [
+    append,
+    input,
+    selectedFiles,
+    handleInputChange,
+    isUploadingFiles,
+    modelSupportsVision,
+    activePreset?.modelId,
+    selectedModel,
+    usageData?.subscriptionType,
+    user?.hasSubscription,
+    billingEnforced,
+    session?.user?.isAnonymous,
+    openAccessGateDialog
+  ]);
 
   const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat || isUploadingFiles;
 
@@ -1102,6 +1175,53 @@ export default function Chat() {
           />
         </form>
       </div>
+
+      <Dialog open={accessGateDialogOpen} onOpenChange={setAccessGateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unlock this model</DialogTitle>
+            <DialogDescription>
+              This model needs paid access or a matching BYOK provider key.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-md border bg-muted/40 p-3 text-sm">
+            <p className="font-medium text-foreground">Selected model</p>
+            <p className="text-muted-foreground">{accessGateModelId || "Current model"}</p>
+            {accessGateReason === 'PAYWALL_BYOK_REQUIRED' ? (
+              <p className="mt-2 text-muted-foreground">
+                Add a BYOK key for this provider, or start a subscription.
+              </p>
+            ) : (
+              <p className="mt-2 text-muted-foreground">
+                Sign in and subscribe to continue with this model while billing enforcement is enabled.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-start">
+            <Button
+              type="button"
+              onClick={() => {
+                setAccessGateDialogOpen(false);
+                router.push('/upgrade');
+              }}
+            >
+              Unlock from $9/month
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setAccessGateDialogOpen(false);
+                router.push('/faq#byok-api-keys');
+              }}
+            >
+              Set up BYOK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -26,6 +26,9 @@ const queryClient = new QueryClient({
 });
 
 export function Providers({ children }: { children: ReactNode }) {
+  const billingEnforced =
+    process.env.NEXT_PUBLIC_BILLING_ENFORCED === "true" ||
+    process.env.BILLING_ENFORCED === "true";
   const [sidebarOpen, setSidebarOpen] = useLocalStorage<boolean>(
     STORAGE_KEYS.SIDEBAR_STATE,
     true
@@ -50,7 +53,7 @@ export function Providers({ children }: { children: ReactNode }) {
                   open={sidebarOpen} 
                   onOpenChange={setSidebarOpen}
                 >
-                  <AnonymousAuth />
+                  {!billingEnforced && <AnonymousAuth />}
                   {children}
                   <Toaster position="top-center" richColors />
                 </SidebarProvider>

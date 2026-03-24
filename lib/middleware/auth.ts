@@ -31,13 +31,11 @@ export class AuthMiddleware {
             let isAnonymous = false;
             let hasSubscription = false;
             let subscriptionType: 'monthly' | 'yearly' | null = null;
-            let hasUnlimitedFreeModels = false;
 
             try {
                 const { db } = await import('@/lib/db');
                 const { users } = await import('@/lib/db/schema');
                 const { eq } = await import('drizzle-orm');
-                const { hasUnlimitedFreeModels: checkUnlimited } = await import('@/lib/polar');
 
                 const userResult = await db
                     .select()
@@ -53,14 +51,6 @@ export class AuthMiddleware {
                     hasSubscription = metadata.hasSubscription || false;
                     subscriptionType = metadata.subscriptionType || null;
 
-                    // Check for unlimited free models access (yearly subscription)
-                    if (!isAnonymous && subscriptionType === 'yearly') {
-                        try {
-                            hasUnlimitedFreeModels = await checkUnlimited(user.id);
-                        } catch (error) {
-                            console.warn('[AuthMiddleware] Error checking unlimited free models:', error);
-                        }
-                    }
                 }
             } catch (error) {
                 console.error('[AuthMiddleware] Error querying user admin status:', error);
@@ -79,7 +69,7 @@ export class AuthMiddleware {
                 isAnonymous,
                 hasSubscription,
                 subscriptionType,
-                hasUnlimitedFreeModels,
+                hasUnlimitedFreeModels: false,
             };
         } catch (error) {
             console.error('[AuthMiddleware] Authentication error:', error);
