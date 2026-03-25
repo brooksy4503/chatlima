@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 import { useState, useCallback, useMemo } from 'react';
 import { ModelsResponse, ModelInfo } from '@/lib/types/models';
+import { getLocalStorageItem, isLocalStorageAvailable } from '@/lib/browser-storage';
 
 // Configuration for SWR
 const SWR_CONFIG = {
@@ -14,6 +15,28 @@ const SWR_CONFIG = {
     errorRetryInterval: 2000,
 };
 
+const API_KEY_STORAGE_NAMES = [
+    'OPENAI_API_KEY',
+    'ANTHROPIC_API_KEY',
+    'GROQ_API_KEY',
+    'XAI_API_KEY',
+    'OPENROUTER_API_KEY',
+    'REQUESTY_API_KEY',
+] as const;
+
+function getApiKeysFromStorage(): Record<string, string> {
+    if (!isLocalStorageAvailable()) return {};
+
+    const keys: Record<string, string> = {};
+    API_KEY_STORAGE_NAMES.forEach((keyName) => {
+        const value = getLocalStorageItem(keyName);
+        if (value && value.trim()) {
+            keys[keyName] = value.trim();
+        }
+    });
+    return keys;
+}
+
 // Custom fetcher with API key support
 async function modelsFetcher(
     url: string,
@@ -24,9 +47,15 @@ async function modelsFetcher(
         'Content-Type': 'application/json',
     };
 
-    // Include user API keys if provided
-    if (userApiKeys && Object.keys(userApiKeys).length > 0) {
-        headers['x-api-keys'] = JSON.stringify(userApiKeys);
+    // Prefer context-provided keys, but fall back to localStorage to avoid transient state drops.
+    const storageKeys = getApiKeysFromStorage();
+    const effectiveUserKeys = {
+        ...storageKeys,
+        ...(userApiKeys || {}),
+    };
+
+    if (Object.keys(effectiveUserKeys).length > 0) {
+        headers['x-api-keys'] = JSON.stringify(effectiveUserKeys);
     }
 
     // Add display mode parameter if requested
@@ -78,7 +107,14 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
         if (!enabled) return null;
 
         const baseKey = '/api/models';
-        const keyHash = userApiKeys ? JSON.stringify(Object.keys(userApiKeys).sort().map(k => `${k}:${userApiKeys[k].substring(0, 10)}`)) : '';
+        const storageKeys = getApiKeysFromStorage();
+        const effectiveUserKeys = {
+            ...storageKeys,
+            ...(userApiKeys || {}),
+        };
+        const keyHash = Object.keys(effectiveUserKeys).length > 0
+            ? JSON.stringify(Object.keys(effectiveUserKeys).sort().map(k => `${k}:${effectiveUserKeys[k].substring(0, 10)}`))
+            : '';
         const displayParam = displayMode ? '&display=true' : '';
         return keyHash ? `${baseKey}?keys=${encodeURIComponent(keyHash)}${displayParam}` : `${baseKey}${displayMode ? '?display=true' : ''}`;
     }, [enabled, userApiKeys, displayMode]);

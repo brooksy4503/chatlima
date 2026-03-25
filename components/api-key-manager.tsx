@@ -72,6 +72,17 @@ function ApiKeyManagerContent({ embedded = false, onOpenChange }: ApiKeyManagerP
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 
+  const buildStorageKeyPayload = (keys: Record<string, string>): Record<string, string> => {
+    const payload: Record<string, string> = {};
+    API_KEYS_CONFIG.forEach((config) => {
+      const value = keys[config.key]?.trim();
+      if (value) {
+        payload[config.storageKey] = value;
+      }
+    });
+    return payload;
+  };
+
   useEffect(() => {
     const storedKeys: Record<string, string> = {};
     
@@ -101,17 +112,21 @@ function ApiKeyManagerContent({ embedded = false, onOpenChange }: ApiKeyManagerP
 
   const handleSaveApiKeys = () => {
     try {
+      const payload = buildStorageKeyPayload(apiKeys);
+
       API_KEYS_CONFIG.forEach(config => {
-        const value = apiKeys[config.key];
+        const value = payload[config.storageKey];
         
-        if (value && value.trim()) {
-          setLocalStorageItem(config.storageKey, value.trim());
+        if (value) {
+          setLocalStorageItem(config.storageKey, value);
         } else {
           removeLocalStorageItem(config.storageKey);
         }
       });
       
-      window.dispatchEvent(new Event('apiKeysChanged'));
+      window.dispatchEvent(new CustomEvent('apiKeysChanged', {
+        detail: { keys: payload }
+      }));
       
       toast.success("API keys saved successfully");
       onOpenChange?.(false);
@@ -129,7 +144,9 @@ function ApiKeyManagerContent({ embedded = false, onOpenChange }: ApiKeyManagerP
       
       setApiKeys({});
       
-      window.dispatchEvent(new Event('apiKeysChanged'));
+      window.dispatchEvent(new CustomEvent('apiKeysChanged', {
+        detail: { keys: {} }
+      }));
       
       toast.success("All API keys cleared");
     } catch (error) {

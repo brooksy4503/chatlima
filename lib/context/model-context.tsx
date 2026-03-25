@@ -89,7 +89,13 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     setKeysLoaded(true);
     
     // Listen for storage changes (when API keys are saved in another tab or by API Key Manager)
-    const handleStorageChange = () => {
+    const handleStorageChange = (event: Event) => {
+      // Prefer event payload from API key manager to avoid transient localStorage read mismatches.
+      if (event instanceof CustomEvent && event.detail?.keys && typeof event.detail.keys === 'object') {
+        setUserApiKeys(event.detail.keys as Record<string, string>);
+        return;
+      }
+
       const newKeys = loadApiKeys();
       setUserApiKeys(newKeys);
     };
