@@ -434,6 +434,14 @@ export function ChatSidebar() {
                             <Skeleton className="h-8 w-8 rounded-full" />
                             {!isLayoutCollapsed && <Skeleton className="h-4 w-24" />}
                         </div>
+                    ) : !session?.user ? (
+                        <div className={cn(
+                            "flex flex-col gap-2 mt-2",
+                            isLayoutCollapsed ? "items-center px-0 py-2" : "px-0 py-2"
+                        )}>
+                            <SignInButton isCollapsed={isLayoutCollapsed} />
+                            <UpgradeButton isCollapsed={isLayoutCollapsed} />
+                        </div>
                     ) : session?.user?.isAnonymous === true ? (
                         <div className={cn(
                             "flex flex-col gap-2 mt-2", 
