@@ -232,8 +232,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const detailsPanelModel = keyboardFocusedModel || hoveredModelData || touchFocusedModelData || availableModels.find(m => m.id === selectedModel);
   
   // Main button always shows the selected model (no layout flipping)
-  const selectedModelData = availableModels.find(m => m.id === selectedModel);
+  const selectedModelData = availableModels.find(m => m.id === selectedModel) || availableModels[0];
   const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelData?.premium);
+  const hasModelLoadError = Boolean(modelsError) || (!modelsLoading && availableModels.length === 0);
 
   // Fetch credit cost for the details panel model
   useEffect(() => {
@@ -405,7 +406,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   }
 
   // Error state
-  if (modelsError || !selectedModelData) {
+  if (hasModelLoadError) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>

@@ -272,6 +272,24 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     ? models.filter(m => m.id.startsWith('openrouter/') && m.id.endsWith(':free'))
     : models;
 
+  // Keep selected model valid when available model list changes due to auth/policy/key updates.
+  useEffect(() => {
+    if (!isInitialized || isLoading) return;
+    if (visibleModels.length === 0) return;
+
+    const visibleModelIds = visibleModels.map(m => m.id);
+    if (visibleModelIds.includes(selectedModel)) return;
+
+    const fallbackModel =
+      FALLBACK_MODELS.find(id => visibleModelIds.includes(id)) ||
+      visibleModelIds[0];
+
+    if (fallbackModel && fallbackModel !== selectedModel) {
+      console.warn(`Selected model "${selectedModel}" is not available. Falling back to "${fallbackModel}".`);
+      setSelectedModelState(fallbackModel);
+    }
+  }, [visibleModels, selectedModel, isInitialized, isLoading]);
+
   // Ensure selected model is valid for anonymous users (without API keys)
   useEffect(() => {
     if (!isInitialized) return;
