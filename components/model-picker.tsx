@@ -233,7 +233,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   
   // Main button always shows the selected model (no layout flipping)
   const selectedModelData = availableModels.find(m => m.id === selectedModel) || availableModels[0];
-  const isModelUnavailable = (creditsLoading || modelsRefreshing) ? false : (!canAccessPremiumModels() && selectedModelData?.premium);
+  const selectedModelHasApiKey = selectedModelData ? hasApiKeyForProvider(selectedModelData.id) : false;
+  const isModelUnavailable = (creditsLoading || modelsRefreshing)
+    ? false
+    : Boolean(selectedModelData?.premium && !canAccessPremiumModels() && !selectedModelHasApiKey);
   const hasModelLoadError = Boolean(modelsError) || (!modelsLoading && availableModels.length === 0);
 
   // Fetch credit cost for the details panel model
@@ -366,7 +369,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         e.preventDefault();
         if (keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length) {
           const selectedModelData = filteredAndSortedModels[keyboardFocusedIndex];
-          const isUnavailable = (creditsLoading || modelsRefreshing) ? false : (selectedModelData.premium && !canAccessPremiumModels());
+          const isUnavailable = (creditsLoading || modelsRefreshing)
+            ? false
+            : (selectedModelData.premium && !canAccessPremiumModels() && !hasApiKeyForProvider(selectedModelData.id));
           if (!isUnavailable) {
             handleModelChange(selectedModelData.id);
           }
