@@ -233,7 +233,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   
   // Main button always shows the selected model (no layout flipping)
   const selectedModelData = availableModels.find(m => m.id === selectedModel) || availableModels[0];
-  const isModelUnavailable = creditsLoading ? false : (!canAccessPremiumModels() && selectedModelData?.premium);
+  const isModelUnavailable = (creditsLoading || modelsRefreshing) ? false : (!canAccessPremiumModels() && selectedModelData?.premium);
   const hasModelLoadError = Boolean(modelsError) || (!modelsLoading && availableModels.length === 0);
 
   // Fetch credit cost for the details panel model
@@ -366,7 +366,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         e.preventDefault();
         if (keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length) {
           const selectedModelData = filteredAndSortedModels[keyboardFocusedIndex];
-          const isUnavailable = creditsLoading ? false : (selectedModelData.premium && !canAccessPremiumModels());
+          const isUnavailable = (creditsLoading || modelsRefreshing) ? false : (selectedModelData.premium && !canAccessPremiumModels());
           if (!isUnavailable) {
             handleModelChange(selectedModelData.id);
           }
@@ -573,7 +573,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                   filteredAndSortedModels.map((model, index) => {
                     // Users with BYOK (Bring Your Own Key) can use premium models from that provider
                     const userHasApiKey = hasApiKeyForProvider(model.id);
-                    const isUnavailable = creditsLoading ? false : (model.premium && !canAccessPremiumModels() && !userHasApiKey);
+                    const isUnavailable = (creditsLoading || modelsRefreshing) ? false : (model.premium && !canAccessPremiumModels() && !userHasApiKey);
                     const isSelected = selectedModel === model.id;
                     const isKeyboardFocused = keyboardFocusedIndex === index;
                     const isTouchFocused = focusedModel === model.id;

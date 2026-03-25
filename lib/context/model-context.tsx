@@ -110,7 +110,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
     userApiKeys: Object.keys(userApiKeys).length > 0 ? userApiKeys : undefined,
     enabled: keysLoaded  // Only start fetching after keys are loaded
   });
-  const { isAnonymous } = useAuth();
+  const { isAnonymous, isLoading: authLoading } = useAuth();
   
   // Trigger model refresh when API keys actually change (not on initial load)
   // Using refs to avoid dependency issues that cause re-render loops
@@ -268,13 +268,21 @@ export function ModelProvider({ children }: { children: ReactNode }) {
   // Enhance models with favorite status
   // Users with API keys should see models from those providers, even if anonymous
   const hasAnyApiKeys = Object.keys(userApiKeys).length > 0;
-  const visibleModels = (isAnonymous && !hasAnyApiKeys)
+  const shouldRestrictToAnonymousFreeModels =
+    keysLoaded &&
+    !authLoading &&
+    !isLoading &&
+    !isValidating &&
+    isAnonymous &&
+    !hasAnyApiKeys;
+
+  const visibleModels = shouldRestrictToAnonymousFreeModels
     ? models.filter(m => m.id.startsWith('openrouter/') && m.id.endsWith(':free'))
     : models;
 
   // Keep selected model valid when available model list changes due to auth/policy/key updates.
   useEffect(() => {
-    if (!isInitialized || isLoading) return;
+    if (!isInitialized || isLoading || isValidating || authLoading) return;
     if (visibleModels.length === 0) return;
 
     const visibleModelIds = visibleModels.map(m => m.id);
@@ -288,17 +296,17 @@ export function ModelProvider({ children }: { children: ReactNode }) {
       console.warn(`Selected model "${selectedModel}" is not available. Falling back to "${fallbackModel}".`);
       setSelectedModelState(fallbackModel);
     }
-  }, [visibleModels, selectedModel, isInitialized, isLoading]);
+  }, [visibleModels, selectedModel, isInitialized, isLoading, isValidating, authLoading]);
 
   // Ensure selected model is valid for anonymous users (without API keys)
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized || authLoading || isLoading || isValidating) return;
     if (!isAnonymous || hasAnyApiKeys) return; // Users with API keys can use any model
     if (!selectedModel.startsWith('openrouter/') || !selectedModel.endsWith(':free')) {
       const fallback = visibleModels[0]?.id || FALLBACK_MODELS.find(id => id.endsWith(':free')) || selectedModel;
       setSelectedModelState(fallback);
     }
-  }, [isAnonymous, hasAnyApiKeys, isInitialized, selectedModel, visibleModels]);
+  }, [isAnonymous, hasAnyApiKeys, isInitialized, selectedModel, visibleModels, authLoading, isLoading, isValidating]);
 
   const modelsWithFavorites = visibleModels.map(model => ({
     ...model,
