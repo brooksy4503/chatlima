@@ -1,5 +1,3 @@
-import { Readability } from "@mozilla/readability";
-import { JSDOM } from "jsdom";
 import { ofetch } from "ofetch";
 import TurndownService from "turndown";
 import { isIP } from "node:net";
@@ -504,22 +502,15 @@ export class WebFetchService {
     finalUrl: string;
     mode: WebFetchMode;
   }): { title?: string; content: string } {
-    const { body, finalUrl, mode } = params;
-    const dom = new JSDOM(body, { url: finalUrl });
-    const document = dom.window.document;
-    const readability = new Readability(document);
-    const article = readability.parse();
-
-    let title = article?.title || document.title || undefined;
-    if (title) {
-      title = this.cleanWhitespace(title);
-    }
+    const { body, mode } = params;
+    const title = this.extractTitle(body);
+    const contentHtml = this.extractPrimaryHtml(body);
+    const contentText = this.extractText(contentHtml);
 
     if (mode === "text") {
-      const rawText = article?.textContent || document.body?.textContent || "";
       return {
         title,
-        content: this.cleanWhitespace(rawText),
+        content: this.cleanWhitespace(contentText),
       };
     }
 
@@ -530,14 +521,12 @@ export class WebFetchService {
       bulletListMarker: "-",
     });
 
-    const html = article?.content || document.body?.innerHTML || "";
-    const markdown = this.cleanWhitespace(turndown.turndown(html));
+    const markdown = this.cleanWhitespace(turndown.turndown(contentHtml));
     if (markdown) {
       return { title, content: markdown };
     }
 
-    const fallbackText = article?.textContent || document.body?.textContent || "";
-    return { title, content: this.cleanWhitespace(fallbackText) };
+    return { title, content: this.cleanWhitespace(contentText) };
   }
 
   private static cleanWhitespace(value: string): string {
@@ -549,12 +538,13 @@ export class WebFetchService {
   }
 
   private static extractLinks(html: string, baseUrl: string): string[] {
-    const dom = new JSDOM(html, { url: baseUrl });
-    const anchors = Array.from(dom.window.document.querySelectorAll("a[href]"));
     const urls = new Set<string>();
 
-    for (const anchor of anchors) {
-      const href = anchor.getAttribute("href");
+    const hrefRegex = /<a\b[^>]*\bhref\s*=\s*(['"])(.*?)\1/gi;
+    let match: RegExpExecArray | null = null;
+
+    while ((match = hrefRegex.exec(html)) !== null) {
+      const href = this.decodeHtmlEntities(match[2]).trim();
       if (!href) continue;
       if (href.startsWith("#")) continue;
 
@@ -568,6 +558,76 @@ export class WebFetchService {
     }
 
     return Array.from(urls);
+  }
+
+  private static extractTitle(html: string): string | undefined {
+    const match = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+    if (!match?.[1]) return undefined;
+    return this.cleanWhitespace(this.decodeHtmlEntities(match[1]));
+  }
+
+  private static extractPrimaryHtml(html: string): string {
+    const cleaned = html
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, "");
+
+    const articleMatch = cleaned.match(/<article\b[^>]*>[\s\S]*?<\/article>/i);
+    if (articleMatch?.[0]) {
+      return articleMatch[0];
+    }
+
+    const mainMatch = cleaned.match(/<main\b[^>]*>[\s\S]*?<\/main>/i);
+    if (mainMatch?.[0]) {
+      return mainMatch[0];
+    }
+
+    const bodyMatch = cleaned.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+    if (bodyMatch?.[1]) {
+      return bodyMatch[1];
+    }
+
+    return cleaned;
+  }
+
+  private static extractText(html: string): string {
+    const withLineBreaks = html
+      .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, "\n")
+      .replace(/<[^>]+>/g, " ");
+    return this.decodeHtmlEntities(withLineBreaks);
+  }
+
+  private static decodeHtmlEntities(value: string): string {
+    const namedEntities: Record<string, string> = {
+      amp: "&",
+      lt: "<",
+      gt: ">",
+      quot: "\"",
+      apos: "'",
+      nbsp: " ",
+      ndash: "-",
+      mdash: "-",
+      hellip: "...",
+    };
+
+    return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (full, entity: string) => {
+      const normalized = entity.toLowerCase();
+      if (normalized in namedEntities) {
+        return namedEntities[normalized];
+      }
+
+      if (normalized.startsWith("#x")) {
+        const codePoint = Number.parseInt(normalized.slice(2), 16);
+        return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : full;
+      }
+
+      if (normalized.startsWith("#")) {
+        const codePoint = Number.parseInt(normalized.slice(1), 10);
+        return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : full;
+      }
+
+      return full;
+    });
   }
 
   private static normalizeForCrawl(url: string): string {

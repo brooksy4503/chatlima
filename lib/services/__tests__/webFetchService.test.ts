@@ -153,6 +153,7 @@ describe("WebFetchService", () => {
   });
 
   it("returns extracted content and marks truncation", async () => {
+    const longParagraph = "This is a long paragraph that should be truncated by the cap. ".repeat(30);
     mockRaw.mockResolvedValueOnce(
       makeRawResponse({
         headers: { "content-type": "text/html; charset=utf-8" },
@@ -162,7 +163,7 @@ describe("WebFetchService", () => {
             <body>
               <article>
                 <h1>Hello</h1>
-                <p>This is a long paragraph that should be truncated by the cap.</p>
+                <p>${longParagraph}</p>
               </article>
             </body>
           </html>
