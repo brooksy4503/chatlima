@@ -111,7 +111,7 @@ export class WebFetchService {
       Math.min(input.siteModeDepth ?? policy.siteModeDepth, policy.siteModeDepth),
     );
 
-    let currentUrl = this.validateAndNormalizeUrl(input.url);
+    const currentUrl = this.validateAndNormalizeUrl(input.url);
     await this.assertPublicUrl(currentUrl);
 
     if (siteMode) {
