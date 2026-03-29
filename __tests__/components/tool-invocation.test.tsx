@@ -71,6 +71,13 @@ describe('ToolInvocation', () => {
       expect(screen.getByText('custom-tool')).toBeInTheDocument();
     });
 
+    test('renders user-friendly web_fetch label', () => {
+      render(<ToolInvocation {...defaultProps} toolName="web_fetch" />);
+
+      expect(screen.getByText('Reading URL')).toBeInTheDocument();
+      expect(screen.queryByText('web_fetch')).not.toBeInTheDocument();
+    });
+
     test('renders collapsed by default', () => {
       render(<ToolInvocation {...defaultProps} />);
       

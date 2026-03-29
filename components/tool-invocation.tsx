@@ -32,6 +32,7 @@ export function ToolInvocation({
   status,
 }: ToolInvocationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const displayToolName = toolName === "web_fetch" ? "Reading URL" : toolName;
 
   const variants = {
     collapsed: {
@@ -97,7 +98,7 @@ export function ToolInvocation({
           <TerminalSquare className="h-3.5 w-3.5" />
         </div>
         <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground flex-1">
-          <span className="text-foreground font-semibold tracking-tight">{toolName}</span>
+          <span className="text-foreground font-semibold tracking-tight">{displayToolName}</span>
           <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
           <span className={cn("font-medium", getStatusClass())}>
             {state === "call" ? (isLatestMessage && status !== "ready" ? "Running" : "Waiting") : "Completed"}

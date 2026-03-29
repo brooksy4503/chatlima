@@ -164,6 +164,7 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 
 ### 🔍 Advanced Capabilities
 - **Web-Enabled Search**: Enhanced search capabilities via OpenRouter with premium billing
+- **Native Web Fetch Tool**: Built-in `web_fetch` tool reads and extracts public URLs directly for chat context without MCP dependency
 - **Reasoning Model Support**: Support for advanced reasoning models with thinking capabilities
 - **Tool Calling**: MCP server integration for extended capabilities with Grok model support
 - **Real-time Pricing Analysis**: Developer tools for cost optimization
@@ -223,6 +224,7 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 
 ### 🔧 Technical Enhancements
 - **Modular Service-Oriented Architecture**: Clean, maintainable architecture with 8 specialized services (Authentication, Credit Validation, Database, MCP Server, Message Processing, Model Validation, Token Tracking, Web Search)
+- **Native URL Extraction Pipeline**: Server-side URL validation, SSRF-safe fetch, readability extraction, and bounded truncation for tool-driven page reading
 - **Enhanced Error Handling**: Improved error handling across chat API and credit management with domain-specific error classes
 - **JSON Repair Utility**: Automatic detection and correction of malformed JSON from AI models using jsonrepair library
 - **Debugging & Traceability**: Enhanced debugging capabilities with comprehensive logging and performant logging utilities

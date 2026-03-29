@@ -47,6 +47,7 @@ import { ChatWebSearchService, type WebSearchContext, type WebSearchResult } fro
 import { ChatTokenTrackingService, type TokenTrackingContext, type TokenTrackingResult } from '@/lib/services/chatTokenTrackingService';
 import { ChatDatabaseService, type ChatCreationContext, type MessageSavingContext } from '@/lib/services/chatDatabaseService';
 import { buildProjectContext, formatProjectContextForSystemPrompt } from '@/lib/services/projectContext';
+import { WebFetchService, WebFetchError } from '@/lib/services/webFetchService';
 import { getAccessPolicyFlags } from '@/lib/config/access-policy';
 import { canUserChat, hasProviderByokForModel } from '@/lib/services/accessGateService';
 
@@ -785,10 +786,68 @@ export async function POST(req: Request) {
             },
         });
 
-        // Merge read_file tool with MCP tools
+        const webFetchPolicy = {
+            ...WebFetchService.getDefaultPolicy(),
+            enabled: accessPolicyFlags.nativeWebFetchEnabled,
+            defaultMaxChars: accessPolicyFlags.nativeWebFetchMaxChars,
+            defaultTimeoutMs: accessPolicyFlags.nativeWebFetchTimeoutMs,
+            maxResponseBytes: accessPolicyFlags.nativeWebFetchMaxBytes,
+            maxRedirects: accessPolicyFlags.nativeWebFetchMaxRedirects,
+            siteModeEnabled: accessPolicyFlags.nativeWebFetchSiteModeEnabled,
+            siteModeMaxPages: accessPolicyFlags.nativeWebFetchSiteModeMaxPages,
+            siteModeDepth: accessPolicyFlags.nativeWebFetchSiteModeDepth,
+        };
+
+        const web_fetch = tool({
+            description: "Fetch and extract readable content from a public web URL. Best for reading a specific link and using it as context.",
+            parameters: z.object({
+                url: z.string().describe("Public http/https URL to read"),
+                mode: z.enum(["markdown", "text"]).optional().describe("Output format. Defaults to markdown."),
+                maxChars: z.number().int().positive().max(100000).optional().describe("Maximum characters to return. Defaults to server policy."),
+                followRedirects: z.boolean().optional().describe("Whether to follow redirects. Defaults to true."),
+                timeoutMs: z.number().int().positive().max(60000).optional().describe("Request timeout in milliseconds. Defaults to server policy."),
+                siteMode: z.boolean().optional().describe("Optional whole-site mode. Disabled unless explicitly enabled by server configuration."),
+                siteModeSameDomain: z.boolean().optional().describe("When siteMode is enabled, limit crawl to the same domain. Defaults to true."),
+                siteModeMaxPages: z.number().int().positive().max(100).optional().describe("When siteMode is enabled, maximum pages to crawl (capped by server policy)."),
+                siteModeDepth: z.number().int().min(0).max(5).optional().describe("When siteMode is enabled, crawl depth (capped by server policy)."),
+            }),
+            execute: async ({ url, mode, maxChars, followRedirects, timeoutMs, siteMode, siteModeSameDomain, siteModeMaxPages, siteModeDepth }) => {
+                try {
+                    const result = await WebFetchService.fetchPage({
+                        url,
+                        mode,
+                        maxChars,
+                        followRedirects,
+                        timeoutMs,
+                        siteMode,
+                        siteModeSameDomain,
+                        siteModeMaxPages,
+                        siteModeDepth,
+                    }, webFetchPolicy);
+                    return JSON.stringify({ success: true, ...result }, null, 2);
+                } catch (error) {
+                    if (error instanceof WebFetchError) {
+                        return JSON.stringify({
+                            success: false,
+                            code: error.code,
+                            error: error.message,
+                        });
+                    }
+                    const message = error instanceof Error ? error.message : "Unknown web fetch error";
+                    return JSON.stringify({
+                        success: false,
+                        code: "WEB_FETCH_UNKNOWN_ERROR",
+                        error: message,
+                    });
+                }
+            },
+        });
+
+        // Merge native + MCP tools
         const allTools = {
             ...tools,
             read_file,
+            ...(webFetchPolicy.enabled ? { web_fetch } : {}),
         };
 
         // Log web search status
@@ -939,6 +998,16 @@ When a user message contains an "[Attached files:]" section with "filepath" and/
 1. Use the \`read_file\` tool to inspect the relevant file(s) before answering questions about file contents.
 2. Prefer using the \`filepath\` value when provided; if unavailable, use the file URL.
 3. If reading a file fails, clearly explain what failed and what the user can retry.
+
+${webFetchPolicy.enabled ? `
+## Native URL Fetch:
+When users ask to read, summarize, analyze, or extract information from a URL:
+1. Prefer the \`web_fetch\` tool for direct page reading.
+2. For messages containing multiple URLs, fetch the first URL unless the user explicitly asks for all.
+3. Only use \`siteMode: true\` when the user explicitly asks for whole-site or multi-page crawling.
+4. Cite the source URL in your response and mention when content was truncated.
+5. If fetching fails, explain the failure and suggest retrying or narrowing scope.
+` : ''}
 
 ${effectiveWebSearchEnabled ? `
 ## Web Search Enabled:

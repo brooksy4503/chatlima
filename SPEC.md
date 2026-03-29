@@ -84,7 +84,7 @@ chatlima/
 
 ### 2.3 Service-Oriented Architecture
 
-The application uses 8 specialized services for maintainability:
+The application uses 9 specialized services for maintainability:
 
 | Service | Responsibility |
 |---------|---------------|
@@ -96,6 +96,7 @@ The application uses 8 specialized services for maintainability:
 | `chatModelValidationService` | Model availability & capability checks |
 | `chatTokenTrackingService` | Token usage & cost tracking |
 | `chatWebSearchService` | Web search integration |
+| `webFetchService` | Native URL fetch, SSRF-safe validation, and content extraction |
 
 ---
 
@@ -484,6 +485,7 @@ Based on model pricing ($/M tokens):
 - **Streaming Responses**: Real-time AI response streaming with visual indicators
 - **Dual-Path File Upload**: Up to 5 files per message, 30 MB max per file. Images (JPEG, PNG, WebP) sent as base64 for vision; documents (PDF, CSV, Excel) and text/code files uploaded to Vercel Blob and exposed to the AI via a `read_file` tool (content parsed on demand). Parser limits: Excel 1,000 rows/sheet, CSV 10,000 rows.
 - **Web Search**: Premium web search via OpenRouter with citations
+- **Native Web Fetch**: First-party `web_fetch` tool for reading public URLs directly in chat with extraction + truncation controls
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
 - **Smart Title Generation**: Dynamic model selection for conversation titles
 
@@ -533,8 +535,8 @@ Based on model pricing ($/M tokens):
 ```
 POST /api/chat
 - Main chat endpoint with streaming
-- Handles MCP tools, web search, images (base64), file references (Blob URLs)
-- Integrates read_file tool for uploaded documents
+- Handles MCP tools, web search, native web_fetch, images (base64), file references (Blob URLs)
+- Integrates read_file tool for uploaded documents and web_fetch tool for URL extraction
 ```
 
 #### Upload API
@@ -712,6 +714,16 @@ REQUESTY_API_KEY=
 # Access gating feature flags
 BILLING_ENFORCED=false
 ALLOW_BYOK_BYPASS=true
+
+# Native web fetch feature flags
+NATIVE_WEB_FETCH_ENABLED=false
+NATIVE_WEB_FETCH_MAX_CHARS=30000
+NATIVE_WEB_FETCH_TIMEOUT_MS=12000
+NATIVE_WEB_FETCH_MAX_BYTES=5000000
+NATIVE_WEB_FETCH_MAX_REDIRECTS=5
+NATIVE_WEB_FETCH_SITE_MODE_ENABLED=false
+NATIVE_WEB_FETCH_SITE_MODE_MAX_PAGES=20
+NATIVE_WEB_FETCH_SITE_MODE_DEPTH=2
 ```
 
 ### 11.5 Optional
@@ -861,6 +873,7 @@ npm run test:anonymous  # Anonymous user tests
 - Images stored temporarily during chat
 - Some models may have rate limits
 - Web search requires subscription
+- Whole-site web fetch mode is gated behind a disabled-by-default flag
 
 ---
 
