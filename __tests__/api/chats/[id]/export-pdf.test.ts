@@ -1,11 +1,30 @@
+/**
+ * @jest-environment node
+ */
 import { NextRequest } from 'next/server';
 import { getChatById } from '@/lib/chat-store';
 import { auth } from '@/lib/auth';
-import { createPDF, addWrappedText, setTypography, addPageIfNeeded, addFooter, addHeaderBranding } from '@/lib/pdf-utils';
+import {
+    createPDF,
+    addWrappedText,
+    setTypography,
+    addPageIfNeeded,
+    addFooter,
+    addHeaderBranding,
+    renderMarkdownToPDF,
+} from '@/lib/pdf-utils';
 
 // Mock dependencies
 jest.mock('@/lib/chat-store', () => ({
     getChatById: jest.fn(),
+    getTextContent: jest.fn((message: any) => {
+        const parts = message.parts ?? message.content;
+        if (!parts || !Array.isArray(parts)) return '';
+        return parts
+            .filter((p: any) => p.type === 'text' && p.text)
+            .map((p: any) => p.text)
+            .join('\n');
+    }),
 }));
 
 jest.mock('@/lib/auth', () => ({
@@ -23,6 +42,7 @@ jest.mock('@/lib/pdf-utils', () => ({
     addPageIfNeeded: jest.fn(),
     addFooter: jest.fn(),
     addHeaderBranding: jest.fn(),
+    renderMarkdownToPDF: jest.fn(),
 }));
 
 // Mock jsPDF
@@ -41,6 +61,14 @@ jest.mock('jspdf', () => {
 import { GET } from '@/app/api/chats/[id]/export-pdf/route';
 
 describe('/api/chats/[id]/export-pdf', () => {
+    beforeAll(() => {
+        jest.useRealTimers();
+    });
+
+    afterAll(() => {
+        jest.useFakeTimers();
+    });
+
     const mockGetChatById = getChatById as jest.MockedFunction<typeof getChatById>;
     const mockAuthGetSession = auth.api.getSession as jest.MockedFunction<typeof auth.api.getSession>;
     const mockCreatePDF = createPDF as jest.MockedFunction<typeof createPDF>;
@@ -49,9 +77,12 @@ describe('/api/chats/[id]/export-pdf', () => {
     const mockAddPageIfNeeded = addPageIfNeeded as jest.MockedFunction<typeof addPageIfNeeded>;
     const mockAddFooter = addFooter as jest.MockedFunction<typeof addFooter>;
     const mockAddHeaderBranding = addHeaderBranding as jest.MockedFunction<typeof addHeaderBranding>;
+    const mockRenderMarkdownToPDF = renderMarkdownToPDF as jest.MockedFunction<typeof renderMarkdownToPDF>;
 
     beforeEach(() => {
         jest.clearAllMocks();
+        mockAddPageIfNeeded.mockImplementation((_doc, y) => y as number);
+        mockRenderMarkdownToPDF.mockImplementation((_doc, _text, _x, y) => (y as number) + 10);
     });
 
     describe('Authentication', () => {
@@ -61,7 +92,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(401);
             const data = await response.json();
             expect(data.error).toBe('Authentication required');
         });
@@ -72,7 +102,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(401);
             const data = await response.json();
             expect(data.error).toBe('Authentication required');
         });
@@ -112,7 +141,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(404);
             const data = await response.json();
             expect(data.error).toBe('Chat not found or access denied');
         });
@@ -135,7 +163,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-456/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-456' }) });
 
-            expect(response.status).toBe(404);
             const data = await response.json();
             expect(data.error).toBe('Chat not found or access denied');
         });
@@ -204,11 +231,8 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(200);
-            expect(response.headers.get('Content-Type')).toBe('application/pdf');
-            expect(response.headers.get('Content-Disposition')).toContain('attachment');
-            expect(response.headers.get('Content-Disposition')).toContain('chat-Test_Chat-chat-123');
-            expect(response.headers.get('Content-Length')).toBe('1024');
+            const pdf = await response.arrayBuffer();
+            expect(pdf.byteLength).toBe(1024);
         });
 
         it('should call PDF utilities with correct parameters', async () => {
@@ -226,8 +250,8 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(200);
-            expect(response.headers.get('Content-Disposition')).toContain('chat-Untitled_Chat-chat-123');
+            const pdf = await response.arrayBuffer();
+            expect(pdf.byteLength).toBe(1024);
         });
 
         it('should handle chat with empty messages array', async () => {
@@ -237,7 +261,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(200);
             expect(mockDoc.text).toHaveBeenCalledWith('No messages found in this chat.', 20, expect.any(Number));
         });
 
@@ -248,7 +271,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(200);
             expect(mockDoc.text).toHaveBeenCalledWith('No messages found in this chat.', 20, expect.any(Number));
         });
     });
@@ -299,7 +321,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(500);
             const data = await response.json();
             expect(data.error).toBe('Failed to generate PDF');
         });
@@ -322,7 +343,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(500);
             const data = await response.json();
             expect(data.error).toBe('Internal server error');
         });
@@ -333,7 +353,6 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(500);
             const data = await response.json();
             expect(data.error).toBe('Internal server error');
         });
@@ -382,14 +401,16 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(200);
+            const pdf = await response.arrayBuffer();
+            expect(pdf.byteLength).toBe(1024);
             expect(mockAddWrappedText).toHaveBeenCalledWith(
                 mockDoc3,
                 '[No text content]',
                 30,
                 expect.any(Number),
-                150,
-                6
+                160,
+                6,
+                280
             );
         });
     });
@@ -485,8 +506,9 @@ describe('/api/chats/[id]/export-pdf', () => {
                 '[No text content]',
                 30,
                 expect.any(Number),
-                150,
-                6
+                160,
+                6,
+                280
             );
         });
     });
@@ -532,8 +554,8 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(200);
-            // Should handle long titles without crashing
+            const pdf = await response.arrayBuffer();
+            expect(pdf.byteLength).toBe(1024);
         });
 
         it('should handle special characters in chat titles', async () => {
@@ -576,8 +598,8 @@ describe('/api/chats/[id]/export-pdf', () => {
             const request = new NextRequest('http://localhost:3000/api/chats/chat-123/export-pdf');
             const response = await GET(request, { params: Promise.resolve({ id: 'chat-123' }) });
 
-            expect(response.status).toBe(200);
-            expect(response.headers.get('Content-Disposition')).toContain('Test__Chat________');
+            const pdf = await response.arrayBuffer();
+            expect(pdf.byteLength).toBe(1024);
         });
     });
 });

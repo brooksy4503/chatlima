@@ -491,7 +491,7 @@ describe('IOSInstallPrompt', () => {
   });
 
   describe('Error Handling', () => {
-    test('throws error when localStorage.getItem fails during initialization', async () => {
+    test('does not throw when localStorage.getItem fails during initialization', () => {
       Object.defineProperty(navigator, 'userAgent', {
         writable: true,
         value: TEST_DATA.userAgents.iosSafari
@@ -501,10 +501,7 @@ describe('IOSInstallPrompt', () => {
         throw new Error('localStorage error');
       });
 
-      // Component should throw error during initialization
-      expect(() => {
-        render(<IOSInstallPrompt onDismiss={mockOnDismiss} />);
-      }).toThrow('localStorage error');
+      expect(() => render(<IOSInstallPrompt onDismiss={mockOnDismiss} />)).not.toThrow();
     });
 
     test('attempts to save to localStorage when dismiss buttons are clicked', async () => {

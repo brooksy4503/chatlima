@@ -124,18 +124,23 @@ jest.mock('../../components/file-upload', () => ({
   ),
 }));
 
-jest.mock('../../components/image-preview', () => ({
-  ImagePreview: ({ images, onRemove, maxWidth, maxHeight, className }: any) => (
-    <div data-testid="image-preview" className={className}>
-      {images.map((image: any, index: number) => (
-        <div key={image.id} data-testid={`image-${index}`}>
-          <img src={image.url} alt="preview" width={maxWidth} height={maxHeight} />
-          <button
-            data-testid={`remove-image-${index}`}
-            onClick={() => onRemove(index)}
-          >
-            Remove
-          </button>
+jest.mock('../../components/file-preview', () => ({
+  FilePreview: ({ files, onRemove, maxWidth, maxHeight, className }: any) => (
+    <div data-testid="file-preview" className={className}>
+      {files.map((file: any, index: number) => (
+        <div
+          key={index}
+          data-testid={`file-item-${index}`}
+          onClick={() => onRemove(index)}
+        >
+          {file.dataUrl && (
+            <img
+              src={file.dataUrl}
+              alt={file.metadata.filename}
+              width={maxWidth}
+              height={maxHeight}
+            />
+          )}
         </div>
       ))}
     </div>
@@ -246,7 +251,7 @@ describe('Textarea', () => {
       render(<Textarea {...defaultProps} files={files} />);
 
       const textarea = screen.getByTestId('textarea');
-      expect(textarea).toHaveAttribute('placeholder', 'Describe these images or ask questions...');
+      expect(textarea).toHaveAttribute('placeholder', 'Describe these files or ask questions...');
     });
 
     test('disables submit button when input is empty and no images', () => {
@@ -351,10 +356,10 @@ describe('Textarea', () => {
       expect(screen.getByTestId('button-ghost')).toBeInTheDocument();
     });
 
-    test('does not show image upload button for non-vision models', () => {
+    test('shows attach button for non-vision models (generic file upload)', () => {
       render(<Textarea {...defaultProps} selectedModel="claude-3-haiku" />);
-      
-      expect(screen.queryByTestId('button-ghost')).not.toBeInTheDocument();
+
+      expect(screen.getByTestId('button-ghost')).toBeInTheDocument();
     });
 
     test('toggles image upload interface when button is clicked', () => {
@@ -395,9 +400,9 @@ describe('Textarea', () => {
       ];
       render(<Textarea {...defaultProps} files={files} />);
 
-      expect(screen.getByTestId('image-preview')).toBeInTheDocument();
-      expect(screen.getByTestId('image-0')).toBeInTheDocument();
-      expect(screen.getByTestId('image-1')).toBeInTheDocument();
+      expect(screen.getByTestId('file-preview')).toBeInTheDocument();
+      expect(screen.getByTestId('file-item-0')).toBeInTheDocument();
+      expect(screen.getByTestId('file-item-1')).toBeInTheDocument();
       expect(screen.getByText('2/5 files • Click to remove')).toBeInTheDocument();
     });
 
@@ -410,7 +415,9 @@ describe('Textarea', () => {
       const selectButton = screen.getByTestId('image-upload-button');
       fireEvent.click(selectButton);
       
-      expect(mockOnFilesChange).toHaveBeenCalledWith([{ id: '1', url: 'test.jpg' }]);
+      expect(mockOnFilesChange).toHaveBeenCalledWith([
+        { id: '1', url: 'test.jpg', type: 'image' },
+      ]);
     });
 
     test('handles image removal', () => {
@@ -430,8 +437,7 @@ describe('Textarea', () => {
       ];
       render(<Textarea {...defaultProps} files={files} />);
 
-      const removeButton = screen.getByTestId('remove-image-0');
-      fireEvent.click(removeButton);
+      fireEvent.click(screen.getByAltText('test.jpg'));
 
       expect(mockOnFilesChange).toHaveBeenCalledWith([]);
     });

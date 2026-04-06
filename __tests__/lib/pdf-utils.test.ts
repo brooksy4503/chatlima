@@ -417,8 +417,11 @@ describe('PDF Utils', () => {
 
             renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
 
-            expect(mockDoc.text).toHaveBeenCalledWith('• First item', x, y);
-            expect(mockDoc.text).toHaveBeenCalledWith('• Second item', x, expect.any(Number));
+            expect(mockDoc.text).toHaveBeenCalledWith('•', x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('First', expect.any(Number), y);
+            expect(mockDoc.text).toHaveBeenCalledWith('item', expect.any(Number), y);
+            expect(mockDoc.text).toHaveBeenCalledWith('•', x, expect.any(Number));
+            expect(mockDoc.text).toHaveBeenCalledWith('Second', expect.any(Number), expect.any(Number));
         });
 
         it('should handle mixed markdown elements', () => {
@@ -432,8 +435,8 @@ describe('PDF Utils', () => {
             expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'bold');
             expect(mockDoc.setFont).toHaveBeenCalledWith('helvetica', 'italic');
             expect(mockDoc.setFont).toHaveBeenCalledWith('courier', 'normal');
-            expect(mockDoc.setFontSize).toHaveBeenCalledWith(16); // Header
-            expect(mockDoc.setFontSize).toHaveBeenCalledWith(12); // Normal text
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(18); // H1 "Title"
+            expect(mockDoc.setFontSize).toHaveBeenCalledWith(12); // Body text
         });
 
         it('should handle text wrapping and pagination', () => {
@@ -458,7 +461,9 @@ describe('PDF Utils', () => {
 
             renderMarkdownToPDF(mockDoc, markdownText, x, y, { maxWidth: 150 });
 
-            expect(mockDoc.text).toHaveBeenCalledWith('Check out this link', x, y);
+            const drawn = mockDoc.text.mock.calls.map((c) => c[0]).join('');
+            expect(drawn).toContain('Check');
+            expect(drawn).toContain('link');
         });
 
         it('should handle empty markdown text', () => {
@@ -478,7 +483,10 @@ describe('PDF Utils', () => {
 
             renderMarkdownToPDF(mockDoc, markdownText, x, y);
 
-            expect(mockDoc.splitTextToSize).toHaveBeenCalledWith('Simple text', 170); // default maxWidth
+            // Token-based layout uses doc.text per word, not splitTextToSize
+            expect(mockDoc.text.mock.calls.length).toBeGreaterThan(0);
+            expect(mockDoc.text).toHaveBeenCalledWith('Simple', x, y);
+            expect(mockDoc.text).toHaveBeenCalledWith('text', expect.any(Number), y);
         });
     });
 });

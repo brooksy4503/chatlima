@@ -1,6 +1,7 @@
 /// <reference types="@testing-library/jest-dom" />
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ApiKeyManager } from '../../components/api-key-manager';
+import * as browserStorage from '@/lib/browser-storage';
 
 // Mock localStorage
 const localStorageMock = {
@@ -106,11 +107,12 @@ describe('ApiKeyManager Component', () => {
 
     test('renders dialog description correctly', () => {
       render(<ApiKeyManager open={true} onOpenChange={mockOnOpenChange} />);
-      
-      const description = screen.getByTestId('dialog-description');
-      expect(description).toHaveTextContent(
-        "Enter your own API keys for different AI providers. Keys are stored securely in your browser's local storage."
-      );
+
+      expect(
+        screen.getByText(
+          /Enter your own API keys for different AI providers\. Keys are stored securely in your browser's local storage\./i
+        )
+      ).toBeInTheDocument();
     });
 
     test('renders key icon in header', () => {
@@ -311,35 +313,37 @@ describe('ApiKeyManager Component', () => {
   // Tests for Error Handling
   describe('Error Handling', () => {
     test('handles localStorage errors when saving', async () => {
-      localStorageMock.setItem.mockImplementation(() => {
+      const spy = jest.spyOn(browserStorage, 'setLocalStorageItem').mockImplementation(() => {
         throw new Error('localStorage error');
       });
-      
+
       render(<ApiKeyManager open={true} onOpenChange={mockOnOpenChange} />);
-      
+
       fireEvent.change(screen.getByTestId('input-openai'), { target: { value: 'sk-test' } });
-      
+
       const saveButton = screen.getByText('Save Keys');
       fireEvent.click(saveButton);
-      
+
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Failed to save API keys');
       });
+      spy.mockRestore();
     });
 
     test('handles localStorage errors when clearing', async () => {
-      localStorageMock.removeItem.mockImplementation(() => {
+      const spy = jest.spyOn(browserStorage, 'removeLocalStorageItem').mockImplementation(() => {
         throw new Error('localStorage error');
       });
-      
+
       render(<ApiKeyManager open={true} onOpenChange={mockOnOpenChange} />);
-      
+
       const clearButton = screen.getByText('Clear All Keys');
       fireEvent.click(clearButton);
-      
+
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('Failed to clear API keys');
       });
+      spy.mockRestore();
     });
   });
 
@@ -389,12 +393,12 @@ describe('ApiKeyManager Component', () => {
 
     test('applies responsive spacing classes', () => {
       render(<ApiKeyManager open={true} onOpenChange={mockOnOpenChange} />);
-      
+
       const dialogHeader = screen.getByTestId('dialog-header');
       expect(dialogHeader).toHaveClass('space-y-2', 'sm:space-y-3');
-      
-      const dialogFooter = screen.getByTestId('dialog-footer');
-      expect(dialogFooter).toHaveClass('flex-col-reverse', 'sm:flex-row');
+
+      const clearRow = screen.getByText('Clear All Keys').parentElement;
+      expect(clearRow).toHaveClass('flex-col-reverse', 'sm:flex-row');
     });
   });
 
