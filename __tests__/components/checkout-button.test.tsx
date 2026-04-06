@@ -9,13 +9,21 @@ jest.mock('../../hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-// Mock auth-client signIn
-const mockSignIn = {
-  social: jest.fn(),
-};
+const mockRouterPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: mockRouterPush,
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  })),
+}));
 
+// Mock auth-client signIn (jest.mock is hoisted; use factory so mocks exist at load time)
+const mockSignInSocial = jest.fn();
 jest.mock('../../lib/auth-client', () => ({
-  signIn: mockSignIn,
+  signIn: {
+    social: (...args: unknown[]) => mockSignInSocial(...args),
+  },
 }));
 
 // Mock the Button component
@@ -32,35 +40,10 @@ jest.mock('lucide-react', () => ({
   CreditCard: ({ className }: any) => <div className={className} data-testid="credit-card-icon" />,
 }));
 
-// Mock window.location to prevent JSDOM navigation errors
-const mockLocation = {
-  href: '',
-  assign: jest.fn(),
-  reload: jest.fn(),
-  replace: jest.fn(),
-};
-
-// Store original location for restoration
-const originalLocation = window.location;
-
-// Set up location mock
-beforeAll(() => {
-  delete (window as any).location;
-  (window as any).location = mockLocation;
-});
-
-// Restore original location after all tests
-afterAll(() => {
-  if (originalLocation) {
-    delete (window as any).location;
-    (window as any).location = originalLocation;
-  }
-});
-
 describe('CheckoutButton Component', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockLocation.href = '';
+    mockSignInSocial.mockClear();
+    mockRouterPush.mockClear();
   });
 
   describe('Anonymous User', () => {
@@ -101,7 +84,7 @@ describe('CheckoutButton Component', () => {
       const button = screen.getByRole('button');
       fireEvent.click(button);
       
-      expect(mockSignIn.social).toHaveBeenCalledWith({
+      expect(mockSignInSocial).toHaveBeenCalledWith({
         provider: 'google',
         callbackURL: '/upgrade',
       });
@@ -130,7 +113,7 @@ describe('CheckoutButton Component', () => {
       const button = screen.getByRole('button');
       fireEvent.click(button);
       
-      expect(mockSignIn.social).toHaveBeenCalledWith({
+      expect(mockSignInSocial).toHaveBeenCalledWith({
         provider: 'google',
         callbackURL: '/upgrade',
       });
@@ -148,6 +131,7 @@ describe('CheckoutButton Component', () => {
         },
         isAnonymous: false,
         isAuthenticated: true,
+        usageData: { subscriptionType: 'monthly' },
       });
     });
 
@@ -158,15 +142,34 @@ describe('CheckoutButton Component', () => {
       expect(button).toHaveTextContent('Upgrade');
     });
 
-    it('navigates to checkout when clicked', () => {
+    it('navigates yearly subscribers to upgrade via router', () => {
+      mockUseAuth.mockReturnValue({
+        user: {
+          id: 'user-123',
+          name: 'John Doe',
+          email: 'john@example.com',
+          isAnonymous: false,
+        },
+        isAnonymous: false,
+        isAuthenticated: true,
+        usageData: { subscriptionType: 'yearly' },
+      });
+
       render(<CheckoutButton />);
-      
-      const button = screen.getByRole('button');
-      fireEvent.click(button);
-      
-      // Component uses window.location.href for authenticated users
-      expect(mockLocation.href).toBe('/api/auth/checkout/ai-usage');
-      expect(mockSignIn.social).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('button'));
+
+      expect(mockRouterPush).toHaveBeenCalledWith('/upgrade');
+      expect(mockSignInSocial).not.toHaveBeenCalled();
+    });
+
+    it('does not use sign-in for authenticated monthly subscribers (checkout via navigation)', () => {
+      render(<CheckoutButton />);
+
+      fireEvent.click(screen.getByRole('button'));
+
+      expect(mockSignInSocial).not.toHaveBeenCalled();
+      expect(mockRouterPush).not.toHaveBeenCalled();
     });
 
     it('displays credit card icon', () => {
@@ -195,7 +198,7 @@ describe('CheckoutButton Component', () => {
       expect(button).toHaveTextContent('Sign In to Purchase Credits');
       
       fireEvent.click(button);
-      expect(mockSignIn.social).toHaveBeenCalledWith({
+      expect(mockSignInSocial).toHaveBeenCalledWith({
         provider: 'google',
         callbackURL: '/upgrade',
       });
@@ -217,7 +220,7 @@ describe('CheckoutButton Component', () => {
       expect(button).toHaveTextContent('Sign In to Purchase Credits');
       
       fireEvent.click(button);
-      expect(mockSignIn.social).toHaveBeenCalledWith({
+      expect(mockSignInSocial).toHaveBeenCalledWith({
         provider: 'google',
         callbackURL: '/upgrade',
       });

@@ -48,6 +48,7 @@ jest.mock('next/navigation', () => ({
     refresh: jest.fn(),
   })),
   useParams: jest.fn(() => ({ id: undefined })),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
 }));
 
 jest.mock('@ai-sdk/react', () => ({
@@ -219,6 +220,10 @@ Object.defineProperty(window, 'performance', {
 });
 
 describe('Chat Component', () => {
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_BILLING_ENFORCED = 'false';
+  });
+
   let queryClient: QueryClient;
   let mockUseChat: jest.MockedFunction<any>;
   let mockUseSession: jest.MockedFunction<any>;
@@ -272,6 +277,9 @@ describe('Chat Component', () => {
     mockUseAuth.mockReturnValue({
       session: null,
       isPending: false,
+      refreshMessageUsage: jest.fn(),
+      usageData: null,
+      user: null,
     });
     
     mockUseModel.mockReturnValue({
@@ -360,13 +368,13 @@ describe('Chat Component', () => {
 
   describe('User Interactions', () => {
     test('handles form submission correctly', async () => {
-      const mockHandleSubmit = jest.fn();
+      const mockAppend = jest.fn();
       mockUseChat.mockReturnValue({
         messages: [],
         input: 'Test message',
         handleInputChange: jest.fn(),
-        handleSubmit: mockHandleSubmit,
-        append: jest.fn(),
+        handleSubmit: jest.fn(),
+        append: mockAppend,
         status: 'idle',
         stop: jest.fn(),
       });
@@ -374,10 +382,11 @@ describe('Chat Component', () => {
       renderWithProviders(<Chat />);
       
       const form = screen.getByTestId('textarea-mock').closest('form');
-      if (form) {
-        fireEvent.submit(form);
-        expect(mockHandleSubmit).toHaveBeenCalled();
-      }
+      expect(form).toBeTruthy();
+      fireEvent.submit(form!);
+      await waitFor(() => {
+        expect(mockAppend).toHaveBeenCalled();
+      });
     });
 
     test('prevents form submission when input is empty', () => {
@@ -457,6 +466,9 @@ describe('Chat Component', () => {
       mockUseAuth.mockReturnValue({
         session: { user: { id: 'user123' } },
         isPending: false,
+        refreshMessageUsage: jest.fn(),
+        usageData: null,
+        user: { id: 'user123' },
       });
       
       rerender(
@@ -877,6 +889,9 @@ describe('Chat Component', () => {
       mockUseAuth.mockReturnValue({
         session: null,
         isPending: true,
+        refreshMessageUsage: jest.fn(),
+        usageData: null,
+        user: null,
       });
 
       renderWithProviders(<Chat />);
@@ -889,6 +904,9 @@ describe('Chat Component', () => {
       mockUseAuth.mockReturnValue({
         session: null,
         isPending: false,
+        refreshMessageUsage: jest.fn(),
+        usageData: null,
+        user: null,
       });
 
       renderWithProviders(<Chat />);

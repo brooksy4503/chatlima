@@ -67,14 +67,6 @@ Project Structure:
 │   │   └── web-search-suggestion.test.tsx
 │   ├── tsconfig.json
 │   └── tsconfig.tsbuildinfo
-├── agentsmith
-│   ├── globals.json
-│   └── prompts
-│       └── default
-│           ├── 0.0.1
-│           │   ├── content.j2
-│           │   └── version.json
-│           └── prompt.json
 ├── ai
 │   └── providers.ts
 ├── app
@@ -1578,11 +1570,6 @@ __tests__/tsconfig.json
 7 |   "include": ["../**/*.ts", "../**/*.tsx"],
 8 |   "files": ["./components/suggested-prompts.test.tsx", "./components/test-utils.d.ts"]
 9 | }
-```
-
-agentsmith/globals.json
-```
-1 | {}
 ```
 
 ai/providers.ts
@@ -57828,18 +57815,6 @@ lib/utils/auth-performance-monitor.ts
 196 | export { authMonitor };
 ```
 
-agentsmith/prompts/default/prompt.json
-```
-1 | {
-2 |   "uuid": "cf77312a-270e-4961-8b32-9baf7cab104c",
-3 |   "name": "default",
-4 |   "slug": "default",
-5 |   "latestVersion": null,
-6 |   "created_at": "2025-07-31T06:22:36.321205+00:00",
-7 |   "updated_at": "2025-08-01T07:04:20.624335+00:00"
-8 | }
-```
-
 app/api/chat/route.ts
 ```
 1 | import { model, type modelID, getLanguageModelWithKeys, createOpenRouterClientWithKey } from "@/ai/providers";
@@ -59361,30 +59336,6 @@ app/checkout/success/page.tsx
 35 |     </div>
 36 |   );
 37 | } 
-```
-
-agentsmith/prompts/default/0.0.1/content.j2
-```
-1 | 
-2 | Create a list of 5 unique character names for a fantasy novel, each derived from a randomly selected combination of syllables and cultural inspirations. Avoid repetitive patterns or predictable naming conventions.
-```
-
-agentsmith/prompts/default/0.0.1/version.json
-```
-1 | {
-2 |   "uuid": "80314698-bdaf-468f-864d-0225411b1809",
-3 |   "config": {
-4 |     "models": [
-5 |       "openrouter/auto"
-6 |     ],
-7 |     "system": "You are a helpful AI assistant. Today's date is {{ today }}.\n\nYou have access to external tools provided by connected servers. These tools can perform specific actions like running code, searching databases, or accessing external services.\n\n{% if effectiveWebSearchEnabled %}\n\nWeb Search Enabled: You have web search capabilities enabled. When you use web search: Cite your sources using markdown links;\nUse the format [domain.com](http: //domain.com/) for citations;\nOnly cite reliable and relevant sources;\nIntegrate the information naturally into your responses; {% endif %}\n\nHow to Respond: Analyze the Request: Understand what the user is asking.\nUse Tools When Necessary: If an external tool provides the best way to answer (e.g., fetching specific data, performing calculations, interacting with services), select the most relevant tool(s) and use them. You can use multiple tools in sequence. Clearly indicate when you are using a tool and what it's doing.\n\nUse Your Own Abilities: For requests involving brainstorming, explanation, writing, summarization, analysis, or general knowledge, rely on your own reasoning and knowledge base. You don't need to force the use of an external tool if it's not suitable or required for these tasks.\nRespond Clearly: Provide your answer directly when using your own abilities. If using tools, explain the steps taken and present the results clearly.\nHandle Limitations: If you cannot answer fully (due to lack of information, missing tools, or capability limits), explain the limitation clearly. Don't just say \"I don't know\" if you can provide partial information or explain why you can't answer. If relevant tools seem to be missing, you can mention that the user could potentially add them via the server configuration.\n\nResponse Format: Use Markdown for formatting.\nBase your response on the results from any tools used, or on your own reasoning and knowledge.",
-8 |     "temperature": 1
-9 |   },
-10 |   "status": "DRAFT",
-11 |   "version": "0.0.1",
-12 |   "created_at": "2025-07-31T06:22:36.57+00:00",
-13 |   "updated_at": "2025-08-01T07:04:22.688662+00:00"
-14 | }
 ```
 
 app/api/auth/[...betterauth]/route.ts

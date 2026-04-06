@@ -30,12 +30,13 @@ describe('ChatWebSearchService', () => {
             enabled: true,
             contextSize: 'medium'
         },
-        selectedModel: 'openai/gpt-4',
+        // Web search requires OpenRouter model IDs (see ChatWebSearchService.checkModelWebSearchSupport)
+        selectedModel: 'openrouter/openai/gpt-4',
         isUsingOwnApiKeys: false,
         isAnonymous: false,
         actualCredits: 50,
         modelInfo: {
-            id: 'openai/gpt-4',
+            id: 'openrouter/openai/gpt-4',
             provider: 'openai',
             name: 'GPT-4',
             premium: false,
@@ -67,7 +68,7 @@ describe('ChatWebSearchService', () => {
                 'Starting web search validation',
                 expect.objectContaining({
                     enabled: true,
-                    selectedModel: 'openai/gpt-4',
+                    selectedModel: 'openrouter/openai/gpt-4',
                     isUsingOwnApiKeys: false,
                     isAnonymous: false,
                     actualCredits: 50
@@ -97,7 +98,7 @@ describe('ChatWebSearchService', () => {
             expect(result).toEqual({
                 enabled: false,
                 contextSize: 'medium',
-                canUseWebSearch: true,
+                canUseWebSearch: false,
                 modelSupportsWebSearch: true,
                 additionalCost: 0
             });
@@ -203,8 +204,9 @@ describe('ChatWebSearchService', () => {
 
         it('should handle model that does not support web search', () => {
             const context = createMockContext({
+                selectedModel: 'openrouter/openai/gpt-4',
                 modelInfo: {
-                    id: 'openai/gpt-4',
+                    id: 'openrouter/openai/gpt-4',
                     provider: 'openai',
                     name: 'GPT-4',
                     premium: false,
@@ -230,7 +232,7 @@ describe('ChatWebSearchService', () => {
                 'WEB_SEARCH_MODEL_SUPPORT',
                 'Web search not supported by model',
                 expect.objectContaining({
-                    selectedModel: 'openai/gpt-4',
+                    selectedModel: 'openrouter/openai/gpt-4',
                     supportsWebSearch: false
                 })
             );
@@ -238,6 +240,7 @@ describe('ChatWebSearchService', () => {
 
         it('should handle null model info', () => {
             const context = createMockContext({
+                selectedModel: 'openrouter/openai/gpt-4',
                 modelInfo: null
             });
 

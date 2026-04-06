@@ -3,6 +3,15 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MCPServerManager } from '../../components/mcp-server-manager';
 import { MCPServer } from '@/lib/context/mcp-context';
 
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+  })),
+}));
+
 // Mock crypto.randomUUID
 Object.defineProperty(global, 'crypto', {
   value: {
@@ -116,7 +125,8 @@ describe('MCPServerManager Component', () => {
       url: 'https://example.com/sse',
       type: 'sse',
       env: [{ key: 'API_KEY', value: 'secret123' }],
-      headers: [{ key: 'Authorization', value: 'Bearer token123' }]
+      headers: [{ key: 'Authorization', value: 'Bearer token123' }],
+      useOAuth: false,
     },
     {
       id: 'server-2',
@@ -126,7 +136,8 @@ describe('MCPServerManager Component', () => {
       type: 'stdio',
       command: 'node',
       args: ['server.js', '--port', '3001'],
-      env: []
+      env: [],
+      useOAuth: false,
     }
   ];
 
@@ -800,7 +811,8 @@ describe('MCPServerManager Component', () => {
         command: 'node',
         args: [],
         env: [],
-        headers: []
+        headers: [],
+        useOAuth: false,
       }]);
       expect(toast.success).toHaveBeenCalledWith('Added MCP server: New Server');
     });
@@ -881,7 +893,8 @@ describe('MCPServerManager Component', () => {
         command: 'node',
         args: [],
         env: [{ key: 'API_KEY', value: 'secret123' }],
-        headers: [{ key: 'Authorization', value: 'Bearer token123' }]
+        headers: [{ key: 'Authorization', value: 'Bearer token123' }],
+        useOAuth: false,
       }]);
       expect(toast.success).toHaveBeenCalledWith('Added MCP server: Full Featured Server');
     });

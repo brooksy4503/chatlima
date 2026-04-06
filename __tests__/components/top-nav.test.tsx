@@ -171,7 +171,7 @@ describe('TopNav', () => {
       const title = screen.getByRole('heading', { level: 1 });
       expect(title).toBeInTheDocument();
       expect(title).toHaveTextContent('Start a conversation');
-      expect(title).toHaveClass('text-3xl', 'font-semibold');
+      expect(title).toHaveClass('text-xl', 'md:text-3xl', 'font-semibold');
     });
 
     test('renders ChatLima title on chat view (pathname /chat/[id])', () => {

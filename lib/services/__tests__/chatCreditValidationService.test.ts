@@ -1,4 +1,11 @@
-import { ChatCreditValidationService, CreditValidationContext, CreditValidationResult } from '../chatCreditValidationService';
+import {
+    ChatCreditValidationService,
+    CreditValidationContext,
+    FeatureRestrictedError,
+    FreeModelOnlyError,
+    InsufficientCreditsError,
+    PremiumModelRestrictedError,
+} from '../chatCreditValidationService';
 
 // Mock dependencies
 jest.mock('@/lib/services/creditCache', () => ({
@@ -28,12 +35,6 @@ import { hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
-
-// Mock createErrorResponse function
-const mockCreateErrorResponse = jest.fn();
-jest.mock('@/app/api/chat/route', () => ({
-    createErrorResponse: mockCreateErrorResponse
-}), { virtual: true });
 
 describe('ChatCreditValidationService', () => {
     const mockCreateRequestCreditCache = createRequestCreditCache as jest.MockedFunction<typeof createRequestCreditCache>;
@@ -194,16 +195,9 @@ describe('ChatCreditValidationService', () => {
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
             mockCache.getRemainingCreditsByExternalId.mockResolvedValue(-5);
-            mockCreateErrorResponse.mockReturnValue(new Response('Negative credits', { status: 402 }));
 
-            await expect(ChatCreditValidationService.validateCredits(context))
-                .rejects.toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                "INSUFFICIENT_CREDITS",
-                `Your account has a negative credit balance (-5). Please purchase more credits to continue.`,
-                402,
-                `User has -5 credits`
+            await expect(ChatCreditValidationService.validateCredits(context)).rejects.toThrow(
+                InsufficientCreditsError
             );
         });
 
@@ -253,16 +247,9 @@ describe('ChatCreditValidationService', () => {
             });
             const mockCache = createMockCreditCache();
             mockCreateRequestCreditCache.mockReturnValue(mockCache);
-            mockCreateErrorResponse.mockReturnValue(new Response('Web search blocked', { status: 403 }));
 
-            await expect(ChatCreditValidationService.validateCredits(context))
-                .rejects.toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                "FEATURE_RESTRICTED",
-                "Web Search is only available to signed-in users with credits. Please sign in and purchase credits to use this feature.",
-                403,
-                "Anonymous users cannot use Web Search"
+            await expect(ChatCreditValidationService.validateCredits(context)).rejects.toThrow(
+                FeatureRestrictedError
             );
         });
 
@@ -286,16 +273,9 @@ describe('ChatCreditValidationService', () => {
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
             mockCache.getRemainingCreditsByExternalId.mockResolvedValue(5);
-            mockCreateErrorResponse.mockReturnValue(new Response('Insufficient credits', { status: 402 }));
 
-            await expect(ChatCreditValidationService.validateCredits(context))
-                .rejects.toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                "INSUFFICIENT_CREDITS",
-                `You need at least ${WEB_SEARCH_COST} credits to use Web Search. Your balance is 5.`,
-                402,
-                `User attempted to bypass Web Search payment with 5 credits`
+            await expect(ChatCreditValidationService.validateCredits(context)).rejects.toThrow(
+                InsufficientCreditsError
             );
         });
 
@@ -322,62 +302,42 @@ describe('ChatCreditValidationService', () => {
     });
 
     describe('validateFreeModelAccess', () => {
-        it('should allow access for users with credits', () => {
+        it('should allow access for users with credits', async () => {
             const context = createMockContext({ hasCredits: true });
 
-            expect(() => {
-                ChatCreditValidationService.validateFreeModelAccess(context);
-            }).not.toThrow();
+            await expect(ChatCreditValidationService.validateFreeModelAccess(context)).resolves.toBeUndefined();
         });
 
-        it('should allow access for users using own API keys', () => {
+        it('should allow access for users using own API keys', async () => {
             const context = createMockContext({
                 isUsingOwnApiKeys: true,
                 hasCredits: false
             });
 
-            expect(() => {
-                ChatCreditValidationService.validateFreeModelAccess(context);
-            }).not.toThrow();
+            await expect(ChatCreditValidationService.validateFreeModelAccess(context)).resolves.toBeUndefined();
         });
 
-        it('should block access for anonymous users without credits', () => {
+        it('should block access for anonymous users without credits', async () => {
             const context = createMockContext({
                 isAnonymous: true,
                 hasCredits: false,
                 isUsingOwnApiKeys: false
             });
-            mockCreateErrorResponse.mockReturnValue(new Response('Access denied', { status: 403 }));
 
-            expect(() => {
-                ChatCreditValidationService.validateFreeModelAccess(context);
-            }).toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                'FREE_MODEL_ONLY',
-                'Anonymous users can only use free models. Please sign in and purchase credits to access other models.',
-                403,
-                'Free-model-only enforcement for anonymous user'
+            await expect(ChatCreditValidationService.validateFreeModelAccess(context)).rejects.toThrow(
+                FreeModelOnlyError
             );
         });
 
-        it('should block access for non-anonymous users without credits', () => {
+        it('should block access for non-anonymous users without credits', async () => {
             const context = createMockContext({
                 isAnonymous: false,
                 hasCredits: false,
                 isUsingOwnApiKeys: false
             });
-            mockCreateErrorResponse.mockReturnValue(new Response('Access denied', { status: 403 }));
 
-            expect(() => {
-                ChatCreditValidationService.validateFreeModelAccess(context);
-            }).toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                'FREE_MODEL_ONLY',
-                'Users without credits can only use free models. Please purchase credits to access other models.',
-                403,
-                'Free-model-only enforcement for non-credit user'
+            await expect(ChatCreditValidationService.validateFreeModelAccess(context)).rejects.toThrow(
+                FreeModelOnlyError
             );
         });
     });
@@ -419,16 +379,9 @@ describe('ChatCreditValidationService', () => {
                 hasCredits: false,
                 isUsingOwnApiKeys: false
             });
-            mockCreateErrorResponse.mockReturnValue(new Response('Access denied', { status: 403 }));
 
-            await expect(ChatCreditValidationService.validatePremiumModelAccess(context))
-                .rejects.toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                "PREMIUM_MODEL_RESTRICTED",
-                "Anonymous users cannot access premium models. Please sign in and purchase credits to use GPT-4.",
-                403,
-                "Premium model access denied for anonymous user"
+            await expect(ChatCreditValidationService.validatePremiumModelAccess(context)).rejects.toThrow(
+                PremiumModelRestrictedError
             );
         });
 
@@ -438,16 +391,9 @@ describe('ChatCreditValidationService', () => {
                 hasCredits: false,
                 isUsingOwnApiKeys: false
             });
-            mockCreateErrorResponse.mockReturnValue(new Response('Access denied', { status: 403 }));
 
-            await expect(ChatCreditValidationService.validatePremiumModelAccess(context))
-                .rejects.toThrow();
-
-            expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-                "PREMIUM_MODEL_RESTRICTED",
-                "Users without credits cannot access premium models. Please purchase credits to use GPT-4.",
-                403,
-                "Premium model access denied for non-credit user"
+            await expect(ChatCreditValidationService.validatePremiumModelAccess(context)).rejects.toThrow(
+                PremiumModelRestrictedError
             );
         });
 
@@ -582,10 +528,10 @@ describe('ChatCreditValidationService', () => {
             mockHasEnoughCreditsWithCache.mockResolvedValue(false);
             mockCache.getRemainingCreditsByExternalId.mockResolvedValue(10); // Only 10 credits, needs 30
 
-            const result = await ChatCreditValidationService.validateCredits(context);
-
+            await expect(ChatCreditValidationService.validateCredits(context)).rejects.toThrow(
+                InsufficientCreditsError
+            );
             expect(mockCalculateCreditCostPerMessage).toHaveBeenCalledWith(mockModelInfo);
-            expect(result.hasCredits).toBe(false);
         });
 
         it('should include credit cost in premium model access error message', async () => {

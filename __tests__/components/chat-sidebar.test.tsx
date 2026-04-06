@@ -741,48 +741,25 @@ describe('ChatSidebar', () => {
     });
   });
 
-  describe('Settings Dropdown', () => {
-    test('renders settings dropdown with correct options', () => {
+  describe('Settings sheet', () => {
+    test('opens settings sheet with tabs when Settings is clicked', () => {
       renderWithProviders(<ChatSidebar />);
-      
-      expect(screen.getByTestId('dropdown-menu')).toBeInTheDocument();
-      expect(screen.getByText('Settings')).toBeInTheDocument();
-      
-      // Check for settings options
-      expect(screen.getByText('MCP Servers')).toBeInTheDocument();
-      expect(screen.getByText('API Keys')).toBeInTheDocument();
-      expect(screen.getByText('Provider Health')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /^settings$/i }));
+
+      expect(screen.getByRole('heading', { name: /settings/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /api keys/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /mcp servers/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /health/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /preferences/i })).toBeInTheDocument();
     });
 
-    test('opens MCP server manager when clicked', () => {
+    test('MCP Servers tab is available in the settings sheet', () => {
       renderWithProviders(<ChatSidebar />);
-      
-      const mcpOption = screen.getByText('MCP Servers');
-      fireEvent.click(mcpOption);
-      
-      const mcpManager = screen.getByTestId('mcp-server-manager');
-      expect(mcpManager).toHaveAttribute('data-open', 'true');
-    });
 
-    test('opens API key manager when clicked', () => {
-      renderWithProviders(<ChatSidebar />);
-      
-      const apiKeyOption = screen.getByText('API Keys');
-      fireEvent.click(apiKeyOption);
-      
-      const apiKeyManager = screen.getByTestId('api-key-manager');
-      expect(apiKeyManager).toHaveAttribute('data-open', 'true');
-    });
+      fireEvent.click(screen.getByRole('button', { name: /^settings$/i }));
 
-    test('opens provider health dialog when clicked', () => {
-      renderWithProviders(<ChatSidebar />);
-      
-      const providerHealthOption = screen.getByText('Provider Health');
-      fireEvent.click(providerHealthOption);
-      
-      const dialog = screen.getByTestId('dialog');
-      expect(dialog).toHaveAttribute('data-open', 'true');
-      expect(screen.getByTestId('provider-health-dashboard')).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /mcp servers/i })).toBeInTheDocument();
     });
 
     test('displays MCP servers badge when servers are active', () => {
@@ -790,60 +767,11 @@ describe('ChatSidebar', () => {
         ...defaultMocks.useMCP,
         selectedMcpServers: ['server1', 'server2'],
       });
-      
+
       renderWithProviders(<ChatSidebar />);
-      
+
       const badge = screen.getByTestId('badge');
       expect(badge).toHaveTextContent('2');
-    });
-  });
-
-  describe('Web Search Settings', () => {
-    test('displays web search options when enabled', () => {
-      renderWithProviders(<ChatSidebar />);
-      
-      expect(screen.getByText('Web Search')).toBeInTheDocument();
-      expect(screen.getByText('Context: Low')).toBeInTheDocument();
-      expect(screen.getByText('Context: Medium')).toBeInTheDocument();
-      expect(screen.getByText('Context: High')).toBeInTheDocument();
-    });
-
-    test('does not display web search options when disabled', () => {
-      (useWebSearch as jest.Mock).mockReturnValue({
-        ...defaultMocks.useWebSearch,
-        webSearchEnabled: false,
-      });
-      
-      renderWithProviders(<ChatSidebar />);
-      
-      expect(screen.queryByText('Web Search')).not.toBeInTheDocument();
-    });
-
-    test('shows current web search context selection', () => {
-      (useWebSearch as jest.Mock).mockReturnValue({
-        ...defaultMocks.useWebSearch,
-        webSearchContextSize: 'high',
-      });
-      
-      renderWithProviders(<ChatSidebar />);
-      
-      const highOption = screen.getByText('Context: High').closest('[data-testid="dropdown-menu-item"]');
-      expect(highOption).toHaveTextContent('✓');
-    });
-
-    test('updates web search context when option is clicked', () => {
-      const mockSetWebSearchContextSize = jest.fn();
-      (useWebSearch as jest.Mock).mockReturnValue({
-        ...defaultMocks.useWebSearch,
-        setWebSearchContextSize: mockSetWebSearchContextSize,
-      });
-      
-      renderWithProviders(<ChatSidebar />);
-      
-      const lowOption = screen.getByText('Context: Low');
-      fireEvent.click(lowOption);
-      
-      expect(mockSetWebSearchContextSize).toHaveBeenCalledWith('low');
     });
   });
 
@@ -1004,14 +932,12 @@ describe('ChatSidebar', () => {
   });
 
   describe('Accessibility Features', () => {
-    test('has proper ARIA attributes for settings dropdown', () => {
+    test('exposes settings tabs with proper roles when settings is open', () => {
       renderWithProviders(<ChatSidebar />);
-      
-      const settingsButton = screen.getByTestId('sidebar-menu-button');
-      expect(settingsButton).toBeInTheDocument();
-      
-      const mcpMenuItem = screen.getByText('MCP Servers').closest('[role="menuitem"]');
-      expect(mcpMenuItem).toHaveAttribute('role', 'menuitem');
+
+      fireEvent.click(screen.getByRole('button', { name: /^settings$/i }));
+
+      expect(screen.getByRole('tab', { name: /mcp servers/i })).toBeInTheDocument();
     });
 
     test('provides tooltip for collapsed settings button', () => {
@@ -1023,7 +949,7 @@ describe('ChatSidebar', () => {
       
       renderWithProviders(<ChatSidebar />);
       
-      const settingsButton = screen.getByTestId('sidebar-menu-button');
+      const settingsButton = screen.getByRole('button', { name: /^settings$/i });
       expect(settingsButton).toHaveAttribute('title', 'Settings');
     });
 
@@ -1184,7 +1110,11 @@ describe('ChatSidebar', () => {
         ],
       });
       
-      rerender(<ChatSidebar />);
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <ChatSidebar />
+        </QueryClientProvider>
+      );
       
       // Should show user account menu
       expect(screen.getByTestId('user-account-menu')).toBeInTheDocument();
@@ -1197,20 +1127,12 @@ describe('ChatSidebar', () => {
       // Navigate to a chat
       const navigateButton = screen.getByTestId('navigate-chat-1');
       fireEvent.click(navigateButton);
-      
-      // Open settings
-      const mcpOption = screen.getByText('MCP Servers');
-      fireEvent.click(mcpOption);
-      
-      const mcpManager = screen.getByTestId('mcp-server-manager');
-      expect(mcpManager).toHaveAttribute('data-open', 'true');
-      
-      // Open API keys
-      const apiKeyOption = screen.getByText('API Keys');
-      fireEvent.click(apiKeyOption);
-      
-      const apiKeyManager = screen.getByTestId('api-key-manager');
-      expect(apiKeyManager).toHaveAttribute('data-open', 'true');
+
+      // Open settings sheet (tabs for API keys, MCP, etc.)
+      fireEvent.click(screen.getByRole('button', { name: /^settings$/i }));
+      expect(screen.getByRole('heading', { name: /settings/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /api keys/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /mcp servers/i })).toBeInTheDocument();
     });
 
     test('mobile sidebar workflow: open, navigate, close', () => {

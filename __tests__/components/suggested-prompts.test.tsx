@@ -189,7 +189,7 @@ describe('SuggestedPrompts Component', () => {
         />
       );
       
-      expect(screen.getByRole('button', { name: /Why these\?/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Why these suggestions/i })).toBeInTheDocument();
     });
   });
 
@@ -318,9 +318,11 @@ describe('SuggestedPrompts Component', () => {
     });
   });
 
-  // Tests for Show More/Show Less Functionality
+  // Tests for expand/collapse extra suggestions (button label includes count, e.g. "Show 3 more suggestions")
   describe('Show More/Show Less Functionality', () => {
-    test('shows "Show More" button when there are more suggestions than maxSuggestions', () => {
+    const showMoreName = /more suggestions/i;
+
+    test('shows expand button when there are more suggestions than maxSuggestions', () => {
       render(
         <SuggestedPrompts 
           sendMessage={mockSendMessage} 
@@ -341,10 +343,10 @@ describe('SuggestedPrompts Component', () => {
         />
       );
       
-      expect(screen.queryByRole('button', { name: /Show More/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: showMoreName })).not.toBeInTheDocument();
     });
 
-    test('expands suggestions when "Show More" is clicked', () => {
+    test('expands suggestions when expand button is clicked', () => {
       render(
         <SuggestedPrompts 
           sendMessage={mockSendMessage} 
@@ -353,7 +355,7 @@ describe('SuggestedPrompts Component', () => {
         />
       );
       
-      const showMoreButton = screen.getByRole('button', { name: /Show More/i });
+      const showMoreButton = screen.getByRole('button', { name: showMoreName });
       fireEvent.click(showMoreButton);
       
       const suggestionButtons = screen.getAllByRole('button').filter(btn => 
@@ -371,13 +373,13 @@ describe('SuggestedPrompts Component', () => {
         />
       );
       
-      const showMoreButton = screen.getByRole('button', { name: /Show More/i });
+      const showMoreButton = screen.getByRole('button', { name: showMoreName });
       fireEvent.click(showMoreButton);
       
       expect(screen.getByRole('button', { name: /Show Less/i })).toBeInTheDocument();
     });
 
-    test('hides "Show More" button when search is active', () => {
+    test('hides expand button when search is active', () => {
       render(
         <SuggestedPrompts 
           sendMessage={mockSendMessage} 
@@ -387,14 +389,14 @@ describe('SuggestedPrompts Component', () => {
       );
       
       // First confirm the button exists
-      expect(screen.getByRole('button', { name: /Show More/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: showMoreName })).toBeInTheDocument();
       
       // Search for something
       const searchInput = screen.getByTestId('search-input');
       fireEvent.change(searchInput, { target: { value: 'debug' } });
       
-      // Show More button should be hidden
-      expect(screen.queryByRole('button', { name: /Show More/i })).not.toBeInTheDocument();
+      // Expand button should be hidden while searching
+      expect(screen.queryByRole('button', { name: showMoreName })).not.toBeInTheDocument();
     });
   });
 

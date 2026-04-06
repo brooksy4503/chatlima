@@ -107,15 +107,18 @@ jest.mock('../../components/preset-selector', () => ({
   ),
 }));
 
-jest.mock('../../components/image-upload', () => ({
-  ImageUpload: ({ onImageSelect, maxFiles, disabled, showDetailSelector }: any) => (
+jest.mock('../../components/file-upload', () => ({
+  FileUpload: ({ onFileSelect, maxFiles, disabled }: any) => (
     <div data-testid="image-upload">
       <button
         data-testid="image-upload-button"
-        onClick={() => onImageSelect([{ id: '1', url: 'test.jpg' }])}
+        type="button"
+        onClick={() =>
+          onFileSelect([{ id: '1', url: 'test.jpg', type: 'image' } as any])
+        }
         disabled={disabled}
       >
-        Upload Images (max: {maxFiles})
+        Upload (max: {maxFiles})
       </button>
     </div>
   ),
