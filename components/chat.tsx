@@ -1112,7 +1112,7 @@ export default function Chat() {
           ) : (
             <div className="flex-1 flex items-center justify-center px-4">
               <p className="text-sm text-muted-foreground text-center max-w-sm">
-                Type a message below to get started. Turn on &quot;Show welcome screen&quot; in Settings to see prompt ideas.
+                Type a message below to get started.
               </p>
             </div>
           )
