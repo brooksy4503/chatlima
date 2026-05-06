@@ -523,9 +523,28 @@ export default function Chat() {
     });
 
   // Custom stop function that handles both stopping the stream and refreshing data
-  const stop = useCallback(() => {
+  const stop = useCallback(async () => {
     console.log('Stopping stream and refreshing chat data...');
-    
+
+    const activeChatId = chatId || generatedChatId;
+
+    if (activeChatId) {
+      try {
+        await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'stop',
+            chatId: activeChatId,
+          }),
+        });
+      } catch (stopError) {
+        console.warn('Failed to send explicit stop request to server:', stopError);
+      }
+    }
+
     // Call the original stop function to abort the stream
     originalStop();
     

@@ -28,6 +28,7 @@ import { z } from "zod";
 import { parseFile } from "@/lib/file-reader";
 import { fetchFileContent } from "@/lib/file-upload";
 import { startBackgroundStreamConsumption } from "@/lib/chat-stream-consumption";
+import { registerChatAbortController, abortChatGeneration } from "@/lib/chat-stop-registry";
 
 // Import our new services
 import { ChatAuthenticationService, ChatAuthenticationError, type AuthenticatedUser } from '@/lib/services/chatAuthenticationService';
@@ -355,6 +356,25 @@ export async function POST(req: Request) {
     });
 
     try {
+        const body = await req.json();
+        const action = body?.action;
+
+        if (action === 'stop') {
+            const authenticatedUser = await ChatAuthenticationService.authenticateUser(req);
+            const stopChatId = typeof body?.chatId === 'string' ? body.chatId : '';
+
+            if (!stopChatId) {
+                return createErrorResponse(
+                    'INVALID_REQUEST',
+                    'chatId is required to stop generation.',
+                    400
+                );
+            }
+
+            const stopped = abortChatGeneration(authenticatedUser.userId, stopChatId);
+            return Response.json({ ok: true, stopped, chatId: stopChatId });
+        }
+
         // Parse request body
         const {
             messages,
@@ -382,7 +402,7 @@ export async function POST(req: Request) {
             temperature?: number;
             maxTokens?: number;
             systemInstruction?: string;
-        } = await req.json();
+        } = body;
 
         logDiagnostic('REQUEST_PARSED', `Request body parsed`, {
             requestId,
@@ -567,6 +587,8 @@ export async function POST(req: Request) {
 
         // 9. Prepare chat ID
         const id = chatId || nanoid();
+        const streamAbortController = new AbortController();
+        registerChatAbortController(authenticatedUser.userId, id, streamAbortController);
         const isNewChat = !chatId || !(await ChatDatabaseService.checkChatExists({
             chatId: id,
             userId: authenticatedUser.userId
@@ -1077,6 +1099,7 @@ You have web search capabilities enabled. When you use web search:
         // 17. Set up streaming payload
         const openRouterPayload = {
             model: modelInstance,
+            abortSignal: streamAbortController.signal,
             system: effectiveSystemInstruction,
             temperature: effectiveTemperature,
             maxTokens: effectiveMaxTokens,

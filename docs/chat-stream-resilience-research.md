@@ -263,6 +263,25 @@ Critical design point:
 - Leaving the page should usually continue generation.
 - Clicking Stop should cancel generation and persist an explicit cancelled/partial state, not silently keep spending tokens.
 
+### Phase 1.1: Restore explicit Stop semantics after `consumeStream`
+
+Observed after Option 1 implementation:
+
+- Accidental refresh/navigation now succeeds (chat completes and persists).
+- Manual Stop in UI currently stops client rendering only; server generation continues and final answer is persisted.
+
+AI SDK docs implications:
+
+- `useChat().stop()` aborts the browser request.
+- `streamText({ abortSignal: req.signal })` plus server abort handling can stop generation.
+- But browser refresh/navigation also triggers request abort, which conflicts with "continue on accidental disconnect" behavior.
+
+Conclusion:
+
+- Keep Option 1 background continuation for accidental disconnect resilience.
+- Add an explicit server-side cancellation channel for deliberate Stop (separate from request disconnect).
+- Practical implementation is a chat-scoped server abort controller triggered by a stop action request, then calling client `stop()` for immediate UI halt.
+
 ### Phase 2: Add durable message/generation status
 
 Implement Option 2.

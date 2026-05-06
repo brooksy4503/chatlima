@@ -434,7 +434,7 @@ describe('Chat Component', () => {
       });
     });
 
-    test('handles stop button click', () => {
+    test('handles stop button click', async () => {
       const mockStop = jest.fn();
       mockUseChat.mockReturnValue({
         messages: [],
@@ -450,8 +450,10 @@ describe('Chat Component', () => {
       
       const stopButton = screen.getByTestId('stop-button');
       fireEvent.click(stopButton);
-      
-      expect(mockStop).toHaveBeenCalled();
+
+      await waitFor(() => {
+        expect(mockStop).toHaveBeenCalled();
+      });
     });
   });
 
