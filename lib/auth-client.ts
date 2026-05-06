@@ -14,7 +14,7 @@ export const { signIn, signOut, useSession } = createAuthClient({
     ],
     // Prevent excessive session refetching that causes re-render loops
     session: {
-        disableDefaultFetching: false,
+        disableDefaultFetching: true,
         refetchOnWindowFocus: false,
     },
 }); 
