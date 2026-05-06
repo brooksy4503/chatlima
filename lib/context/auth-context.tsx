@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
-import { useSession as useSessionOriginal, signIn as signInOriginal, signOut as signOutOriginal } from '@/lib/auth-client';
+import { getSession as getSessionOriginal, signIn as signInOriginal, signOut as signOutOriginal } from '@/lib/auth-client';
 
 interface AuthUser {
   id: string;
@@ -47,42 +47,47 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Get session data from better-auth
-  const { data: sessionData, isPending: isPendingOriginal } = useSessionOriginal();
-  const [session, setSession] = useState(sessionData);
-  const [isPending, setIsPending] = useState(isPendingOriginal);
+  const [session, setSession] = useState<any>(null);
+  const [isPending, setIsPending] = useState(true);
   
   // Use refs to track previous values and avoid triggering effects unnecessarily
   const lastSessionJsonRef = useRef<string>('');
-  const lastPendingRef = useRef<boolean>(isPendingOriginal);
+  const lastPendingRef = useRef<boolean>(true);
   const isInitialMountRef = useRef(true);
-  
-  // Stable session update - only update state when actual content changes
-  useEffect(() => {
-    // Always update pending state when it changes
-    if (isPendingOriginal !== lastPendingRef.current) {
-      lastPendingRef.current = isPendingOriginal;
-      setIsPending(isPendingOriginal);
-    }
-    
-    // Skip session comparison if still pending
-    if (isPendingOriginal) {
+
+  const refreshSession = useCallback(async () => {
+    // Avoid overlapping session calls if a refresh is already running
+    if (lastPendingRef.current) {
       return;
     }
-    
-    // Compare session content, not object reference
-    const currentSessionJson = JSON.stringify(sessionData);
-    
-    // Only update if session content actually changed
-    if (currentSessionJson !== lastSessionJsonRef.current) {
-      lastSessionJsonRef.current = currentSessionJson;
-      setSession(sessionData);
-      
+    lastPendingRef.current = true;
+    setIsPending(true);
+
+    try {
+      const result = await getSessionOriginal();
+      const nextSession = (result as any)?.data ?? null;
+      const nextSessionJson = JSON.stringify(nextSession);
+
+      if (nextSessionJson !== lastSessionJsonRef.current) {
+        lastSessionJsonRef.current = nextSessionJson;
+        setSession(nextSession);
+      }
+    } catch {
+      setSession(null);
+    } finally {
+      lastPendingRef.current = false;
+      setIsPending(false);
       if (isInitialMountRef.current) {
         isInitialMountRef.current = false;
       }
     }
-  }, [sessionData, isPendingOriginal]);
+  }, []);
+
+  useEffect(() => {
+    // Prime the first session load exactly once on mount
+    lastPendingRef.current = false;
+    refreshSession();
+  }, [refreshSession]);
   
   const [user, setUser] = useState<AuthUser | null>(null);
   const [usageData, setUsageData] = useState<UsageData | null>(null);
@@ -245,5 +250,4 @@ export function useAuth() {
   return context;
 }
 
-// Export original useSession for migration purposes
-export { useSessionOriginal };
+// Session is managed centrally via AuthProvider.

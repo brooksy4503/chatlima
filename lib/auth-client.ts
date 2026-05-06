@@ -3,7 +3,7 @@
 import { createAuthClient } from "better-auth/react"; // Use the React adapter
 import { anonymousClient } from "better-auth/client/plugins";
 
-export const { signIn, signOut, useSession } = createAuthClient({
+export const { signIn, signOut, useSession, getSession } = createAuthClient({
     baseURL: typeof window !== 'undefined' ? window.location.origin : undefined,
     fetchOptions: {
         credentials: "include",
@@ -12,9 +12,4 @@ export const { signIn, signOut, useSession } = createAuthClient({
     plugins: [
         anonymousClient()
     ],
-    // Prevent excessive session refetching that causes re-render loops
-    session: {
-        disableDefaultFetching: true,
-        refetchOnWindowFocus: false,
-    },
 }); 
