@@ -27,6 +27,7 @@ import { validatePresetParameters, getModelDefaults, sanitizeSystemInstruction }
 import { z } from "zod";
 import { parseFile } from "@/lib/file-reader";
 import { fetchFileContent } from "@/lib/file-upload";
+import { startBackgroundStreamConsumption } from "@/lib/chat-stream-consumption";
 
 // Import our new services
 import { ChatAuthenticationService, ChatAuthenticationError, type AuthenticatedUser } from '@/lib/services/chatAuthenticationService';
@@ -1729,6 +1730,7 @@ You have web search capabilities enabled. When you use web search:
         console.log(`[Chat ${id}] OpenRouter user tracking: ${authenticatedUser.isAnonymous ? `chatlima_anon_${authenticatedUser.userId}` : `chatlima_user_${authenticatedUser.userId}`}`);
 
         const result = streamText(openRouterPayload);
+        startBackgroundStreamConsumption(result, id);
 
         return result.toDataStreamResponse({
             sendReasoning: true,
