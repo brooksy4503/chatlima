@@ -125,9 +125,9 @@ export const auth = betterAuth({
         // usePlural: true
     }),
     secret: process.env.AUTH_SECRET,
-    sessionMaxAge: 30 * 24 * 60 * 60, // 30 days
-    // Add session field mapping based on documentation
+    // Add session configuration and field mapping based on documentation
     session: {
+        expiresIn: 30 * 24 * 60 * 60, // 30 days
         fields: {
             token: "sessionToken" // Map internal token to sessionToken column
             // If your expires column was different, you'd map expiresAt here too
