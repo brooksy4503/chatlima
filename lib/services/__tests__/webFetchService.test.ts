@@ -62,7 +62,7 @@ jest.mock("ofetch", () => ({
 
 import { lookup } from "node:dns/promises";
 import { ofetch } from "ofetch";
-import { WebFetchError, WebFetchService } from "../webFetchService";
+import { WebFetchService } from "../webFetchService";
 
 const mockLookup = lookup as jest.MockedFunction<typeof lookup>;
 const mockRaw = ofetch.raw as jest.MockedFunction<typeof ofetch.raw>;
@@ -101,7 +101,7 @@ describe("WebFetchService", () => {
         { url: "https://example.com" },
         { ...basePolicy, enabled: false },
       ),
-    ).rejects.toMatchObject<WebFetchError>({
+    ).rejects.toMatchObject({
       code: "WEB_FETCH_DISABLED",
     });
   });
@@ -109,7 +109,7 @@ describe("WebFetchService", () => {
   it("rejects invalid protocols", async () => {
     await expect(
       WebFetchService.fetchPage({ url: "ftp://example.com" }, basePolicy),
-    ).rejects.toMatchObject<WebFetchError>({
+    ).rejects.toMatchObject({
       code: "WEB_FETCH_INVALID_URL",
     });
   });
@@ -133,7 +133,7 @@ describe("WebFetchService", () => {
   it("rejects localhost hostnames", async () => {
     await expect(
       WebFetchService.fetchPage({ url: "http://localhost:3000" }, basePolicy),
-    ).rejects.toMatchObject<WebFetchError>({
+    ).rejects.toMatchObject({
       code: "WEB_FETCH_FORBIDDEN_HOST",
     });
   });
@@ -147,7 +147,7 @@ describe("WebFetchService", () => {
 
     await expect(
       WebFetchService.fetchPage({ url: "https://example.com" }, basePolicy),
-    ).rejects.toMatchObject<WebFetchError>({
+    ).rejects.toMatchObject({
       code: "WEB_FETCH_UNSUPPORTED_CONTENT_TYPE",
     });
   });
@@ -188,7 +188,7 @@ describe("WebFetchService", () => {
         { url: "https://example.com", siteMode: true },
         { ...basePolicy, siteModeEnabled: false },
       ),
-    ).rejects.toMatchObject<WebFetchError>({
+    ).rejects.toMatchObject({
       code: "WEB_FETCH_SITE_MODE_DISABLED",
     });
   });

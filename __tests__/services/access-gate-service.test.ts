@@ -1,4 +1,18 @@
+import { type AccessPolicyFlags } from '@/lib/config/access-policy';
 import { canUserChat, hasProviderByokForModel } from '@/lib/services/accessGateService';
+
+const baseAccessFlags: AccessPolicyFlags = {
+    billingEnforced: false,
+    allowByokBypass: false,
+    nativeWebFetchEnabled: false,
+    nativeWebFetchMaxChars: 30_000,
+    nativeWebFetchTimeoutMs: 12_000,
+    nativeWebFetchMaxBytes: 5_000_000,
+    nativeWebFetchMaxRedirects: 5,
+    nativeWebFetchSiteModeEnabled: false,
+    nativeWebFetchSiteModeMaxPages: 20,
+    nativeWebFetchSiteModeDepth: 2,
+};
 
 describe('accessGateService', () => {
     describe('hasProviderByokForModel', () => {
@@ -17,7 +31,7 @@ describe('accessGateService', () => {
     });
 
     describe('canUserChat', () => {
-        const flagsOn = { billingEnforced: true, allowByokBypass: true };
+        const flagsOn: AccessPolicyFlags = { ...baseAccessFlags, billingEnforced: true, allowByokBypass: true };
 
         it('allows any user when billing is not enforced', () => {
             const result = canUserChat({
@@ -25,7 +39,7 @@ describe('accessGateService', () => {
                 hasPaidSubscription: false,
                 selectedModel: 'openai/gpt-4.1',
                 apiKeys: {},
-                flags: { billingEnforced: false, allowByokBypass: false }
+                flags: baseAccessFlags,
             });
 
             expect(result.allowed).toBe(true);
