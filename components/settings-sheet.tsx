@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Key, ServerIcon, Activity, Settings2 } from "lucide-react";
@@ -19,6 +20,8 @@ interface SettingsSheetProps {
   onSelectedMcpServersChange: (serverIds: string[]) => void;
   showWelcomeScreen: boolean;
   onShowWelcomeScreenChange: (value: boolean) => void;
+  showSuggestedPrompts: boolean;
+  onShowSuggestedPromptsChange: (value: boolean) => void;
   webSearchEnabled: boolean;
   webSearchContextSize: 'low' | 'medium' | 'high';
   onWebSearchContextSizeChange: (value: 'low' | 'medium' | 'high') => void;
@@ -34,10 +37,20 @@ export function SettingsSheet({
   onSelectedMcpServersChange,
   showWelcomeScreen,
   onShowWelcomeScreenChange,
+  showSuggestedPrompts,
+  onShowSuggestedPromptsChange,
   webSearchEnabled,
   webSearchContextSize,
   onWebSearchContextSizeChange,
 }: SettingsSheetProps) {
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
+  useEffect(() => {
+    if (open) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab, open]);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
@@ -52,7 +65,8 @@ export function SettingsSheet({
         </SheetHeader>
         
         <Tabs 
-          defaultValue={defaultTab} 
+          value={activeTab}
+          onValueChange={setActiveTab}
           className="flex-1 flex flex-col min-h-0 overflow-hidden"
         >
           <div className="border-b border-border shrink-0 px-6">
@@ -110,6 +124,8 @@ export function SettingsSheet({
               <PreferencesTab
                 showWelcomeScreen={showWelcomeScreen}
                 onShowWelcomeScreenChange={onShowWelcomeScreenChange}
+                showSuggestedPrompts={showSuggestedPrompts}
+                onShowSuggestedPromptsChange={onShowSuggestedPromptsChange}
                 webSearchEnabled={webSearchEnabled}
                 webSearchContextSize={webSearchContextSize}
                 onWebSearchContextSizeChange={onWebSearchContextSizeChange}

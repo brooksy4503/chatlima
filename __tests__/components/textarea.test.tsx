@@ -300,6 +300,23 @@ describe('Textarea', () => {
       expect(mockHandleInputChange.mock.calls.length).toBeGreaterThan(0);
     });
 
+    test('focuses textarea when onboarding start-chatting action fires', async () => {
+      render(<Textarea {...defaultProps} />);
+
+      const textarea = screen.getByTestId('textarea');
+      const scrollIntoView = jest.fn();
+      textarea.scrollIntoView = scrollIntoView;
+
+      window.dispatchEvent(
+        new CustomEvent('chatlima:onboarding-action', {
+          detail: { action: 'start-chatting' },
+        })
+      );
+
+      await waitFor(() => expect(textarea).toHaveFocus());
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' });
+    });
+
     test('handles Enter key submission when not loading', () => {
       const formSubmitSpy = jest.fn();
       const TestForm = () => (

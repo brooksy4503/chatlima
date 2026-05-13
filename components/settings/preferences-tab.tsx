@@ -3,11 +3,13 @@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Globe, LayoutDashboard } from "lucide-react";
+import { Globe, LayoutDashboard, MessageSquareText } from "lucide-react";
 
 interface PreferencesTabProps {
   showWelcomeScreen: boolean;
   onShowWelcomeScreenChange: (value: boolean) => void;
+  showSuggestedPrompts: boolean;
+  onShowSuggestedPromptsChange: (value: boolean) => void;
   webSearchEnabled: boolean;
   webSearchContextSize: 'low' | 'medium' | 'high';
   onWebSearchContextSizeChange: (value: 'low' | 'medium' | 'high') => void;
@@ -16,6 +18,8 @@ interface PreferencesTabProps {
 export function PreferencesTab({
   showWelcomeScreen,
   onShowWelcomeScreenChange,
+  showSuggestedPrompts,
+  onShowSuggestedPromptsChange,
   webSearchEnabled,
   webSearchContextSize,
   onWebSearchContextSizeChange,
@@ -35,18 +39,39 @@ export function PreferencesTab({
             <LayoutDashboard className="h-5 w-5 text-primary" />
           </div>
           <div className="space-y-0.5">
-            <Label htmlFor="welcome-screen" className="text-sm font-medium cursor-pointer">
-              Show Welcome Screen
+            <Label htmlFor="welcome-onboarding" className="text-sm font-medium cursor-pointer">
+              Show Welcome/Onboarding
             </Label>
             <p className="text-xs text-muted-foreground">
-              Display the welcome screen when you open the application
+              Display the welcome and onboarding setup cards on new empty chats
             </p>
           </div>
         </div>
         <Switch
-          id="welcome-screen"
+          id="welcome-onboarding"
           checked={showWelcomeScreen}
           onCheckedChange={onShowWelcomeScreenChange}
+        />
+      </div>
+
+      <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 mt-0.5">
+            <MessageSquareText className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-0.5">
+            <Label htmlFor="suggested-prompts" className="text-sm font-medium cursor-pointer">
+              Show Suggested Prompts
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Display prompt ideas on new empty chats
+            </p>
+          </div>
+        </div>
+        <Switch
+          id="suggested-prompts"
+          checked={showSuggestedPrompts}
+          onCheckedChange={onShowSuggestedPromptsChange}
         />
       </div>
 

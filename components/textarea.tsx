@@ -3,7 +3,7 @@ import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Globe, AlertCircle, Paperclip, Code2, Eye, EyeOff } from "lucide-react";
 import { ModelPicker } from "./model-picker";
 import { PresetSelector } from "./preset-selector";
-import { useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { usePresets } from "@/lib/context/preset-context";
@@ -209,6 +209,24 @@ export const Textarea = ({
       textareaRef.current?.focus();
     }, 100);
   };
+
+  useEffect(() => {
+    const handleOnboardingAction = (event: Event) => {
+      const detail = (event as CustomEvent<{ action?: string }>).detail;
+
+      if (detail?.action !== "start-chatting") {
+        return;
+      }
+
+      setTimeout(() => {
+        textareaRef.current?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+        textareaRef.current?.focus();
+      }, 0);
+    };
+
+    window.addEventListener("chatlima:onboarding-action", handleOnboardingAction);
+    return () => window.removeEventListener("chatlima:onboarding-action", handleOnboardingAction);
+  }, []);
 
   // File handling functions
   const handleFileSelect = (newFiles: FileAttachment[]) => {

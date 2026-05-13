@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   SIDEBAR_STATE: "sidebarState",
   WEB_SEARCH: "webSearch",
   SHOW_WELCOME_SCREEN: "showWelcomeScreen",
+  SHOW_SUGGESTED_PROMPTS: "showSuggestedPrompts",
 } as const;
 
 // Configurable model IDs

@@ -67,7 +67,8 @@ export default function Chat() {
   
   const { selectedModel, setSelectedModel } = useModel();
   const { activePreset } = usePresets();
-  const [showWelcomeScreen] = useLocalStorage(STORAGE_KEYS.SHOW_WELCOME_SCREEN, true);
+  const [showWelcomeScreen, setShowWelcomeScreen] = useLocalStorage(STORAGE_KEYS.SHOW_WELCOME_SCREEN, true);
+  const [showSuggestedPrompts] = useLocalStorage(STORAGE_KEYS.SHOW_SUGGESTED_PROMPTS, true);
   const [userId, setUserId] = useState<string | null>(null);
   const [generatedChatId, setGeneratedChatId] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
@@ -1119,12 +1120,15 @@ export default function Chat() {
       {/* Main content area: Either ProjectOverview, minimal empty state, or Messages */}
       <div className={`flex-1 min-h-0 pb-2 ${messages.length === 0 && !isLoadingChat ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {messages.length === 0 && !isLoadingChat ? (
-          showWelcomeScreen ? (
+          showWelcomeScreen || showSuggestedPrompts ? (
             <div className="h-full overflow-y-auto no-scrollbar">
               <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
                 <ProjectOverview 
                   sendMessage={sendSuggestedMessage}
                   selectedModel={selectedModel}
+                  showWelcomeOnboarding={showWelcomeScreen}
+                  onShowWelcomeOnboardingChange={setShowWelcomeScreen}
+                  showSuggestedPrompts={showSuggestedPrompts}
                 />
               </div>
             </div>

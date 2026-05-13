@@ -2,8 +2,23 @@
 
 **Date:** 2026-02-24
 **Author:** Nanobot & Garth Scaysbrook
-**Status:** ✅ Design Approved - Ready for Implementation
+**Status:** 🟡 Lightweight Onboarding v1 implemented; full walkthrough system remains pending
 **Approach:** Task-Based Micro-Walkthroughs (Approach 2)
+
+---
+
+## 🧭 Implementation Note: Lightweight Onboarding v1
+
+Implemented a smaller first slice before the full tooltip/walkthrough system:
+
+- `components/project-overview.tsx` now renders a dismissible “Quick setup” panel.
+- The panel includes three setup cards: Start chatting, Bring your own API key, and Connect tools.
+- Completion/dismissal state is stored in `localStorage` under `chatlimaOnboarding`.
+- API key and MCP setup actions dispatch `chatlima:onboarding-action`; `components/chat-sidebar.tsx` listens for the event and opens Settings to the right tab.
+- `components/settings-sheet.tsx` now supports externally selected tabs via controlled tab state.
+- Tests live in `__tests__/components/project-overview.test.tsx`.
+
+The original full micro-walkthrough design below remains useful for a later v2.
 
 ---
 

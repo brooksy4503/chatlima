@@ -104,10 +104,12 @@ export function ChatSidebar() {
     const pathname = usePathname();
     const [userId, setUserId] = useState<string | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [settingsDefaultTab, setSettingsDefaultTab] = useState("api-keys");
     const [isHydrated, setIsHydrated] = useState(false);
     const { state, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
     const isCollapsed = state === "collapsed";
     const [showWelcomeScreen, setShowWelcomeScreen] = useLocalStorage(STORAGE_KEYS.SHOW_WELCOME_SCREEN, true);
+    const [showSuggestedPrompts, setShowSuggestedPrompts] = useLocalStorage(STORAGE_KEYS.SHOW_SUGGESTED_PROMPTS, true);
     // On mobile, always show expanded layout
     const isLayoutCollapsed = isCollapsed && !isMobile;
 
@@ -147,6 +149,20 @@ export function ChatSidebar() {
     // Handle client-side hydration
     useEffect(() => {
         setIsHydrated(true);
+    }, []);
+
+    useEffect(() => {
+        const handleOnboardingAction = (event: Event) => {
+            const detail = (event as CustomEvent<{ action?: string }>).detail;
+
+            if (detail?.action === "api-keys" || detail?.action === "mcp-servers") {
+                setSettingsDefaultTab(detail.action);
+                setSettingsOpen(true);
+            }
+        };
+
+        window.addEventListener("chatlima:onboarding-action", handleOnboardingAction);
+        return () => window.removeEventListener("chatlima:onboarding-action", handleOnboardingAction);
     }, []);
 
     useEffect(() => {
@@ -546,13 +562,15 @@ export function ChatSidebar() {
             <SettingsSheet
                 open={settingsOpen}
                 onOpenChange={setSettingsOpen}
-                defaultTab="api-keys"
+                defaultTab={settingsDefaultTab}
                 mcpServers={mcpServers}
                 onMcpServersChange={setMcpServers}
                 selectedMcpServers={selectedMcpServers}
                 onSelectedMcpServersChange={setSelectedMcpServers}
                 showWelcomeScreen={showWelcomeScreen}
                 onShowWelcomeScreenChange={setShowWelcomeScreen}
+                showSuggestedPrompts={showSuggestedPrompts}
+                onShowSuggestedPromptsChange={setShowSuggestedPrompts}
                 webSearchEnabled={webSearchEnabled}
                 webSearchContextSize={webSearchContextSize}
                 onWebSearchContextSizeChange={setWebSearchContextSize}
