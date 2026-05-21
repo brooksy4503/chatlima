@@ -38,7 +38,9 @@
     "test:seo:all": "MAX_MODELS=100 MAX_COMPARISONS=20 npx tsx scripts/test-seo-pages.ts",
     "test:mcp": "npx tsx scripts/test-mcp-server.ts",
     "cache:clear": "./scripts/clear-cache.sh",
+    "env:sync": "./scripts/sync-env-local.sh",
     "dev:fresh": "pnpm cache:clear && pnpm dev",
+    "dev:codex": "pnpm env:sync && pnpm dev",
     "release:workflow": "tsx scripts/release-workflow.ts",
     "release:notes": "tsx scripts/generate-release-notes.ts"
   },
