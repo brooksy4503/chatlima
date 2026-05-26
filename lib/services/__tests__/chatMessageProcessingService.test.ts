@@ -1,5 +1,6 @@
 import { ChatMessageProcessingService, MessageProcessingContext } from '../chatMessageProcessingService';
 import type { UIMessage } from 'ai';
+import { getUIMessageText } from '@/lib/message-utils';
 
 // Mock console methods
 const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
@@ -14,7 +15,6 @@ describe('ChatMessageProcessingService', () => {
     const createMockUIMessage = (overrides: Partial<UIMessage> = {}): UIMessage => ({
         id: 'msg123',
         role: 'user',
-        content: 'Hello world',
         parts: [{ type: 'text', text: 'Hello world' }],
         ...overrides
     });
@@ -69,8 +69,8 @@ describe('ChatMessageProcessingService', () => {
         it('should process attachments and add them to last user message', async () => {
             const context: MessageProcessingContext = {
                 messages: [
-                    createMockUIMessage({ role: 'assistant', content: 'Previous response' }),
-                    createMockUIMessage({ role: 'user', content: 'Check this image' })
+                    createMockUIMessage({ role: 'assistant', parts: [{ type: 'text', text: 'Previous response' }] }),
+                    createMockUIMessage({ role: 'user', parts: [{ type: 'text', text: 'Check this image' }] })
                 ],
                 attachments: [{
                     name: 'test.jpg',
@@ -88,7 +88,7 @@ describe('ChatMessageProcessingService', () => {
             const lastMessage = result.messages[1];
             expect(lastMessage.role).toBe('user');
             expect(lastMessage.parts).toHaveLength(2);
-            expect(lastMessage.parts[0]).toEqual({ type: 'text', text: 'Hello world' });
+            expect(lastMessage.parts[0]).toEqual({ type: 'text', text: 'Check this image' });
             expect(lastMessage.parts[1]).toEqual({
                 type: 'image_url',
                 image_url: {
@@ -107,7 +107,7 @@ describe('ChatMessageProcessingService', () => {
 
         it('should handle multiple attachments', async () => {
             const context: MessageProcessingContext = {
-                messages: [createMockUIMessage({ role: 'user', content: 'Check these images' })],
+                messages: [createMockUIMessage({ role: 'user', parts: [{ type: 'text', text: 'Check these images' }] })],
                 attachments: [
                     {
                         name: 'image1.jpg',
@@ -132,7 +132,7 @@ describe('ChatMessageProcessingService', () => {
 
         it('should warn when no user message found to attach images to', async () => {
             const context: MessageProcessingContext = {
-                messages: [createMockUIMessage({ role: 'assistant', content: 'Response' })],
+                messages: [createMockUIMessage({ role: 'assistant', parts: [{ type: 'text', text: 'Response' }] })],
                 attachments: [{
                     name: 'image.jpg',
                     contentType: 'image/jpeg',
@@ -151,8 +151,7 @@ describe('ChatMessageProcessingService', () => {
             const context: MessageProcessingContext = {
                 messages: [createMockUIMessage({
                     role: 'user',
-                    content: 'Check this',
-                    parts: undefined
+                    parts: [{ type: 'text', text: 'Check this' }]
                 })],
                 attachments: [{
                     name: 'image.jpg',
@@ -197,7 +196,7 @@ describe('ChatMessageProcessingService', () => {
 
             expect(result).toHaveLength(2);
             expect(result[0].role).toBe('system');
-            expect(result[0].content).toContain('Please provide your reasoning within <think> tags');
+            expect(getUIMessageText(result[0])).toContain('Please provide your reasoning within <think> tags');
             expect(result[1]).toBe(messages[0]);
         });
 
@@ -211,7 +210,7 @@ describe('ChatMessageProcessingService', () => {
 
             expect(result).toHaveLength(2);
             expect(result[0].role).toBe('system');
-            expect(result[0].content).toContain('<think>');
+            expect(getUIMessageText(result[0])).toContain('<think>');
         });
 
         it('should add instructions for QWQ 32B model', () => {
@@ -224,7 +223,7 @@ describe('ChatMessageProcessingService', () => {
 
             expect(result).toHaveLength(2);
             expect(result[0].role).toBe('system');
-            expect(result[0].content).toContain('<think>');
+            expect(getUIMessageText(result[0])).toContain('<think>');
         });
 
         it('should return original messages for non-matching models', () => {
@@ -252,9 +251,9 @@ describe('ChatMessageProcessingService', () => {
     describe('validateMessages', () => {
         it('should validate valid messages', () => {
             const messages: UIMessage[] = [
-                createMockUIMessage({ role: 'user', content: 'Hello' }),
-                createMockUIMessage({ role: 'assistant', content: 'Hi there' }),
-                createMockUIMessage({ role: 'system', content: 'You are helpful' })
+                createMockUIMessage({ role: 'user', parts: [{ type: 'text', text: 'Hello' }] }),
+                createMockUIMessage({ role: 'assistant', parts: [{ type: 'text', text: 'Hi there' }] }),
+                createMockUIMessage({ role: 'system', parts: [{ type: 'text', text: 'You are helpful' }] })
             ];
 
             expect(() => {
@@ -284,24 +283,23 @@ describe('ChatMessageProcessingService', () => {
             }).toThrow('Invalid message role: invalid');
         });
 
-        it.skip('should throw error for message without content or parts', () => {
+        it.skip('should throw error for message without parts', () => {
             const messages: UIMessage[] = [
                 {
                     id: 'msg123',
                     role: 'user',
-                    content: '',
                     parts: []
                 } as UIMessage
             ];
 
             expect(() => {
                 ChatMessageProcessingService.validateMessages(messages);
-            }).toThrow('Message must have either content or parts');
+            }).toThrow('Message must have parts');
         });
 
-        it('should allow message with only content', () => {
+        it('should allow message with text parts', () => {
             const messages: UIMessage[] = [
-                createMockUIMessage({ content: 'Hello', parts: undefined })
+                createMockUIMessage({ parts: [{ type: 'text', text: 'Hello' }] })
             ];
 
             expect(() => {
@@ -314,7 +312,6 @@ describe('ChatMessageProcessingService', () => {
                 {
                     id: 'msg123',
                     role: 'user',
-                    content: '',
                     parts: [{ type: 'text', text: 'Hello' }]
                 } as UIMessage
             ];

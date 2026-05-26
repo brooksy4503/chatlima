@@ -1,7 +1,7 @@
 "use server";
 
 import { openai } from "@ai-sdk/openai";
-import { generateObject } from "ai";
+import { generateObject, type LanguageModel } from "ai";
 import { z } from "zod";
 import { getApiKey, model, titleGenerationModel, getTitleGenerationModel, type modelID } from "@/ai/providers";
 import { type MessagePart } from "@/lib/db/schema";
@@ -82,7 +82,7 @@ export async function generateTitle(messages: any[], selectedModel?: string, api
 
   try {
     const { object } = await generateObject({
-      model: titleModel,
+      model: titleModel as LanguageModel,
       schema: z.object({
         title: z.string().min(1).max(100),
       }),

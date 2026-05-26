@@ -1,7 +1,8 @@
 /// <reference types="@testing-library/jest-dom" />
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Message, ReasoningMessagePart } from '../../components/message';
-import type { Message as TMessage } from 'ai';
+import type { UIMessage } from 'ai';
+import { getUIMessageText } from '@/lib/message-utils';
 import type { ImageUIPart } from '@/lib/types';
 
 // Mock external dependencies
@@ -118,11 +119,10 @@ jest.mock('@/lib/image-utils', () => ({
 
 describe('Message', () => {
   // Test data
-  const baseMessage: TMessage = {
+  const baseMessage: UIMessage = {
     id: 'test-message-1',
     role: 'assistant',
-    content: 'Test message content',
-    createdAt: new Date(),
+    parts: [{ type: 'text', text: 'Test message content' }],
   };
 
   const textPart = {

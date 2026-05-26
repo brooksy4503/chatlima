@@ -32,7 +32,12 @@ export function ToolInvocation({
   status,
 }: ToolInvocationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const displayToolName = toolName === "web_fetch" ? "Reading URL" : toolName;
+  const displayToolName =
+    toolName === "web_fetch"
+      ? "Reading URL"
+      : toolName === "web_search" || toolName === "openrouter.web_search"
+        ? "Searching the web"
+        : toolName;
 
   const variants = {
     collapsed: {

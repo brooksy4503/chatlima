@@ -88,6 +88,15 @@ export const Textarea = ({
     return modelInfo?.vision === true;
   };
 
+  const effectiveModelSupportsWebSearch = (): boolean => {
+    const effectiveModelId = getEffectiveModel();
+    const modelInfo = models.find(model => model.id === effectiveModelId);
+    if (!effectiveModelId.startsWith('openrouter/')) {
+      return false;
+    }
+    return modelInfo?.supportsWebSearch === true;
+  };
+
   // Get the effective web search enabled state - use preset setting if active, otherwise context setting
   const getEffectiveWebSearchEnabled = (): boolean => {
     return activePreset?.webSearchEnabled ?? webSearchEnabled;
@@ -184,7 +193,7 @@ export const Textarea = ({
     return text;
   };
 
-  // Check if user has enough credits for web search (5 credits minimum)
+  // Check if user has enough credits for web search (minimum one search)
   // Use a more resilient check that handles temporary null values during hot reload
   const userCredits = user?.credits ?? 0;
   const hasEnoughCreditsForWebSearch = user?.hasCredits !== false && userCredits >= WEB_SEARCH_COST;
@@ -196,7 +205,7 @@ export const Textarea = ({
   const getEstimatedCost = () => {
     const baseCost = 1; // Base cost for any message
     const effectiveWebSearchEnabled = getEffectiveWebSearchEnabled();
-    const webSearchCost = effectiveWebSearchEnabled ? WEB_SEARCH_COST : 0;
+    const webSearchCost = effectiveWebSearchEnabled ? WEB_SEARCH_COST : 0; // per search when enabled
     return baseCost + webSearchCost;
   };
 
@@ -548,6 +557,9 @@ export const Textarea = ({
         ? `Web search is enabled by "${activePreset.name}" preset`
         : `Web search is disabled by "${activePreset.name}" preset`;
     }
+    if (!effectiveModelSupportsWebSearch()) {
+      return "Web search requires an OpenRouter model with tool calling support";
+    }
     if (isAnonymousUser) {
       return "Sign in and purchase credits to enable Web Search";
     }
@@ -555,7 +567,9 @@ export const Textarea = ({
       return "Purchase credits to enable Web Search";
     }
     const effectiveWebSearchEnabled = getEffectiveWebSearchEnabled();
-    return effectiveWebSearchEnabled ? 'Disable web search' : 'Enable web search';
+    return effectiveWebSearchEnabled
+      ? `Disable web search (${WEB_SEARCH_COST} credits per search)`
+      : `Enable web search (${WEB_SEARCH_COST} credits per search)`;
   };
 
 
@@ -648,7 +662,7 @@ export const Textarea = ({
             <TooltipContent side="top" sideOffset={8}>
               <div className="text-xs">
                 <div>Estimated cost: {estimatedCost} credits</div>
-                <div className="text-muted-foreground">Base: 1 credit + Web Search: {WEB_SEARCH_COST} credits</div>
+                <div className="text-muted-foreground">Base: 1 credit + Web Search: up to {WEB_SEARCH_COST} credits per search</div>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -827,7 +841,7 @@ export const Textarea = ({
               </Tooltip>
               
               {/* Only show web search button when no preset is active and model supports it */}
-              {isMounted && !activePreset && getEffectiveModel().startsWith("openrouter/") && (
+              {isMounted && !activePreset && getEffectiveModel().startsWith("openrouter/") && effectiveModelSupportsWebSearch() && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button

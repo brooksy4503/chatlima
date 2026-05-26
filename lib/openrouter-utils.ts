@@ -1,5 +1,6 @@
 import type { UIMessage } from "ai";
 import type { ImageUIPart, TextUIPart } from "./types";
+import { getUIMessageText } from "./message-utils";
 
 interface StandardImageContent {
     type: "image";
@@ -85,7 +86,7 @@ export function convertToOpenRouterFormat(messages: UIMessage[]): any[] {
             // Handle non-multimodal messages (plain text)
             return {
                 role: message.role,
-                content: getTextContent(message)
+                content: getUIMessageText(message)
             };
         });
 }
@@ -138,18 +139,6 @@ export function estimateImageTokens(
     };
 
     return imageCount * (tokenCosts[detail] || tokenCosts.auto);
-}
-
-// Helper function to get text content from message parts
-function getTextContent(message: UIMessage): string {
-    if (message.parts) {
-        return message.parts
-            .filter(part => part.type === 'text')
-            .map(part => (part as TextUIPart).text)
-            .join('\n\n');
-    }
-
-    return message.content || '';
 }
 
 // Helper function to check if message contains images

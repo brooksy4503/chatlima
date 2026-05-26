@@ -37,6 +37,7 @@ export interface ModelInfo {
     // Legacy compatibility fields for existing features
     enabled?: boolean;
     supportsWebSearch?: boolean;
+    supportsToolCalling?: boolean;
     temperatureRange?: { min: number; max: number; default: number };
     maxTokensRange?: { min: number; max: number; default: number };
     supportsTemperature?: boolean;

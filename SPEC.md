@@ -484,7 +484,7 @@ Based on model pricing ($/M tokens):
 
 - **Streaming Responses**: Real-time AI response streaming with visual indicators
 - **Dual-Path File Upload**: Up to 5 files per message, 30 MB max per file. Images (JPEG, PNG, WebP) sent as base64 for vision; documents (PDF, CSV, Excel) and text/code files uploaded to Vercel Blob and exposed to the AI via a `read_file` tool (content parsed on demand). Parser limits: Excel 1,000 rows/sheet, CSV 10,000 rows.
-- **Web Search**: Premium web search via OpenRouter with citations
+- **Web Search**: Agentic web search via OpenRouter `web_search` server tool (5 credits per invocation, with citations). Legacy `:online` plugin path available when `OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=false`.
 - **Native Web Fetch**: First-party `web_fetch` tool for reading public URLs directly in chat with extraction + truncation controls
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
 - **Smart Title Generation**: Dynamic model selection for conversation titles

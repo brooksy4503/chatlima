@@ -1,6 +1,7 @@
 export interface AccessPolicyFlags {
     billingEnforced: boolean;
     allowByokBypass: boolean;
+    openrouterAgenticWebToolsEnabled: boolean;
     nativeWebFetchEnabled: boolean;
     nativeWebFetchMaxChars: number;
     nativeWebFetchTimeoutMs: number;
@@ -26,6 +27,10 @@ export const getAccessPolicyFlags = (): AccessPolicyFlags => {
     return {
         billingEnforced: parseBooleanEnv(process.env.BILLING_ENFORCED, false),
         allowByokBypass: parseBooleanEnv(process.env.ALLOW_BYOK_BYPASS, true),
+        openrouterAgenticWebToolsEnabled: parseBooleanEnv(
+            process.env.OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED,
+            true
+        ),
         nativeWebFetchEnabled: parseBooleanEnv(process.env.NATIVE_WEB_FETCH_ENABLED, false),
         nativeWebFetchMaxChars: parseNumberEnv(process.env.NATIVE_WEB_FETCH_MAX_CHARS, 30000),
         nativeWebFetchTimeoutMs: parseNumberEnv(process.env.NATIVE_WEB_FETCH_TIMEOUT_MS, 12000),

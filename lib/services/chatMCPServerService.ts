@@ -101,7 +101,7 @@ export class ChatMCPServerService {
                             // Convert MCP tool format to AI SDK tool format using the tool() helper
                             acc[mcpTool.name] = tool({
                                 description: mcpTool.description || '',
-                                parameters: jsonSchema(mcpTool.inputSchema || { type: 'object', properties: {} }),
+                                inputSchema: jsonSchema(mcpTool.inputSchema || { type: 'object', properties: {} }),
                                 execute: async (params: any) => {
                                     try {
                                         const result = await mcpClient.callTool({

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Message as TMessage } from "ai";
+import type { UIMessage } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
 import { memo, useCallback, useEffect, useState } from "react";
 import equal from "fast-deep-equal";
@@ -136,9 +136,19 @@ export function ReasoningMessagePart({
   );
 }
 
+type MessagePart =
+  | NonNullable<UIMessage['parts']>[number]
+  | TextUIPart
+  | ToolInvocationUIPart
+  | ImageUIPart
+  | ReasoningUIPart
+  | SourceUIPart
+  | FileUIPart
+  | StepStartUIPart;
+
 interface MessageProps {
-  message: TMessage & {
-    parts?: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+  message: Omit<UIMessage, 'parts'> & {
+    parts?: MessagePart[];
     hasWebSearch?: boolean;
     tokenUsage?: {
       inputTokens?: number;
@@ -181,15 +191,15 @@ const PurePreviewMessage = ({
   const getMessageText = () => {
     if (!message.parts) return "";
     return message.parts
-      .filter(part => part.type === "text")
-      .map(part => (part.type === "text" ? part.text : ""))
+      .filter((part: MessagePart) => part.type === "text")
+      .map((part: MessagePart) => (part.type === "text" ? part.text : ""))
       .join("\n\n");
   };
 
   // Check if message has web search results - use hasWebSearch flag if available, otherwise detect from parts
-  const hasWebSearchResults = message.hasWebSearch || message.parts?.some(part => 
+  const hasWebSearchResults = message.hasWebSearch || message.parts?.some((part: MessagePart) => 
     (part.type === "text" && (part as TextUIPart).citations && (part as TextUIPart).citations!.length > 0) ||
-    (part.type === "tool-invocation" && (part as ToolInvocationUIPart).toolInvocation.toolName === "web_search")
+    (part.type === "tool-invocation" && (part as unknown as ToolInvocationUIPart).toolInvocation.toolName === "web_search")
   );
   
 
@@ -217,10 +227,10 @@ const PurePreviewMessage = ({
         >
           <div className="flex flex-col w-full space-y-3">
             {/* Render all parts in chronological order (reasoning interleaved with text/tools) */}
-            {message.parts?.map((part, i) => {
+            {message.parts?.map((part: MessagePart, i: number) => {
               switch ((part as any).type) {
                 case "reasoning": {
-                  const reasoningPart = part as ReasoningUIPart;
+                  const reasoningPart = part as unknown as ReasoningUIPart;
                   return (
                     <ReasoningMessagePart
                       key={`message-${message.id}-reasoning-${i}`}
@@ -272,7 +282,7 @@ const PurePreviewMessage = ({
                     </motion.div>
                   );
                 case "tool-invocation":
-                  const toolPart = part as ToolInvocationUIPart;
+                  const toolPart = part as unknown as ToolInvocationUIPart;
                   const { toolName, state, args } = toolPart.toolInvocation;
                   const result = 'result' in toolPart.toolInvocation ? toolPart.toolInvocation.result : null;
                   
@@ -405,7 +415,7 @@ const PurePreviewMessage = ({
 
 export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
-  if (prevProps.message.annotations !== nextProps.message.annotations)
+  if ((prevProps.message as { annotations?: unknown }).annotations !== (nextProps.message as { annotations?: unknown }).annotations)
     return false;
   if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
   return true;

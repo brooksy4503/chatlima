@@ -1,6 +1,7 @@
 "use client";
 
-import { Message, useChat } from "@ai-sdk/react";
+import { useChat, type UIMessage } from "@ai-sdk/react";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
@@ -27,6 +28,7 @@ import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { ChatProjectSelector } from "./projects/chat-project-selector";
 import { Button } from "./ui/button";
+import { Check, MessageSquare, Search, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +38,12 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { hasProviderByokForModel } from "@/lib/services/accessGateService";
-import { Check, MessageSquare, Search, Sparkles } from "lucide-react";
+import { getUIMessageText } from "@/lib/message-utils";
+
+type ChatUIMessage = UIMessage & {
+  hasWebSearch?: boolean;
+  webSearchContextSize?: 'low' | 'medium' | 'high';
+};
 
 // Type for chat data from DB
 interface ChatData {
@@ -212,7 +219,7 @@ export default function Chat() {
     refetchOnWindowFocus: false
   });
   
-  const initialMessages = useMemo(() => {
+  const initialMessages = useMemo((): ChatUIMessage[] => {
     if (!chatData || !chatData.messages || chatData.messages.length === 0) {
       return [];
     }
@@ -220,12 +227,70 @@ export default function Chat() {
     const uiMessages = convertToUIMessages(chatData.messages);
     return uiMessages.map(msg => ({
       id: msg.id,
-      role: msg.role as Message['role'],
-      content: msg.content,
+      role: msg.role as ChatUIMessage['role'],
       parts: msg.parts,
       hasWebSearch: msg.hasWebSearch,
-    } as Message & { hasWebSearch?: boolean }));
+      webSearchContextSize: msg.webSearchContextSize,
+    }));
   }, [chatData]);
+
+  const [input, setInput] = useState("");
+
+  const chatBodyRef = useRef({
+    selectedModel: selectedModel,
+    mcpServers: mcpServersForApi,
+    chatId: chatId || generatedChatId,
+    webSearch: {
+      enabled: webSearchEnabled,
+      contextSize: webSearchContextSize,
+    },
+    apiKeys: {} as Record<string, string>,
+    attachments: [] as unknown[],
+    temperature: undefined as number | undefined,
+    maxTokens: undefined as number | undefined,
+    systemInstruction: undefined as string | undefined,
+  });
+
+  useEffect(() => {
+    chatBodyRef.current = {
+      selectedModel: activePreset?.modelId || selectedModel,
+      mcpServers: mcpServersForApi,
+      chatId: chatId || generatedChatId,
+      webSearch: {
+        enabled: activePreset?.webSearchEnabled ?? webSearchEnabled,
+        contextSize: activePreset?.webSearchContextSize || webSearchContextSize,
+      },
+      apiKeys: getClientApiKeys(),
+      attachments: [],
+      temperature: activePreset?.temperature,
+      maxTokens: activePreset?.maxTokens,
+      systemInstruction: activePreset?.systemInstruction,
+    };
+  }, [
+    activePreset,
+    selectedModel,
+    mcpServersForApi,
+    chatId,
+    generatedChatId,
+    webSearchEnabled,
+    webSearchContextSize,
+  ]);
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages, id, body }) => ({
+          body: {
+            ...body,
+            ...chatBodyRef.current,
+            messages,
+            id,
+          },
+        }),
+      }),
+    []
+  );
   
   // Function to get API keys from localStorage (uses safe helper for SSR/broken Node env)
   const getClientApiKeys = () => {
@@ -305,32 +370,13 @@ export default function Chat() {
     setUploadErrors([]);
   }, []);
 
-  // Note: No longer creating attachments array since we use message parts directly
-
-  const { messages, input, handleInputChange, handleSubmit, append, status, stop: originalStop } =
-    useChat({
+  const { messages, sendMessage, status, stop: originalStop, setMessages } = useChat({
       id: chatId || generatedChatId,
-      initialMessages,
-      maxSteps: 20,
-      body: {
-        selectedModel: activePreset?.modelId || selectedModel,
-        mcpServers: mcpServersForApi,
-        chatId: chatId || generatedChatId,
-        webSearch: {
-          enabled: activePreset?.webSearchEnabled ?? webSearchEnabled,
-          contextSize: activePreset?.webSearchContextSize || webSearchContextSize,
-        },
-        apiKeys: getClientApiKeys(),
-        // Only send attachments for text-only messages (handleSubmit)
-        // Don't send when using append() since images are already in message parts
-        attachments: [],
-        // Include preset parameters
-        temperature: activePreset?.temperature,
-        maxTokens: activePreset?.maxTokens,
-        systemInstruction: activePreset?.systemInstruction
-      },
+      messages: initialMessages,
+      transport,
+      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
       experimental_throttle: 500,
-      onFinish: (message) => {
+      onFinish: () => {
         // Clear images and reset UI state after successful submission
         clearFiles();
         setHideImagesInUI(false);
@@ -523,6 +569,10 @@ export default function Chat() {
       },
     });
 
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+  }, []);
+
   // Custom stop function that handles both stopping the stream and refreshing data
   const stop = useCallback(async () => {
     console.log('Stopping stream and refreshing chat data...');
@@ -602,7 +652,7 @@ export default function Chat() {
       
       if (messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage.role === 'assistant' && lastMessage.content) {
+        if (lastMessage.role === 'assistant' && getUIMessageText(lastMessage)) {
           setLastStreamingActivity(Date.now());
           
           // NEW: Track time to first token when first content appears
@@ -777,7 +827,6 @@ export default function Chat() {
       messageContent = `${input}\n\n[Attached files:]\n${fileList}\n\n[Instruction: Use the read_file tool with filepath values before answering.]`;
     }
 
-    // If we have image files with dataUrl, use append to create a message with parts
     if (imageFiles.length > 0) {
       const textPart = { type: 'text' as const, text: messageContent };
       const imageParts = imageFiles.map((file) => ({
@@ -794,29 +843,20 @@ export default function Chat() {
           height: file.metadata.height
         }
       }));
-      
-      // Use append to create message with image parts
-      append({
+
+      await sendMessage({
         role: 'user',
-        content: messageContent,
-        parts: [textPart, ...imageParts] as any
+        parts: [textPart, ...imageParts] as ChatUIMessage['parts'],
       });
-      
-      // Clear the input field manually since append doesn't do it automatically
-      handleInputChange({ target: { value: '' } } as any);
+      setInput('');
     } else {
-      // No images: append directly to avoid racing input state updates.
-      append({
-        role: 'user',
-        content: messageContent
-      });
-      handleInputChange({ target: { value: '' } } as any);
+      await sendMessage({ text: messageContent });
+      setInput('');
     }
   }, [
-    append,
+    sendMessage,
     input,
     selectedFiles,
-    handleInputChange,
     isUploadingFiles,
     modelSupportsVision,
     activePreset?.modelId,
@@ -832,11 +872,8 @@ export default function Chat() {
 
   // Function to send a message from suggested prompts
   const sendSuggestedMessage = useCallback((message: string) => {
-    append({
-      role: 'user',
-      content: message
-    });
-  }, [append]);
+    void sendMessage({ text: message });
+  }, [sendMessage]);
 
   const isOpenRouterModel = effectiveModel.startsWith("openrouter/");
 
@@ -861,8 +898,8 @@ export default function Chat() {
       
       return {
         ...enhancedMessage,
-        hasWebSearch: (enhancedMessage as any).hasWebSearch || false
-      } as Message & { hasWebSearch?: boolean };
+        hasWebSearch: (enhancedMessage as ChatUIMessage).hasWebSearch || false
+      } as ChatUIMessage;
     });
   }, [messages, webSearchEnabled, activePreset, isOpenRouterModel]);
 
@@ -900,30 +937,11 @@ export default function Chat() {
       if (lastMessage.role === 'assistant') {
         // Simulate real-time token updates during streaming
         // In a real implementation, this would come from the streaming response
-        let outputContentLength = 0;
+        const outputContentLength = getUIMessageText(lastMessage).length;
         let inputContentLength = 0;
 
-        // Handle structured content (Google models)
-        if (Array.isArray(lastMessage.content)) {
-          outputContentLength = lastMessage.content
-            .filter((part: any) => part.type === 'text')
-            .map((part: any) => part.text)
-            .join('').length;
-        } else if (typeof lastMessage.content === 'string') {
-          outputContentLength = lastMessage.content.length;
-        }
-
-        // Handle input message content
         if (messages.length > 1) {
-          const inputMessage = messages[messages.length - 2];
-          if (Array.isArray(inputMessage.content)) {
-            inputContentLength = inputMessage.content
-              .filter((part: any) => part.type === 'text')
-              .map((part: any) => part.text)
-              .join('').length;
-          } else if (typeof inputMessage.content === 'string') {
-            inputContentLength = inputMessage.content.length;
-          }
+          inputContentLength = getUIMessageText(messages[messages.length - 2]).length;
         }
 
         const estimatedOutputTokens = Math.floor(outputContentLength / 4); // Rough estimate

@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai";
 import type { ModelInfo } from "@/lib/types/models";
 import type { ImageUIPart } from '@/lib/types';
+import { getUIMessageText } from '@/lib/message-utils';
 
 export interface MessageProcessingContext {
     messages: UIMessage[];
@@ -56,7 +57,7 @@ export class ChatMessageProcessingService {
             const lastMessage = processedMessages[lastMessageIndex];
             console.log('[DEBUG] Last message:', {
                 role: lastMessage.role,
-                content: lastMessage.content?.substring(0, 100),
+                content: getUIMessageText(lastMessage).substring(0, 100),
                 hasExistingParts: !!lastMessage.parts,
                 existingPartsCount: lastMessage.parts?.length || 0
             });
@@ -89,7 +90,9 @@ export class ChatMessageProcessingService {
             console.log('[DEBUG] Created image parts:', imageParts.length);
 
             // Create new parts array with type assertion
-            const existingParts = lastMessage.parts || [{ type: 'text', text: lastMessage.content }];
+            const existingParts = lastMessage.parts?.length
+                ? lastMessage.parts
+                : [{ type: 'text', text: getUIMessageText(lastMessage) }];
             const newParts = [...existingParts, ...imageParts] as any;
 
             console.log('[DEBUG] Combined parts:', {
@@ -127,7 +130,6 @@ export class ChatMessageProcessingService {
             modelMessages.unshift({
                 role: "system",
                 id: `system_${Date.now()}`,
-                content: systemContent,
                 parts: [{ type: "text", text: systemContent }]
             });
         }
@@ -148,8 +150,8 @@ export class ChatMessageProcessingService {
                 throw new Error(`Invalid message role: ${message.role}`);
             }
 
-            if (!message.content && !message.parts) {
-                throw new Error('Message must have either content or parts');
+            if (!message.parts?.length) {
+                throw new Error('Message must have parts');
             }
         }
     }

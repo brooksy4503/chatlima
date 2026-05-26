@@ -8,7 +8,7 @@
 
 import { config } from 'dotenv';
 import { createRequesty } from '@requesty/ai-sdk';
-import { generateText } from 'ai';
+import { generateText, type LanguageModel } from 'ai';
 import path from 'path';
 
 // Load environment variables from .env.local
@@ -77,9 +77,9 @@ async function testRequestyUsage() {
 
             // Make the request using generateText (similar to streamText but simpler for testing)
             const result = await generateText({
-                model: requestyClient(testConfig.model),
+                model: requestyClient(testConfig.model) as unknown as LanguageModel,
                 prompt: testConfig.prompt,
-                maxTokens: testConfig.maxTokens,
+                maxOutputTokens: testConfig.maxTokens,
             });
 
             const endTime = Date.now();
@@ -94,8 +94,8 @@ async function testRequestyUsage() {
 
             if (result.usage) {
                 console.log('\n🔍 Usage field breakdown:');
-                console.log(`- promptTokens: ${result.usage.promptTokens}`);
-                console.log(`- completionTokens: ${result.usage.completionTokens}`);
+                console.log(`- inputTokens: ${result.usage.inputTokens}`);
+                console.log(`- outputTokens: ${result.usage.outputTokens}`);
                 console.log(`- totalTokens: ${result.usage.totalTokens}`);
 
                 // Check for alternative field names
@@ -123,14 +123,15 @@ async function testRequestyUsage() {
             console.log('\n🧮 TOKEN EXTRACTION TEST (simulating main app logic):');
             const usageAny = result.usage as any;
             const extractedInputTokens =
-                result.usage?.promptTokens ||
-                usageAny?.inputTokens ||
+                result.usage?.inputTokens ||
+                usageAny?.promptTokens ||
                 usageAny?.prompt_tokens ||
                 usageAny?.input_tokens ||
                 0;
 
             const extractedOutputTokens =
-                result.usage?.completionTokens ||
+                result.usage?.outputTokens ||
+                usageAny?.completionTokens ||
                 usageAny?.outputTokens ||
                 usageAny?.completion_tokens ||
                 usageAny?.output_tokens ||

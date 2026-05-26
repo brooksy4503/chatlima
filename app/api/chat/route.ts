@@ -1,5 +1,6 @@
-import { streamText, generateText, tool, jsonSchema, type UIMessage, type LanguageModelResponseMetadata, type Message } from "ai";
+import { streamText, generateText, tool, jsonSchema, stepCountIs, type UIMessage, type LanguageModel, type LanguageModelResponseMetadata } from "ai";
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
+import { getUIMessageText } from '@/lib/message-utils';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
 import { chats, messages as messagesTable } from '@/lib/db/schema';
@@ -105,7 +106,7 @@ interface Annotation {
 }
 
 interface OpenRouterResponse extends LanguageModelResponseMetadata {
-    readonly messages: Message[];
+    readonly messages: Array<UIMessage | { role: string; content?: string | unknown[]; parts?: unknown[]; id?: string }>;
     annotations?: Annotation[];
     body?: unknown;
 }
@@ -570,6 +571,8 @@ export async function POST(req: Request) {
             isAnonymous: authenticatedUser.isAnonymous,
             actualCredits: creditValidation.actualCredits,
             modelInfo: modelValidation.modelInfo
+        }, {
+            agenticWebToolsEnabled: accessPolicyFlags.openrouterAgenticWebToolsEnabled,
         });
 
         // 8. Initialize MCP servers
@@ -650,7 +653,7 @@ export async function POST(req: Request) {
                 const lastMessage = processedMessages[lastMessageIndex];
                 console.log('[DEBUG] Last message:', {
                     role: lastMessage.role,
-                    content: lastMessage.content?.substring(0, 100),
+                    content: getUIMessageText(lastMessage).substring(0, 100),
                     hasExistingParts: !!lastMessage.parts,
                     existingPartsCount: lastMessage.parts?.length || 0
                 });
@@ -683,7 +686,9 @@ export async function POST(req: Request) {
                 console.log('[DEBUG] Created image parts:', imageParts.length);
 
                 // Create new parts array with type assertion
-                const existingParts = lastMessage.parts || [{ type: 'text', text: lastMessage.content }];
+                const existingParts = lastMessage.parts?.length
+                    ? lastMessage.parts
+                    : [{ type: 'text', text: getUIMessageText(lastMessage) }];
                 const newParts = [...existingParts, ...imageParts] as any;
 
                 console.log('[DEBUG] Combined parts:', {
@@ -725,7 +730,6 @@ export async function POST(req: Request) {
             modelMessagesFinal.unshift({
                 role: "system",
                 id: nanoid(),
-                content: systemContent,
                 parts: [{ type: "text", text: systemContent }]
             });
         }
@@ -737,8 +741,10 @@ export async function POST(req: Request) {
         // "- name | filepath: uploads/... | url: https://..."
         const attachedFileUrlByPath = new Map<string, string>();
         for (const msg of messages) {
-            if (msg.role !== 'user' || typeof msg.content !== 'string') continue;
-            const lines = msg.content.split('\n');
+            if (msg.role !== 'user') continue;
+            const messageText = getUIMessageText(msg);
+            if (!messageText) continue;
+            const lines = messageText.split('\n');
             for (const line of lines) {
                 const match = line.match(/filepath:\s*([^\s|]+)\s*\|\s*url:\s*(https?:\/\/\S+)/i);
                 if (match) {
@@ -752,7 +758,7 @@ export async function POST(req: Request) {
         // Add read_file tool for file analysis
         const read_file = tool({
             description: `Read contents of a file uploaded by the user. Supports: CSV, Excel, PDF, text files, code files. Returns parsed content based on file type.`,
-            parameters: z.object({
+            inputSchema: z.object({
                 filepath: z.string().describe('File path or full URL (e.g., "uploads/data-2024-02-06-143022.csv" or "https://...")'),
             }),
             execute: async ({ filepath }) => {
@@ -823,7 +829,7 @@ export async function POST(req: Request) {
 
         const web_fetch = tool({
             description: "Fetch and extract readable content from a public web URL. Best for reading a specific link and using it as context.",
-            parameters: z.object({
+            inputSchema: z.object({
                 url: z.string().describe("Public http/https URL to read"),
                 mode: z.enum(["markdown", "text"]).optional().describe("Output format. Defaults to markdown."),
                 maxChars: z.number().int().positive().max(100000).optional().describe("Maximum characters to return. Defaults to server policy."),
@@ -866,8 +872,8 @@ export async function POST(req: Request) {
             },
         });
 
-        // Merge native + MCP tools
-        const allTools = {
+        // Merge native + MCP tools (OpenRouter server tools added after model resolution)
+        const baseTools = {
             ...tools,
             read_file,
             ...(webFetchPolicy.enabled ? { web_fetch } : {}),
@@ -875,13 +881,18 @@ export async function POST(req: Request) {
 
         // Log web search status
         if (webSearchConfig.enabled) {
-            console.log(`[Web Search] ENABLED with context size: ${webSearchConfig.contextSize}`);
+            console.log(`[Web Search] ENABLED (${webSearchConfig.useAgenticServerTools ? 'agentic server tools' : 'legacy :online plugin'}) with context size: ${webSearchConfig.contextSize}`);
         } else {
             console.log(`[Web Search] DISABLED`);
         }
 
-        let modelInstance;
+        let modelInstance: LanguageModel;
         let effectiveWebSearchEnabled = webSearchConfig.enabled;
+        let openRouterServerTools: Record<string, unknown> = {};
+
+        const openrouterUserId = authenticatedUser.isAnonymous
+            ? `chatlima_anon_${authenticatedUser.userId}`
+            : `chatlima_user_${authenticatedUser.userId}`;
 
         // Add API key validation for OpenRouter models to prevent authentication errors
         if (selectedModel.startsWith("openrouter/")) {
@@ -898,52 +909,63 @@ export async function POST(req: Request) {
             console.log(`[Chat ${id}] OpenRouter API key available: ${openrouterApiKey.substring(0, 8)}...`);
         }
 
-        // Check if the selected model supports web search
         const currentModelDetails = selectedModelInfo;
+        const openrouterClient = selectedModel.startsWith("openrouter/")
+            ? createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY'], openrouterUserId)
+            : null;
+
         if (webSearchConfig.enabled && selectedModel.startsWith("openrouter/")) {
             if (currentModelDetails?.supportsWebSearch === true) {
-                // Model supports web search, use :online variant
-                const openrouterModelId = selectedModel.replace("openrouter/", "") + ":online";
-                const openrouterClient = createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY'], authenticatedUser.isAnonymous
-                    ? `chatlima_anon_${authenticatedUser.userId}`
-                    : `chatlima_user_${authenticatedUser.userId}`);
-                if (
-                    selectedModel === "openrouter/deepseek/deepseek-r1" ||
-                    selectedModel === "openrouter/deepseek/deepseek-r1-0528" ||
-                    selectedModel === "openrouter/x-ai/grok-3-beta" ||
-                    selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-                    selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-                    selectedModel === "openrouter/qwen/qwq-32b"
-                ) {
-                    modelInstance = openrouterClient(openrouterModelId, { logprobs: false });
+                if (webSearchConfig.useAgenticServerTools && openrouterClient) {
+                    modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openrouterUserId) as LanguageModel;
+                    openRouterServerTools = ChatWebSearchService.buildOpenRouterServerTools(openrouterClient, {
+                        contextSize: webSearchConfig.contextSize,
+                        maxTotalResults: ChatWebSearchService.DEFAULT_MAX_TOTAL_RESULTS,
+                    });
+                    console.log(`[Web Search] Agentic server tools enabled for ${selectedModel}`);
+                } else if (!webSearchConfig.useAgenticServerTools && openrouterClient) {
+                    const legacyModelId = ChatWebSearchService.getWebSearchModelId(selectedModel, webSearchConfig)
+                        .replace("openrouter/", "");
+                    if (
+                        selectedModel === "openrouter/deepseek/deepseek-r1" ||
+                        selectedModel === "openrouter/deepseek/deepseek-r1-0528" ||
+                        selectedModel === "openrouter/x-ai/grok-3-beta" ||
+                        selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
+                        selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
+                        selectedModel === "openrouter/qwen/qwq-32b"
+                    ) {
+                        modelInstance = openrouterClient(legacyModelId, { logprobs: false }) as LanguageModel;
+                    } else {
+                        modelInstance = openrouterClient(legacyModelId) as LanguageModel;
+                    }
+                    console.log(`[Web Search] Legacy :online enabled for ${selectedModel} using ${legacyModelId}`);
                 } else {
-                    modelInstance = openrouterClient(openrouterModelId);
+                    effectiveWebSearchEnabled = false;
+                    modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openrouterUserId) as LanguageModel;
+                    console.log(`[Web Search] Agentic tools requested but unavailable for ${selectedModel}. Using standard model.`);
                 }
-                console.log(`[Web Search] Enabled for ${selectedModel} using ${openrouterModelId}`);
             } else {
-                // Model does not support web search, or flag is not explicitly true
                 effectiveWebSearchEnabled = false;
-                modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, authenticatedUser.isAnonymous
-                    ? `chatlima_anon_${authenticatedUser.userId}`
-                    : `chatlima_user_${authenticatedUser.userId}`);
-                console.log(`[Web Search] Requested for ${selectedModel}, but not supported or not enabled for this model. Using standard model.`);
+                modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openrouterUserId) as LanguageModel;
+                console.log(`[Web Search] Requested for ${selectedModel}, but not supported. Using standard model.`);
             }
         } else {
             if (webSearchConfig.enabled) {
-                console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model or web search support unknown. Disabling web search for this call.`);
+                console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model. Disabling web search for this call.`);
             }
             effectiveWebSearchEnabled = false;
-            modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, authenticatedUser.isAnonymous
-                ? `chatlima_anon_${authenticatedUser.userId}`
-                : `chatlima_user_${authenticatedUser.userId}`);
+            modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openrouterUserId) as LanguageModel;
         }
 
-        const modelOptions: any = {};
+        const allTools = {
+            ...baseTools,
+            ...openRouterServerTools,
+        };
 
-        if (effectiveWebSearchEnabled) {
-            modelOptions.web_search_options = {
-                search_context_size: webSearchConfig.contextSize
-            };
+        const modelOptions: Record<string, unknown> = {};
+
+        if (effectiveWebSearchEnabled && !webSearchConfig.useAgenticServerTools) {
+            Object.assign(modelOptions, ChatWebSearchService.createWebSearchOptions(webSearchConfig));
         }
 
         // Always set logprobs: false for these models at the providerOptions level for streamText
@@ -1032,7 +1054,13 @@ When users ask to read, summarize, analyze, or extract information from a URL:
 5. If fetching fails, explain the failure and suggest retrying or narrowing scope.
 ` : ''}
 
-${effectiveWebSearchEnabled ? `
+${webSearchConfig.useAgenticServerTools ? `
+## Web Search Enabled (Agentic):
+You have the \`web_search\` server tool available. Use it when the user needs current information from the web.
+1. Only search when fresh information is required
+2. Cite sources using markdown links: [domain.com](full-url)
+3. Prefer OpenRouter fetch for pages discovered during search; use native \`web_fetch\` for explicit user-provided URLs
+` : effectiveWebSearchEnabled ? `
 ## Web Search Enabled:
 You have web search capabilities enabled. When you use web search:
 1. Cite your sources using markdown links
@@ -1098,14 +1126,14 @@ You have web search capabilities enabled. When you use web search:
 
         // 17. Set up streaming payload
         const openRouterPayload = {
-            model: modelInstance,
+            model: modelInstance as LanguageModel,
             abortSignal: streamAbortController.signal,
             system: effectiveSystemInstruction,
             temperature: effectiveTemperature,
-            maxTokens: effectiveMaxTokens,
+            maxOutputTokens: effectiveMaxTokens,
             messages: formattedMessages,
             tools: toolsToUse,
-            maxSteps: 20,
+            stopWhen: stepCountIs(20),
             user: authenticatedUser.isAnonymous
                 ? `chatlima_anon_${authenticatedUser.userId}`
                 : `chatlima_user_${authenticatedUser.userId}`,
@@ -1279,7 +1307,11 @@ You have web search capabilities enabled. When you use web search:
                     try {
                         dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
                             ...msg,
-                            hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (response.annotations?.length || 0) > 0,
+                            hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (
+                                webSearchConfig.useAgenticServerTools
+                                    ? ChatWebSearchService.countWebSearchInvocations(event.steps) > 0
+                                    : (response.annotations?.length || 0) > 0
+                            ),
                             webSearchContextSize: webSearchConfig.enabled ? webSearchConfig.contextSize : undefined
                         }));
 
@@ -1446,18 +1478,7 @@ You have web search capabilities enabled. When you use web search:
                                 let totalInputContentLength = 0;
 
                                 modelMessagesFinal.forEach((message, index) => {
-                                    let messageContentLength = 0;
-
-                                    if (message.content) {
-                                        if (Array.isArray(message.content)) {
-                                            messageContentLength = message.content
-                                                .filter((part: any) => part.type === 'text')
-                                                .map((part: any) => part.text || '')
-                                                .join('').length;
-                                        } else if (typeof message.content === 'string') {
-                                            messageContentLength = message.content.length;
-                                        }
-                                    }
+                                    const messageContentLength = getUIMessageText(message).length;
 
                                     totalInputContentLength += messageContentLength;
 
@@ -1665,8 +1686,15 @@ You have web search capabilities enabled. When you use web search:
                         }
 
                         let additionalCost = 0;
-                        if (webSearchConfig.enabled && !callbackIsUsingOwnApiKeys && shouldDeductCredits) {
-                            additionalCost = WEB_SEARCH_COST;
+                        if (shouldDeductCredits) {
+                            additionalCost = ChatWebSearchService.computeWebSearchCreditCost({
+                                webSearchEnabled: webSearchConfig.enabled,
+                                useAgenticServerTools: webSearchConfig.useAgenticServerTools,
+                                isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
+                                shouldDeductCredits,
+                                steps: event.steps,
+                                hasCitationAnnotations: (response.annotations?.length || 0) > 0,
+                            });
                         }
 
                         const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
@@ -1755,22 +1783,23 @@ You have web search capabilities enabled. When you use web search:
         const result = streamText(openRouterPayload);
         startBackgroundStreamConsumption(result, id);
 
-        return result.toDataStreamResponse({
+        return result.toUIMessageStreamResponse({
             sendReasoning: true,
-            getErrorMessage: (error: any) => {
+            onError: (error: unknown) => {
+                const err = error as any;
                 console.error(`[API Error][Chat ${id}] Error in stream processing:`, {
-                    error: error,
-                    message: error?.message,
-                    stack: error?.stack,
-                    responseBody: error?.responseBody,
-                    name: error?.name,
-                    cause: error?.cause,
+                    error: err,
+                    message: err?.message,
+                    stack: err?.stack,
+                    responseBody: err?.responseBody,
+                    name: err?.name,
+                    cause: err?.cause,
                 });
 
-                if (error?.name === 'AI_TypeValidationError') {
+                if (err?.name === 'AI_TypeValidationError') {
                     let errorMessage = "The AI provider returned an unexpected response format. Please try again.";
-                    if (error?.value?.error?.message) {
-                        errorMessage = `API Error: ${error.value.error.message}`;
+                    if (err?.value?.error?.message) {
+                        errorMessage = `API Error: ${err.value.error.message}`;
                     }
                     return JSON.stringify({ error: { code: "PROVIDER_ERROR", message: errorMessage, details: "Type validation error" } });
                 }
@@ -1780,17 +1809,17 @@ You have web search capabilities enabled. When you use web search:
                 const errorDetails: any = {};
 
                 // Try to extract error details from various sources
-                if (error?.message) {
-                    errorDetails.rawMessage = error.message;
+                if (err?.message) {
+                    errorDetails.rawMessage = err.message;
                 }
 
-                if (error?.cause) {
-                    errorDetails.cause = error.cause;
+                if (err?.cause) {
+                    errorDetails.cause = err.cause;
                 }
 
-                if (error && typeof error.responseBody === 'string') {
+                if (err && typeof err.responseBody === 'string') {
                     try {
-                        const parsedBody = JSON.parse(error.responseBody);
+                        const parsedBody = JSON.parse(err.responseBody);
                         errorDetails.responseBody = parsedBody;
                         if (parsedBody.error && typeof parsedBody.error.message === 'string') {
                             errorMessage = parsedBody.error.message;
@@ -1800,18 +1829,18 @@ You have web search capabilities enabled. When you use web search:
                         }
                     } catch (e) {
                         console.warn(`[API Error][Chat ${id}] Failed to parse error.responseBody`);
-                        errorDetails.responseBody = error.responseBody;
+                        errorDetails.responseBody = err.responseBody;
                     }
                 }
 
                 // Check if error has standard properties
-                if (error?.code) {
-                    errorCode = String(error.code);
+                if (err?.code) {
+                    errorCode = String(err.code);
                 }
 
                 // Use error message if available
-                if (error?.message && !errorDetails.responseBody) {
-                    errorMessage = error.message;
+                if (err?.message && !errorDetails.responseBody) {
+                    errorMessage = err.message;
                 }
 
                 // Log the final error for debugging
