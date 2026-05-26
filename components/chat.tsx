@@ -569,6 +569,13 @@ export default function Chat() {
       },
     });
 
+  // Sync DB history into useChat when a chat loads or changes (AI SDK v6 only uses `messages` at init).
+  useEffect(() => {
+    if (!chatId || isLoadingChat) return;
+    if (status === "streaming" || status === "submitted") return;
+    setMessages(initialMessages);
+  }, [chatId, isLoadingChat, initialMessages, status, setMessages]);
+
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
   }, []);

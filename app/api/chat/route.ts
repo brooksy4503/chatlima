@@ -1251,10 +1251,27 @@ You have web search capabilities enabled. When you use web search:
                         console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map(a => a.type));
                     }
 
-                    // Manually concatenate request and response messages
-                    const allMessages = [...modelMessagesFinal, ...(response.messages || [])];
+                    // Build UI messages for persistence: client history + final assistant from streamText event
+                    const clientMessages = messages as UIMessage[];
+                    const trailingAssistant = clientMessages[clientMessages.length - 1];
+                    const historyMessages =
+                        trailingAssistant?.role === 'assistant'
+                            ? clientMessages.slice(0, -1)
+                            : clientMessages;
 
-                    const processedMessages = allMessages.map(msg => {
+                    const assistantParts: UIMessage['parts'] = [];
+                    if (event.reasoningText?.trim()) {
+                        assistantParts.push({ type: 'reasoning', text: event.reasoningText });
+                    }
+                    assistantParts.push({ type: 'text', text: event.text || '' });
+
+                    const assistantMessage: UIMessage = {
+                        id: response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ?? nanoid(),
+                        role: 'assistant',
+                        parts: assistantParts,
+                    };
+
+                    const processedMessages = [...historyMessages, assistantMessage].map(msg => {
                         if (msg.role === 'assistant' && (response.annotations?.length)) {
                             console.log(`[Chat ${id}] Found ${response.annotations.length} annotations:`, response.annotations);
 
@@ -1784,6 +1801,7 @@ You have web search capabilities enabled. When you use web search:
         startBackgroundStreamConsumption(result, id);
 
         return result.toUIMessageStreamResponse({
+            originalMessages: messages,
             sendReasoning: true,
             onError: (error: unknown) => {
                 const err = error as any;

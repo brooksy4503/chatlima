@@ -1,6 +1,7 @@
 "use client";
 
 import type { UIMessage } from "ai";
+import { getToolName, isToolUIPart } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
 import { memo, useCallback, useEffect, useState } from "react";
 import equal from "fast-deep-equal";
@@ -34,11 +35,14 @@ export function ReasoningMessagePart({
   isReasoning,
 }: ReasoningMessagePartProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const reasoningDetails = Array.isArray((part as any).details)
-    ? (part as any).details
-    : (typeof (part as any).reasoning === "string" && (part as any).reasoning.trim().length > 0
-        ? [{ type: "text", text: (part as any).reasoning }]
-        : []);
+  const reasoningPartAny = part as ReasoningUIPart & { text?: string; reasoning?: string; details?: Array<{ type: string; text: string }> };
+  const reasoningDetails = Array.isArray(reasoningPartAny.details)
+    ? reasoningPartAny.details
+    : (typeof reasoningPartAny.text === "string" && reasoningPartAny.text.trim().length > 0
+        ? [{ type: "text", text: reasoningPartAny.text }]
+        : (typeof reasoningPartAny.reasoning === "string" && reasoningPartAny.reasoning.trim().length > 0
+            ? [{ type: "text", text: reasoningPartAny.reasoning }]
+            : []));
 
   const memoizedSetIsExpanded = useCallback((value: boolean) => {
     setIsExpanded(value);
@@ -341,8 +345,31 @@ const PurePreviewMessage = ({
                       </div>
                     </motion.div>
                   );
-                default:
+                default: {
+                  if (isToolUIPart(part as UIMessage['parts'][number]) || (part as { type?: string }).type === 'dynamic-tool') {
+                    const v6ToolPart = part as UIMessage['parts'][number] & {
+                      state?: string;
+                      input?: unknown;
+                      output?: unknown;
+                    };
+                    const toolName = getToolName(v6ToolPart as Parameters<typeof getToolName>[0]);
+                    const toolState = v6ToolPart.state === 'output-available' ? 'result' : 'call';
+
+                    return (
+                      <ToolInvocation
+                        key={`message-${message.id}-part-${i}`}
+                        toolName={toolName}
+                        state={toolState}
+                        args={v6ToolPart.input}
+                        result={v6ToolPart.output}
+                        isLatestMessage={isLatestMessage}
+                        status={status}
+                      />
+                    );
+                  }
+
                   return null;
+                }
               }
             })}
             
