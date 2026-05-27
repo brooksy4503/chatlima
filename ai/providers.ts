@@ -5,6 +5,7 @@ import { createXai } from "@ai-sdk/xai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createRequesty } from "@requesty/ai-sdk";
 
+import type { LanguageModelV3 } from "@ai-sdk/provider";
 import {
   customProvider,
   wrapLanguageModel,
@@ -38,11 +39,13 @@ function usesNativeReasoningField(modelId: string): boolean {
   return id.includes('minimax/m2') || id.includes('minimax-m2');
 }
 
-function wrapWithTagBasedReasoning(model: LanguageModel): LanguageModel {
+function wrapWithTagBasedReasoning(model: LanguageModel): LanguageModel;
+function wrapWithTagBasedReasoning(model: unknown): LanguageModel;
+function wrapWithTagBasedReasoning(model: unknown): LanguageModel {
   return wrapLanguageModel({
-    model,
+    model: model as LanguageModelV3,
     middleware: tagBasedReasoningMiddleware,
-  });
+  }) as LanguageModel;
 }
 
 export { usesTagBasedReasoningExtraction, wrapWithTagBasedReasoning };
@@ -172,7 +175,11 @@ const languageModels = {
 };
 
 // Helper to get language model with dynamic API keys
-export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>, userId?: string) => {
+export const getLanguageModelWithKeys = (
+  modelId: string,
+  apiKeys?: Record<string, string>,
+  userId?: string,
+): LanguageModel => {
   // Helper function to create clients on demand
   const getOpenAIClient = () => createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
   const getAnthropicClient = () => createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
@@ -194,7 +201,7 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       );
     }
 
-    return getRequestyClient()(requestyModelId);
+    return getRequestyClient()(requestyModelId) as unknown as LanguageModel;
   }
 
   // Handle dynamic OpenRouter models
@@ -203,7 +210,7 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     console.log(`[getLanguageModelWithKeys] Creating dynamic OpenRouter client for: ${openrouterModelId}`);
 
     if (usesNativeReasoningField(modelId)) {
-      return getOpenRouterClient()(openrouterModelId);
+      return getOpenRouterClient()(openrouterModelId) as LanguageModel;
     }
 
     if (openrouterModelId === 'x-ai/grok-3-mini-beta' && modelId.includes('reasoning-high')) {
@@ -218,7 +225,7 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
       );
     }
 
-    return getOpenRouterClient()(openrouterModelId);
+    return getOpenRouterClient()(openrouterModelId) as LanguageModel;
   }
 
   switch (modelId) {

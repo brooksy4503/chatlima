@@ -1098,13 +1098,6 @@ You have web search capabilities enabled. When you use web search:
                             : `chatlima_user_${authenticatedUser.userId}`,
                     },
                 },
-                requesty: {
-                    ...(Object.keys(toolsToUse).length > 0 && {
-                        extraBody: {
-                            tools: toolsToUse
-                        }
-                    })
-                }
             },
             onError: (error: any) => {
                 console.error(`[streamText.onError][Chat ${id}] Error during LLM stream:`, JSON.stringify(error, null, 2));

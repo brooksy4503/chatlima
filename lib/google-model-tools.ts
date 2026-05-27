@@ -1,4 +1,4 @@
-import { asSchema, jsonSchema, type Tool } from 'ai';
+import { asSchema, jsonSchema, type FlexibleSchema, type Tool } from 'ai';
 
 /**
  * Google models routed via OpenRouter/Vertex reject JSON Schema `$schema` metadata
@@ -42,7 +42,7 @@ export function stripJsonSchemaMeta<T>(value: T): T {
     return result as T;
 }
 
-export function googleCompatibleInputSchema(inputSchema: unknown) {
+export function googleCompatibleInputSchema(inputSchema: FlexibleSchema<unknown> | undefined) {
     const baseSchema = asSchema(inputSchema);
 
     return jsonSchema(
