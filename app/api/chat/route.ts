@@ -888,7 +888,6 @@ export async function POST(req: Request) {
             console.log(`[Web Search] DISABLED`);
         }
 
-        let modelInstance: LanguageModel;
         let effectiveWebSearchEnabled = webSearchConfig.enabled;
         let openRouterServerTools: Record<string, unknown> = {};
 
@@ -923,7 +922,7 @@ export async function POST(req: Request) {
             wrapWithTagBasedReasoning,
         });
 
-        modelInstance = webSearchSetup.modelInstance;
+        const modelInstance = webSearchSetup.modelInstance;
         effectiveWebSearchEnabled = webSearchSetup.effectiveWebSearchEnabled;
         openRouterServerTools = webSearchSetup.openRouterServerTools;
         const modelOptions = webSearchSetup.modelOptions;
