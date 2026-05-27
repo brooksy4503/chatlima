@@ -32,7 +32,7 @@ export const Messages = ({
       <div className="max-w-lg sm:max-w-3xl mx-auto py-4">
         {messages.map((m, i) => (
           <Message
-            key={i}
+            key={m.id}
             isLatestMessage={i === messages.length - 1}
             isLoading={isLoading}
             message={{

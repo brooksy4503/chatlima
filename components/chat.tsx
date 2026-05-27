@@ -375,17 +375,19 @@ export default function Chat() {
       messages: initialMessages,
       transport,
       sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-      experimental_throttle: 500,
+      experimental_throttle: 100,
       onFinish: () => {
         // Clear images and reset UI state after successful submission
         clearFiles();
         setHideImagesInUI(false);
         
-        // Refresh usage data to update upgrade button and other UI elements
-        refreshMessageUsage();
-        
-        queryClient.invalidateQueries({ queryKey: ['chats'] });
-        queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+        // Defer refetches so the UI can finish the stream→ready transition first
+        requestAnimationFrame(() => {
+          refreshMessageUsage();
+          queryClient.invalidateQueries({ queryKey: ['chats'] });
+          queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+        });
+
         if (!chatId && generatedChatId) {
           if (window.location.pathname !== `/chat/${generatedChatId}`) {
              router.push(`/chat/${generatedChatId}`, { scroll: false }); 
@@ -569,11 +571,15 @@ export default function Chat() {
       },
     });
 
-  // Sync DB history into useChat when a chat loads or changes (AI SDK v6 only uses `messages` at init).
+  // Sync DB history into useChat when navigating to a chat (not after every refetch).
+  const loadedChatIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!chatId || isLoadingChat) return;
     if (status === "streaming" || status === "submitted") return;
+    if (loadedChatIdRef.current === chatId) return;
+
     setMessages(initialMessages);
+    loadedChatIdRef.current = chatId;
   }, [chatId, isLoadingChat, initialMessages, status, setMessages]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -984,13 +990,14 @@ export default function Chat() {
           totalDuration: chatTokenData.avgTotalDuration || totalDuration || undefined
         });
         
-        // Refetch token data to get the latest information
-        refetchTokenData();
-        
-        // Invalidate user token usage queries to refresh sidebar data
-        if (userId) {
-          queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
-        }
+        // Defer token refetches — don't compete with the post-stream UI update
+        const refetchTimer = window.setTimeout(() => {
+          refetchTokenData();
+          if (userId) {
+            queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
+          }
+        }, 100);
+        return () => window.clearTimeout(refetchTimer);
       }
       // If chatTokenData is not available yet, keep the estimated values from streaming
     }
@@ -1032,19 +1039,19 @@ export default function Chat() {
     const [elapsed, setElapsed] = useState(0);
 
     useEffect(() => {
-      if (status === "streaming" && streamingStartTime) {
-        // Set initial elapsed time immediately
-        setElapsed(Date.now() - streamingStartTime);
-        
-        const interval = setInterval(() => {
-          setElapsed(Date.now() - streamingStartTime);
-        }, 1000);
-        return () => clearInterval(interval);
-      } else if (status !== "streaming") {
-        // Only reset to 0 when not streaming
+      if (status !== "streaming" || !streamingStartTime) {
         setElapsed(0);
+        return;
       }
-    }, [elapsed]);
+
+      setElapsed(Date.now() - streamingStartTime);
+
+      const interval = setInterval(() => {
+        setElapsed(Date.now() - streamingStartTime);
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }, [status, streamingStartTime]);
 
     if (status !== "streaming" || !streamingStartTime) return null;
 

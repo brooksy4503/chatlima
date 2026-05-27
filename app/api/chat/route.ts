@@ -19,7 +19,7 @@ import { UsageLimitsService } from '@/lib/services/usageLimits';
 import { OptimizedUsageLimitsService } from '@/lib/services/optimizedUsageLimits';
 import type { ImageUIPart } from '@/lib/types';
 import { convertToOpenRouterFormat } from '@/lib/openrouter-utils';
-import { model, type modelID, getLanguageModelWithKeys, createOpenRouterClientWithKey } from "@/ai/providers";
+import { model, type modelID, getLanguageModelWithKeys, createOpenRouterClientWithKey, usesTagBasedReasoningExtraction, wrapWithTagBasedReasoning } from "@/ai/providers";
 import { getModelDetails } from "@/lib/models/fetch-models";
 import { type ModelInfo } from "@/lib/types/models";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
@@ -778,11 +778,11 @@ export async function POST(req: Request) {
                         ? normalizedPath
                         : mappedUrl
                             ? mappedUrl
-                        : projectMappedUrl
-                            ? projectMappedUrl
-                        : blobBaseUrl
-                            ? `${blobBaseUrl.replace(/\/$/, '')}/${normalizedPath.replace(/^\//, '')}`
-                            : normalizedPath;
+                            : projectMappedUrl
+                                ? projectMappedUrl
+                                : blobBaseUrl
+                                    ? `${blobBaseUrl.replace(/\/$/, '')}/${normalizedPath.replace(/^\//, '')}`
+                                    : normalizedPath;
 
                     if (!/^https?:\/\//i.test(blobUrl)) {
                         return JSON.stringify({
@@ -926,18 +926,19 @@ export async function POST(req: Request) {
                 } else if (!webSearchConfig.useAgenticServerTools && openrouterClient) {
                     const legacyModelId = ChatWebSearchService.getWebSearchModelId(selectedModel, webSearchConfig)
                         .replace("openrouter/", "");
-                    if (
+                    const legacyLogprobsOff =
                         selectedModel === "openrouter/deepseek/deepseek-r1" ||
                         selectedModel === "openrouter/deepseek/deepseek-r1-0528" ||
                         selectedModel === "openrouter/x-ai/grok-3-beta" ||
                         selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
                         selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-                        selectedModel === "openrouter/qwen/qwq-32b"
-                    ) {
-                        modelInstance = openrouterClient(legacyModelId, { logprobs: false }) as LanguageModel;
-                    } else {
-                        modelInstance = openrouterClient(legacyModelId) as LanguageModel;
-                    }
+                        selectedModel === "openrouter/qwen/qwq-32b";
+                    const legacyBaseModel = legacyLogprobsOff
+                        ? openrouterClient(legacyModelId, { logprobs: false })
+                        : openrouterClient(legacyModelId);
+                    modelInstance = usesTagBasedReasoningExtraction(selectedModel)
+                        ? wrapWithTagBasedReasoning(legacyBaseModel as LanguageModel)
+                        : (legacyBaseModel as LanguageModel);
                     console.log(`[Web Search] Legacy :online enabled for ${selectedModel} using ${legacyModelId}`);
                 } else {
                     effectiveWebSearchEnabled = false;
@@ -1261,15 +1262,28 @@ You have web search capabilities enabled. When you use web search:
 
                     const assistantParts: UIMessage['parts'] = [];
                     if (event.reasoningText?.trim()) {
-                        assistantParts.push({ type: 'reasoning', text: event.reasoningText });
+                        assistantParts.push({ type: 'reasoning', text: event.reasoningText, state: 'done' });
                     }
-                    assistantParts.push({ type: 'text', text: event.text || '' });
+                    assistantParts.push({ type: 'text', text: event.text || '', state: 'done' });
 
-                    const assistantMessage: UIMessage = {
-                        id: response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ?? nanoid(),
-                        role: 'assistant',
-                        parts: assistantParts,
-                    };
+                    if (!uiResponseMessage) {
+                        uiResponseMessage = await Promise.race([
+                            uiResponseMessagePromise,
+                            new Promise<null>((resolve) => setTimeout(() => resolve(null), 500)),
+                        ]);
+                    }
+
+                    const assistantMessage: UIMessage = uiResponseMessage?.parts?.length
+                        ? {
+                            id: uiResponseMessage.id || response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id || nanoid(),
+                            role: 'assistant',
+                            parts: uiResponseMessage.parts,
+                        }
+                        : {
+                            id: response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ?? nanoid(),
+                            role: 'assistant',
+                            parts: assistantParts,
+                        };
 
                     const processedMessages = [...historyMessages, assistantMessage].map(msg => {
                         if (msg.role === 'assistant' && (response.annotations?.length)) {
@@ -1797,12 +1811,22 @@ You have web search capabilities enabled. When you use web search:
         console.log(`[Chat ${id}] Using model: ${selectedModel}, effectiveWebSearchEnabled: ${webSearchConfig.enabled}`);
         console.log(`[Chat ${id}] OpenRouter user tracking: ${authenticatedUser.isAnonymous ? `chatlima_anon_${authenticatedUser.userId}` : `chatlima_user_${authenticatedUser.userId}`}`);
 
+        let resolveUiResponseMessage: ((message: UIMessage) => void) | null = null;
+        let uiResponseMessage: UIMessage | null = null;
+        const uiResponseMessagePromise = new Promise<UIMessage>((resolve) => {
+            resolveUiResponseMessage = resolve;
+        });
+
         const result = streamText(openRouterPayload);
         startBackgroundStreamConsumption(result, id);
 
         return result.toUIMessageStreamResponse({
             originalMessages: messages,
             sendReasoning: true,
+            onFinish: ({ responseMessage }) => {
+                uiResponseMessage = responseMessage;
+                resolveUiResponseMessage?.(responseMessage);
+            },
             onError: (error: unknown) => {
                 const err = error as any;
                 console.error(`[API Error][Chat ${id}] Error in stream processing:`, {

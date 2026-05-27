@@ -37,7 +37,11 @@ export function ToolInvocation({
       ? "Reading URL"
       : toolName === "web_search" || toolName === "openrouter.web_search"
         ? "Searching the web"
-        : toolName;
+        : toolName.endsWith(".web_search")
+          ? "Searching the web"
+          : toolName.endsWith(".web_fetch")
+            ? "Fetching page"
+            : toolName;
 
   const variants = {
     collapsed: {
