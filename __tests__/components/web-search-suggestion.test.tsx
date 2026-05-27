@@ -72,7 +72,7 @@ describe('WebSearchSuggestion', () => {
       
       expect(screen.getByText('Save credits on follow-up questions')).toBeInTheDocument();
       expect(screen.getByText(/Follow-up questions about these results don't need web search/)).toBeInTheDocument();
-      expect(screen.getByText(/save 25 credits per message/)).toBeInTheDocument();
+      expect(screen.getByText(/save 25 credits per search/)).toBeInTheDocument();
     });
 
     test('does not render when component is not mounted', () => {
@@ -323,7 +323,7 @@ describe('WebSearchSuggestion', () => {
     test('displays correct web search cost', () => {
       render(<WebSearchSuggestion {...defaultProps} />);
       
-      expect(screen.getByText(/save 25 credits per message/)).toBeInTheDocument();
+      expect(screen.getByText(/save 25 credits per search/)).toBeInTheDocument();
     });
 
     test('updates cost display when WEB_SEARCH_COST changes', () => {
@@ -332,7 +332,7 @@ describe('WebSearchSuggestion', () => {
       
       render(<WebSearchSuggestion {...defaultProps} />);
       
-      expect(screen.getByText(/save 50 credits per message/)).toBeInTheDocument();
+      expect(screen.getByText(/save 50 credits per search/)).toBeInTheDocument();
     });
   });
 

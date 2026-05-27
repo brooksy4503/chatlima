@@ -1,8 +1,8 @@
 if (typeof window !== 'undefined') {
   require('@testing-library/jest-dom');
 
-  // jsdom does not implement HTMLFormElement.prototype.requestSubmit (used by textarea Enter-to-submit)
-  if (typeof HTMLFormElement !== 'undefined' && !HTMLFormElement.prototype.requestSubmit) {
+  // jsdom ships requestSubmit but throws "Not implemented" — always override for Enter-to-submit tests
+  if (typeof HTMLFormElement !== 'undefined') {
     HTMLFormElement.prototype.requestSubmit = function requestSubmit(submitter) {
       if (submitter) {
         submitter.click();
