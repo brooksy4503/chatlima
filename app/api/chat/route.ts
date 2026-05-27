@@ -1,6 +1,6 @@
 import { streamText, generateText, tool, jsonSchema, stepCountIs, type UIMessage, type LanguageModel, type LanguageModelResponseMetadata } from "ai";
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
-import { getUIMessageText } from '@/lib/message-utils';
+import { getUIMessageText, hasWebSearchToolPart, injectSyntheticWebSearchToolPart } from '@/lib/message-utils';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
 import { chats, messages as messagesTable } from '@/lib/db/schema';
@@ -1285,6 +1285,28 @@ You have web search capabilities enabled. When you use web search:
                             parts: assistantParts,
                         };
 
+                    const webSearchInvocationCount = ChatWebSearchService.resolveWebSearchInvocationCount({
+                        steps: event.steps,
+                        usage: event.usage,
+                    });
+                    const webSearchWasUsed = ChatWebSearchService.messageUsedWebSearch({
+                        steps: event.steps,
+                        usage: event.usage,
+                        hasCitationAnnotations: (response.annotations?.length || 0) > 0,
+                    });
+
+                    if (
+                        webSearchConfig.useAgenticServerTools &&
+                        effectiveWebSearchEnabled &&
+                        webSearchWasUsed &&
+                        !hasWebSearchToolPart(assistantMessage.parts)
+                    ) {
+                        assistantMessage.parts = injectSyntheticWebSearchToolPart(
+                            assistantMessage.parts ?? [],
+                            Math.max(webSearchInvocationCount, 1)
+                        );
+                    }
+
                     const processedMessages = [...historyMessages, assistantMessage].map(msg => {
                         if (msg.role === 'assistant' && (response.annotations?.length)) {
                             console.log(`[Chat ${id}] Found ${response.annotations.length} annotations:`, response.annotations);
@@ -1340,7 +1362,7 @@ You have web search capabilities enabled. When you use web search:
                             ...msg,
                             hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (
                                 webSearchConfig.useAgenticServerTools
-                                    ? ChatWebSearchService.countWebSearchInvocations(event.steps) > 0
+                                    ? webSearchWasUsed
                                     : (response.annotations?.length || 0) > 0
                             ),
                             webSearchContextSize: webSearchConfig.enabled ? webSearchConfig.contextSize : undefined
@@ -1724,6 +1746,7 @@ You have web search capabilities enabled. When you use web search:
                                 isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
                                 shouldDeductCredits,
                                 steps: event.steps,
+                                usage: event.usage,
                                 hasCitationAnnotations: (response.annotations?.length || 0) > 0,
                             });
                         }

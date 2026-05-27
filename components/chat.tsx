@@ -1177,6 +1177,7 @@ export default function Chat() {
             isLoading={isLoading}
             status={status}
             chatTokenUsage={chatTokenUsage}
+            webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
           />
         )}
       </div>

@@ -15,7 +15,7 @@ import { Citations } from "./citation";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import { formatFileSize } from "@/lib/image-utils";
-import { getReasoningPartText, isWebSearchToolPart, mapV6ToolStateToLegacy } from "@/lib/message-utils";
+import { getReasoningPartText, isWebSearchToolPart, mapV6ToolStateToLegacy, shouldShowLiveWebSearchIndicator, shouldShowSyntheticCompletedWebSearch } from "@/lib/message-utils";
 import { WebSearchSuggestion } from "./web-search-suggestion";
 import { ImageModal } from "./image-modal";
 import { CompactMessageTokenMetrics, StreamingTokenMetrics } from "./token-metrics/MessageTokenMetrics";
@@ -187,6 +187,7 @@ interface MessageProps {
     tokensPerSecond?: number;
     totalDuration?: number;
   };
+  webSearchEnabled?: boolean;
 }
 
 const PurePreviewMessage = ({
@@ -195,6 +196,7 @@ const PurePreviewMessage = ({
   status,
   isLoading,
   chatTokenUsage,
+  webSearchEnabled = false,
 }: MessageProps) => {
   const deferredStatus = useDeferredValue(status);
   // Keep plain text until React finishes the streaming→ready transition (avoids blocking markdown parse).
@@ -224,7 +226,21 @@ const PurePreviewMessage = ({
     (part.type === "text" && (part as TextUIPart).citations && (part as TextUIPart).citations!.length > 0) ||
     isWebSearchToolPart(part as UIMessage['parts'][number])
   );
-  
+
+  const showLiveWebSearch = shouldShowLiveWebSearchIndicator({
+    webSearchEnabled,
+    status,
+    isLatestMessage,
+    role: message.role,
+    parts: message.parts as UIMessage['parts'],
+  });
+
+  const showSyntheticCompletedWebSearch = shouldShowSyntheticCompletedWebSearch({
+    role: message.role,
+    status,
+    hasWebSearchResults: !!hasWebSearchResults,
+    parts: message.parts as UIMessage['parts'],
+  });
 
 
   // Only show copy button if the message is from the assistant or user, and not currently streaming
@@ -249,6 +265,17 @@ const PurePreviewMessage = ({
           )}
         >
           <div className="flex flex-col w-full space-y-3">
+            {showLiveWebSearch && (
+              <ToolInvocation
+                key={`message-${message.id}-live-web-search`}
+                toolName="web_search"
+                state="call"
+                args={{}}
+                result={null}
+                isLatestMessage={isLatestMessage}
+                status={status}
+              />
+            )}
             {/* Render all parts in chronological order (reasoning interleaved with text/tools) */}
             {message.parts?.map((part: MessagePart, i: number) => {
               switch ((part as any).type) {
@@ -397,6 +424,18 @@ const PurePreviewMessage = ({
               }
             })}
             
+            {showSyntheticCompletedWebSearch && (
+              <ToolInvocation
+                key={`message-${message.id}-synthetic-web-search`}
+                toolName="web_search"
+                state="result"
+                args={{}}
+                result={{ provider: "openrouter" }}
+                isLatestMessage={isLatestMessage}
+                status={status}
+              />
+            )}
+
             {/* Web Search Suggestion - only for assistant messages with web search results and when not streaming */}
             {message.role === 'assistant' && hasWebSearchResults && status !== "streaming" && (
               <WebSearchSuggestion
@@ -467,6 +506,7 @@ const PurePreviewMessage = ({
 export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
   if (prevProps.isLatestMessage !== nextProps.isLatestMessage) return false;
+  if (prevProps.webSearchEnabled !== nextProps.webSearchEnabled) return false;
   if (nextProps.status === "streaming" && nextProps.isLatestMessage) return false;
   if ((prevProps.message as { annotations?: unknown }).annotations !== (nextProps.message as { annotations?: unknown }).annotations)
     return false;

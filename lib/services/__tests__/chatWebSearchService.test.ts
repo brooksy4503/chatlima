@@ -406,4 +406,53 @@ describe('ChatWebSearchService', () => {
             }).not.toThrow();
         });
     });
+
+    describe('web search invocation detection', () => {
+        it('counts web search tool names including openrouter colon variant', () => {
+            const steps = [{
+                toolCalls: [
+                    { toolName: 'openrouter:web_search' },
+                    { toolName: 'other_tool' },
+                ],
+            }];
+
+            expect(ChatWebSearchService.countWebSearchInvocations(steps)).toBe(1);
+        });
+
+        it('reads server_tool_use metadata when step tool calls are absent', () => {
+            expect(ChatWebSearchService.getServerToolWebSearchRequests({
+                raw: { server_tool_use: { web_search_requests: 2 } },
+            })).toBe(2);
+        });
+
+        it('resolves invocation count from server metadata', () => {
+            const count = ChatWebSearchService.resolveWebSearchInvocationCount({
+                steps: [],
+                usage: { raw: { server_tool_use: { web_search_requests: 3 } } },
+            });
+
+            expect(count).toBe(3);
+        });
+
+        it('detects web search usage from citations when metadata is missing', () => {
+            expect(ChatWebSearchService.messageUsedWebSearch({
+                steps: [],
+                usage: null,
+                hasCitationAnnotations: true,
+            })).toBe(true);
+        });
+
+        it('computes per-search billing from server metadata', () => {
+            const cost = ChatWebSearchService.computeWebSearchCreditCost({
+                webSearchEnabled: true,
+                useAgenticServerTools: true,
+                isUsingOwnApiKeys: false,
+                shouldDeductCredits: true,
+                steps: [],
+                usage: { raw: { server_tool_use: { web_search_requests: 2 } } },
+            });
+
+            expect(cost).toBe(WEB_SEARCH_COST * 2);
+        });
+    });
 });

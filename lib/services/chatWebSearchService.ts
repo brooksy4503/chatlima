@@ -36,6 +36,17 @@ export interface OpenRouterServerToolsConfig {
 
 type ToolCallLike = { toolName?: string; toolCallId?: string };
 
+type UsageLike = {
+    raw?: {
+        server_tool_use?: {
+            web_search_requests?: number;
+        };
+    };
+    server_tool_use?: {
+        web_search_requests?: number;
+    };
+};
+
 export class ChatWebSearchService {
     static readonly DEFAULT_MAX_TOTAL_RESULTS = 10;
 
@@ -141,6 +152,34 @@ export class ChatWebSearchService {
         };
     }
 
+    /** Whether a streamed / persisted tool name represents web search. */
+    static isWebSearchToolName(toolName: string): boolean {
+        return (
+            toolName === 'web_search' ||
+            toolName === 'openrouter.web_search' ||
+            toolName === 'openrouter:web_search' ||
+            toolName.endsWith('.web_search') ||
+            toolName.endsWith(':web_search')
+        );
+    }
+
+    /**
+     * OpenRouter native server search reports usage here when tool-call stream events are absent.
+     */
+    static getServerToolWebSearchRequests(usage: UsageLike | null | undefined): number {
+        const fromRaw = usage?.raw?.server_tool_use?.web_search_requests;
+        if (typeof fromRaw === 'number' && fromRaw > 0) {
+            return fromRaw;
+        }
+
+        const fromUsage = usage?.server_tool_use?.web_search_requests;
+        if (typeof fromUsage === 'number' && fromUsage > 0) {
+            return fromUsage;
+        }
+
+        return 0;
+    }
+
     /**
      * Count web_search tool invocations across multi-step generations.
      */
@@ -153,12 +192,37 @@ export class ChatWebSearchService {
         for (const step of steps) {
             for (const call of step.toolCalls ?? []) {
                 const name = call.toolName ?? '';
-                if (name === 'web_search' || name === 'openrouter.web_search') {
+                if (this.isWebSearchToolName(name)) {
                     count++;
                 }
             }
         }
         return count;
+    }
+
+    /**
+     * Resolve how many web searches ran (stream tool calls and/or OR server_tool_use metadata).
+     */
+    static resolveWebSearchInvocationCount(params: {
+        steps?: Array<{ toolCalls?: ToolCallLike[] }>;
+        usage?: UsageLike | null;
+    }): number {
+        const fromSteps = this.countWebSearchInvocations(params.steps);
+        const fromServer = this.getServerToolWebSearchRequests(params.usage);
+        return Math.max(fromSteps, fromServer);
+    }
+
+    /** Whether a response actually used web search (for hasWebSearch flag and synthetic tool UI). */
+    static messageUsedWebSearch(params: {
+        steps?: Array<{ toolCalls?: ToolCallLike[] }>;
+        usage?: UsageLike | null;
+        hasCitationAnnotations?: boolean;
+    }): boolean {
+        if (this.resolveWebSearchInvocationCount(params) > 0) {
+            return true;
+        }
+
+        return params.hasCitationAnnotations === true;
     }
 
     /**
@@ -200,6 +264,7 @@ export class ChatWebSearchService {
         isUsingOwnApiKeys: boolean;
         shouldDeductCredits: boolean;
         steps?: Array<{ toolCalls?: ToolCallLike[] }>;
+        usage?: UsageLike | null;
         hasCitationAnnotations?: boolean;
     }): number {
         const {
@@ -208,7 +273,7 @@ export class ChatWebSearchService {
             isUsingOwnApiKeys,
             shouldDeductCredits,
             steps,
-            hasCitationAnnotations,
+            usage,
         } = params;
 
         if (!webSearchEnabled || isUsingOwnApiKeys || !shouldDeductCredits) {
@@ -216,7 +281,7 @@ export class ChatWebSearchService {
         }
 
         if (useAgenticServerTools) {
-            const invocations = this.countWebSearchInvocations(steps);
+            const invocations = this.resolveWebSearchInvocationCount({ steps, usage });
             return invocations * WEB_SEARCH_COST;
         }
 

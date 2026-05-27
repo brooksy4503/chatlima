@@ -7,6 +7,7 @@ export const Messages = ({
   isLoading,
   status,
   chatTokenUsage,
+  webSearchEnabled = false,
 }: {
   messages: (UIMessage & { hasWebSearch?: boolean })[];
   isLoading: boolean;
@@ -21,6 +22,7 @@ export const Messages = ({
     tokensPerSecond?: number;
     totalDuration?: number;
   };
+  webSearchEnabled?: boolean;
 }) => {
   const [containerRef, endRef] = useScrollToBottom();
   
@@ -41,6 +43,7 @@ export const Messages = ({
             }}
             status={status}
             chatTokenUsage={chatTokenUsage}
+            webSearchEnabled={webSearchEnabled}
           />
         ))}
         <div className="h-1" ref={endRef} />
