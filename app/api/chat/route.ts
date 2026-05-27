@@ -47,6 +47,7 @@ import { ChatMessageProcessingService, type MessageProcessingContext } from '@/l
 import { ChatModelValidationService, type ModelValidationContext, type ModelValidationResult } from '@/lib/services/chatModelValidationService';
 import { ChatMCPServerService, type MCPServerContext, type MCPServerResult } from '@/lib/services/chatMCPServerService';
 import { ChatWebSearchService, type WebSearchContext, type WebSearchResult } from '@/lib/services/chatWebSearchService';
+import { resolveOpenRouterWebSearchRouteSetup } from '@/lib/services/openRouterWebSearchRouteSetup';
 import { ChatTokenTrackingService, type TokenTrackingContext, type TokenTrackingResult } from '@/lib/services/chatTokenTrackingService';
 import { ChatDatabaseService, type ChatCreationContext, type MessageSavingContext } from '@/lib/services/chatDatabaseService';
 import { buildProjectContext, formatProjectContextForSystemPrompt } from '@/lib/services/projectContext';
@@ -909,65 +910,39 @@ export async function POST(req: Request) {
             console.log(`[Chat ${id}] OpenRouter API key available: ${openrouterApiKey.substring(0, 8)}...`);
         }
 
-        const currentModelDetails = selectedModelInfo;
-        const openrouterClient = selectedModel.startsWith("openrouter/")
-            ? createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY'], openrouterUserId)
-            : null;
+        const webSearchSetup = resolveOpenRouterWebSearchRouteSetup({
+            selectedModel,
+            webSearchConfig,
+            modelInfo: selectedModelInfo,
+            apiKeys,
+            openrouterUserId,
+            getLanguageModelWithKeys,
+            createOpenRouterClientWithKey,
+            usesTagBasedReasoningExtraction,
+            wrapWithTagBasedReasoning,
+        });
 
-        if (webSearchConfig.enabled && selectedModel.startsWith("openrouter/")) {
-            if (currentModelDetails?.supportsWebSearch === true) {
-                if (webSearchConfig.useAgenticServerTools && openrouterClient) {
-                    modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openrouterUserId) as LanguageModel;
-                    openRouterServerTools = ChatWebSearchService.buildOpenRouterServerTools(openrouterClient, {
-                        contextSize: webSearchConfig.contextSize,
-                        maxTotalResults: ChatWebSearchService.DEFAULT_MAX_TOTAL_RESULTS,
-                    });
-                    console.log(`[Web Search] Agentic server tools enabled for ${selectedModel}`);
-                } else if (!webSearchConfig.useAgenticServerTools && openrouterClient) {
-                    const legacyModelId = ChatWebSearchService.getWebSearchModelId(selectedModel, webSearchConfig)
-                        .replace("openrouter/", "");
-                    const legacyLogprobsOff =
-                        selectedModel === "openrouter/deepseek/deepseek-r1" ||
-                        selectedModel === "openrouter/deepseek/deepseek-r1-0528" ||
-                        selectedModel === "openrouter/x-ai/grok-3-beta" ||
-                        selectedModel === "openrouter/x-ai/grok-3-mini-beta" ||
-                        selectedModel === "openrouter/x-ai/grok-3-mini-beta-reasoning-high" ||
-                        selectedModel === "openrouter/qwen/qwq-32b";
-                    const legacyBaseModel = legacyLogprobsOff
-                        ? openrouterClient(legacyModelId, { logprobs: false })
-                        : openrouterClient(legacyModelId);
-                    modelInstance = usesTagBasedReasoningExtraction(selectedModel)
-                        ? wrapWithTagBasedReasoning(legacyBaseModel as LanguageModel)
-                        : (legacyBaseModel as LanguageModel);
-                    console.log(`[Web Search] Legacy :online enabled for ${selectedModel} using ${legacyModelId}`);
-                } else {
-                    effectiveWebSearchEnabled = false;
-                    modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openrouterUserId) as LanguageModel;
-                    console.log(`[Web Search] Agentic tools requested but unavailable for ${selectedModel}. Using standard model.`);
-                }
-            } else {
-                effectiveWebSearchEnabled = false;
-                modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openrouterUserId) as LanguageModel;
-                console.log(`[Web Search] Requested for ${selectedModel}, but not supported. Using standard model.`);
-            }
-        } else {
-            if (webSearchConfig.enabled) {
-                console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model. Disabling web search for this call.`);
-            }
-            effectiveWebSearchEnabled = false;
-            modelInstance = getLanguageModelWithKeys(selectedModel, apiKeys, openrouterUserId) as LanguageModel;
+        modelInstance = webSearchSetup.modelInstance;
+        effectiveWebSearchEnabled = webSearchSetup.effectiveWebSearchEnabled;
+        openRouterServerTools = webSearchSetup.openRouterServerTools;
+        const modelOptions = webSearchSetup.modelOptions;
+
+        if (webSearchConfig.enabled && webSearchConfig.useAgenticServerTools && Object.keys(openRouterServerTools).length > 0) {
+            console.log(`[Web Search] Agentic server tools enabled for ${selectedModel}`);
+        } else if (webSearchConfig.enabled && !webSearchConfig.useAgenticServerTools && effectiveWebSearchEnabled) {
+            const legacyModelId = ChatWebSearchService.getWebSearchModelId(selectedModel, webSearchConfig)
+                .replace("openrouter/", "");
+            console.log(`[Web Search] Legacy :online enabled for ${selectedModel} using ${legacyModelId}`);
+        } else if (webSearchConfig.enabled && !effectiveWebSearchEnabled) {
+            console.log(`[Web Search] Requested for ${selectedModel}, but not supported or unavailable. Using standard model.`);
+        } else if (webSearchConfig.enabled && !selectedModel.startsWith("openrouter/")) {
+            console.log(`[Web Search] Requested but ${selectedModel} is not an OpenRouter model. Disabling web search for this call.`);
         }
 
         const allTools = {
             ...baseTools,
             ...openRouterServerTools,
         };
-
-        const modelOptions: Record<string, unknown> = {};
-
-        if (effectiveWebSearchEnabled && !webSearchConfig.useAgenticServerTools) {
-            Object.assign(modelOptions, ChatWebSearchService.createWebSearchOptions(webSearchConfig));
-        }
 
         // Always set logprobs: false for these models at the providerOptions level for streamText
         if (

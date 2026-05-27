@@ -407,6 +407,82 @@ describe('ChatWebSearchService', () => {
         });
     });
 
+    describe('agentic web search policy', () => {
+        it('should validate web search with agentic tools when policy flag is enabled', () => {
+            const context = createMockContext({
+                modelInfo: {
+                    ...createMockContext().modelInfo!,
+                    supportsToolCalling: true,
+                },
+            });
+
+            const result = ChatWebSearchService.validateAndConfigureWebSearch(context, {
+                agenticWebToolsEnabled: true,
+            });
+
+            expect(result.useAgenticServerTools).toBe(true);
+            expect(result.enabled).toBe(true);
+        });
+
+        it('disables agentic path when policy flag is off even for tool-capable models', () => {
+            const context = createMockContext({
+                modelInfo: {
+                    ...createMockContext().modelInfo!,
+                    supportsToolCalling: true,
+                },
+            });
+
+            const result = ChatWebSearchService.validateAndConfigureWebSearch(context, {
+                agenticWebToolsEnabled: false,
+            });
+
+            expect(result.useAgenticServerTools).toBe(false);
+            expect(result.enabled).toBe(true);
+        });
+    });
+
+    describe('buildOpenRouterServerTools', () => {
+        it('creates a web_search provider tool with context-aware prompt', () => {
+            const openrouterClient = {
+                tools: {
+                    webSearch: jest.fn(() => ({ type: 'provider-tool' })),
+                },
+            } as unknown as import('@openrouter/ai-sdk-provider').OpenRouterProvider;
+
+            const tools = ChatWebSearchService.buildOpenRouterServerTools(openrouterClient, {
+                contextSize: 'high',
+                maxTotalResults: 10,
+            });
+
+            expect(openrouterClient.tools.webSearch).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    maxResults: 5,
+                    engine: 'auto',
+                    searchPrompt: expect.stringContaining('high'),
+                })
+            );
+            expect(tools).toHaveProperty('web_search');
+        });
+    });
+
+    describe('supportsToolCalling', () => {
+        it('returns true when model metadata explicitly supports tool calling', () => {
+            expect(
+                ChatWebSearchService.supportsToolCalling({
+                    id: 'openrouter/openai/gpt-4',
+                    provider: 'openai',
+                    name: 'GPT-4',
+                    premium: false,
+                    vision: false,
+                    supportsToolCalling: true,
+                    capabilities: [],
+                    status: 'available',
+                    lastChecked: new Date(),
+                })
+            ).toBe(true);
+        });
+    });
+
     describe('web search invocation detection', () => {
         it('counts web search tool names including openrouter colon variant', () => {
             const steps = [{

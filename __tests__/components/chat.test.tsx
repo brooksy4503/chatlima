@@ -658,23 +658,23 @@ describe('Chat Component', () => {
 
     test('handles streaming timeout detection', async () => {
       jest.useFakeTimers();
-      
-      mockUseChat.mockReturnValue(createUseChatMock({ status: 'streaming' }));
 
-      renderWithProviders(<Chat />);
-      
-      // Fast-forward time to trigger timeout detection
-      act(() => {
-        jest.advanceTimersByTime(120000); // 2 minutes
-      });
+      try {
+        mockUseChat.mockReturnValue(createUseChatMock({ status: 'streaming' }));
 
-      // Should trigger stuck detection logic
-      await waitFor(() => {
-        // The timeout logic would be triggered
-        expect(true).toBe(true); // Placeholder for actual timeout test
-      });
-      
-      jest.useRealTimers();
+        renderWithProviders(<Chat />);
+
+        act(() => {
+          jest.advanceTimersByTime(120000);
+        });
+
+        await waitFor(() => {
+          expect(true).toBe(true);
+        });
+      } finally {
+        jest.runOnlyPendingTimers();
+        jest.useRealTimers();
+      }
     });
 
     test('optimizes re-renders with proper memoization', () => {

@@ -14,6 +14,7 @@ describe("getAccessPolicyFlags", () => {
     delete process.env.NATIVE_WEB_FETCH_SITE_MODE_ENABLED;
     delete process.env.NATIVE_WEB_FETCH_SITE_MODE_MAX_PAGES;
     delete process.env.NATIVE_WEB_FETCH_SITE_MODE_DEPTH;
+    delete process.env.OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED;
   });
 
   afterAll(() => {
@@ -34,6 +35,7 @@ describe("getAccessPolicyFlags", () => {
     expect(flags.nativeWebFetchSiteModeEnabled).toBe(false);
     expect(flags.nativeWebFetchSiteModeMaxPages).toBe(20);
     expect(flags.nativeWebFetchSiteModeDepth).toBe(2);
+    expect(flags.openrouterAgenticWebToolsEnabled).toBe(true);
   });
 
   it("parses explicit env overrides", async () => {
@@ -47,6 +49,7 @@ describe("getAccessPolicyFlags", () => {
     process.env.NATIVE_WEB_FETCH_SITE_MODE_ENABLED = "true";
     process.env.NATIVE_WEB_FETCH_SITE_MODE_MAX_PAGES = "10";
     process.env.NATIVE_WEB_FETCH_SITE_MODE_DEPTH = "3";
+    process.env.OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED = "false";
 
     const { getAccessPolicyFlags } = await import("../access-policy");
     const flags = getAccessPolicyFlags();
@@ -61,5 +64,6 @@ describe("getAccessPolicyFlags", () => {
     expect(flags.nativeWebFetchSiteModeEnabled).toBe(true);
     expect(flags.nativeWebFetchSiteModeMaxPages).toBe(10);
     expect(flags.nativeWebFetchSiteModeDepth).toBe(3);
+    expect(flags.openrouterAgenticWebToolsEnabled).toBe(false);
   });
 });
