@@ -25,6 +25,7 @@ import { type ModelInfo } from "@/lib/types/models";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getApiKey } from "@/ai/providers";
 import { validatePresetParameters, getModelDefaults, sanitizeSystemInstruction } from "@/lib/parameter-validation";
+import { cleanToolsForGoogleModels, isGoogleModel } from '@/lib/google-model-tools';
 import { z } from "zod";
 import { parseFile } from "@/lib/file-reader";
 import { fetchFileContent } from "@/lib/file-upload";
@@ -958,49 +959,11 @@ export async function POST(req: Request) {
             modelOptions.logprobs = false;
         }
 
-        // Helper function to recursively remove $schema fields from any object
-        const removeSchemaRecursively = (obj: any): any => {
-            if (obj === null || obj === undefined) return obj;
-            if (typeof obj !== 'object') return obj;
-            if ((obj as any)._def && typeof (obj as any)._def === 'object' && 'typeName' in (obj as any)._def) {
-                return obj;
-            }
-            if (Array.isArray(obj)) {
-                obj.forEach((item, idx) => {
-                    obj[idx] = removeSchemaRecursively(item);
-                });
-                return obj;
-            }
-            for (const key of Object.keys(obj)) {
-                if (key === '$schema') {
-                    delete obj[key];
-                    continue;
-                }
-                obj[key] = removeSchemaRecursively((obj as any)[key]);
-            }
-            return obj;
-        };
-
-        const cleanToolsForGoogleModels = (tools: any) => {
-            console.log(`[GOOGLE CLEAN] Cleaning ${Object.keys(tools).length} tools for Google models`);
-            const cleanedTools = removeSchemaRecursively(tools);
-            console.log(`[GOOGLE CLEAN] Cleaned tools, removed $schema fields recursively`);
-            return cleanedTools;
-        };
-
-        const isGoogleModel = selectedModel.includes('vertex/google/') ||
-            selectedModel.includes('google/gemini') ||
-            selectedModel.includes('openrouter/google/') ||
-            selectedModel.includes('coding/gemini') ||
-            selectedModel.includes('requesty/google/') ||
-            (selectedModel.includes('vertex') && selectedModel.includes('google')) ||
-            (selectedModel.toLowerCase().includes('gemini'));
-
-        if (isGoogleModel) {
-            console.log(`[GOOGLE MODEL DETECTED] ${selectedModel} - Will clean $schema from tools`);
+        if (isGoogleModel(selectedModel)) {
+            console.log(`[GOOGLE MODEL DETECTED] ${selectedModel} - Will wrap tool input schemas without $schema metadata`);
         }
 
-        const toolsToUse = isGoogleModel && Object.keys(allTools).length > 0
+        const toolsToUse = isGoogleModel(selectedModel) && Object.keys(allTools).length > 0
             ? cleanToolsForGoogleModels(allTools)
             : allTools;
 
