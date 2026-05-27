@@ -29,9 +29,6 @@ Object.assign(navigator, {
   },
 });
 
-// Mock window.setTimeout and clearTimeout
-jest.useFakeTimers();
-
 // Test component that throws errors
 const ThrowError = ({ shouldThrow, errorMessage }: { shouldThrow: boolean; errorMessage?: string }) => {
   if (shouldThrow) {
