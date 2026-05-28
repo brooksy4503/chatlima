@@ -1313,7 +1313,10 @@ You have web search capabilities enabled. When you use web search:
             await DirectTokenTrackingService.processTokenUsage({
                 userId: authenticatedUser.userId,
                 chatId: id,
-                messageId: streamFinishState.actualMessageId || streamFinishState.finalAssistantMessageId,
+                // Chat messages are replaced during post-stream persistence upgrades
+                // (text-only -> full UI parts). Keep usage scoped to the chat so
+                // those message deletes do not cascade-delete token metrics.
+                messageId: undefined,
                 modelId: selectedModel,
                 provider: selectedModel.split('/')[0],
                 inputTokens: finalInputTokens,

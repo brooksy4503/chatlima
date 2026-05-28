@@ -1,0 +1,19 @@
+---
+description: Enforce SPEC.md alignment and prevent feature regressions
+alwaysApply: true
+---
+
+# SPEC Compliance and Regression Prevention
+
+`SPEC.md` is the product and architecture source of truth for this repo.
+
+Before editing code for features, refactors, APIs, database schema, billing, auth, chat, AI providers, MCP, file handling, or admin flows:
+- Check the relevant `SPEC.md` section.
+- Identify existing behavior that must continue working.
+- Do not remove, weaken, or replace existing features unless the user explicitly asks for that.
+- If the request conflicts with `SPEC.md`, stop and ask before editing.
+
+After editing:
+- Update `SPEC.md` when behavior, contracts, schema, billing rules, or architecture changed.
+- Run the most relevant verification available for the touched area, such as `pnpm lint`, `pnpm build`, unit tests, or focused Playwright tests.
+- Summarize any verification not run and any remaining regression risk.

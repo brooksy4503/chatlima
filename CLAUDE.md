@@ -1,15 +1,17 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code and other AI coding agents when working with code in this repository. Keep this file aligned with `AGENTS.md` and `.cursor/rules/`.
 
-## Spec Compliance
+## Source of Truth and Regression Prevention
 
 **SPEC.md is the source of truth for this application's architecture.**
 
 Before implementing features or making architectural changes:
-1. Consult SPEC.md to ensure alignment with documented architecture, database schema, and API contracts
-2. If a change would deviate from the spec, flag it for discussion first
-3. After implementing significant changes, update SPEC.md to keep it current
+1. Consult `SPEC.md` to ensure alignment with documented product behavior, architecture, database schema, API contracts, AI provider behavior, credit/billing rules, and MCP support.
+2. Identify existing behavior that must be preserved before editing.
+3. Do not remove or simplify existing features unless the user explicitly asks for that.
+4. If a change would deviate from the spec, flag it for discussion before editing.
+5. After implementing significant behavior changes, update `SPEC.md` to keep it current.
 
 Key sections to reference:
 - Section 3: Database Schema (before schema changes)
@@ -17,36 +19,38 @@ Key sections to reference:
 - Section 7: Credit & Billing System (before modifying billing)
 - Section 9: API Reference (before adding/modifying endpoints)
 
+High-risk areas require extra care: authentication, anonymous usage limits, subscriptions and credits, chat persistence, message streaming, model/provider routing, API key handling, MCP tools, file upload/readers, and admin flows.
+
 ## Development Commands
 
 ### Build and Development
 ```bash
-npm run dev          # Start development server with turbopack
-npm run build        # Build production bundle with turbopack
-npm run start        # Start production server
-npm run lint         # Run ESLint
+pnpm dev          # Start development server with turbopack
+pnpm build        # Build production bundle with turbopack
+pnpm start        # Start production server
+pnpm lint         # Run ESLint
 ```
 
 ### Testing
 ```bash
-npm run test         # Run Playwright tests (local config)
-npm run test:ui      # Run tests with UI
-npm run test:debug   # Run tests in debug mode
-npm run test:headed  # Run tests in headed mode
-npm run test:anonymous  # Run anonymous user tests
+pnpm test         # Run Playwright tests (local config)
+pnpm test:ui      # Run tests with UI
+pnpm test:debug   # Run tests in debug mode
+pnpm test:headed  # Run tests in headed mode
+pnpm test:anonymous  # Run anonymous user tests
 ```
 
 ### Database Operations
 ```bash
-npm run db:generate  # Generate Drizzle schema
-npm run db:migrate   # Run database migrations
-npm run db:push      # Push schema to database
-npm run db:studio    # Open Drizzle Studio
+pnpm db:generate  # Generate Drizzle schema
+pnpm db:migrate   # Run database migrations
+pnpm db:push      # Push schema to database
+pnpm db:studio    # Open Drizzle Studio
 ```
 
 ### Utilities
 ```bash
-npm run pricing:analysis  # Analyze OpenRouter pricing with tsx
+pnpm pricing:analysis  # Analyze OpenRouter pricing with tsx
 ```
 
 ## Architecture Overview

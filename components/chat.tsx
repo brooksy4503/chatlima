@@ -584,10 +584,10 @@ export default function Chat() {
   // Sync DB history into useChat when navigating to a chat, and re-sync when a refetch
   // returns richer assistant parts (tool/reasoning) after the server finishes persisting.
   const loadedChatIdRef = useRef<string | null>(null);
-  const lastTokenRefetchMessageCountRef = useRef(0);
+  const tokenUsageRefetchKeyRef = useRef("");
 
   useEffect(() => {
-    lastTokenRefetchMessageCountRef.current = 0;
+    tokenUsageRefetchKeyRef.current = "";
   }, [activeChatId]);
   useEffect(() => {
     if (!chatId || isLoadingChat) return;
@@ -1021,19 +1021,28 @@ export default function Chat() {
         });
       }
 
-      // Refetch once per completed assistant turn — first message has no cached chatTokenData yet.
-      if (messages.length > lastTokenRefetchMessageCountRef.current) {
-        lastTokenRefetchMessageCountRef.current = messages.length;
-        const refetchTimer = window.setTimeout(() => {
+      const totalTokens =
+        chatTokenData?.totalTokens ||
+        (chatTokenData?.totalInputTokens || 0) + (chatTokenData?.totalOutputTokens || 0);
+      const completedTurnKey = `${activeChatId ?? "new"}:${messages.length}`;
+
+      if (totalTokens > 0 || tokenUsageRefetchKeyRef.current === completedTurnKey) {
+        return;
+      }
+
+      tokenUsageRefetchKeyRef.current = completedTurnKey;
+      const refetchDelays = [300, 1200, 2500, 5000, 8000];
+      const refetchTimers = refetchDelays.map((refetchDelay) =>
+        window.setTimeout(() => {
           refetchTokenData();
           if (userId) {
             queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
           }
-        }, 300);
-        return () => window.clearTimeout(refetchTimer);
-      }
+        }, refetchDelay)
+      );
+      return () => refetchTimers.forEach((timer) => window.clearTimeout(timer));
     }
-  }, [messages, status, chatTokenData, refetchTokenData, userId, queryClient, timeToFirstToken, tokensPerSecond, totalDuration, chatTokenData?.avgTimeToFirstToken, chatTokenData?.avgTokensPerSecond, chatTokenData?.avgTotalDuration]);
+  }, [activeChatId, messages, status, chatTokenData, refetchTokenData, userId, queryClient, timeToFirstToken, tokensPerSecond, totalDuration, chatTokenData?.avgTimeToFirstToken, chatTokenData?.avgTokensPerSecond, chatTokenData?.avgTotalDuration]);
 
   // Manual recovery function
   const forceRecovery = useCallback(() => {

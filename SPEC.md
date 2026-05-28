@@ -1,7 +1,7 @@
 # ChatLima - Full Application Specification
 
-**Version:** 0.37.0  
-**Last Updated:** February 2026
+**Version:** 0.39.0  
+**Last Updated:** May 2026
 
 ---
 
@@ -30,7 +30,7 @@ ChatLima is a feature-rich, MCP-powered AI chatbot application with multi-model 
 | Database | PostgreSQL with Drizzle ORM 0.42.0 |
 | Authentication | Better Auth 1.2.7 |
 | Payments | Polar SDK 0.32.13 |
-| AI SDK | Vercel AI SDK 4.3.9 |
+| AI SDK | Vercel AI SDK 6.0.191 |
 | MCP | @modelcontextprotocol/sdk 1.20.2 |
 | Styling | Tailwind CSS 4.1.4 with shadcn/ui |
 | Testing | Playwright (E2E) + Jest (Unit) |
@@ -48,6 +48,7 @@ chatlima/
 │   │   ├── models/          # Dynamic model fetching
 │   │   ├── favorites/       # Favorite models
 │   │   ├── upload-files/    # Multipart upload → Vercel Blob
+│   │   ├── projects/        # Project CRUD, files, and project chats
 │   │   ├── admin/           # Admin endpoints
 │   │   └── ...
 │   ├── chat/[id]/           # Chat page
@@ -84,7 +85,7 @@ chatlima/
 
 ### 2.3 Service-Oriented Architecture
 
-The application uses 9 specialized services for maintainability:
+The application uses specialized services for maintainability:
 
 | Service | Responsibility |
 |---------|---------------|
@@ -97,6 +98,7 @@ The application uses 9 specialized services for maintainability:
 | `chatTokenTrackingService` | Token usage & cost tracking |
 | `chatWebSearchService` | Web search integration |
 | `webFetchService` | Native URL fetch, SSRF-safe validation, and content extraction |
+| `projectContext` | Project instructions and file context for linked chats |
 
 ---
 
@@ -133,6 +135,8 @@ The application uses 9 specialized services for maintainability:
   accessToken: string?
   refreshToken: string?
   accessTokenExpiresAt: timestamp?
+  tokenType: string?
+  scope: string?
   idToken: string?
   sessionState: string?
   createdAt: timestamp
@@ -225,6 +229,7 @@ The application uses 9 specialized services for maintainability:
   processingTimeMs: integer?
   timeToFirstTokenMs: integer?
   tokensPerSecond: numeric(10,2)?
+  streamingStartTime: timestamp?
   status: string              // "pending", "processing", "completed", "failed"
   errorMessage: string?
   metadata: json?
@@ -265,7 +270,45 @@ The application uses 9 specialized services for maintainability:
 }
 ```
 
-### 3.6 Billing & Polar Integration
+### 3.6 Projects System
+
+#### Projects (`projects`)
+```typescript
+{
+  id: string (nanoid)
+  userId: string (FK → users, cascade delete)
+  name: string                // 1-100 chars, unique per user
+  instructions: string        // <= 8000 chars
+  createdAt: timestamp
+  updatedAt: timestamp
+  deletedAt: timestamp?
+}
+```
+
+#### Project Files (`project_files`)
+```typescript
+{
+  id: string (nanoid)
+  projectId: string (FK → projects, cascade delete)
+  filepath: string?
+  url: string?
+  filename: string
+  mimeType: string?
+  size: integer?
+  createdAt: timestamp
+}
+```
+
+#### Chat Projects (`chat_projects`)
+```typescript
+{
+  chatId: string (PK, FK → chats, cascade delete)
+  projectId: string (FK → projects, cascade delete)
+  attachedAt: timestamp
+}
+```
+
+### 3.7 Billing & Polar Integration
 
 #### Polar Usage Events (`polar_usage_events`)
 ```typescript
@@ -279,7 +322,7 @@ The application uses 9 specialized services for maintainability:
 }
 ```
 
-### 3.7 Other Tables
+### 3.8 Other Tables
 
 - `favorite_models` - User's favorited models
 - `preset_usage` - Preset usage tracking
@@ -348,8 +391,9 @@ Models are fetched in real-time from:
 - **Requesty API**: `/v1/models`
 
 **Caching Strategy:**
-- Model list: 1-hour TTL
-- Model details: 24-hour TTL
+- Model list: 10-minute TTL
+- Model details: 1-hour TTL
+- Provider health: 30-second TTL
 - Smart filtering of blocked/deprecated models
 
 ### 5.3 Model ID Format
@@ -505,12 +549,20 @@ Based on model pricing ($/M tokens):
 - Web search toggle
 - API key preferences
 
-### 8.3 Image & File Processing
+### 8.3 Projects System
+
+- Create and manage authenticated user projects from the sidebar.
+- Store project-level instructions and files.
+- Link a chat to one project at a time.
+- Create new chats inside a project.
+- Inject linked project context into chat prompts.
+
+### 8.4 Image & File Processing
 
 - **Images**: Drag-and-drop upload, client-side validation and compression, preview with full-screen modal, metadata (dimensions, size), detail level (low/high/auto).
 - **Documents**: File preview component for images and document metadata; client-side validation for type and size before upload. Document content is fetched and parsed only when the AI calls the `read_file` tool.
 
-### 8.4 PDF Export & Sharing
+### 8.5 PDF Export & Sharing
 
 - One-click PDF download
 - Professional formatting with branding
@@ -518,7 +570,7 @@ Based on model pricing ($/M tokens):
 - Social sharing (Twitter, Facebook, LinkedIn)
 - Direct link copying
 
-### 8.5 SEO Features
+### 8.6 SEO Features
 
 - Dynamic model pages at `/model/[slug]`
 - Model comparison at `/compare/[slug]`
@@ -551,6 +603,9 @@ POST /api/upload-files
 GET /api/models
 - Returns all available models with metadata
 
+POST /api/models
+- Clears provider model cache for one provider or all providers
+
 GET /api/models/[modelId]/credit-cost
 - Returns credit cost for specific model
 ```
@@ -560,11 +615,11 @@ GET /api/models/[modelId]/credit-cost
 GET /api/chats
 - List user's chats
 
-POST /api/chats
-- Create new chat
-
 GET /api/chats/[id]
 - Get specific chat
+
+PATCH /api/chats/[id]
+- Update chat metadata
 
 DELETE /api/chats/[id]
 - Delete chat
@@ -575,8 +630,32 @@ GET /api/chats/[id]/export-pdf
 POST /api/chats/[id]/share
 - Create shareable link
 
+GET /api/chats/[id]/share
+- Get share state for chat
+
+DELETE /api/chats/[id]/share
+- Revoke shareable link
+
 GET /api/chats/shared/[shareId]
 - Get shared chat
+
+GET /api/chats/[id]/project
+PUT /api/chats/[id]/project
+DELETE /api/chats/[id]/project
+- Get, attach, or detach the project linked to a chat
+```
+
+#### Projects API
+```
+GET /api/projects
+POST /api/projects
+GET /api/projects/[id]
+PATCH /api/projects/[id]
+DELETE /api/projects/[id]
+GET /api/projects/[id]/files
+POST /api/projects/[id]/files
+DELETE /api/projects/[id]/files/[fileId]
+POST /api/projects/[id]/chats
 ```
 
 #### Presets API
@@ -587,7 +666,9 @@ GET /api/presets/[id]
 PUT /api/presets/[id]
 DELETE /api/presets/[id]
 POST /api/presets/[id]/set-default
+DELETE /api/presets/[id]/set-default
 POST /api/presets/[id]/share
+DELETE /api/presets/[id]/share
 GET /api/presets/shared/[shareId]
 POST /api/presets/validate
 ```
@@ -606,12 +687,20 @@ GET /api/usage/summary
 GET /api/usage/cost
 GET /api/usage/token
 GET /api/usage/export
+GET /api/token-usage
+GET /api/cost-analytics
+GET /api/cost-calculate
+POST /api/cost-calculate
 ```
 
 #### Credits API
 ```
 GET /api/credits
 - Get user's remaining credits
+
+GET /api/limits/usage
+PUT /api/limits/usage
+- Get or update user usage limit configuration
 ```
 
 #### Admin API
@@ -623,12 +712,38 @@ GET /api/admin/models
 GET /api/admin/model-analytics
 POST /api/admin/sync-pricing
 GET /api/admin/logging-health
+GET /api/admin/usage-limits
+POST /api/admin/usage-limits
+PUT /api/admin/usage-limits/[id]
+DELETE /api/admin/usage-limits/[id]
+GET /api/admin/check-status
+GET /api/admin/test-pricing-sync
+POST /api/admin/test-pricing-sync
 
 # User Cleanup
 GET /api/admin/cleanup-users/preview
 POST /api/admin/cleanup-users/execute
+GET /api/admin/cleanup-users/execute
 GET /api/admin/cleanup-users/logs
+GET /api/admin/cleanup-users/count-only
+GET /api/admin/cleanup-users/health
+GET /api/admin/cleanup-users/schedule
+POST /api/admin/cleanup-users/schedule
+GET /api/admin/cleanup-users/emergency-disable
 POST /api/admin/cleanup-users/emergency-disable
+```
+
+#### Configuration & System APIs
+```
+GET /api/provider-config
+PUT /api/provider-config
+GET /api/pricing/models
+PUT /api/pricing/models
+GET /api/version
+POST /api/create-polar-customer
+GET /api/portal
+GET /api/mcp/oauth/proxy
+POST /api/mcp/oauth/proxy
 ```
 
 ### 9.2 Authentication Endpoints
@@ -636,7 +751,10 @@ POST /api/admin/cleanup-users/emergency-disable
 ```
 POST /api/auth/sign-in/anonymous
 GET /api/auth/[...betterauth]
+POST /api/auth/[...betterauth]
+GET /api/auth/polar
 POST /api/auth/polar
+GET /api/auth/polar/webhooks
 POST /api/auth/polar/webhooks
 ```
 
@@ -675,6 +793,7 @@ POST /api/auth/polar/webhooks
 ### 11.1 Required
 
 ```bash
+DATABASE_URL=                  # PostgreSQL/Neon connection string
 AUTH_SECRET=                    # Better Auth secret
 POLAR_ACCESS_TOKEN=             # Polar API token
 POLAR_PRODUCT_ID=              # Monthly plan product ID
@@ -714,6 +833,7 @@ REQUESTY_API_KEY=
 # Access gating feature flags
 BILLING_ENFORCED=false
 ALLOW_BYOK_BYPASS=true
+OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=true
 
 # Native web fetch feature flags
 NATIVE_WEB_FETCH_ENABLED=false
@@ -734,6 +854,18 @@ NEXT_PUBLIC_APP_TITLE=         # App title
 PREVIEW_DOMAIN=                # Custom preview domain
 NGROK_DOMAIN=                  # Ngrok for local dev
 BLOB_READ_WRITE_TOKEN=         # Vercel Blob Storage (for document uploads)
+BLOB_PUBLIC_URL=               # Optional Blob public base URL
+NEXT_PUBLIC_BLOB_URL=          # Optional public Blob base URL fallback
+TITLE_GENERATION_MODEL_ID=     # Global title-generation model override
+OPENROUTER_TITLE_MODEL=        # Provider-specific title model override
+REQUESTY_TITLE_MODEL=
+OPENAI_TITLE_MODEL=
+ANTHROPIC_TITLE_MODEL=
+GROQ_TITLE_MODEL=
+XAI_TITLE_MODEL=
+POLAR_PRODUCT_ID_MONTHLY_ALIASES= # Optional comma-separated legacy product IDs
+POLAR_PRODUCT_ID_YEARLY_ALIASES=  # Optional comma-separated legacy product IDs
+VERBOSE_LOGGING=false
 ```
 
 ---
@@ -743,28 +875,28 @@ BLOB_READ_WRITE_TOKEN=         # Vercel Blob Storage (for document uploads)
 ### 12.1 Build Commands
 
 ```bash
-npm run dev          # Development with Turbopack
-npm run build        # Production build with Turbopack
-npm run start        # Start production server
-npm run lint         # ESLint
+pnpm dev          # Development with Turbopack
+pnpm build        # Production build with Turbopack
+pnpm start        # Start production server
+pnpm lint         # ESLint
 ```
 
 ### 12.2 Database Commands
 
 ```bash
-npm run db:generate  # Generate Drizzle migration
-npm run db:migrate   # Run migrations
-npm run db:push      # Push schema directly
-npm run db:studio    # Open Drizzle Studio
+pnpm db:generate  # Generate Drizzle migration
+pnpm db:migrate   # Run migrations
+pnpm db:push      # Push schema directly
+pnpm db:studio    # Open Drizzle Studio
 ```
 
 ### 12.3 Testing Commands
 
 ```bash
-npm run test         # Playwright tests (local)
-npm run test:ui      # Tests with UI
-npm run test:unit    # Jest unit tests
-npm run test:anonymous  # Anonymous user tests
+pnpm test         # Playwright tests (local)
+pnpm test:ui      # Tests with UI
+pnpm test:unit    # Jest unit tests
+pnpm test:anonymous  # Anonymous user tests
 ```
 
 ### 12.4 Deployment Platform
@@ -812,8 +944,9 @@ npm run test:anonymous  # Anonymous user tests
 
 ### 14.1 Caching
 
-- Model list: 1-hour TTL
-- Model details: 24-hour TTL
+- Model list: 10-minute TTL
+- Model details: 1-hour TTL
+- Provider health: 30-second TTL
 - Credit cache per request
 
 ### 14.2 Database Optimization
