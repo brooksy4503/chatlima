@@ -1,6 +1,11 @@
 import { streamText, generateText, tool, jsonSchema, stepCountIs, type UIMessage, type LanguageModel, type LanguageModelResponseMetadata } from "ai";
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
-import { getUIMessageText, hasWebSearchToolPart, injectSyntheticWebSearchToolPart } from '@/lib/message-utils';
+import { getUIMessageText } from '@/lib/message-utils';
+import {
+    buildAssistantMessageForPersistence,
+    processMessagesForPersistence,
+    waitForUiResponseMessage,
+} from '@/lib/chat-message-persistence';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
 import { chats, messages as messagesTable } from '@/lib/db/schema';
@@ -1182,7 +1187,7 @@ You have web search capabilities enabled. When you use web search:
                         console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map(a => a.type));
                     }
 
-                    // Build UI messages for persistence: client history + final assistant from streamText event
+                    // Wait for the UI message stream to finish so tool/reasoning parts are included in persistence.
                     const clientMessages = messages as UIMessage[];
                     const trailingAssistant = clientMessages[clientMessages.length - 1];
                     const historyMessages =
@@ -1190,30 +1195,24 @@ You have web search capabilities enabled. When you use web search:
                             ? clientMessages.slice(0, -1)
                             : clientMessages;
 
-                    const assistantParts: UIMessage['parts'] = [];
-                    if (event.reasoningText?.trim()) {
-                        assistantParts.push({ type: 'reasoning', text: event.reasoningText, state: 'done' });
-                    }
-                    assistantParts.push({ type: 'text', text: event.text || '', state: 'done' });
-
                     if (!uiResponseMessage) {
-                        uiResponseMessage = await Promise.race([
+                        uiResponseMessage = await waitForUiResponseMessage(
                             uiResponseMessagePromise,
-                            new Promise<null>((resolve) => setTimeout(() => resolve(null), 500)),
-                        ]);
+                            streamAbortController.signal
+                        );
                     }
 
-                    const assistantMessage: UIMessage = uiResponseMessage?.parts?.length
-                        ? {
-                            id: uiResponseMessage.id || response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id || nanoid(),
-                            role: 'assistant',
-                            parts: uiResponseMessage.parts,
-                        }
-                        : {
-                            id: response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ?? nanoid(),
-                            role: 'assistant',
-                            parts: assistantParts,
-                        };
+                    const responseAssistantId = response.messages
+                        ?.filter((m: { role?: string }) => m.role === 'assistant')
+                        .pop()?.id;
+
+                    const assistantMessage = buildAssistantMessageForPersistence({
+                        clientMessages,
+                        uiResponseMessage,
+                        streamText: event.text || '',
+                        reasoningText: event.reasoningText,
+                        responseAssistantId,
+                    });
 
                     const webSearchInvocationCount = ChatWebSearchService.resolveWebSearchInvocationCount({
                         steps: event.steps,
@@ -1225,48 +1224,23 @@ You have web search capabilities enabled. When you use web search:
                         hasCitationAnnotations: (response.annotations?.length || 0) > 0,
                     });
 
-                    if (
-                        webSearchConfig.useAgenticServerTools &&
-                        effectiveWebSearchEnabled &&
-                        webSearchWasUsed &&
-                        !hasWebSearchToolPart(assistantMessage.parts)
-                    ) {
-                        assistantMessage.parts = injectSyntheticWebSearchToolPart(
-                            assistantMessage.parts ?? [],
-                            Math.max(webSearchInvocationCount, 1)
-                        );
-                    }
+                    const processedMessages = processMessagesForPersistence({
+                        historyMessages,
+                        assistantMessage,
+                        annotations: response.annotations,
+                        webSearch: {
+                            useAgenticServerTools: webSearchConfig.useAgenticServerTools,
+                            enabled: effectiveWebSearchEnabled,
+                            wasUsed: webSearchWasUsed,
+                            invocationCount: webSearchInvocationCount,
+                        },
+                    });
 
-                    const processedMessages = [...historyMessages, assistantMessage].map(msg => {
-                        if (msg.role === 'assistant' && (response.annotations?.length)) {
-                            console.log(`[Chat ${id}] Found ${response.annotations.length} annotations:`, response.annotations);
-
-                            const citations = response.annotations
-                                .filter((a: Annotation) => a.type === 'url_citation')
-                                .map((c: Annotation) => ({
-                                    url: c.url_citation.url,
-                                    title: c.url_citation.title,
-                                    content: c.url_citation.content,
-                                    startIndex: c.url_citation.start_index,
-                                    endIndex: c.url_citation.end_index
-                                }));
-
-                            console.log(`[Chat ${id}] Processed citations:`, citations);
-
-                            if (citations.length > 0 && msg.parts) {
-                                console.log(`[Chat ${id}] Adding citations to ${msg.parts.length} message parts`);
-                                msg.parts = (msg.parts as any[]).map(part => {
-                                    if (part.type === 'text') {
-                                        return {
-                                            ...part,
-                                            citations
-                                        };
-                                    }
-                                    return part;
-                                });
-                            }
-                        }
-                        return msg;
+                    const assistantPartTypes = assistantMessage.parts?.map((p) => p.type) ?? [];
+                    console.log(`[Chat ${id}][onFinish] Persisting assistant parts:`, {
+                        fromUiStream: !!uiResponseMessage?.parts?.length,
+                        partTypes: assistantPartTypes,
+                        partCount: assistantMessage.parts?.length ?? 0,
                     });
 
                     try {

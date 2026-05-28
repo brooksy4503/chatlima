@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat-store";
+import { dbMessagesHaveRicherAssistantParts } from "@/lib/chat-message-persistence";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
@@ -571,16 +572,29 @@ export default function Chat() {
       },
     });
 
-  // Sync DB history into useChat when navigating to a chat (not after every refetch).
+  // Sync DB history into useChat when navigating to a chat, and re-sync when a refetch
+  // returns richer assistant parts (tool/reasoning) after the server finishes persisting.
   const loadedChatIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!chatId || isLoadingChat) return;
     if (status === "streaming" || status === "submitted") return;
-    if (loadedChatIdRef.current === chatId) return;
 
-    setMessages(initialMessages);
-    loadedChatIdRef.current = chatId;
-  }, [chatId, isLoadingChat, initialMessages, status, setMessages]);
+    const isNewChatNavigation = loadedChatIdRef.current !== chatId;
+
+    if (isNewChatNavigation) {
+      setMessages(initialMessages);
+      loadedChatIdRef.current = chatId;
+      return;
+    }
+
+    if (
+      status === "ready" &&
+      initialMessages.length > 0 &&
+      dbMessagesHaveRicherAssistantParts(messages, initialMessages)
+    ) {
+      setMessages(initialMessages);
+    }
+  }, [chatId, isLoadingChat, initialMessages, status, setMessages, messages]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
