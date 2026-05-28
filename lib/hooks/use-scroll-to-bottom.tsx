@@ -1,12 +1,35 @@
 import { useEffect, useRef, type RefObject } from 'react';
 
-export function useScrollToBottom(): [
+function isExpandCollapseMutation(container: HTMLElement, mutations: MutationRecord[]) {
+  return mutations.some((mutation) => {
+    let target = mutation.target as HTMLElement;
+    while (target && target !== container) {
+      if (target.classList?.contains('motion-div')) {
+        return true;
+      }
+      target = target.parentElement as HTMLElement;
+    }
+    return false;
+  });
+}
+
+export function useScrollToBottom(scrollTrigger?: unknown): [
   RefObject<HTMLDivElement>,
   RefObject<HTMLDivElement>,
 ] {
   const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const isUserScrollingRef = useRef(false);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
+    const container = containerRef.current;
+    if (!container || isUserScrollingRef.current) return;
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior,
+    });
+  };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -15,64 +38,41 @@ export function useScrollToBottom(): [
     if (!container || !end) return;
 
     // Initial scroll to bottom
-    setTimeout(() => {
-      end.scrollIntoView({ behavior: 'instant', block: 'end' });
+    const initialScrollTimeout = window.setTimeout(() => {
+      scrollToBottom('instant');
     }, 100);
 
     // Track if user has manually scrolled up
     const handleScroll = () => {
-      if (!container) return;
-      
       const { scrollTop, scrollHeight, clientHeight } = container;
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-      
-      // If user is scrolled up, mark as manually scrolling
       isUserScrollingRef.current = distanceFromBottom > 100;
     };
 
-    // Handle mutations
-    const observer = new MutationObserver((mutations) => {
-      if (!container || !end) return;
-
-      // Check if mutation is related to expand/collapse
-      const isToggleSection = mutations.some(mutation => {
-        // Check if the target or parent is a motion-div (expanded content)
-        let target = mutation.target as HTMLElement;
-        let isExpand = false;
-        
-        while (target && target !== container) {
-          if (target.classList?.contains('motion-div')) {
-            isExpand = true;
-            break;
-          }
-          target = target.parentElement as HTMLElement;
-        }
-        return isExpand;
-      });
-
-      // Don't scroll for expand/collapse actions
-      if (isToggleSection) return;
-
-      // Only auto-scroll if user hasn't manually scrolled up
-      if (!isUserScrollingRef.current) {
-        // For new messages, use smooth scrolling
-        end.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
+    // New messages and structural DOM changes
+    const mutationObserver = new MutationObserver((mutations) => {
+      if (isExpandCollapseMutation(container, mutations)) return;
+      scrollToBottom('smooth');
     });
 
-    observer.observe(container, {
+    mutationObserver.observe(container, {
       childList: true,
       subtree: true,
     });
 
-    // Add scroll event listener
-    container.addEventListener('scroll', handleScroll);
+    container.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      observer.disconnect();
+      window.clearTimeout(initialScrollTimeout);
+      mutationObserver.disconnect();
       container.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    if (scrollTrigger === undefined) return;
+    scrollToBottom('auto');
+  }, [scrollTrigger]);
 
   return [containerRef, endRef] as [RefObject<HTMLDivElement>, RefObject<HTMLDivElement>];
 }

@@ -24,11 +24,21 @@ export const Messages = ({
   };
   webSearchEnabled?: boolean;
 }) => {
-  const [containerRef, endRef] = useScrollToBottom();
-  
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageTextLength = lastMessage?.parts
+    ?.filter((part) => part.type === "text")
+    .reduce((total, part) => total + (part.type === "text" ? part.text.length : 0), 0) ?? 0;
+
+  const scrollTrigger =
+    status === "streaming" || status === "submitted"
+      ? `${messages.length}:${lastMessageTextLength}:${status}`
+      : messages.length;
+
+  const [containerRef, endRef] = useScrollToBottom(scrollTrigger);
+
   return (
     <div
-      className="h-full overflow-y-auto no-scrollbar"
+      className="h-full min-h-0 overflow-y-auto no-scrollbar"
       ref={containerRef}
     >
       <div className="max-w-lg sm:max-w-3xl mx-auto py-4">

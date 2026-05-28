@@ -1191,7 +1191,7 @@ export default function Chat() {
       )}
 
       {/* Main content area: Either ProjectOverview, minimal empty state, or Messages */}
-      <div className={`flex-1 min-h-0 pb-2 ${messages.length === 0 && !isLoadingChat ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+      <div className="flex-1 min-h-0 pb-2 overflow-hidden">
         {messages.length === 0 && !isLoadingChat ? (
           showWelcomeScreen || showSuggestedPrompts ? (
             <div className="h-full overflow-y-auto no-scrollbar">

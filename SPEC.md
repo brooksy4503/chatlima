@@ -13,7 +13,7 @@ ChatLima is a feature-rich, MCP-powered AI chatbot application with multi-model 
 - **Dynamic Model Loading**: Real-time fetching from OpenRouter and Requesty APIs
 - **Model Context Protocol (MCP)**: Full MCP 1.20.2 support with OAuth 2.1 authorization
 - **Flexible Authentication**: Anonymous users (10 msg/day) + Google OAuth (20 msg/day)
-- **Dual Subscription Tiers**: Monthly ($10/mo, 1,000 messages) and Yearly ($10/yr, unlimited free models)
+- **Dual Subscription Tiers**: Monthly ($10/mo, Polar credit allocation) and Yearly ($10/yr, unlimited free OpenRouter models)
 - **Multi-Provider AI**: OpenAI, Anthropic, Groq, XAI, OpenRouter, Requesty
 
 ---
@@ -346,12 +346,12 @@ The application uses specialized services for maintainability:
 
 ### 4.2 User Tiers & Limits
 
-| User Type | Daily Messages | Monthly Credits | Features |
-|-----------|---------------|-----------------|----------|
-| Anonymous | 10 | None | Basic models only |
-| Free Google | 20 | None | Standard models |
-| Monthly Subscriber ($10/mo) | 1,000/month | Credit-based | All models |
-| Yearly Subscriber ($10/yr) | Unlimited | Free models only | Free-tier models |
+| User Type | App daily message cap | Polar credits | Features |
+|-----------|------------------------|---------------|----------|
+| Anonymous | 10/day | None | Basic models only; no web search |
+| Free Google (signed in, no credits) | 20/day (custom limit via user metadata supported) | None | Standard models; web search blocked without credits |
+| Authenticated with Polar credits | Daily cap skipped while credits remain | Meter balance (monthly plan allocates credits, e.g. 1,000/month on product) | All models per credit tier; web search when eligible |
+| Yearly Subscriber ($10/yr) | Effectively unlimited for free models (`:free`) | Not required for free models | Free-tier OpenRouter models only |
 
 ### 4.3 Anonymous User Flow
 
@@ -476,10 +476,10 @@ interface MCPServerConfig {
 
 ### 7.1 Subscription Plans
 
-| Plan | Price | Messages | Model Access |
-|------|-------|----------|--------------|
-| Monthly | $10/month | 1,000/month | All models |
-| Yearly | $10/year | Unlimited | Free models only |
+| Plan | Price | Polar allocation | Model Access |
+|------|-------|------------------|--------------|
+| Monthly | $10/month | ~1,000 credits/month on the Polar meter (usage-based, not a separate in-app message counter) | All models while credits remain |
+| Yearly | $10/year | Unlimited access to free OpenRouter models (`:free` suffix) | Free-tier models only |
 
 ### 7.2 Credit Cost Tiers
 
@@ -497,7 +497,10 @@ Based on model pricing ($/M tokens):
 
 | Feature | Cost |
 |---------|------|
-| Web Search | 5 credits/search |
+| Web Search (agentic, default) | 5 credits × invocation count (billed after stream from tool steps or `server_tool_use.web_search_requests`) |
+| Web Search (legacy `:online` plugin) | Flat 5 credits per request when web search was enabled (not per invocation) |
+
+Web search billing is skipped when the user supplies their own OpenRouter API key (BYOK).
 
 ### 7.4 Polar Integration
 
@@ -517,8 +520,9 @@ Based on model pricing ($/M tokens):
 
 1. Check for yearly subscription (unlimited free models)
 2. Check Polar credits for authenticated users
-3. Fall back to daily message limit
+3. Fall back to daily message limit (10 anonymous / 20 authenticated)
 4. Block on negative credits
+5. Web search (if requested): require signed-in user, OpenRouter model with `supportsWebSearch`, and either ≥5 credits or BYOK OpenRouter key (`ChatWebSearchService` + `ChatCreditValidationService`)
 
 ---
 
@@ -526,9 +530,20 @@ Based on model pricing ($/M tokens):
 
 ### 8.1 Chat Features
 
-- **Streaming Responses**: Real-time AI response streaming with visual indicators
+- **Streaming Responses**: Real-time AI response streaming with visual indicators. While a response is streaming, the message list auto-scrolls to keep the latest content in view. Auto-scroll pauses if the user scrolls more than 100px away from the bottom and resumes when they return. Expand/collapse of reasoning sections does not trigger auto-scroll.
+- **Chat message list scrolling** (implementation):
+  - **`components/messages.tsx`**: Owns the scrollable message list (`h-full min-h-0 overflow-y-auto`). During `streaming` or `submitted` status, passes a `scrollTrigger` (message count + latest message text length) to the scroll hook so in-place token updates scroll the view without DOM structure changes.
+  - **`lib/hooks/use-scroll-to-bottom.tsx`**: `useScrollToBottom(scrollTrigger?)` scrolls the message container via `container.scrollTo()`. New messages use smooth scroll (`MutationObserver` on `childList`); streaming updates use instant scroll (React effect on `scrollTrigger`). Ignores mutations inside reasoning expand/collapse sections (`.motion-div`).
+  - **`components/chat.tsx`**: Main content wrapper uses `overflow-hidden` when messages are shown so only `Messages` handles vertical scrolling (avoids nested scroll containers that break auto-scroll).
 - **Dual-Path File Upload**: Up to 5 files per message, 30 MB max per file. Images (JPEG, PNG, WebP) sent as base64 for vision; documents (PDF, CSV, Excel) and text/code files uploaded to Vercel Blob and exposed to the AI via a `read_file` tool (content parsed on demand). Parser limits: Excel 1,000 rows/sheet, CSV 10,000 rows.
-- **Web Search**: Agentic web search via OpenRouter `web_search` server tool (5 credits per invocation, with citations). Legacy `:online` plugin path available when `OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=false`.
+- **Web Search** (OpenRouter models only; globe toggle in composer):
+  - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with `supportsWebSearch: true` in the catalog.
+  - **Client**: `webSearch: { enabled, contextSize }` sent on every `POST /api/chat` from `WebSearchProvider` (localStorage) or active preset overrides.
+  - **Agentic path (default, `OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=true`)**: OpenRouter `web_search` server tool merged into `streamText` tools; model may invoke search 0+ times (`stopWhen: stepCountIs(20)`). System prompt instructs cite-with-markdown-links. Citations from `url_citation` annotations; `hasWebSearch` set when invocations or citations detected.
+  - **Legacy path (`OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=false`)**: Model ID rewritten to `:online` variant plus `web_search_options.search_context_size` from context size (`low` / `medium` / `high`).
+  - **No automatic fallback**: When agentic tools are enabled globally, unsupported or failed agentic setup disables web search for that request; legacy `:online` is not used unless the env flag is `false`.
+  - **UI**: Live “Searching the web” indicator during stream; tool cards and `Citations` component; optional follow-up suggestion to disable search to save credits.
+  - See §7.3 for billing; implementation in `chatWebSearchService`, `openRouterWebSearchRouteSetup`, `app/api/chat/route.ts`.
 - **Native Web Fetch**: First-party `web_fetch` tool for reading public URLs directly in chat with extraction + truncation controls
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
 - **Smart Title Generation**: Dynamic model selection for conversation titles
@@ -587,7 +602,8 @@ Based on model pricing ($/M tokens):
 ```
 POST /api/chat
 - Main chat endpoint with streaming
-- Handles MCP tools, web search, native web_fetch, images (base64), file references (Blob URLs)
+- Request body includes webSearch: { enabled: boolean, contextSize: "low" | "medium" | "high" }
+- Handles MCP tools, OpenRouter web search (agentic or legacy :online), native web_fetch, images (base64), file references (Blob URLs)
 - Integrates read_file tool for uploaded documents and web_fetch tool for URL extraction
 ```
 
@@ -959,7 +975,7 @@ pnpm test:anonymous  # Anonymous user tests
 
 - Turbopack for fast builds
 - React Query for data fetching
-- Streaming responses
+- Streaming responses with auto-scroll during generation (`useScrollToBottom`)
 - Lazy loading for heavy components
 
 ---
@@ -1005,7 +1021,7 @@ pnpm test:anonymous  # Anonymous user tests
 - No offline support (requires internet)
 - Images stored temporarily during chat
 - Some models may have rate limits
-- Web search requires subscription
+- Web search requires a signed-in user, an OpenRouter model with web-search support, and either ≥5 Polar credits or a BYOK OpenRouter API key (not tied to subscription status alone)
 - Whole-site web fetch mode is gated behind a disabled-by-default flag
 
 ---
