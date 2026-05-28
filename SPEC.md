@@ -1,7 +1,7 @@
 # ChatLima - Full Application Specification
 
-**Version:** 0.37.0  
-**Last Updated:** February 2026
+**Version:** 0.39.0  
+**Last Updated:** May 2026
 
 ---
 
@@ -13,7 +13,7 @@ ChatLima is a feature-rich, MCP-powered AI chatbot application with multi-model 
 - **Dynamic Model Loading**: Real-time fetching from OpenRouter and Requesty APIs
 - **Model Context Protocol (MCP)**: Full MCP 1.20.2 support with OAuth 2.1 authorization
 - **Flexible Authentication**: Anonymous users (10 msg/day) + Google OAuth (20 msg/day)
-- **Dual Subscription Tiers**: Monthly ($10/mo, 1,000 messages) and Yearly ($10/yr, unlimited free models)
+- **Dual Subscription Tiers**: Monthly ($10/mo, Polar credit allocation) and Yearly ($10/yr, unlimited free OpenRouter models)
 - **Multi-Provider AI**: OpenAI, Anthropic, Groq, XAI, OpenRouter, Requesty
 
 ---
@@ -30,7 +30,7 @@ ChatLima is a feature-rich, MCP-powered AI chatbot application with multi-model 
 | Database | PostgreSQL with Drizzle ORM 0.42.0 |
 | Authentication | Better Auth 1.2.7 |
 | Payments | Polar SDK 0.32.13 |
-| AI SDK | Vercel AI SDK 4.3.9 |
+| AI SDK | Vercel AI SDK 6.0.191 |
 | MCP | @modelcontextprotocol/sdk 1.20.2 |
 | Styling | Tailwind CSS 4.1.4 with shadcn/ui |
 | Testing | Playwright (E2E) + Jest (Unit) |
@@ -48,6 +48,7 @@ chatlima/
 │   │   ├── models/          # Dynamic model fetching
 │   │   ├── favorites/       # Favorite models
 │   │   ├── upload-files/    # Multipart upload → Vercel Blob
+│   │   ├── projects/        # Project CRUD, files, and project chats
 │   │   ├── admin/           # Admin endpoints
 │   │   └── ...
 │   ├── chat/[id]/           # Chat page
@@ -84,7 +85,7 @@ chatlima/
 
 ### 2.3 Service-Oriented Architecture
 
-The application uses 9 specialized services for maintainability:
+The application uses specialized services for maintainability:
 
 | Service | Responsibility |
 |---------|---------------|
@@ -97,6 +98,7 @@ The application uses 9 specialized services for maintainability:
 | `chatTokenTrackingService` | Token usage & cost tracking |
 | `chatWebSearchService` | Web search integration |
 | `webFetchService` | Native URL fetch, SSRF-safe validation, and content extraction |
+| `projectContext` | Project instructions and file context for linked chats |
 
 ---
 
@@ -133,6 +135,8 @@ The application uses 9 specialized services for maintainability:
   accessToken: string?
   refreshToken: string?
   accessTokenExpiresAt: timestamp?
+  tokenType: string?
+  scope: string?
   idToken: string?
   sessionState: string?
   createdAt: timestamp
@@ -225,6 +229,7 @@ The application uses 9 specialized services for maintainability:
   processingTimeMs: integer?
   timeToFirstTokenMs: integer?
   tokensPerSecond: numeric(10,2)?
+  streamingStartTime: timestamp?
   status: string              // "pending", "processing", "completed", "failed"
   errorMessage: string?
   metadata: json?
@@ -265,7 +270,45 @@ The application uses 9 specialized services for maintainability:
 }
 ```
 
-### 3.6 Billing & Polar Integration
+### 3.6 Projects System
+
+#### Projects (`projects`)
+```typescript
+{
+  id: string (nanoid)
+  userId: string (FK → users, cascade delete)
+  name: string                // 1-100 chars, unique per user
+  instructions: string        // <= 8000 chars
+  createdAt: timestamp
+  updatedAt: timestamp
+  deletedAt: timestamp?
+}
+```
+
+#### Project Files (`project_files`)
+```typescript
+{
+  id: string (nanoid)
+  projectId: string (FK → projects, cascade delete)
+  filepath: string?
+  url: string?
+  filename: string
+  mimeType: string?
+  size: integer?
+  createdAt: timestamp
+}
+```
+
+#### Chat Projects (`chat_projects`)
+```typescript
+{
+  chatId: string (PK, FK → chats, cascade delete)
+  projectId: string (FK → projects, cascade delete)
+  attachedAt: timestamp
+}
+```
+
+### 3.7 Billing & Polar Integration
 
 #### Polar Usage Events (`polar_usage_events`)
 ```typescript
@@ -279,7 +322,7 @@ The application uses 9 specialized services for maintainability:
 }
 ```
 
-### 3.7 Other Tables
+### 3.8 Other Tables
 
 - `favorite_models` - User's favorited models
 - `preset_usage` - Preset usage tracking
@@ -303,12 +346,12 @@ The application uses 9 specialized services for maintainability:
 
 ### 4.2 User Tiers & Limits
 
-| User Type | Daily Messages | Monthly Credits | Features |
-|-----------|---------------|-----------------|----------|
-| Anonymous | 10 | None | Basic models only |
-| Free Google | 20 | None | Standard models |
-| Monthly Subscriber ($10/mo) | 1,000/month | Credit-based | All models |
-| Yearly Subscriber ($10/yr) | Unlimited | Free models only | Free-tier models |
+| User Type | App daily message cap | Polar credits | Features |
+|-----------|------------------------|---------------|----------|
+| Anonymous | 10/day | None | Basic models only; no web search |
+| Free Google (signed in, no credits) | 20/day (custom limit via user metadata supported) | None | Standard models; web search blocked without credits |
+| Authenticated with Polar credits | Daily cap skipped while credits remain | Meter balance (monthly plan allocates credits, e.g. 1,000/month on product) | All models per credit tier; web search when eligible |
+| Yearly Subscriber ($10/yr) | Effectively unlimited for free models (`:free`) | Not required for free models | Free-tier OpenRouter models only |
 
 ### 4.3 Anonymous User Flow
 
@@ -348,8 +391,9 @@ Models are fetched in real-time from:
 - **Requesty API**: `/v1/models`
 
 **Caching Strategy:**
-- Model list: 1-hour TTL
-- Model details: 24-hour TTL
+- Model list: 10-minute TTL
+- Model details: 1-hour TTL
+- Provider health: 30-second TTL
 - Smart filtering of blocked/deprecated models
 
 ### 5.3 Model ID Format
@@ -432,10 +476,10 @@ interface MCPServerConfig {
 
 ### 7.1 Subscription Plans
 
-| Plan | Price | Messages | Model Access |
-|------|-------|----------|--------------|
-| Monthly | $10/month | 1,000/month | All models |
-| Yearly | $10/year | Unlimited | Free models only |
+| Plan | Price | Polar allocation | Model Access |
+|------|-------|------------------|--------------|
+| Monthly | $10/month | ~1,000 credits/month on the Polar meter (usage-based, not a separate in-app message counter) | All models while credits remain |
+| Yearly | $10/year | Unlimited access to free OpenRouter models (`:free` suffix) | Free-tier models only |
 
 ### 7.2 Credit Cost Tiers
 
@@ -453,7 +497,10 @@ Based on model pricing ($/M tokens):
 
 | Feature | Cost |
 |---------|------|
-| Web Search | 5 credits/search |
+| Web Search (agentic, default) | 5 credits × invocation count (billed after stream from tool steps or `server_tool_use.web_search_requests`) |
+| Web Search (legacy `:online` plugin) | Flat 5 credits per request when web search was enabled (not per invocation) |
+
+Web search billing is skipped when the user supplies their own OpenRouter API key (BYOK).
 
 ### 7.4 Polar Integration
 
@@ -473,8 +520,9 @@ Based on model pricing ($/M tokens):
 
 1. Check for yearly subscription (unlimited free models)
 2. Check Polar credits for authenticated users
-3. Fall back to daily message limit
+3. Fall back to daily message limit (10 anonymous / 20 authenticated)
 4. Block on negative credits
+5. Web search (if requested): require signed-in user, OpenRouter model with `supportsWebSearch`, and either ≥5 credits or BYOK OpenRouter key (`ChatWebSearchService` + `ChatCreditValidationService`)
 
 ---
 
@@ -482,9 +530,20 @@ Based on model pricing ($/M tokens):
 
 ### 8.1 Chat Features
 
-- **Streaming Responses**: Real-time AI response streaming with visual indicators
+- **Streaming Responses**: Real-time AI response streaming with visual indicators. While a response is streaming, the message list auto-scrolls to keep the latest content in view. Auto-scroll pauses if the user scrolls more than 100px away from the bottom and resumes when they return. Expand/collapse of reasoning sections does not trigger auto-scroll.
+- **Chat message list scrolling** (implementation):
+  - **`components/messages.tsx`**: Owns the scrollable message list (`h-full min-h-0 overflow-y-auto`). During `streaming` or `submitted` status, passes a `scrollTrigger` (message count + latest message text length) to the scroll hook so in-place token updates scroll the view without DOM structure changes.
+  - **`lib/hooks/use-scroll-to-bottom.tsx`**: `useScrollToBottom(scrollTrigger?)` scrolls the message container via `container.scrollTo()`. New messages use smooth scroll (`MutationObserver` on `childList`); streaming updates use instant scroll (React effect on `scrollTrigger`). Ignores mutations inside reasoning expand/collapse sections (`.motion-div`).
+  - **`components/chat.tsx`**: Main content wrapper uses `overflow-hidden` when messages are shown so only `Messages` handles vertical scrolling (avoids nested scroll containers that break auto-scroll).
 - **Dual-Path File Upload**: Up to 5 files per message, 30 MB max per file. Images (JPEG, PNG, WebP) sent as base64 for vision; documents (PDF, CSV, Excel) and text/code files uploaded to Vercel Blob and exposed to the AI via a `read_file` tool (content parsed on demand). Parser limits: Excel 1,000 rows/sheet, CSV 10,000 rows.
-- **Web Search**: Premium web search via OpenRouter with citations
+- **Web Search** (OpenRouter models only; globe toggle in composer):
+  - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with `supportsWebSearch: true` in the catalog.
+  - **Client**: `webSearch: { enabled, contextSize }` sent on every `POST /api/chat` from `WebSearchProvider` (localStorage) or active preset overrides.
+  - **Agentic path (default, `OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=true`)**: OpenRouter `web_search` server tool merged into `streamText` tools; model may invoke search 0+ times (`stopWhen: stepCountIs(20)`). System prompt instructs cite-with-markdown-links. Citations from `url_citation` annotations; `hasWebSearch` set when invocations or citations detected.
+  - **Legacy path (`OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=false`)**: Model ID rewritten to `:online` variant plus `web_search_options.search_context_size` from context size (`low` / `medium` / `high`).
+  - **No automatic fallback**: When agentic tools are enabled globally, unsupported or failed agentic setup disables web search for that request; legacy `:online` is not used unless the env flag is `false`.
+  - **UI**: Live “Searching the web” indicator during stream; tool cards and `Citations` component; optional follow-up suggestion to disable search to save credits.
+  - See §7.3 for billing; implementation in `chatWebSearchService`, `openRouterWebSearchRouteSetup`, `app/api/chat/route.ts`.
 - **Native Web Fetch**: First-party `web_fetch` tool for reading public URLs directly in chat with extraction + truncation controls
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
 - **Smart Title Generation**: Dynamic model selection for conversation titles
@@ -505,12 +564,20 @@ Based on model pricing ($/M tokens):
 - Web search toggle
 - API key preferences
 
-### 8.3 Image & File Processing
+### 8.3 Projects System
+
+- Create and manage authenticated user projects from the sidebar.
+- Store project-level instructions and files.
+- Link a chat to one project at a time.
+- Create new chats inside a project.
+- Inject linked project context into chat prompts.
+
+### 8.4 Image & File Processing
 
 - **Images**: Drag-and-drop upload, client-side validation and compression, preview with full-screen modal, metadata (dimensions, size), detail level (low/high/auto).
 - **Documents**: File preview component for images and document metadata; client-side validation for type and size before upload. Document content is fetched and parsed only when the AI calls the `read_file` tool.
 
-### 8.4 PDF Export & Sharing
+### 8.5 PDF Export & Sharing
 
 - One-click PDF download
 - Professional formatting with branding
@@ -518,7 +585,7 @@ Based on model pricing ($/M tokens):
 - Social sharing (Twitter, Facebook, LinkedIn)
 - Direct link copying
 
-### 8.5 SEO Features
+### 8.6 SEO Features
 
 - Dynamic model pages at `/model/[slug]`
 - Model comparison at `/compare/[slug]`
@@ -535,7 +602,8 @@ Based on model pricing ($/M tokens):
 ```
 POST /api/chat
 - Main chat endpoint with streaming
-- Handles MCP tools, web search, native web_fetch, images (base64), file references (Blob URLs)
+- Request body includes webSearch: { enabled: boolean, contextSize: "low" | "medium" | "high" }
+- Handles MCP tools, OpenRouter web search (agentic or legacy :online), native web_fetch, images (base64), file references (Blob URLs)
 - Integrates read_file tool for uploaded documents and web_fetch tool for URL extraction
 ```
 
@@ -551,6 +619,9 @@ POST /api/upload-files
 GET /api/models
 - Returns all available models with metadata
 
+POST /api/models
+- Clears provider model cache for one provider or all providers
+
 GET /api/models/[modelId]/credit-cost
 - Returns credit cost for specific model
 ```
@@ -560,11 +631,11 @@ GET /api/models/[modelId]/credit-cost
 GET /api/chats
 - List user's chats
 
-POST /api/chats
-- Create new chat
-
 GET /api/chats/[id]
 - Get specific chat
+
+PATCH /api/chats/[id]
+- Update chat metadata
 
 DELETE /api/chats/[id]
 - Delete chat
@@ -575,8 +646,32 @@ GET /api/chats/[id]/export-pdf
 POST /api/chats/[id]/share
 - Create shareable link
 
+GET /api/chats/[id]/share
+- Get share state for chat
+
+DELETE /api/chats/[id]/share
+- Revoke shareable link
+
 GET /api/chats/shared/[shareId]
 - Get shared chat
+
+GET /api/chats/[id]/project
+PUT /api/chats/[id]/project
+DELETE /api/chats/[id]/project
+- Get, attach, or detach the project linked to a chat
+```
+
+#### Projects API
+```
+GET /api/projects
+POST /api/projects
+GET /api/projects/[id]
+PATCH /api/projects/[id]
+DELETE /api/projects/[id]
+GET /api/projects/[id]/files
+POST /api/projects/[id]/files
+DELETE /api/projects/[id]/files/[fileId]
+POST /api/projects/[id]/chats
 ```
 
 #### Presets API
@@ -587,7 +682,9 @@ GET /api/presets/[id]
 PUT /api/presets/[id]
 DELETE /api/presets/[id]
 POST /api/presets/[id]/set-default
+DELETE /api/presets/[id]/set-default
 POST /api/presets/[id]/share
+DELETE /api/presets/[id]/share
 GET /api/presets/shared/[shareId]
 POST /api/presets/validate
 ```
@@ -606,12 +703,20 @@ GET /api/usage/summary
 GET /api/usage/cost
 GET /api/usage/token
 GET /api/usage/export
+GET /api/token-usage
+GET /api/cost-analytics
+GET /api/cost-calculate
+POST /api/cost-calculate
 ```
 
 #### Credits API
 ```
 GET /api/credits
 - Get user's remaining credits
+
+GET /api/limits/usage
+PUT /api/limits/usage
+- Get or update user usage limit configuration
 ```
 
 #### Admin API
@@ -623,12 +728,38 @@ GET /api/admin/models
 GET /api/admin/model-analytics
 POST /api/admin/sync-pricing
 GET /api/admin/logging-health
+GET /api/admin/usage-limits
+POST /api/admin/usage-limits
+PUT /api/admin/usage-limits/[id]
+DELETE /api/admin/usage-limits/[id]
+GET /api/admin/check-status
+GET /api/admin/test-pricing-sync
+POST /api/admin/test-pricing-sync
 
 # User Cleanup
 GET /api/admin/cleanup-users/preview
 POST /api/admin/cleanup-users/execute
+GET /api/admin/cleanup-users/execute
 GET /api/admin/cleanup-users/logs
+GET /api/admin/cleanup-users/count-only
+GET /api/admin/cleanup-users/health
+GET /api/admin/cleanup-users/schedule
+POST /api/admin/cleanup-users/schedule
+GET /api/admin/cleanup-users/emergency-disable
 POST /api/admin/cleanup-users/emergency-disable
+```
+
+#### Configuration & System APIs
+```
+GET /api/provider-config
+PUT /api/provider-config
+GET /api/pricing/models
+PUT /api/pricing/models
+GET /api/version
+POST /api/create-polar-customer
+GET /api/portal
+GET /api/mcp/oauth/proxy
+POST /api/mcp/oauth/proxy
 ```
 
 ### 9.2 Authentication Endpoints
@@ -636,7 +767,10 @@ POST /api/admin/cleanup-users/emergency-disable
 ```
 POST /api/auth/sign-in/anonymous
 GET /api/auth/[...betterauth]
+POST /api/auth/[...betterauth]
+GET /api/auth/polar
 POST /api/auth/polar
+GET /api/auth/polar/webhooks
 POST /api/auth/polar/webhooks
 ```
 
@@ -675,6 +809,7 @@ POST /api/auth/polar/webhooks
 ### 11.1 Required
 
 ```bash
+DATABASE_URL=                  # PostgreSQL/Neon connection string
 AUTH_SECRET=                    # Better Auth secret
 POLAR_ACCESS_TOKEN=             # Polar API token
 POLAR_PRODUCT_ID=              # Monthly plan product ID
@@ -714,6 +849,7 @@ REQUESTY_API_KEY=
 # Access gating feature flags
 BILLING_ENFORCED=false
 ALLOW_BYOK_BYPASS=true
+OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=true
 
 # Native web fetch feature flags
 NATIVE_WEB_FETCH_ENABLED=false
@@ -734,6 +870,18 @@ NEXT_PUBLIC_APP_TITLE=         # App title
 PREVIEW_DOMAIN=                # Custom preview domain
 NGROK_DOMAIN=                  # Ngrok for local dev
 BLOB_READ_WRITE_TOKEN=         # Vercel Blob Storage (for document uploads)
+BLOB_PUBLIC_URL=               # Optional Blob public base URL
+NEXT_PUBLIC_BLOB_URL=          # Optional public Blob base URL fallback
+TITLE_GENERATION_MODEL_ID=     # Global title-generation model override
+OPENROUTER_TITLE_MODEL=        # Provider-specific title model override
+REQUESTY_TITLE_MODEL=
+OPENAI_TITLE_MODEL=
+ANTHROPIC_TITLE_MODEL=
+GROQ_TITLE_MODEL=
+XAI_TITLE_MODEL=
+POLAR_PRODUCT_ID_MONTHLY_ALIASES= # Optional comma-separated legacy product IDs
+POLAR_PRODUCT_ID_YEARLY_ALIASES=  # Optional comma-separated legacy product IDs
+VERBOSE_LOGGING=false
 ```
 
 ---
@@ -743,28 +891,28 @@ BLOB_READ_WRITE_TOKEN=         # Vercel Blob Storage (for document uploads)
 ### 12.1 Build Commands
 
 ```bash
-npm run dev          # Development with Turbopack
-npm run build        # Production build with Turbopack
-npm run start        # Start production server
-npm run lint         # ESLint
+pnpm dev          # Development with Turbopack
+pnpm build        # Production build with Turbopack
+pnpm start        # Start production server
+pnpm lint         # ESLint
 ```
 
 ### 12.2 Database Commands
 
 ```bash
-npm run db:generate  # Generate Drizzle migration
-npm run db:migrate   # Run migrations
-npm run db:push      # Push schema directly
-npm run db:studio    # Open Drizzle Studio
+pnpm db:generate  # Generate Drizzle migration
+pnpm db:migrate   # Run migrations
+pnpm db:push      # Push schema directly
+pnpm db:studio    # Open Drizzle Studio
 ```
 
 ### 12.3 Testing Commands
 
 ```bash
-npm run test         # Playwright tests (local)
-npm run test:ui      # Tests with UI
-npm run test:unit    # Jest unit tests
-npm run test:anonymous  # Anonymous user tests
+pnpm test         # Playwright tests (local)
+pnpm test:ui      # Tests with UI
+pnpm test:unit    # Jest unit tests
+pnpm test:anonymous  # Anonymous user tests
 ```
 
 ### 12.4 Deployment Platform
@@ -812,8 +960,9 @@ npm run test:anonymous  # Anonymous user tests
 
 ### 14.1 Caching
 
-- Model list: 1-hour TTL
-- Model details: 24-hour TTL
+- Model list: 10-minute TTL
+- Model details: 1-hour TTL
+- Provider health: 30-second TTL
 - Credit cache per request
 
 ### 14.2 Database Optimization
@@ -826,7 +975,7 @@ npm run test:anonymous  # Anonymous user tests
 
 - Turbopack for fast builds
 - React Query for data fetching
-- Streaming responses
+- Streaming responses with auto-scroll during generation (`useScrollToBottom`)
 - Lazy loading for heavy components
 
 ---
@@ -872,7 +1021,7 @@ npm run test:anonymous  # Anonymous user tests
 - No offline support (requires internet)
 - Images stored temporarily during chat
 - Some models may have rate limits
-- Web search requires subscription
+- Web search requires a signed-in user, an OpenRouter model with web-search support, and either ≥5 Polar credits or a BYOK OpenRouter API key (not tied to subscription status alone)
 - Whole-site web fetch mode is gated behind a disabled-by-default flag
 
 ---

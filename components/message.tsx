@@ -1,8 +1,9 @@
 "use client";
 
-import type { Message as TMessage } from "ai";
+import type { UIMessage } from "ai";
+import { getToolName, isToolUIPart } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useDeferredValue, useEffect, useState } from "react";
 import equal from "fast-deep-equal";
 import { Markdown } from "./markdown";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ import { Citations } from "./citation";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import { formatFileSize } from "@/lib/image-utils";
+import { getReasoningPartText, isWebSearchToolPart, mapV6ToolStateToLegacy, shouldShowLiveWebSearchIndicator, shouldShowSyntheticCompletedWebSearch } from "@/lib/message-utils";
 import { WebSearchSuggestion } from "./web-search-suggestion";
 import { ImageModal } from "./image-modal";
 import { CompactMessageTokenMetrics, StreamingTokenMetrics } from "./token-metrics/MessageTokenMetrics";
@@ -33,33 +35,47 @@ export function ReasoningMessagePart({
   part,
   isReasoning,
 }: ReasoningMessagePartProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const reasoningDetails = Array.isArray((part as any).details)
-    ? (part as any).details
-    : (typeof (part as any).reasoning === "string" && (part as any).reasoning.trim().length > 0
-        ? [{ type: "text", text: (part as any).reasoning }]
-        : []);
-
-  const memoizedSetIsExpanded = useCallback((value: boolean) => {
-    setIsExpanded(value);
-  }, []);
+  const [isExpanded, setIsExpanded] = useState(isReasoning);
+  const reasoningPartAny = part as ReasoningUIPart & { text?: string; reasoning?: string; details?: Array<{ type: string; text: string }>; state?: 'streaming' | 'done' };
+  const reasoningDetails = Array.isArray(reasoningPartAny.details)
+    ? reasoningPartAny.details
+    : (() => {
+        const reasoningText = getReasoningPartText(reasoningPartAny);
+        return reasoningText ? [{ type: "text", text: reasoningText }] : [];
+      })();
+  const streamingReasoningText = getReasoningPartText(reasoningPartAny);
 
   useEffect(() => {
-    memoizedSetIsExpanded(isReasoning);
-  }, [isReasoning, memoizedSetIsExpanded]);
+    if (isReasoning) {
+      setIsExpanded(true);
+    }
+  }, [isReasoning]);
 
   return (
     <div className="flex flex-col mb-2 group">
       {isReasoning ? (
-        <div className={cn(
-          "flex items-center gap-2.5 rounded-full py-1.5 px-3",
-          "bg-indigo-50/50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300",
-          "border border-indigo-200/50 dark:border-indigo-700/20 w-fit"
-        )}>
-          <div className="animate-spin h-3.5 w-3.5">
-            <SpinnerIcon />
+        <div className="flex flex-col gap-2">
+          <div className={cn(
+            "flex items-center gap-2.5 rounded-full py-1.5 px-3",
+            "bg-indigo-50/50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300",
+            "border border-indigo-200/50 dark:border-indigo-700/20 w-fit"
+          )}>
+            <div className="animate-spin h-3.5 w-3.5">
+              <SpinnerIcon />
+            </div>
+            <div className="text-xs font-medium tracking-tight">Thinking...</div>
           </div>
-          <div className="text-xs font-medium tracking-tight">Thinking...</div>
+          {streamingReasoningText && (
+            <div className={cn(
+              "text-sm text-muted-foreground flex flex-col gap-2",
+              "pl-3.5 ml-0.5",
+              "border-l border-indigo-200/50 dark:border-indigo-700/30"
+            )}>
+              <div className="px-2 py-1.5 bg-muted/10 rounded-md border border-border/30 whitespace-pre-wrap break-words">
+                {streamingReasoningText}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <button 
@@ -104,7 +120,7 @@ export function ReasoningMessagePart({
       )}
 
       <AnimatePresence initial={false}>
-        {isExpanded && (
+        {isExpanded && !isReasoning && (
           <motion.div
             key="reasoning"
             className={cn(
@@ -136,9 +152,19 @@ export function ReasoningMessagePart({
   );
 }
 
+type MessagePart =
+  | NonNullable<UIMessage['parts']>[number]
+  | TextUIPart
+  | ToolInvocationUIPart
+  | ImageUIPart
+  | ReasoningUIPart
+  | SourceUIPart
+  | FileUIPart
+  | StepStartUIPart;
+
 interface MessageProps {
-  message: TMessage & {
-    parts?: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+  message: Omit<UIMessage, 'parts'> & {
+    parts?: MessagePart[];
     hasWebSearch?: boolean;
     tokenUsage?: {
       inputTokens?: number;
@@ -161,6 +187,7 @@ interface MessageProps {
     tokensPerSecond?: number;
     totalDuration?: number;
   };
+  webSearchEnabled?: boolean;
 }
 
 const PurePreviewMessage = ({
@@ -169,7 +196,15 @@ const PurePreviewMessage = ({
   status,
   isLoading,
   chatTokenUsage,
+  webSearchEnabled = false,
 }: MessageProps) => {
+  const deferredStatus = useDeferredValue(status);
+  // Keep plain text until React finishes the streaming→ready transition (avoids blocking markdown parse).
+  const usePlainTextOutput =
+    message.role === "assistant" &&
+    isLatestMessage &&
+    deferredStatus !== "ready";
+
   // State for image modal
   const [selectedImage, setSelectedImage] = useState<{
     url: string;
@@ -181,17 +216,31 @@ const PurePreviewMessage = ({
   const getMessageText = () => {
     if (!message.parts) return "";
     return message.parts
-      .filter(part => part.type === "text")
-      .map(part => (part.type === "text" ? part.text : ""))
+      .filter((part: MessagePart) => part.type === "text")
+      .map((part: MessagePart) => (part.type === "text" ? part.text : ""))
       .join("\n\n");
   };
 
   // Check if message has web search results - use hasWebSearch flag if available, otherwise detect from parts
-  const hasWebSearchResults = message.hasWebSearch || message.parts?.some(part => 
+  const hasWebSearchResults = message.hasWebSearch || message.parts?.some((part: MessagePart) => 
     (part.type === "text" && (part as TextUIPart).citations && (part as TextUIPart).citations!.length > 0) ||
-    (part.type === "tool-invocation" && (part as ToolInvocationUIPart).toolInvocation.toolName === "web_search")
+    isWebSearchToolPart(part as UIMessage['parts'][number])
   );
-  
+
+  const showLiveWebSearch = shouldShowLiveWebSearchIndicator({
+    webSearchEnabled,
+    status,
+    isLatestMessage,
+    role: message.role,
+    parts: message.parts as UIMessage['parts'],
+  });
+
+  const showSyntheticCompletedWebSearch = shouldShowSyntheticCompletedWebSearch({
+    role: message.role,
+    status,
+    hasWebSearchResults: !!hasWebSearchResults,
+    parts: message.parts as UIMessage['parts'],
+  });
 
 
   // Only show copy button if the message is from the assistant or user, and not currently streaming
@@ -216,26 +265,33 @@ const PurePreviewMessage = ({
           )}
         >
           <div className="flex flex-col w-full space-y-3">
+            {showLiveWebSearch && (
+              <ToolInvocation
+                key={`message-${message.id}-live-web-search`}
+                toolName="web_search"
+                state="call"
+                args={{}}
+                result={null}
+                isLatestMessage={isLatestMessage}
+                status={status}
+              />
+            )}
             {/* Render all parts in chronological order (reasoning interleaved with text/tools) */}
-            {message.parts?.map((part, i) => {
+            {message.parts?.map((part: MessagePart, i: number) => {
               switch ((part as any).type) {
                 case "reasoning": {
-                  const reasoningPart = part as ReasoningUIPart;
+                  const reasoningPart = part as unknown as ReasoningUIPart & { state?: 'streaming' | 'done' };
+                  const isStreamingReasoning = status === "streaming" && isLatestMessage;
                   return (
                     <ReasoningMessagePart
                       key={`message-${message.id}-reasoning-${i}`}
                       part={reasoningPart}
-                      isReasoning={
-                        (message.parts &&
-                          status === "streaming" &&
-                          i === message.parts.length - 1) ??
-                        false
-                      }
+                      isReasoning={isStreamingReasoning}
                     />
                   );
                 }
                 case "text":
-                  const textPart = part as TextUIPart;
+                  const textPart = part as TextUIPart & { state?: 'streaming' | 'done' };
                   return (
                     <motion.div
                       initial={{ y: 5, opacity: 0 }}
@@ -250,17 +306,22 @@ const PurePreviewMessage = ({
                             message.role === "user",
                         })}
                       >
-                        <Markdown 
-                          citations={textPart.citations}
-                          onScrollToCitations={() => {
-                            // Scroll to citations section
-                            const citationsElement = document.querySelector(`[data-message-id="${message.id}"] .citations-container`);
-                            citationsElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                          }}
-                        >
-                          {textPart.text}
-                        </Markdown>
-                        {textPart.citations && (
+                        {usePlainTextOutput ? (
+                          <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap break-words">
+                            {textPart.text}
+                          </div>
+                        ) : (
+                          <Markdown 
+                            citations={textPart.citations}
+                            onScrollToCitations={() => {
+                              const citationsElement = document.querySelector(`[data-message-id="${message.id}"] .citations-container`);
+                              citationsElement?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }}
+                          >
+                            {textPart.text}
+                          </Markdown>
+                        )}
+                        {!usePlainTextOutput && textPart.citations && (
                           <div className="citations-container">
                             <Citations citations={textPart.citations} />
                           </div>
@@ -272,7 +333,7 @@ const PurePreviewMessage = ({
                     </motion.div>
                   );
                 case "tool-invocation":
-                  const toolPart = part as ToolInvocationUIPart;
+                  const toolPart = part as unknown as ToolInvocationUIPart;
                   const { toolName, state, args } = toolPart.toolInvocation;
                   const result = 'result' in toolPart.toolInvocation ? toolPart.toolInvocation.result : null;
                   
@@ -331,11 +392,50 @@ const PurePreviewMessage = ({
                       </div>
                     </motion.div>
                   );
-                default:
+                default: {
+                  if ((part as { type?: string }).type === 'step-start') {
+                    return null;
+                  }
+
+                  if (isToolUIPart(part as UIMessage['parts'][number])) {
+                    const v6ToolPart = part as UIMessage['parts'][number] & {
+                      state?: string;
+                      input?: unknown;
+                      output?: unknown;
+                    };
+                    const toolName = getToolName(v6ToolPart as Parameters<typeof getToolName>[0]);
+                    const toolState = mapV6ToolStateToLegacy(v6ToolPart.state);
+
+                    return (
+                      <ToolInvocation
+                        key={`message-${message.id}-part-${i}`}
+                        toolName={toolName}
+                        state={toolState}
+                        args={v6ToolPart.input}
+                        result={v6ToolPart.output}
+                        isLatestMessage={isLatestMessage}
+                        status={status}
+                      />
+                    );
+                  }
+
                   return null;
+                }
               }
             })}
             
+            {showSyntheticCompletedWebSearch && (
+              <ToolInvocation
+                key={`message-${message.id}-synthetic-web-search`}
+                toolName="web_search"
+                state="result"
+                args={{}}
+                result={{ provider: "openrouter" }}
+                isLatestMessage={isLatestMessage}
+                status={status}
+              />
+            )}
+
             {/* Web Search Suggestion - only for assistant messages with web search results and when not streaming */}
             {message.role === 'assistant' && hasWebSearchResults && status !== "streaming" && (
               <WebSearchSuggestion
@@ -405,7 +505,10 @@ const PurePreviewMessage = ({
 
 export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
-  if (prevProps.message.annotations !== nextProps.message.annotations)
+  if (prevProps.isLatestMessage !== nextProps.isLatestMessage) return false;
+  if (prevProps.webSearchEnabled !== nextProps.webSearchEnabled) return false;
+  if (nextProps.status === "streaming" && nextProps.isLatestMessage) return false;
+  if ((prevProps.message as { annotations?: unknown }).annotations !== (nextProps.message as { annotations?: unknown }).annotations)
     return false;
   if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
   return true;

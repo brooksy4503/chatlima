@@ -42,8 +42,8 @@ jest.mock('@/hooks/use-mobile', () => ({
 jest.mock('@/hooks/use-models', () => ({
   useModels: () => ({
     models: [
-      { id: 'openrouter/test-model', vision: true },
-      { id: 'claude-3-haiku', vision: false },
+      { id: 'openrouter/test-model', vision: true, supportsWebSearch: true },
+      { id: 'claude-3-haiku', vision: false, supportsWebSearch: false },
     ],
   }),
 }));

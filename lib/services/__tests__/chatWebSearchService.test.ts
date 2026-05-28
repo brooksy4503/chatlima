@@ -60,6 +60,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium',
                 canUseWebSearch: true,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: WEB_SEARCH_COST
             });
 
@@ -100,6 +102,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium',
                 canUseWebSearch: false,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: 0
             });
         });
@@ -117,6 +121,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium',
                 canUseWebSearch: true,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: 0
             });
         });
@@ -134,6 +140,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium',
                 canUseWebSearch: false,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: 0
             });
 
@@ -156,6 +164,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium',
                 canUseWebSearch: false,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: 0
             });
 
@@ -192,6 +202,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium',
                 canUseWebSearch: true,
                 modelSupportsWebSearch: false,
+                supportsToolCalling: false,
+                useAgenticServerTools: false,
                 additionalCost: 0
             });
 
@@ -225,6 +237,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium',
                 canUseWebSearch: true,
                 modelSupportsWebSearch: false,
+                supportsToolCalling: false,
+                useAgenticServerTools: false,
                 additionalCost: 0
             });
 
@@ -251,6 +265,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium',
                 canUseWebSearch: true,
                 modelSupportsWebSearch: false,
+                supportsToolCalling: false,
+                useAgenticServerTools: false,
                 additionalCost: 0
             });
         });
@@ -388,6 +404,131 @@ describe('ChatWebSearchService', () => {
             expect(() => {
                 ChatWebSearchService.validateWebSearchRequest(context);
             }).not.toThrow();
+        });
+    });
+
+    describe('agentic web search policy', () => {
+        it('should validate web search with agentic tools when policy flag is enabled', () => {
+            const context = createMockContext({
+                modelInfo: {
+                    ...createMockContext().modelInfo!,
+                    supportsToolCalling: true,
+                },
+            });
+
+            const result = ChatWebSearchService.validateAndConfigureWebSearch(context, {
+                agenticWebToolsEnabled: true,
+            });
+
+            expect(result.useAgenticServerTools).toBe(true);
+            expect(result.enabled).toBe(true);
+        });
+
+        it('disables agentic path when policy flag is off even for tool-capable models', () => {
+            const context = createMockContext({
+                modelInfo: {
+                    ...createMockContext().modelInfo!,
+                    supportsToolCalling: true,
+                },
+            });
+
+            const result = ChatWebSearchService.validateAndConfigureWebSearch(context, {
+                agenticWebToolsEnabled: false,
+            });
+
+            expect(result.useAgenticServerTools).toBe(false);
+            expect(result.enabled).toBe(true);
+        });
+    });
+
+    describe('buildOpenRouterServerTools', () => {
+        it('creates a web_search provider tool with context-aware prompt', () => {
+            const openrouterClient = {
+                tools: {
+                    webSearch: jest.fn(() => ({ type: 'provider-tool' })),
+                },
+            } as unknown as import('@openrouter/ai-sdk-provider').OpenRouterProvider;
+
+            const tools = ChatWebSearchService.buildOpenRouterServerTools(openrouterClient, {
+                contextSize: 'high',
+                maxTotalResults: 10,
+            });
+
+            expect(openrouterClient.tools.webSearch).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    maxResults: 5,
+                    engine: 'auto',
+                    searchPrompt: expect.stringContaining('high'),
+                })
+            );
+            expect(tools).toHaveProperty('web_search');
+        });
+    });
+
+    describe('supportsToolCalling', () => {
+        it('returns true when model metadata explicitly supports tool calling', () => {
+            expect(
+                ChatWebSearchService.supportsToolCalling({
+                    id: 'openrouter/openai/gpt-4',
+                    provider: 'openai',
+                    name: 'GPT-4',
+                    premium: false,
+                    vision: false,
+                    supportsToolCalling: true,
+                    capabilities: [],
+                    status: 'available',
+                    lastChecked: new Date(),
+                })
+            ).toBe(true);
+        });
+    });
+
+    describe('web search invocation detection', () => {
+        it('counts web search tool names including openrouter colon variant', () => {
+            const steps = [{
+                toolCalls: [
+                    { toolName: 'openrouter:web_search' },
+                    { toolName: 'other_tool' },
+                ],
+            }];
+
+            expect(ChatWebSearchService.countWebSearchInvocations(steps)).toBe(1);
+        });
+
+        it('reads server_tool_use metadata when step tool calls are absent', () => {
+            expect(ChatWebSearchService.getServerToolWebSearchRequests({
+                raw: { server_tool_use: { web_search_requests: 2 } },
+            })).toBe(2);
+        });
+
+        it('resolves invocation count from server metadata', () => {
+            const count = ChatWebSearchService.resolveWebSearchInvocationCount({
+                steps: [],
+                usage: { raw: { server_tool_use: { web_search_requests: 3 } } },
+            });
+
+            expect(count).toBe(3);
+        });
+
+        it('detects web search usage from citations when metadata is missing', () => {
+            expect(ChatWebSearchService.messageUsedWebSearch({
+                steps: [],
+                usage: null,
+                hasCitationAnnotations: true,
+            })).toBe(true);
+        });
+
+        it('computes per-search billing from server metadata', () => {
+            const cost = ChatWebSearchService.computeWebSearchCreditCost({
+                webSearchEnabled: true,
+                useAgenticServerTools: true,
+                isUsingOwnApiKeys: false,
+                shouldDeductCredits: true,
+                steps: [],
+                usage: { raw: { server_tool_use: { web_search_requests: 2 } } },
+            });
+
+            expect(cost).toBe(WEB_SEARCH_COST * 2);
         });
     });
 });

@@ -84,13 +84,11 @@ describe('ChatDatabaseService', () => {
             {
                 id: 'msg1',
                 role: 'user',
-                content: 'Hello',
                 parts: [{ type: 'text', text: 'Hello' } as TextUIPart]
             },
             {
                 id: 'msg2',
                 role: 'assistant',
-                content: 'Hi there',
                 parts: [{ type: 'text', text: 'Hi there' } as TextUIPart]
             }
         ] as UIMessage[],
@@ -262,8 +260,8 @@ describe('ChatDatabaseService', () => {
     describe('convertMessagesForDatabase', () => {
         it('should convert messages successfully', () => {
             const messages: UIMessage[] = [
-                { id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] },
-                { id: 'msg2', role: 'assistant', content: 'Hi there', parts: [{ type: 'text', text: 'Hi there' } as TextUIPart] }
+                { id: 'msg1', role: 'user', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] },
+                { id: 'msg2', role: 'assistant', parts: [{ type: 'text', text: 'Hi there' } as TextUIPart] }
             ];
             const chatId = 'chat123';
             const convertedMessages: DBMessage[] = [
@@ -280,7 +278,7 @@ describe('ChatDatabaseService', () => {
         });
 
         it('should handle conversion errors', () => {
-            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
+            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
             const chatId = 'chat123';
             const error = new Error('Conversion failed');
 
@@ -514,8 +512,8 @@ describe('ChatDatabaseService', () => {
             const chatId = 'chat123';
             const userId = 'user456';
             const messages: UIMessage[] = [
-                { id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] },
-                { id: 'msg2', role: 'assistant', content: 'Hi there', parts: [{ type: 'text', text: 'Hi there' } as TextUIPart] }
+                { id: 'msg1', role: 'user', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] },
+                { id: 'msg2', role: 'assistant', parts: [{ type: 'text', text: 'Hi there' } as TextUIPart] }
             ];
             const selectedModel = 'openai/gpt-4';
             const apiKeys = { 'OPENAI_API_KEY': 'sk-test' };
@@ -562,7 +560,7 @@ describe('ChatDatabaseService', () => {
         it('should handle update errors', async () => {
             const chatId = 'chat123';
             const userId = 'user456';
-            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
+            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
             const selectedModel = 'openai/gpt-4';
             const error = new Error('Update failed');
 
@@ -596,7 +594,7 @@ describe('ChatDatabaseService', () => {
         it('should handle default parameters', async () => {
             const chatId = 'chat123';
             const userId = 'user456';
-            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
+            const messages: UIMessage[] = [{ id: 'msg1', role: 'user', parts: [{ type: 'text', text: 'Hello' } as TextUIPart] }];
             const selectedModel = 'openai/gpt-4';
 
             mockSaveChat.mockResolvedValue({ id: 'chat123' });

@@ -6,6 +6,19 @@
 
 This is a Next.js 15 (App Router + Turbopack) AI chatbot with PostgreSQL (Neon Serverless), Better Auth, Polar billing, and 300+ AI models via OpenRouter/Requesty/Anthropic/OpenAI/Groq/XAI. See `README.md` for full feature details.
 
+### Source of Truth and Regression Prevention
+
+`SPEC.md` is the source of truth for product behavior, architecture, database schema, API contracts, AI provider behavior, credit/billing rules, and MCP support.
+
+Before implementing features, refactors, or architectural changes:
+- Consult `SPEC.md` for the affected area before editing.
+- Identify existing behavior that must be preserved.
+- Do not remove or simplify existing features unless the user explicitly asks for that.
+- If the requested change conflicts with `SPEC.md`, stop and flag the conflict before editing.
+- After significant behavior changes, update `SPEC.md` in the same change.
+
+High-risk areas require extra care: authentication, anonymous usage limits, subscriptions and credits, chat persistence, message streaming, model/provider routing, API key handling, MCP tools, file upload/readers, and admin flows.
+
 ### Running the Dev Server
 
 ```bash

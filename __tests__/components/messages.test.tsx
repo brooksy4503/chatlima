@@ -1,7 +1,7 @@
 /// <reference types="@testing-library/jest-dom" />
 import { render, screen } from '@testing-library/react';
 import { Messages } from '../../components/messages';
-import type { Message as TMessage } from 'ai';
+import type { UIMessage } from 'ai';
 
 // Mock the useScrollToBottom hook
 const mockContainerRef = { current: null };
@@ -19,28 +19,28 @@ jest.mock('../../components/message', () => ({
       data-is-loading={isLoading.toString()}
       data-status={status}
     >
-      <div data-testid="message-content">{message.content}</div>
+      <div data-testid="message-content">{message.parts?.find((p: { type: string; text?: string }) => p.type === 'text')?.text}</div>
       {message.hasWebSearch && <div data-testid="web-search-indicator">Web Search</div>}
     </div>
   ),
 }));
 
 describe('Messages Component', () => {
-  const mockMessages: (TMessage & { hasWebSearch?: boolean })[] = [
+  const mockMessages: (UIMessage & { hasWebSearch?: boolean })[] = [
     {
       id: '1',
       role: 'user',
-      content: 'Hello, how are you?',
+      parts: [{ type: 'text' as const, text: 'Hello, how are you?' }],
     },
     {
       id: '2',
       role: 'assistant',
-      content: 'I am doing well, thank you!',
+      parts: [{ type: 'text' as const, text: 'I am doing well, thank you!' }],
     },
     {
       id: '3',
       role: 'user',
-      content: 'Can you search for information about React?',
+      parts: [{ type: 'text' as const, text: 'Can you search for information about React?' }],
       hasWebSearch: true,
     },
   ];
@@ -126,7 +126,7 @@ describe('Messages Component', () => {
         {
           id: '1',
           role: 'user' as const,
-          content: 'Simple message',
+          parts: [{ type: 'text' as const, text: 'Simple message' }],
         },
       ];
       
@@ -231,7 +231,7 @@ describe('Messages Component', () => {
         {
           id: '1',
           role: 'user' as const,
-          content: 'Message without explicit webSearch property',
+          parts: [{ type: 'text' as const, text: 'Message without explicit webSearch property' }],
           // hasWebSearch is undefined
         },
       ];
@@ -246,7 +246,7 @@ describe('Messages Component', () => {
       const longMessagesList = Array(100).fill(null).map((_, index) => ({
         id: `msg-${index}`,
         role: (index % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
-        content: `Message number ${index}`,
+        parts: [{ type: 'text' as const, text: `Message number ${index}` }],
       }));
       
       render(<Messages {...defaultProps} messages={longMessagesList} />);
@@ -263,7 +263,7 @@ describe('Messages Component', () => {
         {
           id: '1',
           role: 'user' as const,
-          content: 'Special chars: @#$%^&*()_+{}|:"<>?[];,./`~',
+          parts: [{ type: 'text' as const, text: 'Special chars: @#$%^&*()_+{}|:"<>?[];,./`~' }],
         },
       ];
       
@@ -319,7 +319,7 @@ describe('Messages Component', () => {
       const firstMessage = [{
         id: '1',
         role: 'user' as const,
-        content: 'Initial message',
+        parts: [{ type: 'text' as const, text: 'Initial message' }],
       }];
       
       rerender(<Messages {...defaultProps} messages={firstMessage} isLoading={true} status="streaming" />);
@@ -334,7 +334,7 @@ describe('Messages Component', () => {
         {
           id: '2',
           role: 'assistant' as const,
-          content: 'Assistant response',
+          parts: [{ type: 'text' as const, text: 'Assistant response' }],
         }
       ];
       

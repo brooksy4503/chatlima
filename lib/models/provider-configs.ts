@@ -221,6 +221,9 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
                 // Legacy compatibility
                 enabled: true,
                 supportsWebSearch: true,
+                supportsToolCalling: Array.isArray(model.supported_parameters)
+                    ? model.supported_parameters.includes('tools')
+                    : true,
                 supportsTemperature: true,
                 supportsMaxTokens: true,
                 supportsSystemInstruction: true,

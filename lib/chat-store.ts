@@ -3,19 +3,17 @@ import { chats, messages, chatShares, type Chat, type ChatWithShareInfo, type Me
 import { eq, desc, and, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateTitle } from "@/app/actions";
+import type { UIMessage } from "ai";
+import { getUIMessageText } from "./message-utils";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation } from "./types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 
-type AIMessage = {
-  role: string;
-  content: string | any[];
-  id?: string;
-  parts?: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
+type AIMessage = UIMessage & {
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
 };
 
-type UIMessage = {
+type UIMessageWithMeta = {
   id: string;
   role: string;
   content: string;
@@ -70,7 +68,7 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
     const messageId = msg.id || nanoid();
 
     // If msg has parts, use them directly
-    if (msg.parts) {
+    if (msg.parts?.length) {
       return {
         id: messageId,
         chatId,
@@ -82,23 +80,10 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
       };
     }
 
-    // Otherwise, convert content to parts
-    let parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
-
-    if (typeof msg.content === 'string') {
-      parts = [{ type: 'text', text: msg.content } as TextUIPart];
-    } else if (Array.isArray(msg.content)) {
-      if (msg.content.every(item => typeof item === 'object' && item !== null)) {
-        // Content is already in parts-like format
-        parts = msg.content as Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>;
-      } else {
-        // Content is an array but not in parts format
-        parts = [{ type: 'text', text: JSON.stringify(msg.content) } as TextUIPart];
-      }
-    } else {
-      // Default case
-      parts = [{ type: 'text', text: String(msg.content) } as TextUIPart];
-    }
+    // Otherwise, create parts from text content
+    const parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart> = [
+      { type: 'text', text: getUIMessageText(msg) } as TextUIPart,
+    ];
 
     return {
       id: messageId,
@@ -113,16 +98,23 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
 }
 
 // Convert DB messages to UI format
-export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage> {
+export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage & {
+  createdAt?: Date;
+  hasWebSearch?: boolean;
+  webSearchContextSize?: 'low' | 'medium' | 'high';
+}> {
   return dbMessages.map((message) => ({
     id: message.id,
     parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
-    role: message.role as string,
-    content: getTextContent(message), // For backward compatibility
+    role: message.role as UIMessage['role'],
     createdAt: message.createdAt,
     hasWebSearch: message.hasWebSearch || false,
     webSearchContextSize: (message.webSearchContextSize || 'medium') as 'low' | 'medium' | 'high'
-  }));
+  })) as Array<UIMessage & {
+    createdAt?: Date;
+    hasWebSearch?: boolean;
+    webSearchContextSize?: 'low' | 'medium' | 'high';
+  }>;
 }
 
 export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys, isAnonymous }: SaveChatParams) {
@@ -337,6 +329,6 @@ export function processImageParts(parts: Array<TextUIPart | ToolInvocationUIPart
 
 export function hasImageAttachments(messages: UIMessage[]): boolean {
   return messages.some(message =>
-    message.parts?.some(part => part.type === "image_url")
+    message.parts?.some(part => (part as { type?: string }).type === "image_url")
   );
 } 

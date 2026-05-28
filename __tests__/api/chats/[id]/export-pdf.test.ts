@@ -65,10 +65,6 @@ describe('/api/chats/[id]/export-pdf', () => {
         jest.useRealTimers();
     });
 
-    afterAll(() => {
-        jest.useFakeTimers();
-    });
-
     const mockGetChatById = getChatById as jest.MockedFunction<typeof getChatById>;
     const mockAuthGetSession = auth.api.getSession as jest.MockedFunction<typeof auth.api.getSession>;
     const mockCreatePDF = createPDF as jest.MockedFunction<typeof createPDF>;

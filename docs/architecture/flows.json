@@ -1,0 +1,708 @@
+{
+  "meta": {
+    "title": "ChatLima Architecture Flows",
+    "version": "1.0.0",
+    "description": "Interactive map of how UI, API routes, services, and external systems connect for each user action."
+  },
+  "groups": [
+    { "id": "components", "label": "Components", "color": "#60a5fa" },
+    { "id": "hooks", "label": "Hooks & Context", "color": "#a78bfa" },
+    { "id": "app-api", "label": "API Routes", "color": "#34d399" },
+    { "id": "lib-services", "label": "Services", "color": "#fbbf24" },
+    { "id": "lib", "label": "Lib / Core", "color": "#f472b6" },
+    { "id": "ai", "label": "AI Layer", "color": "#fb923c" },
+    { "id": "external", "label": "External", "color": "#94a3b8" },
+    { "id": "database", "label": "Database", "color": "#2dd4bf" }
+  ],
+  "nodes": [
+    { "id": "chat", "label": "chat.tsx", "path": "components/chat.tsx", "group": "components" },
+    { "id": "textarea", "label": "textarea.tsx", "path": "components/textarea.tsx", "group": "components" },
+    { "id": "sign-in-button", "label": "SignInButton", "path": "components/auth/SignInButton.tsx", "group": "components" },
+    { "id": "checkout-button", "label": "CheckoutButton", "path": "components/checkout-button.tsx", "group": "components" },
+    { "id": "file-upload", "label": "file-upload.tsx", "path": "components/file-upload.tsx", "group": "components" },
+    { "id": "mcp-manager", "label": "mcp-server-manager", "path": "components/mcp-server-manager.tsx", "group": "components" },
+    { "id": "chat-share-dialog", "label": "chat-share-dialog", "path": "components/chat-share-dialog.tsx", "group": "components" },
+    { "id": "model-picker", "label": "model-picker", "path": "components/model-picker.tsx", "group": "components" },
+    { "id": "admin-cleanup", "label": "AdminUserCleanup", "path": "components/admin/AdminUserCleanup.tsx", "group": "components" },
+    { "id": "settings-sheet", "label": "settings-sheet", "path": "components/settings-sheet.tsx", "group": "components" },
+
+    { "id": "use-auth", "label": "useAuth", "path": "hooks/useAuth.ts", "group": "hooks" },
+    { "id": "use-credits", "label": "useCredits", "path": "hooks/useCredits.ts", "group": "hooks" },
+    { "id": "use-models", "label": "useModels", "path": "hooks/use-models.ts", "group": "hooks" },
+    { "id": "model-context", "label": "model-context", "path": "lib/context/model-context.tsx", "group": "hooks" },
+    { "id": "mcp-context", "label": "mcp-context", "path": "lib/context/mcp-context.tsx", "group": "hooks" },
+    { "id": "preset-context", "label": "preset-context", "path": "lib/context/preset-context.tsx", "group": "hooks" },
+    { "id": "browser-storage", "label": "browser-storage", "path": "lib/browser-storage.ts", "group": "hooks" },
+
+    { "id": "api-chat", "label": "POST /api/chat", "path": "app/api/chat/route.ts", "group": "app-api" },
+    { "id": "api-auth", "label": "/api/auth/*", "path": "app/api/auth/[...betterauth]/route.ts", "group": "app-api" },
+    { "id": "api-checkout", "label": "/api/auth/checkout", "path": "lib/auth.ts (polar checkout)", "group": "app-api" },
+    { "id": "api-upload", "label": "POST /api/upload-files", "path": "app/api/upload-files/route.ts", "group": "app-api" },
+    { "id": "api-models", "label": "GET /api/models", "path": "app/api/models/route.ts", "group": "app-api" },
+    { "id": "api-credits", "label": "GET /api/credits", "path": "app/api/credits/route.ts", "group": "app-api" },
+    { "id": "api-share", "label": "POST /api/chats/.../share", "path": "app/api/chats/[id]/share/route.ts", "group": "app-api" },
+    { "id": "api-admin-cleanup", "label": "POST /api/admin/cleanup-users", "path": "app/api/admin/cleanup-users/execute/route.ts", "group": "app-api" },
+    { "id": "api-create-polar", "label": "POST /api/create-polar-customer", "path": "app/api/create-polar-customer/route.ts", "group": "app-api" },
+
+    { "id": "svc-auth", "label": "chatAuthenticationService", "path": "lib/services/chatAuthenticationService.ts", "group": "lib-services" },
+    { "id": "svc-credit", "label": "chatCreditValidationService", "path": "lib/services/chatCreditValidationService.ts", "group": "lib-services" },
+    { "id": "svc-model", "label": "chatModelValidationService", "path": "lib/services/chatModelValidationService.ts", "group": "lib-services" },
+    { "id": "svc-message", "label": "chatMessageProcessingService", "path": "lib/services/chatMessageProcessingService.ts", "group": "lib-services" },
+    { "id": "svc-mcp", "label": "chatMCPServerService", "path": "lib/services/chatMCPServerService.ts", "group": "lib-services" },
+    { "id": "svc-websearch", "label": "chatWebSearchService", "path": "lib/services/chatWebSearchService.ts", "group": "lib-services" },
+    { "id": "svc-token", "label": "chatTokenTrackingService", "path": "lib/services/chatTokenTrackingService.ts", "group": "lib-services" },
+    { "id": "svc-db", "label": "chatDatabaseService", "path": "lib/services/chatDatabaseService.ts", "group": "lib-services" },
+    { "id": "svc-sharing", "label": "chat-sharing", "path": "lib/services/chat-sharing.ts", "group": "lib-services" },
+    { "id": "svc-cleanup", "label": "userCleanupService", "path": "lib/services/userCleanupService.ts", "group": "lib-services" },
+    { "id": "svc-access", "label": "accessGateService", "path": "lib/services/accessGateService.ts", "group": "lib-services" },
+
+    { "id": "auth", "label": "lib/auth.ts", "path": "lib/auth.ts", "group": "lib" },
+    { "id": "auth-client", "label": "auth-client", "path": "lib/auth-client.ts", "group": "lib" },
+    { "id": "chat-store", "label": "chat-store", "path": "lib/chat-store.ts", "group": "lib" },
+    { "id": "db-schema", "label": "db/schema", "path": "lib/db/schema.ts", "group": "lib" },
+    { "id": "db-index", "label": "db/index", "path": "lib/db/index.ts", "group": "lib" },
+    { "id": "polar-lib", "label": "lib/polar.ts", "path": "lib/polar.ts", "group": "lib" },
+    { "id": "file-upload-lib", "label": "file-upload", "path": "lib/file-upload.ts", "group": "lib" },
+    { "id": "token-counter", "label": "tokenCounter", "path": "lib/tokenCounter.ts", "group": "lib" },
+    { "id": "fetch-models", "label": "fetch-models", "path": "lib/models/fetch-models.ts", "group": "lib" },
+
+    { "id": "ai-providers", "label": "ai/providers", "path": "ai/providers.ts", "group": "ai" },
+    { "id": "vercel-ai-sdk", "label": "Vercel AI SDK", "path": "ai package (streamText)", "group": "ai" },
+
+    { "id": "ext-google", "label": "Google OAuth", "path": "accounts.google.com", "group": "external" },
+    { "id": "ext-polar", "label": "Polar", "path": "api.polar.sh", "group": "external" },
+    { "id": "ext-openrouter", "label": "OpenRouter", "path": "openrouter.ai", "group": "external" },
+    { "id": "ext-requesty", "label": "Requesty", "path": "requesty.ai", "group": "external" },
+    { "id": "ext-vercel-blob", "label": "Vercel Blob", "path": "@vercel/blob", "group": "external" },
+    { "id": "ext-mcp-servers", "label": "MCP Servers", "path": "user-configured SSE/HTTP", "group": "external" },
+    { "id": "ext-vercel", "label": "Vercel Platform", "path": "vercel.com deploy", "group": "external" },
+
+    { "id": "neon", "label": "PostgreSQL (Neon)", "path": "@neondatabase/serverless", "group": "database" }
+  ],
+  "flows": [
+    {
+      "id": "send-chat-message",
+      "label": "Send chat message",
+      "category": "Chat",
+      "description": "User submits a prompt; server authenticates, validates credits/model, streams from AI provider, persists messages, tracks usage.",
+      "steps": [
+        {
+          "from": "chat",
+          "to": "textarea",
+          "label": "User input",
+          "payload": "text, attachments[], selected model from model-context"
+        },
+        {
+          "from": "chat",
+          "to": "mcp-context",
+          "label": "Read MCP config",
+          "payload": "enabled MCP servers from localStorage via browser-storage"
+        },
+        {
+          "from": "chat",
+          "to": "preset-context",
+          "label": "Read preset",
+          "payload": "system prompt, temperature, maxTokens"
+        },
+        {
+          "from": "chat",
+          "to": "api-chat",
+          "label": "useChat → POST",
+          "payload": "{ id, messages: UIMessage[], selectedModel, apiKeys?, mcpServers[], webSearchEnabled, presetId?, projectId? }"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-auth",
+          "label": "Authenticate",
+          "payload": "session cookie → AuthenticatedUser { id, isAnonymous, email }"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-credit",
+          "label": "Validate credits / limits",
+          "payload": "userId, modelId, webSearch flag → CreditValidationResult; calls polar-lib + token-counter"
+        },
+        {
+          "from": "svc-credit",
+          "to": "polar-lib",
+          "label": "Polar balance check",
+          "payload": "externalCustomerId → remaining credits, subscription type"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-model",
+          "label": "Validate model",
+          "payload": "modelId, user tier → ModelValidationResult (premium/free/BYOK)"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-message",
+          "label": "Process messages",
+          "payload": "UIMessage[] → normalized messages, image parts, file tool content"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-mcp",
+          "label": "Connect MCP tools",
+          "payload": "MCPServerConfig[] → MCP Client tools merged into streamText"
+        },
+        {
+          "from": "svc-mcp",
+          "to": "ext-mcp-servers",
+          "label": "MCP protocol",
+          "payload": "SSE/streamable-http; tools/list, tools/call"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-websearch",
+          "label": "Optional web search",
+          "payload": "query → search results injected as context (WEB_SEARCH_COST credits)"
+        },
+        {
+          "from": "api-chat",
+          "to": "ai-providers",
+          "label": "Resolve model",
+          "payload": "modelId + user apiKeys → LanguageModel instance"
+        },
+        {
+          "from": "ai-providers",
+          "to": "vercel-ai-sdk",
+          "label": "streamText",
+          "payload": "{ model, messages, tools, system }"
+        },
+        {
+          "from": "vercel-ai-sdk",
+          "to": "ext-openrouter",
+          "label": "Provider call",
+          "payload": "OpenRouter or Requesty API key (app or BYOK)"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-db",
+          "label": "Persist chat",
+          "payload": "chat id, messages[] → chats + messages tables"
+        },
+        {
+          "from": "svc-db",
+          "to": "db-index",
+          "label": "Drizzle ORM",
+          "payload": "insert/update via schema types"
+        },
+        {
+          "from": "db-index",
+          "to": "neon",
+          "label": "SQL",
+          "payload": "Neon serverless driver"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-token",
+          "label": "Track usage",
+          "payload": "usage metadata → tokenCounter, CostCalculationService, Polar usage events"
+        },
+        {
+          "from": "svc-token",
+          "to": "ext-polar",
+          "label": "Bill usage",
+          "payload": "metered usage event (when applicable)"
+        },
+        {
+          "from": "api-chat",
+          "to": "chat",
+          "label": "SSE stream response",
+          "payload": "UI message stream chunks → useChat updates Messages component"
+        }
+      ]
+    },
+    {
+      "id": "google-sign-in",
+      "label": "Google sign-in",
+      "category": "Auth",
+      "description": "User signs in with Google; Better Auth creates session, links Polar customer, may merge anonymous account.",
+      "steps": [
+        {
+          "from": "sign-in-button",
+          "to": "auth-client",
+          "label": "signIn.social",
+          "payload": "{ provider: 'google', callbackURL }"
+        },
+        {
+          "from": "auth-client",
+          "to": "api-auth",
+          "label": "Better Auth handler",
+          "payload": "OAuth redirect to Google"
+        },
+        {
+          "from": "api-auth",
+          "to": "auth",
+          "label": "betterAuth config",
+          "payload": "drizzleAdapter, google clientId/secret (prod vs dev)"
+        },
+        {
+          "from": "auth",
+          "to": "ext-google",
+          "label": "OAuth 2.0",
+          "payload": "authorization code → tokens + profile"
+        },
+        {
+          "from": "auth",
+          "to": "db-index",
+          "label": "Upsert user",
+          "payload": "user, account, session rows in schema"
+        },
+        {
+          "from": "db-index",
+          "to": "neon",
+          "label": "Persist session",
+          "payload": "sessionToken cookie bound to userId"
+        },
+        {
+          "from": "auth",
+          "to": "ext-polar",
+          "label": "Polar plugin",
+          "payload": "@polar-sh/better-auth creates/links external customer on sign-up"
+        },
+        {
+          "from": "sign-in-button",
+          "to": "use-auth",
+          "label": "Session refresh",
+          "payload": "useSession() → user, usage limits in client"
+        }
+      ]
+    },
+    {
+      "id": "anonymous-session",
+      "label": "Anonymous session",
+      "category": "Auth",
+      "description": "First visit creates anonymous Better Auth user with 10 messages/day limit.",
+      "steps": [
+        {
+          "from": "chat",
+          "to": "use-auth",
+          "label": "Session required",
+          "payload": "useAuth() waits for session"
+        },
+        {
+          "from": "use-auth",
+          "to": "auth-client",
+          "label": "getSession",
+          "payload": "no cookie → triggers anonymous plugin"
+        },
+        {
+          "from": "auth-client",
+          "to": "api-auth",
+          "label": "anonymous plugin",
+          "payload": "better-auth/plugins/anonymous"
+        },
+        {
+          "from": "auth",
+          "to": "db-index",
+          "label": "Create anonymous user",
+          "payload": "{ isAnonymous: true } in user table"
+        },
+        {
+          "from": "use-auth",
+          "to": "api-credits",
+          "label": "Usage limits",
+          "payload": "daily message count for anonymous tier"
+        }
+      ]
+    },
+    {
+      "id": "subscribe-checkout",
+      "label": "Subscribe (Polar checkout)",
+      "category": "Billing",
+      "description": "Authenticated user starts Polar checkout for monthly or yearly plan.",
+      "steps": [
+        {
+          "from": "checkout-button",
+          "to": "use-auth",
+          "label": "Auth gate",
+          "payload": "if !session → store planSlug, redirect to sign-in"
+        },
+        {
+          "from": "checkout-button",
+          "to": "api-checkout",
+          "label": "Redirect",
+          "payload": "window.location = `/api/auth/checkout/${planSlug}`"
+        },
+        {
+          "from": "api-checkout",
+          "to": "auth",
+          "label": "polar checkout config",
+          "payload": "productIds (monthly/yearly), successUrl, errorUrl"
+        },
+        {
+          "from": "auth",
+          "to": "ext-polar",
+          "label": "Create checkout session",
+          "payload": "Polar SDK checkout → hosted payment page"
+        },
+        {
+          "from": "ext-polar",
+          "to": "auth",
+          "label": "Webhook",
+          "payload": "subscription.created → update user metadata / credits"
+        },
+        {
+          "from": "auth",
+          "to": "neon",
+          "label": "Persist subscription state",
+          "payload": "user metadata, polar customer linkage"
+        },
+        {
+          "from": "checkout-button",
+          "to": "use-credits",
+          "label": "Refresh credits UI",
+          "payload": "SWR revalidate /api/credits after success redirect"
+        }
+      ]
+    },
+    {
+      "id": "upload-file",
+      "label": "Upload file attachment",
+      "category": "Chat",
+      "description": "User attaches image or document before sending; file stored in Vercel Blob, referenced in chat message.",
+      "steps": [
+        {
+          "from": "file-upload",
+          "to": "file-upload-lib",
+          "label": "Client validation",
+          "payload": "file type, size limits before upload"
+        },
+        {
+          "from": "file-upload",
+          "to": "api-upload",
+          "label": "multipart POST",
+          "payload": "FormData with file blob"
+        },
+        {
+          "from": "api-upload",
+          "to": "svc-auth",
+          "label": "Auth check",
+          "payload": "session required"
+        },
+        {
+          "from": "api-upload",
+          "to": "ext-vercel-blob",
+          "label": "put()",
+          "payload": "BLOB_READ_WRITE_TOKEN → public URL"
+        },
+        {
+          "from": "api-upload",
+          "to": "chat",
+          "label": "Attachment metadata",
+          "payload": "{ url, name, mimeType } added to message FileAttachment[]"
+        },
+        {
+          "from": "chat",
+          "to": "api-chat",
+          "label": "Send with attachment",
+          "payload": "image URL in UIMessage parts; documents parsed via file-reader in api-chat"
+        }
+      ]
+    },
+    {
+      "id": "configure-mcp",
+      "label": "Configure MCP server",
+      "category": "Settings",
+      "description": "User adds MCP server in settings; config persisted locally and sent with each chat request.",
+      "steps": [
+        {
+          "from": "settings-sheet",
+          "to": "mcp-manager",
+          "label": "MCP tab",
+          "payload": "embedded MCPServerManager"
+        },
+        {
+          "from": "mcp-manager",
+          "to": "mcp-context",
+          "label": "Update servers",
+          "payload": "MCPServerConfig { url, type, headers, oauth }"
+        },
+        {
+          "from": "mcp-context",
+          "to": "browser-storage",
+          "label": "Persist",
+          "payload": "localStorage key STORAGE_KEYS.MCP_SERVERS"
+        },
+        {
+          "from": "mcp-manager",
+          "to": "ext-mcp-servers",
+          "label": "Test connection",
+          "payload": "optional health check / OAuth flow (test-mcp-oauth page)"
+        },
+        {
+          "from": "chat",
+          "to": "mcp-context",
+          "label": "Load on send",
+          "payload": "active servers[] included in POST /api/chat body"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-mcp",
+          "label": "Runtime connect",
+          "payload": "@modelcontextprotocol/sdk Client per server"
+        }
+      ]
+    },
+    {
+      "id": "share-chat",
+      "label": "Share chat publicly",
+      "category": "Chat",
+      "description": "Owner creates a read-only share link with optional redaction of PII and system prompts.",
+      "steps": [
+        {
+          "from": "chat-share-dialog",
+          "to": "api-share",
+          "label": "POST share",
+          "payload": "{ redaction options: hideSystemPrompts, hideToolArgs, excludeMedia }"
+        },
+        {
+          "from": "api-share",
+          "to": "svc-auth",
+          "label": "Owner check",
+          "payload": "session.userId must own chat"
+        },
+        {
+          "from": "api-share",
+          "to": "svc-sharing",
+          "label": "Build snapshot",
+          "payload": "ChatSnapshot { messages, metadata, redaction applied }"
+        },
+        {
+          "from": "svc-sharing",
+          "to": "db-index",
+          "label": "Insert chat_shares",
+          "payload": "shareId (nanoid 32), snapshot JSON, expiresAt?"
+        },
+        {
+          "from": "db-index",
+          "to": "neon",
+          "label": "Persist",
+          "payload": "chatShares table"
+        },
+        {
+          "from": "chat-share-dialog",
+          "to": "chat",
+          "label": "Copy link",
+          "payload": "/chats/shared/{shareId} public URL"
+        }
+      ]
+    },
+    {
+      "id": "load-models",
+      "label": "Load model catalog",
+      "category": "Models",
+      "description": "Model picker fetches dynamic model list from OpenRouter/Requesty with caching and favorites.",
+      "steps": [
+        {
+          "from": "model-picker",
+          "to": "use-models",
+          "label": "React Query",
+          "payload": "staleTime, filter state"
+        },
+        {
+          "from": "use-models",
+          "to": "api-models",
+          "label": "GET /api/models",
+          "payload": "optional provider filter"
+        },
+        {
+          "from": "api-models",
+          "to": "fetch-models",
+          "label": "Aggregate providers",
+          "payload": "OpenRouter + Requesty APIs, merge ModelInfo[]"
+        },
+        {
+          "from": "fetch-models",
+          "to": "ext-openrouter",
+          "label": "Models API",
+          "payload": "OPENROUTER_API_KEY"
+        },
+        {
+          "from": "fetch-models",
+          "to": "ext-requesty",
+          "label": "Models API",
+          "payload": "REQUESTY_API_KEY"
+        },
+        {
+          "from": "model-picker",
+          "to": "model-context",
+          "label": "Selection",
+          "payload": "selectedModelId persisted to localStorage"
+        },
+        {
+          "from": "chat",
+          "to": "model-context",
+          "label": "Use in chat",
+          "payload": "selectedModel sent to /api/chat"
+        }
+      ]
+    },
+    {
+      "id": "admin-cleanup-users",
+      "label": "Admin: cleanup inactive users",
+      "category": "Admin",
+      "description": "Admin triggers scheduled cleanup of stale anonymous/inactive accounts.",
+      "steps": [
+        {
+          "from": "admin-cleanup",
+          "to": "api-admin-cleanup",
+          "label": "POST execute",
+          "payload": "{ dryRun?, batchSize? } + admin session"
+        },
+        {
+          "from": "api-admin-cleanup",
+          "to": "svc-auth",
+          "label": "Admin role check",
+          "payload": "user.isAdmin === true"
+        },
+        {
+          "from": "api-admin-cleanup",
+          "to": "svc-cleanup",
+          "label": "Run cleanup",
+          "payload": "criteria: last active, isAnonymous, retention days"
+        },
+        {
+          "from": "svc-cleanup",
+          "to": "db-index",
+          "label": "Delete cascades",
+          "payload": "users, chats, messages, sessions (transaction)"
+        },
+        {
+          "from": "db-index",
+          "to": "neon",
+          "label": "SQL deletes",
+          "payload": "batched deletes with logging"
+        },
+        {
+          "from": "api-admin-cleanup",
+          "to": "ext-polar",
+          "label": "Optional notify",
+          "payload": "webhookUrl from schedule config (cleanupMonitoringService)"
+        }
+      ]
+    },
+    {
+      "id": "production-deploy",
+      "label": "Production deploy (Vercel)",
+      "category": "DevOps",
+      "description": "CI/CD path from git push to live Next.js app (no ToDesktop in this repo).",
+      "steps": [
+        {
+          "from": "ext-vercel",
+          "to": "ext-vercel",
+          "label": "Git push / PR",
+          "payload": "GitHub integration triggers build"
+        },
+        {
+          "from": "ext-vercel",
+          "to": "api-chat",
+          "label": "next build",
+          "payload": "pnpm build → Turbopack bundle of app/ + components/ + lib/"
+        },
+        {
+          "from": "ext-vercel",
+          "to": "neon",
+          "label": "Migrate (manual/CI)",
+          "payload": "pnpm db:migrate against DATABASE_URL"
+        },
+        {
+          "from": "ext-vercel",
+          "to": "auth",
+          "label": "Env injection",
+          "payload": "AUTH_SECRET, POLAR_*, GOOGLE_*_PROD, AI provider keys"
+        },
+        {
+          "from": "ext-vercel",
+          "to": "ext-openrouter",
+          "label": "Runtime",
+          "payload": "Serverless functions call external APIs at edge/node"
+        }
+      ]
+    },
+    {
+      "id": "link-anonymous-to-google",
+      "label": "Link anonymous → Google account",
+      "category": "Auth",
+      "description": "Anonymous user signs in with Google; Better Auth merges identity and preserves chats where configured.",
+      "steps": [
+        {
+          "from": "sign-in-button",
+          "to": "auth-client",
+          "label": "signIn with existing session",
+          "payload": "anonymous session cookie present"
+        },
+        {
+          "from": "auth-client",
+          "to": "auth",
+          "label": "Account linking",
+          "payload": "better-auth account linking plugin"
+        },
+        {
+          "from": "auth",
+          "to": "db-index",
+          "label": "Merge users",
+          "payload": "reassign chats/messages to Google userId or link accounts"
+        },
+        {
+          "from": "auth",
+          "to": "ext-polar",
+          "label": "Customer merge",
+          "payload": "Polar external_id updated to canonical user"
+        },
+        {
+          "from": "use-auth",
+          "to": "use-credits",
+          "label": "Tier upgrade",
+          "payload": "20 msg/day Google tier + credit balance"
+        }
+      ]
+    },
+    {
+      "id": "check-credits",
+      "label": "Check credit balance",
+      "category": "Billing",
+      "description": "UI displays remaining credits and subscription status.",
+      "steps": [
+        {
+          "from": "chat",
+          "to": "use-credits",
+          "label": "Hook mount",
+          "payload": "SWR or React Query polling"
+        },
+        {
+          "from": "use-credits",
+          "to": "api-credits",
+          "label": "GET /api/credits",
+          "payload": "session cookie"
+        },
+        {
+          "from": "api-credits",
+          "to": "polar-lib",
+          "label": "Fetch balance",
+          "payload": "getRemainingCreditsByExternalId(userId)"
+        },
+        {
+          "from": "polar-lib",
+          "to": "ext-polar",
+          "label": "Polar API",
+          "payload": "customer credits + subscription metadata"
+        },
+        {
+          "from": "api-credits",
+          "to": "token-counter",
+          "label": "Usage summary",
+          "payload": "recent token usage from DB"
+        },
+        {
+          "from": "use-credits",
+          "to": "chat",
+          "label": "UI gate",
+          "payload": "disable send if insufficient credits (unless BYOK)"
+        }
+      ]
+    }
+  ]
+}

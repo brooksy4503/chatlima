@@ -5,22 +5,50 @@ import { createXai } from "@ai-sdk/xai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createRequesty } from "@requesty/ai-sdk";
 
+import type { LanguageModelV3 } from "@ai-sdk/provider";
 import {
   customProvider,
   wrapLanguageModel,
-  extractReasoningMiddleware
+  extractReasoningMiddleware,
+  type LanguageModel,
 } from "ai";
 
 import { titleGenerationModelId } from '@/lib/constants';
 import { getLocalStorageItem, isLocalStorageAvailable } from '@/lib/browser-storage';
 
-const middleware = extractReasoningMiddleware({
+const tagBasedReasoningMiddleware = extractReasoningMiddleware({
   tagName: 'think',
 });
 
-const deepseekR1Middleware = extractReasoningMiddleware({
-  tagName: 'think',
-});
+/** Models that embed reasoning in think tags inside the text stream. */
+function usesTagBasedReasoningExtraction(modelId: string): boolean {
+  const id = modelId.toLowerCase();
+  return (
+    id.includes('deepseek-r1') ||
+    id.includes('deepseek-reasoner') ||
+    id.includes('qwq') ||
+    id.includes('grok-3-beta') ||
+    id.includes('grok-3-mini-beta') ||
+    id.includes('parasail-deepseek-r1')
+  );
+}
+
+/** Models that expose reasoning via OpenRouter's native reasoning field (no tag middleware). */
+function usesNativeReasoningField(modelId: string): boolean {
+  const id = modelId.toLowerCase();
+  return id.includes('minimax/m2') || id.includes('minimax-m2');
+}
+
+function wrapWithTagBasedReasoning(model: LanguageModel): LanguageModel;
+function wrapWithTagBasedReasoning(model: unknown): LanguageModel;
+function wrapWithTagBasedReasoning(model: unknown): LanguageModel {
+  return wrapLanguageModel({
+    model: model as LanguageModelV3,
+    middleware: tagBasedReasoningMiddleware,
+  }) as LanguageModel;
+}
+
+export { usesTagBasedReasoningExtraction, wrapWithTagBasedReasoning };
 
 // Helper to get API keys from environment variables first, then localStorage
 export const getApiKey = (key: string): string | undefined => {
@@ -147,7 +175,11 @@ const languageModels = {
 };
 
 // Helper to get language model with dynamic API keys
-export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<string, string>, userId?: string) => {
+export const getLanguageModelWithKeys = (
+  modelId: string,
+  apiKeys?: Record<string, string>,
+  userId?: string,
+): LanguageModel => {
   // Helper function to create clients on demand
   const getOpenAIClient = () => createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
   const getAnthropicClient = () => createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
@@ -163,22 +195,13 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     const requestyModelId = modelId.replace('requesty/', '');
     console.log(`[getLanguageModelWithKeys] Creating dynamic Requesty client for: ${requestyModelId}`);
 
-    // Check if this is a reasoning model that needs special middleware
-    const isReasoningModel = (
-      requestyModelId.includes('deepseek-r1') ||
-      requestyModelId.includes('DeepSeek-R1') ||
-      requestyModelId.includes('deepseek-reasoner') ||
-      requestyModelId.includes('thinking') ||
-      requestyModelId.includes('parasail-deepseek-r1')
-    );
-
-    if (isReasoningModel) {
-      // Note: Reasoning extraction is now handled natively by the AI SDK in v6
-      return getRequestyClient()(requestyModelId, { logprobs: false });
+    if (usesTagBasedReasoningExtraction(modelId)) {
+      return wrapWithTagBasedReasoning(
+        getRequestyClient()(requestyModelId, { logprobs: false }),
+      );
     }
 
-    // Regular model without special middleware
-    return getRequestyClient()(requestyModelId);
+    return getRequestyClient()(requestyModelId) as unknown as LanguageModel;
   }
 
   // Handle dynamic OpenRouter models
@@ -186,37 +209,23 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
     const openrouterModelId = modelId.replace('openrouter/', '');
     console.log(`[getLanguageModelWithKeys] Creating dynamic OpenRouter client for: ${openrouterModelId}`);
 
-    // Check if this is a reasoning model that needs special middleware
-    const isReasoningModel = (
-      openrouterModelId.includes('deepseek-r1') ||
-      openrouterModelId.includes('deepseek-reasoner') ||
-      openrouterModelId.includes('thinking') ||
-      openrouterModelId.includes('qwq') ||
-      openrouterModelId.includes('grok-3-beta') ||
-      openrouterModelId.includes('grok-3-mini-beta') ||
-      openrouterModelId.includes('minimax/m2') ||
-      openrouterModelId.includes('minimax-m2')
-    );
-
-    if (isReasoningModel) {
-      // Handle special reasoning parameters for specific models
-      if (openrouterModelId === 'x-ai/grok-3-mini-beta' && modelId.includes('reasoning-high')) {
-        // Note: Reasoning extraction is now handled natively by the AI SDK in v6
-        return getOpenRouterClient()('x-ai/grok-3-mini-beta', { reasoning: { effort: "high" }, logprobs: false });
-      }
-
-      // MiniMax M2 uses OpenRouter's native reasoning field format, not tag-based reasoning
-      // The AI SDK handles this automatically with sendReasoning: true, so no middleware needed
-      if (openrouterModelId.includes('minimax/m2') || openrouterModelId.includes('minimax-m2')) {
-        return getOpenRouterClient()(openrouterModelId);
-      }
-
-      // Note: Reasoning extraction is now handled natively by the AI SDK in v6
-      return getOpenRouterClient()(openrouterModelId, { logprobs: false });
+    if (usesNativeReasoningField(modelId)) {
+      return getOpenRouterClient()(openrouterModelId) as LanguageModel;
     }
 
-    // Regular model without special middleware
-    return getOpenRouterClient()(openrouterModelId);
+    if (openrouterModelId === 'x-ai/grok-3-mini-beta' && modelId.includes('reasoning-high')) {
+      return wrapWithTagBasedReasoning(
+        getOpenRouterClient()('x-ai/grok-3-mini-beta', { reasoning: { effort: "high" }, logprobs: false }),
+      );
+    }
+
+    if (usesTagBasedReasoningExtraction(modelId)) {
+      return wrapWithTagBasedReasoning(
+        getOpenRouterClient()(openrouterModelId, { logprobs: false }),
+      );
+    }
+
+    return getOpenRouterClient()(openrouterModelId) as LanguageModel;
   }
 
   switch (modelId) {
@@ -230,8 +239,7 @@ export const getLanguageModelWithKeys = (modelId: string, apiKeys?: Record<strin
 
     // Groq models
     case "qwen-qwq":
-      // Note: Reasoning extraction is now handled natively by the AI SDK in v6
-      return getGroqClient()("qwen-qwq-32b");
+      return wrapWithTagBasedReasoning(getGroqClient()("qwen-qwq-32b"));
 
     // XAI models
     case "grok-3-mini":

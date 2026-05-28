@@ -71,7 +71,7 @@ export function WebSearchSuggestion({ messageId, hasWebSearchResults }: WebSearc
             </div>
             <div className="text-xs text-blue-700 dark:text-blue-200 mb-3 leading-relaxed">
               Follow-up questions about these results don&apos;t need web search. 
-              Disable it to save {WEB_SEARCH_COST} credits per message.
+              Disable it to save {WEB_SEARCH_COST} credits per search.
             </div>
             
             <div className="flex items-center gap-2">

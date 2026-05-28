@@ -1,6 +1,7 @@
 "use client";
 
-import { Message, useChat } from "@ai-sdk/react";
+import { useChat, type UIMessage } from "@ai-sdk/react";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat-store";
+import { dbMessagesHaveRicherAssistantParts } from "@/lib/chat-message-persistence";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
@@ -27,6 +29,7 @@ import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { ChatProjectSelector } from "./projects/chat-project-selector";
 import { Button } from "./ui/button";
+import { Check, MessageSquare, Search, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +39,12 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { hasProviderByokForModel } from "@/lib/services/accessGateService";
-import { Check, MessageSquare, Search, Sparkles } from "lucide-react";
+import { getUIMessageText } from "@/lib/message-utils";
+
+type ChatUIMessage = UIMessage & {
+  hasWebSearch?: boolean;
+  webSearchContextSize?: 'low' | 'medium' | 'high';
+};
 
 // Type for chat data from DB
 interface ChatData {
@@ -157,6 +165,8 @@ export default function Chat() {
     }
   }, [chatId]);
 
+  const activeChatId = chatId || generatedChatId;
+
   // Reset error state when navigating to a new chat
   useEffect(() => {
     if (!chatId) {
@@ -212,7 +222,7 @@ export default function Chat() {
     refetchOnWindowFocus: false
   });
   
-  const initialMessages = useMemo(() => {
+  const initialMessages = useMemo((): ChatUIMessage[] => {
     if (!chatData || !chatData.messages || chatData.messages.length === 0) {
       return [];
     }
@@ -220,12 +230,70 @@ export default function Chat() {
     const uiMessages = convertToUIMessages(chatData.messages);
     return uiMessages.map(msg => ({
       id: msg.id,
-      role: msg.role as Message['role'],
-      content: msg.content,
+      role: msg.role as ChatUIMessage['role'],
       parts: msg.parts,
       hasWebSearch: msg.hasWebSearch,
-    } as Message & { hasWebSearch?: boolean }));
+      webSearchContextSize: msg.webSearchContextSize,
+    }));
   }, [chatData]);
+
+  const [input, setInput] = useState("");
+
+  const chatBodyRef = useRef({
+    selectedModel: selectedModel,
+    mcpServers: mcpServersForApi,
+    chatId: chatId || generatedChatId,
+    webSearch: {
+      enabled: webSearchEnabled,
+      contextSize: webSearchContextSize,
+    },
+    apiKeys: {} as Record<string, string>,
+    attachments: [] as unknown[],
+    temperature: undefined as number | undefined,
+    maxTokens: undefined as number | undefined,
+    systemInstruction: undefined as string | undefined,
+  });
+
+  useEffect(() => {
+    chatBodyRef.current = {
+      selectedModel: activePreset?.modelId || selectedModel,
+      mcpServers: mcpServersForApi,
+      chatId: chatId || generatedChatId,
+      webSearch: {
+        enabled: activePreset?.webSearchEnabled ?? webSearchEnabled,
+        contextSize: activePreset?.webSearchContextSize || webSearchContextSize,
+      },
+      apiKeys: getClientApiKeys(),
+      attachments: [],
+      temperature: activePreset?.temperature,
+      maxTokens: activePreset?.maxTokens,
+      systemInstruction: activePreset?.systemInstruction,
+    };
+  }, [
+    activePreset,
+    selectedModel,
+    mcpServersForApi,
+    chatId,
+    generatedChatId,
+    webSearchEnabled,
+    webSearchContextSize,
+  ]);
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages, id, body }) => ({
+          body: {
+            ...body,
+            ...chatBodyRef.current,
+            messages,
+            id,
+          },
+        }),
+      }),
+    []
+  );
   
   // Function to get API keys from localStorage (uses safe helper for SSR/broken Node env)
   const getClientApiKeys = () => {
@@ -305,41 +373,31 @@ export default function Chat() {
     setUploadErrors([]);
   }, []);
 
-  // Note: No longer creating attachments array since we use message parts directly
-
-  const { messages, input, handleInputChange, handleSubmit, append, status, stop: originalStop } =
-    useChat({
+  const { messages, sendMessage, status, stop: originalStop, setMessages } = useChat({
       id: chatId || generatedChatId,
-      initialMessages,
-      maxSteps: 20,
-      body: {
-        selectedModel: activePreset?.modelId || selectedModel,
-        mcpServers: mcpServersForApi,
-        chatId: chatId || generatedChatId,
-        webSearch: {
-          enabled: activePreset?.webSearchEnabled ?? webSearchEnabled,
-          contextSize: activePreset?.webSearchContextSize || webSearchContextSize,
-        },
-        apiKeys: getClientApiKeys(),
-        // Only send attachments for text-only messages (handleSubmit)
-        // Don't send when using append() since images are already in message parts
-        attachments: [],
-        // Include preset parameters
-        temperature: activePreset?.temperature,
-        maxTokens: activePreset?.maxTokens,
-        systemInstruction: activePreset?.systemInstruction
+      messages: initialMessages,
+      transport,
+      sendAutomaticallyWhen: ({ messages: chatMessages }) => {
+        // MCP / server-executed tools must not trigger client follow-up requests (causes stuck "streaming").
+        if (mcpServersForApi.length > 0) {
+          return false;
+        }
+        return lastAssistantMessageIsCompleteWithToolCalls({ messages: chatMessages });
       },
-      experimental_throttle: 500,
-      onFinish: (message) => {
+      experimental_throttle: 100,
+      onFinish: () => {
         // Clear images and reset UI state after successful submission
         clearFiles();
         setHideImagesInUI(false);
         
-        // Refresh usage data to update upgrade button and other UI elements
-        refreshMessageUsage();
-        
-        queryClient.invalidateQueries({ queryKey: ['chats'] });
-        queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+        // Defer refetches so the UI can finish the stream→ready transition first
+        requestAnimationFrame(() => {
+          refreshMessageUsage();
+          queryClient.invalidateQueries({ queryKey: ['chats'] });
+          queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
+          queryClient.invalidateQueries({ queryKey: ['chat-token-usage', activeChatId] });
+        });
+
         if (!chatId && generatedChatId) {
           if (window.location.pathname !== `/chat/${generatedChatId}`) {
              router.push(`/chat/${generatedChatId}`, { scroll: false }); 
@@ -523,6 +581,43 @@ export default function Chat() {
       },
     });
 
+  // Sync DB history into useChat when navigating to a chat, and re-sync when a refetch
+  // returns richer assistant parts (tool/reasoning) after the server finishes persisting.
+  const loadedChatIdRef = useRef<string | null>(null);
+  const tokenUsageRefetchKeyRef = useRef("");
+
+  useEffect(() => {
+    tokenUsageRefetchKeyRef.current = "";
+  }, [activeChatId]);
+  useEffect(() => {
+    if (!chatId || isLoadingChat) return;
+    if (status === "streaming" || status === "submitted") return;
+
+    const isNewChatNavigation = loadedChatIdRef.current !== chatId;
+
+    if (isNewChatNavigation) {
+      // Avoid wiping streamed messages while DB persistence/refetch is still in flight.
+      if (initialMessages.length > 0 || messages.length === 0) {
+        setMessages(initialMessages);
+      }
+      loadedChatIdRef.current = chatId;
+      return;
+    }
+
+    if (
+      status === "ready" &&
+      initialMessages.length > 0 &&
+      (messages.length === 0 ||
+        dbMessagesHaveRicherAssistantParts(messages, initialMessages))
+    ) {
+      setMessages(initialMessages);
+    }
+  }, [chatId, isLoadingChat, initialMessages, status, setMessages, messages]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+  }, []);
+
   // Custom stop function that handles both stopping the stream and refreshing data
   const stop = useCallback(async () => {
     console.log('Stopping stream and refreshing chat data...');
@@ -602,7 +697,7 @@ export default function Chat() {
       
       if (messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage.role === 'assistant' && lastMessage.content) {
+        if (lastMessage.role === 'assistant' && getUIMessageText(lastMessage)) {
           setLastStreamingActivity(Date.now());
           
           // NEW: Track time to first token when first content appears
@@ -777,7 +872,6 @@ export default function Chat() {
       messageContent = `${input}\n\n[Attached files:]\n${fileList}\n\n[Instruction: Use the read_file tool with filepath values before answering.]`;
     }
 
-    // If we have image files with dataUrl, use append to create a message with parts
     if (imageFiles.length > 0) {
       const textPart = { type: 'text' as const, text: messageContent };
       const imageParts = imageFiles.map((file) => ({
@@ -794,29 +888,20 @@ export default function Chat() {
           height: file.metadata.height
         }
       }));
-      
-      // Use append to create message with image parts
-      append({
+
+      await sendMessage({
         role: 'user',
-        content: messageContent,
-        parts: [textPart, ...imageParts] as any
+        parts: [textPart, ...imageParts] as ChatUIMessage['parts'],
       });
-      
-      // Clear the input field manually since append doesn't do it automatically
-      handleInputChange({ target: { value: '' } } as any);
+      setInput('');
     } else {
-      // No images: append directly to avoid racing input state updates.
-      append({
-        role: 'user',
-        content: messageContent
-      });
-      handleInputChange({ target: { value: '' } } as any);
+      await sendMessage({ text: messageContent });
+      setInput('');
     }
   }, [
-    append,
+    sendMessage,
     input,
     selectedFiles,
-    handleInputChange,
     isUploadingFiles,
     modelSupportsVision,
     activePreset?.modelId,
@@ -832,11 +917,8 @@ export default function Chat() {
 
   // Function to send a message from suggested prompts
   const sendSuggestedMessage = useCallback((message: string) => {
-    append({
-      role: 'user',
-      content: message
-    });
-  }, [append]);
+    void sendMessage({ text: message });
+  }, [sendMessage]);
 
   const isOpenRouterModel = effectiveModel.startsWith("openrouter/");
 
@@ -861,20 +943,20 @@ export default function Chat() {
       
       return {
         ...enhancedMessage,
-        hasWebSearch: (enhancedMessage as any).hasWebSearch || false
-      } as Message & { hasWebSearch?: boolean };
+        hasWebSearch: (enhancedMessage as ChatUIMessage).hasWebSearch || false
+      } as ChatUIMessage;
     });
   }, [messages, webSearchEnabled, activePreset, isOpenRouterModel]);
 
   // Fetch chat token usage data
   const { data: chatTokenData, isLoading: isTokenDataLoading, error: tokenDataError, refetch: refetchTokenData } = useQuery({
-    queryKey: ['chat-token-usage', chatId],
+    queryKey: ['chat-token-usage', activeChatId],
     queryFn: async ({ queryKey }) => {
-      const [_, chatId] = queryKey;
-      if (!chatId || !userId) return null;
+      const [_, chatIdFromKey] = queryKey;
+      if (!chatIdFromKey || !userId) return null;
       
       try {
-        const response = await fetch(`/api/token-usage?chatId=${chatId}`);
+        const response = await fetch(`/api/token-usage?chatId=${chatIdFromKey}`);
         
         if (!response.ok) {
           throw new Error('Failed to load token usage data');
@@ -887,7 +969,7 @@ export default function Chat() {
         throw error;
       }
     },
-    enabled: !!chatId && !!userId,
+    enabled: !!activeChatId && !!userId,
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false
@@ -900,30 +982,11 @@ export default function Chat() {
       if (lastMessage.role === 'assistant') {
         // Simulate real-time token updates during streaming
         // In a real implementation, this would come from the streaming response
-        let outputContentLength = 0;
+        const outputContentLength = getUIMessageText(lastMessage).length;
         let inputContentLength = 0;
 
-        // Handle structured content (Google models)
-        if (Array.isArray(lastMessage.content)) {
-          outputContentLength = lastMessage.content
-            .filter((part: any) => part.type === 'text')
-            .map((part: any) => part.text)
-            .join('').length;
-        } else if (typeof lastMessage.content === 'string') {
-          outputContentLength = lastMessage.content.length;
-        }
-
-        // Handle input message content
         if (messages.length > 1) {
-          const inputMessage = messages[messages.length - 2];
-          if (Array.isArray(inputMessage.content)) {
-            inputContentLength = inputMessage.content
-              .filter((part: any) => part.type === 'text')
-              .map((part: any) => part.text)
-              .join('').length;
-          } else if (typeof inputMessage.content === 'string') {
-            inputContentLength = inputMessage.content.length;
-          }
+          inputContentLength = getUIMessageText(messages[messages.length - 2]).length;
         }
 
         const estimatedOutputTokens = Math.floor(outputContentLength / 4); // Rough estimate
@@ -943,7 +1006,6 @@ export default function Chat() {
     } else if (status === "ready") {
       if (chatTokenData) {
         // When streaming is complete and we have actual data from the API
-        // Handle both old format (totalInputTokens) and new format (totalInputTokens from chat-specific data)
         const inputTokens = chatTokenData.totalInputTokens || chatTokenData.inputTokens || 0;
         const outputTokens = chatTokenData.totalOutputTokens || chatTokenData.outputTokens || 0;
         const estimatedCost = chatTokenData.totalEstimatedCost || chatTokenData.estimatedCost || 0;
@@ -953,23 +1015,34 @@ export default function Chat() {
           outputTokens,
           estimatedCost,
           currency: chatTokenData.currency || 'USD',
-          // NEW: Enhanced timing metrics for Phase 2
           timeToFirstToken: chatTokenData.avgTimeToFirstToken || timeToFirstToken || undefined,
           tokensPerSecond: chatTokenData.avgTokensPerSecond || tokensPerSecond || undefined,
           totalDuration: chatTokenData.avgTotalDuration || totalDuration || undefined
         });
-        
-        // Refetch token data to get the latest information
-        refetchTokenData();
-        
-        // Invalidate user token usage queries to refresh sidebar data
-        if (userId) {
-          queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
-        }
       }
-      // If chatTokenData is not available yet, keep the estimated values from streaming
+
+      const totalTokens =
+        chatTokenData?.totalTokens ||
+        (chatTokenData?.totalInputTokens || 0) + (chatTokenData?.totalOutputTokens || 0);
+      const completedTurnKey = `${activeChatId ?? "new"}:${messages.length}`;
+
+      if (totalTokens > 0 || tokenUsageRefetchKeyRef.current === completedTurnKey) {
+        return;
+      }
+
+      tokenUsageRefetchKeyRef.current = completedTurnKey;
+      const refetchDelays = [300, 1200, 2500, 5000, 8000];
+      const refetchTimers = refetchDelays.map((refetchDelay) =>
+        window.setTimeout(() => {
+          refetchTokenData();
+          if (userId) {
+            queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
+          }
+        }, refetchDelay)
+      );
+      return () => refetchTimers.forEach((timer) => window.clearTimeout(timer));
     }
-  }, [messages, status, chatTokenData, refetchTokenData, userId, queryClient, timeToFirstToken, tokensPerSecond, totalDuration, chatTokenData?.avgTimeToFirstToken, chatTokenData?.avgTokensPerSecond, chatTokenData?.avgTotalDuration]);
+  }, [activeChatId, messages, status, chatTokenData, refetchTokenData, userId, queryClient, timeToFirstToken, tokensPerSecond, totalDuration, chatTokenData?.avgTimeToFirstToken, chatTokenData?.avgTokensPerSecond, chatTokenData?.avgTotalDuration]);
 
   // Manual recovery function
   const forceRecovery = useCallback(() => {
@@ -1007,19 +1080,19 @@ export default function Chat() {
     const [elapsed, setElapsed] = useState(0);
 
     useEffect(() => {
-      if (status === "streaming" && streamingStartTime) {
-        // Set initial elapsed time immediately
-        setElapsed(Date.now() - streamingStartTime);
-        
-        const interval = setInterval(() => {
-          setElapsed(Date.now() - streamingStartTime);
-        }, 1000);
-        return () => clearInterval(interval);
-      } else if (status !== "streaming") {
-        // Only reset to 0 when not streaming
+      if (status !== "streaming" || !streamingStartTime) {
         setElapsed(0);
+        return;
       }
-    }, [elapsed]);
+
+      setElapsed(Date.now() - streamingStartTime);
+
+      const interval = setInterval(() => {
+        setElapsed(Date.now() - streamingStartTime);
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }, [status, streamingStartTime]);
 
     if (status !== "streaming" || !streamingStartTime) return null;
 
@@ -1118,7 +1191,7 @@ export default function Chat() {
       )}
 
       {/* Main content area: Either ProjectOverview, minimal empty state, or Messages */}
-      <div className={`flex-1 min-h-0 pb-2 ${messages.length === 0 && !isLoadingChat ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+      <div className="flex-1 min-h-0 pb-2 overflow-hidden">
         {messages.length === 0 && !isLoadingChat ? (
           showWelcomeScreen || showSuggestedPrompts ? (
             <div className="h-full overflow-y-auto no-scrollbar">
@@ -1145,12 +1218,13 @@ export default function Chat() {
             isLoading={isLoading}
             status={status}
             chatTokenUsage={chatTokenUsage}
+            webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
           />
         )}
       </div>
 
       {/* Token Usage Summary - Only show when not streaming or submitted */}
-      {chatId && status === "ready" && (
+      {activeChatId && status === "ready" && (
         <div className="mb-4">
           <ChatTokenSummary
             totalInputTokens={chatTokenData?.totalInputTokens || chatTokenUsage?.inputTokens || 0}

@@ -54,12 +54,10 @@ jest.mock('next/navigation', () => ({
 jest.mock('@ai-sdk/react', () => ({
   useChat: jest.fn(() => ({
     messages: [],
-    input: '',
-    handleInputChange: jest.fn(),
-    handleSubmit: jest.fn(),
-    append: jest.fn(),
     status: 'idle',
     stop: jest.fn(),
+    sendMessage: jest.fn(),
+    setMessages: jest.fn(),
   })),
 }));
 
@@ -135,20 +133,30 @@ jest.mock('@/lib/hooks/use-chats', () => ({
 
 // Mock child components
 jest.mock('../../components/textarea', () => ({
-  Textarea: ({ handleInputChange, input, isLoading, status, stop, images, onImagesChange, ...props }: any) => (
+  Textarea: ({
+    handleInputChange,
+    input,
+    isLoading,
+    status,
+    stop,
+    files,
+    onFilesChange,
+    selectedModel,
+    setSelectedModel,
+    ...props
+  }: any) => (
     <div data-testid="textarea-mock">
       <textarea
         data-testid="chat-input"
         value={input}
         onChange={handleInputChange}
         disabled={isLoading}
-        {...props}
       />
-      {images && images.length > 0 && (
+      {files && files.length > 0 && (
         <div data-testid="selected-images">
-          {images.map((img: any, index: number) => (
+          {files.map((file: any, index: number) => (
             <div key={index} data-testid={`image-${index}`}>
-              {img.metadata.filename}
+              {file.metadata?.filename ?? `file-${index}`}
             </div>
           ))}
         </div>
@@ -219,6 +227,25 @@ Object.defineProperty(window, 'performance', {
   },
 });
 
+const createUseChatMock = (overrides: Record<string, unknown> = {}) => ({
+  messages: [],
+  status: 'idle',
+  stop: jest.fn(),
+  sendMessage: jest.fn().mockResolvedValue(undefined),
+  setMessages: jest.fn(),
+  ...overrides,
+});
+
+const getPreparedChatRequestBody = (mock: jest.MockedFunction<any>, callIndex = -1) => {
+  const call = mock.mock.calls.at(callIndex)?.[0];
+  const transport = call?.transport;
+  return transport.prepareSendMessagesRequest({
+    messages: [],
+    id: 'test-chat-id',
+    body: {},
+  }).body;
+};
+
 describe('Chat Component', () => {
   beforeAll(() => {
     process.env.NEXT_PUBLIC_BILLING_ENFORCED = 'false';
@@ -259,15 +286,7 @@ describe('Chat Component', () => {
     mockUseParams = require('next/navigation').useParams;
     mockUseAuth = require('@/hooks/useAuth').useAuth;
     
-    mockUseChat.mockReturnValue({
-      messages: [],
-      input: '',
-      handleInputChange: jest.fn(),
-      handleSubmit: jest.fn(),
-      append: jest.fn(),
-      status: 'idle',
-      stop: jest.fn(),
-    });
+    mockUseChat.mockReturnValue(createUseChatMock());
     
     mockUseSession.mockReturnValue({
       data: null,
@@ -318,18 +337,12 @@ describe('Chat Component', () => {
     });
 
     test('renders messages when they exist', () => {
-      mockUseChat.mockReturnValue({
+      mockUseChat.mockReturnValue(createUseChatMock({
         messages: [
           { id: '1', role: 'user', content: 'Hello' },
           { id: '2', role: 'assistant', content: 'Hi there!' },
         ],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: jest.fn(),
-        status: 'idle',
-        stop: jest.fn(),
-      });
+      }));
 
       renderWithProviders(<Chat />);
       
@@ -339,15 +352,10 @@ describe('Chat Component', () => {
     });
 
     test('shows loading state correctly', () => {
-      mockUseChat.mockReturnValue({
-        messages: [{ role: 'user', content: 'Test message' }], // Add a message so Messages component is rendered
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: jest.fn(),
+      mockUseChat.mockReturnValue(createUseChatMock({
+        messages: [{ role: 'user', content: 'Test message' }],
         status: 'streaming',
-        stop: jest.fn(),
-      });
+      }));
 
       renderWithProviders(<Chat />);
       
@@ -368,83 +376,55 @@ describe('Chat Component', () => {
 
   describe('User Interactions', () => {
     test('handles form submission correctly', async () => {
-      const mockAppend = jest.fn();
-      mockUseChat.mockReturnValue({
-        messages: [],
-        input: 'Test message',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: mockAppend,
-        status: 'idle',
-        stop: jest.fn(),
-      });
+      const mockSendMessage = jest.fn().mockResolvedValue(undefined);
+      mockUseChat.mockReturnValue(createUseChatMock({ sendMessage: mockSendMessage }));
 
       renderWithProviders(<Chat />);
-      
+
+      fireEvent.change(screen.getByTestId('chat-input'), {
+        target: { value: 'Test message' },
+      });
+
       const form = screen.getByTestId('textarea-mock').closest('form');
       expect(form).toBeTruthy();
       fireEvent.submit(form!);
+
       await waitFor(() => {
-        expect(mockAppend).toHaveBeenCalled();
+        expect(mockSendMessage).toHaveBeenCalledWith({ text: 'Test message' });
       });
     });
 
     test('prevents form submission when input is empty', () => {
-      const mockHandleSubmit = jest.fn();
-      mockUseChat.mockReturnValue({
-        messages: [],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: mockHandleSubmit,
-        append: jest.fn(),
-        status: 'idle',
-        stop: jest.fn(),
-      });
+      const mockSendMessage = jest.fn().mockResolvedValue(undefined);
+      mockUseChat.mockReturnValue(createUseChatMock({ sendMessage: mockSendMessage }));
 
       renderWithProviders(<Chat />);
-      
+
       const form = screen.getByTestId('textarea-mock').closest('form');
       if (form) {
         fireEvent.submit(form);
-        // Should not call handleSubmit for empty input
-        expect(mockHandleSubmit).not.toHaveBeenCalled();
+        expect(mockSendMessage).not.toHaveBeenCalled();
       }
     });
 
     test('handles suggested message sending', () => {
-      const mockAppend = jest.fn();
-      mockUseChat.mockReturnValue({
-        messages: [],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: mockAppend,
-        status: 'idle',
-        stop: jest.fn(),
-      });
+      const mockSendMessage = jest.fn().mockResolvedValue(undefined);
+      mockUseChat.mockReturnValue(createUseChatMock({ sendMessage: mockSendMessage }));
 
       renderWithProviders(<Chat />);
-      
+
       const sendButton = screen.getByText('Send Test Message');
       fireEvent.click(sendButton);
-      
-      expect(mockAppend).toHaveBeenCalledWith({
-        role: 'user',
-        content: 'Test message',
-      });
+
+      expect(mockSendMessage).toHaveBeenCalledWith({ text: 'Test message' });
     });
 
     test('handles stop button click', async () => {
       const mockStop = jest.fn();
-      mockUseChat.mockReturnValue({
-        messages: [],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: jest.fn(),
+      mockUseChat.mockReturnValue(createUseChatMock({
         status: 'streaming',
         stop: mockStop,
-      });
+      }));
 
       renderWithProviders(<Chat />);
       
@@ -523,17 +503,7 @@ describe('Chat Component', () => {
     });
 
     test('handles authentication errors', async () => {
-      const mockOnError = jest.fn();
-      mockUseChat.mockReturnValue({
-        messages: [],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: jest.fn(),
-        status: 'idle',
-        stop: jest.fn(),
-        onError: mockOnError,
-      });
+      mockUseChat.mockReturnValue(createUseChatMock());
 
       renderWithProviders(<Chat />);
       
@@ -590,22 +560,24 @@ describe('Chat Component', () => {
       });
 
       renderWithProviders(<Chat />);
-      
+
       expect(mockUseChat).toHaveBeenCalledWith(
         expect.objectContaining({
-          maxSteps: 20,
-          body: expect.objectContaining({
-            selectedModel: 'claude-3-opus',
-            mcpServers: [],
-            webSearch: expect.objectContaining({
-              enabled: false,
-              contextSize: 5,
-            }),
-            apiKeys: {},
-            attachments: [],
-          }),
+          transport: expect.objectContaining({ api: '/api/chat' }),
+          experimental_throttle: 100,
         })
       );
+
+      expect(getPreparedChatRequestBody(mockUseChat)).toMatchObject({
+        selectedModel: 'claude-3-opus',
+        mcpServers: [],
+        webSearch: expect.objectContaining({
+          enabled: false,
+          contextSize: 5,
+        }),
+        apiKeys: {},
+        attachments: [],
+      });
     });
 
     test('includes API keys from localStorage', () => {
@@ -616,17 +588,13 @@ describe('Chat Component', () => {
       });
 
       renderWithProviders(<Chat />);
-      
-      expect(mockUseChat).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: expect.objectContaining({
-            apiKeys: {
-              OPENAI_API_KEY: 'sk-test123',
-              ANTHROPIC_API_KEY: 'sk-ant-test456',
-            },
-          }),
-        })
-      );
+
+      expect(getPreparedChatRequestBody(mockUseChat)).toMatchObject({
+        apiKeys: {
+          OPENAI_API_KEY: 'sk-test123',
+          ANTHROPIC_API_KEY: 'sk-ant-test456',
+        },
+      });
     });
 
     test('handles successful message completion', async () => {
@@ -678,15 +646,10 @@ describe('Chat Component', () => {
 
   describe('Streaming and Performance', () => {
     test('displays streaming status correctly', () => {
-      mockUseChat.mockReturnValue({
+      mockUseChat.mockReturnValue(createUseChatMock({
         messages: [{ id: '1', role: 'assistant', content: 'Streaming...' }],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: jest.fn(),
         status: 'streaming',
-        stop: jest.fn(),
-      });
+      }));
 
       renderWithProviders(<Chat />);
       
@@ -695,31 +658,23 @@ describe('Chat Component', () => {
 
     test('handles streaming timeout detection', async () => {
       jest.useFakeTimers();
-      
-      mockUseChat.mockReturnValue({
-        messages: [],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: jest.fn(),
-        status: 'streaming',
-        stop: jest.fn(),
-      });
 
-      renderWithProviders(<Chat />);
-      
-      // Fast-forward time to trigger timeout detection
-      act(() => {
-        jest.advanceTimersByTime(120000); // 2 minutes
-      });
+      try {
+        mockUseChat.mockReturnValue(createUseChatMock({ status: 'streaming' }));
 
-      // Should trigger stuck detection logic
-      await waitFor(() => {
-        // The timeout logic would be triggered
-        expect(true).toBe(true); // Placeholder for actual timeout test
-      });
-      
-      jest.useRealTimers();
+        renderWithProviders(<Chat />);
+
+        act(() => {
+          jest.advanceTimersByTime(120000);
+        });
+
+        await waitFor(() => {
+          expect(true).toBe(true);
+        });
+      } finally {
+        jest.runOnlyPendingTimers();
+        jest.useRealTimers();
+      }
     });
 
     test('optimizes re-renders with proper memoization', () => {
@@ -739,16 +694,8 @@ describe('Chat Component', () => {
 
   describe('Image Handling', () => {
     test('handles image selection correctly', () => {
-      const mockAppend = jest.fn();
-      mockUseChat.mockReturnValue({
-        messages: [],
-        input: 'Test with image',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: mockAppend,
-        status: 'idle',
-        stop: jest.fn(),
-      });
+      const mockSendMessage = jest.fn().mockResolvedValue(undefined);
+      mockUseChat.mockReturnValue(createUseChatMock({ sendMessage: mockSendMessage }));
 
       renderWithProviders(<Chat />);
       
@@ -933,21 +880,17 @@ describe('Chat Component', () => {
       });
 
       renderWithProviders(<Chat />);
-      
-      expect(mockUseChat).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: expect.objectContaining({
-            selectedModel: 'claude-3-sonnet',
-            temperature: 0.7,
-            maxTokens: 2000,
-            systemInstruction: 'Be helpful',
-            webSearch: expect.objectContaining({
-              enabled: true,
-              contextSize: 8,
-            }),
-          }),
-        })
-      );
+
+      expect(getPreparedChatRequestBody(mockUseChat)).toMatchObject({
+        selectedModel: 'claude-3-sonnet',
+        temperature: 0.7,
+        maxTokens: 2000,
+        systemInstruction: 'Be helpful',
+        webSearch: expect.objectContaining({
+          enabled: true,
+          contextSize: 8,
+        }),
+      });
     });
 
     test('falls back to model context when no preset is active', () => {
@@ -962,14 +905,10 @@ describe('Chat Component', () => {
       });
 
       renderWithProviders(<Chat />);
-      
-      expect(mockUseChat).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: expect.objectContaining({
-            selectedModel: 'gpt-4',
-          }),
-        })
-      );
+
+      expect(getPreparedChatRequestBody(mockUseChat)).toMatchObject({
+        selectedModel: 'gpt-4',
+      });
     });
   });
 
@@ -988,18 +927,12 @@ describe('Chat Component', () => {
         setSelectedModel: jest.fn(),
       });
 
-      mockUseChat.mockReturnValue({
+      mockUseChat.mockReturnValue(createUseChatMock({
         messages: [
           { id: '1', role: 'user', content: 'What is the weather?' },
           { id: '2', role: 'assistant', content: 'The weather is sunny.' },
         ],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: jest.fn(),
-        status: 'idle',
-        stop: jest.fn(),
-      });
+      }));
 
       renderWithProviders(<Chat />);
       
@@ -1021,18 +954,12 @@ describe('Chat Component', () => {
         setSelectedModel: jest.fn(),
       });
 
-      mockUseChat.mockReturnValue({
+      mockUseChat.mockReturnValue(createUseChatMock({
         messages: [
           { id: '1', role: 'user', content: 'What is the weather?' },
           { id: '2', role: 'assistant', content: 'The weather is sunny.' },
         ],
-        input: '',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: jest.fn(),
-        status: 'idle',
-        stop: jest.fn(),
-      });
+      }));
 
       renderWithProviders(<Chat />);
       
@@ -1043,31 +970,19 @@ describe('Chat Component', () => {
 
   describe('Integration Tests', () => {
     test('complete chat workflow: send message and receive response', async () => {
-      const mockAppend = jest.fn();
+      const mockSendMessage = jest.fn().mockResolvedValue(undefined);
       const mockRouter = { push: jest.fn() };
-      
-      mockUseChat.mockReturnValue({
-        messages: [],
-        input: 'Hello',
-        handleInputChange: jest.fn(),
-        handleSubmit: jest.fn(),
-        append: mockAppend,
-        status: 'idle',
-        stop: jest.fn(),
-      });
-      
+
+      mockUseChat.mockReturnValue(createUseChatMock({ sendMessage: mockSendMessage }));
+
       mockUseRouter.mockReturnValue(mockRouter);
 
       renderWithProviders(<Chat />);
-      
-      // Send a suggested message
+
       const sendButton = screen.getByText('Send Test Message');
       fireEvent.click(sendButton);
-      
-      expect(mockAppend).toHaveBeenCalledWith({
-        role: 'user',
-        content: 'Test message',
-      });
+
+      expect(mockSendMessage).toHaveBeenCalledWith({ text: 'Test message' });
     });
 
     test('handles chat navigation correctly', async () => {
@@ -1108,16 +1023,12 @@ describe('Chat Component', () => {
       });
 
       renderWithProviders(<Chat />);
-      
-      expect(mockUseChat).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: expect.objectContaining({
-            mcpServers: [
-              { name: 'test-server', url: 'http://localhost:3001' }
-            ],
-          }),
-        })
-      );
+
+      expect(getPreparedChatRequestBody(mockUseChat)).toMatchObject({
+        mcpServers: [
+          { name: 'test-server', url: 'http://localhost:3001' },
+        ],
+      });
     });
   });
 });

@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatLima — Architecture Flow Explorer</title>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --surface: #141a22;
+      --surface-2: #1c2430;
+      --border: #2a3544;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-dim: rgba(59, 130, 246, 0.15);
+      --edge: #3d4f66;
+      --edge-active: #60a5fa;
+      --font: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --mono: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    header .subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .search-box {
+      margin-left: auto;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .search-box input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 0.4rem 0.75rem;
+      font-size: 0.85rem;
+      width: 220px;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Sidebar: flows */
+    .flows-panel {
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .flows-panel h2 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding: 0.75rem 1rem 0.5rem;
+    }
+
+    .flow-category {
+      margin-bottom: 0.25rem;
+    }
+
+    .flow-category-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 0.5rem 1rem 0.25rem;
+    }
+
+    .flow-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      color: var(--text);
+      padding: 0.55rem 1rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .flow-btn:hover {
+      background: var(--surface-2);
+    }
+
+    .flow-btn.active {
+      background: var(--accent-dim);
+      border-left-color: var(--accent);
+      color: #93c5fd;
+    }
+
+    /* Graph canvas */
+    .graph-panel {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
+        var(--bg);
+    }
+
+    .graph-toolbar {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      z-index: 10;
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .graph-toolbar button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .graph-toolbar button:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    #graph-scroll {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+
+    #graph-container {
+      position: relative;
+      min-width: 100%;
+      min-height: 100%;
+    }
+
+    #edges-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .edge-path {
+      fill: none;
+      stroke: var(--edge);
+      stroke-width: 1.5;
+      opacity: 0.35;
+      transition: stroke 0.2s, opacity 0.2s, stroke-width 0.2s;
+    }
+
+    .edge-path.active {
+      stroke: var(--edge-active);
+      stroke-width: 2.5;
+      opacity: 1;
+      filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.5));
+    }
+
+    .edge-label {
+      font-size: 9px;
+      fill: var(--muted);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    .edge-label.active {
+      opacity: 1;
+      fill: #93c5fd;
+    }
+
+    .group-column {
+      position: absolute;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+      padding-top: 1rem;
+    }
+
+    .group-header {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      text-align: center;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.25rem;
+    }
+
+    .node-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+      min-width: 140px;
+      max-width: 160px;
+    }
+
+    .node-card:hover {
+      border-color: #4b6078;
+    }
+
+    .node-card.dimmed {
+      opacity: 0.2;
+    }
+
+    .node-card.highlighted {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(59, 130, 246, 0.2);
+      opacity: 1;
+    }
+
+    .node-card.pulse {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 1px var(--accent), 0 4px 20px rgba(59, 130, 246, 0.2); }
+      50% { box-shadow: 0 0 0 2px var(--accent), 0 4px 28px rgba(59, 130, 246, 0.35); }
+    }
+
+    .node-label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+
+    .node-path {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      margin-top: 0.2rem;
+      word-break: break-all;
+    }
+
+    .node-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+
+    /* Detail panel */
+    .detail-panel {
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-panel .empty-state {
+      padding: 2rem 1.25rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .flow-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .flow-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .flow-header .category-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: var(--accent-dim);
+      color: #93c5fd;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    .flow-header p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .steps-list {
+      padding: 0.5rem 0;
+    }
+
+    .step-item {
+      padding: 0.65rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .step-item:hover,
+    .step-item.active {
+      background: var(--surface-2);
+    }
+
+    .step-num {
+      font-size: 0.65rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+
+    .step-route {
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-route .arrow {
+      color: var(--muted);
+      margin: 0 0.25rem;
+    }
+
+    .step-label {
+      font-size: 0.75rem;
+      color: #93c5fd;
+      margin-bottom: 0.3rem;
+    }
+
+  .step-payload {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      background: var(--bg);
+      border-radius: 4px;
+      padding: 0.4rem 0.5rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .legend {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+
+    .legend h3 {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    .error-banner {
+      background: #451a1a;
+      color: #fca5a5;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 1100px) {
+      main { grid-template-columns: 240px 1fr; }
+      .detail-panel { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="doc-title">Architecture Flow Explorer</h1>
+      <div class="subtitle" id="doc-subtitle">Loading…</div>
+    </div>
+    <div class="search-box">
+      <input type="search" id="flow-search" placeholder="Search flows…" />
+    </div>
+  </header>
+
+  <div id="error" class="error-banner" style="display:none"></div>
+
+  <main>
+    <aside class="flows-panel" id="flows-panel">
+      <h2>Workflows</h2>
+      <div id="flows-list"></div>
+    </aside>
+
+    <section class="graph-panel">
+      <div class="graph-toolbar">
+        <button type="button" id="btn-reset">Reset view</button>
+        <button type="button" id="btn-show-all">Show all nodes</button>
+      </div>
+      <div id="graph-scroll">
+        <div id="graph-container">
+          <svg id="edges-svg"></svg>
+        </div>
+      </div>
+    </section>
+
+    <aside class="detail-panel" id="detail-panel">
+      <div class="empty-state" id="detail-empty">
+        Select a workflow on the left to highlight how data moves between components, services, and external systems.
+      </div>
+      <div id="detail-content" style="display:none">
+        <div class="flow-header" id="flow-header"></div>
+        <div class="steps-list" id="steps-list"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const FLOWS_URL = './flows.json';
+
+    let data = null;
+    let activeFlowId = null;
+    let activeStepIndex = null;
+    let nodeElements = {};
+    let groupColumns = {};
+
+    const NODE_W = 160;
+    const NODE_H = 52;
+    const COL_GAP = 24;
+    const ROW_GAP = 10;
+    const PAD_TOP = 48;
+    const PAD_LEFT = 24;
+
+    async function init() {
+      try {
+        const res = await fetch(FLOWS_URL);
+        if (!res.ok) {
+          throw new Error(
+            `Failed to load flows.json (${res.status}). ` +
+            `Run from repo root: pnpm docs:flows — then open http://localhost:3456/flow-explorer.html ` +
+            `(Note: folder is docs/architecture, not architechture)`
+          );
+        }
+        data = await res.json();
+        document.getElementById('doc-title').textContent = data.meta.title;
+        document.getElementById('doc-subtitle').textContent = `${data.flows.length} workflows · ${data.nodes.length} nodes`;
+        buildLegend();
+        layoutGraph();
+        renderFlowsList();
+        bindEvents();
+      } catch (e) {
+        const el = document.getElementById('error');
+        el.style.display = 'block';
+        el.textContent = e.message;
+      }
+    }
+
+    function buildLegend() {
+      const legend = document.getElementById('legend');
+      legend.innerHTML = '<h3>Layers</h3>' + data.groups.map(g =>
+        `<div class="legend-item"><span class="legend-swatch" style="background:${g.color}"></span>${g.label}</div>`
+      ).join('');
+    }
+
+    function getGroupColor(groupId) {
+      return data.groups.find(g => g.id === groupId)?.color || '#64748b';
+    }
+
+    function layoutGraph() {
+      const container = document.getElementById('graph-container');
+      const svg = document.getElementById('edges-svg');
+      container.querySelectorAll('.group-column').forEach(el => el.remove());
+      svg.innerHTML = '';
+      nodeElements = {};
+      groupColumns = {};
+
+      const nodesByGroup = {};
+      for (const g of data.groups) nodesByGroup[g.id] = [];
+      for (const node of data.nodes) {
+        if (!nodesByGroup[node.group]) nodesByGroup[node.group] = [];
+        nodesByGroup[node.group].push(node);
+      }
+
+      let colX = PAD_LEFT;
+      let maxHeight = 0;
+
+      for (const group of data.groups) {
+        const nodes = nodesByGroup[group.id] || [];
+        const col = document.createElement('div');
+        col.className = 'group-column';
+        col.dataset.group = group.id;
+        col.style.left = colX + 'px';
+
+        const header = document.createElement('div');
+        header.className = 'group-header';
+        header.textContent = group.label;
+        col.appendChild(header);
+
+        let y = PAD_TOP + 28;
+        for (const node of nodes) {
+          const card = document.createElement('div');
+          card.className = 'node-card';
+          card.dataset.nodeId = node.id;
+          card.style.position = 'absolute';
+          card.style.left = '0';
+          card.style.top = y + 'px';
+          card.style.width = NODE_W + 'px';
+
+          card.innerHTML = `
+            <div class="node-label">
+              <span class="node-dot" style="background:${group.color}"></span>${escapeHtml(node.label)}
+            </div>
+            <div class="node-path">${escapeHtml(node.path)}</div>
+          `;
+
+          card.addEventListener('click', () => onNodeClick(node.id));
+          col.appendChild(card);
+          nodeElements[node.id] = { el: card, x: colX, y, group: group.id };
+          y += NODE_H + ROW_GAP;
+        }
+
+        const colHeight = y + PAD_TOP;
+        maxHeight = Math.max(maxHeight, colHeight);
+        col.style.width = NODE_W + 'px';
+        col.style.height = colHeight + 'px';
+        container.appendChild(col);
+        groupColumns[group.id] = col;
+
+        colX += NODE_W + COL_GAP;
+      }
+
+      const totalW = colX + PAD_LEFT;
+      container.style.width = totalW + 'px';
+      container.style.height = maxHeight + 'px';
+      svg.setAttribute('width', totalW);
+      svg.setAttribute('height', maxHeight);
+
+      drawAllEdges();
+    }
+
+    function getNodeCenter(nodeId) {
+      const n = nodeElements[nodeId];
+      if (!n) return null;
+      return {
+        x: n.x + NODE_W / 2,
+        y: n.y + NODE_H / 2
+      };
+    }
+
+    function drawAllEdges() {
+      const svg = document.getElementById('edges-svg');
+      const existing = svg.querySelectorAll('[data-edge-key]');
+      existing.forEach(e => e.remove());
+
+      const edgeSet = new Set();
+      for (const flow of data.flows) {
+        for (const step of flow.steps) {
+          const key = `${step.from}→${step.to}`;
+          if (edgeSet.has(key)) continue;
+          edgeSet.add(key);
+          drawEdge(step.from, step.to, key, false, '');
+        }
+      }
+    }
+
+    function drawEdge(fromId, toId, key, active, label) {
+      const from = getNodeCenter(fromId);
+      const to = getNodeCenter(toId);
+      if (!from || !to) return;
+
+      const svg = document.getElementById('edges-svg');
+      const midX = (from.x + to.x) / 2;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`);
+      path.setAttribute('class', 'edge-path' + (active ? ' active' : ''));
+      path.dataset.edgeKey = key;
+      path.dataset.from = fromId;
+      path.dataset.to = toId;
+      svg.appendChild(path);
+
+      if (label && active) {
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', midX);
+        text.setAttribute('y', (from.y + to.y) / 2 - 4);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('class', 'edge-label active');
+        text.textContent = label.length > 40 ? label.slice(0, 37) + '…' : label;
+        svg.appendChild(text);
+      }
+
+      if (active) {
+        const len = path.getTotalLength();
+        path.style.strokeDasharray = len;
+        path.style.strokeDashoffset = len;
+        path.style.animation = 'drawEdge 0.6s ease forwards';
+      }
+    }
+
+    const style = document.createElement('style');
+    style.textContent = `@keyframes drawEdge { to { stroke-dashoffset: 0; } }`;
+    document.head.appendChild(style);
+
+    function highlightFlow(flowId, stepIndex = null) {
+      activeFlowId = flowId;
+      activeStepIndex = stepIndex;
+      const flow = data.flows.find(f => f.id === flowId);
+      if (!flow) return;
+
+      const involvedNodes = new Set();
+      const activeEdges = new Set();
+
+      flow.steps.forEach((step, i) => {
+        involvedNodes.add(step.from);
+        involvedNodes.add(step.to);
+        const key = `${step.from}→${step.to}`;
+        if (stepIndex === null || i <= stepIndex) {
+          activeEdges.add(key);
+        }
+      });
+
+      Object.entries(nodeElements).forEach(([id, { el }]) => {
+        el.classList.remove('dimmed', 'highlighted', 'pulse');
+        if (!involvedNodes.has(id)) {
+          el.classList.add('dimmed');
+        } else {
+          el.classList.add('highlighted');
+          if (stepIndex !== null) {
+            const step = flow.steps[stepIndex];
+            if (id === step.from || id === step.to) el.classList.add('pulse');
+          }
+        }
+      });
+
+      const svg = document.getElementById('edges-svg');
+      svg.querySelectorAll('.edge-path, .edge-label').forEach(el => el.remove());
+
+      flow.steps.forEach((step, i) => {
+        const key = `${step.from}→${step.to}`;
+        const isActive = stepIndex === null || i <= stepIndex;
+        if (isActive) {
+          drawEdge(step.from, step.to, key, true, step.label || '');
+        }
+      });
+
+      renderFlowDetail(flow, stepIndex);
+    }
+
+    function clearHighlight() {
+      activeFlowId = null;
+      activeStepIndex = null;
+      Object.values(nodeElements).forEach(({ el }) => {
+        el.classList.remove('dimmed', 'highlighted', 'pulse');
+      });
+      drawAllEdges();
+      document.getElementById('detail-empty').style.display = 'block';
+      document.getElementById('detail-content').style.display = 'none';
+      document.querySelectorAll('.flow-btn').forEach(b => b.classList.remove('active'));
+    }
+
+    function renderFlowsList(filter = '') {
+      const list = document.getElementById('flows-list');
+      list.innerHTML = '';
+      const q = filter.toLowerCase();
+
+      const byCategory = {};
+      for (const flow of data.flows) {
+        if (q && !flow.label.toLowerCase().includes(q) && !flow.category.toLowerCase().includes(q)) continue;
+        if (!byCategory[flow.category]) byCategory[flow.category] = [];
+        byCategory[flow.category].push(flow);
+      }
+
+      for (const [cat, flows] of Object.entries(byCategory)) {
+        const section = document.createElement('div');
+        section.className = 'flow-category';
+        section.innerHTML = `<div class="flow-category-title">${escapeHtml(cat)}</div>`;
+        for (const flow of flows) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'flow-btn';
+          btn.dataset.flowId = flow.id;
+          btn.textContent = flow.label;
+          btn.addEventListener('click', () => selectFlow(flow.id));
+          section.appendChild(btn);
+        }
+        list.appendChild(section);
+      }
+    }
+
+    function selectFlow(flowId) {
+      document.querySelectorAll('.flow-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.flowId === flowId);
+      });
+      highlightFlow(flowId, null);
+    }
+
+    function renderFlowDetail(flow, stepIndex) {
+      document.getElementById('detail-empty').style.display = 'none';
+      document.getElementById('detail-content').style.display = 'flex';
+      document.getElementById('detail-content').style.flexDirection = 'column';
+      document.getElementById('detail-content').style.flex = '1';
+
+      document.getElementById('flow-header').innerHTML = `
+        <span class="category-badge">${escapeHtml(flow.category)}</span>
+        <h2>${escapeHtml(flow.label)}</h2>
+        <p>${escapeHtml(flow.description)}</p>
+      `;
+
+      const stepsList = document.getElementById('steps-list');
+      stepsList.innerHTML = flow.steps.map((step, i) => {
+        const fromNode = data.nodes.find(n => n.id === step.from);
+        const toNode = data.nodes.find(n => n.id === step.to);
+        return `
+          <div class="step-item ${stepIndex === i ? 'active' : ''}" data-step="${i}">
+            <div class="step-num">Step ${i + 1}</div>
+            <div class="step-route">
+              ${escapeHtml(fromNode?.label || step.from)}
+              <span class="arrow">→</span>
+              ${escapeHtml(toNode?.label || step.to)}
+            </div>
+            ${step.label ? `<div class="step-label">${escapeHtml(step.label)}</div>` : ''}
+            ${step.payload ? `<div class="step-payload">${escapeHtml(step.payload)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      stepsList.querySelectorAll('.step-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const idx = parseInt(el.dataset.step, 10);
+          highlightFlow(flow.id, idx);
+        });
+      });
+    }
+
+    function onNodeClick(nodeId) {
+      const flows = data.flows.filter(f =>
+        f.steps.some(s => s.from === nodeId || s.to === nodeId)
+      );
+      if (flows.length === 1) {
+        selectFlow(flows[0].id);
+        const stepIdx = flows[0].steps.findIndex(s => s.from === nodeId || s.to === nodeId);
+        highlightFlow(flows[0].id, stepIdx >= 0 ? stepIdx : null);
+      } else if (flows.length > 1 && activeFlowId) {
+        // cycle or keep current
+      }
+    }
+
+    function bindEvents() {
+      document.getElementById('flow-search').addEventListener('input', e => {
+        renderFlowsList(e.target.value);
+        if (activeFlowId) {
+          document.querySelector(`[data-flow-id="${activeFlowId}"]`)?.classList.add('active');
+        }
+      });
+      document.getElementById('btn-reset').addEventListener('click', clearHighlight);
+      document.getElementById('btn-show-all').addEventListener('click', () => {
+        Object.values(nodeElements).forEach(({ el }) => el.classList.remove('dimmed'));
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    init();
+  </script>
+</body>
+</html>
