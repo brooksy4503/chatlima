@@ -165,6 +165,8 @@ export default function Chat() {
     }
   }, [chatId]);
 
+  const activeChatId = chatId || generatedChatId;
+
   // Reset error state when navigating to a new chat
   useEffect(() => {
     if (!chatId) {
@@ -392,7 +394,8 @@ export default function Chat() {
         requestAnimationFrame(() => {
           refreshMessageUsage();
           queryClient.invalidateQueries({ queryKey: ['chats'] });
-          queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+          queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
+          queryClient.invalidateQueries({ queryKey: ['chat-token-usage', activeChatId] });
         });
 
         if (!chatId && generatedChatId) {
@@ -581,6 +584,11 @@ export default function Chat() {
   // Sync DB history into useChat when navigating to a chat, and re-sync when a refetch
   // returns richer assistant parts (tool/reasoning) after the server finishes persisting.
   const loadedChatIdRef = useRef<string | null>(null);
+  const lastTokenRefetchMessageCountRef = useRef(0);
+
+  useEffect(() => {
+    lastTokenRefetchMessageCountRef.current = 0;
+  }, [activeChatId]);
   useEffect(() => {
     if (!chatId || isLoadingChat) return;
     if (status === "streaming" || status === "submitted") return;
@@ -588,7 +596,10 @@ export default function Chat() {
     const isNewChatNavigation = loadedChatIdRef.current !== chatId;
 
     if (isNewChatNavigation) {
-      setMessages(initialMessages);
+      // Avoid wiping streamed messages while DB persistence/refetch is still in flight.
+      if (initialMessages.length > 0 || messages.length === 0) {
+        setMessages(initialMessages);
+      }
       loadedChatIdRef.current = chatId;
       return;
     }
@@ -596,7 +607,8 @@ export default function Chat() {
     if (
       status === "ready" &&
       initialMessages.length > 0 &&
-      dbMessagesHaveRicherAssistantParts(messages, initialMessages)
+      (messages.length === 0 ||
+        dbMessagesHaveRicherAssistantParts(messages, initialMessages))
     ) {
       setMessages(initialMessages);
     }
@@ -938,13 +950,13 @@ export default function Chat() {
 
   // Fetch chat token usage data
   const { data: chatTokenData, isLoading: isTokenDataLoading, error: tokenDataError, refetch: refetchTokenData } = useQuery({
-    queryKey: ['chat-token-usage', chatId],
+    queryKey: ['chat-token-usage', activeChatId],
     queryFn: async ({ queryKey }) => {
-      const [_, chatId] = queryKey;
-      if (!chatId || !userId) return null;
+      const [_, chatIdFromKey] = queryKey;
+      if (!chatIdFromKey || !userId) return null;
       
       try {
-        const response = await fetch(`/api/token-usage?chatId=${chatId}`);
+        const response = await fetch(`/api/token-usage?chatId=${chatIdFromKey}`);
         
         if (!response.ok) {
           throw new Error('Failed to load token usage data');
@@ -957,7 +969,7 @@ export default function Chat() {
         throw error;
       }
     },
-    enabled: !!chatId && !!userId,
+    enabled: !!activeChatId && !!userId,
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false
@@ -994,7 +1006,6 @@ export default function Chat() {
     } else if (status === "ready") {
       if (chatTokenData) {
         // When streaming is complete and we have actual data from the API
-        // Handle both old format (totalInputTokens) and new format (totalInputTokens from chat-specific data)
         const inputTokens = chatTokenData.totalInputTokens || chatTokenData.inputTokens || 0;
         const outputTokens = chatTokenData.totalOutputTokens || chatTokenData.outputTokens || 0;
         const estimatedCost = chatTokenData.totalEstimatedCost || chatTokenData.estimatedCost || 0;
@@ -1004,22 +1015,23 @@ export default function Chat() {
           outputTokens,
           estimatedCost,
           currency: chatTokenData.currency || 'USD',
-          // NEW: Enhanced timing metrics for Phase 2
           timeToFirstToken: chatTokenData.avgTimeToFirstToken || timeToFirstToken || undefined,
           tokensPerSecond: chatTokenData.avgTokensPerSecond || tokensPerSecond || undefined,
           totalDuration: chatTokenData.avgTotalDuration || totalDuration || undefined
         });
-        
-        // Defer token refetches — don't compete with the post-stream UI update
+      }
+
+      // Refetch once per completed assistant turn — first message has no cached chatTokenData yet.
+      if (messages.length > lastTokenRefetchMessageCountRef.current) {
+        lastTokenRefetchMessageCountRef.current = messages.length;
         const refetchTimer = window.setTimeout(() => {
           refetchTokenData();
           if (userId) {
             queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
           }
-        }, 100);
+        }, 300);
         return () => window.clearTimeout(refetchTimer);
       }
-      // If chatTokenData is not available yet, keep the estimated values from streaming
     }
   }, [messages, status, chatTokenData, refetchTokenData, userId, queryClient, timeToFirstToken, tokensPerSecond, totalDuration, chatTokenData?.avgTimeToFirstToken, chatTokenData?.avgTokensPerSecond, chatTokenData?.avgTotalDuration]);
 
@@ -1203,7 +1215,7 @@ export default function Chat() {
       </div>
 
       {/* Token Usage Summary - Only show when not streaming or submitted */}
-      {chatId && status === "ready" && (
+      {activeChatId && status === "ready" && (
         <div className="mb-4">
           <ChatTokenSummary
             totalInputTokens={chatTokenData?.totalInputTokens || chatTokenUsage?.inputTokens || 0}

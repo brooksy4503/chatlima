@@ -1724,13 +1724,17 @@ You have web search capabilities enabled. When you use web search:
 
                         streamFinishState.tokenUsageData = tokenUsageData;
 
-                        void trackTokenUsageFromStreamFinish(event, response).catch((tokenError) => {
-                            console.error(`[Chat ${id}][onFinish] Failed token tracking:`, tokenError);
-                        });
-
-                        void finalizeStreamPersistence().catch((persistError) => {
+                        try {
+                            await finalizeStreamPersistence();
+                        } catch (persistError) {
                             console.error(`[Chat ${id}][onFinish] Failed stream persistence:`, persistError);
-                        });
+                        }
+
+                        try {
+                            await trackTokenUsageFromStreamFinish(event, response);
+                        } catch (tokenError) {
+                            console.error(`[Chat ${id}][onFinish] Failed token tracking:`, tokenError);
+                        }
 
                     } catch (error: any) {
                         logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage (independent)`, {
@@ -1755,10 +1759,12 @@ You have web search capabilities enabled. When you use web search:
         return result.toUIMessageStreamResponse({
             originalMessages: messages,
             sendReasoning: true,
-            onFinish: ({ responseMessage }) => {
-                void handleUiStreamFinish(responseMessage).catch((err) => {
+            onFinish: async ({ responseMessage }) => {
+                try {
+                    await handleUiStreamFinish(responseMessage);
+                } catch (err) {
                     console.error(`[Chat ${id}][uiOnFinish] Unhandled error:`, err);
-                });
+                }
             },
             onError: (error: unknown) => {
                 const err = error as any;
