@@ -1,4 +1,5 @@
 import type { UIMessage } from 'ai';
+import { isToolUIPart } from 'ai';
 import { hasWebSearchToolPart, injectSyntheticWebSearchToolPart } from '@/lib/message-utils';
 import { nanoid } from 'nanoid';
 
@@ -46,7 +47,7 @@ export function buildAssistantMessageForPersistence(
     return {
       id: uiResponseMessage.id || fallbackId,
       role: 'assistant',
-      parts: uiResponseMessage.parts,
+      parts: markServerExecutedToolParts(uiResponseMessage.parts),
     };
   }
 
@@ -131,6 +132,35 @@ export function processMessagesForPersistence(
   });
 }
 
+/** Sync gate: UI stream onFinish can run before streamText onFinish without this. */
+export function createStreamFinishGate() {
+  let resolveReady: ((value: { event: unknown; response: unknown }) => void) | null = null;
+  const readyPromise = new Promise<{ event: unknown; response: unknown }>((resolve) => {
+    resolveReady = resolve;
+  });
+
+  return {
+    readyPromise,
+    notify(event: unknown, response: unknown) {
+      resolveReady?.({ event, response });
+      resolveReady = null;
+    },
+  };
+}
+
+/**
+ * Mark server-executed tool parts so useChat does not auto-submit a follow-up request
+ * (lastAssistantMessageIsCompleteWithToolCalls treats missing providerExecuted as client tools).
+ */
+export function markServerExecutedToolParts(parts: UIMessage['parts']): UIMessage['parts'] {
+  return parts.map((part) => {
+    if (isToolUIPart(part) && part.providerExecuted !== true) {
+      return { ...part, providerExecuted: true as const };
+    }
+    return part;
+  });
+}
+
 /** Count reasoning / tool parts used to decide if DB history is richer than local stream state. */
 export function countPersistableDisplayParts(
   parts: UIMessage['parts'] | undefined
@@ -145,6 +175,14 @@ export function countPersistableDisplayParts(
     }
     return typeof part.type === 'string' && part.type.startsWith('tool-');
   }).length;
+}
+
+/** True when the next assistant parts include more tool/reasoning segments than the current set. */
+export function assistantPartsAreRicher(
+  current: UIMessage['parts'] | undefined,
+  next: UIMessage['parts'] | undefined
+): boolean {
+  return countPersistableDisplayParts(next) > countPersistableDisplayParts(current);
 }
 
 /** True when DB messages include more tool/reasoning parts than the current useChat state. */

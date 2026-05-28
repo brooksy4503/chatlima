@@ -35,9 +35,14 @@ export function ToolInvocation({
   const displayToolName =
     toolName === "web_fetch"
       ? "Reading URL"
-      : toolName === "web_search" || toolName === "openrouter.web_search" || toolName === "openrouter:web_search"
+      : toolName === "web_search" ||
+          toolName === "web_search_exa" ||
+          toolName === "openrouter.web_search" ||
+          toolName === "openrouter:web_search"
         ? "Searching the web"
-        : toolName.endsWith(".web_search") || toolName.endsWith(":web_search")
+        : toolName.endsWith(".web_search") ||
+            toolName.endsWith(":web_search") ||
+            toolName.includes("web_search")
           ? "Searching the web"
           : toolName.endsWith(".web_fetch")
             ? "Fetching page"

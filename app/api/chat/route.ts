@@ -3,6 +3,8 @@ import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
 import { getUIMessageText } from '@/lib/message-utils';
 import {
     buildAssistantMessageForPersistence,
+    countPersistableDisplayParts,
+    createStreamFinishGate,
     processMessagesForPersistence,
 } from '@/lib/chat-message-persistence';
 import { nanoid } from 'nanoid';
@@ -1066,22 +1068,30 @@ You have web search capabilities enabled. When you use web search:
         console.log(`[DEBUG] Using ${needsFormatConversion ? 'converted' : 'raw'} message format for model:`, selectedModel);
         console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
 
-        // Shared state between streamText onFinish (model done) and UI stream onFinish (client consumed SSE).
-        // Persistence runs in handleUiStreamFinish only — awaiting the UI message inside streamText onFinish deadlocks the stream.
+        const streamFinishGate = createStreamFinishGate();
         const streamFinishState = {
-            event: null as any,
-            response: null as OpenRouterResponse | null,
             tokenUsageData: null as any,
             messagesSavedSuccessfully: false,
+            savedAssistantPartCount: 0,
             actualMessageId: undefined as string | undefined,
             finalAssistantMessageId: nanoid(),
+            uiResponseMessage: null as UIMessage | null,
+            streamFinishEvent: null as any,
+            streamFinishResponse: null as OpenRouterResponse | null,
         };
 
-        const handleUiStreamFinish = async (responseMessage: UIMessage) => {
-            const event = streamFinishState.event;
-            const response = streamFinishState.response;
-            if (!event || !response?.messages) {
-                console.warn(`[Chat ${id}][uiOnFinish] Skipping persistence — streamText onFinish did not run`);
+        let persistInFlight: Promise<void> = Promise.resolve();
+
+        const persistAssistantMessages = async (
+            source: 'ui' | 'stream',
+            responseMessage?: UIMessage,
+        ) => {
+            const runPersist = async () => {
+            const uiMsg = responseMessage ?? streamFinishState.uiResponseMessage;
+            const event = streamFinishState.streamFinishEvent;
+            const response = streamFinishState.streamFinishResponse;
+
+            if (!uiMsg?.parts?.length && !event?.text) {
                 return;
             }
 
@@ -1093,32 +1103,43 @@ You have web search capabilities enabled. When you use web search:
                         ? clientMessages.slice(0, -1)
                         : clientMessages;
 
-                const responseAssistantId = response.messages
+                const responseAssistantId = response?.messages
                     ?.filter((m: { role?: string }) => m.role === 'assistant')
                     .pop()?.id;
 
                 const assistantMessage = buildAssistantMessageForPersistence({
                     clientMessages,
-                    uiResponseMessage: responseMessage,
-                    streamText: event.text || '',
-                    reasoningText: event.reasoningText,
+                    uiResponseMessage: uiMsg ?? null,
+                    streamText: event?.text || '',
+                    reasoningText: event?.reasoningText,
                     responseAssistantId,
                 });
 
-                const webSearchInvocationCount = ChatWebSearchService.resolveWebSearchInvocationCount({
-                    steps: event.steps,
-                    usage: event.usage,
-                });
-                const webSearchWasUsed = ChatWebSearchService.messageUsedWebSearch({
-                    steps: event.steps,
-                    usage: event.usage,
-                    hasCitationAnnotations: (response.annotations?.length || 0) > 0,
-                });
+                if (streamFinishState.messagesSavedSuccessfully) {
+                    const newCount = countPersistableDisplayParts(assistantMessage.parts);
+                    if (newCount <= streamFinishState.savedAssistantPartCount) {
+                        return;
+                    }
+                }
+
+                const webSearchInvocationCount = event
+                    ? ChatWebSearchService.resolveWebSearchInvocationCount({
+                        steps: event.steps,
+                        usage: event.usage,
+                    })
+                    : 0;
+                const webSearchWasUsed = event
+                    ? ChatWebSearchService.messageUsedWebSearch({
+                        steps: event.steps,
+                        usage: event.usage,
+                        hasCitationAnnotations: (response?.annotations?.length || 0) > 0,
+                    })
+                    : false;
 
                 const processedMessages = processMessagesForPersistence({
                     historyMessages,
                     assistantMessage,
-                    annotations: response.annotations,
+                    annotations: response?.annotations,
                     webSearch: {
                         useAgenticServerTools: webSearchConfig.useAgenticServerTools,
                         enabled: effectiveWebSearchEnabled,
@@ -1127,18 +1148,10 @@ You have web search capabilities enabled. When you use web search:
                     },
                 });
 
-                console.log(`[Chat ${id}][uiOnFinish] Persisting assistant parts:`, {
+                const logTag = source === 'ui' ? 'uiOnFinish' : 'onFinish';
+                console.log(`[Chat ${id}][${logTag}] Persisting assistant parts:`, {
                     partTypes: assistantMessage.parts?.map((p) => p.type) ?? [],
                     partCount: assistantMessage.parts?.length ?? 0,
-                });
-
-                await saveChat({
-                    id,
-                    userId: authenticatedUser.userId,
-                    messages: processedMessages as any,
-                    selectedModel,
-                    apiKeys,
-                    isAnonymous: authenticatedUser.isAnonymous,
                 });
 
                 const dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
@@ -1146,7 +1159,7 @@ You have web search capabilities enabled. When you use web search:
                     hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (
                         webSearchConfig.useAgenticServerTools
                             ? webSearchWasUsed
-                            : (response.annotations?.length || 0) > 0
+                            : (response?.annotations?.length || 0) > 0
                     ),
                     webSearchContextSize: webSearchConfig.enabled ? webSearchConfig.contextSize : undefined
                 }));
@@ -1154,12 +1167,26 @@ You have web search capabilities enabled. When you use web search:
                 const savedAssistant = dbMessages.find(msg => msg.role === 'assistant');
                 streamFinishState.finalAssistantMessageId =
                     savedAssistant?.id ||
-                    response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ||
+                    response?.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ||
                     streamFinishState.finalAssistantMessageId;
 
                 await saveMessages({ messages: dbMessages });
                 streamFinishState.messagesSavedSuccessfully = true;
-                console.log(`[Chat ${id}][uiOnFinish] Successfully saved messages.`);
+                streamFinishState.savedAssistantPartCount = countPersistableDisplayParts(
+                    assistantMessage.parts
+                );
+                console.log(`[Chat ${id}][${logTag}] Successfully saved messages.`);
+
+                void saveChat({
+                    id,
+                    userId: authenticatedUser.userId,
+                    messages: processedMessages as any,
+                    selectedModel,
+                    apiKeys,
+                    isAnonymous: authenticatedUser.isAnonymous,
+                }).catch((titleError) => {
+                    console.warn(`[Chat ${id}][${logTag}] saveChat title generation failed:`, titleError);
+                });
 
                 try {
                     const savedMessages = await db.query.messages.findMany({
@@ -1171,134 +1198,172 @@ You have web search capabilities enabled. When you use web search:
                         streamFinishState.actualMessageId = assistantRow.id;
                     }
                 } catch (msgQueryError) {
-                    console.warn(`[Chat ${id}][uiOnFinish] Could not query actual message ID:`, msgQueryError);
+                    console.warn(`[Chat ${id}][${logTag}] Could not query actual message ID:`, msgQueryError);
                 }
+            } catch (persistError: any) {
+                const logTag = source === 'ui' ? 'uiOnFinish' : 'onFinish';
+                console.error(`[Chat ${id}][${logTag}] Failed to persist messages:`, persistError);
+            }
+            };
 
-                const typedResponse = response as any;
-                let completionTokens = 0;
+            persistInFlight = persistInFlight.then(runPersist, runPersist);
+            await persistInFlight;
+        };
 
-                if (typedResponse.usage?.completion_tokens) {
-                    completionTokens = typedResponse.usage.completion_tokens;
-                } else if (typedResponse.usage?.output_tokens) {
-                    completionTokens = typedResponse.usage.output_tokens;
+        const trackTokenUsageFromStreamFinish = async (event: any, response: OpenRouterResponse) => {
+            const typedResponse = response as any;
+            let completionTokens = 0;
+
+            if (typedResponse.usage?.completion_tokens) {
+                completionTokens = typedResponse.usage.completion_tokens;
+            } else if (typedResponse.usage?.output_tokens) {
+                completionTokens = typedResponse.usage.output_tokens;
+            } else {
+                const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+                if (lastMessage?.content) {
+                    let contentLength = 0;
+                    if (Array.isArray(lastMessage.content)) {
+                        contentLength = lastMessage.content
+                            .filter((part: any) => part.type === 'text')
+                            .map((part: any) => part.text)
+                            .join('').length;
+                    } else if (typeof lastMessage.content === 'string') {
+                        contentLength = lastMessage.content.length;
+                    }
+                    completionTokens = Math.ceil(contentLength / 4);
+                } else if (typeof typedResponse.content === 'string') {
+                    completionTokens = Math.ceil(typedResponse.content.length / 4);
                 } else {
-                    const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
-                    if (lastMessage?.content) {
-                        let contentLength = 0;
-                        if (Array.isArray(lastMessage.content)) {
-                            contentLength = lastMessage.content
-                                .filter((part: any) => part.type === 'text')
-                                .map((part: any) => part.text)
-                                .join('').length;
-                        } else if (typeof lastMessage.content === 'string') {
-                            contentLength = lastMessage.content.length;
-                        }
-                        completionTokens = Math.ceil(contentLength / 4);
-                    } else if (typeof typedResponse.content === 'string') {
-                        completionTokens = Math.ceil(typedResponse.content.length / 4);
-                    } else {
-                        completionTokens = 1;
-                    }
+                    completionTokens = 1;
                 }
+            }
 
-                if (completionTokens <= 0) {
-                    return;
-                }
+            if (completionTokens <= 0) {
+                return;
+            }
 
-                let polarCustomerId: string | undefined;
+            let polarCustomerId: string | undefined;
+            try {
+                const session = await auth.api.getSession({ headers: req.headers });
+                polarCustomerId = (session?.user as any)?.polarCustomerId ||
+                    (session?.user as any)?.metadata?.polarCustomerId;
+            } catch (error) {
+                console.warn('Failed to get session for Polar customer ID:', error);
+            }
+
+            let isAnonymous = authenticatedUser.isAnonymous;
+            try {
+                const session = await auth.api.getSession({ headers: req.headers });
+                isAnonymous = (session?.user as any)?.isAnonymous === true;
+            } catch {
+                // keep default
+            }
+
+            const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+            let callbackActualCredits: number | null = null;
+            if (!isAnonymous && authenticatedUser.userId) {
                 try {
-                    const session = await auth.api.getSession({ headers: req.headers });
-                    polarCustomerId = (session?.user as any)?.polarCustomerId ||
-                        (session?.user as any)?.metadata?.polarCustomerId;
+                    callbackActualCredits = await getCachedCreditsByExternal(authenticatedUser.userId);
                 } catch (error) {
-                    console.warn('Failed to get session for Polar customer ID:', error);
-                }
-
-                let isAnonymous = authenticatedUser.isAnonymous;
-                try {
-                    const session = await auth.api.getSession({ headers: req.headers });
-                    isAnonymous = (session?.user as any)?.isAnonymous === true;
-                } catch {
-                    // keep default
-                }
-
-                const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
-                let callbackActualCredits: number | null = null;
-                if (!isAnonymous && authenticatedUser.userId) {
-                    try {
-                        callbackActualCredits = await getCachedCreditsByExternal(authenticatedUser.userId);
-                    } catch (error) {
-                        logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Error getting actual credits in uiOnFinish`, {
-                            requestId,
-                            userId: authenticatedUser.userId,
-                            error: error instanceof Error ? error.message : String(error),
-                        });
-                    }
-                }
-
-                const isFreeModel = selectedModel.endsWith(':free');
-                let shouldDeductCredits = false;
-                if (!isAnonymous && !callbackIsUsingOwnApiKeys && !isFreeModel && callbackActualCredits !== null && callbackActualCredits > 0) {
-                    shouldDeductCredits = true;
-                }
-
-                let additionalCost = 0;
-                if (shouldDeductCredits) {
-                    additionalCost = ChatWebSearchService.computeWebSearchCreditCost({
-                        webSearchEnabled: webSearchConfig.enabled,
-                        useAgenticServerTools: webSearchConfig.useAgenticServerTools,
-                        isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
-                        shouldDeductCredits,
-                        steps: event.steps,
-                        usage: event.usage,
-                        hasCitationAnnotations: (response.annotations?.length || 0) > 0,
+                    logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Error getting actual credits in onFinish`, {
+                        requestId,
+                        userId: authenticatedUser.userId,
+                        error: error instanceof Error ? error.message : String(error),
                     });
                 }
-
-                const tokenUsageData = streamFinishState.tokenUsageData;
-                const extractedInputTokens = extractInputTokensFromEvent(event);
-                const finalInputTokens = tokenUsageData?.inputTokens || extractedInputTokens;
-                const finalOutputTokens = tokenUsageData?.outputTokens || completionTokens;
-                const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
-
-                import('@/lib/services/costReconciliation').then(async ({ CostReconciliationService }) => {
-                    try {
-                        await CostReconciliationService.reconcileRecentMissingActualCosts({
-                            limit: 3,
-                            maxAgeHours: 48,
-                            apiKeyOverride: openrouterApiKey,
-                        });
-                    } catch {
-                        // Swallow errors silently
-                    }
-                });
-
-                await DirectTokenTrackingService.processTokenUsage({
-                    userId: authenticatedUser.userId,
-                    chatId: id,
-                    messageId: streamFinishState.actualMessageId || streamFinishState.finalAssistantMessageId,
-                    modelId: selectedModel,
-                    provider: selectedModel.split('/')[0],
-                    inputTokens: finalInputTokens,
-                    outputTokens: finalOutputTokens,
-                    generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
-                    openRouterResponse: typedResponse,
-                    providerResponse: typedResponse,
-                    apiKeyOverride: openrouterApiKey,
-                    processingTimeMs: Date.now() - requestStartTime,
-                    timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
-                    tokensPerSecond: tokensPerSecond ?? undefined,
-                    streamingStartTime: streamingStartTime ?? undefined,
-                    polarCustomerId,
-                    completionTokens,
-                    isAnonymous,
-                    shouldDeductCredits,
-                    additionalCost,
-                    modelInfo: modelValidation.modelInfo ?? undefined,
-                });
-            } catch (persistError: any) {
-                console.error(`[Chat ${id}][uiOnFinish] Failed to persist messages:`, persistError);
             }
+
+            const isFreeModel = selectedModel.endsWith(':free');
+            let shouldDeductCredits = false;
+            if (!isAnonymous && !callbackIsUsingOwnApiKeys && !isFreeModel && callbackActualCredits !== null && callbackActualCredits > 0) {
+                shouldDeductCredits = true;
+            }
+
+            let additionalCost = 0;
+            if (shouldDeductCredits) {
+                additionalCost = ChatWebSearchService.computeWebSearchCreditCost({
+                    webSearchEnabled: webSearchConfig.enabled,
+                    useAgenticServerTools: webSearchConfig.useAgenticServerTools,
+                    isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
+                    shouldDeductCredits,
+                    steps: event.steps,
+                    usage: event.usage,
+                    hasCitationAnnotations: (response.annotations?.length || 0) > 0,
+                });
+            }
+
+            const tokenUsageData = streamFinishState.tokenUsageData;
+            const extractedInputTokens = extractInputTokensFromEvent(event);
+            const finalInputTokens = tokenUsageData?.inputTokens || extractedInputTokens;
+            const finalOutputTokens = tokenUsageData?.outputTokens || completionTokens;
+            const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
+
+            import('@/lib/services/costReconciliation').then(async ({ CostReconciliationService }) => {
+                try {
+                    await CostReconciliationService.reconcileRecentMissingActualCosts({
+                        limit: 3,
+                        maxAgeHours: 48,
+                        apiKeyOverride: openrouterApiKey,
+                    });
+                } catch {
+                    // Swallow errors silently
+                }
+            });
+
+            await DirectTokenTrackingService.processTokenUsage({
+                userId: authenticatedUser.userId,
+                chatId: id,
+                messageId: streamFinishState.actualMessageId || streamFinishState.finalAssistantMessageId,
+                modelId: selectedModel,
+                provider: selectedModel.split('/')[0],
+                inputTokens: finalInputTokens,
+                outputTokens: finalOutputTokens,
+                generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
+                openRouterResponse: typedResponse,
+                providerResponse: typedResponse,
+                apiKeyOverride: openrouterApiKey,
+                processingTimeMs: Date.now() - requestStartTime,
+                timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
+                tokensPerSecond: tokensPerSecond ?? undefined,
+                streamingStartTime: streamingStartTime ?? undefined,
+                polarCustomerId,
+                completionTokens,
+                isAnonymous,
+                shouldDeductCredits,
+                additionalCost,
+                modelInfo: modelValidation.modelInfo ?? undefined,
+            });
+        };
+
+        const handleUiStreamFinish = async (responseMessage: UIMessage) => {
+            streamFinishState.uiResponseMessage = responseMessage;
+            await persistAssistantMessages('ui', responseMessage);
+        };
+
+        const handleStreamTextFinishReady = (event: any, response: OpenRouterResponse) => {
+            streamFinishState.streamFinishEvent = event;
+            streamFinishState.streamFinishResponse = response;
+            streamFinishGate.notify(event, response);
+        };
+
+        const finalizeStreamPersistence = async () => {
+            if (!streamFinishState.streamFinishEvent || !streamFinishState.streamFinishResponse) {
+                return;
+            }
+
+            // UI onFinish usually follows with MCP tool-* parts; brief wait avoids text-only saves
+            for (let i = 0; i < 30 && !streamFinishState.uiResponseMessage; i++) {
+                await new Promise((resolve) => setTimeout(resolve, 200));
+            }
+
+            if (streamFinishState.messagesSavedSuccessfully) {
+                if (streamFinishState.uiResponseMessage) {
+                    await persistAssistantMessages('stream', streamFinishState.uiResponseMessage);
+                }
+                return;
+            }
+
+            await persistAssistantMessages('stream', streamFinishState.uiResponseMessage ?? undefined);
         };
 
         // 17. Set up streaming payload
@@ -1362,7 +1427,7 @@ You have web search capabilities enabled. When you use web search:
                 logChunk(id, chunk, firstTokenTime, requestId);
             },
             async onFinish(event: any) {
-                console.log(`[Chat ${id}][onFinish] Stream finished, computing usage (persistence deferred to UI stream)...`);
+                console.log(`[Chat ${id}][onFinish] Stream finished, computing usage...`);
 
                 let tokenUsageData: any = null;
 
@@ -1417,9 +1482,7 @@ You have web search capabilities enabled. When you use web search:
                         console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map(a => a.type));
                     }
 
-                    // Defer DB persistence to handleUiStreamFinish (UI stream onFinish) to avoid deadlocking the SSE stream.
-                    streamFinishState.event = event;
-                    streamFinishState.response = response;
+                    handleStreamTextFinishReady(event, response);
                     streamFinishState.finalAssistantMessageId =
                         response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ||
                         streamFinishState.finalAssistantMessageId;
@@ -1660,6 +1723,14 @@ You have web search capabilities enabled. When you use web search:
                         });
 
                         streamFinishState.tokenUsageData = tokenUsageData;
+
+                        void trackTokenUsageFromStreamFinish(event, response).catch((tokenError) => {
+                            console.error(`[Chat ${id}][onFinish] Failed token tracking:`, tokenError);
+                        });
+
+                        void finalizeStreamPersistence().catch((persistError) => {
+                            console.error(`[Chat ${id}][onFinish] Failed stream persistence:`, persistError);
+                        });
 
                     } catch (error: any) {
                         logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage (independent)`, {

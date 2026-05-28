@@ -375,7 +375,13 @@ export default function Chat() {
       id: chatId || generatedChatId,
       messages: initialMessages,
       transport,
-      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+      sendAutomaticallyWhen: ({ messages: chatMessages }) => {
+        // MCP / server-executed tools must not trigger client follow-up requests (causes stuck "streaming").
+        if (mcpServersForApi.length > 0) {
+          return false;
+        }
+        return lastAssistantMessageIsCompleteWithToolCalls({ messages: chatMessages });
+      },
       experimental_throttle: 100,
       onFinish: () => {
         // Clear images and reset UI state after successful submission

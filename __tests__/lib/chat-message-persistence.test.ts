@@ -2,7 +2,9 @@ import type { UIMessage } from 'ai';
 import {
   buildAssistantMessageForPersistence,
   countPersistableDisplayParts,
+  createStreamFinishGate,
   dbMessagesHaveRicherAssistantParts,
+  markServerExecutedToolParts,
   processMessagesForPersistence,
 } from '@/lib/chat-message-persistence';
 
@@ -175,6 +177,32 @@ describe('chat-message-persistence', () => {
           [userMessage, richAssistant]
         )
       ).toBe(false);
+    });
+  });
+
+  describe('markServerExecutedToolParts', () => {
+    it('sets providerExecuted on tool parts missing the flag', () => {
+      const parts = [
+        {
+          type: 'tool-web_search_exa',
+          toolCallId: 'c1',
+          state: 'output-available',
+          input: {},
+          output: {},
+        },
+      ] as UIMessage['parts'];
+
+      const marked = markServerExecutedToolParts(parts);
+      expect((marked[0] as { providerExecuted?: boolean }).providerExecuted).toBe(true);
+    });
+  });
+
+  describe('createStreamFinishGate', () => {
+    it('resolves when notify is called', async () => {
+      const gate = createStreamFinishGate();
+      const wait = gate.readyPromise;
+      gate.notify({ text: 'hi' }, { messages: [] });
+      await expect(wait).resolves.toEqual({ event: { text: 'hi' }, response: { messages: [] } });
     });
   });
 
