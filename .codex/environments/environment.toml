@@ -3,7 +3,10 @@ version = 1
 name = "chatlima"
 
 [setup]
-script = ""
+script = '''
+pnpm install
+pnpm env:sync
+'''
 
 [[actions]]
 name = "Run"

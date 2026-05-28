@@ -42,7 +42,8 @@
     "dev:fresh": "pnpm cache:clear && pnpm dev",
     "dev:codex": "pnpm env:sync && pnpm dev",
     "release:workflow": "tsx scripts/release-workflow.ts",
-    "release:notes": "tsx scripts/generate-release-notes.ts"
+    "release:notes": "tsx scripts/generate-release-notes.ts",
+    "docs:flows": "npx serve docs/architecture -p 3456"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.79",
