@@ -131,31 +131,6 @@ export function processMessagesForPersistence(
   });
 }
 
-/** Await the UI stream response message until the client finishes consuming the SSE stream. */
-export function waitForUiResponseMessage(
-  promise: Promise<UIMessage>,
-  abortSignal: AbortSignal
-): Promise<UIMessage | null> {
-  if (abortSignal.aborted) {
-    return Promise.resolve(null);
-  }
-
-  return new Promise((resolve) => {
-    const onAbort = () => resolve(null);
-    abortSignal.addEventListener('abort', onAbort, { once: true });
-
-    promise
-      .then((message) => {
-        abortSignal.removeEventListener('abort', onAbort);
-        resolve(message);
-      })
-      .catch(() => {
-        abortSignal.removeEventListener('abort', onAbort);
-        resolve(null);
-      });
-  });
-}
-
 /** Count reasoning / tool parts used to decide if DB history is richer than local stream state. */
 export function countPersistableDisplayParts(
   parts: UIMessage['parts'] | undefined

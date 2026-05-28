@@ -4,7 +4,6 @@ import { getUIMessageText } from '@/lib/message-utils';
 import {
     buildAssistantMessageForPersistence,
     processMessagesForPersistence,
-    waitForUiResponseMessage,
 } from '@/lib/chat-message-persistence';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/db';
@@ -1067,6 +1066,241 @@ You have web search capabilities enabled. When you use web search:
         console.log(`[DEBUG] Using ${needsFormatConversion ? 'converted' : 'raw'} message format for model:`, selectedModel);
         console.log("[DEBUG] Formatted messages for model:", JSON.stringify(formattedMessages, null, 2));
 
+        // Shared state between streamText onFinish (model done) and UI stream onFinish (client consumed SSE).
+        // Persistence runs in handleUiStreamFinish only — awaiting the UI message inside streamText onFinish deadlocks the stream.
+        const streamFinishState = {
+            event: null as any,
+            response: null as OpenRouterResponse | null,
+            tokenUsageData: null as any,
+            messagesSavedSuccessfully: false,
+            actualMessageId: undefined as string | undefined,
+            finalAssistantMessageId: nanoid(),
+        };
+
+        const handleUiStreamFinish = async (responseMessage: UIMessage) => {
+            const event = streamFinishState.event;
+            const response = streamFinishState.response;
+            if (!event || !response?.messages) {
+                console.warn(`[Chat ${id}][uiOnFinish] Skipping persistence — streamText onFinish did not run`);
+                return;
+            }
+
+            try {
+                const clientMessages = messages as UIMessage[];
+                const trailingAssistant = clientMessages[clientMessages.length - 1];
+                const historyMessages =
+                    trailingAssistant?.role === 'assistant'
+                        ? clientMessages.slice(0, -1)
+                        : clientMessages;
+
+                const responseAssistantId = response.messages
+                    ?.filter((m: { role?: string }) => m.role === 'assistant')
+                    .pop()?.id;
+
+                const assistantMessage = buildAssistantMessageForPersistence({
+                    clientMessages,
+                    uiResponseMessage: responseMessage,
+                    streamText: event.text || '',
+                    reasoningText: event.reasoningText,
+                    responseAssistantId,
+                });
+
+                const webSearchInvocationCount = ChatWebSearchService.resolveWebSearchInvocationCount({
+                    steps: event.steps,
+                    usage: event.usage,
+                });
+                const webSearchWasUsed = ChatWebSearchService.messageUsedWebSearch({
+                    steps: event.steps,
+                    usage: event.usage,
+                    hasCitationAnnotations: (response.annotations?.length || 0) > 0,
+                });
+
+                const processedMessages = processMessagesForPersistence({
+                    historyMessages,
+                    assistantMessage,
+                    annotations: response.annotations,
+                    webSearch: {
+                        useAgenticServerTools: webSearchConfig.useAgenticServerTools,
+                        enabled: effectiveWebSearchEnabled,
+                        wasUsed: webSearchWasUsed,
+                        invocationCount: webSearchInvocationCount,
+                    },
+                });
+
+                console.log(`[Chat ${id}][uiOnFinish] Persisting assistant parts:`, {
+                    partTypes: assistantMessage.parts?.map((p) => p.type) ?? [],
+                    partCount: assistantMessage.parts?.length ?? 0,
+                });
+
+                await saveChat({
+                    id,
+                    userId: authenticatedUser.userId,
+                    messages: processedMessages as any,
+                    selectedModel,
+                    apiKeys,
+                    isAnonymous: authenticatedUser.isAnonymous,
+                });
+
+                const dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
+                    ...msg,
+                    hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (
+                        webSearchConfig.useAgenticServerTools
+                            ? webSearchWasUsed
+                            : (response.annotations?.length || 0) > 0
+                    ),
+                    webSearchContextSize: webSearchConfig.enabled ? webSearchConfig.contextSize : undefined
+                }));
+
+                const savedAssistant = dbMessages.find(msg => msg.role === 'assistant');
+                streamFinishState.finalAssistantMessageId =
+                    savedAssistant?.id ||
+                    response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ||
+                    streamFinishState.finalAssistantMessageId;
+
+                await saveMessages({ messages: dbMessages });
+                streamFinishState.messagesSavedSuccessfully = true;
+                console.log(`[Chat ${id}][uiOnFinish] Successfully saved messages.`);
+
+                try {
+                    const savedMessages = await db.query.messages.findMany({
+                        where: eq(messagesTable.chatId, id),
+                        orderBy: [messagesTable.createdAt]
+                    });
+                    const assistantRow = savedMessages.find(msg => msg.role === 'assistant');
+                    if (assistantRow) {
+                        streamFinishState.actualMessageId = assistantRow.id;
+                    }
+                } catch (msgQueryError) {
+                    console.warn(`[Chat ${id}][uiOnFinish] Could not query actual message ID:`, msgQueryError);
+                }
+
+                const typedResponse = response as any;
+                let completionTokens = 0;
+
+                if (typedResponse.usage?.completion_tokens) {
+                    completionTokens = typedResponse.usage.completion_tokens;
+                } else if (typedResponse.usage?.output_tokens) {
+                    completionTokens = typedResponse.usage.output_tokens;
+                } else {
+                    const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+                    if (lastMessage?.content) {
+                        let contentLength = 0;
+                        if (Array.isArray(lastMessage.content)) {
+                            contentLength = lastMessage.content
+                                .filter((part: any) => part.type === 'text')
+                                .map((part: any) => part.text)
+                                .join('').length;
+                        } else if (typeof lastMessage.content === 'string') {
+                            contentLength = lastMessage.content.length;
+                        }
+                        completionTokens = Math.ceil(contentLength / 4);
+                    } else if (typeof typedResponse.content === 'string') {
+                        completionTokens = Math.ceil(typedResponse.content.length / 4);
+                    } else {
+                        completionTokens = 1;
+                    }
+                }
+
+                if (completionTokens <= 0) {
+                    return;
+                }
+
+                let polarCustomerId: string | undefined;
+                try {
+                    const session = await auth.api.getSession({ headers: req.headers });
+                    polarCustomerId = (session?.user as any)?.polarCustomerId ||
+                        (session?.user as any)?.metadata?.polarCustomerId;
+                } catch (error) {
+                    console.warn('Failed to get session for Polar customer ID:', error);
+                }
+
+                let isAnonymous = authenticatedUser.isAnonymous;
+                try {
+                    const session = await auth.api.getSession({ headers: req.headers });
+                    isAnonymous = (session?.user as any)?.isAnonymous === true;
+                } catch {
+                    // keep default
+                }
+
+                const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
+                let callbackActualCredits: number | null = null;
+                if (!isAnonymous && authenticatedUser.userId) {
+                    try {
+                        callbackActualCredits = await getCachedCreditsByExternal(authenticatedUser.userId);
+                    } catch (error) {
+                        logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Error getting actual credits in uiOnFinish`, {
+                            requestId,
+                            userId: authenticatedUser.userId,
+                            error: error instanceof Error ? error.message : String(error),
+                        });
+                    }
+                }
+
+                const isFreeModel = selectedModel.endsWith(':free');
+                let shouldDeductCredits = false;
+                if (!isAnonymous && !callbackIsUsingOwnApiKeys && !isFreeModel && callbackActualCredits !== null && callbackActualCredits > 0) {
+                    shouldDeductCredits = true;
+                }
+
+                let additionalCost = 0;
+                if (shouldDeductCredits) {
+                    additionalCost = ChatWebSearchService.computeWebSearchCreditCost({
+                        webSearchEnabled: webSearchConfig.enabled,
+                        useAgenticServerTools: webSearchConfig.useAgenticServerTools,
+                        isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
+                        shouldDeductCredits,
+                        steps: event.steps,
+                        usage: event.usage,
+                        hasCitationAnnotations: (response.annotations?.length || 0) > 0,
+                    });
+                }
+
+                const tokenUsageData = streamFinishState.tokenUsageData;
+                const extractedInputTokens = extractInputTokensFromEvent(event);
+                const finalInputTokens = tokenUsageData?.inputTokens || extractedInputTokens;
+                const finalOutputTokens = tokenUsageData?.outputTokens || completionTokens;
+                const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
+
+                import('@/lib/services/costReconciliation').then(async ({ CostReconciliationService }) => {
+                    try {
+                        await CostReconciliationService.reconcileRecentMissingActualCosts({
+                            limit: 3,
+                            maxAgeHours: 48,
+                            apiKeyOverride: openrouterApiKey,
+                        });
+                    } catch {
+                        // Swallow errors silently
+                    }
+                });
+
+                await DirectTokenTrackingService.processTokenUsage({
+                    userId: authenticatedUser.userId,
+                    chatId: id,
+                    messageId: streamFinishState.actualMessageId || streamFinishState.finalAssistantMessageId,
+                    modelId: selectedModel,
+                    provider: selectedModel.split('/')[0],
+                    inputTokens: finalInputTokens,
+                    outputTokens: finalOutputTokens,
+                    generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
+                    openRouterResponse: typedResponse,
+                    providerResponse: typedResponse,
+                    apiKeyOverride: openrouterApiKey,
+                    processingTimeMs: Date.now() - requestStartTime,
+                    timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
+                    tokensPerSecond: tokensPerSecond ?? undefined,
+                    streamingStartTime: streamingStartTime ?? undefined,
+                    polarCustomerId,
+                    completionTokens,
+                    isAnonymous,
+                    shouldDeductCredits,
+                    additionalCost,
+                    modelInfo: modelValidation.modelInfo ?? undefined,
+                });
+            } catch (persistError: any) {
+                console.error(`[Chat ${id}][uiOnFinish] Failed to persist messages:`, persistError);
+            }
+        };
+
         // 17. Set up streaming payload
         const openRouterPayload = {
             model: modelInstance as LanguageModel,
@@ -1128,13 +1362,9 @@ You have web search capabilities enabled. When you use web search:
                 logChunk(id, chunk, firstTokenTime, requestId);
             },
             async onFinish(event: any) {
-                console.log(`[Chat ${id}][onFinish] Stream finished, processing and saving...`);
+                console.log(`[Chat ${id}][onFinish] Stream finished, computing usage (persistence deferred to UI stream)...`);
 
-                // Track whether messages are saved successfully for background cost tracking
-                let messagesSavedSuccessfully = false;
-                const finalAssistantMessageId: string = nanoid();
-                let actualMessageId: string | undefined = undefined;
-                let tokenUsageData: any = null; // Declare at onFinish scope
+                let tokenUsageData: any = null;
 
                 const provider = selectedModel.split('/')[0];
                 console.log(`[Chat ${id}][onFinish] Event data for provider ${provider}:`, {
@@ -1187,117 +1417,22 @@ You have web search capabilities enabled. When you use web search:
                         console.log(`[Chat ${id}][onFinish] Annotation types:`, response.annotations.map(a => a.type));
                     }
 
-                    // Wait for the UI message stream to finish so tool/reasoning parts are included in persistence.
-                    const clientMessages = messages as UIMessage[];
-                    const trailingAssistant = clientMessages[clientMessages.length - 1];
-                    const historyMessages =
-                        trailingAssistant?.role === 'assistant'
-                            ? clientMessages.slice(0, -1)
-                            : clientMessages;
-
-                    if (!uiResponseMessage) {
-                        uiResponseMessage = await waitForUiResponseMessage(
-                            uiResponseMessagePromise,
-                            streamAbortController.signal
-                        );
-                    }
-
-                    const responseAssistantId = response.messages
-                        ?.filter((m: { role?: string }) => m.role === 'assistant')
-                        .pop()?.id;
-
-                    const assistantMessage = buildAssistantMessageForPersistence({
-                        clientMessages,
-                        uiResponseMessage,
-                        streamText: event.text || '',
-                        reasoningText: event.reasoningText,
-                        responseAssistantId,
-                    });
-
-                    const webSearchInvocationCount = ChatWebSearchService.resolveWebSearchInvocationCount({
-                        steps: event.steps,
-                        usage: event.usage,
-                    });
-                    const webSearchWasUsed = ChatWebSearchService.messageUsedWebSearch({
-                        steps: event.steps,
-                        usage: event.usage,
-                        hasCitationAnnotations: (response.annotations?.length || 0) > 0,
-                    });
-
-                    const processedMessages = processMessagesForPersistence({
-                        historyMessages,
-                        assistantMessage,
-                        annotations: response.annotations,
-                        webSearch: {
-                            useAgenticServerTools: webSearchConfig.useAgenticServerTools,
-                            enabled: effectiveWebSearchEnabled,
-                            wasUsed: webSearchWasUsed,
-                            invocationCount: webSearchInvocationCount,
-                        },
-                    });
-
-                    const assistantPartTypes = assistantMessage.parts?.map((p) => p.type) ?? [];
-                    console.log(`[Chat ${id}][onFinish] Persisting assistant parts:`, {
-                        fromUiStream: !!uiResponseMessage?.parts?.length,
-                        partTypes: assistantPartTypes,
-                        partCount: assistantMessage.parts?.length ?? 0,
-                    });
-
-                    try {
-                        await saveChat({
-                            id,
-                            userId: authenticatedUser.userId,
-                            messages: processedMessages as any,
-                            selectedModel,
-                            apiKeys,
-                            isAnonymous: authenticatedUser.isAnonymous,
-                        });
-                        console.log(`[Chat ${id}][onFinish] Successfully saved chat with all messages.`);
-                    } catch (dbError: any) {
-                        console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving chat:`, dbError);
-                    }
-
-                    let dbMessages;
-                    let assistantMessageId: string | undefined;
-                    let finalAssistantMessageId: string = nanoid();
-
-                    try {
-                        dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
-                            ...msg,
-                            hasWebSearch: effectiveWebSearchEnabled && msg.role === 'assistant' && (
-                                webSearchConfig.useAgenticServerTools
-                                    ? webSearchWasUsed
-                                    : (response.annotations?.length || 0) > 0
-                            ),
-                            webSearchContextSize: webSearchConfig.enabled ? webSearchConfig.contextSize : undefined
-                        }));
-
-                        const assistantMessage = dbMessages.find(msg => msg.role === 'assistant');
-                        assistantMessageId = assistantMessage?.id;
-
-                    } catch (conversionError: any) {
-                        console.error(`[Chat ${id}][onFinish] ERROR converting messages for DB:`, conversionError);
-                        return;
-                    }
-
-                    try {
-                        await saveMessages({ messages: dbMessages });
-                        console.log(`[Chat ${id}][onFinish] Successfully saved individual messages.`);
-                        messagesSavedSuccessfully = true;
-                    } catch (dbMessagesError: any) {
-                        console.error(`[Chat ${id}][onFinish] DATABASE_ERROR saving messages:`, dbMessagesError);
-                    }
+                    // Defer DB persistence to handleUiStreamFinish (UI stream onFinish) to avoid deadlocking the SSE stream.
+                    streamFinishState.event = event;
+                    streamFinishState.response = response;
+                    streamFinishState.finalAssistantMessageId =
+                        response.messages?.filter((m: { role?: string }) => m.role === 'assistant').pop()?.id ||
+                        streamFinishState.finalAssistantMessageId;
 
                     const typedResponse = response as any;
                     const provider = selectedModel.split('/')[0];
-                    finalAssistantMessageId = assistantMessageId || response.messages?.[response.messages.length - 1]?.id || nanoid();
 
                     try {
                         logDiagnostic('TOKEN_TRACKING_START', `Starting detailed token tracking`, {
                             requestId,
                             userId: authenticatedUser.userId,
                             chatId: id,
-                            messageId: finalAssistantMessageId,
+                            messageId: streamFinishState.finalAssistantMessageId,
                             modelId: selectedModel,
                             provider,
                             tokenUsage: typedResponse.usage || {
@@ -1524,27 +1659,7 @@ You have web search capabilities enabled. When you use web search:
                             calculatedProcessingTimeMs
                         });
 
-                        const extractedTokenUsage = tokenUsageData || { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
-                        const inputTokens = extractedTokenUsage.inputTokens || extractedTokenUsage.prompt_tokens || 0;
-                        const outputTokens = extractedTokenUsage.outputTokens || extractedTokenUsage.completion_tokens || 0;
-
-                        // Now that messages are saved, we can get the actual message ID from the database
-                        if (messagesSavedSuccessfully) {
-                            try {
-                                const savedMessages = await db.query.messages.findMany({
-                                    where: eq(messagesTable.chatId, id),
-                                    orderBy: [messagesTable.createdAt]
-                                });
-
-                                const assistantMessage = savedMessages.find(msg => msg.role === 'assistant');
-                                if (assistantMessage) {
-                                    actualMessageId = assistantMessage.id;
-                                    console.log(`[Chat ${id}][onFinish] Found actual message ID from database: ${actualMessageId}`);
-                                }
-                            } catch (msgQueryError) {
-                                console.warn(`[Chat ${id}][onFinish] Could not query actual message ID:`, msgQueryError);
-                            }
-                        }
+                        streamFinishState.tokenUsageData = tokenUsageData;
 
                     } catch (error: any) {
                         logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage (independent)`, {
@@ -1557,192 +1672,11 @@ You have web search capabilities enabled. When you use web search:
                 } catch (finishError: any) {
                     console.error(`[Chat ${id}][onFinish] Unexpected error in onFinish:`, finishError);
                 }
-
-                // Extract token usage from response - OpenRouter may provide it in different formats
-                const typedResponse = response as any;
-                let completionTokens = 0;
-
-                if (typedResponse.usage?.completion_tokens) {
-                    completionTokens = typedResponse.usage.completion_tokens;
-                } else if (typedResponse.usage?.output_tokens) {
-                    completionTokens = typedResponse.usage.output_tokens;
-                } else {
-                    const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
-                    if (lastMessage?.content) {
-                        let contentLength = 0;
-
-                        if (Array.isArray(lastMessage.content)) {
-                            contentLength = lastMessage.content
-                                .filter((part: any) => part.type === 'text')
-                                .map((part: any) => part.text)
-                                .join('').length;
-                        } else if (typeof lastMessage.content === 'string') {
-                            contentLength = lastMessage.content.length;
-                        }
-
-                        completionTokens = Math.ceil(contentLength / 4);
-                    } else if (typeof typedResponse.content === 'string') {
-                        completionTokens = Math.ceil(typedResponse.content.length / 4);
-                    } else {
-                        completionTokens = 1;
-                    }
-                }
-
-                // Existing code for tracking tokens (legacy credit system)
-                let polarCustomerId: string | undefined;
-
-                try {
-                    const session = await auth.api.getSession({ headers: req.headers });
-
-                    polarCustomerId = (session?.user as any)?.polarCustomerId ||
-                        (session?.user as any)?.metadata?.polarCustomerId;
-                } catch (error) {
-                    console.warn('Failed to get session for Polar customer ID:', error);
-                }
-
-                if (completionTokens > 0) {
-                    try {
-                        logDiagnostic('LEGACY_TOKEN_TRACKING_START', `Starting legacy token tracking`, {
-                            requestId,
-                            userId: authenticatedUser.userId,
-                            completionTokens
-                        });
-
-                        let isAnonymous = authenticatedUser.isAnonymous;
-                        try {
-                            const session = await auth.api.getSession({ headers: req.headers });
-                            isAnonymous = (session?.user as any)?.isAnonymous === true;
-                        } catch (error) {
-                            logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Could not determine if user is anonymous, assuming not anonymous`, {
-                                requestId,
-                                userId: authenticatedUser.userId,
-                                error: error instanceof Error ? error.message : String(error)
-                            });
-                        }
-
-                        const callbackIsUsingOwnApiKeys = checkIfUsingOwnApiKeys(selectedModel, apiKeys);
-
-                        let callbackActualCredits: number | null = null;
-                        if (!isAnonymous && authenticatedUser.userId) {
-                            try {
-                                callbackActualCredits = await getCachedCreditsByExternal(authenticatedUser.userId);
-                            } catch (error) {
-                                logDiagnostic('LEGACY_TOKEN_TRACKING_WARNING', `Error getting actual credits in onFinish callback`, {
-                                    requestId,
-                                    userId: authenticatedUser.userId,
-                                    error: error instanceof Error ? error.message : String(error)
-                                });
-                            }
-                        }
-
-                        const isFreeModel = selectedModel.endsWith(':free');
-
-                        let shouldDeductCredits = false;
-                        if (!isAnonymous && !callbackIsUsingOwnApiKeys && !isFreeModel && callbackActualCredits !== null && callbackActualCredits > 0) {
-                            shouldDeductCredits = true;
-                        }
-
-                        let additionalCost = 0;
-                        if (shouldDeductCredits) {
-                            additionalCost = ChatWebSearchService.computeWebSearchCreditCost({
-                                webSearchEnabled: webSearchConfig.enabled,
-                                useAgenticServerTools: webSearchConfig.useAgenticServerTools,
-                                isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
-                                shouldDeductCredits,
-                                steps: event.steps,
-                                usage: event.usage,
-                                hasCitationAnnotations: (response.annotations?.length || 0) > 0,
-                            });
-                        }
-
-                        const actualCreditsReported = shouldDeductCredits ? 1 + additionalCost : 0;
-                        const trackingReason = isAnonymous ? 'Queued (stopped)' : shouldDeductCredits ? 'Queued for Polar' : isFreeModel ? 'Queued (free model)' : 'Queued (daily limit)';
-
-                        if (messagesSavedSuccessfully) {
-                            try {
-                                const finalProcessingTimeMs = Date.now() - requestStartTime;
-
-                                import('@/lib/services/costReconciliation').then(async ({ CostReconciliationService }) => {
-                                    try {
-                                        const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
-                                        await CostReconciliationService.reconcileRecentMissingActualCosts({ limit: 3, maxAgeHours: 48, apiKeyOverride: openrouterApiKey });
-                                    } catch (e) {
-                                        // Swallow errors silently
-                                    }
-                                });
-
-                                const openrouterApiKey = apiKeys?.['OPENROUTER_API_KEY'] || process.env.OPENROUTER_API_KEY;
-
-                                const extractedInputTokens = extractInputTokensFromEvent(event);
-                                console.log(`[Chat ${id}][onFinish] Token extraction result: ${extractedInputTokens} input tokens`);
-
-                                // Use aggregated token data if available from steps processing above
-                                const finalInputTokens = tokenUsageData?.inputTokens || extractedInputTokens;
-                                const finalOutputTokens = tokenUsageData?.outputTokens || completionTokens;
-
-                                console.log(`[Chat ${id}][onFinish] Final token counts for tracking: input=${finalInputTokens}, output=${finalOutputTokens}`);
-
-                                await DirectTokenTrackingService.processTokenUsage({
-                                    userId: authenticatedUser.userId,
-                                    chatId: id,
-                                    messageId: actualMessageId || finalAssistantMessageId,
-                                    modelId: selectedModel,
-                                    provider: selectedModel.split('/')[0],
-                                    inputTokens: finalInputTokens,
-                                    outputTokens: finalOutputTokens,
-                                    generationId: typedResponse.id || typedResponse.generation_id || typedResponse.generationId || undefined,
-                                    openRouterResponse: typedResponse,
-                                    providerResponse: typedResponse,
-                                    apiKeyOverride: openrouterApiKey,
-                                    processingTimeMs: finalProcessingTimeMs,
-                                    timeToFirstTokenMs: timeToFirstTokenMs ?? undefined,
-                                    tokensPerSecond: tokensPerSecond ?? undefined,
-                                    streamingStartTime: streamingStartTime ?? undefined,
-                                    polarCustomerId,
-                                    completionTokens,
-                                    isAnonymous,
-                                    shouldDeductCredits,
-                                    additionalCost,
-                                    modelInfo: modelValidation.modelInfo ?? undefined
-                                });
-
-                                logDiagnostic('DIRECT_TOKEN_TRACKING_COMPLETED', `Completed direct token usage tracking with credit parameters`, {
-                                    requestId,
-                                    userId: authenticatedUser.userId,
-                                    completionTokens,
-                                    actualCreditsReported,
-                                    trackingReason,
-                                    shouldDeductCredits,
-                                    additionalCost
-                                });
-                            } catch (creditTrackingError: any) {
-                                console.error(`[Chat ${id}][onFinish] Failed to process direct token tracking with credit parameters:`, creditTrackingError);
-                            }
-                        } else {
-                            console.log(`[Chat ${id}][onFinish] Skipping background cost tracking due to message save failure`);
-                        }
-
-                        console.log(`${trackingReason} ${actualCreditsReported} credits for user ${authenticatedUser.userId} [Chat ${id}]`);
-                    } catch (error: any) {
-                        logDiagnostic('LEGACY_TOKEN_TRACKING_ERROR', `Failed to track legacy token usage`, {
-                            requestId,
-                            userId: authenticatedUser.userId,
-                            error: error instanceof Error ? error.message : String(error)
-                        });
-                        console.error(`[Chat ${id}][onFinish] Failed to track token usage for user ${authenticatedUser.userId}:`, error);
-                    }
-                }
             }
         };
 
         console.log(`[Chat ${id}] Using model: ${selectedModel}, effectiveWebSearchEnabled: ${webSearchConfig.enabled}`);
         console.log(`[Chat ${id}] OpenRouter user tracking: ${authenticatedUser.isAnonymous ? `chatlima_anon_${authenticatedUser.userId}` : `chatlima_user_${authenticatedUser.userId}`}`);
-
-        let resolveUiResponseMessage: ((message: UIMessage) => void) | null = null;
-        let uiResponseMessage: UIMessage | null = null;
-        const uiResponseMessagePromise = new Promise<UIMessage>((resolve) => {
-            resolveUiResponseMessage = resolve;
-        });
 
         const result = streamText(openRouterPayload);
         startBackgroundStreamConsumption(result, id);
@@ -1751,8 +1685,9 @@ You have web search capabilities enabled. When you use web search:
             originalMessages: messages,
             sendReasoning: true,
             onFinish: ({ responseMessage }) => {
-                uiResponseMessage = responseMessage;
-                resolveUiResponseMessage?.(responseMessage);
+                void handleUiStreamFinish(responseMessage).catch((err) => {
+                    console.error(`[Chat ${id}][uiOnFinish] Unhandled error:`, err);
+                });
             },
             onError: (error: unknown) => {
                 const err = error as any;
