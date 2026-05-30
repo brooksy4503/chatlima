@@ -86,7 +86,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   } = useModel();
   
   // Helper function to check if user has API key for a model's provider
-  const hasApiKeyForProvider = useCallback((modelId: string) => {
+  const hasApiKeyForProvider = useCallback((modelId: string): boolean => {
     // Extract provider from model ID (e.g., "requesty/..." -> REQUESTY_API_KEY)
     const provider = modelId.split('/')[0];
     const keyMap: Record<string, string> = {
@@ -98,7 +98,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
       'requesty': 'REQUESTY_API_KEY',
     };
     const requiredKey = keyMap[provider?.toLowerCase()];
-    return requiredKey && userApiKeys[requiredKey]?.trim().length > 0;
+    if (!requiredKey) return false;
+    return (userApiKeys[requiredKey]?.trim().length ?? 0) > 0;
   }, [userApiKeys]);
   
   // Function to get the appropriate icon for each provider
