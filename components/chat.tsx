@@ -238,6 +238,7 @@ export default function Chat() {
   }, [chatData]);
 
   const [input, setInput] = useState("");
+  const lastSubmittedDraftRef = useRef<string | null>(null);
 
   const chatBodyRef = useRef({
     selectedModel: selectedModel,
@@ -386,6 +387,7 @@ export default function Chat() {
       },
       experimental_throttle: 100,
       onFinish: () => {
+        lastSubmittedDraftRef.current = null;
         // Clear images and reset UI state after successful submission
         clearFiles();
         setHideImagesInUI(false);
@@ -397,6 +399,14 @@ export default function Chat() {
           queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
           queryClient.invalidateQueries({ queryKey: ['chat-token-usage', activeChatId] });
         });
+
+        // Server title generation finishes after stream end; refetch once more for new chats
+        if (activeChatId) {
+          window.setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['chats'] });
+            queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
+          }, 3000);
+        }
 
         if (!chatId && generatedChatId) {
           if (window.location.pathname !== `/chat/${generatedChatId}`) {
@@ -468,6 +478,10 @@ export default function Chat() {
               ? "PAYWALL_SUBSCRIPTION_REQUIRED"
               : "PAYWALL_BYOK_REQUIRED";
           setHideImagesInUI(false);
+          if (lastSubmittedDraftRef.current !== null) {
+            setInput(lastSubmittedDraftRef.current);
+            lastSubmittedDraftRef.current = null;
+          }
           openAccessGateDialog(
             paywallReason,
             activePreset?.modelId || selectedModel
@@ -477,6 +491,10 @@ export default function Chat() {
 
         // Reset UI state on error so images reappear
         setHideImagesInUI(false);
+        if (lastSubmittedDraftRef.current !== null) {
+          setInput(lastSubmittedDraftRef.current);
+          lastSubmittedDraftRef.current = null;
+        }
 
         // Force reset the chat state to allow new messages
         setIsErrorRecoveryNeeded(true);
@@ -816,10 +834,19 @@ export default function Chat() {
       return;
     }
 
+    const draftInput = input;
+    lastSubmittedDraftRef.current = draftInput;
+    setInput('');
+
     // Hide files from UI immediately when form is submitted
     if (selectedFiles.length > 0) {
       setHideImagesInUI(true);
     }
+
+    const restoreDraftAfterFailedSubmit = () => {
+      setInput(draftInput);
+      lastSubmittedDraftRef.current = null;
+    };
 
     // Upload non-image files first
     let uploadedFiles: Array<{ filepath: string; url: string; filename: string }> = [];
@@ -846,6 +873,7 @@ export default function Chat() {
           setUploadErrors(result.errors || ['Upload failed']);
           setHideImagesInUI(false);
           setIsUploadingFiles(false);
+          restoreDraftAfterFailedSubmit();
           toast.error('Failed to upload files: ' + (result.errors?.join(', ') || 'Unknown error'));
           return;
         }
@@ -856,6 +884,7 @@ export default function Chat() {
         setUploadErrors(['Network error during upload']);
         setHideImagesInUI(false);
         setIsUploadingFiles(false);
+        restoreDraftAfterFailedSubmit();
         toast.error('Failed to upload files. Please try again.');
         return;
       }
@@ -864,39 +893,43 @@ export default function Chat() {
     }
 
     // Build enhanced message content with file context
-    let messageContent = input;
+    let messageContent = draftInput;
     if (uploadedFiles.length > 0) {
       const fileList = uploadedFiles
         .map(f => `- ${f.filename} | filepath: ${f.filepath} | url: ${f.url}`)
         .join('\n');
-      messageContent = `${input}\n\n[Attached files:]\n${fileList}\n\n[Instruction: Use the read_file tool with filepath values before answering.]`;
+      messageContent = `${draftInput}\n\n[Attached files:]\n${fileList}\n\n[Instruction: Use the read_file tool with filepath values before answering.]`;
     }
 
-    if (imageFiles.length > 0) {
-      const textPart = { type: 'text' as const, text: messageContent };
-      const imageParts = imageFiles.map((file) => ({
-        type: 'image_url' as const,
-        image_url: {
-          url: file.dataUrl!,
-          detail: file.detail as 'auto' | 'low' | 'high'
-        },
-        metadata: {
-          filename: file.metadata.filename,
-          mimeType: file.metadata.mimeType,
-          size: file.metadata.size,
-          width: file.metadata.width,
-          height: file.metadata.height
-        }
-      }));
+    try {
+      if (imageFiles.length > 0) {
+        const textPart = { type: 'text' as const, text: messageContent };
+        const imageParts = imageFiles.map((file) => ({
+          type: 'image_url' as const,
+          image_url: {
+            url: file.dataUrl!,
+            detail: file.detail as 'auto' | 'low' | 'high'
+          },
+          metadata: {
+            filename: file.metadata.filename,
+            mimeType: file.metadata.mimeType,
+            size: file.metadata.size,
+            width: file.metadata.width,
+            height: file.metadata.height
+          }
+        }));
 
-      await sendMessage({
-        role: 'user',
-        parts: [textPart, ...imageParts] as ChatUIMessage['parts'],
-      });
-      setInput('');
-    } else {
-      await sendMessage({ text: messageContent });
-      setInput('');
+        await sendMessage({
+          role: 'user',
+          parts: [textPart, ...imageParts] as ChatUIMessage['parts'],
+        });
+      } else {
+        await sendMessage({ text: messageContent });
+      }
+    } catch (error) {
+      restoreDraftAfterFailedSubmit();
+      setHideImagesInUI(false);
+      console.error('[Chat] Error sending message:', error);
     }
   }, [
     sendMessage,
@@ -1279,12 +1312,12 @@ export default function Chat() {
           <div className="bg-gradient-to-br from-primary/10 via-background to-background p-6 pb-4">
             <div className="mb-2 inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              Premium model access
+              Subscription or BYOK required
             </div>
             <DialogHeader>
-              <DialogTitle className="text-2xl">Unlock this model</DialogTitle>
+              <DialogTitle className="text-2xl">Unlock chat access</DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
-                Keep the conversation flowing with full model access, or connect your own provider key.
+                Start a plan for ChatLima credits and tools, or connect your own provider API key.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -1320,7 +1353,7 @@ export default function Chat() {
               <p className="flex items-center text-muted-foreground">
                 <Check className="mr-2 h-4 w-4 text-green-500" />
                 <Sparkles className="mr-1.5 h-4 w-4" />
-                Premium and free model catalog access
+                Full model catalog with credit-based usage
               </p>
               <p className="flex items-center text-muted-foreground">
                 <Check className="mr-2 h-4 w-4 text-green-500" />

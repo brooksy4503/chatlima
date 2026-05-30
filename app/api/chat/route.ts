@@ -1,5 +1,6 @@
 import { streamText, generateText, tool, jsonSchema, stepCountIs, type UIMessage, type LanguageModel, type LanguageModelResponseMetadata } from "ai";
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
+import { generateTitle } from '@/app/actions';
 import { getUIMessageText } from '@/lib/message-utils';
 import {
     buildAssistantMessageForPersistence,
@@ -617,6 +618,17 @@ export async function POST(req: Request) {
             });
         }
 
+        // Start title generation in parallel with streaming so it is ready when the response finishes
+        const titleGenerationPromise = isNewChat && (messages as UIMessage[]).some((m) => m.role === 'user')
+            ? generateTitle(
+                messages as UIMessage[],
+                selectedModel,
+                apiKeys,
+                authenticatedUser.userId,
+                authenticatedUser.isAnonymous
+            )
+            : undefined;
+
         // Continue with the rest of the implementation from the original route.ts
         // This is where the actual streaming logic begins
 
@@ -1177,15 +1189,14 @@ You have web search capabilities enabled. When you use web search:
                 );
                 console.log(`[Chat ${id}][${logTag}] Successfully saved messages.`);
 
-                void saveChat({
+                await saveChat({
                     id,
                     userId: authenticatedUser.userId,
                     messages: processedMessages as any,
                     selectedModel,
                     apiKeys,
                     isAnonymous: authenticatedUser.isAnonymous,
-                }).catch((titleError) => {
-                    console.warn(`[Chat ${id}][${logTag}] saveChat title generation failed:`, titleError);
+                    titleGenerationPromise,
                 });
 
                 try {

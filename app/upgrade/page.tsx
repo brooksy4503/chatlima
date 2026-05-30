@@ -136,18 +136,18 @@ function UpgradeContent() {
                 </li>
                 <li className="flex items-start">
                   <Brain className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-card-foreground">Access to all models (premium + free)</span>
+                  <span className="text-card-foreground">Full model catalog (credit cost shown per model)</span>
                 </li>
                 <li className="flex items-start">
                   <Sparkles className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-card-foreground">
-                    Premium model access{' '}
+                    Tiered credit usage{' '}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-3 w-3 inline-block ml-1 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>Access to GPT-5.1 Chat, Claude Sonnet 4.5, Grok 4.1 Fast, Gemini 3 Pro Preview, Kimi K2 Thinking, MiniMax M2, and GLM-4.6</p>
+                        <p>Each model costs 1–30 credits per message depending on provider pricing. Economy models use 1 credit; frontier models use more.</p>
                       </TooltipContent>
                     </Tooltip>
                   </span>
@@ -206,13 +206,13 @@ function UpgradeContent() {
                 <li className="flex items-start">
                   <Brain className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-card-foreground">
-                    Access to all models (premium + free){' '}
+                    Full model catalog (same as monthly){' '}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-3 w-3 inline-block ml-1 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        <p>Use the same premium and free model catalog as monthly, including GPT, Claude, Grok, Gemini, and more.</p>
+                        <p>Same models as the monthly plan. Credit cost per message is shown in the model picker (1c–30c).</p>
                       </TooltipContent>
                     </Tooltip>
                   </span>
@@ -253,7 +253,7 @@ function UpgradeContent() {
 
           <div className="mt-8 w-full max-w-7xl mx-auto text-center">
             <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4">
-              Both plans include access to premium and free models. Choose monthly for flexibility, or yearly for lower total cost across 12 months.
+              Both plans include the full model catalog with credit-based usage. Choose monthly for flexibility, or yearly for lower total cost across 12 months.
             </p>
           </div>
 

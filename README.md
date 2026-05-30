@@ -38,7 +38,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Intelligent Model Filtering**: Automatic filtering of blocked, deprecated, and unavailable models
 - **Dynamic API Key Management**: Use your own API keys for any provider with runtime overrides
 - **Smart Credit Validation**: Bypasses credit checks when using personal API keys
-- **Premium Model Access Control**: Intelligent credit checking for premium models with real-time validation
+- **Credit-Tier Model Pricing**: Per-message costs (1–30 credits) shown in the model picker with real-time balance checks
 - **Model Picker**: Real-time model availability and access validation with comprehensive descriptions and search functionality
 - **Provider Health Monitoring**: Comprehensive provider status tracking and health checks
 
@@ -72,7 +72,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
   - Anonymous users: 10 messages/day
   - Free Google users: 20 messages/day
   - Monthly subscribers: 1,000 messages/month
-  - Yearly subscribers: Unlimited messages (free models only)
+  - Yearly subscribers: High annual usage allowance with full model catalog
 - **Enhanced Daily Message Tracking**: Tamper-proof daily message usage tracking that prevents limit bypass vulnerabilities
 - **Automated User Cleanup**: Intelligent system to remove inactive anonymous users for optimal database performance
 - **Admin Cleanup Dashboard**: Comprehensive interface with preview, configuration, and monitoring capabilities
@@ -83,14 +83,14 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 
 ### 💳 Billing & Payment System
 - **Flexible Subscription Plans**: Choose the plan that fits your usage pattern
-  - **Monthly Plan ($10/month)**: 1,000 messages per month with access to all models (premium + free)
-  - **Yearly Plan ($10/year)**: Unlimited messages with unlimited access to free models - save 92% vs monthly
-- **Tiered Credit System**: Variable credit costs based on model pricing to protect against expensive model abuse
-  - **Free/Standard Models**: 1 credit per message
-  - **Premium Models ($3-15/M)**: 2 credits per message
-  - **High Premium Models ($15-50/M)**: 5 credits per message
-  - **Very High Premium Models ($50-100/M)**: 15 credits per message
-  - **Ultra Premium Models ($100+/M)**: 30 credits per message (e.g., o1-pro, o3-pro)
+  - **Monthly Plan ($9/month)**: ~1,000 credits per month with access to the full model catalog
+  - **Yearly Plan ($90/year)**: ~12,000 messages per year with the same catalog — save ~17% vs monthly
+- **Tiered Credit System**: Variable credit costs based on model pricing (shown as 1c–30c in the model picker)
+  - **Economy (1 credit)**: Standard and OpenRouter `:free` models
+  - **Standard (2 credits)**: Mid-tier frontier models
+  - **Pro (5 credits)**: High-capability models
+  - **Frontier (15 credits)**: Very high-cost models
+  - **Ultra (30 credits)**: Top-tier reasoning models (e.g., o1-pro, o3-pro)
 - **Transparent Pricing**: Credit costs displayed in model picker for informed decision-making
 - **Smart Credit Validation**: System automatically checks if you have sufficient credits before allowing expensive model usage
 - **Polar Integration**: Complete integration with Polar billing platform for customer management
@@ -99,7 +99,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 - **Customer Portal Access**: Direct access to Polar customer portal for subscription management
 - **Credit Purchase Workflow**: Streamlined process for purchasing AI usage credits (for monthly plan users)
 - **Subscription-Based Access Control**: Intelligent model filtering based on subscription type
-- **Unlimited Free Models**: Yearly subscribers get unlimited access to all OpenRouter `:free` models
+- **Access gating**: When `BILLING_ENFORCED=true`, chat requires subscription or BYOK (see `lib/config/access-policy.ts`)
 - **Paid Web Search**: Premium web search feature with credit-based billing and usage tracking (5 credits per search)
 - **Comprehensive Error Handling**: Dedicated error pages for failed, canceled, and problematic transactions
 - **Environment-Based Configuration**: Secure Polar server environment selection
@@ -217,7 +217,7 @@ ChatLima automatically detects when you paste code and wraps it in proper markdo
 - **Webhook Support**: Real-time payment and subscription updates for both plan types
 - **Customer Management**: Automated customer creation and management with advanced retrieval logic
 - **Premium Feature Access**: Intelligent access control for paid features including image processing
-- **Model Access Control**: Subscription-based filtering for free vs premium models
+- **Model Access Control**: Subscription or BYOK gate; per-model credit tiers for usage
 - **Dynamic Pricing Integration**: Real-time pricing information from provider APIs
 - **Database Performance Optimization**: Automated user cleanup for optimal database performance and storage efficiency
 - **Admin Operations Dashboard**: Comprehensive monitoring and management tools for system health

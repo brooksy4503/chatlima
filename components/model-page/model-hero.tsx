@@ -32,7 +32,7 @@ export function ModelHero({ model, isFree, canAccessPremium = true }: ModelHeroP
               }`}>
                 {!canAccessPremium && <Lock className="h-4 w-4" />}
                 <Sparkles className="h-4 w-4" />
-                Premium
+                Higher cost
               </span>
             )}
           </div>

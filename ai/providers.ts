@@ -280,8 +280,8 @@ export const titleGenerationModel = languageModels[titleGenerationModelId as key
 export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => {
   // Define preferred title generation models for each provider with environment variable fallbacks
   const titleGenerationModels: Record<string, modelID> = {
-    'openrouter': process.env.OPENROUTER_TITLE_MODEL || 'openrouter/qwen/qwen-turbo',
-    'requesty': process.env.REQUESTY_TITLE_MODEL || 'requesty/alibaba/qwen-turbo',
+    'openrouter': process.env.OPENROUTER_TITLE_MODEL || 'openrouter/openai/gpt-5-nano',
+    'requesty': process.env.REQUESTY_TITLE_MODEL || 'requesty/openai/gpt-5-nano',
     'openai': process.env.OPENAI_TITLE_MODEL || 'gpt-5-nano',
     'anthropic': process.env.ANTHROPIC_TITLE_MODEL || 'claude-3-7-sonnet',
     'groq': process.env.GROQ_TITLE_MODEL || 'qwen-qwq',

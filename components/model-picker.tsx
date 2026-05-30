@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "./ui/popover";
 import { cn } from "@/lib/utils";
-import { Sparkles, Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check, RefreshCw, AlertCircle, Star } from "lucide-react";
+import { Zap, Info, Bolt, Code, Brain, Lightbulb, Image, Gauge, Rocket, Bot, ChevronDown, Check, RefreshCw, AlertCircle, Star } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useCredits } from "@/hooks/useCredits";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -15,6 +15,26 @@ import { useAuth } from "@/hooks/useAuth";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { FavoriteToggle } from "./favorite-toggle";
+import {
+  formatCreditCostBadge,
+  formatCreditsPerMessage,
+  getCreditTierInfo,
+} from "@/lib/utils/creditTierLabels";
+
+function getEstimatedCreditCost(model: ModelInfo, creditCosts: Record<string, number>): number {
+  return creditCosts[model.id] ?? (model.premium ? 2 : 1);
+}
+
+function isModelBlockedByCredits(
+  model: ModelInfo,
+  creditCosts: Record<string, number>,
+  canUseModelAtCreditCost: (required: number) => boolean,
+  userHasApiKey: boolean
+): boolean {
+  if (userHasApiKey) return false;
+  const cost = getEstimatedCreditCost(model, creditCosts);
+  return !canUseModelAtCreditCost(cost);
+}
 
 // Helper functions for pricing display
 function formatPricingDisplay(pricePerToken: number): string {
@@ -50,7 +70,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modelListRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { canAccessPremiumModels, loading: creditsLoading } = useCredits(undefined, user?.id);
+  const { canUseModelAtCreditCost, loading: creditsLoading } = useCredits(undefined, user?.id);
   const [creditCosts, setCreditCosts] = useState<Record<string, number>>({});
   
   // Get dynamic models and state from enhanced context
@@ -234,9 +254,15 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   // Main button always shows the selected model (no layout flipping)
   const selectedModelData = availableModels.find(m => m.id === selectedModel) || availableModels[0];
   const selectedModelHasApiKey = selectedModelData ? hasApiKeyForProvider(selectedModelData.id) : false;
-  const isModelUnavailable = (creditsLoading || modelsRefreshing)
-    ? false
-    : Boolean(selectedModelData?.premium && !canAccessPremiumModels() && !selectedModelHasApiKey);
+  const isModelUnavailable =
+    selectedModelData && !(creditsLoading || modelsRefreshing)
+      ? isModelBlockedByCredits(
+          selectedModelData,
+          creditCosts,
+          canUseModelAtCreditCost,
+          selectedModelHasApiKey
+        )
+      : false;
   const hasModelLoadError = Boolean(modelsError) || (!modelsLoading && availableModels.length === 0);
 
   // Fetch credit cost for the details panel model
@@ -369,9 +395,15 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         e.preventDefault();
         if (keyboardFocusedIndex >= 0 && keyboardFocusedIndex < filteredAndSortedModels.length) {
           const selectedModelData = filteredAndSortedModels[keyboardFocusedIndex];
-          const isUnavailable = (creditsLoading || modelsRefreshing)
-            ? false
-            : (selectedModelData.premium && !canAccessPremiumModels() && !hasApiKeyForProvider(selectedModelData.id));
+          const isUnavailable =
+            creditsLoading || modelsRefreshing
+              ? false
+              : isModelBlockedByCredits(
+                  selectedModelData,
+                  creditCosts,
+                  canUseModelAtCreditCost,
+                  hasApiKeyForProvider(selectedModelData.id)
+                );
           if (!isUnavailable) {
             handleModelChange(selectedModelData.id);
           }
@@ -382,7 +414,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         setIsOpen(false);
         break;
     }
-  }, [isOpen, filteredAndSortedModels, keyboardFocusedIndex, creditsLoading, canAccessPremiumModels, handleModelChange]);
+  }, [isOpen, filteredAndSortedModels, keyboardFocusedIndex, creditsLoading, canUseModelAtCreditCost, creditCosts, handleModelChange, hasApiKeyForProvider]);
 
   // Loading state
   if (modelsLoading) {
@@ -475,7 +507,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                 Switch to &quot;Manual Mode&quot; to change models.
               </p>
             ) : isModelUnavailable ? (
-              <p>This model requires premium access. Please check your credits.</p>
+              <p>
+                Insufficient credits for this model. Check your balance or pick a lower-cost model
+                (shown as credit cost in the picker).
+              </p>
             ) : (
               <div className="space-y-1.5">
                 <p className="font-medium">{selectedModelData.name}</p>
@@ -576,9 +611,12 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
               <div ref={modelListRef} className="space-y-1 p-1">
                 {filteredAndSortedModels.length > 0 ? (
                   filteredAndSortedModels.map((model, index) => {
-                    // Users with BYOK (Bring Your Own Key) can use premium models from that provider
                     const userHasApiKey = hasApiKeyForProvider(model.id);
-                    const isUnavailable = (creditsLoading || modelsRefreshing) ? false : (model.premium && !canAccessPremiumModels() && !userHasApiKey);
+                    const modelCreditCost = getEstimatedCreditCost(model, creditCosts);
+                    const isUnavailable =
+                      creditsLoading || modelsRefreshing
+                        ? false
+                        : isModelBlockedByCredits(model, creditCosts, canUseModelAtCreditCost, userHasApiKey);
                     const isSelected = selectedModel === model.id;
                     const isKeyboardFocused = keyboardFocusedIndex === index;
                     const isTouchFocused = focusedModel === model.id;
@@ -608,9 +646,17 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                           <div className="flex items-center gap-1.5">
                             {getProviderIcon(model.provider)}
                             <span className="font-medium truncate flex-1">{model.name}</span>
-                            {model.premium && (
-                              <Sparkles className="h-3 w-3 text-yellow-500 flex-shrink-0" />
-                            )}
+                            <span
+                              className={cn(
+                                "text-[9px] font-medium px-1 py-0.5 rounded flex-shrink-0",
+                                modelCreditCost > 1
+                                  ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400"
+                                  : "bg-muted text-muted-foreground"
+                              )}
+                              title={formatCreditsPerMessage(modelCreditCost)}
+                            >
+                              {formatCreditCostBadge(modelCreditCost)}
+                            </span>
                             {model.vision && (
                               // eslint-disable-next-line jsx-a11y/alt-text
                               <Image className="h-3 w-3 text-indigo-500 flex-shrink-0" aria-hidden="true" />
@@ -636,7 +682,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                         <Tooltip key={`${model.id}-tooltip`}>
                           <TooltipTrigger asChild>{modelItem}</TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p className="text-xs">This is a premium model. Credits are required to use it.</p>
+                            <p className="text-xs">
+                              Requires {formatCreditsPerMessage(modelCreditCost)}. Add credits, use BYOK for
+                              this provider, or choose a lower-cost model.
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       );
@@ -666,9 +715,22 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                   <div className="flex items-center gap-2 mb-1">
                     {getProviderIcon(detailsPanelModel.provider)}
                     <h3 className="text-sm font-semibold">{detailsPanelModel.name}</h3>
-                    {detailsPanelModel.premium && (
-                      <Sparkles className="h-4 w-4 text-yellow-500 ml-1 flex-shrink-0" />
-                    )}
+                    {(() => {
+                      const panelCost = getEstimatedCreditCost(detailsPanelModel, creditCosts);
+                      const tier = getCreditTierInfo(panelCost);
+                      return (
+                        <span
+                          className={cn(
+                            "text-[10px] font-medium px-1.5 py-0.5 rounded ml-1 flex-shrink-0",
+                            panelCost > 1
+                              ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400"
+                              : "bg-muted text-muted-foreground"
+                          )}
+                        >
+                          {tier.label} · {formatCreditCostBadge(panelCost)}
+                        </span>
+                      );
+                    })()}
                     {detailsPanelModel.vision && (
                       // eslint-disable-next-line jsx-a11y/alt-text
                       <Image className="h-4 w-4 text-indigo-500 ml-0.5 flex-shrink-0" aria-hidden="true" />
@@ -745,15 +807,16 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                   
                   {/* Credit Cost */}
                   {(() => {
-                    const creditCost = creditCosts[detailsPanelModel.id] ?? (detailsPanelModel.premium ? 2 : 1);
+                    const creditCost = getEstimatedCreditCost(detailsPanelModel, creditCosts);
+                    const tier = getCreditTierInfo(creditCost);
                     return (
                       <div className="text-[10px] text-muted-foreground flex justify-between items-center">
-                        <span>Credit Cost:</span>
+                        <span>Usage cost:</span>
                         <code className={cn(
                           "bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono",
                           creditCost > 1 && "text-yellow-600 dark:text-yellow-500 font-semibold"
                         )}>
-                          {creditCost} {creditCost === 1 ? 'credit' : 'credits'} per message
+                          {tier.label} — {formatCreditsPerMessage(creditCost)}
                         </code>
                       </div>
                     );

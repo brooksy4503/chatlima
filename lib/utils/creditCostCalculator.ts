@@ -4,16 +4,16 @@ import { ModelInfo } from '@/lib/types/models';
  * Calculates the credit cost per message for a given model
  * Based on tiered pricing structure to protect against expensive model abuse
  * 
- * Tiers:
- * - Free/Standard models: 1 credit
- * - Premium ($3-15/M input or $5-50/M output): 2 credits  
- * - High Premium ($15-50/M): 5 credits
- * - Very High Premium ($50-100/M): 15 credits
- * - Ultra Premium ($100+/M): 30 credits
+ * Tiers (see creditTierLabels.ts for user-facing names):
+ * - Economy: 1 credit
+ * - Standard ($3-15/M): 2 credits
+ * - Pro ($15-50/M): 5 credits
+ * - Frontier ($50-100/M): 15 credits
+ * - Ultra ($100+/M): 30 credits
  */
 export function calculateCreditCostPerMessage(modelInfo: ModelInfo | null): number {
   if (!modelInfo) return 1; // Default to 1 credit if model info unavailable
-  if (!modelInfo.premium) return 1; // Free/standard models: 1 credit
+  if (!modelInfo.premium) return 1; // Economy tier
 
   const inputPrice = modelInfo.pricing?.input || 0;
   const outputPrice = modelInfo.pricing?.output || 0;

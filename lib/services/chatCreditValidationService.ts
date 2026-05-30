@@ -271,8 +271,8 @@ export class ChatCreditValidationService {
 
             console.log(`[SECURITY] ${userType} attempted to access premium model: ${selectedModel} (requires ${requiredCredits} credits)`);
             throw new PremiumModelRestrictedError(
-                `${userType} cannot access premium models. ${actionRequired} to use ${modelInfo.name || selectedModel} (${requiredCredits} credits per message).`,
-                `Premium model access denied for ${isAnonymous ? 'anonymous' : 'non-credit'} user`
+                `${userType} need ${requiredCredits} credits per message for ${modelInfo.name || selectedModel}. ${actionRequired}.`,
+                `Insufficient credits for model tier (${requiredCredits} required)`
             );
         }
     }

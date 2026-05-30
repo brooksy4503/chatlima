@@ -31,6 +31,7 @@ type SaveChatParams = {
   selectedModel?: string;
   apiKeys?: Record<string, string>;
   isAnonymous?: boolean;
+  titleGenerationPromise?: Promise<string>;
 };
 
 type ChatWithMessages = Chat & {
@@ -117,7 +118,7 @@ export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage
   }>;
 }
 
-export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys, isAnonymous }: SaveChatParams) {
+export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys, isAnonymous, titleGenerationPromise }: SaveChatParams) {
   // Generate a new ID if one wasn't provided
   const chatId = id || nanoid();
 
@@ -143,45 +144,23 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
         aiMessages.some(m => m.role === 'assistant');
 
       if (!chatTitle || chatTitle === 'New Chat' || chatTitle === undefined) {
-        if (hasEnoughMessages) {
+        if (titleGenerationPromise) {
           try {
-            // Use AI to generate a meaningful title based on conversation
+            chatTitle = await titleGenerationPromise;
+          } catch (error) {
+            console.error('Error generating title from pre-started promise:', error);
+          }
+        } else if (hasEnoughMessages) {
+          try {
             chatTitle = await generateTitle(aiMessages, selectedModel, apiKeys, userId, isAnonymous);
           } catch (error) {
             console.error('Error generating title:', error);
-            // Fallback to basic title extraction if AI title generation fails
-            const firstUserMessage = aiMessages.find(m => m.role === 'user');
-            if (firstUserMessage) {
-              // Check for parts first (new format)
-              if (firstUserMessage.parts && Array.isArray(firstUserMessage.parts)) {
-                const textParts = firstUserMessage.parts.filter((p: MessagePart) => p.type === 'text' && p.text);
-                if (textParts.length > 0) {
-                  chatTitle = textParts[0].text?.slice(0, 50) || 'New Chat';
-                  if ((textParts[0].text?.length || 0) > 50) {
-                    chatTitle += '...';
-                  }
-                } else {
-                  chatTitle = 'New Chat';
-                }
-              }
-              // Fallback to content (old format)
-              else if (typeof firstUserMessage.content === 'string') {
-                chatTitle = firstUserMessage.content.slice(0, 50);
-                if (firstUserMessage.content.length > 50) {
-                  chatTitle += '...';
-                }
-              } else {
-                chatTitle = 'New Chat';
-              }
-            } else {
-              chatTitle = 'New Chat';
-            }
           }
-        } else {
-          // Not enough messages for AI title, use first message
+        }
+
+        if (!chatTitle || chatTitle === 'New Chat') {
           const firstUserMessage = aiMessages.find(m => m.role === 'user');
           if (firstUserMessage) {
-            // Check for parts first (new format)
             if (firstUserMessage.parts && Array.isArray(firstUserMessage.parts)) {
               const textParts = firstUserMessage.parts.filter((p: MessagePart) => p.type === 'text' && p.text);
               if (textParts.length > 0) {
@@ -192,9 +171,7 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
               } else {
                 chatTitle = 'New Chat';
               }
-            }
-            // Fallback to content (old format)
-            else if (typeof firstUserMessage.content === 'string') {
+            } else if (typeof firstUserMessage.content === 'string') {
               chatTitle = firstUserMessage.content.slice(0, 50);
               if (firstUserMessage.content.length > 50) {
                 chatTitle += '...';

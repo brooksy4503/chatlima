@@ -133,7 +133,7 @@ export function ComparisonTable({ model1, model2 }: ComparisonTableProps) {
 
             <tr className="border-b border-border/30 hover:bg-muted/30 transition-colors">
               <td className="px-6 py-4 text-sm font-medium text-foreground">
-                Premium
+                Higher cost
               </td>
               <td className="px-6 py-4 text-sm text-center">
                 <span className={model1.premium ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-muted-foreground'}>

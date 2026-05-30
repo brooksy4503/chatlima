@@ -1,6 +1,6 @@
 export const metadata = {
   title: 'Frequently Asked Questions - ChatLima',
-  description: 'Frequently asked questions about ChatLima subscriptions, models, and features',
+  description: 'Frequently asked questions about ChatLima subscriptions, models, credits, BYOK, MCP, and web search',
 };
 
 export default function FAQPage() {
@@ -12,7 +12,7 @@ export default function FAQPage() {
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Frequently Asked Questions
             </h1>
-            
+
             <p className="text-muted-foreground mb-8 italic">
               Last updated: {new Date().toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
@@ -20,103 +20,132 @@ export default function FAQPage() {
             <div className="space-y-8">
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">
-                  What are free models?
+                  What is ChatLima?
                 </h2>
-                <p className="text-card-foreground leading-relaxed mb-4">
-                  Free models are powerful AI models that don&apos;t require additional credits or fees to use. 
-                  These models are provided through OpenRouter and are perfect for most everyday tasks like 
-                  writing emails, brainstorming ideas, answering questions, and general conversation.
-                </p>
-                <p className="text-card-foreground leading-relaxed mb-4">
-                  Current top free models include:
-                </p>
-                <div className="bg-muted p-4 rounded-lg">
-                  <ul className="space-y-2 text-card-foreground">
-                    <li>• Grok 4.1 Fast - Fast and capable for general tasks</li>
-                    <li>• GPT-OSS-20B - OpenAI&apos;s open-source model</li>
-                    <li>• Kimi K2 - Great for reasoning and analysis</li>
-                    <li>• DeepSeek R1 - Advanced reasoning capabilities</li>
-                    <li>• GLM-4.5 Air - Efficient and versatile</li>
-                    <li>• Dolphin Mistral 24B - Strong performance for various tasks</li>
-                    <li>• Qwen3-235B - Large-scale model for complex queries</li>
-                    <li>• DeepSeek Chat V3 - Conversational AI specialist</li>
-                    <li>• Gemma 3-27B - Google&apos;s efficient model</li>
-                  </ul>
-                </div>
-                <p className="text-card-foreground leading-relaxed mt-4">
-                  These models handle about 80% of typical chat needs and are included with your yearly subscription 
-                  at no extra cost. No setup required—just start chatting!
+                <p className="text-card-foreground leading-relaxed">
+                  ChatLima is a multi-model AI chat app with 300+ models from providers such as OpenRouter,
+                  Requesty, OpenAI, Anthropic, Groq, and X AI. It includes presets, projects, file and image
+                  uploads, web search, native URL fetching, and Model Context Protocol (MCP) tool integrations—
+                  all in one interface. Subscribers do not need separate provider accounts; ChatLima handles routing
+                  and billing through Polar.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">
-                  What are premium models?
+                  What&apos;s the difference between monthly and yearly plans?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  Premium models are advanced AI models that offer enhanced capabilities for complex tasks, 
-                  advanced reasoning, and specialized use cases. These models typically provide better accuracy, 
-                  deeper understanding, and more sophisticated responses for challenging questions.
+                  Both paid plans include the same full model catalog (credit cost shown per model), web search on supported
+                  OpenRouter models, and MCP server support. Choose monthly for flexibility or yearly for lower
+                  total cost over 12 months. See the{' '}
+                  <a href="/upgrade" className="text-primary hover:text-primary/80 underline">
+                    upgrade page
+                  </a>{' '}
+                  for current pricing.
                 </p>
-                <p className="text-card-foreground leading-relaxed mb-4">
-                  Current premium models include:
-                </p>
-                <div className="bg-muted p-4 rounded-lg">
-                  <ul className="space-y-2 text-card-foreground">
-                    <li>• GPT-5.1 Chat - OpenAI&apos;s latest flagship model</li>
-                    <li>• Claude Sonnet 4.5 - Anthropic&apos;s advanced reasoning model</li>
-                    <li>• Grok 4.1 Fast - X.AI&apos;s premium offering</li>
-                    <li>• Gemini 3 Pro Preview - Google&apos;s most capable model</li>
-                    <li>• Kimi K2 Thinking - Advanced reasoning capabilities</li>
-                    <li>• MiniMax M2 - High-performance model</li>
-                    <li>• GLM-4.6 - Latest from Z-AI</li>
-                  </ul>
-                </div>
-                <p className="text-card-foreground leading-relaxed mt-4">
-                  Premium models are ideal for complex analysis, advanced problem-solving, creative writing, 
-                  and tasks that require deep reasoning. They&apos;re available with the monthly subscription plan.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-semibold text-foreground mb-4">
-                  What&apos;s the difference between yearly and monthly plans?
-                </h2>
                 <div className="space-y-4">
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h3 className="text-xl font-medium text-foreground mb-3">
-                      Yearly Plan ($90/year)
-                    </h3>
-                    <ul className="space-y-2 text-card-foreground">
-                      <li>✓ 12,000 messages per year</li>
-                      <li>✓ Access to all models (premium + free)</li>
-                      <li>✓ Perfect for everyday use</li>
-                      <li>✓ Save 17% compared to monthly</li>
-                      <li>✓ Access to MCP tools (maps, search, etc.)</li>
-                    </ul>
-                    <p className="text-card-foreground mt-3 italic">
-                      Best for: Regular users who want full access all year and the best annual value.
-                    </p>
-                  </div>
                   <div className="bg-muted p-4 rounded-lg">
                     <h3 className="text-xl font-medium text-foreground mb-3">
                       Monthly Plan ($9/month)
                     </h3>
                     <ul className="space-y-2 text-card-foreground">
-                      <li>✓ 1,000 messages per month</li>
-                      <li>✓ Access to all models (premium + free)</li>
-                      <li>✓ Premium model access (GPT-5.1, Claude, etc.)</li>
-                      <li>✓ Web search capabilities</li>
-                      <li>✓ Access to MCP tools</li>
+                      <li>✓ About 1,000 credits per month on your Polar usage meter</li>
+                      <li>✓ Full model catalog while credits remain (1–30 credits per message by model tier)</li>
+                      <li>✓ Web search on eligible OpenRouter models</li>
+                      <li>✓ MCP tools and presets</li>
                     </ul>
                     <p className="text-card-foreground mt-3 italic">
-                      Best for: Power users, professionals, and anyone who needs premium models for 
-                      advanced tasks, complex analysis, or heavy usage.
+                      Best for: Power users and professionals who want frontier models and flexible monthly billing.
+                    </p>
+                  </div>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <h3 className="text-xl font-medium text-foreground mb-3">
+                      Yearly Plan ($90/year)
+                    </h3>
+                    <ul className="space-y-2 text-card-foreground">
+                      <li>✓ About 12,000 messages worth of usage per year (high usage limits in the app)</li>
+                      <li>✓ Same full catalog as monthly (per-message credit cost applies by model)</li>
+                      <li>✓ Web search on eligible OpenRouter models</li>
+                      <li>✓ MCP tools and presets</li>
+                      <li>✓ Save about 17% compared to paying monthly for a full year</li>
+                    </ul>
+                    <p className="text-card-foreground mt-3 italic">
+                      Best for: Regular users who want full access at the best annual price.
                     </p>
                   </div>
                 </div>
                 <p className="text-card-foreground leading-relaxed mt-4">
-                  <strong>Key insight:</strong> Both plans include premium and free models. Choose yearly for best value, or monthly for flexible pay-as-you-go billing.
+                  You can only have one active subscription at a time. Switching plans replaces the previous
+                  subscription after checkout.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  How do credits work?
+                </h2>
+                <p className="text-card-foreground leading-relaxed mb-4">
+                  Monthly subscribers use a credit balance tied to Polar usage. Each chat message consumes
+                  credits based on the model&apos;s pricing tier—not a flat “one message = one credit” for every
+                  model. The model picker shows the credit cost per message so you can choose accordingly.
+                </p>
+                <div className="bg-muted p-4 rounded-lg">
+                  <ul className="space-y-2 text-card-foreground">
+                    <li>• <strong>Economy</strong> (1 credit): everyday chat and lighter workloads</li>
+                    <li>• <strong>Standard</strong> (2 credits): mid-tier frontier models</li>
+                    <li>• <strong>Pro</strong> (5 credits): high-capability models</li>
+                    <li>• <strong>Frontier</strong> (15 credits): very high-cost models</li>
+                    <li>• <strong>Ultra</strong> (30 credits): top-tier reasoning models</li>
+                  </ul>
+                </div>
+                <p className="text-card-foreground leading-relaxed mt-4">
+                  The model picker shows each model&apos;s credit cost (e.g. <strong>1c</strong>, <strong>2c</strong>).
+                  Both monthly and yearly plans use the same catalog; cost depends on the model you choose, not
+                  your plan type. BYOK bypasses ChatLima credits for that provider.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  How do I choose a model?
+                </h2>
+                <p className="text-card-foreground leading-relaxed mb-4">
+                  Once you have a subscription or BYOK set up, open the model picker in chat. Every model shows
+                  how many credits it uses per message (for example <strong>1c</strong> or <strong>5c</strong>).
+                  Pick the model that fits your task—everyday questions often work well at 1 credit; complex
+                  analysis or coding may use more.
+                </p>
+                <p className="text-card-foreground leading-relaxed mb-4">
+                  Browse the full catalog on the{' '}
+                  <a href="/models" className="text-primary hover:text-primary/80 underline">
+                    models page
+                  </a>{' '}
+                  or filter by &quot;Low cost&quot; or &quot;Higher cost&quot; to compare options.
+                </p>
+                <p className="text-card-foreground leading-relaxed">
+                  If you run low on credits, switch to a lower-cost model, add a provider API key in Settings,
+                  or review your plan on the{' '}
+                  <a href="/upgrade" className="text-primary hover:text-primary/80 underline">
+                    upgrade page
+                  </a>
+                  .
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  How does web search work?
+                </h2>
+                <p className="text-card-foreground leading-relaxed mb-4">
+                  For supported OpenRouter models, turn on the globe toggle in the composer to enable web search.
+                  ChatLima uses OpenRouter&apos;s agentic web search tools so the model can search and cite sources
+                  during the reply. You must be signed in; the model must support web search.
+                </p>
+                <p className="text-card-foreground leading-relaxed mb-4">
+                  Web search costs <strong>5 credits per search invocation</strong> (billed from actual tool usage
+                  during the response). If you use your own OpenRouter API key, web search is billed to your
+                  OpenRouter account instead of ChatLima credits.
                 </p>
               </section>
 
@@ -125,26 +154,42 @@ export default function FAQPage() {
                   What are MCP tools?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  MCP (Model Context Protocol) tools extend ChatLima&apos;s capabilities beyond basic chat. 
-                  These integrations allow the AI to interact with external services and perform real-world actions.
+                  MCP (Model Context Protocol) lets the AI call external tools you configure—databases, APIs,
+                  automation platforms, custom scripts, and more. ChatLima supports SSE, stdio, and HTTP streamable
+                  transports, plus OAuth 2.1 for servers that require sign-in.
                 </p>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  Examples of MCP tools include:
+                  Common use cases:
                 </p>
                 <div className="bg-muted p-4 rounded-lg">
                   <ul className="space-y-2 text-card-foreground">
-                    <li>• <strong>Google Maps</strong> - Get directions, find places, check locations</li>
-                    <li>• <strong>Web Search</strong> - Search the internet for current information</li>
-                    <li>• <strong>File Operations</strong> - Read and write files on your system</li>
-                    <li>• <strong>Code Execution</strong> - Run code snippets and see results</li>
-                    <li>• <strong>Database Access</strong> - Query databases and retrieve data</li>
-                    <li>• <strong>API Integrations</strong> - Connect to various third-party services</li>
+                    <li>• Third-party integrations (e.g. Composio, Zapier-style workflows)</li>
+                    <li>• Custom HTTP or stdio servers you run locally or in the cloud</li>
+                    <li>• Authenticated remote MCP servers via OAuth</li>
+                    <li>• Extending chat with domain-specific actions beyond plain text</li>
                   </ul>
                 </div>
                 <p className="text-card-foreground leading-relaxed mt-4">
-                  MCP tools make ChatLima more powerful by allowing the AI to take actions, not just answer 
-                  questions. For example, you can ask &quot;Show me directions to the nearest coffee shop&quot; and the 
-                  AI can use Google Maps to provide real directions.
+                  Add and test servers under <strong>Settings → MCP Servers</strong> in the sidebar. MCP is
+                  available to subscribers and to users who connect their own API keys (BYOK).
+                </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  Can I try ChatLima without subscribing?
+                </h2>
+                <p className="text-card-foreground leading-relaxed mb-4">
+                  To chat on ChatLima you need either an active subscription (monthly or yearly) or your own
+                  provider API keys (BYOK). Sign in with Google, choose a plan on the{' '}
+                  <a href="/upgrade" className="text-primary hover:text-primary/80 underline">
+                    upgrade page
+                  </a>
+                  , or add keys under Settings → API Keys.
+                </p>
+                <p className="text-card-foreground leading-relaxed">
+                  With BYOK, usage is billed by your provider and ChatLima credit limits do not apply for that
+                  provider&apos;s models. See the BYOK section below for setup steps.
                 </p>
               </section>
 
@@ -153,14 +198,13 @@ export default function FAQPage() {
                   Do I need an OpenRouter account?
                 </h2>
                 <p className="text-card-foreground leading-relaxed">
-                  No! ChatLima handles everything for you. You don&apos;t need to sign up for OpenRouter, manage 
-                  API keys, or purchase credits separately. When you subscribe to ChatLima, we handle all the 
-                  technical setup and provide you with a seamless experience. Just sign in and start chatting—we 
-                  take care of rest.
+                  No, not for a paid ChatLima subscription. We route requests and manage usage through our provider
+                  integrations. You only need your own OpenRouter (or other provider) account if you choose BYOK for
+                  direct billing and full model access from that provider.
                 </p>
                 <p className="text-card-foreground leading-relaxed mt-4">
-                  ChatLima provides additional features and a polished interface that you won&apos;t find on OpenRouter 
-                  directly, including MCP tool integrations, preset management, and a user-friendly chat interface.
+                  ChatLima adds presets, projects, MCP, file uploads, web search, provider health checks, and a
+                  unified chat experience you would not get from using a provider dashboard alone.
                 </p>
               </section>
 
@@ -169,62 +213,48 @@ export default function FAQPage() {
                   How do I use my own API keys (BYOK)?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  ChatLima supports Bring Your Own Key (BYOK) functionality across supported providers. You can add your own
-                  provider API keys and use models from those providers with your own billing relationship.
+                  Bring Your Own Key lets you connect your own provider accounts. Supported providers in Settings:
+                  OpenAI, Anthropic, Groq, X AI, OpenRouter, and Requesty.
                 </p>
                 <div className="bg-muted p-4 rounded-lg mb-4">
                   <h3 className="text-xl font-medium text-foreground mb-3">
-                    Benefits of using your own API key:
+                    Benefits of BYOK
                   </h3>
                   <ul className="space-y-2 text-card-foreground">
-                    <li>• Direct billing through your provider account</li>
-                    <li>• Access to all models you&apos;ve purchased or have access to</li>
-                    <li>• Bypasses ChatLima credit system and message limits</li>
-                    <li>• Full control over your API usage and spending</li>
-                    <li>• Real-time model availability based on your provider account access</li>
+                    <li>• Billed directly by the provider you configure</li>
+                    <li>• Access to models your provider account can use</li>
+                    <li>• Bypasses ChatLima credit limits for that provider&apos;s models</li>
+                    <li>• OpenRouter BYOK also bypasses ChatLima web search credit charges</li>
                   </ul>
                 </div>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  <strong>How to configure BYOK in ChatLima:</strong>
+                  <strong>How to configure BYOK:</strong>
                 </p>
                 <ol className="list-decimal list-inside space-y-3 text-card-foreground ml-4">
                   <li>
-                    <strong>Get your OpenRouter API key:</strong>
-                    <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                      <li>Sign up or log in to <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline">OpenRouter</a></li>
-                      <li>Navigate to the &quot;Keys&quot; section in your dashboard</li>
-                      <li>Click &quot;Create Key&quot; and give it a name like &quot;ChatLima&quot;</li>
-                      <li>Copy the API key (starts with <code className="bg-muted px-2 py-1 rounded text-sm">sk-or-v1-</code>)</li>
-                    </ul>
+                    Create an API key with your provider (e.g.{' '}
+                    <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline">
+                      OpenRouter Keys
+                    </a>
+                    , OpenAI, Anthropic, etc.).
                   </li>
                   <li>
-                    <strong>Add the key to ChatLima:</strong>
-                    <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                      <li>Open ChatLima and click the settings icon (⚙️) near the model selector</li>
-                      <li>Find the &quot;OpenRouter API Key&quot; field</li>
-                      <li>Paste your API key</li>
-                      <li>Click &quot;Save&quot;</li>
-                    </ul>
+                    In ChatLima, open <strong>Settings</strong> from the sidebar and go to the <strong>API Keys</strong> tab.
                   </li>
+                  <li>Paste the key for each provider you want to use and save.</li>
                   <li>
-                    <strong>Start using your models:</strong>
-                    <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                      <li>The model list will automatically refresh to show all available models</li>
-                      <li>Models you have access to will be marked as available</li>
-                      <li>Your usage will be billed directly to your OpenRouter account</li>
-                    </ul>
+                    The model list refreshes to reflect models available through your keys. Select a model from
+                    that provider to route requests with your key.
                   </li>
                 </ol>
                 <div className="bg-muted p-4 rounded-lg mt-4">
                   <h3 className="text-xl font-medium text-foreground mb-3">
-                    Notes and Tips:
+                    Privacy notes
                   </h3>
                   <ul className="space-y-2 text-card-foreground">
-                    <li>• Your API key is stored locally in your browser and is never sent to ChatLima servers</li>
-                    <li>• You can remove or replace your API key at any time from the settings</li>
-                    <li>• The key is only used to make requests directly to OpenRouter</li>
-                    <li>• If you remove the key, you&apos;ll revert to ChatLima&apos;s subscription-based access</li>
-                    <li>• Model availability updates instantly when you add or remove your API key</li>
+                    <li>• Keys are stored in your browser&apos;s local storage, not on ChatLima servers</li>
+                    <li>• You can remove or replace keys anytime from Settings</li>
+                    <li>• Removing keys returns you to subscription-based access (if you have a plan)</li>
                   </ul>
                 </div>
               </section>
@@ -234,17 +264,18 @@ export default function FAQPage() {
                   Can I switch plans?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  Yes! You can switch between plans at any time. Here&apos;s how it works:
+                  Yes. You can move between monthly and yearly at any time:
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-card-foreground ml-4">
-                  <li>If you have a yearly plan and want premium models, you can upgrade to monthly</li>
-                  <li>If you have a monthly plan and want to save money, you can switch to yearly</li>
-                  <li>One subscription replaces the other—you can only have one active subscription at a time</li>
-                  <li>Changes take effect immediately</li>
+                  <li>Only one subscription is active at a time—the new plan replaces the old one after checkout</li>
+                  <li>Changes take effect once Polar confirms your new subscription</li>
                 </ul>
                 <p className="text-card-foreground leading-relaxed mt-4">
-                  To switch plans, visit the <a href="/upgrade" className="text-primary hover:text-primary/80 underline">upgrade page</a> and select your preferred plan. 
-                  You&apos;ll be guided through the checkout process.
+                  Visit the{' '}
+                  <a href="/upgrade" className="text-primary hover:text-primary/80 underline">
+                    upgrade page
+                  </a>{' '}
+                  to choose a plan or manage billing.
                 </p>
               </section>
 
@@ -253,17 +284,16 @@ export default function FAQPage() {
                   What happens if I cancel?
                 </h2>
                 <p className="text-card-foreground leading-relaxed">
-                  You can cancel your subscription at any time with no penalties or fees. Your subscription will 
-                  remain active until the end of your current billing period. After cancellation:
+                  You can cancel anytime with no penalty. Access continues until the end of the current billing
+                  period. After that:
                 </p>
-                  <ul className="list-disc list-inside space-y-2 text-card-foreground ml-4 mt-4">
-                  <li>You&apos;ll continue to have access to all features until your current period ends</li>
-                  <li>You won&apos;t be charged for the next billing cycle</li>
-                  <li>Your account and chat history will be preserved</li>
-                  <li>You can resubscribe anytime</li>
+                <ul className="list-disc list-inside space-y-2 text-card-foreground ml-4 mt-4">
+                  <li>You will not be charged for the next cycle</li>
+                  <li>Chat history and account data are preserved</li>
+                  <li>You can resubscribe or use BYOK later</li>
                 </ul>
                 <p className="text-card-foreground leading-relaxed mt-4">
-                  To cancel, visit your subscription management portal from the upgrade page or contact support.
+                  Cancel from the subscription portal linked on the upgrade page, or contact support below.
                 </p>
               </section>
 
@@ -272,18 +302,14 @@ export default function FAQPage() {
                   How do I manage my subscription?
                 </h2>
                 <p className="text-card-foreground leading-relaxed mb-4">
-                  Managing your subscription is easy:
+                  From the{' '}
+                  <a href="/upgrade" className="text-primary hover:text-primary/80 underline">
+                    upgrade page
+                  </a>
+                  , use <strong>Manage Subscription</strong> (or &quot;Manage your subscription&quot; at the bottom) to open
+                  the Polar customer portal. There you can view your plan, update payment methods, see billing
+                  history, and cancel or change your subscription.
                 </p>
-                <ul className="list-disc list-inside space-y-2 text-card-foreground ml-4">
-                  <li>Visit the <a href="/upgrade" className="text-primary hover:text-primary/80 underline">upgrade page</a> and click &quot;Manage your subscription&quot;</li>
-                  <li>You&apos;ll be taken to your subscription portal where you can:</li>
-                  <ul className="list-disc list-inside space-y-1 ml-6 mt-2">
-                    <li>View your current plan and billing details</li>
-                    <li>Update payment methods</li>
-                    <li>Cancel or modify your subscription</li>
-                    <li>View billing history</li>
-                  </ul>
-                </ul>
               </section>
 
               <section>
@@ -292,7 +318,7 @@ export default function FAQPage() {
                 </h2>
                 <div className="bg-muted p-6 rounded-lg">
                   <p className="text-card-foreground mb-4">
-                    We&apos;re here to help! If you have any other questions, please contact us:
+                    We&apos;re here to help:
                   </p>
                   <ul className="space-y-2">
                     <li className="flex items-center space-x-2">

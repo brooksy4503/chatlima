@@ -12,8 +12,9 @@ ChatLima is a feature-rich, MCP-powered AI chatbot application with multi-model 
 ### Key Differentiators
 - **Dynamic Model Loading**: Real-time fetching from OpenRouter and Requesty APIs
 - **Model Context Protocol (MCP)**: Full MCP 1.20.2 support with OAuth 2.1 authorization
-- **Flexible Authentication**: Anonymous users (10 msg/day) + Google OAuth (20 msg/day)
-- **Dual Subscription Tiers**: Monthly ($10/mo, Polar credit allocation) and Yearly ($10/yr, unlimited free OpenRouter models)
+- **Flexible Authentication**: Google OAuth; optional anonymous access when `BILLING_ENFORCED=false` (10 msg/day)
+- **Dual Subscription Tiers**: Monthly ($9/mo, ~1,000 Polar credits/month) and Yearly ($90/yr, high usage allowance); full model catalog on both plans
+- **Credit-tier pricing**: Per-message cost 1–30 credits by model (Economy → Ultra), shown in model picker—not separate “free vs premium” product tiers
 - **Multi-Provider AI**: OpenAI, Anthropic, Groq, XAI, OpenRouter, Requesty
 
 ---
@@ -348,10 +349,12 @@ The application uses specialized services for maintainability:
 
 | User Type | App daily message cap | Polar credits | Features |
 |-----------|------------------------|---------------|----------|
-| Anonymous | 10/day | None | Basic models only; no web search |
-| Free Google (signed in, no credits) | 20/day (custom limit via user metadata supported) | None | Standard models; web search blocked without credits |
-| Authenticated with Polar credits | Daily cap skipped while credits remain | Meter balance (monthly plan allocates credits, e.g. 1,000/month on product) | All models per credit tier; web search when eligible |
-| Yearly Subscriber ($10/yr) | Effectively unlimited for free models (`:free`) | Not required for free models | Free-tier OpenRouter models only |
+| Anonymous (`BILLING_ENFORCED=false`) | 10/day | None | OpenRouter `:free` models only unless BYOK |
+| Signed-in, no subscription (`BILLING_ENFORCED=false`) | 20/day | None | `:free` models; web search needs credits |
+| Signed-in, no subscription (`BILLING_ENFORCED=true`) | Blocked | None | Requires subscription or BYOK (`accessGateService`) |
+| Monthly subscriber ($9/mo) | High / credit-gated | ~1,000 credits/month (Polar meter) | Full catalog; cost 1–30 credits/msg by model tier |
+| Yearly subscriber ($90/yr) | Very high (effectively unlimited in-app) | Often null in API (`hasUnlimitedFreeModels`) | Full catalog; same credit tiers where enforced server-side |
+| BYOK (any enforced mode) | Bypasses subscription gate when `ALLOW_BYOK_BYPASS=true` | N/A | Provider-billed; ChatLima credits skipped for that provider |
 
 ### 4.3 Anonymous User Flow
 
@@ -478,20 +481,22 @@ interface MCPServerConfig {
 
 | Plan | Price | Polar allocation | Model Access |
 |------|-------|------------------|--------------|
-| Monthly | $10/month | ~1,000 credits/month on the Polar meter (usage-based, not a separate in-app message counter) | All models while credits remain |
-| Yearly | $10/year | Unlimited access to free OpenRouter models (`:free` suffix) | Free-tier models only |
+| Monthly | $9/month | ~1,000 credits/month on the Polar meter (usage-based, not a flat per-message counter) | Full catalog while credits remain |
+| Yearly | $90/year | High annual usage allowance (see daily limit bypass for yearly subscribers) | Full catalog (same as monthly) |
+
+**Product vocabulary:** User-facing copy uses **credit tiers** (Economy / Standard / Pro / Frontier / Ultra), not “free vs premium plans.” The internal `model.premium` flag and OpenRouter `:free` suffix inform tier calculation only.
 
 ### 7.2 Credit Cost Tiers
 
-Based on model pricing ($/M tokens):
+Based on model pricing ($/M tokens). Labels in `lib/utils/creditTierLabels.ts`:
 
-| Pricing Range | Credits/Message |
-|---------------|-----------------|
-| Free/Standard (<$3/M) | 1 |
-| Premium ($3-15/M) | 2 |
-| High Premium ($15-50/M) | 5 |
-| Very High Premium ($50-100/M) | 15 |
-| Ultra Premium ($100+/M) | 30 |
+| Tier (user-facing) | Pricing range ($/M tokens) | Credits/message |
+|--------------------|----------------------------|-----------------|
+| Economy | &lt;$3/M input (incl. many `:free` models) | 1 |
+| Standard | ~$3–15/M | 2 |
+| Pro | ~$15–50/M | 5 |
+| Frontier | ~$50–100/M | 15 |
+| Ultra | $100+/M | 30 |
 
 ### 7.3 Special Feature Costs
 
@@ -518,10 +523,10 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 
 ### 7.5 Credit Validation Flow
 
-1. Check for yearly subscription (unlimited free models)
-2. Check Polar credits for authenticated users
-3. Fall back to daily message limit (10 anonymous / 20 authenticated)
-4. Block on negative credits
+1. Access gate when `BILLING_ENFORCED=true`: active subscription (monthly or yearly) or BYOK for model provider (`accessGateService`)
+2. Check Polar credits for non-BYOK requests (yearly may bypass credit pool via `hasUnlimitedFreeModels`)
+3. When billing not enforced: fall back to daily message limit (10 anonymous / 20 authenticated) and `:free`-only without credits
+4. Block on negative credits; block when `actualCredits < requiredCredits` for selected model tier
 5. Web search (if requested): require signed-in user, OpenRouter model with `supportsWebSearch`, and either ≥5 credits or BYOK OpenRouter key (`ChatWebSearchService` + `ChatCreditValidationService`)
 
 ---
@@ -546,7 +551,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
   - See §7.3 for billing; implementation in `chatWebSearchService`, `openRouterWebSearchRouteSetup`, `app/api/chat/route.ts`.
 - **Native Web Fetch**: First-party `web_fetch` tool for reading public URLs directly in chat with extraction + truncation controls
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
-- **Smart Title Generation**: Dynamic model selection for conversation titles
+- **Smart Title Generation**: Dynamic model selection for conversation titles. Default OpenRouter title model is `openrouter/openai/gpt-5-nano` (override via `TITLE_GENERATION_MODEL_ID` or `OPENROUTER_TITLE_MODEL`). Title generation starts in parallel when a new chat begins streaming and is persisted before the chat save completes.
 
 ### 8.2 Presets System
 
@@ -872,9 +877,9 @@ NGROK_DOMAIN=                  # Ngrok for local dev
 BLOB_READ_WRITE_TOKEN=         # Vercel Blob Storage (for document uploads)
 BLOB_PUBLIC_URL=               # Optional Blob public base URL
 NEXT_PUBLIC_BLOB_URL=          # Optional public Blob base URL fallback
-TITLE_GENERATION_MODEL_ID=     # Global title-generation model override
-OPENROUTER_TITLE_MODEL=        # Provider-specific title model override
-REQUESTY_TITLE_MODEL=
+TITLE_GENERATION_MODEL_ID=     # Global title-generation model override (default: openrouter/openai/gpt-5-nano)
+OPENROUTER_TITLE_MODEL=        # Provider-specific title model override (default: openrouter/openai/gpt-5-nano)
+REQUESTY_TITLE_MODEL=          # Provider-specific title model override (default: requesty/openai/gpt-5-nano)
 OPENAI_TITLE_MODEL=
 ANTHROPIC_TITLE_MODEL=
 GROQ_TITLE_MODEL=

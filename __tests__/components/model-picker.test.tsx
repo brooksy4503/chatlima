@@ -185,6 +185,7 @@ describe('ModelPicker', () => {
 
   const mockUseCredits = {
     canAccessPremiumModels: jest.fn(() => true),
+    canUseModelAtCreditCost: jest.fn(() => true),
     loading: false,
   };
 
@@ -194,7 +195,9 @@ describe('ModelPicker', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+    mockUseCredits.canAccessPremiumModels.mockReturnValue(true);
+    mockUseCredits.canUseModelAtCreditCost.mockReturnValue(true);
+
     // Reset mock implementations
     require('@/lib/context/model-context').useModel.mockReturnValue(mockUseModel);
     require('@/hooks/useCredits').useCredits.mockReturnValue(mockUseCredits);
@@ -238,16 +241,16 @@ describe('ModelPicker', () => {
       expect(tooltipContent).toHaveTextContent('Model is controlled by "Custom Preset" preset');
     });
 
-    test('displays premium model warning when user lacks credits', () => {
-      mockUseCredits.canAccessPremiumModels.mockReturnValue(false);
+    test('displays insufficient credits warning when user lacks credits', () => {
+      mockUseCredits.canUseModelAtCreditCost.mockReturnValue(false);
       
       render(<ModelPicker {...defaultProps} selectedModel="claude-3-opus" />);
       
       const tooltipContents = screen.getAllByTestId('tooltip-content');
-      const premiumWarning = tooltipContents.find(tooltip => 
-        tooltip.textContent?.includes('This model requires premium access')
+      const creditsWarning = tooltipContents.find(tooltip => 
+        tooltip.textContent?.includes('Insufficient credits')
       );
-      expect(premiumWarning).toBeInTheDocument();
+      expect(creditsWarning).toBeInTheDocument();
     });
   });
 
@@ -502,7 +505,7 @@ describe('ModelPicker', () => {
     });
 
     test('prevents selection of unavailable models with Enter key', async () => {
-      mockUseCredits.canAccessPremiumModels.mockReturnValue(false);
+      mockUseCredits.canUseModelAtCreditCost.mockReturnValue(false);
       const mockSetSelectedModel = jest.fn();
       
       render(
@@ -659,14 +662,14 @@ describe('ModelPicker', () => {
 
   describe('Error Handling', () => {
     test('handles unavailable models gracefully', () => {
-      mockUseCredits.canAccessPremiumModels.mockReturnValue(false);
+      mockUseCredits.canUseModelAtCreditCost.mockReturnValue(false);
       
       render(<ModelPicker {...defaultProps} />);
       
       // Open popover
       fireEvent.click(screen.getByRole('combobox'));
       
-      // Premium models should be disabled - find the container with the disabled classes
+      // High-cost models should be disabled when credits are insufficient - find the container with the disabled classes
       const claudeModels = screen.getAllByText('Claude 3 Opus');
       // Find the one that's actually in a disabled container
       let disabledContainer = null;

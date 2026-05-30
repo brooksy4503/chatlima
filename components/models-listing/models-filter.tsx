@@ -11,8 +11,8 @@ const FILTERS: Array<{
   icon: string;
 }> = [
   { type: 'all', label: 'All Models', icon: 'Grid' },
-  { type: 'free', label: 'Free Models', icon: 'Zap' },
-  { type: 'premium', label: 'Premium Models', icon: 'Sparkles' },
+  { type: 'free', label: 'Low cost (:free)', icon: 'Zap' },
+  { type: 'premium', label: 'Higher cost (2+ credits)', icon: 'Sparkles' },
   { type: 'vision', label: 'Vision Models', icon: 'Eye' },
   { type: 'coding', label: 'Coding Models', icon: 'Code' },
   { type: 'reasoning', label: 'Reasoning Models', icon: 'Brain' }

@@ -394,6 +394,34 @@ describe('Chat Component', () => {
       });
     });
 
+    test('clears input immediately on submit before send completes', async () => {
+      let resolveSend: (() => void) | undefined;
+      const mockSendMessage = jest.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveSend = resolve;
+          })
+      );
+      mockUseChat.mockReturnValue(createUseChatMock({ sendMessage: mockSendMessage }));
+
+      renderWithProviders(<Chat />);
+
+      fireEvent.change(screen.getByTestId('chat-input'), {
+        target: { value: 'Test message' },
+      });
+
+      const form = screen.getByTestId('textarea-mock').closest('form');
+      fireEvent.submit(form!);
+
+      await waitFor(() => {
+        expect(mockSendMessage).toHaveBeenCalled();
+      });
+
+      expect(screen.getByTestId('chat-input')).toHaveValue('');
+
+      resolveSend?.();
+    });
+
     test('prevents form submission when input is empty', () => {
       const mockSendMessage = jest.fn().mockResolvedValue(undefined);
       mockUseChat.mockReturnValue(createUseChatMock({ sendMessage: mockSendMessage }));

@@ -13,4 +13,4 @@ export const STORAGE_KEYS = {
 } as const;
 
 // Configurable model IDs
-export const titleGenerationModelId = process.env.TITLE_GENERATION_MODEL_ID || 'openrouter/qwen/qwen-turbo'; 
+export const titleGenerationModelId = process.env.TITLE_GENERATION_MODEL_ID || 'openrouter/openai/gpt-5-nano'; 

@@ -70,7 +70,7 @@ export function ModelsGrid({ title, models, showBadges, showAccessibleOnly = fal
                           : 'bg-yellow-500/10 text-yellow-600/70 dark:text-yellow-400/70'
                       }`}>
                         {!isAccessible && <Lock className="h-3 w-3" />}
-                        Premium
+                        2+ credits
                       </span>
                     )}
                     {model.vision && (
@@ -102,7 +102,7 @@ export function ModelsGrid({ title, models, showBadges, showAccessibleOnly = fal
                     isPremium && !isAccessible ? 'opacity-75' : ''
                   }`}
                 >
-                  {isFree ? 'Chat Free' : isPremium && !isAccessible ? 'Upgrade to Access' : 'View Details'}
+                  {isFree ? 'View model' : isPremium && !isAccessible ? 'View plans' : 'View Details'}
                   <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </div>
