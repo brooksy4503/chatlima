@@ -503,7 +503,8 @@
         }
         data = await res.json();
         document.getElementById('doc-title').textContent = data.meta.title;
-        document.getElementById('doc-subtitle').textContent = `${data.flows.length} workflows · ${data.nodes.length} nodes`;
+        const appVer = data.meta.appVersion ? ` · app v${data.meta.appVersion}` : '';
+        document.getElementById('doc-subtitle').textContent = `${data.flows.length} workflows · ${data.nodes.length} nodes · docs v${data.meta.version}${appVer}`;
         buildLegend();
         layoutGraph();
         renderFlowsList();

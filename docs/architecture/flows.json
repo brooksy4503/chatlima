@@ -1,8 +1,9 @@
 {
   "meta": {
     "title": "ChatLima Architecture Flows",
-    "version": "1.0.0",
-    "description": "Interactive map of how UI, API routes, services, and external systems connect for each user action."
+    "version": "1.1.0",
+    "appVersion": "0.40.0",
+    "description": "Interactive map of how UI, API routes, services, and external systems connect for each user action. Aligned with AI SDK v6, OpenRouter agentic web search, native web_fetch, projects, and stream resilience."
   },
   "groups": [
     { "id": "components", "label": "Components", "color": "#60a5fa" },
@@ -25,6 +26,10 @@
     { "id": "model-picker", "label": "model-picker", "path": "components/model-picker.tsx", "group": "components" },
     { "id": "admin-cleanup", "label": "AdminUserCleanup", "path": "components/admin/AdminUserCleanup.tsx", "group": "components" },
     { "id": "settings-sheet", "label": "settings-sheet", "path": "components/settings-sheet.tsx", "group": "components" },
+    { "id": "message", "label": "message.tsx", "path": "components/message.tsx", "group": "components" },
+    { "id": "chat-project-selector", "label": "ChatProjectSelector", "path": "components/projects/chat-project-selector.tsx", "group": "components" },
+    { "id": "projects-browser", "label": "projects-browser-sheet", "path": "components/projects/projects-browser-sheet.tsx", "group": "components" },
+    { "id": "project-detail", "label": "project-detail-sheet", "path": "components/projects/project-detail-sheet.tsx", "group": "components" },
 
     { "id": "use-auth", "label": "useAuth", "path": "hooks/useAuth.ts", "group": "hooks" },
     { "id": "use-credits", "label": "useCredits", "path": "hooks/useCredits.ts", "group": "hooks" },
@@ -33,6 +38,7 @@
     { "id": "mcp-context", "label": "mcp-context", "path": "lib/context/mcp-context.tsx", "group": "hooks" },
     { "id": "preset-context", "label": "preset-context", "path": "lib/context/preset-context.tsx", "group": "hooks" },
     { "id": "browser-storage", "label": "browser-storage", "path": "lib/browser-storage.ts", "group": "hooks" },
+    { "id": "use-projects", "label": "useProjects", "path": "lib/hooks/use-projects.ts", "group": "hooks" },
 
     { "id": "api-chat", "label": "POST /api/chat", "path": "app/api/chat/route.ts", "group": "app-api" },
     { "id": "api-auth", "label": "/api/auth/*", "path": "app/api/auth/[...betterauth]/route.ts", "group": "app-api" },
@@ -43,6 +49,9 @@
     { "id": "api-share", "label": "POST /api/chats/.../share", "path": "app/api/chats/[id]/share/route.ts", "group": "app-api" },
     { "id": "api-admin-cleanup", "label": "POST /api/admin/cleanup-users", "path": "app/api/admin/cleanup-users/execute/route.ts", "group": "app-api" },
     { "id": "api-create-polar", "label": "POST /api/create-polar-customer", "path": "app/api/create-polar-customer/route.ts", "group": "app-api" },
+    { "id": "api-projects", "label": "/api/projects", "path": "app/api/projects/route.ts", "group": "app-api" },
+    { "id": "api-chat-project", "label": "/api/chats/.../project", "path": "app/api/chats/[id]/project/route.ts", "group": "app-api" },
+    { "id": "api-mcp-oauth-proxy", "label": "GET/POST /api/mcp/oauth/proxy", "path": "app/api/mcp/oauth/proxy/route.ts", "group": "app-api" },
 
     { "id": "svc-auth", "label": "chatAuthenticationService", "path": "lib/services/chatAuthenticationService.ts", "group": "lib-services" },
     { "id": "svc-credit", "label": "chatCreditValidationService", "path": "lib/services/chatCreditValidationService.ts", "group": "lib-services" },
@@ -55,6 +64,9 @@
     { "id": "svc-sharing", "label": "chat-sharing", "path": "lib/services/chat-sharing.ts", "group": "lib-services" },
     { "id": "svc-cleanup", "label": "userCleanupService", "path": "lib/services/userCleanupService.ts", "group": "lib-services" },
     { "id": "svc-access", "label": "accessGateService", "path": "lib/services/accessGateService.ts", "group": "lib-services" },
+    { "id": "svc-webfetch", "label": "webFetchService", "path": "lib/services/webFetchService.ts", "group": "lib-services" },
+    { "id": "svc-or-websearch-setup", "label": "openRouterWebSearchRouteSetup", "path": "lib/services/openRouterWebSearchRouteSetup.ts", "group": "lib-services" },
+    { "id": "svc-project-context", "label": "projectContext", "path": "lib/services/projectContext.ts", "group": "lib-services" },
 
     { "id": "auth", "label": "lib/auth.ts", "path": "lib/auth.ts", "group": "lib" },
     { "id": "auth-client", "label": "auth-client", "path": "lib/auth-client.ts", "group": "lib" },
@@ -65,9 +77,16 @@
     { "id": "file-upload-lib", "label": "file-upload", "path": "lib/file-upload.ts", "group": "lib" },
     { "id": "token-counter", "label": "tokenCounter", "path": "lib/tokenCounter.ts", "group": "lib" },
     { "id": "fetch-models", "label": "fetch-models", "path": "lib/models/fetch-models.ts", "group": "lib" },
+    { "id": "chat-message-persistence", "label": "chat-message-persistence", "path": "lib/chat-message-persistence.ts", "group": "lib" },
+    { "id": "message-utils", "label": "message-utils", "path": "lib/message-utils.ts", "group": "lib" },
+    { "id": "google-model-tools", "label": "google-model-tools", "path": "lib/google-model-tools.ts", "group": "lib" },
+    { "id": "access-policy", "label": "access-policy", "path": "lib/config/access-policy.ts", "group": "lib" },
+    { "id": "chat-stream-consumption", "label": "chat-stream-consumption", "path": "lib/chat-stream-consumption.ts", "group": "lib" },
+    { "id": "chat-stop-registry", "label": "chat-stop-registry", "path": "lib/chat-stop-registry.ts", "group": "lib" },
 
     { "id": "ai-providers", "label": "ai/providers", "path": "ai/providers.ts", "group": "ai" },
-    { "id": "vercel-ai-sdk", "label": "Vercel AI SDK", "path": "ai package (streamText)", "group": "ai" },
+    { "id": "openrouter-provider", "label": "@openrouter/ai-sdk-provider", "path": "OpenRouterProvider v2.x", "group": "ai" },
+    { "id": "vercel-ai-sdk", "label": "Vercel AI SDK v6", "path": "ai package (streamText, UIMessage)", "group": "ai" },
 
     { "id": "ext-google", "label": "Google OAuth", "path": "accounts.google.com", "group": "external" },
     { "id": "ext-polar", "label": "Polar", "path": "api.polar.sh", "group": "external" },
@@ -84,13 +103,13 @@
       "id": "send-chat-message",
       "label": "Send chat message",
       "category": "Chat",
-      "description": "User submits a prompt; server authenticates, validates credits/model, streams from AI provider, persists messages, tracks usage.",
+      "description": "User submits a prompt; server authenticates, validates credits/model/access, optionally injects project context, streams from AI provider with MCP tools, agentic web search, and native web_fetch, persists UIMessage parts, tracks per-invocation usage.",
       "steps": [
         {
           "from": "chat",
           "to": "textarea",
           "label": "User input",
-          "payload": "text, attachments[], selected model from model-context"
+          "payload": "text, attachments[], selected model from model-context, webSearch toggle from WebSearchProvider"
         },
         {
           "from": "chat",
@@ -102,19 +121,37 @@
           "from": "chat",
           "to": "preset-context",
           "label": "Read preset",
-          "payload": "system prompt, temperature, maxTokens"
+          "payload": "system prompt, temperature, maxTokens, optional webSearch override"
+        },
+        {
+          "from": "chat",
+          "to": "chat-project-selector",
+          "label": "Linked project",
+          "payload": "chatId may be linked to a project via chat_projects (context injected server-side)"
         },
         {
           "from": "chat",
           "to": "api-chat",
           "label": "useChat → POST",
-          "payload": "{ id, messages: UIMessage[], selectedModel, apiKeys?, mcpServers[], webSearchEnabled, presetId?, projectId? }"
+          "payload": "{ id, messages: UIMessage[], selectedModel, apiKeys?, mcpServers[], webSearch: { enabled, contextSize }, presetId?, attachments[] }"
         },
         {
           "from": "api-chat",
           "to": "svc-auth",
           "label": "Authenticate",
           "payload": "session cookie → AuthenticatedUser { id, isAnonymous, email }"
+        },
+        {
+          "from": "api-chat",
+          "to": "access-policy",
+          "label": "Feature flags",
+          "payload": "OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED, NATIVE_WEB_FETCH_ENABLED, BILLING_ENFORCED"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-access",
+          "label": "Access gate",
+          "payload": "canUserChat, BYOK check when billing enforced"
         },
         {
           "from": "api-chat",
@@ -132,13 +169,19 @@
           "from": "api-chat",
           "to": "svc-model",
           "label": "Validate model",
-          "payload": "modelId, user tier → ModelValidationResult (premium/free/BYOK)"
+          "payload": "modelId, user tier → ModelValidationResult (credit tier / BYOK)"
         },
         {
           "from": "api-chat",
           "to": "svc-message",
           "label": "Process messages",
-          "payload": "UIMessage[] → normalized messages, image parts, file tool content"
+          "payload": "UIMessage[] → normalized messages, image parts, read_file tool content"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-project-context",
+          "label": "Project context",
+          "payload": "chatId + userId → instructions + file list appended to system prompt"
         },
         {
           "from": "api-chat",
@@ -150,31 +193,79 @@
           "from": "svc-mcp",
           "to": "ext-mcp-servers",
           "label": "MCP protocol",
-          "payload": "SSE/streamable-http; tools/list, tools/call"
+          "payload": "SSE/streamable-http; tools/list, tools/call; OAuth via mcpOAuthProvider"
         },
         {
           "from": "api-chat",
           "to": "svc-websearch",
-          "label": "Optional web search",
-          "payload": "query → search results injected as context (WEB_SEARCH_COST credits)"
+          "label": "Validate web search",
+          "payload": "WebSearchContext → WebSearchResult; signed-in + ≥5 credits or BYOK; model supportsWebSearch"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-or-websearch-setup",
+          "label": "OpenRouter web search setup",
+          "payload": "Agentic path: openrouter:web_search + web_fetch server tools; legacy path: :online suffix when flag off"
+        },
+        {
+          "from": "svc-or-websearch-setup",
+          "to": "openrouter-provider",
+          "label": "Server tools",
+          "payload": "ChatWebSearchService.buildOpenRouterServerTools(contextSize, maxTotalResults)"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-webfetch",
+          "label": "Native web_fetch tool",
+          "payload": "SSR-safe URL fetch (DNS/IP validation, HTML→markdown) when NATIVE_WEB_FETCH_ENABLED"
         },
         {
           "from": "api-chat",
           "to": "ai-providers",
           "label": "Resolve model",
-          "payload": "modelId + user apiKeys → LanguageModel instance"
+          "payload": "modelId + user apiKeys → LanguageModel; tag-based reasoning wrap when applicable"
+        },
+        {
+          "from": "api-chat",
+          "to": "google-model-tools",
+          "label": "Sanitize tool schemas",
+          "payload": "cleanToolsForGoogleModels strips $schema from tool inputs for Gemini/Vertex"
         },
         {
           "from": "ai-providers",
           "to": "vercel-ai-sdk",
           "label": "streamText",
-          "payload": "{ model, messages, tools, system }"
+          "payload": "{ model, messages, tools, system, stopWhen: stepCountIs(20), abortSignal }"
         },
         {
           "from": "vercel-ai-sdk",
           "to": "ext-openrouter",
           "label": "Provider call",
-          "payload": "OpenRouter or Requesty API key (app or BYOK)"
+          "payload": "OpenRouter or Requesty API key (app or BYOK); agentic web_search invocations billed per count"
+        },
+        {
+          "from": "api-chat",
+          "to": "chat-stop-registry",
+          "label": "Register abort",
+          "payload": "AbortController keyed userId:chatId for { action: 'stop' } requests"
+        },
+        {
+          "from": "api-chat",
+          "to": "chat-stream-consumption",
+          "label": "Background consume",
+          "payload": "result.consumeStream() on client disconnect so persistence completes"
+        },
+        {
+          "from": "api-chat",
+          "to": "chat-message-persistence",
+          "label": "Build assistant message",
+          "payload": "buildAssistantMessageForPersistence: UIMessage parts, reasoning, tool invocations, citations"
+        },
+        {
+          "from": "chat-message-persistence",
+          "to": "message-utils",
+          "label": "Web search parts",
+          "payload": "hasWebSearchToolPart, injectSyntheticWebSearchToolPart for UI consistency"
         },
         {
           "from": "api-chat",
@@ -198,7 +289,7 @@
           "from": "api-chat",
           "to": "svc-token",
           "label": "Track usage",
-          "payload": "usage metadata → tokenCounter, CostCalculationService, Polar usage events"
+          "payload": "token usage + web search invocation count → CostCalculationService, Polar usage events"
         },
         {
           "from": "svc-token",
@@ -210,7 +301,7 @@
           "from": "api-chat",
           "to": "chat",
           "label": "SSE stream response",
-          "payload": "UI message stream chunks → useChat updates Messages component"
+          "payload": "UIMessage stream chunks → useChat updates message.tsx (reasoning, tool cards, Citations)"
         }
       ]
     },
@@ -274,7 +365,7 @@
       "id": "anonymous-session",
       "label": "Anonymous session",
       "category": "Auth",
-      "description": "First visit creates anonymous Better Auth user with 10 messages/day limit.",
+      "description": "First visit creates anonymous Better Auth user with 10 messages/day limit (when BILLING_ENFORCED=false; otherwise sign-in required).",
       "steps": [
         {
           "from": "chat",
@@ -430,7 +521,13 @@
           "from": "mcp-manager",
           "to": "ext-mcp-servers",
           "label": "Test connection",
-          "payload": "optional health check / OAuth flow (test-mcp-oauth page)"
+          "payload": "optional health check / OAuth flow via api-mcp-oauth-proxy (CORS bypass)"
+        },
+        {
+          "from": "mcp-manager",
+          "to": "api-mcp-oauth-proxy",
+          "label": "OAuth discovery",
+          "payload": "proxy ?url=.../.well-known/oauth-authorization-server"
         },
         {
           "from": "chat",
@@ -612,7 +709,7 @@
           "from": "ext-vercel",
           "to": "auth",
           "label": "Env injection",
-          "payload": "AUTH_SECRET, POLAR_*, GOOGLE_*_PROD, AI provider keys"
+          "payload": "AUTH_SECRET, POLAR_*, GOOGLE_*_PROD, AI keys, OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED, NATIVE_WEB_FETCH_ENABLED"
         },
         {
           "from": "ext-vercel",
@@ -700,7 +797,115 @@
           "from": "use-credits",
           "to": "chat",
           "label": "UI gate",
-          "payload": "disable send if insufficient credits (unless BYOK)"
+          "payload": "disable send if insufficient credits (unless BYOK); web search requires ≥5 credits"
+        }
+      ]
+    },
+    {
+      "id": "stop-chat-generation",
+      "label": "Stop chat generation",
+      "category": "Chat",
+      "description": "User clicks Stop during streaming; client aborts fetch and server cancels in-flight streamText via registered AbortController.",
+      "steps": [
+        {
+          "from": "chat",
+          "to": "api-chat",
+          "label": "POST action: stop",
+          "payload": "{ action: 'stop', chatId } after originalStop()"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-auth",
+          "label": "Authenticate",
+          "payload": "session required to stop own chat"
+        },
+        {
+          "from": "api-chat",
+          "to": "chat-stop-registry",
+          "label": "Abort stream",
+          "payload": "abortChatGeneration(userId, chatId) → controller.abort()"
+        },
+        {
+          "from": "chat",
+          "to": "chat",
+          "label": "Client reset",
+          "payload": "useChat stop + invalidate credits/usage queries"
+        }
+      ]
+    },
+    {
+      "id": "manage-projects",
+      "label": "Manage projects",
+      "category": "Projects",
+      "description": "Authenticated user creates projects with instructions and files; links chats for injected context.",
+      "steps": [
+        {
+          "from": "projects-browser",
+          "to": "use-projects",
+          "label": "List projects",
+          "payload": "React Query → GET /api/projects"
+        },
+        {
+          "from": "use-projects",
+          "to": "api-projects",
+          "label": "CRUD",
+          "payload": "POST { name, instructions }; PATCH/DELETE /api/projects/[id]"
+        },
+        {
+          "from": "api-projects",
+          "to": "db-index",
+          "label": "Persist",
+          "payload": "projects, project_files tables"
+        },
+        {
+          "from": "project-detail",
+          "to": "api-projects",
+          "label": "Upload files",
+          "payload": "POST /api/projects/[id]/files → Vercel Blob URL stored"
+        },
+        {
+          "from": "project-detail",
+          "to": "ext-vercel-blob",
+          "label": "File storage",
+          "payload": "project file attachments"
+        }
+      ]
+    },
+    {
+      "id": "link-chat-to-project",
+      "label": "Link chat to project",
+      "category": "Projects",
+      "description": "User attaches an existing chat to a project; subsequent messages include project instructions and file references.",
+      "steps": [
+        {
+          "from": "chat-project-selector",
+          "to": "api-chat-project",
+          "label": "PUT link",
+          "payload": "{ projectId } → chat_projects row"
+        },
+        {
+          "from": "api-chat-project",
+          "to": "svc-auth",
+          "label": "Owner check",
+          "payload": "user owns both chat and project"
+        },
+        {
+          "from": "api-chat-project",
+          "to": "db-index",
+          "label": "Upsert link",
+          "payload": "chat_projects (chatId, projectId) unique"
+        },
+        {
+          "from": "chat",
+          "to": "api-chat",
+          "label": "Next message",
+          "payload": "buildProjectContext injects instructions + files into system prompt"
+        },
+        {
+          "from": "api-chat",
+          "to": "svc-project-context",
+          "label": "Context injection",
+          "payload": "formatProjectContextForSystemPrompt"
         }
       ]
     }
