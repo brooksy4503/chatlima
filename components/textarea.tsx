@@ -649,29 +649,9 @@ export const Textarea = ({
           }}
         />
       
-      {/* Cost visibility warning */}
-      {isMounted && shouldShowCostWarning && (
-        <div className="absolute top-2 right-4 z-10">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full border border-amber-200 dark:border-amber-700/30">
-                <AlertCircle className="h-3 w-3" />
-                <span className="font-medium">{estimatedCost} credits</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8}>
-              <div className="text-xs">
-                <div>Estimated cost: {estimatedCost} credits</div>
-                <div className="text-muted-foreground">Base: 1 credit + Web Search: up to {WEB_SEARCH_COST} credits per search</div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      )}
-
       {/* Code mode indicator with auto-detection toggle */}
       {isCodeMode && (
-        <div className={`absolute top-2 z-10 flex items-center gap-1 ${shouldShowCostWarning ? 'right-32' : 'right-4'}`}>
+        <div className="absolute top-2 right-4 z-10 flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border transition-all duration-200 ${
@@ -731,7 +711,7 @@ export const Textarea = ({
 
       {/* Auto-detection disabled indicator */}
       {!autoDetectionEnabled && !isCodeMode && safeInput.length > 20 && (
-        <div className={`absolute top-2 z-10 ${shouldShowCostWarning ? 'right-32' : 'right-4'}`}>
+        <div className="absolute top-2 right-4 z-10">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -756,9 +736,7 @@ export const Textarea = ({
       {/* Auto-wrap feedback indicator */}
       {showAutoWrapFeedback && (
         <div className={`absolute top-2 z-10 ${
-          shouldShowCostWarning && isCodeMode ? 'right-72' : 
-          shouldShowCostWarning || isCodeMode || (!autoDetectionEnabled && input.length > 20) ? 'right-44' : 
-          'right-4'
+          isCodeMode || (!autoDetectionEnabled && input.length > 20) ? 'right-44' : 'right-4'
         }`}>
           <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs px-2.5 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-700/30 animate-in slide-in-from-right-2 duration-300">
             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -772,9 +750,7 @@ export const Textarea = ({
       {/* Auto-unwrap feedback indicator */}
       {showAutoUnwrapFeedback && (
         <div className={`absolute top-2 z-10 ${
-          shouldShowCostWarning && isCodeMode ? 'right-72' : 
-          shouldShowCostWarning || isCodeMode || (!autoDetectionEnabled && input.length > 20) ? 'right-44' : 
-          'right-4'
+          isCodeMode || (!autoDetectionEnabled && input.length > 20) ? 'right-44' : 'right-4'
         }`}>
           <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs px-2.5 py-1.5 rounded-full border border-blue-200 dark:border-blue-700/30 animate-in slide-in-from-right-2 duration-300">
             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -785,6 +761,26 @@ export const Textarea = ({
         </div>
       )}
       </div>
+
+      {/* Cost visibility — below textarea so it never covers typed text */}
+      {isMounted && shouldShowCostWarning && (
+        <div className="flex items-center justify-end px-1 -mt-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs px-2 py-1 rounded-full border border-amber-200 dark:border-amber-700/30">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span className="font-medium">{estimatedCost} credits</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={8}>
+              <div className="text-xs">
+                <div>Estimated cost: {estimatedCost} credits</div>
+                <div className="text-muted-foreground">Base: 1 credit + Web Search: up to {WEB_SEARCH_COST} credits per search</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
 
       {/* Control Bar - Unified for both mobile and desktop */}
       <div className="w-full bg-background/50 dark:bg-muted/50 backdrop-blur-sm rounded-xl border border-border p-2">
@@ -806,9 +802,9 @@ export const Textarea = ({
           </div>
 
           {/* Right side controls - Second row on mobile */}
-          <div className={`flex items-center ${isMobileScreen ? 'w-full justify-between' : 'gap-2'}`}>
+          <div className={`flex items-center ${isMobileScreen ? 'w-full gap-3' : 'gap-2'}`}>
             {/* Action buttons group */}
-            <div className="flex items-center gap-1.5">
+            <div className={`flex items-center shrink-0 ${isMobileScreen ? 'gap-2' : 'gap-1.5'}`}>
               {/* File Upload Button */}
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -879,7 +875,7 @@ export const Textarea = ({
                   disabled={(!isStreaming && !(safeInput.trim() || hasFiles)) || (isStreaming && status === "submitted")}
                   className={`${
                     isMobileScreen 
-                      ? 'flex-1 h-8 px-3 text-sm' 
+                      ? 'flex-1 min-w-0 h-8 px-3 text-sm' 
                       : 'px-3 h-9'
                   } rounded-full bg-primary hover:bg-primary/90 disabled:bg-muted/60 disabled:border disabled:border-border disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2`}
                 >
