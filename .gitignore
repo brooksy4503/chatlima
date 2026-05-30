@@ -57,4 +57,5 @@ playwright/.auth/
 # Playwright test results and reports
 /test-results/
 /playwright-report/
+.playwright-mcp/
 .aider*
