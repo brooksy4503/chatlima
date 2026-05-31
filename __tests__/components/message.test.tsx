@@ -633,6 +633,58 @@ describe('Message', () => {
       expect(screen.getByTestId('tool-invocation')).toHaveAttribute('data-tool-name', 'web_search');
       expect(screen.getByTestId('tool-invocation')).toHaveAttribute('data-state', 'result');
     });
+
+    test('shows live image generation indicator while streaming with toggle enabled', () => {
+      const message = {
+        ...baseMessage,
+        parts: [reasoningPart],
+      };
+
+      render(
+        <Message
+          message={message}
+          isLoading={false}
+          status="streaming"
+          isLatestMessage={true}
+          imageGenerationEnabled={true}
+        />
+      );
+
+      expect(screen.getByTestId('tool-invocation')).toHaveAttribute('data-tool-name', 'image_generation');
+      expect(screen.getByTestId('tool-invocation')).toHaveAttribute('data-state', 'call');
+    });
+
+    test('shows only one image generation card when streamed tool part exists', () => {
+      const message = {
+        ...baseMessage,
+        parts: [
+          {
+            type: 'tool-invocation' as const,
+            toolInvocation: {
+              toolCallId: 'test-image-call',
+              toolName: 'image_generation',
+              state: 'call' as const,
+              args: { prompt: 'A sunset over mountains' },
+            },
+          },
+        ],
+      };
+
+      render(
+        <Message
+          message={message}
+          isLoading={false}
+          status="streaming"
+          isLatestMessage={true}
+          imageGenerationEnabled={true}
+        />
+      );
+
+      const toolInvocations = screen.getAllByTestId('tool-invocation');
+      expect(toolInvocations).toHaveLength(1);
+      expect(toolInvocations[0]).toHaveAttribute('data-tool-name', 'image_generation');
+      expect(toolInvocations[0]).toHaveAttribute('data-state', 'call');
+    });
   });
 
   describe('Copy Button Visibility Logic', () => {

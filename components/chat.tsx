@@ -408,8 +408,8 @@ export default function Chat() {
       messages: initialMessages,
       transport,
       sendAutomaticallyWhen: ({ messages: chatMessages }) => {
-        // MCP / server-executed tools must not trigger client follow-up requests (causes stuck "streaming").
-        if (mcpServersForApi.length > 0) {
+        // Server-executed tools must not trigger client follow-up requests (causes stuck "streaming").
+        if (mcpServersForApi.length > 0 || imageGenerationEnabled) {
           return false;
         }
         return lastAssistantMessageIsCompleteWithToolCalls({ messages: chatMessages });
@@ -744,10 +744,14 @@ export default function Chat() {
       
       if (messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage.role === 'assistant' && getUIMessageText(lastMessage)) {
+        const hasAssistantActivity =
+          lastMessage.role === 'assistant' &&
+          ((lastMessage.parts?.length ?? 0) > 0 || getUIMessageText(lastMessage).length > 0);
+
+        if (hasAssistantActivity) {
           setLastStreamingActivity(Date.now());
-          
-          // NEW: Track time to first token when first content appears
+
+          // Track time to first visible output (text, tool, or reasoning parts)
           if (timeToFirstToken === null && streamingStartTime) {
             const ttft = Date.now() - streamingStartTime;
             setTimeToFirstToken(ttft);

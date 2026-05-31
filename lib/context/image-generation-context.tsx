@@ -4,13 +4,18 @@ import React, { createContext, useState, useContext, ReactNode, Dispatch, SetSta
 import { useLocalStorage } from '@/lib/hooks/use-local-storage';
 import { STORAGE_KEYS } from '@/lib/constants';
 import type { ImageGenerationQuality, ImageGenerationOutputFormat } from '@/lib/openrouter-image-generation-tool';
+import {
+    DEFAULT_IMAGE_GENERATION_MODEL,
+    resolveAllowedImageModel,
+    type AllowedImageModelId,
+} from '@/lib/constants/image-generation-models';
 
 export type ImageGenerationSettings = {
     enabled: boolean;
     quality: ImageGenerationQuality;
     aspectRatio: string;
     outputFormat: ImageGenerationOutputFormat;
-    model: string;
+    model: AllowedImageModelId;
 };
 
 type ImageGenerationContextType = {
@@ -22,8 +27,8 @@ type ImageGenerationContextType = {
     setImageGenerationAspectRatio: Dispatch<SetStateAction<string>>;
     imageGenerationOutputFormat: ImageGenerationOutputFormat;
     setImageGenerationOutputFormat: Dispatch<SetStateAction<ImageGenerationOutputFormat>>;
-    imageGenerationModel: string;
-    setImageGenerationModel: Dispatch<SetStateAction<string>>;
+    imageGenerationModel: AllowedImageModelId;
+    setImageGenerationModel: Dispatch<SetStateAction<AllowedImageModelId>>;
 };
 
 const DEFAULT_SETTINGS: ImageGenerationSettings = {
@@ -31,8 +36,15 @@ const DEFAULT_SETTINGS: ImageGenerationSettings = {
     quality: 'medium',
     aspectRatio: '1:1',
     outputFormat: 'png',
-    model: 'openai/gpt-5-image',
+    model: DEFAULT_IMAGE_GENERATION_MODEL,
 };
+
+function normalizeImageGenerationSettings(settings: ImageGenerationSettings): ImageGenerationSettings {
+    return {
+        ...settings,
+        model: resolveAllowedImageModel(settings.model),
+    };
+}
 
 const ImageGenerationContext = createContext<ImageGenerationContextType | undefined>(undefined);
 
@@ -52,7 +64,21 @@ export const ImageGenerationProvider: React.FC<ImageGenerationProviderProps> = (
         setIsMounted(true);
     }, []);
 
-    const effectiveSettings = isMounted ? settings : DEFAULT_SETTINGS;
+    useEffect(() => {
+        if (!isMounted) {
+            return;
+        }
+
+        const normalizedModel = resolveAllowedImageModel(settings.model);
+        if (settings.model !== normalizedModel) {
+            setSettings((prev) => ({
+                ...prev,
+                model: normalizedModel,
+            }));
+        }
+    }, [isMounted, settings.model, setSettings]);
+
+    const effectiveSettings = isMounted ? normalizeImageGenerationSettings(settings) : DEFAULT_SETTINGS;
 
     const setImageGenerationEnabled = (enabled: boolean | ((prevState: boolean) => boolean)) => {
         setSettings((prev) => ({
@@ -88,10 +114,12 @@ export const ImageGenerationProvider: React.FC<ImageGenerationProviderProps> = (
         }));
     };
 
-    const setImageGenerationModel = (model: string | ((prevState: string) => string)) => {
+    const setImageGenerationModel = (model: AllowedImageModelId | ((prevState: AllowedImageModelId) => AllowedImageModelId)) => {
         setSettings((prev) => ({
             ...prev,
-            model: typeof model === 'function' ? model(prev.model) : model,
+            model: typeof model === 'function'
+                ? resolveAllowedImageModel(model(resolveAllowedImageModel(prev.model)))
+                : resolveAllowedImageModel(model),
         }));
     };
 

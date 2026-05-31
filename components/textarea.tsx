@@ -10,7 +10,8 @@ import { useImageGeneration } from "@/lib/context/image-generation-context";
 import { usePresets } from "@/lib/context/preset-context";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { WEB_SEARCH_COST, IMAGE_GENERATION_COST } from "@/lib/tokenCounter";
+import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
+import { getImageGenerationCreditCost } from "@/lib/constants/image-generation-models";
 import { FileUpload } from "./file-upload";
 import { FilePreview } from "./file-preview";
 import type { FileAttachment } from "@/lib/types";
@@ -72,7 +73,7 @@ export const Textarea = ({
   const isMounted = useClientMount();
 
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
-  const { imageGenerationEnabled, setImageGenerationEnabled } = useImageGeneration();
+  const { imageGenerationEnabled, setImageGenerationEnabled, imageGenerationModel } = useImageGeneration();
   const { activePreset } = usePresets();
   const { user } = useAuth();
   const isMobileScreen = useIsMobile();
@@ -224,7 +225,8 @@ export const Textarea = ({
   // Use a more resilient check that handles temporary null values during hot reload
   const userCredits = user?.credits ?? 0;
   const hasEnoughCreditsForWebSearch = user?.hasCredits !== false && userCredits >= WEB_SEARCH_COST;
-  const hasEnoughCreditsForImageGeneration = user?.hasCredits !== false && userCredits >= IMAGE_GENERATION_COST;
+  const imageGenerationCreditCost = getImageGenerationCreditCost(imageGenerationModel);
+  const hasEnoughCreditsForImageGeneration = user?.hasCredits !== false && userCredits >= imageGenerationCreditCost;
   const isAnonymousUser = !user || user?.isAnonymous;
   const canUseWebSearch = !isAnonymousUser && hasEnoughCreditsForWebSearch;
   const canUseImageGeneration = !isAnonymousUser && hasEnoughCreditsForImageGeneration;
@@ -235,7 +237,7 @@ export const Textarea = ({
     const effectiveWebSearchEnabled = getEffectiveWebSearchEnabled();
     const effectiveImageGenerationEnabled = getEffectiveImageGenerationEnabled();
     const webSearchCost = effectiveWebSearchEnabled ? WEB_SEARCH_COST : 0;
-    const imageGenerationCost = effectiveImageGenerationEnabled ? IMAGE_GENERATION_COST : 0;
+    const imageGenerationCost = effectiveImageGenerationEnabled ? imageGenerationCreditCost : 0;
     return baseCost + webSearchCost + imageGenerationCost;
   };
 
@@ -616,7 +618,7 @@ export const Textarea = ({
     }
     const effectiveImageGenerationEnabled = getEffectiveImageGenerationEnabled();
     return effectiveImageGenerationEnabled
-      ? `Create image — on (${IMAGE_GENERATION_COST} credits per image + message tokens)`
+      ? `Create image — on (${imageGenerationCreditCost} credits per image + message tokens)`
       : "Create image — off (turn on to let the model generate images)";
   };
 
@@ -826,7 +828,7 @@ export const Textarea = ({
                 <div className="text-muted-foreground">
                   Base: 1 credit
                   {getEffectiveWebSearchEnabled() ? ` + Web Search: up to ${WEB_SEARCH_COST} credits per search` : ''}
-                  {getEffectiveImageGenerationEnabled() ? ` + Create image: up to ${IMAGE_GENERATION_COST} credits per image` : ''}
+                  {getEffectiveImageGenerationEnabled() ? ` + Create image: up to ${imageGenerationCreditCost} credits per image` : ''}
                 </div>
               </div>
             </TooltipContent>

@@ -160,7 +160,7 @@ export function getGeneratedImageUrlFromToolResult(result: unknown): string | nu
   return null;
 }
 
-/** Live "Generating image" indicator during image generation tool execution. */
+/** Live "Generating image" indicator before the streamed tool part arrives (mirrors web search). */
 export function shouldShowLiveImageGenerationIndicator(params: {
   imageGenerationEnabled: boolean;
   status: string;
@@ -170,32 +170,11 @@ export function shouldShowLiveImageGenerationIndicator(params: {
 }): boolean {
   const { imageGenerationEnabled, status, isLatestMessage, role, parts } = params;
 
-  if (!imageGenerationEnabled || role !== 'assistant' || !isLatestMessage || status !== 'streaming') {
-    return false;
-  }
-
-  const hasPendingImageGen = parts?.some((part) => {
-    if (part.type === 'tool-invocation') {
-      const invocation = (part as { toolInvocation?: { toolName?: string; state?: string } }).toolInvocation;
-      return (
-        isImageGenerationToolName(invocation?.toolName ?? '') &&
-        invocation?.state === 'call'
-      );
-    }
-
-    if (isToolUIPart(part) && isImageGenerationToolPart(part)) {
-      const v6Part = part as UIMessage['parts'][number] & { state?: string };
-      return v6Part.state !== 'output-available';
-    }
-
-    return false;
-  });
-
-  if (hasPendingImageGen) {
-    return true;
-  }
-
   return (
+    imageGenerationEnabled &&
+    role === 'assistant' &&
+    isLatestMessage &&
+    status === 'streaming' &&
     !hasImageGenerationToolPart(parts) &&
     !messageHasAssistantText(parts)
   );

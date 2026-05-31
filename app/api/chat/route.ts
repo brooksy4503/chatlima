@@ -17,6 +17,7 @@ import { db } from '@/lib/db';
 import { chats, messages as messagesTable } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage, hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
+import { resolveAllowedImageModel } from '@/lib/constants/image-generation-models';
 import { TokenTrackingService } from '@/lib/tokenTracking';
 import { CostCalculationService } from '@/lib/services/costCalculation';
 import { SimpleCostEstimationService } from '@/lib/services/simpleCostEstimation';
@@ -606,13 +607,15 @@ export async function POST(req: Request) {
             agenticWebToolsEnabled: accessPolicyFlags.openrouterAgenticWebToolsEnabled,
         });
 
+        const resolvedImageGenerationModel = resolveAllowedImageModel(imageGeneration.model);
+
         const imageGenerationConfig = ChatImageGenerationService.validateAndConfigureImageGeneration({
             imageGeneration: {
                 enabled: imageGeneration.enabled,
                 quality: imageGeneration.quality ?? 'medium',
                 aspectRatio: imageGeneration.aspectRatio ?? '1:1',
                 outputFormat: imageGeneration.outputFormat ?? 'png',
-                model: imageGeneration.model ?? 'openai/gpt-5-image',
+                model: resolvedImageGenerationModel,
             },
             selectedModel,
             isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
@@ -628,7 +631,7 @@ export async function POST(req: Request) {
                     quality: imageGeneration.quality ?? 'medium',
                     aspectRatio: imageGeneration.aspectRatio ?? '1:1',
                     outputFormat: imageGeneration.outputFormat ?? 'png',
-                    model: imageGeneration.model ?? 'openai/gpt-5-image',
+                    model: resolvedImageGenerationModel,
                 },
                 selectedModel,
                 isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
@@ -1428,6 +1431,7 @@ You have the \`image_generation\` server tool available. Use it when the user wa
                         imageGenerationEnabled: imageGenerationConfig.enabled,
                         isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
                         shouldDeductCredits,
+                        model: imageGenerationConfig.model,
                         steps: event.steps,
                     });
             }
@@ -1882,17 +1886,21 @@ You have the \`image_generation\` server tool available. Use it when the user wa
 
                         streamFinishState.tokenUsageData = tokenUsageData;
 
-                        try {
-                            await finalizeStreamPersistence();
-                        } catch (persistError) {
-                            console.error(`[Chat ${id}][onFinish] Failed stream persistence:`, persistError);
-                        }
+                        // Do not await persistence or billing here — streamText onFinish blocks
+                        // stream closure, and useChat stays in "streaming" until the HTTP body closes.
+                        void (async () => {
+                            try {
+                                await finalizeStreamPersistence();
+                            } catch (persistError) {
+                                console.error(`[Chat ${id}][onFinish] Failed stream persistence:`, persistError);
+                            }
 
-                        try {
-                            await trackTokenUsageFromStreamFinish(event, response);
-                        } catch (tokenError) {
-                            console.error(`[Chat ${id}][onFinish] Failed token tracking:`, tokenError);
-                        }
+                            try {
+                                await trackTokenUsageFromStreamFinish(event, response);
+                            } catch (tokenError) {
+                                console.error(`[Chat ${id}][onFinish] Failed token tracking:`, tokenError);
+                            }
+                        })();
 
                     } catch (error: any) {
                         logDiagnostic('TOKEN_TRACKING_ERROR', `Failed to track detailed token usage (independent)`, {
@@ -1917,12 +1925,10 @@ You have the \`image_generation\` server tool available. Use it when the user wa
         return result.toUIMessageStreamResponse({
             originalMessages: messages,
             sendReasoning: true,
-            onFinish: async ({ responseMessage }) => {
-                try {
-                    await handleUiStreamFinish(responseMessage);
-                } catch (err) {
+            onFinish: ({ responseMessage }) => {
+                void handleUiStreamFinish(responseMessage).catch((err) => {
                     console.error(`[Chat ${id}][uiOnFinish] Unhandled error:`, err);
-                }
+                });
             },
             onError: (error: unknown) => {
                 const err = error as any;

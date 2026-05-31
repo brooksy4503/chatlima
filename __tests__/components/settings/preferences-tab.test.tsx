@@ -55,4 +55,12 @@ describe('PreferencesTab', () => {
     expect(defaultProps.onShowWelcomeScreenChange).toHaveBeenCalledWith(false);
     expect(defaultProps.onShowSuggestedPromptsChange).toHaveBeenCalledWith(false);
   });
+
+  test('renders locked image generation model selector with selected cost', () => {
+    render(<PreferencesTab {...defaultProps} />);
+
+    expect(screen.getByLabelText(/image model/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/25 credits per image/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('GPT-5 Image')).toBeInTheDocument();
+  });
 });

@@ -3,10 +3,13 @@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Globe, ImagePlus, LayoutDashboard, MessageSquareText } from "lucide-react";
 import type { ImageGenerationOutputFormat, ImageGenerationQuality } from "@/lib/openrouter-image-generation-tool";
-import { IMAGE_GENERATION_COST } from "@/lib/tokenCounter";
+import {
+  getImageGenerationCreditCost,
+  IMAGE_GENERATION_MODEL_OPTIONS,
+  type AllowedImageModelId,
+} from "@/lib/constants/image-generation-models";
 
 interface PreferencesTabProps {
   showWelcomeScreen: boolean;
@@ -45,6 +48,8 @@ export function PreferencesTab({
   imageGenerationModel,
   onImageGenerationModelChange,
 }: PreferencesTabProps) {
+  const selectedImageCreditCost = getImageGenerationCreditCost(imageGenerationModel);
+
   return (
     <div className="space-y-4">
       <div>
@@ -150,19 +155,33 @@ export function PreferencesTab({
           <div className="space-y-0.5 flex-1">
             <Label className="text-sm font-medium">Create Image Defaults</Label>
             <p className="text-xs text-muted-foreground">
-              Used when the Create image toggle is on in the composer ({IMAGE_GENERATION_COST} credits per image).
+              Used when the Create image toggle is on in the composer ({selectedImageCreditCost} credits per image).
             </p>
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="image-gen-model" className="text-xs text-muted-foreground">Image model</Label>
-          <Input
-            id="image-gen-model"
+          <Select
             value={imageGenerationModel}
-            onChange={(e) => onImageGenerationModelChange(e.target.value)}
-            placeholder="openai/gpt-5-image"
-          />
+            onValueChange={(value) => onImageGenerationModelChange(value as AllowedImageModelId)}
+          >
+            <SelectTrigger id="image-gen-model" className="w-full">
+              <SelectValue placeholder="Select image model" />
+            </SelectTrigger>
+            <SelectContent>
+              {IMAGE_GENERATION_MODEL_OPTIONS.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">{option.label}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {option.creditCost} credits per image
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="space-y-2">

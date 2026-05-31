@@ -1,5 +1,5 @@
 import { ChatImageGenerationService } from '@/lib/services/chatImageGenerationService';
-import { IMAGE_GENERATION_COST } from '@/lib/tokenCounter';
+import { getImageGenerationCreditCost } from '@/lib/constants/image-generation-models';
 
 describe('ChatImageGenerationService', () => {
     const baseContext = {
@@ -32,7 +32,34 @@ describe('ChatImageGenerationService', () => {
             const result = ChatImageGenerationService.validateAndConfigureImageGeneration(baseContext);
 
             expect(result.enabled).toBe(true);
-            expect(result.additionalCost).toBe(IMAGE_GENERATION_COST);
+            expect(result.additionalCost).toBe(getImageGenerationCreditCost('openai/gpt-5-image'));
+            expect(result.model).toBe('openai/gpt-5-image');
+        });
+
+        it('charges mini model at lower credit cost', () => {
+            const result = ChatImageGenerationService.validateAndConfigureImageGeneration({
+                ...baseContext,
+                imageGeneration: {
+                    ...baseContext.imageGeneration,
+                    model: 'openai/gpt-5-image-mini',
+                },
+            });
+
+            expect(result.additionalCost).toBe(10);
+            expect(result.model).toBe('openai/gpt-5-image-mini');
+        });
+
+        it('coerces unknown models to default pricing', () => {
+            const result = ChatImageGenerationService.validateAndConfigureImageGeneration({
+                ...baseContext,
+                imageGeneration: {
+                    ...baseContext.imageGeneration,
+                    model: 'openai/custom-image-model',
+                },
+            });
+
+            expect(result.model).toBe('openai/gpt-5-image');
+            expect(result.additionalCost).toBe(25);
         });
 
         it('disables image generation for anonymous users', () => {
@@ -84,10 +111,23 @@ describe('ChatImageGenerationService', () => {
                 imageGenerationEnabled: true,
                 isUsingOwnApiKeys: false,
                 shouldDeductCredits: true,
+                model: 'openai/gpt-5-image',
                 steps: [{ toolCalls: [{ toolName: 'image_generation' }, { toolName: 'image_generation' }] }],
             });
 
-            expect(cost).toBe(IMAGE_GENERATION_COST * 2);
+            expect(cost).toBe(50);
+        });
+
+        it('uses mini model credit cost when configured', () => {
+            const cost = ChatImageGenerationService.computeImageGenerationCreditCost({
+                imageGenerationEnabled: true,
+                isUsingOwnApiKeys: false,
+                shouldDeductCredits: true,
+                model: 'openai/gpt-5-image-mini',
+                steps: [{ toolCalls: [{ toolName: 'image_generation' }] }],
+            });
+
+            expect(cost).toBe(10);
         });
 
         it('returns zero for BYOK users', () => {
@@ -95,6 +135,7 @@ describe('ChatImageGenerationService', () => {
                 imageGenerationEnabled: true,
                 isUsingOwnApiKeys: true,
                 shouldDeductCredits: true,
+                model: 'openai/gpt-5-image',
                 steps: [{ toolCalls: [{ toolName: 'image_generation' }] }],
             });
 

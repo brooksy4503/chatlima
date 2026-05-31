@@ -1,5 +1,8 @@
 import type { ModelInfo } from '@/lib/types/models';
-import { IMAGE_GENERATION_COST } from '@/lib/tokenCounter';
+import {
+    getImageGenerationCreditCost,
+    resolveAllowedImageModel,
+} from '@/lib/constants/image-generation-models';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import {
     createOpenRouterImageGenerationTool,
@@ -61,8 +64,13 @@ export class ChatImageGenerationService {
             actualCredits,
         });
 
+        const resolvedModel = resolveAllowedImageModel(imageGeneration.model);
+        const imageCreditCost = getImageGenerationCreditCost(resolvedModel);
+
         const canUseImageGeneration = this.determineImageGenerationPermission({
             imageGeneration,
+            resolvedModel,
+            imageCreditCost,
             isUsingOwnApiKeys,
             isAnonymous,
             actualCredits,
@@ -78,7 +86,7 @@ export class ChatImageGenerationService {
             isOpenRouterModel &&
             modelSupportsToolCalling;
 
-        const additionalCost = finalEnabled && !isUsingOwnApiKeys ? IMAGE_GENERATION_COST : 0;
+        const additionalCost = finalEnabled && !isUsingOwnApiKeys ? imageCreditCost : 0;
 
         logDiagnostic('IMAGE_GEN_VALIDATION_COMPLETE', 'Image generation validation completed', {
             requestId,
@@ -95,7 +103,7 @@ export class ChatImageGenerationService {
             quality: imageGeneration.quality,
             aspectRatio: imageGeneration.aspectRatio,
             outputFormat: imageGeneration.outputFormat,
-            model: imageGeneration.model,
+            model: resolvedModel,
             canUseImageGeneration,
             modelSupportsToolCalling,
             additionalCost,
@@ -152,20 +160,23 @@ export class ChatImageGenerationService {
         imageGenerationEnabled: boolean;
         isUsingOwnApiKeys: boolean;
         shouldDeductCredits: boolean;
+        model?: string;
         steps?: Array<{ toolCalls?: ToolCallLike[] }>;
     }): number {
-        const { imageGenerationEnabled, isUsingOwnApiKeys, shouldDeductCredits, steps } = params;
+        const { imageGenerationEnabled, isUsingOwnApiKeys, shouldDeductCredits, model, steps } = params;
 
         if (!imageGenerationEnabled || isUsingOwnApiKeys || !shouldDeductCredits) {
             return 0;
         }
 
         const invocations = this.countImageGenerationInvocations(steps);
-        return invocations * IMAGE_GENERATION_COST;
+        return invocations * getImageGenerationCreditCost(model);
     }
 
     static validateImageGenerationRequest(context: ImageGenerationContext): void {
         const { imageGeneration, isAnonymous, actualCredits, isUsingOwnApiKeys } = context;
+        const resolvedModel = resolveAllowedImageModel(imageGeneration.model);
+        const imageCreditCost = getImageGenerationCreditCost(resolvedModel);
 
         if (imageGeneration.enabled && isAnonymous) {
             throw new Error(
@@ -177,22 +188,31 @@ export class ChatImageGenerationService {
             imageGeneration.enabled &&
             !isUsingOwnApiKeys &&
             actualCredits !== null &&
-            actualCredits < IMAGE_GENERATION_COST
+            actualCredits < imageCreditCost
         ) {
             throw new Error(
-                `You need at least ${IMAGE_GENERATION_COST} credits to generate images. Your balance is ${actualCredits}.`
+                `You need at least ${imageCreditCost} credits to generate images with ${resolvedModel}. Your balance is ${actualCredits}.`
             );
         }
     }
 
     private static determineImageGenerationPermission(context: {
         imageGeneration: ImageGenerationOptions;
+        resolvedModel: ReturnType<typeof resolveAllowedImageModel>;
+        imageCreditCost: number;
         isUsingOwnApiKeys: boolean;
         isAnonymous: boolean;
         actualCredits: number | null;
         requestId: string;
     }): boolean {
-        const { imageGeneration, isUsingOwnApiKeys, isAnonymous, actualCredits, requestId } = context;
+        const {
+            imageGeneration,
+            imageCreditCost,
+            isUsingOwnApiKeys,
+            isAnonymous,
+            actualCredits,
+            requestId,
+        } = context;
 
         if (isUsingOwnApiKeys && imageGeneration.enabled) {
             logDiagnostic('IMAGE_GEN_PERMISSION', 'Allowed for user with own API keys', { requestId });
@@ -204,20 +224,20 @@ export class ChatImageGenerationService {
             return false;
         }
 
-        if (actualCredits !== null && actualCredits >= IMAGE_GENERATION_COST) {
+        if (actualCredits !== null && actualCredits >= imageCreditCost) {
             logDiagnostic('IMAGE_GEN_PERMISSION', 'Allowed for user with sufficient credits', {
                 requestId,
                 actualCredits,
-                cost: IMAGE_GENERATION_COST,
+                cost: imageCreditCost,
             });
             return imageGeneration.enabled;
         }
 
-        if (actualCredits !== null && actualCredits < IMAGE_GENERATION_COST) {
+        if (actualCredits !== null && actualCredits < imageCreditCost) {
             logDiagnostic('IMAGE_GEN_PERMISSION', 'Blocked due to insufficient credits', {
                 requestId,
                 actualCredits,
-                required: IMAGE_GENERATION_COST,
+                required: imageCreditCost,
             });
         }
 

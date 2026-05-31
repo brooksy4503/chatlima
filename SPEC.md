@@ -504,7 +504,7 @@ Based on model pricing ($/M tokens). Labels in `lib/utils/creditTierLabels.ts`:
 |---------|------|
 | Web Search (agentic, default) | 5 credits × invocation count (billed after stream from tool steps or `server_tool_use.web_search_requests`) |
 | Web Search (legacy `:online` plugin) | Flat 5 credits per request when web search was enabled (not per invocation) |
-| Image Generation (Chatlima `image_generation` tool backed by OpenRouter image-output models) | 5 credits per image invocation when Create image toggle was enabled for the request |
+| Image Generation (Chatlima `image_generation` tool backed by OpenRouter image-output models) | Model-specific: `openai/gpt-5-image` = 25 credits/image; `openai/gpt-5-image-mini` = 10 credits/image (allowlisted models only; Settings dropdown) |
 
 Web search billing is skipped when the user supplies their own OpenRouter API key (BYOK). Image generation billing follows the same BYOK rule.
 

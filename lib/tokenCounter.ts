@@ -13,9 +13,10 @@ import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator'
 export const WEB_SEARCH_COST = 5;
 
 /**
- * Cost in credits per image generated via OpenRouter image_generation server tool
+ * @deprecated Use getImageGenerationCreditCost() from lib/constants/image-generation-models.ts
+ * Kept for backward compatibility during migration; reflects default model cost only.
  */
-export const IMAGE_GENERATION_COST = 5;
+export const IMAGE_GENERATION_COST = 25;
 
 /**
  * Tracks token usage for a user's chat session and reports it to Polar for billing.

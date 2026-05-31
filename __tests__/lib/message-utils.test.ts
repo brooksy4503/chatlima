@@ -13,6 +13,7 @@ import {
   isWebSearchToolPart,
   mapV6ToolStateToLegacy,
   messageHasAssistantText,
+  shouldShowLiveImageGenerationIndicator,
   shouldShowLiveWebSearchIndicator,
   shouldShowSyntheticCompletedWebSearch,
   userMessageRequestsImageCreation,
@@ -113,6 +114,58 @@ describe('message-utils', () => {
       expect(mapV6ToolStateToLegacy('output-available')).toBe('result');
       expect(mapV6ToolStateToLegacy('input-streaming')).toBe('call');
       expect(mapV6ToolStateToLegacy(undefined)).toBe('call');
+    });
+  });
+
+  describe('image generation UI helpers', () => {
+    const baseParams = {
+      imageGenerationEnabled: true,
+      status: 'streaming',
+      isLatestMessage: true,
+      role: 'assistant',
+      parts: [{ type: 'reasoning', text: 'thinking' }] as UIMessage['parts'],
+    };
+
+    it('shows live indicator only while streaming with no tool or text yet', () => {
+      expect(shouldShowLiveImageGenerationIndicator(baseParams)).toBe(true);
+      expect(
+        shouldShowLiveImageGenerationIndicator({
+          ...baseParams,
+          parts: [{ type: 'text', text: 'Partial answer' }],
+        })
+      ).toBe(false);
+    });
+
+    it('hides live indicator once an image generation tool part exists', () => {
+      expect(
+        shouldShowLiveImageGenerationIndicator({
+          ...baseParams,
+          parts: [
+            {
+              type: 'tool-invocation',
+              toolInvocation: {
+                toolName: 'image_generation',
+                state: 'call',
+                args: { prompt: 'A sunset over mountains' },
+              },
+            },
+          ] as UIMessage['parts'],
+        })
+      ).toBe(false);
+
+      expect(
+        shouldShowLiveImageGenerationIndicator({
+          ...baseParams,
+          parts: [
+            {
+              type: 'tool-image_generation',
+              toolCallId: 'call-1',
+              state: 'input-available',
+              input: { prompt: 'A sunset over mountains' },
+            },
+          ] as UIMessage['parts'],
+        })
+      ).toBe(false);
     });
   });
 
