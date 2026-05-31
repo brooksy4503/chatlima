@@ -2,6 +2,11 @@ import type { UIMessage } from "ai";
 import type { ModelInfo } from "@/lib/types/models";
 import type { ImageUIPart } from '@/lib/types';
 import { getUIMessageText } from '@/lib/message-utils';
+import {
+    modelUsesReasoningTagInstructions,
+    REASONING_TAG_SYSTEM_PROMPT,
+} from '@/lib/chat/reasoningModels';
+import { nanoid } from 'nanoid';
 
 export interface MessageProcessingContext {
     messages: UIMessage[];
@@ -121,16 +126,11 @@ export class ChatMessageProcessingService {
     static addModelSpecificInstructions(messages: UIMessage[], selectedModel: string): UIMessage[] {
         const modelMessages = [...messages];
 
-        if (
-            selectedModel === "openrouter/deepseek/deepseek-r1" ||
-            selectedModel === "openrouter/deepseek/deepseek-r1-0528-qwen3-8b" ||
-            selectedModel === "openrouter/qwen/qwq-32b"
-        ) {
-            const systemContent = "Please provide your reasoning within <think> tags. After closing the </think> tag, provide your final answer directly without any other special tags.";
+        if (modelUsesReasoningTagInstructions(selectedModel)) {
             modelMessages.unshift({
                 role: "system",
-                id: `system_${Date.now()}`,
-                parts: [{ type: "text", text: systemContent }]
+                id: nanoid(),
+                parts: [{ type: "text", text: REASONING_TAG_SYSTEM_PROMPT }]
             });
         }
 
