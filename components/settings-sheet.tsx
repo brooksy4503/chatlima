@@ -10,6 +10,7 @@ import { ProviderHealthTab } from "./settings/provider-health-tab";
 import { PreferencesTab } from "./settings/preferences-tab";
 import { MCPServer } from "@/lib/context/mcp-context";
 import type { ImageGenerationOutputFormat, ImageGenerationQuality } from "@/lib/openrouter-image-generation-tool";
+import type { AllowedImageModelId } from "@/lib/constants/image-generation-models";
 
 interface SettingsSheetProps {
   open: boolean;
@@ -33,8 +34,8 @@ interface SettingsSheetProps {
   onImageGenerationAspectRatioChange: (value: string) => void;
   imageGenerationOutputFormat: ImageGenerationOutputFormat;
   onImageGenerationOutputFormatChange: (value: ImageGenerationOutputFormat) => void;
-  imageGenerationModel: string;
-  onImageGenerationModelChange: (value: string) => void;
+  imageGenerationModel: AllowedImageModelId;
+  onImageGenerationModelChange: (value: AllowedImageModelId) => void;
 }
 
 export function SettingsSheet({

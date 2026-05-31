@@ -8,6 +8,7 @@ import type { ImageGenerationOutputFormat, ImageGenerationQuality } from "@/lib/
 import {
   getImageGenerationCreditCost,
   IMAGE_GENERATION_MODEL_OPTIONS,
+  resolveAllowedImageModel,
   type AllowedImageModelId,
 } from "@/lib/constants/image-generation-models";
 
@@ -26,8 +27,8 @@ interface PreferencesTabProps {
   onImageGenerationAspectRatioChange: (value: string) => void;
   imageGenerationOutputFormat: ImageGenerationOutputFormat;
   onImageGenerationOutputFormatChange: (value: ImageGenerationOutputFormat) => void;
-  imageGenerationModel: string;
-  onImageGenerationModelChange: (value: string) => void;
+  imageGenerationModel: AllowedImageModelId;
+  onImageGenerationModelChange: (value: AllowedImageModelId) => void;
 }
 
 export function PreferencesTab({
@@ -164,7 +165,7 @@ export function PreferencesTab({
           <Label htmlFor="image-gen-model" className="text-xs text-muted-foreground">Image model</Label>
           <Select
             value={imageGenerationModel}
-            onValueChange={(value) => onImageGenerationModelChange(value as AllowedImageModelId)}
+            onValueChange={(value) => onImageGenerationModelChange(resolveAllowedImageModel(value))}
           >
             <SelectTrigger id="image-gen-model" className="w-full">
               <SelectValue placeholder="Select image model" />
