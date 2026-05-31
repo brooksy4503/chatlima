@@ -150,4 +150,27 @@ describe('ChatImageGenerationService', () => {
             expect(ChatImageGenerationService.isImageGenerationToolName('web_search')).toBe(false);
         });
     });
+
+    describe('modelSupportsForcedToolChoice', () => {
+        it('blocks Qwen3 thinking models that reject explicit tool_choice', () => {
+            expect(
+                ChatImageGenerationService.modelSupportsForcedToolChoice('openrouter/qwen/qwen3.7-max')
+            ).toBe(false);
+            expect(
+                ChatImageGenerationService.modelSupportsForcedToolChoice('openrouter/qwen/qwen3-235b-a22b')
+            ).toBe(false);
+            expect(
+                ChatImageGenerationService.modelSupportsForcedToolChoice('openrouter/qwen/qwq-32b')
+            ).toBe(false);
+        });
+
+        it('allows models that accept explicit tool_choice', () => {
+            expect(
+                ChatImageGenerationService.modelSupportsForcedToolChoice('openrouter/openai/gpt-4o')
+            ).toBe(true);
+            expect(
+                ChatImageGenerationService.modelSupportsForcedToolChoice('openrouter/qwen/qwen-2.5-72b-instruct')
+            ).toBe(true);
+        });
+    });
 });

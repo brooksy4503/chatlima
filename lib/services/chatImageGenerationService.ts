@@ -139,6 +139,20 @@ export class ChatImageGenerationService {
         );
     }
 
+    /**
+     * Whether the chat model accepts an explicit toolChoice on step 0.
+     * Alibaba Qwen3 thinking models reject tool_choice objects while in thinking mode.
+     */
+    static modelSupportsForcedToolChoice(selectedModel: string): boolean {
+        const openRouterId = selectedModel.toLowerCase().replace(/^openrouter\//, '');
+
+        if (/^qwen\/qwen3/i.test(openRouterId) || openRouterId.includes('qwq')) {
+            return false;
+        }
+
+        return true;
+    }
+
     static countImageGenerationInvocations(steps: Array<{ toolCalls?: ToolCallLike[] }> | undefined): number {
         if (!steps?.length) {
             return 0;

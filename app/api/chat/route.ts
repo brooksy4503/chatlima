@@ -1044,14 +1044,24 @@ export async function POST(req: Request) {
             return '';
         })();
 
-        const shouldForceImageGenerationTool =
+        const userRequestedImageCreation =
             imageGenerationConfig.enabled &&
             userMessageRequestsImageCreation(lastUserMessageText);
 
-        if (shouldForceImageGenerationTool) {
-            console.log(
-                `[Image Generation] Forcing image_generation tool on first step for ${selectedModel}`
-            );
+        const shouldForceImageGenerationTool =
+            userRequestedImageCreation &&
+            ChatImageGenerationService.modelSupportsForcedToolChoice(selectedModel);
+
+        if (userRequestedImageCreation) {
+            if (shouldForceImageGenerationTool) {
+                console.log(
+                    `[Image Generation] Forcing image_generation tool on first step for ${selectedModel}`
+                );
+            } else {
+                console.log(
+                    `[Image Generation] Skipping forced tool_choice for ${selectedModel} (thinking mode); relying on system prompt`
+                );
+            }
         }
 
         // Always set logprobs: false for these models at the providerOptions level for streamText
