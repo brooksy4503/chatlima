@@ -7,7 +7,6 @@ import { nanoid } from 'nanoid';
 import {
   buildAssistantMessageForPersistence,
   countPersistableDisplayParts,
-  createStreamFinishGate,
   processMessagesForPersistence,
 } from '@/lib/chat-message-persistence';
 import {
@@ -70,8 +69,6 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
     getRemainingCreditsByExternalId,
   } = params;
 
-  const streamFinishGate = createStreamFinishGate();
-
   const state = {
     tokenUsageData: null as { inputTokens: number; outputTokens: number } | null,
     messagesSavedSuccessfully: false,
@@ -80,7 +77,6 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
     uiResponseMessage: null as UIMessage | null,
     streamFinishEvent: null as Record<string, unknown> | null,
     streamFinishResponse: null as OpenRouterStreamResponse | null,
-    uiFinishResolved: false,
   };
 
   let persistInFlight: Promise<void> = Promise.resolve();
@@ -98,6 +94,9 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
       const response = state.streamFinishResponse;
 
       if (!uiMsg?.parts?.length && !(event?.text as string | undefined)) {
+        console.warn(
+          `[Chat ${chatId}][${source === 'ui' ? 'uiOnFinish' : 'onFinish'}] Skipping persist: no UI parts and no stream text yet`
+        );
         return;
       }
 
@@ -190,6 +189,15 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
 
         const logTag = source === 'ui' ? 'uiOnFinish' : 'onFinish';
 
+        console.log(`[Chat ${chatId}][${logTag}] Persisting assistant parts:`, {
+          partTypes:
+            processedMessages
+              .find((m) => m.role === 'assistant')
+              ?.parts?.map((p) => p.type) ?? [],
+          partCount:
+            processedMessages.find((m) => m.role === 'assistant')?.parts?.length ?? 0,
+        });
+
         const dbMessages = (
           convertToDBMessages(processedMessages as UIMessage[], chatId) as Array<{
             id?: string;
@@ -242,27 +250,6 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
 
     persistInFlight = persistInFlight.then(runPersist, runPersist);
     await persistInFlight;
-  };
-
-  const waitForUiFinish = (): Promise<void> => {
-    if (state.uiFinishResolved) {
-      return Promise.resolve();
-    }
-    return new Promise((resolve) => {
-      const deadline = Date.now() + UI_FINISH_WAIT_MS;
-      const tick = () => {
-        if (state.uiFinishResolved || state.uiResponseMessage) {
-          resolve();
-          return;
-        }
-        if (Date.now() >= deadline) {
-          resolve();
-          return;
-        }
-        setTimeout(tick, UI_FINISH_POLL_MS);
-      };
-      tick();
-    });
   };
 
   const trackTokenUsage = async (
@@ -359,10 +346,11 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
       return;
     }
 
-    await Promise.race([
-      waitForUiFinish(),
-      streamFinishGate.readyPromise.then(() => undefined),
-    ]);
+    // UI onFinish usually follows with tool/image parts; wait like main branch (do not
+    // race streamFinishGate — it resolves on streamText onFinish and skips this wait).
+    for (let i = 0; i < UI_FINISH_WAIT_MS / UI_FINISH_POLL_MS && !state.uiResponseMessage; i++) {
+      await new Promise((resolve) => setTimeout(resolve, UI_FINISH_POLL_MS));
+    }
 
     if (state.messagesSavedSuccessfully) {
       if (state.uiResponseMessage) {
@@ -375,7 +363,6 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
   };
 
   return {
-    streamFinishGate,
     recordFirstToken() {
       if (timeToFirstTokenMs === null) {
         const now = Date.now();
@@ -392,13 +379,11 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
     }),
     async handleUiStreamFinish(responseMessage: UIMessage) {
       state.uiResponseMessage = responseMessage;
-      state.uiFinishResolved = true;
       await persistAssistantMessages('ui', responseMessage);
     },
     handleStreamTextFinish(event: Record<string, unknown>, response: OpenRouterStreamResponse) {
       state.streamFinishEvent = event;
       state.streamFinishResponse = response;
-      streamFinishGate.notify(event, response);
 
       state.finalAssistantMessageId =
         (response.messages?.filter((m) => m.role === 'assistant').pop()?.id as string) ||
@@ -412,7 +397,6 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
 
       state.streamFinishEvent = event;
       state.streamFinishResponse = response;
-      streamFinishGate.notify(event, response);
 
       state.finalAssistantMessageId =
         (response.messages?.filter((m) => m.role === 'assistant').pop()?.id as string) ||
