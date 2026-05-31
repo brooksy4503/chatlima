@@ -22,6 +22,15 @@ describe('PreferencesTab', () => {
     webSearchEnabled: false,
     webSearchContextSize: 'low' as const,
     onWebSearchContextSizeChange: jest.fn(),
+    imageGenerationEnabled: false,
+    imageGenerationQuality: 'medium' as const,
+    onImageGenerationQualityChange: jest.fn(),
+    imageGenerationAspectRatio: '1:1',
+    onImageGenerationAspectRatioChange: jest.fn(),
+    imageGenerationOutputFormat: 'png' as const,
+    onImageGenerationOutputFormatChange: jest.fn(),
+    imageGenerationModel: 'openai/gpt-5-image',
+    onImageGenerationModelChange: jest.fn(),
   };
 
   beforeEach(() => {

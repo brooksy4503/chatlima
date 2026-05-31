@@ -143,7 +143,7 @@ describe('resolveOpenRouterWebSearchRouteSetup', () => {
     });
 
     it('falls back when agentic tools are requested but OpenRouter client is unavailable', () => {
-        mockOpenRouterClientFactory.mockReturnValue(null);
+        (mockOpenRouterClientFactory as jest.Mock<OpenRouterProvider | null>).mockReturnValue(null);
 
         const result = runSetup();
 

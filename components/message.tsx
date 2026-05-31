@@ -15,9 +15,10 @@ import { Citations } from "./citation";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import { formatFileSize } from "@/lib/image-utils";
-import { getReasoningPartText, isWebSearchToolPart, mapV6ToolStateToLegacy, shouldShowLiveWebSearchIndicator, shouldShowSyntheticCompletedWebSearch } from "@/lib/message-utils";
+import { getReasoningPartText, getGeneratedImageUrlFromToolResult, isImageGenerationToolName, isWebSearchToolPart, mapV6ToolStateToLegacy, shouldShowLiveImageGenerationIndicator, shouldShowLiveWebSearchIndicator, shouldShowSyntheticCompletedWebSearch } from "@/lib/message-utils";
 import { WebSearchSuggestion } from "./web-search-suggestion";
 import { ImageModal } from "./image-modal";
+import { GeneratedImage } from "./generated-image";
 import { CompactMessageTokenMetrics, StreamingTokenMetrics } from "./token-metrics/MessageTokenMetrics";
 
 interface ReasoningPart {
@@ -188,6 +189,7 @@ interface MessageProps {
     totalDuration?: number;
   };
   webSearchEnabled?: boolean;
+  imageGenerationEnabled?: boolean;
 }
 
 const PurePreviewMessage = ({
@@ -197,6 +199,7 @@ const PurePreviewMessage = ({
   isLoading,
   chatTokenUsage,
   webSearchEnabled = false,
+  imageGenerationEnabled = false,
 }: MessageProps) => {
   const deferredStatus = useDeferredValue(status);
   // Keep plain text until React finishes the streaming→ready transition (avoids blocking markdown parse).
@@ -235,13 +238,31 @@ const PurePreviewMessage = ({
     parts: message.parts as UIMessage['parts'],
   });
 
+  const showLiveImageGeneration = shouldShowLiveImageGenerationIndicator({
+    imageGenerationEnabled,
+    status,
+    isLatestMessage,
+    role: message.role,
+    parts: message.parts as UIMessage['parts'],
+  });
+
+  const renderImageGenerationExtras = (toolName: string, result: unknown) => {
+    if (!isImageGenerationToolName(toolName)) {
+      return null;
+    }
+    const imageUrl = getGeneratedImageUrlFromToolResult(result);
+    if (!imageUrl) {
+      return null;
+    }
+    return <GeneratedImage url={imageUrl} />;
+  };
+
   const showSyntheticCompletedWebSearch = shouldShowSyntheticCompletedWebSearch({
     role: message.role,
     status,
     hasWebSearchResults: !!hasWebSearchResults,
     parts: message.parts as UIMessage['parts'],
   });
-
 
   // Only show copy button if the message is from the assistant or user, and not currently streaming
   const shouldShowCopyButton = (message.role === "assistant" || message.role === "user") && (!isLatestMessage || status !== "streaming");
@@ -269,6 +290,17 @@ const PurePreviewMessage = ({
               <ToolInvocation
                 key={`message-${message.id}-live-web-search`}
                 toolName="web_search"
+                state="call"
+                args={{}}
+                result={null}
+                isLatestMessage={isLatestMessage}
+                status={status}
+              />
+            )}
+            {showLiveImageGeneration && (
+              <ToolInvocation
+                key={`message-${message.id}-live-image-generation`}
+                toolName="image_generation"
                 state="call"
                 args={{}}
                 result={null}
@@ -338,16 +370,39 @@ const PurePreviewMessage = ({
                   const result = 'result' in toolPart.toolInvocation ? toolPart.toolInvocation.result : null;
                   
                   return (
-                    <ToolInvocation
+                    <div key={`message-${message.id}-part-${i}`} className="flex flex-col gap-2">
+                      <ToolInvocation
+                        toolName={toolName}
+                        state={state}
+                        args={args}
+                        result={result}
+                        isLatestMessage={isLatestMessage}
+                        status={status}
+                      />
+                      {renderImageGenerationExtras(toolName, result)}
+                    </div>
+                  );
+                case "file": {
+                  const filePart = part as FileUIPart & {
+                    url?: string;
+                    filename?: string;
+                    mediaType?: string;
+                    mimeType?: string;
+                    data?: string;
+                  };
+                  const mimeType = filePart.mediaType ?? filePart.mimeType;
+                  const imageUrl = filePart.url ?? filePart.data;
+                  if (!mimeType?.startsWith("image/") || !imageUrl) {
+                    return null;
+                  }
+                  return (
+                    <GeneratedImage
                       key={`message-${message.id}-part-${i}`}
-                      toolName={toolName}
-                      state={state}
-                      args={args}
-                      result={result}
-                      isLatestMessage={isLatestMessage}
-                      status={status}
+                      url={imageUrl}
+                      alt={filePart.filename ?? "Generated image"}
                     />
                   );
+                }
                 case "image_url":
                   const imagePart = part as any as ImageUIPart;
                   return (
@@ -407,15 +462,17 @@ const PurePreviewMessage = ({
                     const toolState = mapV6ToolStateToLegacy(v6ToolPart.state);
 
                     return (
-                      <ToolInvocation
-                        key={`message-${message.id}-part-${i}`}
-                        toolName={toolName}
-                        state={toolState}
-                        args={v6ToolPart.input}
-                        result={v6ToolPart.output}
-                        isLatestMessage={isLatestMessage}
-                        status={status}
-                      />
+                      <div key={`message-${message.id}-part-${i}`} className="flex flex-col gap-2">
+                        <ToolInvocation
+                          toolName={toolName}
+                          state={toolState}
+                          args={v6ToolPart.input}
+                          result={v6ToolPart.output}
+                          isLatestMessage={isLatestMessage}
+                          status={status}
+                        />
+                        {renderImageGenerationExtras(toolName, v6ToolPart.output)}
+                      </div>
                     );
                   }
 
@@ -507,6 +564,7 @@ export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
   if (prevProps.isLatestMessage !== nextProps.isLatestMessage) return false;
   if (prevProps.webSearchEnabled !== nextProps.webSearchEnabled) return false;
+  if (prevProps.imageGenerationEnabled !== nextProps.imageGenerationEnabled) return false;
   if (nextProps.status === "streaming" && nextProps.isLatestMessage) return false;
   if ((prevProps.message as { annotations?: unknown }).annotations !== (nextProps.message as { annotations?: unknown }).annotations)
     return false;

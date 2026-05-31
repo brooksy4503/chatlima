@@ -504,8 +504,9 @@ Based on model pricing ($/M tokens). Labels in `lib/utils/creditTierLabels.ts`:
 |---------|------|
 | Web Search (agentic, default) | 5 credits × invocation count (billed after stream from tool steps or `server_tool_use.web_search_requests`) |
 | Web Search (legacy `:online` plugin) | Flat 5 credits per request when web search was enabled (not per invocation) |
+| Image Generation (Chatlima `image_generation` tool backed by OpenRouter image-output models) | 5 credits per image invocation when Create image toggle was enabled for the request |
 
-Web search billing is skipped when the user supplies their own OpenRouter API key (BYOK).
+Web search billing is skipped when the user supplies their own OpenRouter API key (BYOK). Image generation billing follows the same BYOK rule.
 
 ### 7.4 Polar Integration
 
@@ -549,6 +550,12 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
   - **No automatic fallback**: When agentic tools are enabled globally, unsupported or failed agentic setup disables web search for that request; legacy `:online` is not used unless the env flag is `false`.
   - **UI**: Live “Searching the web” indicator during stream; tool cards and `Citations` component; optional follow-up suggestion to disable search to save credits.
   - See §7.3 for billing; implementation in `chatWebSearchService`, `openRouterWebSearchRouteSetup`, `app/api/chat/route.ts`.
+- **Image Generation** (OpenRouter models only; ImagePlus toggle in composer):
+  - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with tool-calling support (`supportsToolCalling` or `Tools` capability in catalog).
+  - **Client**: `imageGeneration: { enabled, quality, aspectRatio, outputFormat, model }` sent on every `POST /api/chat` from `ImageGenerationProvider` (localStorage). Defaults configurable in Settings → Preferences.
+  - **Image tool**: Chatlima merges an app-executed `image_generation` tool into `streamText` when the toggle is on; the chat model decides when to invoke. The tool calls the configured OpenRouter image-output model with `modalities: ["image", "text"]`, extracts `message.images[]`, uploads generated data URLs to Blob when configured, and returns `{ status, imageUrl }` for persistence/rendering.
+  - **UI**: ImagePlus toggle between attach and web search; live “Generating image” tool card; generated images rendered inline with click-to-expand/download. Estimated cost shown when toggle is on.
+  - See §7.3 for billing; implementation in `chatImageGenerationService`, `openrouter-image-generation-tool`, `app/api/chat/route.ts`.
 - **Native Web Fetch**: First-party `web_fetch` tool for reading public URLs directly in chat with extraction + truncation controls
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
 - **Smart Title Generation**: Dynamic model selection for conversation titles. Default OpenRouter title model is `openrouter/openai/gpt-5-nano` (override via `TITLE_GENERATION_MODEL_ID` or `OPENROUTER_TITLE_MODEL`). Title generation starts in parallel when a new chat begins streaming and is persisted before the chat save completes.
@@ -607,8 +614,8 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 ```
 POST /api/chat
 - Main chat endpoint with streaming
-- Request body includes webSearch: { enabled: boolean, contextSize: "low" | "medium" | "high" }
-- Handles MCP tools, OpenRouter web search (agentic or legacy :online), native web_fetch, images (base64), file references (Blob URLs)
+- Request body includes webSearch: { enabled: boolean, contextSize: "low" | "medium" | "high" } and imageGeneration: { enabled, quality, aspectRatio, outputFormat, model }
+- Handles MCP tools, OpenRouter web search (agentic or legacy :online), Chatlima image_generation tool backed by OpenRouter image-output models, native web_fetch, images (base64), file references (Blob URLs)
 - Integrates read_file tool for uploaded documents and web_fetch tool for URL extraction
 ```
 

@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   SELECTED_MCP_SERVERS: "selectedMcpServers",
   SIDEBAR_STATE: "sidebarState",
   WEB_SEARCH: "webSearch",
+  IMAGE_GENERATION: "imageGeneration",
   SHOW_WELCOME_SCREEN: "showWelcomeScreen",
   SHOW_SUGGESTED_PROMPTS: "showSuggestedPrompts",
 } as const;

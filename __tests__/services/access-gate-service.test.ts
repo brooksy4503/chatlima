@@ -4,6 +4,7 @@ import { canUserChat, hasProviderByokForModel } from '@/lib/services/accessGateS
 const baseAccessFlags: AccessPolicyFlags = {
     billingEnforced: false,
     allowByokBypass: false,
+    openrouterAgenticWebToolsEnabled: false,
     nativeWebFetchEnabled: false,
     nativeWebFetchMaxChars: 30_000,
     nativeWebFetchTimeoutMs: 12_000,

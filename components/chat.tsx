@@ -19,6 +19,7 @@ import { useMCP } from "@/lib/context/mcp-context";
 import { useAuth } from "@/hooks/useAuth";
 import { MCPServerManager } from "./mcp-server-manager";
 import { useWebSearch } from "@/lib/context/web-search-context";
+import { useImageGeneration } from "@/lib/context/image-generation-context";
 import { ErrorBoundary } from "./error-boundary";
 import { useCredits } from "@/hooks/useCredits";
 import type { FileAttachment } from "@/lib/types";
@@ -70,6 +71,15 @@ export default function Chat() {
     webSearchContextSize, 
     setWebSearchContextSize 
   } = useWebSearch();
+
+  const {
+    imageGenerationEnabled,
+    setImageGenerationEnabled,
+    imageGenerationQuality,
+    imageGenerationAspectRatio,
+    imageGenerationOutputFormat,
+    imageGenerationModel,
+  } = useImageGeneration();
   
   const { mcpServersForApi } = useMCP();
   
@@ -248,6 +258,13 @@ export default function Chat() {
       enabled: webSearchEnabled,
       contextSize: webSearchContextSize,
     },
+    imageGeneration: {
+      enabled: imageGenerationEnabled,
+      quality: imageGenerationQuality,
+      aspectRatio: imageGenerationAspectRatio,
+      outputFormat: imageGenerationOutputFormat,
+      model: imageGenerationModel,
+    },
     apiKeys: {} as Record<string, string>,
     attachments: [] as unknown[],
     temperature: undefined as number | undefined,
@@ -264,6 +281,13 @@ export default function Chat() {
         enabled: activePreset?.webSearchEnabled ?? webSearchEnabled,
         contextSize: activePreset?.webSearchContextSize || webSearchContextSize,
       },
+      imageGeneration: {
+        enabled: imageGenerationEnabled,
+        quality: imageGenerationQuality,
+        aspectRatio: imageGenerationAspectRatio,
+        outputFormat: imageGenerationOutputFormat,
+        model: imageGenerationModel,
+      },
       apiKeys: getClientApiKeys(),
       attachments: [],
       temperature: activePreset?.temperature,
@@ -278,6 +302,11 @@ export default function Chat() {
     generatedChatId,
     webSearchEnabled,
     webSearchContextSize,
+    imageGenerationEnabled,
+    imageGenerationQuality,
+    imageGenerationAspectRatio,
+    imageGenerationOutputFormat,
+    imageGenerationModel,
   ]);
 
   const transport = useMemo(
@@ -1252,6 +1281,7 @@ export default function Chat() {
             status={status}
             chatTokenUsage={chatTokenUsage}
             webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
+            imageGenerationEnabled={imageGenerationEnabled && isOpenRouterModel}
           />
         )}
       </div>

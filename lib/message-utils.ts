@@ -41,6 +41,166 @@ export function getReasoningPartText(part: ReasoningLikePart): string {
   return '';
 }
 
+/** Whether a tool name represents OpenRouter image generation. */
+export function isImageGenerationToolName(toolName: string): boolean {
+  return (
+    toolName === 'image_generation' ||
+    toolName === 'openrouter.image_generation' ||
+    toolName === 'openrouter:image_generation' ||
+    toolName.endsWith('.image_generation') ||
+    toolName.endsWith(':image_generation')
+  );
+}
+
+/** Whether a message part represents an image generation tool invocation (v5 or v6). */
+export function isImageGenerationToolPart(part: UIMessage['parts'][number]): boolean {
+  if (part.type === 'tool-invocation') {
+    const toolName = (part as { toolInvocation?: { toolName?: string } }).toolInvocation?.toolName;
+    return typeof toolName === 'string' && isImageGenerationToolName(toolName);
+  }
+
+  if (isToolUIPart(part)) {
+    const toolName = getToolName(part as Parameters<typeof getToolName>[0]);
+    return isImageGenerationToolName(toolName);
+  }
+
+  return false;
+}
+
+/** Whether message parts already include an image generation tool invocation. */
+export function hasImageGenerationToolPart(parts: UIMessage['parts'] | undefined): boolean {
+  return parts?.some(isImageGenerationToolPart) ?? false;
+}
+
+/** Extract image URLs from image generation tool results in message parts. */
+export function extractGeneratedImageUrls(parts: UIMessage['parts'] | undefined): string[] {
+  if (!parts?.length) {
+    return [];
+  }
+
+  const urls: string[] = [];
+
+  for (const part of parts) {
+    if (part.type === 'tool-invocation') {
+      const invocation = (part as { toolInvocation?: { toolName?: string; result?: unknown } }).toolInvocation;
+      if (!invocation || !isImageGenerationToolName(invocation.toolName ?? '')) {
+        continue;
+      }
+      const url = getGeneratedImageUrlFromToolResult(invocation.result);
+      if (url) {
+        urls.push(url);
+      }
+      continue;
+    }
+
+    if (isToolUIPart(part) && isImageGenerationToolPart(part)) {
+      const v6Part = part as UIMessage['parts'][number] & { output?: unknown };
+      const url = getGeneratedImageUrlFromToolResult(v6Part.output);
+      if (url) {
+        urls.push(url);
+      }
+    }
+  }
+
+  return urls;
+}
+
+/** Extract image URL from an image_generation tool result payload. */
+export function getGeneratedImageUrlFromToolResult(result: unknown): string | null {
+  if (!result) {
+    return null;
+  }
+
+  if (typeof result === 'string') {
+    try {
+      const parsed = JSON.parse(result) as { imageUrl?: string; image_url?: string };
+      return parsed.imageUrl ?? parsed.image_url ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (typeof result === 'object') {
+    const record = result as {
+      type?: string;
+      output?: unknown;
+      result?: unknown;
+      imageUrl?: string;
+      image_url?: string | { url?: string };
+      status?: string;
+      error?: string;
+    };
+    if (record.status === 'error') {
+      return null;
+    }
+    if (typeof record.imageUrl === 'string') {
+      return record.imageUrl;
+    }
+    if (typeof record.image_url === 'string') {
+      return record.image_url;
+    }
+    if (record.image_url && typeof record.image_url === 'object' && typeof record.image_url.url === 'string') {
+      return record.image_url.url;
+    }
+
+    // AI SDK TypedToolResult wraps OpenRouter payloads in `output` (or legacy `result`).
+    for (const nested of [record.output, record.result]) {
+      if (nested == null) {
+        continue;
+      }
+      const url = getGeneratedImageUrlFromToolResult(nested);
+      if (url) {
+        return url;
+      }
+    }
+
+    return null;
+  }
+
+  return null;
+}
+
+/** Live "Generating image" indicator during image generation tool execution. */
+export function shouldShowLiveImageGenerationIndicator(params: {
+  imageGenerationEnabled: boolean;
+  status: string;
+  isLatestMessage: boolean;
+  role: string;
+  parts: UIMessage['parts'] | undefined;
+}): boolean {
+  const { imageGenerationEnabled, status, isLatestMessage, role, parts } = params;
+
+  if (!imageGenerationEnabled || role !== 'assistant' || !isLatestMessage || status !== 'streaming') {
+    return false;
+  }
+
+  const hasPendingImageGen = parts?.some((part) => {
+    if (part.type === 'tool-invocation') {
+      const invocation = (part as { toolInvocation?: { toolName?: string; state?: string } }).toolInvocation;
+      return (
+        isImageGenerationToolName(invocation?.toolName ?? '') &&
+        invocation?.state === 'call'
+      );
+    }
+
+    if (isToolUIPart(part) && isImageGenerationToolPart(part)) {
+      const v6Part = part as UIMessage['parts'][number] & { state?: string };
+      return v6Part.state !== 'output-available';
+    }
+
+    return false;
+  });
+
+  if (hasPendingImageGen) {
+    return true;
+  }
+
+  return (
+    !hasImageGenerationToolPart(parts) &&
+    !messageHasAssistantText(parts)
+  );
+}
+
 /** Whether a tool name represents OpenRouter / native web search. */
 export function isWebSearchToolName(toolName: string): boolean {
   return (
@@ -154,4 +314,181 @@ export function injectSyntheticWebSearchToolPart(
   }
 
   return [...parts.slice(0, firstTextIndex), synthetic, ...parts.slice(firstTextIndex)];
+}
+
+/** Whether the user's message is asking to create or generate an image. */
+export function userMessageRequestsImageCreation(text: string): boolean {
+  const normalized = text.trim();
+  if (!normalized) {
+    return false;
+  }
+
+  const hasImageNoun = /\b(image|picture|photo|illustration|artwork|drawing|portrait|poster)\b/i.test(
+    normalized
+  );
+  const hasCreateVerb = /\b(create|generate|draw|make|paint|design|illustrate|render)\b/i.test(
+    normalized
+  );
+
+  return (
+    (hasCreateVerb && hasImageNoun) ||
+    /\b(create|generate|draw)\s+(an?\s+)?(image|picture|photo)\b/i.test(normalized)
+  );
+}
+
+function isImageUrl(value: string): boolean {
+  return (
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('data:image/')
+  );
+}
+
+/** Collect image URLs from known tool/file/message payload shapes. */
+function collectImageUrl(value: unknown, urls: string[]): void {
+  if (!value) {
+    return;
+  }
+
+  if (typeof value === 'string') {
+    if (isImageUrl(value)) {
+      urls.push(value);
+    }
+    return;
+  }
+
+  if (typeof value !== 'object') {
+    return;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (record.type === 'tool-result') {
+    collectImageUrl(record.output, urls);
+    collectImageUrl(record.result, urls);
+    return;
+  }
+
+  if (record.type === 'file' && record.file && typeof record.file === 'object') {
+    const file = record.file as { base64?: string; mediaType?: string };
+    if (typeof file.base64 === 'string' && file.base64.length > 0 && file.mediaType?.startsWith('image/')) {
+      urls.push(`data:${file.mediaType};base64,${file.base64}`);
+    }
+  }
+
+  if (record.type === 'image_url' && record.image_url && typeof record.image_url === 'object') {
+    const nested = record.image_url as { url?: string };
+    if (typeof nested.url === 'string' && isImageUrl(nested.url)) {
+      urls.push(nested.url);
+    }
+  }
+
+  if (record.type === 'file' || record.type === 'image') {
+    if (typeof record.url === 'string' && isImageUrl(record.url)) {
+      urls.push(record.url);
+    }
+    if (typeof record.data === 'string' && record.data.startsWith('data:image/')) {
+      urls.push(record.data);
+    }
+  }
+
+  const fromToolResult = getGeneratedImageUrlFromToolResult(value);
+  if (typeof fromToolResult === 'string' && isImageUrl(fromToolResult)) {
+    urls.push(fromToolResult);
+  }
+}
+
+/** Extract generated image URLs from stream finish event / provider response payloads. */
+export function extractGeneratedImageUrlsFromStreamEvent(
+  event?: {
+    content?: unknown[];
+    files?: unknown[];
+    toolResults?: unknown[];
+    staticToolResults?: unknown[];
+    dynamicToolResults?: unknown[];
+    steps?: Array<{ content?: unknown[]; toolResults?: unknown[] }>;
+  } | null,
+  response?: { messages?: unknown[] } | null
+): string[] {
+  const urls: string[] = [];
+
+  for (const part of event?.content ?? []) {
+    collectImageUrl(part, urls);
+  }
+
+  for (const file of event?.files ?? []) {
+    collectImageUrl(file, urls);
+  }
+
+  for (const result of [
+    ...(event?.toolResults ?? []),
+    ...(event?.staticToolResults ?? []),
+    ...(event?.dynamicToolResults ?? []),
+  ]) {
+    collectImageUrl(result, urls);
+  }
+
+  for (const step of event?.steps ?? []) {
+    for (const part of step.content ?? []) {
+      collectImageUrl(part, urls);
+    }
+    for (const result of step.toolResults ?? []) {
+      collectImageUrl(result, urls);
+    }
+  }
+
+  for (const message of response?.messages ?? []) {
+    if (!message || typeof message !== 'object') {
+      continue;
+    }
+
+    const record = message as Record<string, unknown>;
+    if (Array.isArray(record.images)) {
+      for (const image of record.images) {
+        collectImageUrl(image, urls);
+      }
+    }
+
+    if (Array.isArray(record.content)) {
+      for (const part of record.content) {
+        collectImageUrl(part, urls);
+      }
+    }
+  }
+
+  return [...new Set(urls)];
+}
+
+/** Synthetic v6 tool part for provider-executed OpenRouter image generation. */
+export function createSyntheticImageGenerationToolPart(imageUrl: string): UIMessage['parts'][number] {
+  return {
+    type: 'tool-image_generation',
+    toolCallId: `image-generation-${crypto.randomUUID()}`,
+    state: 'output-available',
+    input: {},
+    output: { imageUrl, provider: 'openrouter' },
+    providerExecuted: true,
+  } as UIMessage['parts'][number];
+}
+
+/** Insert synthetic image tool parts (with URLs) before the first text part when missing. */
+export function injectSyntheticImageGenerationToolParts(
+  parts: UIMessage['parts'],
+  imageUrls: string[]
+): UIMessage['parts'] {
+  const existing = new Set(extractGeneratedImageUrls(parts));
+  const missing = imageUrls.filter((url) => !existing.has(url));
+
+  if (missing.length === 0) {
+    return parts;
+  }
+
+  const synthetics = missing.map((url) => createSyntheticImageGenerationToolPart(url));
+  const firstTextIndex = parts.findIndex((part) => part.type === 'text');
+
+  if (firstTextIndex === -1) {
+    return [...parts, ...synthetics];
+  }
+
+  return [...parts.slice(0, firstTextIndex), ...synthetics, ...parts.slice(firstTextIndex)];
 }

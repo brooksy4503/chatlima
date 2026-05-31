@@ -119,6 +119,27 @@ describe('chat-message-persistence', () => {
         title: 'Example',
       });
     });
+
+    it('injects synthetic image generation tool parts when URLs exist without tool parts', () => {
+      const assistantMessage: UIMessage = {
+        id: 'asst-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Generated!', state: 'done' }],
+      };
+
+      const processed = processMessagesForPersistence({
+        historyMessages: [userMessage],
+        assistantMessage,
+        imageGeneration: {
+          enabled: true,
+          wasUsed: true,
+          imageUrls: ['https://cdn.example.com/generated.png'],
+        },
+      });
+
+      const assistant = processed.find((m) => m.role === 'assistant');
+      expect(assistant?.parts?.some((p) => p.type === 'tool-image_generation')).toBe(true);
+    });
   });
 
   describe('dbMessagesHaveRicherAssistantParts', () => {
@@ -143,7 +164,7 @@ describe('chat-message-persistence', () => {
               type: 'tool-web_search',
               toolCallId: 'c1',
               state: 'output-available',
-            } as UIMessage['parts'][number],
+            } as unknown as UIMessage['parts'][number],
             { type: 'text', text: 'Summary', state: 'done' },
           ],
         },
@@ -166,7 +187,7 @@ describe('chat-message-persistence', () => {
               args: {},
               result: {},
             },
-          } as UIMessage['parts'][number],
+          } as unknown as UIMessage['parts'][number],
           { type: 'text', text: 'Summary', state: 'done' },
         ],
       };
@@ -214,12 +235,12 @@ describe('chat-message-persistence', () => {
         {
           type: 'tool-invocation',
           toolInvocation: { toolName: 'x', state: 'call', args: {} },
-        } as UIMessage['parts'][number],
+        } as unknown as UIMessage['parts'][number],
         {
           type: 'tool-web_search',
           toolCallId: '1',
           state: 'output-available',
-        } as UIMessage['parts'][number],
+        } as unknown as UIMessage['parts'][number],
       ];
 
       expect(countPersistableDisplayParts(parts)).toBe(3);

@@ -13,6 +13,11 @@ import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator'
 export const WEB_SEARCH_COST = 5;
 
 /**
+ * Cost in credits per image generated via OpenRouter image_generation server tool
+ */
+export const IMAGE_GENERATION_COST = 5;
+
+/**
  * Tracks token usage for a user's chat session and reports it to Polar for billing.
  * @param userId The ID of the user
  * @param polarCustomerId Optional Polar customer ID

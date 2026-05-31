@@ -1,15 +1,16 @@
 import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, Globe, AlertCircle, Paperclip, Code2, Eye, EyeOff } from "lucide-react";
+import { ArrowUp, Square, Globe, AlertCircle, Paperclip, Code2, Eye, EyeOff, ImagePlus } from "lucide-react";
 import { ModelPicker } from "./model-picker";
 import { PresetSelector } from "./preset-selector";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useWebSearch } from "@/lib/context/web-search-context";
+import { useImageGeneration } from "@/lib/context/image-generation-context";
 import { usePresets } from "@/lib/context/preset-context";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
+import { WEB_SEARCH_COST, IMAGE_GENERATION_COST } from "@/lib/tokenCounter";
 import { FileUpload } from "./file-upload";
 import { FilePreview } from "./file-preview";
 import type { FileAttachment } from "@/lib/types";
@@ -71,6 +72,7 @@ export const Textarea = ({
   const isMounted = useClientMount();
 
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
+  const { imageGenerationEnabled, setImageGenerationEnabled } = useImageGeneration();
   const { activePreset } = usePresets();
   const { user } = useAuth();
   const isMobileScreen = useIsMobile();
@@ -97,15 +99,40 @@ export const Textarea = ({
     return modelInfo?.supportsWebSearch === true;
   };
 
+  const effectiveModelSupportsImageGeneration = (): boolean => {
+    const effectiveModelId = getEffectiveModel();
+    const modelInfo = models.find(model => model.id === effectiveModelId);
+    if (!effectiveModelId.startsWith('openrouter/')) {
+      return false;
+    }
+    if (modelInfo?.supportsToolCalling === true) {
+      return true;
+    }
+    if (modelInfo?.capabilities?.includes('Tools')) {
+      return true;
+    }
+    return modelInfo?.supportsWebSearch === true;
+  };
+
   // Get the effective web search enabled state - use preset setting if active, otherwise context setting
   const getEffectiveWebSearchEnabled = (): boolean => {
     return activePreset?.webSearchEnabled ?? webSearchEnabled;
+  };
+
+  const getEffectiveImageGenerationEnabled = (): boolean => {
+    return imageGenerationEnabled;
   };
 
   const handleWebSearchToggle = () => {
     // Only allow toggle when no preset is active
     if (!activePreset) {
       setWebSearchEnabled(!webSearchEnabled);
+    }
+  };
+
+  const handleImageGenerationToggle = () => {
+    if (!activePreset) {
+      setImageGenerationEnabled(!imageGenerationEnabled);
     }
   };
 
@@ -197,20 +224,25 @@ export const Textarea = ({
   // Use a more resilient check that handles temporary null values during hot reload
   const userCredits = user?.credits ?? 0;
   const hasEnoughCreditsForWebSearch = user?.hasCredits !== false && userCredits >= WEB_SEARCH_COST;
+  const hasEnoughCreditsForImageGeneration = user?.hasCredits !== false && userCredits >= IMAGE_GENERATION_COST;
   const isAnonymousUser = !user || user?.isAnonymous;
-  // Only allow web search if user has sufficient credits and is not anonymous
   const canUseWebSearch = !isAnonymousUser && hasEnoughCreditsForWebSearch;
+  const canUseImageGeneration = !isAnonymousUser && hasEnoughCreditsForImageGeneration;
 
   // Calculate estimated cost
   const getEstimatedCost = () => {
-    const baseCost = 1; // Base cost for any message
+    const baseCost = 1;
     const effectiveWebSearchEnabled = getEffectiveWebSearchEnabled();
-    const webSearchCost = effectiveWebSearchEnabled ? WEB_SEARCH_COST : 0; // per search when enabled
-    return baseCost + webSearchCost;
+    const effectiveImageGenerationEnabled = getEffectiveImageGenerationEnabled();
+    const webSearchCost = effectiveWebSearchEnabled ? WEB_SEARCH_COST : 0;
+    const imageGenerationCost = effectiveImageGenerationEnabled ? IMAGE_GENERATION_COST : 0;
+    return baseCost + webSearchCost + imageGenerationCost;
   };
 
   const estimatedCost = getEstimatedCost();
-  const shouldShowCostWarning = getEffectiveWebSearchEnabled() && canUseWebSearch && safeInput.trim();
+  const shouldShowCostWarning =
+    (getEffectiveWebSearchEnabled() && canUseWebSearch || getEffectiveImageGenerationEnabled() && canUseImageGeneration) &&
+    safeInput.trim();
 
   // Focus textarea after model selection
   const handleModelSelected = () => {
@@ -572,6 +604,22 @@ export const Textarea = ({
       : `Enable web search (${WEB_SEARCH_COST} credits per search)`;
   };
 
+  const getImageGenerationTooltipMessage = () => {
+    if (!effectiveModelSupportsImageGeneration()) {
+      return "Create image requires an OpenRouter model with tool calling support";
+    }
+    if (isAnonymousUser) {
+      return "Sign in and purchase credits to create images";
+    }
+    if (!hasEnoughCreditsForImageGeneration) {
+      return "Purchase credits to create images";
+    }
+    const effectiveImageGenerationEnabled = getEffectiveImageGenerationEnabled();
+    return effectiveImageGenerationEnabled
+      ? `Create image — on (${IMAGE_GENERATION_COST} credits per image + message tokens)`
+      : "Create image — off (turn on to let the model generate images)";
+  };
+
 
 
   return (
@@ -775,7 +823,11 @@ export const Textarea = ({
             <TooltipContent side="top" sideOffset={8}>
               <div className="text-xs">
                 <div>Estimated cost: {estimatedCost} credits</div>
-                <div className="text-muted-foreground">Base: 1 credit + Web Search: up to {WEB_SEARCH_COST} credits per search</div>
+                <div className="text-muted-foreground">
+                  Base: 1 credit
+                  {getEffectiveWebSearchEnabled() ? ` + Web Search: up to ${WEB_SEARCH_COST} credits per search` : ''}
+                  {getEffectiveImageGenerationEnabled() ? ` + Create image: up to ${IMAGE_GENERATION_COST} credits per image` : ''}
+                </div>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -835,6 +887,33 @@ export const Textarea = ({
                       : 'Attach file (images require a vision model)'}
                 </TooltipContent>
               </Tooltip>
+
+              {isMounted && !activePreset && getEffectiveModel().startsWith("openrouter/") && effectiveModelSupportsImageGeneration() && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={getEffectiveImageGenerationEnabled() ? "Create image enabled" : "Create image disabled"}
+                      onClick={handleImageGenerationToggle}
+                      disabled={!canUseImageGeneration}
+                      className={`${
+                        isMobileScreen ? 'h-8 w-8' : 'h-9 w-9'
+                      } flex items-center justify-center rounded-full border transition-colors duration-150 ${
+                        !canUseImageGeneration
+                          ? 'bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50'
+                          : getEffectiveImageGenerationEnabled()
+                            ? 'bg-primary text-primary-foreground border-primary shadow'
+                            : 'bg-background border-border text-muted-foreground hover:bg-accent'
+                      } focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                    >
+                      <ImagePlus className={isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={8}>
+                    {getImageGenerationTooltipMessage()}
+                  </TooltipContent>
+                </Tooltip>
+              )}
               
               {/* Only show web search button when no preset is active and model supports it */}
               {isMounted && !activePreset && getEffectiveModel().startsWith("openrouter/") && effectiveModelSupportsWebSearch() && (

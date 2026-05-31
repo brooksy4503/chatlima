@@ -1,9 +1,13 @@
 import type { UIMessage } from 'ai';
 import {
+  createSyntheticImageGenerationToolPart,
   createSyntheticWebSearchToolPart,
+  extractGeneratedImageUrlsFromStreamEvent,
+  getGeneratedImageUrlFromToolResult,
   getReasoningPartText,
   getUIMessageText,
   hasWebSearchToolPart,
+  injectSyntheticImageGenerationToolParts,
   injectSyntheticWebSearchToolPart,
   isWebSearchToolName,
   isWebSearchToolPart,
@@ -11,6 +15,7 @@ import {
   messageHasAssistantText,
   shouldShowLiveWebSearchIndicator,
   shouldShowSyntheticCompletedWebSearch,
+  userMessageRequestsImageCreation,
 } from '@/lib/message-utils';
 
 describe('message-utils', () => {
@@ -68,7 +73,7 @@ describe('message-utils', () => {
         isWebSearchToolPart({
           type: 'tool-invocation',
           toolInvocation: { toolName: 'openrouter:web_search' },
-        } as UIMessage['parts'][number])
+        } as unknown as UIMessage['parts'][number])
       ).toBe(true);
 
       expect(
@@ -76,7 +81,7 @@ describe('message-utils', () => {
           type: 'tool-web_search',
           toolCallId: 'call-1',
           state: 'output-available',
-        } as UIMessage['parts'][number])
+        } as unknown as UIMessage['parts'][number])
       ).toBe(true);
     });
 
@@ -186,6 +191,114 @@ describe('message-utils', () => {
       ] as UIMessage['parts'];
 
       expect(injectSyntheticWebSearchToolPart(parts)).toBe(parts);
+    });
+  });
+
+  describe('userMessageRequestsImageCreation', () => {
+    it('detects explicit image creation prompts', () => {
+      expect(
+        userMessageRequestsImageCreation(
+          'Create an image of a crowd of people at the horse races'
+        )
+      ).toBe(true);
+    });
+
+    it('returns false for unrelated prompts', () => {
+      expect(userMessageRequestsImageCreation('What is the weather today?')).toBe(false);
+    });
+  });
+
+  describe('image generation stream extraction', () => {
+    it('extracts image URLs from tool results and response messages', () => {
+      const urls = extractGeneratedImageUrlsFromStreamEvent(
+        {
+          toolResults: [{ imageUrl: 'https://cdn.example.com/generated.png' }],
+        },
+        {
+          messages: [
+            {
+              role: 'assistant',
+              content: [
+                {
+                  type: 'image_url',
+                  image_url: { url: 'https://cdn.example.com/inline.png' },
+                },
+              ],
+            },
+          ],
+        }
+      );
+
+      expect(urls).toEqual([
+        'https://cdn.example.com/generated.png',
+        'https://cdn.example.com/inline.png',
+      ]);
+    });
+
+    it('extracts image URLs from AI SDK tool-result wrappers', () => {
+      const urls = extractGeneratedImageUrlsFromStreamEvent({
+        toolResults: [
+          {
+            type: 'tool-result',
+            toolCallId: 'call-1',
+            toolName: 'image_generation',
+            output: { status: 'ok', imageUrl: 'https://cdn.example.com/from-output.png' },
+          },
+        ],
+        steps: [
+          {
+            content: [
+              {
+                type: 'tool-result',
+                toolCallId: 'call-2',
+                toolName: 'image_generation',
+                output: { status: 'ok', imageUrl: 'https://cdn.example.com/from-step-content.png' },
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(urls).toEqual([
+        'https://cdn.example.com/from-output.png',
+        'https://cdn.example.com/from-step-content.png',
+      ]);
+    });
+
+    it('reads nested output from getGeneratedImageUrlFromToolResult', () => {
+      expect(
+        getGeneratedImageUrlFromToolResult({
+          type: 'tool-result',
+          toolName: 'image_generation',
+          output: { status: 'ok', imageUrl: 'https://cdn.example.com/nested.png' },
+        })
+      ).toBe('https://cdn.example.com/nested.png');
+    });
+  });
+
+  describe('synthetic image generation tool parts', () => {
+    it('injects synthetic image tool parts before text when missing', () => {
+      const parts = [{ type: 'text', text: 'Here is your image.' }] as UIMessage['parts'];
+
+      const updated = injectSyntheticImageGenerationToolParts(parts, [
+        'https://cdn.example.com/generated.png',
+      ]);
+
+      expect(updated).toHaveLength(2);
+      expect(updated[0]).toMatchObject({
+        type: 'tool-image_generation',
+        output: { imageUrl: 'https://cdn.example.com/generated.png' },
+      });
+    });
+
+    it('creates provider-executed synthetic image tool parts', () => {
+      const part = createSyntheticImageGenerationToolPart('https://cdn.example.com/a.png');
+
+      expect(part).toMatchObject({
+        type: 'tool-image_generation',
+        providerExecuted: true,
+        output: { imageUrl: 'https://cdn.example.com/a.png' },
+      });
     });
   });
 });

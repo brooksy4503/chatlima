@@ -8,6 +8,7 @@ export const Messages = ({
   status,
   chatTokenUsage,
   webSearchEnabled = false,
+  imageGenerationEnabled = false,
 }: {
   messages: (UIMessage & { hasWebSearch?: boolean })[];
   isLoading: boolean;
@@ -23,6 +24,7 @@ export const Messages = ({
     totalDuration?: number;
   };
   webSearchEnabled?: boolean;
+  imageGenerationEnabled?: boolean;
 }) => {
   const lastMessage = messages[messages.length - 1];
   const lastMessageTextLength = lastMessage?.parts
@@ -54,6 +56,7 @@ export const Messages = ({
             status={status}
             chatTokenUsage={chatTokenUsage}
             webSearchEnabled={webSearchEnabled}
+            imageGenerationEnabled={imageGenerationEnabled}
           />
         ))}
         <div className="h-1" ref={endRef} />

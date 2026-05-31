@@ -44,9 +44,15 @@ export function ToolInvocation({
             toolName.endsWith(":web_search") ||
             toolName.includes("web_search")
           ? "Searching the web"
-          : toolName.endsWith(".web_fetch")
-            ? "Fetching page"
-            : toolName;
+          : toolName === "image_generation" ||
+              toolName === "openrouter.image_generation" ||
+              toolName === "openrouter:image_generation" ||
+              toolName.endsWith(".image_generation") ||
+              toolName.endsWith(":image_generation")
+            ? "Generating image"
+            : toolName.endsWith(".web_fetch")
+              ? "Fetching page"
+              : toolName;
 
   const variants = {
     collapsed: {

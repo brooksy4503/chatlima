@@ -1,6 +1,11 @@
 import type { UIMessage } from 'ai';
 import { isToolUIPart } from 'ai';
-import { hasWebSearchToolPart, injectSyntheticWebSearchToolPart } from '@/lib/message-utils';
+import {
+  extractGeneratedImageUrls,
+  hasWebSearchToolPart,
+  injectSyntheticImageGenerationToolParts,
+  injectSyntheticWebSearchToolPart,
+} from '@/lib/message-utils';
 import { nanoid } from 'nanoid';
 
 export interface UrlCitation {
@@ -74,13 +79,18 @@ export interface ProcessMessagesForPersistenceParams {
     wasUsed: boolean;
     invocationCount: number;
   };
+  imageGeneration?: {
+    enabled: boolean;
+    wasUsed: boolean;
+    imageUrls: string[];
+  };
 }
 
 /** Apply citations, synthetic web-search tool parts, and return messages ready for DB conversion. */
 export function processMessagesForPersistence(
   params: ProcessMessagesForPersistenceParams
 ): UIMessage[] {
-  const { historyMessages, annotations, webSearch } = params;
+  const { historyMessages, annotations, webSearch, imageGeneration } = params;
   let { assistantMessage } = params;
 
   if (
@@ -94,6 +104,21 @@ export function processMessagesForPersistence(
       parts: injectSyntheticWebSearchToolPart(
         assistantMessage.parts ?? [],
         Math.max(webSearch.invocationCount, 1)
+      ),
+    };
+  }
+
+  if (
+    imageGeneration?.enabled &&
+    imageGeneration.wasUsed &&
+    imageGeneration.imageUrls.length > 0 &&
+    extractGeneratedImageUrls(assistantMessage.parts).length === 0
+  ) {
+    assistantMessage = {
+      ...assistantMessage,
+      parts: injectSyntheticImageGenerationToolParts(
+        assistantMessage.parts ?? [],
+        imageGeneration.imageUrls
       ),
     };
   }

@@ -18,13 +18,16 @@ jest.mock('ai', () => {
     const actual = jest.requireActual('ai');
     return {
         ...actual,
-        streamText: (...args: unknown[]) => mockStreamText(...args),
+        streamText: (...args: unknown[]) =>
+            (mockStreamText as jest.Mock<unknown, unknown[]>)(...args),
     };
 });
 
 jest.mock('@/ai/providers', () => ({
-    getLanguageModelWithKeys: (...args: unknown[]) => mockGetLanguageModelWithKeys(...args),
-    createOpenRouterClientWithKey: (...args: unknown[]) => mockCreateOpenRouterClient(...args),
+    getLanguageModelWithKeys: (...args: unknown[]) =>
+        (mockGetLanguageModelWithKeys as jest.Mock<unknown, unknown[]>)(...args),
+    createOpenRouterClientWithKey: (...args: unknown[]) =>
+        (mockCreateOpenRouterClient as jest.Mock<unknown, unknown[]>)(...args),
     usesTagBasedReasoningExtraction: jest.fn(() => false),
     wrapWithTagBasedReasoning: jest.fn((model: unknown) => model),
     model: {},
@@ -154,7 +157,7 @@ jest.mock('@/lib/openrouter-utils', () => ({
 jest.mock('@/lib/services/chatWebSearchService', () => {
     const actual = jest.requireActual('@/lib/services/chatWebSearchService');
     actual.ChatWebSearchService.buildOpenRouterServerTools = (...args: unknown[]) =>
-        mockBuildOpenRouterServerTools(...args);
+        (mockBuildOpenRouterServerTools as jest.Mock<unknown, unknown[]>)(...args);
     return actual;
 });
 

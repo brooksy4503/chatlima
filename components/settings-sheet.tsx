@@ -9,6 +9,7 @@ import { MCPServersTab } from "./settings/mcp-servers-tab";
 import { ProviderHealthTab } from "./settings/provider-health-tab";
 import { PreferencesTab } from "./settings/preferences-tab";
 import { MCPServer } from "@/lib/context/mcp-context";
+import type { ImageGenerationOutputFormat, ImageGenerationQuality } from "@/lib/openrouter-image-generation-tool";
 
 interface SettingsSheetProps {
   open: boolean;
@@ -25,6 +26,15 @@ interface SettingsSheetProps {
   webSearchEnabled: boolean;
   webSearchContextSize: 'low' | 'medium' | 'high';
   onWebSearchContextSizeChange: (value: 'low' | 'medium' | 'high') => void;
+  imageGenerationEnabled: boolean;
+  imageGenerationQuality: ImageGenerationQuality;
+  onImageGenerationQualityChange: (value: ImageGenerationQuality) => void;
+  imageGenerationAspectRatio: string;
+  onImageGenerationAspectRatioChange: (value: string) => void;
+  imageGenerationOutputFormat: ImageGenerationOutputFormat;
+  onImageGenerationOutputFormatChange: (value: ImageGenerationOutputFormat) => void;
+  imageGenerationModel: string;
+  onImageGenerationModelChange: (value: string) => void;
 }
 
 export function SettingsSheet({
@@ -42,6 +52,15 @@ export function SettingsSheet({
   webSearchEnabled,
   webSearchContextSize,
   onWebSearchContextSizeChange,
+  imageGenerationEnabled,
+  imageGenerationQuality,
+  onImageGenerationQualityChange,
+  imageGenerationAspectRatio,
+  onImageGenerationAspectRatioChange,
+  imageGenerationOutputFormat,
+  onImageGenerationOutputFormatChange,
+  imageGenerationModel,
+  onImageGenerationModelChange,
 }: SettingsSheetProps) {
   const [activeTab, setActiveTab] = useState(defaultTab);
 
@@ -129,6 +148,15 @@ export function SettingsSheet({
                 webSearchEnabled={webSearchEnabled}
                 webSearchContextSize={webSearchContextSize}
                 onWebSearchContextSizeChange={onWebSearchContextSizeChange}
+                imageGenerationEnabled={imageGenerationEnabled}
+                imageGenerationQuality={imageGenerationQuality}
+                onImageGenerationQualityChange={onImageGenerationQualityChange}
+                imageGenerationAspectRatio={imageGenerationAspectRatio}
+                onImageGenerationAspectRatioChange={onImageGenerationAspectRatioChange}
+                imageGenerationOutputFormat={imageGenerationOutputFormat}
+                onImageGenerationOutputFormatChange={onImageGenerationOutputFormatChange}
+                imageGenerationModel={imageGenerationModel}
+                onImageGenerationModelChange={onImageGenerationModelChange}
               />
             </TabsContent>
           </div>

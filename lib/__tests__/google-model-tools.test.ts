@@ -1,4 +1,4 @@
-import { tool, jsonSchema, asSchema } from 'ai';
+import { tool, jsonSchema, asSchema, type Tool } from 'ai';
 import { z } from 'zod';
 import {
     cleanToolsForGoogleModels,
@@ -98,7 +98,7 @@ describe('google-model-tools', () => {
             });
 
             const cleaned = cleanToolsForGoogleModels({
-                web_search: providerTool,
+                web_search: providerTool as unknown as Tool,
                 read_file: readFileTool,
                 mcp_search: mcpTool,
             });

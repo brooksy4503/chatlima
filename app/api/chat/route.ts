@@ -1,7 +1,11 @@
 import { streamText, generateText, tool, jsonSchema, stepCountIs, type UIMessage, type LanguageModel, type LanguageModelResponseMetadata } from "ai";
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
 import { generateTitle } from '@/app/actions';
-import { getUIMessageText } from '@/lib/message-utils';
+import {
+    extractGeneratedImageUrlsFromStreamEvent,
+    getUIMessageText,
+    userMessageRequestsImageCreation,
+} from '@/lib/message-utils';
 import {
     buildAssistantMessageForPersistence,
     countPersistableDisplayParts,
@@ -55,6 +59,7 @@ import { ChatMessageProcessingService, type MessageProcessingContext } from '@/l
 import { ChatModelValidationService, type ModelValidationContext, type ModelValidationResult } from '@/lib/services/chatModelValidationService';
 import { ChatMCPServerService, type MCPServerContext, type MCPServerResult } from '@/lib/services/chatMCPServerService';
 import { ChatWebSearchService, type WebSearchContext, type WebSearchResult } from '@/lib/services/chatWebSearchService';
+import { ChatImageGenerationService, type ImageGenerationOptions } from '@/lib/services/chatImageGenerationService';
 import { resolveOpenRouterWebSearchRouteSetup } from '@/lib/services/openRouterWebSearchRouteSetup';
 import { ChatTokenTrackingService, type TokenTrackingContext, type TokenTrackingResult } from '@/lib/services/chatTokenTrackingService';
 import { ChatDatabaseService, type ChatCreationContext, type MessageSavingContext } from '@/lib/services/chatDatabaseService';
@@ -99,6 +104,14 @@ interface MCPServerConfig {
 interface WebSearchOptions {
     enabled: boolean;
     contextSize: 'low' | 'medium' | 'high';
+}
+
+interface ImageGenerationRequestOptions {
+    enabled: boolean;
+    quality?: ImageGenerationOptions['quality'];
+    aspectRatio?: string;
+    outputFormat?: ImageGenerationOptions['outputFormat'];
+    model?: string;
 }
 
 interface UrlCitation {
@@ -392,6 +405,13 @@ export async function POST(req: Request) {
             selectedModel,
             mcpServers: initialMcpServers = [],
             webSearch = { enabled: false, contextSize: 'medium' },
+            imageGeneration = {
+                enabled: false,
+                quality: 'medium' as const,
+                aspectRatio: '1:1',
+                outputFormat: 'png' as const,
+                model: 'openai/gpt-5-image',
+            },
             apiKeys = {},
             attachments = [],
             temperature,
@@ -403,6 +423,7 @@ export async function POST(req: Request) {
             selectedModel: string;
             mcpServers?: MCPServerConfig[];
             webSearch?: WebSearchOptions;
+            imageGeneration?: ImageGenerationRequestOptions;
             apiKeys?: Record<string, string>;
             attachments?: Array<{
                 name: string;
@@ -421,6 +442,7 @@ export async function POST(req: Request) {
             selectedModel,
             attachmentsCount: attachments.length,
             webSearchEnabled: webSearch.enabled,
+            imageGenerationEnabled: imageGeneration.enabled,
             hasTemperature: temperature !== undefined,
             hasMaxTokens: maxTokens !== undefined,
             hasSystemInstruction: systemInstruction !== undefined
@@ -583,6 +605,41 @@ export async function POST(req: Request) {
         }, {
             agenticWebToolsEnabled: accessPolicyFlags.openrouterAgenticWebToolsEnabled,
         });
+
+        const imageGenerationConfig = ChatImageGenerationService.validateAndConfigureImageGeneration({
+            imageGeneration: {
+                enabled: imageGeneration.enabled,
+                quality: imageGeneration.quality ?? 'medium',
+                aspectRatio: imageGeneration.aspectRatio ?? '1:1',
+                outputFormat: imageGeneration.outputFormat ?? 'png',
+                model: imageGeneration.model ?? 'openai/gpt-5-image',
+            },
+            selectedModel,
+            isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
+            isAnonymous: authenticatedUser.isAnonymous,
+            actualCredits: creditValidation.actualCredits,
+            modelInfo: modelValidation.modelInfo,
+        });
+
+        try {
+            ChatImageGenerationService.validateImageGenerationRequest({
+                imageGeneration: {
+                    enabled: imageGeneration.enabled,
+                    quality: imageGeneration.quality ?? 'medium',
+                    aspectRatio: imageGeneration.aspectRatio ?? '1:1',
+                    outputFormat: imageGeneration.outputFormat ?? 'png',
+                    model: imageGeneration.model ?? 'openai/gpt-5-image',
+                },
+                selectedModel,
+                isUsingOwnApiKeys: checkIfUsingOwnApiKeys(selectedModel, apiKeys),
+                isAnonymous: authenticatedUser.isAnonymous,
+                actualCredits: creditValidation.actualCredits,
+                modelInfo: modelValidation.modelInfo,
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Image generation is not available.';
+            return createErrorResponse('FEATURE_RESTRICTED', message, 403);
+        }
 
         // 8. Initialize MCP servers
         const mcpResult = await ChatMCPServerService.initializeMCPServers({
@@ -906,6 +963,14 @@ export async function POST(req: Request) {
             console.log(`[Web Search] DISABLED`);
         }
 
+        if (imageGenerationConfig.enabled) {
+            console.log(`[Image Generation] ENABLED (model: ${imageGenerationConfig.model}, quality: ${imageGenerationConfig.quality}, aspect: ${imageGenerationConfig.aspectRatio})`);
+        } else if (imageGeneration.enabled) {
+            console.log(`[Image Generation] Requested but not available for ${selectedModel}`);
+        } else {
+            console.log(`[Image Generation] DISABLED`);
+        }
+
         let effectiveWebSearchEnabled = webSearchConfig.enabled;
         let openRouterServerTools: Record<string, unknown> = {};
 
@@ -960,7 +1025,31 @@ export async function POST(req: Request) {
         const allTools = {
             ...baseTools,
             ...openRouterServerTools,
+            ...ChatImageGenerationService.buildOpenRouterServerTools(
+                imageGenerationConfig,
+                apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
+            ),
         };
+
+        const lastUserMessageText = (() => {
+            for (let i = messages.length - 1; i >= 0; i--) {
+                const msg = messages[i];
+                if (msg.role === 'user') {
+                    return getUIMessageText(msg);
+                }
+            }
+            return '';
+        })();
+
+        const shouldForceImageGenerationTool =
+            imageGenerationConfig.enabled &&
+            userMessageRequestsImageCreation(lastUserMessageText);
+
+        if (shouldForceImageGenerationTool) {
+            console.log(
+                `[Image Generation] Forcing image_generation tool on first step for ${selectedModel}`
+            );
+        }
 
         // Always set logprobs: false for these models at the providerOptions level for streamText
         if (
@@ -1023,6 +1112,14 @@ You have web search capabilities enabled. When you use web search:
 2. Use the format [domain.com](full-url) for citations
 3. Only cite reliable and relevant sources
 4. Integrate the information naturally into your responses
+` : ''}
+
+${imageGenerationConfig.enabled ? `
+## Image Generation Enabled:
+You have the \`image_generation\` server tool available. Use it when the user wants you to create, draw, or generate an image.
+1. Call the tool with a detailed visual prompt when image creation is requested or clearly implied
+2. After generation, describe what was created and reference the image naturally in your reply
+3. If generation fails due to content policy, explain clearly and suggest a revised prompt
 ` : ''}
 
 ## How to Respond:
@@ -1148,6 +1245,15 @@ You have web search capabilities enabled. When you use web search:
                     })
                     : false;
 
+                const imageUrlsFromStream = extractGeneratedImageUrlsFromStreamEvent(
+                    event,
+                    response
+                );
+                const imageGenerationWasUsed =
+                    imageGenerationConfig.enabled &&
+                    (ChatImageGenerationService.countImageGenerationInvocations(event?.steps) > 0 ||
+                        imageUrlsFromStream.length > 0);
+
                 const processedMessages = processMessagesForPersistence({
                     historyMessages,
                     assistantMessage,
@@ -1158,12 +1264,28 @@ You have web search capabilities enabled. When you use web search:
                         wasUsed: webSearchWasUsed,
                         invocationCount: webSearchInvocationCount,
                     },
+                    imageGeneration: imageGenerationConfig.enabled
+                        ? {
+                              enabled: true,
+                              wasUsed: imageGenerationWasUsed,
+                              imageUrls: imageUrlsFromStream,
+                          }
+                        : undefined,
                 });
+
+                const processedAssistant = processedMessages.find((m) => m.role === 'assistant');
+                if (processedAssistant && source === 'ui') {
+                    streamFinishState.uiResponseMessage = processedAssistant;
+                }
 
                 const logTag = source === 'ui' ? 'uiOnFinish' : 'onFinish';
                 console.log(`[Chat ${id}][${logTag}] Persisting assistant parts:`, {
-                    partTypes: assistantMessage.parts?.map((p) => p.type) ?? [],
-                    partCount: assistantMessage.parts?.length ?? 0,
+                    partTypes:
+                        processedMessages
+                            .find((m) => m.role === 'assistant')
+                            ?.parts?.map((p) => p.type) ?? [],
+                    partCount:
+                        processedMessages.find((m) => m.role === 'assistant')?.parts?.length ?? 0,
                 });
 
                 const dbMessages = (convertToDBMessages(processedMessages as any, id) as any[]).map(msg => ({
@@ -1185,7 +1307,7 @@ You have web search capabilities enabled. When you use web search:
                 await saveMessages({ messages: dbMessages });
                 streamFinishState.messagesSavedSuccessfully = true;
                 streamFinishState.savedAssistantPartCount = countPersistableDisplayParts(
-                    assistantMessage.parts
+                    processedAssistant?.parts ?? assistantMessage.parts
                 );
                 console.log(`[Chat ${id}][${logTag}] Successfully saved messages.`);
 
@@ -1292,15 +1414,22 @@ You have web search capabilities enabled. When you use web search:
 
             let additionalCost = 0;
             if (shouldDeductCredits) {
-                additionalCost = ChatWebSearchService.computeWebSearchCreditCost({
-                    webSearchEnabled: webSearchConfig.enabled,
-                    useAgenticServerTools: webSearchConfig.useAgenticServerTools,
-                    isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
-                    shouldDeductCredits,
-                    steps: event.steps,
-                    usage: event.usage,
-                    hasCitationAnnotations: (response.annotations?.length || 0) > 0,
-                });
+                additionalCost =
+                    ChatWebSearchService.computeWebSearchCreditCost({
+                        webSearchEnabled: webSearchConfig.enabled,
+                        useAgenticServerTools: webSearchConfig.useAgenticServerTools,
+                        isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
+                        shouldDeductCredits,
+                        steps: event.steps,
+                        usage: event.usage,
+                        hasCitationAnnotations: (response.annotations?.length || 0) > 0,
+                    }) +
+                    ChatImageGenerationService.computeImageGenerationCreditCost({
+                        imageGenerationEnabled: imageGenerationConfig.enabled,
+                        isUsingOwnApiKeys: callbackIsUsingOwnApiKeys,
+                        shouldDeductCredits,
+                        steps: event.steps,
+                    });
             }
 
             const tokenUsageData = streamFinishState.tokenUsageData;
@@ -1389,6 +1518,21 @@ You have web search capabilities enabled. When you use web search:
             maxOutputTokens: effectiveMaxTokens,
             messages: formattedMessages,
             tools: toolsToUse,
+            ...(shouldForceImageGenerationTool
+                ? {
+                      prepareStep: async ({ stepNumber }: { stepNumber: number }) => {
+                          if (stepNumber === 0) {
+                              return {
+                                  toolChoice: {
+                                      type: 'tool' as const,
+                                      toolName: 'image_generation' as any,
+                                  },
+                              };
+                          }
+                          return {};
+                      },
+                  }
+                : {}),
             stopWhen: stepCountIs(20),
             user: authenticatedUser.isAnonymous
                 ? `chatlima_anon_${authenticatedUser.userId}`

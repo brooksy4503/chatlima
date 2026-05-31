@@ -279,6 +279,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'high' as const,
                 canUseWebSearch: true,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: WEB_SEARCH_COST
             };
 
@@ -297,6 +299,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium' as const,
                 canUseWebSearch: true,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: 0
             };
 
@@ -313,6 +317,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium' as const,
                 canUseWebSearch: true,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: 0
             };
 
@@ -327,6 +333,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium' as const,
                 canUseWebSearch: true,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: WEB_SEARCH_COST
             };
 
@@ -341,6 +349,8 @@ describe('ChatWebSearchService', () => {
                 contextSize: 'medium' as const,
                 canUseWebSearch: true,
                 modelSupportsWebSearch: true,
+                supportsToolCalling: true,
+                useAgenticServerTools: false,
                 additionalCost: WEB_SEARCH_COST
             };
 

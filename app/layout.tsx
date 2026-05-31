@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { WebSearchProvider } from "@/lib/context/web-search-context";
+import { ImageGenerationProvider } from "@/lib/context/image-generation-context";
 import { cn } from "@/lib/utils";
 import BuildInfo from "@/components/ui/BuildInfo";
 import { IOSInstallPrompt } from "@/components/ios-install-prompt";
@@ -83,6 +84,7 @@ export default function RootLayout({
       <body className={`${inter.className}`}>
         <Providers>
           <WebSearchProvider>
+            <ImageGenerationProvider>
             <div className="flex h-dvh w-full">
               {/* Sidebar - rendered directly to avoid hydration mismatch (lazy + Suspense caused server fallback to differ from client Sidebar) */}
               <ChatSidebar />
@@ -95,6 +97,7 @@ export default function RootLayout({
               </SidebarInset>
             </div>
             <IOSInstallPrompt />
+            </ImageGenerationProvider>
           </WebSearchProvider>
         </Providers>
         <Analytics />

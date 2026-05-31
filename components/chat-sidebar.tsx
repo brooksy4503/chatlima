@@ -41,6 +41,7 @@ import { useAuth, signOut } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";
+import { useImageGeneration } from "@/lib/context/image-generation-context";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import {
@@ -122,6 +123,17 @@ export function ChatSidebar() {
 
     const { mcpServers, setMcpServers, selectedMcpServers, setSelectedMcpServers } = useMCP();
     const { webSearchContextSize, setWebSearchContextSize, webSearchEnabled } = useWebSearch();
+    const {
+        imageGenerationEnabled,
+        imageGenerationQuality,
+        setImageGenerationQuality,
+        imageGenerationAspectRatio,
+        setImageGenerationAspectRatio,
+        imageGenerationOutputFormat,
+        setImageGenerationOutputFormat,
+        imageGenerationModel,
+        setImageGenerationModel,
+    } = useImageGeneration();
     const isAnyOpenRouterModelSelected = true;
 
     const renderChatSkeletons = () => {
@@ -574,6 +586,15 @@ export function ChatSidebar() {
                 webSearchEnabled={webSearchEnabled}
                 webSearchContextSize={webSearchContextSize}
                 onWebSearchContextSizeChange={setWebSearchContextSize}
+                imageGenerationEnabled={imageGenerationEnabled}
+                imageGenerationQuality={imageGenerationQuality}
+                onImageGenerationQualityChange={setImageGenerationQuality}
+                imageGenerationAspectRatio={imageGenerationAspectRatio}
+                onImageGenerationAspectRatioChange={setImageGenerationAspectRatio}
+                imageGenerationOutputFormat={imageGenerationOutputFormat}
+                onImageGenerationOutputFormatChange={setImageGenerationOutputFormat}
+                imageGenerationModel={imageGenerationModel}
+                onImageGenerationModelChange={setImageGenerationModel}
             />
         </>
     );
