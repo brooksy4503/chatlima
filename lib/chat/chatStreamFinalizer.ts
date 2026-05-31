@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import type { UIMessage, LanguageModelResponseMetadata } from 'ai';
 import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
 import { db } from '@/lib/db';
@@ -54,6 +55,30 @@ export interface ChatStreamFinalizerParams {
 const UI_FINISH_WAIT_MS = 6000;
 const UI_FINISH_POLL_MS = 200;
 
+/** Persist client-side history (excluding in-flight assistant placeholder) before streaming. */
+export async function persistClientMessagesAtRequestStart(params: {
+  chatId: string;
+  clientMessages: UIMessage[];
+}): Promise<void> {
+  const { chatId, clientMessages } = params;
+  const trailingAssistant = clientMessages[clientMessages.length - 1];
+  const historyMessages =
+    trailingAssistant?.role === 'assistant'
+      ? clientMessages.slice(0, -1)
+      : clientMessages;
+
+  if (historyMessages.length === 0) {
+    return;
+  }
+
+  const dbMessages = convertToDBMessages(historyMessages, chatId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await saveMessages({ messages: dbMessages as any });
+  console.log(
+    `[Chat ${chatId}][requestStart] Saved ${dbMessages.length} client message(s) before stream.`
+  );
+}
+
 export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
   const {
     chatId,
@@ -93,9 +118,19 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
       const event = state.streamFinishEvent;
       const response = state.streamFinishResponse;
 
-      if (!uiMsg?.parts?.length && !(event?.text as string | undefined)) {
+      const imageUrlsFromStreamPreview = event
+        ? extractGeneratedImageUrlsFromStreamEvent(event, response)
+        : [];
+      const canPersistFromStreamImages =
+        plan.imageGenerationConfig.enabled && imageUrlsFromStreamPreview.length > 0;
+
+      if (
+        !uiMsg?.parts?.length &&
+        !(event?.text as string | undefined) &&
+        !canPersistFromStreamImages
+      ) {
         console.warn(
-          `[Chat ${chatId}][${source === 'ui' ? 'uiOnFinish' : 'onFinish'}] Skipping persist: no UI parts and no stream text yet`
+          `[Chat ${chatId}][${source === 'ui' ? 'uiOnFinish' : 'onFinish'}] Skipping persist: no UI parts, stream text, or image URLs yet`
         );
         return;
       }
@@ -379,6 +414,16 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
     }),
     async handleUiStreamFinish(responseMessage: UIMessage) {
       state.uiResponseMessage = responseMessage;
+
+      // streamText onFinish often arrives after UI onFinish for image/tool flows.
+      for (
+        let i = 0;
+        i < UI_FINISH_WAIT_MS / UI_FINISH_POLL_MS && !state.streamFinishEvent;
+        i++
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, UI_FINISH_POLL_MS));
+      }
+
       await persistAssistantMessages('ui', responseMessage);
     },
     handleStreamTextFinish(event: Record<string, unknown>, response: OpenRouterStreamResponse) {
@@ -422,7 +467,7 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
         requestStartTime,
       });
 
-      void (async () => {
+      after(async () => {
         try {
           await finalizeAfterStream();
         } catch (persistError) {
@@ -433,7 +478,7 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
         } catch (tokenError) {
           console.error(`[Chat ${chatId}][onFinish] Failed token tracking:`, tokenError);
         }
-      })();
+      });
     },
   };
 }

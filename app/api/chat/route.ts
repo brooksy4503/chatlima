@@ -17,7 +17,10 @@ import { parseChatRequestBody } from '@/lib/chat/chatRequest';
 import { createErrorResponse } from '@/lib/chat/createErrorResponse';
 import { runChatPreflight } from '@/lib/chat/chatPreflight';
 import { buildChatStreamPlan } from '@/lib/chat/buildChatStreamPlan';
-import { createChatStreamFinalizer } from '@/lib/chat/chatStreamFinalizer';
+import {
+  createChatStreamFinalizer,
+  persistClientMessagesAtRequestStart,
+} from '@/lib/chat/chatStreamFinalizer';
 import type { OpenRouterStreamResponse } from '@/lib/chat/chatStreamFinalizer';
 
 export { createErrorResponse } from '@/lib/chat/createErrorResponse';
@@ -138,6 +141,18 @@ export async function POST(req: Request) {
     }
     const plan = planResult.plan;
 
+    try {
+      await persistClientMessagesAtRequestStart({
+        chatId,
+        clientMessages: chatBody.messages,
+      });
+    } catch (earlyPersistError) {
+      console.error(
+        `[Chat ${chatId}][requestStart] Failed to persist client messages:`,
+        earlyPersistError
+      );
+    }
+
     const finalizer = createChatStreamFinalizer({
       chatId,
       requestId,
@@ -234,10 +249,12 @@ export async function POST(req: Request) {
     return result.toUIMessageStreamResponse({
       originalMessages: chatBody.messages,
       sendReasoning: true,
-      onFinish: ({ responseMessage }) => {
-        void finalizer.handleUiStreamFinish(responseMessage).catch((err) => {
+      onFinish: async ({ responseMessage }) => {
+        try {
+          await finalizer.handleUiStreamFinish(responseMessage);
+        } catch (err) {
           console.error(`[Chat ${chatId}][uiOnFinish] Unhandled error:`, err);
-        });
+        }
       },
       onError: (error: unknown) => {
         const err = error as {

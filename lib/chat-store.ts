@@ -48,13 +48,11 @@ export async function saveMessages({
     if (dbMessages.length > 0) {
       const chatId = dbMessages[0].chatId;
 
-      // First delete any existing messages for this chat
-      await db
-        .delete(messages)
-        .where(eq(messages.chatId, chatId));
-
-      // Then insert the new messages
-      return await db.insert(messages).values(dbMessages);
+      // Replace chat messages atomically so a failed insert cannot leave an empty chat.
+      return await db.transaction(async (tx) => {
+        await tx.delete(messages).where(eq(messages.chatId, chatId));
+        return tx.insert(messages).values(dbMessages);
+      });
     }
     return null;
   } catch (error) {
