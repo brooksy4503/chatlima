@@ -9,6 +9,7 @@ import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation }
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 
 type AIMessage = UIMessage & {
+  createdAt?: Date | string;
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
 };
@@ -62,11 +63,36 @@ export async function saveMessages({
   }
 }
 
+function parseMessageCreatedAt(createdAt: AIMessage['createdAt']): Date | null {
+  if (createdAt instanceof Date && !Number.isNaN(createdAt.getTime())) {
+    return createdAt;
+  }
+
+  if (typeof createdAt === 'string') {
+    const parsed = new Date(createdAt);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
 // Function to convert AI messages to DB format
 export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DBMessage[] {
-  return aiMessages.map(msg => {
+  const baseTimestamp = Date.now();
+  let previousTimestamp = 0;
+
+  return aiMessages.map((msg, index) => {
     // Use existing id or generate a new one
     const messageId = msg.id || nanoid();
+    const parsedCreatedAt = parseMessageCreatedAt(msg.createdAt);
+    let createdAt = parsedCreatedAt ?? new Date(baseTimestamp + index);
+
+    if (createdAt.getTime() <= previousTimestamp) {
+      createdAt = new Date(previousTimestamp + 1);
+    }
+    previousTimestamp = createdAt.getTime();
 
     // If msg has parts, use them directly
     if (msg.parts?.length) {
@@ -77,7 +103,7 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
         parts: msg.parts,
         hasWebSearch: msg.hasWebSearch || false,
         webSearchContextSize: msg.webSearchContextSize || 'medium',
-        createdAt: new Date()
+        createdAt
       };
     }
 
@@ -93,7 +119,7 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
       parts,
       hasWebSearch: msg.hasWebSearch || false,
       webSearchContextSize: msg.webSearchContextSize || 'medium',
-      createdAt: new Date()
+      createdAt
     };
   });
 }

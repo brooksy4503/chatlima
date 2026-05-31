@@ -43,6 +43,7 @@ import { hasProviderByokForModel } from "@/lib/services/accessGateService";
 import { getUIMessageText } from "@/lib/message-utils";
 
 type ChatUIMessage = UIMessage & {
+  createdAt?: Date | string;
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
 };
@@ -242,6 +243,7 @@ export default function Chat() {
       id: msg.id,
       role: msg.role as ChatUIMessage['role'],
       parts: msg.parts,
+      createdAt: msg.createdAt,
       hasWebSearch: msg.hasWebSearch,
       webSearchContextSize: msg.webSearchContextSize,
     }));
