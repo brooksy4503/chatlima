@@ -1,13 +1,24 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('ChatLima Basic UI Tests', () => {
-
-    test('should load page and display core interface elements', async ({ page }) => {
-        // Navigate to the home page
+    test('should load public landing page', async ({ page }) => {
         await page.goto('/');
 
+        await expect(page).toHaveTitle(/ChatLima - AI Chat With 300\+ Models/);
+        await expect(page.getByRole('heading', { name: /One AI chat app for 300\+ models/i })).toBeVisible();
+        await expect(page.getByRole('link', { name: /Start Chatting/i })).toHaveAttribute('href', '/chat');
+        await expect(page.getByPlaceholder('Send a message...')).toHaveCount(0);
+        await expect(page.getByRole('button', { name: /Open sidebar/i })).toHaveCount(0);
+
+        console.log('✅ Landing page loaded successfully');
+    });
+
+    test('should load page and display core interface elements', async ({ page }) => {
+        // Navigate to the chat app
+        await page.goto('/chat');
+
         // Verify the page title
-        await expect(page).toHaveTitle('ChatLima');
+        await expect(page).toHaveTitle(/ChatLima/);
 
         // Verify the main heading is visible
         await expect(page.getByRole('heading', { name: 'ChatLima' })).toBeVisible();
@@ -26,8 +37,8 @@ test.describe('ChatLima Basic UI Tests', () => {
     });
 
     test('should handle message input field interactions', async ({ page }) => {
-        // Navigate to the home page
-        await page.goto('/');
+        // Navigate to the chat app
+        await page.goto('/chat');
 
         // Get the message input field
         const messageInput = page.getByPlaceholder('Send a message...');
@@ -55,8 +66,8 @@ test.describe('ChatLima Basic UI Tests', () => {
     });
 
     test('should interact with model picker', async ({ page }) => {
-        // Navigate to the home page
-        await page.goto('/');
+        // Navigate to the chat app
+        await page.goto('/chat');
 
         // Get the model picker combobox - it should contain model text with ":" pattern
         const modelPicker = page.getByRole('combobox').filter({ hasText: /:/ }).first();
@@ -81,9 +92,9 @@ test.describe('ChatLima Basic UI Tests', () => {
         console.log('✅ Model picker interaction working correctly');
     });
 
-    test('should navigate home when clicking logo link', async ({ page }) => {
-        // Navigate to the home page
-        await page.goto('/');
+    test('should navigate to new chat when clicking app logo link', async ({ page }) => {
+        // Navigate to the chat app
+        await page.goto('/chat');
 
         // Find the logo link - it should contain "ChatLima" text and be a link
         const logoLink = page.getByRole('link', { name: /ChatLima/i }).first();
@@ -95,18 +106,18 @@ test.describe('ChatLima Basic UI Tests', () => {
         // Click the logo link
         await logoLink.click();
 
-        // Verify we're still on the home page (URL should be base URL)
-        await expect(page).toHaveURL('/');
+        // Verify we're still on the app new-chat page
+        await expect(page).toHaveURL('/chat');
 
         // Verify the page title is still correct
-        await expect(page).toHaveTitle('ChatLima');
+        await expect(page).toHaveTitle(/ChatLima/);
 
         console.log('✅ Logo link navigation working correctly');
     });
 
     test('should toggle sidebar open and close', async ({ page }) => {
-        // Navigate to the home page
-        await page.goto('/');
+        // Navigate to the chat app
+        await page.goto('/chat');
 
         // Find the sidebar toggle button (hamburger menu)
         const sidebarToggle = page.getByRole('button', { name: /toggle sidebar|menu|hamburger/i }).or(
@@ -140,8 +151,8 @@ test.describe('ChatLima Basic UI Tests', () => {
     });
 
     test('should interact with new chat button in sidebar', async ({ page }) => {
-        // Navigate to the home page
-        await page.goto('/');
+        // Navigate to the chat app
+        await page.goto('/chat');
 
         // Find the sidebar toggle button and open sidebar
         const sidebarToggle = page.getByRole('button', { name: /toggle sidebar|menu|hamburger/i }).or(
@@ -171,7 +182,7 @@ test.describe('ChatLima Basic UI Tests', () => {
         await newChatButton.click();
 
         // Verify we're still on a valid page (could be home or new chat route)
-        await expect(page).toHaveTitle('ChatLima');
+        await expect(page).toHaveTitle(/ChatLima/);
 
         // Verify the message input is still available (indicating chat interface is ready)
         await expect(page.getByPlaceholder('Send a message...')).toBeVisible();

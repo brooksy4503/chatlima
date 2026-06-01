@@ -61,7 +61,7 @@ export default function CheckoutErrorPage({ searchParams }: CheckoutErrorPagePro
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
-          <Link href="/" className="w-full">
+          <Link href="/chat" className="w-full">
             <Button variant="default" size="lg" className="w-full">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Return to Chat

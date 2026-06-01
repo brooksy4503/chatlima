@@ -1,16 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { TopNav } from "@/components/top-nav";
 import { Providers } from "./providers";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
-import { WebSearchProvider } from "@/lib/context/web-search-context";
-import { ImageGenerationProvider } from "@/lib/context/image-generation-context";
-import { cn } from "@/lib/utils";
-import BuildInfo from "@/components/ui/BuildInfo";
-import { IOSInstallPrompt } from "@/components/ios-install-prompt";
-import { SidebarInset } from "@/components/ui/sidebar";
-import { ChatSidebar } from "@/components/chat-sidebar";
 
 // Import auth performance monitor in development
 if (process.env.NODE_ENV === 'development') {
@@ -21,8 +13,11 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.chatlima.com/"),
-  title: "ChatLima",
-  description: "Feature-rich MCP-powered AI chatbot with multi-model support and advanced tools.",
+  title: {
+    default: "ChatLima",
+    template: "%s | ChatLima",
+  },
+  description: "AI chat with 300+ models, web search, files, MCP tools, and transparent credit-based pricing.",
   icons: {
     icon: "/logo.png",
     apple: [
@@ -52,12 +47,12 @@ export const metadata: Metadata = {
         height: 630,
       },
     ],
-    description: "Feature-rich MCP-powered AI chatbot with multi-model support and advanced tools.",
+    description: "AI chat with 300+ models, web search, files, MCP tools, and transparent credit-based pricing.",
   },
   twitter: {
     card: "summary_large_image",
     title: "ChatLima",
-    description: "Feature-rich MCP-powered AI chatbot with multi-model support and advanced tools.",
+    description: "AI chat with 300+ models, web search, files, MCP tools, and transparent credit-based pricing.",
     images: ["https://www.chatlima.com/twitter-image.png"],
   },
   other: {
@@ -83,22 +78,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className}`}>
         <Providers>
-          <WebSearchProvider>
-            <ImageGenerationProvider>
-            <div className="flex h-dvh w-full">
-              {/* Sidebar - rendered directly to avoid hydration mismatch (lazy + Suspense caused server fallback to differ from client Sidebar) */}
-              <ChatSidebar />
-              {/* Main content area - SidebarInset handles responsive peer classes */}
-              <SidebarInset className="flex flex-col min-w-0">
-                <TopNav />
-                <div className="flex-1 flex justify-center overflow-auto">
-                  {children}
-                </div>
-              </SidebarInset>
-            </div>
-            <IOSInstallPrompt />
-            </ImageGenerationProvider>
-          </WebSearchProvider>
+          {children}
         </Providers>
         <Analytics />
       </body>

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('ChatLima Anonymous User Test', () => {
     test('should work with anonymous authentication', async ({ page }) => {
         // Step 1: Navigate to ChatLima (using baseURL from config)
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Wait for page to load
         await expect(page).toHaveTitle('ChatLima');
@@ -87,7 +87,7 @@ test.describe('ChatLima Anonymous User Test', () => {
 
     test('should have proper interface elements for anonymous users', async ({ page }) => {
         // Navigate to ChatLima (using baseURL from config)
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Check if ChatLima interface is loaded
         await expect(page.getByRole('heading', { name: 'ChatLima' })).toBeVisible();

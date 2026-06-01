@@ -96,7 +96,7 @@ export default function SharedPresetPage() {
       setImporting(true);
       await importSharedPreset(shareId);
       toast.success('Preset imported successfully!');
-      router.push('/'); // Redirect to home page
+      router.push('/chat'); // Redirect to new chat page
     } catch (error) {
       console.error('Error importing preset:', error);
       toast.error('Failed to import preset. Please try again.');
@@ -137,7 +137,7 @@ export default function SharedPresetPage() {
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.push('/')} className="w-full">
+            <Button onClick={() => router.push('/chat')} className="w-full">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go Home
             </Button>
@@ -158,7 +158,7 @@ export default function SharedPresetPage() {
         <div className="flex items-center gap-4 mb-8">
           <Button
             variant="ghost"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/chat')}
             className="shrink-0"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

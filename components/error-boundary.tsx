@@ -138,7 +138,7 @@ function DefaultErrorFallback({
   const router = useRouter();
 
   const handleGoHome = () => {
-    router.push('/');
+    router.push('/chat');
   };
 
   const handleReportError = () => {

@@ -63,6 +63,12 @@ export async function GET(request: NextRequest) {
             priority: '1.0'
         },
         {
+            url: '/chat',
+            lastmod: currentDate,
+            changefreq: 'weekly',
+            priority: '0.5'
+        },
+        {
             url: '/models',
             lastmod: currentDate,
             changefreq: 'daily',
@@ -73,6 +79,18 @@ export async function GET(request: NextRequest) {
             lastmod: currentDate,
             changefreq: 'weekly',
             priority: '0.8'
+        },
+        {
+            url: '/upgrade',
+            lastmod: currentDate,
+            changefreq: 'weekly',
+            priority: '0.8'
+        },
+        {
+            url: '/faq',
+            lastmod: currentDate,
+            changefreq: 'monthly',
+            priority: '0.7'
         }
     ]
 

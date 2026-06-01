@@ -134,7 +134,7 @@ function CheckoutSuccessContent() {
           )}
         </CardContent>
         <CardFooter className="flex justify-center">
-          <Link href="/">
+          <Link href="/chat">
             <Button size="lg">
               Return to Chat
             </Button>
