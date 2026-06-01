@@ -32,6 +32,8 @@ export interface TokenTrackingContext {
     shouldDeductCredits: boolean;
     webSearchEnabled: boolean;
     webSearchCost: number;
+    /** When set, replaces the default web-search-only additional cost calculation. */
+    additionalCost?: number;
     apiKeys?: Record<string, string>;
     modelInfo?: ModelInfo; // Model information for variable credit cost calculation
 }
@@ -103,8 +105,12 @@ export class ChatTokenTrackingService {
                 }
             }
 
-            // Calculate additional cost for web search
-            const additionalCost = webSearchEnabled && !isUsingOwnApiKeys && shouldDeductCredits ? webSearchCost : 0;
+            const additionalCost =
+                context.additionalCost !== undefined
+                    ? context.additionalCost
+                    : webSearchEnabled && !isUsingOwnApiKeys && shouldDeductCredits
+                      ? webSearchCost
+                      : 0;
 
             // Fetch modelInfo if not provided (needed for variable credit cost calculation)
             let modelInfo = context.modelInfo;

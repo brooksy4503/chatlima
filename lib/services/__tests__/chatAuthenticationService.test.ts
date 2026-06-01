@@ -11,14 +11,14 @@ jest.mock('@/lib/utils/performantLogging', () => ({
     logDiagnostic: jest.fn()
 }));
 
-jest.mock('@/app/api/chat/route', () => ({
+jest.mock('@/lib/chat/createErrorResponse', () => ({
     createErrorResponse: jest.fn()
-}), { virtual: true });
+}));
 
 import { ChatAuthenticationService, AuthenticatedUser } from '../chatAuthenticationService';
 import { auth } from '@/lib/auth';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
-import { createErrorResponse } from '@/app/api/chat/route';
+import { createErrorResponse } from '@/lib/chat/createErrorResponse';
 
 describe('ChatAuthenticationService', () => {
     const mockAuth = auth.api.getSession as jest.MockedFunction<typeof auth.api.getSession>;

@@ -243,6 +243,37 @@ async function fileToDataUrl(file: File): Promise<string> {
     });
 }
 
+export async function downloadImageFromUrl(imageUrl: string, filename: string): Promise<void> {
+    const triggerDownload = (href: string) => {
+        const link = document.createElement('a');
+        link.href = href;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Same-origin data/blob URLs honor the download attribute directly.
+    if (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:')) {
+        triggerDownload(imageUrl);
+        return;
+    }
+
+    // Cross-origin URLs ignore the download attribute; fetch and save as a blob instead.
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+        throw new Error(`Failed to download image (${response.status})`);
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+        triggerDownload(objectUrl);
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
 export function formatFileSize(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
 

@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
-import { Download, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Dialog, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from '@/components/ui/button';
-import { formatFileSize } from '@/lib/image-utils';
+import { downloadImageFromUrl, formatFileSize } from '@/lib/image-utils';
 import { cn } from '@/lib/utils';
 
 interface ImageModalProps {
@@ -31,17 +32,22 @@ export function ImageModal({
   metadata,
   detail
 }: ImageModalProps) {
-  const handleDownload = () => {
-    // Create a download link for the image
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = filename || metadata?.filename || 'image';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
+  const [isDownloading, setIsDownloading] = useState(false);
   const displayFilename = filename || metadata?.filename || 'Uploaded image';
+
+  const handleDownload = async () => {
+    if (isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      await downloadImageFromUrl(imageUrl, displayFilename);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to download image');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -80,10 +86,15 @@ export function ImageModal({
                   variant="outline"
                   size="sm"
                   onClick={handleDownload}
+                  disabled={isDownloading}
                   className="flex items-center space-x-2"
                   aria-label={`Download ${displayFilename}`}
                 >
-                  <Download className="h-4 w-4" />
+                  {isDownloading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
                   <span className="hidden sm:inline">Download</span>
                 </Button>
                 
