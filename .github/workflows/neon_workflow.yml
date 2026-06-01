@@ -60,11 +60,12 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
 
       - name: Push Schema Changes
-        run: pnpm db:push
+        run: pnpm exec drizzle-kit push --force
         env:
           DATABASE_URL: "${{ steps.create_neon_branch.outputs.db_url_with_pooler }}"
 
       - name: Post Schema Diff Comment to PR
+        continue-on-error: true
         uses: neondatabase/schema-diff-action@v1
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}

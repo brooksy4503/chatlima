@@ -621,6 +621,7 @@ POST /api/chat
 - Request body includes webSearch: { enabled: boolean, contextSize: "low" | "medium" | "high" } and imageGeneration: { enabled, quality, aspectRatio, outputFormat, model }
 - Handles MCP tools, OpenRouter web search (agentic or legacy :online), Chatlima image_generation tool backed by OpenRouter image-output models, native web_fetch, images (base64), file references (Blob URLs)
 - Integrates read_file tool for uploaded documents and web_fetch tool for URL extraction
+- **Persistence**: Client history (excluding in-flight assistant placeholder) is saved before streaming starts; assistant messages are saved in awaited `uiOnFinish` after waiting up to 6s for `streamText` metadata (image URLs, tool steps). `saveMessages` uses a DB transaction (delete + insert). Stream-finish fallback persistence runs via Next.js `after()`.
 ```
 
 #### Upload API
