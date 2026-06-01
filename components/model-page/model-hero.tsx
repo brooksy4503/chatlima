@@ -47,7 +47,7 @@ export function ModelHero({ model, isFree, canAccessPremium = true }: ModelHeroP
       </p>
 
       {canAccess ? (
-        <Link href={`/?model=${encodeURIComponent(model.id)}`}>
+        <Link href={`/chat?model=${encodeURIComponent(model.id)}`}>
           <Button size="lg" className="w-full sm:w-auto group">
             {isFree ? 'Chat Now' : 'Start Chat'}
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />

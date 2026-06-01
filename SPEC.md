@@ -58,6 +58,7 @@ chatlima/
 │   ├── models/              # SEO model pages
 │   ├── compare/             # Model comparison
 │   ├── upgrade/             # Subscription upgrade
+│   ├── auth/sign-in/        # Google OAuth sign-in entry
 │   ├── admin/               # Admin dashboard
 │   └── ...
 ├── components/               # React components
@@ -603,6 +604,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 
 - Public landing page at `/`; the chat app starts at `/chat`
 - Dynamic model pages at `/model/[slug]`
+- Model detail chat CTAs deep-link to `/chat?model=<modelId>`
 - Model comparison at `/compare/[slug]`
 - Auto-generated sitemap
 - Structured data for models

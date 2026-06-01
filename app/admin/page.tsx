@@ -26,7 +26,7 @@ export default async function AdminPage() {
   // Check if user is authenticated
   if (!session?.user?.id) {
     console.log('Admin page - No session or user ID, redirecting to sign-in');
-    redirect("/auth/sign-in");
+    redirect("/auth/sign-in?next=/admin");
   }
 
   // Query the database to get the user's admin status

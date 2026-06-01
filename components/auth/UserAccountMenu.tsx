@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, signOut } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -16,13 +16,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CheckoutButton } from "@/components/checkout-button";
 
 export function UserAccountMenu() {
-  const { session } = useAuth();
+  const { session, signOut } = useAuth();
 
   if (!session?.user) return null;
 
   const handleSignOut = async () => {
     try {
-      await signOut({});
+      await signOut();
     } catch (error) {
       console.error("Sign-out error:", error);
     }
@@ -93,4 +93,4 @@ export function UserAccountMenu() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-} 
+}

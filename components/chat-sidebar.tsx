@@ -37,7 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SignInButton } from "@/components/auth/SignInButton";
 import { UpgradeButton } from "@/components/auth/UpgradeButton";
 import { UserAccountMenu } from "@/components/auth/UserAccountMenu";
-import { useAuth, signOut } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Flame, Sun } from "lucide-react";
 import { useWebSearch } from "@/lib/context/web-search-context";

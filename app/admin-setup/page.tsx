@@ -23,12 +23,12 @@ export default function AdminSetupPage() {
         setAuthStatus('authenticated');
       } else {
         setAuthStatus('unauthorized');
-        router.push('/auth/sign-in');
+        router.push('/auth/sign-in?next=/admin-setup');
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
       setAuthStatus('unauthorized');
-      router.push('/auth/sign-in');
+      router.push('/auth/sign-in?next=/admin-setup');
     }
   }, [router]);
 
@@ -128,4 +128,4 @@ export default function AdminSetupPage() {
       </Card>
     </div>
   );
-} 
+}

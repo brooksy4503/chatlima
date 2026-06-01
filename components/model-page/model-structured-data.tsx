@@ -13,7 +13,7 @@ interface ModelStructuredDataProps {
  * Implements SoftwareApplication schema for AI models
  */
 export function ModelStructuredData({ model, isFree, baseUrl, slug }: ModelStructuredDataProps) {
-  const applicationUrl = `${baseUrl}/?model=${encodeURIComponent(model.id)}`;
+  const applicationUrl = `${baseUrl}/chat?model=${encodeURIComponent(model.id)}`;
   const modelUrl = `${baseUrl}/model/${slug}`;
   
   const structuredData = {

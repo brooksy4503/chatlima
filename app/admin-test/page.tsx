@@ -23,12 +23,12 @@ export default function AdminTestPage() {
         setUserStatus(data);
       } else {
         setAuthStatus('unauthorized');
-        router.push('/auth/sign-in');
+        router.push('/auth/sign-in?next=/admin-test');
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
       setAuthStatus('unauthorized');
-      router.push('/auth/sign-in');
+      router.push('/auth/sign-in?next=/admin-test');
     } finally {
       setLoading(false);
     }
@@ -145,4 +145,4 @@ export default function AdminTestPage() {
       </Card>
     </div>
   );
-} 
+}

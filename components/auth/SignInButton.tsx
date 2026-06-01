@@ -12,8 +12,10 @@ interface SignInButtonProps {
 export function SignInButton({ isCollapsed }: SignInButtonProps) {
   const handleSignIn = async () => {
     try {
+      const callbackURL = `${window.location.pathname}${window.location.search}` || "/chat";
       await signIn.social({
         provider: "google",
+        callbackURL,
       });
     } catch (error) {
       console.error("Sign-in error:", error);
@@ -33,4 +35,4 @@ export function SignInButton({ isCollapsed }: SignInButtonProps) {
       {!isCollapsed && <span>Sign in with Google</span>}
     </Button>
   );
-} 
+}
