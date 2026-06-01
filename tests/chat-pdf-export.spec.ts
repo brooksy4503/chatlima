@@ -4,7 +4,7 @@ test.describe('Chat PDF Export Feature', () => {
 
     test('should display download button in chat list', async ({ page }) => {
         // Navigate to the home page
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Open the sidebar
         const sidebarToggle = page.getByRole('button', { name: /toggle sidebar|menu|hamburger/i }).or(
@@ -31,7 +31,7 @@ test.describe('Chat PDF Export Feature', () => {
 
     test('should handle PDF download for existing chat', async ({ page }) => {
         // Navigate to the home page
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Create a simple chat by sending a message
         const messageInput = page.getByPlaceholder('Send a message...');
@@ -80,7 +80,7 @@ test.describe('Chat PDF Export Feature', () => {
 
     test('should show loading state during PDF generation', async ({ page }) => {
         // Navigate to the home page
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Create a chat with multiple messages
         const messageInput = page.getByPlaceholder('Send a message...');
@@ -133,7 +133,7 @@ test.describe('Chat PDF Export Feature', () => {
 
     test('should handle download errors gracefully', async ({ page }) => {
         // Navigate to the home page
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Open the sidebar
         const sidebarToggle = page.getByRole('button', { name: /toggle sidebar|menu|hamburger/i }).or(
@@ -163,7 +163,7 @@ test.describe('Chat PDF Export Feature', () => {
 
     test('should handle special characters in chat titles', async ({ page }) => {
         // Navigate to the home page
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Create a chat with special characters in title
         const messageInput = page.getByPlaceholder('Send a message...');
@@ -207,7 +207,7 @@ test.describe('Chat PDF Export Feature', () => {
 
     test('should work with collapsed sidebar', async ({ page }) => {
         // Navigate to the home page
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Create a chat
         const messageInput = page.getByPlaceholder('Send a message...');
@@ -235,7 +235,7 @@ test.describe('Chat PDF Export Feature', () => {
 
     test('should handle multiple rapid download attempts', async ({ page }) => {
         // Navigate to the home page
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Create a chat
         const messageInput = page.getByPlaceholder('Send a message...');
@@ -273,7 +273,7 @@ test.describe('Chat PDF Export Feature', () => {
 
     test('should maintain chat list state after download', async ({ page }) => {
         // Navigate to the home page
-        await page.goto('/');
+        await page.goto('/chat');
 
         // Create multiple chats
         const messageInput = page.getByPlaceholder('Send a message...');

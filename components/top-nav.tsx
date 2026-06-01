@@ -13,7 +13,7 @@ export function TopNav() {
   const params = useParams();
   const pathname = usePathname();
   const chatId = params?.id as string | undefined;
-  const isWelcomeView = pathname === "/";
+  const isWelcomeView = pathname === "/chat";
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   // Fetch chat title for sharing - only when actually needed
@@ -31,7 +31,7 @@ export function TopNav() {
 
   const handleNewChat = () => {
     // Use window.location for more reliable navigation
-    window.location.href = '/';
+    window.location.href = '/chat';
   };
 
   const handleShare = () => {

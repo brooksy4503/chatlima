@@ -6,7 +6,7 @@ setup('authenticate locally', async ({ page }) => {
     console.log('🔐 Starting local authentication setup...');
 
     // Go to local ChatLima
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/chat', { waitUntil: 'networkidle' });
 
     // Take a screenshot to see what we're dealing with
     await page.screenshot({ path: 'playwright-report/local-auth-step-1-initial-load.png' });

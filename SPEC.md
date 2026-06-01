@@ -52,7 +52,9 @@ chatlima/
 │   │   ├── projects/        # Project CRUD, files, and project chats
 │   │   ├── admin/           # Admin endpoints
 │   │   └── ...
-│   ├── chat/[id]/           # Chat page
+│   ├── (marketing)/         # Public landing page at `/`
+│   ├── (app)/chat/          # New-chat app entry at `/chat`
+│   ├── (app)/chat/[id]/     # Saved chat page
 │   ├── models/              # SEO model pages
 │   ├── compare/             # Model comparison
 │   ├── upgrade/             # Subscription upgrade
@@ -599,10 +601,12 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 
 ### 8.6 SEO Features
 
+- Public landing page at `/`; the chat app starts at `/chat`
 - Dynamic model pages at `/model/[slug]`
 - Model comparison at `/compare/[slug]`
 - Auto-generated sitemap
 - Structured data for models
+- Homepage structured data for the software application and visible FAQ content
 
 ---
 

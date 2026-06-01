@@ -11,7 +11,6 @@ import { MCPProvider } from "@/lib/context/mcp-context";
 import { ModelProvider } from "@/lib/context/model-context";
 import { PresetProvider } from "@/lib/context/preset-context";
 import { AuthProvider } from "@/lib/context/auth-context";
-import { AnonymousAuth } from "@/components/auth/AnonymousAuth";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -26,9 +25,6 @@ const queryClient = new QueryClient({
 });
 
 export function Providers({ children }: { children: ReactNode }) {
-  const billingEnforced =
-    process.env.NEXT_PUBLIC_BILLING_ENFORCED === "true" ||
-    process.env.BILLING_ENFORCED === "true";
   const [sidebarOpen, setSidebarOpen] = useLocalStorage<boolean>(
     STORAGE_KEYS.SIDEBAR_STATE,
     true
@@ -53,7 +49,6 @@ export function Providers({ children }: { children: ReactNode }) {
                   open={sidebarOpen} 
                   onOpenChange={setSidebarOpen}
                 >
-                  {!billingEnforced && <AnonymousAuth />}
                   {children}
                   <Toaster position="top-center" richColors />
                 </SidebarProvider>

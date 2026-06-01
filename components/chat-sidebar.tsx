@@ -217,7 +217,7 @@ export function ChatSidebar() {
         } else if (previousSession?.user && !currentSession?.user) {
             console.log('User logged out.');
             setUserId(null);
-            router.push('/');
+            router.push('/chat');
             
             // Debounce query invalidations to prevent cascade
             invalidationRef.current = true;
@@ -254,7 +254,7 @@ export function ChatSidebar() {
         }
         
         // Use window.location for more reliable navigation
-        window.location.href = '/';
+        window.location.href = '/chat';
     };
 
     const handleNavigateToChat = (chatId: string) => {
@@ -273,7 +273,7 @@ export function ChatSidebar() {
         deleteChat(chatId);
         
         if (pathname === `/chat/${chatId}`) {
-            window.location.href = '/';
+            window.location.href = '/chat';
         }
     };
 
@@ -285,7 +285,7 @@ export function ChatSidebar() {
                 <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
                     <SidebarHeader className="p-4 border-b border-border/40 h-[72px]">
                         <div className="flex items-center justify-between">
-                            <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isLayoutCollapsed ? "justify-center w-full" : ""}`}>
+                            <Link href="/chat" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isLayoutCollapsed ? "justify-center w-full" : ""}`}>
                                 <div className={`flex items-center justify-center rounded-full bg-primary ${isLayoutCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
                                     <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isLayoutCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
                                 </div>
@@ -370,7 +370,7 @@ export function ChatSidebar() {
             <Sidebar className="shadow-sm bg-background/80 dark:bg-background/40 backdrop-blur-md" collapsible="icon">
                 <SidebarHeader className="p-4 border-b border-border/40 h-[72px]">
                     <div className="flex items-center justify-between">
-                        <Link href="/" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isLayoutCollapsed ? "justify-center w-full" : ""}`}>
+                        <Link href="/chat" className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${isLayoutCollapsed ? "justify-center w-full" : ""}`}>
                             <div className={`flex items-center justify-center rounded-full bg-primary ${isLayoutCollapsed ? 'h-6 w-6 flex-shrink-0' : 'h-8 w-8'}`}>
                                 <Image src="/logo.png" alt="ChatLima logo" width={32} height={32} className={`${isLayoutCollapsed ? 'h-4 w-4' : 'h-6 w-6'}`} />
                             </div>

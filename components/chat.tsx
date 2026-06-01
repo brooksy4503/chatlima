@@ -165,7 +165,7 @@ export default function Chat() {
     if (isMounted && !isSessionLoading && !session && chatId && params?.id && !sessionUpdateRef.current) {
       console.log("User logged out while on chat page, redirecting to home.");
       toast.info("You have been logged out.");
-      router.push('/'); 
+      router.push('/chat'); 
     }
   }, [isMounted, session, isSessionLoading, chatId, router, params]);
   
