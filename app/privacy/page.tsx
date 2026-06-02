@@ -5,7 +5,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full w-full flex-1 overflow-y-auto">
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-12 max-w-4xl">
           <div className="bg-white rounded-lg shadow-sm p-8 md:p-12">

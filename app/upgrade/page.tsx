@@ -8,6 +8,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
+import { MarketingShell } from '@/components/marketing-shell';
 
 function UpgradeContent() {
   const { user, isAuthenticated, isAnonymous, usageData, isLoading } = useAuth();
@@ -102,7 +103,7 @@ function UpgradeContent() {
   };
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full w-full flex-1 overflow-y-auto">
       <div className="min-h-screen bg-background">
         <div className="w-full px-4 py-12">
           <div className="text-center mb-12">
@@ -291,17 +292,19 @@ function UpgradeContent() {
 
 export default function UpgradePage() {
   return (
-    <Suspense fallback={
-      <div className="h-full overflow-y-auto">
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-muted-foreground">Loading...</p>
+    <MarketingShell>
+      <Suspense fallback={
+        <div className="w-full flex-1 overflow-y-auto">
+          <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-muted-foreground">Loading...</p>
+            </div>
           </div>
         </div>
-      </div>
-    }>
-      <UpgradeContent />
-    </Suspense>
+      }>
+        <UpgradeContent />
+      </Suspense>
+    </MarketingShell>
   );
 }
 

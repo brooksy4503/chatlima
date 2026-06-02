@@ -4,6 +4,7 @@ import { modelIdToSlug } from '@/lib/models/slug-utils';
 import Link from 'next/link';
 import { GitCompare, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MarketingShell } from '@/components/marketing-shell';
 
 export const dynamic = 'auto';
 
@@ -67,7 +68,8 @@ export default async function ComparePage() {
     });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <MarketingShell>
+      <div className="w-full flex-1 bg-gradient-to-b from-background to-muted/20">
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
           <div className="bg-primary/10 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
@@ -135,6 +137,7 @@ export default async function ComparePage() {
           </Link>
         </div>
       </div>
-    </div>
+      </div>
+    </MarketingShell>
   );
 }

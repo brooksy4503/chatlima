@@ -297,7 +297,7 @@ export default async function ModelPage({ params }: { params: Promise<{ slug: st
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen w-full flex-1 bg-gradient-to-b from-background to-muted/20">
       <ModelStructuredData model={model} isFree={isFree} baseUrl={baseUrl} slug={decodedSlug} />
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <ModelHero model={model} isFree={isFree} canAccessPremium={canAccessPremium} />

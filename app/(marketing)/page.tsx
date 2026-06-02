@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
+import { MarketingShell } from "@/components/marketing-shell";
 import {
   ArrowRight,
   BadgeCheck,
@@ -228,7 +228,7 @@ const workflowSteps = [
 
 export default function MarketingHomePage() {
   return (
-    <main className="min-h-dvh overflow-hidden bg-background text-foreground">
+    <MarketingShell>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
@@ -237,37 +237,6 @@ export default function MarketingHomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-
-      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
-        <nav className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5 font-semibold" aria-label="ChatLima home">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card shadow-sm">
-              <Image src="/logo.png" alt="" width={24} height={24} className="h-6 w-6" priority />
-            </span>
-            <span>ChatLima</span>
-          </Link>
-          <div className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-            <Link href="/models" className="transition-colors hover:text-foreground">
-              Models
-            </Link>
-            <Link href="/compare" className="transition-colors hover:text-foreground">
-              Compare
-            </Link>
-            <Link href="/faq" className="transition-colors hover:text-foreground">
-              FAQ
-            </Link>
-            <Link href="/upgrade" className="transition-colors hover:text-foreground">
-              Pricing
-            </Link>
-          </div>
-          <Button asChild size="sm">
-            <Link href="/chat">
-              Start chatting
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </nav>
-      </header>
 
       <section className="relative">
         <div className="absolute left-1/2 top-0 h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-primary/15 blur-[140px]" />
@@ -339,35 +308,44 @@ export default function MarketingHomePage() {
                 <div className="flex flex-col bg-background">
                   <div className="flex items-center justify-between border-b border-border px-4 py-3">
                     <div>
-                      <div className="text-sm font-semibold text-foreground">Claude Sonnet 4.5</div>
-                      <div className="text-xs text-muted-foreground">Reasoning, files, web search, MCP tools</div>
+                      <div className="text-sm font-semibold text-foreground">Launch research preset</div>
+                      <div className="text-xs text-muted-foreground">Web search, files, MCP tools</div>
                     </div>
                     <div className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
                       Pro tier
                     </div>
                   </div>
                   <div className="flex-1 space-y-4 p-4">
+                    <div className="rounded-xl border border-border bg-card p-3 text-xs shadow-sm">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <span className="font-medium text-foreground">Selected model</span>
+                        <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-medium text-primary-foreground">Active</span>
+                      </div>
+                      <div className="rounded-lg border border-primary/30 bg-primary/10 p-3">
+                        <div className="font-semibold text-foreground">Claude Sonnet 4.5</div>
+                        <div className="mt-1 text-muted-foreground">Reasoning, strategy, files • Pro tier</div>
+                      </div>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {[
+                          { name: "GPT-5.2", detail: "structured drafting" },
+                          { name: "Gemini 3.1", detail: "long context" },
+                        ].map((model) => (
+                          <div key={model.name} className="rounded-lg border border-border bg-background p-2 text-muted-foreground">
+                            <div className="font-medium text-foreground">Switch to {model.name}</div>
+                            <div className="mt-0.5">{model.detail}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                     <div className="max-w-[88%] rounded-xl border border-border bg-card p-3 text-sm text-foreground">
-                      Compare the best launch strategy for my indie app. Search the web and give me a practical plan.
+                      Plan the best launch strategy for my indie app. Search the web and give me a practical plan.
                     </div>
                     <div className="ml-auto max-w-[92%] rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm text-foreground shadow-sm">
                       <div className="mb-2 flex items-center gap-2 text-xs font-medium text-primary">
                         <Globe2 className="h-3.5 w-3.5" />
-                        Web search enabled
+                        Web search enabled on the selected model
                       </div>
-                      I&apos;ll use a reasoning model for synthesis, search for current market context, then outline the highest-leverage launch path.
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      {[
-                        { name: "GPT", role: "structured draft" },
-                        { name: "Claude", role: "strategy memo" },
-                        { name: "Gemini", role: "long context" },
-                      ].map((model) => (
-                        <div key={model.name} className="rounded-xl border border-border bg-card p-3 text-xs">
-                          <div className="font-medium text-foreground">{model.name}</div>
-                          <div className="mt-1 text-muted-foreground">{model.role}</div>
-                        </div>
-                      ))}
+                      I&apos;ll use Claude for synthesis, search for current market context, then outline the highest-leverage launch path.
                     </div>
                     <div className="rounded-xl border border-border bg-card p-3 text-sm text-foreground">
                       <div className="mb-2 flex items-center gap-2 text-xs font-medium text-primary">
@@ -648,28 +626,6 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <Image src="/logo.png" alt="" width={20} height={20} />
-            <span>ChatLima</span>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <Link href="/privacy" className="hover:text-foreground">
-              Privacy
-            </Link>
-            <Link href="/terms" className="hover:text-foreground">
-              Terms
-            </Link>
-            <Link href="/faq" className="hover:text-foreground">
-              FAQ
-            </Link>
-            <Link href="/chat" className="hover:text-foreground">
-              Open Chat
-            </Link>
-          </div>
-        </div>
-      </footer>
-    </main>
+    </MarketingShell>
   );
 }

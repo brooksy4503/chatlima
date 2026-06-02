@@ -147,7 +147,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen w-full flex-1 bg-gradient-to-b from-background to-muted/20">
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-5xl font-bold text-foreground mb-4">

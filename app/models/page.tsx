@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ModelsGrid } from '@/components/models-listing/models-grid';
 import { ModelsFilter, type FilterType } from '@/components/models-listing/models-filter';
+import { MarketingShell } from '@/components/marketing-shell';
 
 const FILTER_LABELS: Record<FilterType, string> = {
   all: 'All Models',
@@ -92,7 +93,8 @@ export default function ModelsPage() {
   }, [allModelsForDisplay, models, searchTerm, activeFilter]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <MarketingShell>
+      <div className="w-full flex-1 bg-gradient-to-b from-background to-muted/20">
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-foreground mb-4">
@@ -229,6 +231,7 @@ export default function ModelsPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </MarketingShell>
   );
 }

@@ -1,3 +1,5 @@
+import { MarketingShell } from '@/components/marketing-shell';
+
 export const metadata = {
   title: 'Frequently Asked Questions - ChatLima',
   description: 'Frequently asked questions about ChatLima subscriptions, models, credits, BYOK, MCP, and web search',
@@ -5,7 +7,8 @@ export const metadata = {
 
 export default function FAQPage() {
   return (
-    <div className="h-full overflow-y-auto">
+    <MarketingShell>
+      <div className="w-full flex-1 overflow-y-auto">
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-12 max-w-4xl">
           <div className="bg-card border border-border rounded-lg shadow-sm p-8 md:p-12">
@@ -340,6 +343,7 @@ export default function FAQPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </MarketingShell>
   );
 }
