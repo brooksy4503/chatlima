@@ -670,7 +670,16 @@ export function PresetManager({ open, onOpenChange }: PresetManagerProps) {
                       <Label htmlFor="model">Model</Label>
                       <ModelPicker
                         selectedModel={formData.modelId}
-                        setSelectedModel={(modelId) => setFormData(prev => ({ ...prev, modelId }))}
+                        setSelectedModel={(modelId) => {
+                          const nextModelInfo = getModelInfo(modelId) || null;
+                          const nextConstraints = getModelParameterConstraints(nextModelInfo);
+
+                          setFormData(prev => ({
+                            ...prev,
+                            modelId,
+                            maxTokens: nextConstraints.maxTokens.default,
+                          }));
+                        }}
                         disabled={false}
                       />
                     </div>

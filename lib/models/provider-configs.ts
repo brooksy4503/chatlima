@@ -112,15 +112,29 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
                     default: 4096
                 };
             } else if (maxCompletionTokens && maxCompletionTokens > 0) {
-                // Use the actual max completion tokens from the provider
-                // Adjust default specifically for GPT-5 models to allow longer outputs by default
-                const gpt5Default = model.id.includes('gpt-5')
-                    ? 8192
-                    : Math.min(4096, Math.floor(maxCompletionTokens * 0.25));
+                // Use the actual max completion tokens from the provider.
+                // Large-context models need a higher output default; otherwise the UI
+                // leaves them at 4096 and long generations stop early with finish_reason=length.
+                const defaultOutputTokens = (() => {
+                    if (model.id.includes('minimax-m3')) {
+                        return 32768;
+                    }
+
+                    if (model.id.includes('gpt-5')) {
+                        return 8192;
+                    }
+
+                    if (model.context_length && model.context_length >= 200000) {
+                        return Math.min(16384, maxCompletionTokens);
+                    }
+
+                    return Math.min(4096, Math.floor(maxCompletionTokens * 0.25));
+                })();
+
                 maxTokensRange = {
                     min: 1,
                     max: maxCompletionTokens,
-                    default: gpt5Default
+                    default: Math.min(defaultOutputTokens, maxCompletionTokens)
                 };
             } else {
                 // Handle specific models with known high token limits

@@ -239,6 +239,7 @@ jest.mock('../../components/model-picker', () => ({
       >
         <option value="openrouter/anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
         <option value="openrouter/openai/gpt-4">GPT-4</option>
+        <option value="openrouter/minimax/minimax-m3">MiniMax M3</option>
         <option value="requesty/test-model">Requesty Test</option>
       </select>
     </div>
@@ -277,9 +278,11 @@ jest.mock('@/lib/preset-templates', () => {
 
 jest.mock('@/lib/parameter-validation', () => ({
   validatePresetParameters: jest.fn(() => ({ valid: true, errors: [] })),
-  getModelParameterConstraints: jest.fn(() => ({
+  getModelParameterConstraints: jest.fn((modelInfo?: { id?: string } | null) => ({
     temperature: { min: 0, max: 2, default: 1 },
-    maxTokens: { min: 1, max: 100000, default: 4096 },
+    maxTokens: modelInfo?.id === 'openrouter/minimax/minimax-m3'
+      ? { min: 1, max: 512000, default: 32768 }
+      : { min: 1, max: 100000, default: 4096 },
     supportsSystemInstruction: true,
     maxSystemInstructionLength: 50000,
   })),
@@ -317,6 +320,20 @@ const mockModel = {
   lastChecked: new Date(),
 };
 
+const mockMiniMaxModel = {
+  id: 'openrouter/minimax/minimax-m3',
+  name: 'MiniMax M3',
+  provider: 'OpenRouter',
+  supportsWebSearch: true,
+  capabilities: ['chat', 'reasoning'],
+  premium: false,
+  vision: true,
+  contextMax: 1048576,
+  maxTokensRange: { min: 1, max: 512000, default: 32768 },
+  status: 'available' as const,
+  lastChecked: new Date(),
+};
+
 describe('PresetManager', () => {
   const mockUsePresets = usePresets as jest.MockedFunction<typeof usePresets>;
   const mockUseModels = useModels as jest.MockedFunction<typeof useModels>;
@@ -342,7 +359,7 @@ describe('PresetManager', () => {
   };
 
   const defaultModelsReturn = {
-    models: [mockModel],
+    models: [mockModel, mockMiniMaxModel],
     isLoading: false,
     error: null,
     mutate: jest.fn(),
@@ -454,6 +471,24 @@ describe('PresetManager', () => {
       fireEvent.change(temperatureInput, { target: { value: '0.8' } });
       
       expect(temperatureInput).toHaveValue(0.8);
+    });
+
+    test('uses the selected model max token default when changing models', () => {
+      render(<PresetManager open={true} onOpenChange={jest.fn()} />);
+
+      fireEvent.click(screen.getByTestId('tab-create'));
+
+      const modelSelect = screen.getByTestId('model-picker-select');
+      const maxTokensInput = screen.getByLabelText(/Max Tokens/);
+
+      expect(maxTokensInput).toHaveValue(4096);
+
+      fireEvent.change(modelSelect, {
+        target: { value: 'openrouter/minimax/minimax-m3' },
+      });
+
+      expect(maxTokensInput).toHaveValue(32768);
+      expect(maxTokensInput).toHaveAttribute('max', '512000');
     });
 
     test('toggles web search when switch is clicked', () => {
