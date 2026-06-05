@@ -1,9 +1,9 @@
 {
   "meta": {
     "title": "ChatLima Architecture Flows",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "appVersion": "0.40.0",
-    "description": "Interactive map of how UI, API routes, services, and external systems connect for each user action. Aligned with AI SDK v6, OpenRouter agentic web search, native web_fetch, projects, and stream resilience."
+    "description": "Interactive map of how UI, API routes, services, and external systems connect for each user action. Aligned with AI SDK v6, OpenRouter agentic web search, native web_fetch, projects, stream resilience, and modular chat pipeline (lib/chat/* decomposition of /api/chat)."
   },
   "groups": [
     { "id": "components", "label": "Components", "color": "#60a5fa" },
@@ -30,6 +30,12 @@
     { "id": "chat-project-selector", "label": "ChatProjectSelector", "path": "components/projects/chat-project-selector.tsx", "group": "components" },
     { "id": "projects-browser", "label": "projects-browser-sheet", "path": "components/projects/projects-browser-sheet.tsx", "group": "components" },
     { "id": "project-detail", "label": "project-detail-sheet", "path": "components/projects/project-detail-sheet.tsx", "group": "components" },
+    { "id": "marketing-shell", "label": "MarketingShell", "path": "components/marketing-shell.tsx", "group": "components" },
+    { "id": "preset-manager", "label": "preset-manager", "path": "components/preset-manager.tsx", "group": "components" },
+    { "id": "preset-selector", "label": "preset-selector", "path": "components/preset-selector.tsx", "group": "components" },
+    { "id": "image-upload", "label": "image-upload", "path": "components/image-upload.tsx", "group": "components" },
+    { "id": "generated-image", "label": "generated-image", "path": "components/generated-image.tsx", "group": "components" },
+    { "id": "image-modal", "label": "image-modal", "path": "components/image-modal.tsx", "group": "components" },
 
     { "id": "use-auth", "label": "useAuth", "path": "hooks/useAuth.ts", "group": "hooks" },
     { "id": "use-credits", "label": "useCredits", "path": "hooks/useCredits.ts", "group": "hooks" },
@@ -37,6 +43,9 @@
     { "id": "model-context", "label": "model-context", "path": "lib/context/model-context.tsx", "group": "hooks" },
     { "id": "mcp-context", "label": "mcp-context", "path": "lib/context/mcp-context.tsx", "group": "hooks" },
     { "id": "preset-context", "label": "preset-context", "path": "lib/context/preset-context.tsx", "group": "hooks" },
+    { "id": "web-search-context", "label": "web-search-context", "path": "lib/context/web-search-context.tsx", "group": "hooks" },
+    { "id": "image-gen-context", "label": "image-generation-context", "path": "lib/context/image-generation-context.tsx", "group": "hooks" },
+    { "id": "auth-context", "label": "auth-context", "path": "lib/context/auth-context.tsx", "group": "hooks" },
     { "id": "browser-storage", "label": "browser-storage", "path": "lib/browser-storage.ts", "group": "hooks" },
     { "id": "use-projects", "label": "useProjects", "path": "lib/hooks/use-projects.ts", "group": "hooks" },
 
@@ -52,6 +61,8 @@
     { "id": "api-projects", "label": "/api/projects", "path": "app/api/projects/route.ts", "group": "app-api" },
     { "id": "api-chat-project", "label": "/api/chats/.../project", "path": "app/api/chats/[id]/project/route.ts", "group": "app-api" },
     { "id": "api-mcp-oauth-proxy", "label": "GET/POST /api/mcp/oauth/proxy", "path": "app/api/mcp/oauth/proxy/route.ts", "group": "app-api" },
+    { "id": "api-presets", "label": "/api/presets", "path": "app/api/presets/route.ts", "group": "app-api" },
+    { "id": "api-preset-share", "label": "/api/presets/.../share", "path": "app/api/presets/[id]/share/route.ts", "group": "app-api" },
 
     { "id": "svc-auth", "label": "chatAuthenticationService", "path": "lib/services/chatAuthenticationService.ts", "group": "lib-services" },
     { "id": "svc-credit", "label": "chatCreditValidationService", "path": "lib/services/chatCreditValidationService.ts", "group": "lib-services" },
@@ -67,6 +78,11 @@
     { "id": "svc-webfetch", "label": "webFetchService", "path": "lib/services/webFetchService.ts", "group": "lib-services" },
     { "id": "svc-or-websearch-setup", "label": "openRouterWebSearchRouteSetup", "path": "lib/services/openRouterWebSearchRouteSetup.ts", "group": "lib-services" },
     { "id": "svc-project-context", "label": "projectContext", "path": "lib/services/projectContext.ts", "group": "lib-services" },
+    { "id": "svc-image-gen", "label": "chatImageGenerationService", "path": "lib/services/chatImageGenerationService.ts", "group": "lib-services" },
+    { "id": "svc-daily-usage", "label": "dailyMessageUsageService", "path": "lib/services/dailyMessageUsageService.ts", "group": "lib-services" },
+    { "id": "svc-cleanup-mon", "label": "cleanupMonitoringService", "path": "lib/services/cleanupMonitoringService.ts", "group": "lib-services" },
+    { "id": "svc-cleanup-config", "label": "cleanupConfigService", "path": "lib/services/cleanupConfigService.ts", "group": "lib-services" },
+    { "id": "svc-cost-calc", "label": "costCalculationService", "path": "lib/services/costCalculation.ts", "group": "lib-services" },
 
     { "id": "auth", "label": "lib/auth.ts", "path": "lib/auth.ts", "group": "lib" },
     { "id": "auth-client", "label": "auth-client", "path": "lib/auth-client.ts", "group": "lib" },
@@ -83,6 +99,20 @@
     { "id": "access-policy", "label": "access-policy", "path": "lib/config/access-policy.ts", "group": "lib" },
     { "id": "chat-stream-consumption", "label": "chat-stream-consumption", "path": "lib/chat-stream-consumption.ts", "group": "lib" },
     { "id": "chat-stop-registry", "label": "chat-stop-registry", "path": "lib/chat-stop-registry.ts", "group": "lib" },
+    { "id": "chat-request", "label": "chatRequest", "path": "lib/chat/chatRequest.ts", "group": "lib" },
+    { "id": "chat-preflight", "label": "chatPreflight", "path": "lib/chat/chatPreflight.ts", "group": "lib" },
+    { "id": "build-chat-stream-plan", "label": "buildChatStreamPlan", "path": "lib/chat/buildChatStreamPlan.ts", "group": "lib" },
+    { "id": "chat-stream-finalizer", "label": "chatStreamFinalizer", "path": "lib/chat/chatStreamFinalizer.ts", "group": "lib" },
+    { "id": "chat-tools", "label": "chatTools", "path": "lib/chat/chatTools.ts", "group": "lib" },
+    { "id": "prepare-messages", "label": "prepareMessagesForModel", "path": "lib/chat/prepareMessagesForModel.ts", "group": "lib" },
+    { "id": "reasoning-models", "label": "reasoningModels", "path": "lib/chat/reasoningModels.ts", "group": "lib" },
+    { "id": "stream-token-usage", "label": "streamTokenUsage", "path": "lib/chat/streamTokenUsage.ts", "group": "lib" },
+    { "id": "system-instruction", "label": "systemInstruction", "path": "lib/chat/systemInstruction.ts", "group": "lib" },
+    { "id": "create-error-response", "label": "createErrorResponse", "path": "lib/chat/createErrorResponse.ts", "group": "lib" },
+    { "id": "parameter-validation", "label": "parameter-validation", "path": "lib/parameter-validation.ts", "group": "lib" },
+    { "id": "image-utils", "label": "image-utils", "path": "lib/image-utils.ts", "group": "lib" },
+    { "id": "preset-templates", "label": "preset-templates", "path": "lib/preset-templates.ts", "group": "lib" },
+    { "id": "cost-calc", "label": "costCalculation", "path": "lib/services/costCalculation.ts", "group": "lib" },
 
     { "id": "ai-providers", "label": "ai/providers", "path": "ai/providers.ts", "group": "ai" },
     { "id": "openrouter-provider", "label": "@openrouter/ai-sdk-provider", "path": "OpenRouterProvider v2.x", "group": "ai" },
@@ -103,7 +133,7 @@
       "id": "send-chat-message",
       "label": "Send chat message",
       "category": "Chat",
-      "description": "User submits a prompt; server authenticates, validates credits/model/access, optionally injects project context, streams from AI provider with MCP tools, agentic web search, and native web_fetch, persists UIMessage parts, tracks per-invocation usage.",
+      "description": "User submits a prompt; server uses modular lib/chat (chatRequest parse → chatPreflight → buildChatStreamPlan → streamText + finalizer) for auth/credits/model/access/websearch/imagegen/MCP/project context, streams from AI with tools, persists UIMessage parts (incl. generated images), tracks usage.",
       "steps": [
         {
           "from": "chat",
@@ -133,28 +163,40 @@
           "from": "chat",
           "to": "api-chat",
           "label": "useChat → POST",
-          "payload": "{ id, messages: UIMessage[], selectedModel, apiKeys?, mcpServers[], webSearch: { enabled, contextSize }, presetId?, attachments[] }"
+          "payload": "{ id, messages: UIMessage[], selectedModel, apiKeys?, mcpServers[], webSearch: { enabled, contextSize }, presetId?, attachments[], imageGeneration? }"
         },
         {
           "from": "api-chat",
+          "to": "chat-request",
+          "label": "Parse request body",
+          "payload": "parseChatRequestBody → ChatRequestBody (typed messages, model, attachments, mcp, webSearch, imageGen, systemInstruction overrides, presetId)"
+        },
+        {
+          "from": "chat-request",
+          "to": "chat-preflight",
+          "label": "Run preflight checks",
+          "payload": "orchestrates auth, access, credits, model, websearch, image gen, daily usage; returns preflight context or error"
+        },
+        {
+          "from": "chat-preflight",
           "to": "svc-auth",
           "label": "Authenticate",
           "payload": "session cookie → AuthenticatedUser { id, isAnonymous, email }"
         },
         {
-          "from": "api-chat",
+          "from": "chat-preflight",
           "to": "access-policy",
           "label": "Feature flags",
           "payload": "OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED, NATIVE_WEB_FETCH_ENABLED, BILLING_ENFORCED"
         },
         {
-          "from": "api-chat",
+          "from": "chat-preflight",
           "to": "svc-access",
           "label": "Access gate",
           "payload": "canUserChat, BYOK check when billing enforced"
         },
         {
-          "from": "api-chat",
+          "from": "chat-preflight",
           "to": "svc-credit",
           "label": "Validate credits / limits",
           "payload": "userId, modelId, webSearch flag → CreditValidationResult; calls polar-lib + token-counter"
@@ -166,16 +208,34 @@
           "payload": "externalCustomerId → remaining credits, subscription type"
         },
         {
-          "from": "api-chat",
+          "from": "chat-preflight",
           "to": "svc-model",
           "label": "Validate model",
           "payload": "modelId, user tier → ModelValidationResult (credit tier / BYOK)"
         },
         {
-          "from": "api-chat",
+          "from": "chat-preflight",
           "to": "svc-message",
           "label": "Process messages",
-          "payload": "UIMessage[] → normalized messages, image parts, read_file tool content"
+          "payload": "UIMessage[] → normalized messages, image parts, read_file tool content (delegated from preflight)"
+        },
+        {
+          "from": "chat-preflight",
+          "to": "svc-websearch",
+          "label": "Validate web search",
+          "payload": "WebSearchContext → WebSearchResult; signed-in + ≥5 credits or BYOK; model supportsWebSearch"
+        },
+        {
+          "from": "chat-preflight",
+          "to": "svc-image-gen",
+          "label": "Validate image gen",
+          "payload": "imageGeneration flag + model support → resolved image model, tool injection decision"
+        },
+        {
+          "from": "chat-preflight",
+          "to": "svc-daily-usage",
+          "label": "Daily usage check",
+          "payload": "anonymous / free tier message limits per day"
         },
         {
           "from": "api-chat",
@@ -197,12 +257,12 @@
         },
         {
           "from": "api-chat",
-          "to": "svc-websearch",
-          "label": "Validate web search",
-          "payload": "WebSearchContext → WebSearchResult; signed-in + ≥5 credits or BYOK; model supportsWebSearch"
+          "to": "build-chat-stream-plan",
+          "label": "Build stream plan",
+          "payload": "assembles model instance, tools, system instr, formatted messages, web search config, image force, effective params; delegates to submodules"
         },
         {
-          "from": "api-chat",
+          "from": "build-chat-stream-plan",
           "to": "svc-or-websearch-setup",
           "label": "OpenRouter web search setup",
           "payload": "Agentic path: openrouter:web_search + web_fetch server tools; legacy path: :online suffix when flag off"
@@ -214,28 +274,58 @@
           "payload": "ChatWebSearchService.buildOpenRouterServerTools(contextSize, maxTotalResults)"
         },
         {
-          "from": "api-chat",
+          "from": "build-chat-stream-plan",
           "to": "svc-webfetch",
           "label": "Native web_fetch tool",
           "payload": "SSR-safe URL fetch (DNS/IP validation, HTML→markdown) when NATIVE_WEB_FETCH_ENABLED"
         },
         {
-          "from": "api-chat",
+          "from": "build-chat-stream-plan",
           "to": "ai-providers",
           "label": "Resolve model",
-          "payload": "modelId + user apiKeys → LanguageModel; tag-based reasoning wrap when applicable"
+          "payload": "modelId + user apiKeys → LanguageModel; tag-based reasoning wrap when applicable (via getLanguageModelWithKeys)"
         },
         {
-          "from": "api-chat",
+          "from": "build-chat-stream-plan",
+          "to": "chat-tools",
+          "label": "Build base tools",
+          "payload": "buildBaseChatTools + buildWebFetchPolicy; merges MCP, web search server tools, image_generation tool"
+        },
+        {
+          "from": "build-chat-stream-plan",
+          "to": "system-instruction",
+          "label": "Build system prompt",
+          "payload": "buildDefaultSystemInstruction + project context + preset + image gen guardrails"
+        },
+        {
+          "from": "build-chat-stream-plan",
+          "to": "prepare-messages",
+          "label": "Prepare messages",
+          "payload": "prepareMessagesForModel: strip client-only parts, attach file contents, apply reasoning extraction"
+        },
+        {
+          "from": "build-chat-stream-plan",
           "to": "google-model-tools",
           "label": "Sanitize tool schemas",
           "payload": "cleanToolsForGoogleModels strips $schema from tool inputs for Gemini/Vertex"
         },
         {
+          "from": "build-chat-stream-plan",
+          "to": "parameter-validation",
+          "label": "Apply model defaults",
+          "payload": "getModelDefaults for temperature / maxTokens if not overridden"
+        },
+        {
+          "from": "build-chat-stream-plan",
+          "to": "reasoning-models",
+          "label": "Reasoning model handling",
+          "payload": "modelShouldDisableLogprobs, wrapWithTagBasedReasoning for o1-style etc."
+        },
+        {
           "from": "ai-providers",
           "to": "vercel-ai-sdk",
           "label": "streamText",
-          "payload": "{ model, messages, tools, system, stopWhen: stepCountIs(20), abortSignal }"
+          "payload": "{ model, messages, tools, system, stopWhen: stepCountIs(20), abortSignal, prepareStep for forced image gen }"
         },
         {
           "from": "vercel-ai-sdk",
@@ -257,36 +347,30 @@
         },
         {
           "from": "api-chat",
+          "to": "chat-stream-finalizer",
+          "label": "Create stream finalizer",
+          "payload": "createChatStreamFinalizer with plan, preflight context, title promise; handles onFinish, timing, persistence, credits, tokens"
+        },
+        {
+          "from": "chat-stream-finalizer",
           "to": "chat-message-persistence",
           "label": "Build assistant message",
-          "payload": "buildAssistantMessageForPersistence: UIMessage parts, reasoning, tool invocations, citations"
+          "payload": "buildAssistantMessageForPersistence: UIMessage parts, reasoning, tool invocations, citations; persistClientMessagesAtRequestStart"
         },
         {
           "from": "chat-message-persistence",
           "to": "message-utils",
           "label": "Web search parts",
-          "payload": "hasWebSearchToolPart, injectSyntheticWebSearchToolPart for UI consistency"
+          "payload": "hasWebSearchToolPart, injectSyntheticWebSearchToolPart for UI consistency; extract image urls"
         },
         {
-          "from": "api-chat",
-          "to": "svc-db",
-          "label": "Persist chat",
-          "payload": "chat id, messages[] → chats + messages tables"
+          "from": "chat-stream-finalizer",
+          "to": "stream-token-usage",
+          "label": "Compute usage",
+          "payload": "computeStreamTokenUsage, computeTokensPerSecond, estimateTimeToFirstTokenMs"
         },
         {
-          "from": "svc-db",
-          "to": "db-index",
-          "label": "Drizzle ORM",
-          "payload": "insert/update via schema types"
-        },
-        {
-          "from": "db-index",
-          "to": "neon",
-          "label": "SQL",
-          "payload": "Neon serverless driver"
-        },
-        {
-          "from": "api-chat",
+          "from": "chat-stream-finalizer",
           "to": "svc-token",
           "label": "Track usage",
           "payload": "token usage + web search invocation count → CostCalculationService, Polar usage events"
@@ -299,9 +383,45 @@
         },
         {
           "from": "api-chat",
+          "to": "svc-db",
+          "label": "Persist chat",
+          "payload": "chat id, messages[] → chats + messages tables (via finalizer + ChatDatabaseService)"
+        },
+        {
+          "from": "svc-db",
+          "to": "db-index",
+          "label": "Drizzle ORM",
+          "payload": "insert/update via schema types"
+        },
+        {
+          "from": "svc-db",
+          "to": "db-index",
+          "label": "Drizzle ORM",
+          "payload": "insert/update via schema types (finalizer may call create/update)"
+        },
+        {
+          "from": "db-index",
+          "to": "neon",
+          "label": "SQL",
+          "payload": "Neon serverless driver"
+        },
+        {
+          "from": "api-chat",
           "to": "chat",
           "label": "SSE stream response",
-          "payload": "UIMessage stream chunks → useChat updates message.tsx (reasoning, tool cards, Citations)"
+          "payload": "UIMessage stream chunks → useChat updates message.tsx (reasoning, tool cards, Citations, generated images)"
+        },
+        {
+          "from": "chat",
+          "to": "generated-image",
+          "label": "Render image cards",
+          "payload": "image_generation tool results → <GeneratedImage> previews + download modal"
+        },
+        {
+          "from": "chat",
+          "to": "image-modal",
+          "label": "Fullscreen viewer",
+          "payload": "click to open modal with download"
         }
       ]
     },
@@ -489,7 +609,7 @@
           "from": "chat",
           "to": "api-chat",
           "label": "Send with attachment",
-          "payload": "image URL in UIMessage parts; documents parsed via file-reader in api-chat"
+          "payload": "image URL in UIMessage parts; documents parsed via file-reader (in chatMessageProcessingService called from chatPreflight)"
         }
       ]
     },
@@ -805,7 +925,7 @@
       "id": "stop-chat-generation",
       "label": "Stop chat generation",
       "category": "Chat",
-      "description": "User clicks Stop during streaming; client aborts fetch and server cancels in-flight streamText via registered AbortController.",
+      "description": "User clicks Stop during streaming; POST {action:'stop'} to api-chat (early return path before full preflight), server cancels in-flight streamText via registered AbortController.",
       "steps": [
         {
           "from": "chat",
@@ -899,13 +1019,13 @@
           "from": "chat",
           "to": "api-chat",
           "label": "Next message",
-          "payload": "buildProjectContext injects instructions + files into system prompt"
+          "payload": "linked project causes buildChatStreamPlan to inject context"
         },
         {
-          "from": "api-chat",
+          "from": "build-chat-stream-plan",
           "to": "svc-project-context",
           "label": "Context injection",
-          "payload": "formatProjectContextForSystemPrompt"
+          "payload": "buildProjectContext + formatProjectContextForSystemPrompt into system"
         }
       ]
     }

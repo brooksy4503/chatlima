@@ -1,7 +1,7 @@
 # ChatLima - Full Application Specification
 
-**Version:** 0.39.0  
-**Last Updated:** May 2026
+**Version:** 0.40.0  
+**Last Updated:** June 2026
 
 ---
 
@@ -66,13 +66,23 @@ chatlima/
 │   ├── auth/                # Auth components
 │   ├── admin/               # Admin components
 │   ├── token-metrics/       # Usage analytics
+│   ├── marketing-shell.tsx  # Shared shell for marketing, faq, upgrade, models, compare pages
 │   ├── file-upload.tsx      # Upload UI (drag-drop, picker)
 │   ├── file-preview.tsx    # Preview for images & document metadata
+│   ├── preset-manager.tsx, preset-selector.tsx
+│   ├── image-*.tsx         # image-upload, preview, generated-image, modal for gen tool results
 │   └── ...
 ├── lib/                      # Shared utilities
+│   ├── chat/                # Modular chat pipeline (chatRequest, chatPreflight, buildChatStreamPlan, chatStreamFinalizer, chatTools, prepareMessagesForModel, systemInstruction, reasoningModels, streamTokenUsage, createErrorResponse) — refactored out of the former 2k-line /api/chat/route.ts
 │   ├── db/                  # Database config & schema
-│   ├── services/            # Business logic services
+│   ├── services/            # Business logic services (chat* + chatImageGenerationService, dailyMessageUsageService, costCalculation, projectContext, etc.)
 │   ├── models/              # Model fetching & config
+│   ├── context/             # React contexts (model, mcp, preset, auth, web-search, image-generation)
+│   ├── hooks/               # Shared custom hooks (useProjects, useChats, etc.)
+│   ├── config/              # Access policy, feature flags
+│   ├── constants/           # Image gen models, etc.
+│   ├── types/               # Shared TS types
+│   ├── utils/               # Logging, json repair, pagination, etc.
 │   ├── auth.ts              # Better Auth config
 │   ├── polar.ts             # Polar integration
 │   ├── file-upload.ts       # Upload validation & Blob helpers
@@ -101,8 +111,11 @@ The application uses specialized services for maintainability:
 | `chatModelValidationService` | Model availability & capability checks |
 | `chatTokenTrackingService` | Token usage & cost tracking |
 | `chatWebSearchService` | Web search integration |
+| `chatImageGenerationService` | Image gen toggle validation, tool registration, OpenRouter image model invocation + Blob upload |
 | `webFetchService` | Native URL fetch, SSRF-safe validation, and content extraction |
 | `projectContext` | Project instructions and file context for linked chats |
+| `dailyMessageUsageService` | Enforces anonymous (10/day) and free Google (20/day) limits when billing not enforced |
+| `openRouterWebSearchRouteSetup` | Chooses agentic vs legacy :online web search path based on flags |
 
 ---
 
@@ -552,13 +565,13 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
   - **Legacy path (`OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=false`)**: Model ID rewritten to `:online` variant plus `web_search_options.search_context_size` from context size (`low` / `medium` / `high`).
   - **No automatic fallback**: When agentic tools are enabled globally, unsupported or failed agentic setup disables web search for that request; legacy `:online` is not used unless the env flag is `false`.
   - **UI**: Live “Searching the web” indicator during stream; tool cards and `Citations` component; optional follow-up suggestion to disable search to save credits.
-  - See §7.3 for billing; implementation in `chatWebSearchService`, `openRouterWebSearchRouteSetup`, `app/api/chat/route.ts`.
+  - See §7.3 for billing; implementation in `chatWebSearchService`, `openRouterWebSearchRouteSetup`, `lib/chat/*` (buildChatStreamPlan etc), `app/api/chat/route.ts` (thin orchestrator).
 - **Image Generation** (OpenRouter models only; ImagePlus toggle in composer):
   - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with tool-calling support (`supportsToolCalling` or `Tools` capability in catalog).
   - **Client**: `imageGeneration: { enabled, quality, aspectRatio, outputFormat, model }` sent on every `POST /api/chat` from `ImageGenerationProvider` (localStorage). Defaults configurable in Settings → Preferences.
   - **Image tool**: Chatlima merges an app-executed `image_generation` tool into `streamText` when the toggle is on; the chat model decides when to invoke. When the user message clearly requests image creation and the chat model supports explicit `tool_choice`, step 0 forces `image_generation`; Qwen3/QwQ thinking models skip forced `tool_choice` (Alibaba rejects it in thinking mode) and rely on system-prompt guidance instead. The tool calls the configured OpenRouter image-output model with `modalities: ["image", "text"]`, extracts `message.images[]`, uploads generated data URLs to Blob when configured, and returns `{ status, imageUrl }` for persistence/rendering.
   - **UI**: ImagePlus toggle between attach and web search; live “Generating image” tool card; generated images rendered inline with click-to-expand/download. Estimated cost shown when toggle is on.
-  - See §7.3 for billing; implementation in `chatImageGenerationService`, `openrouter-image-generation-tool`, `app/api/chat/route.ts`.
+  - See §7.3 for billing; implementation in `chatImageGenerationService`, `openrouter-image-generation-tool`, `lib/chat/*` (buildChatStreamPlan, chatTools, chatStreamFinalizer), `app/api/chat/route.ts` (thin).
 - **Native Web Fetch**: First-party `web_fetch` tool for reading public URLs directly in chat with extraction + truncation controls
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
 - **Smart Title Generation**: Dynamic model selection for conversation titles. Default OpenRouter title model is `openrouter/openai/gpt-5-nano` (override via `TITLE_GENERATION_MODEL_ID` or `OPENROUTER_TITLE_MODEL`). Title generation starts in parallel when a new chat begins streaming and is persisted before the chat save completes.
