@@ -367,7 +367,7 @@ describe('Markdown Custom Components', () => {
     test('renders table with wrapper and correct styling', () => {
       const TableComponent = ({ children }: any) => (
         <div className="my-1.5 overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700">
+          <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700 cyberpunk:divide-zinc-700">
             {children}
           </table>
         </div>
@@ -390,13 +390,14 @@ describe('Markdown Custom Components', () => {
         'divide-y',
         'divide-zinc-200',
         'dark:divide-zinc-700',
-        'black:divide-zinc-700'
+        'black:divide-zinc-700',
+        'cyberpunk:divide-zinc-700'
       );
     });
 
     test('renders thead with correct styling', () => {
       const TheadComponent = ({ children }: any) => (
-        <thead className="bg-zinc-50 dark:bg-zinc-800/50 black:bg-zinc-800/50">
+        <thead className="bg-zinc-50 dark:bg-zinc-800/50 black:bg-zinc-800/50 cyberpunk:bg-zinc-800/50">
           {children}
         </thead>
       );
@@ -413,13 +414,14 @@ describe('Markdown Custom Components', () => {
       expect(theadElement).toHaveClass(
         'bg-zinc-50',
         'dark:bg-zinc-800/50',
-        'black:bg-zinc-800/50'
+        'black:bg-zinc-800/50',
+        'cyberpunk:bg-zinc-800/50'
       );
     });
 
     test('renders tbody with correct styling', () => {
       const TbodyComponent = ({ children }: any) => (
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700 bg-white dark:bg-transparent black:bg-transparent">
+        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700 cyberpunk:divide-zinc-700 bg-white dark:bg-transparent black:bg-transparent cyberpunk:bg-transparent">
           {children}
         </tbody>
       );
@@ -440,13 +442,15 @@ describe('Markdown Custom Components', () => {
         'black:divide-zinc-700',
         'bg-white',
         'dark:bg-transparent',
-        'black:bg-transparent'
+        'black:bg-transparent',
+        'cyberpunk:divide-zinc-700',
+        'cyberpunk:bg-transparent'
       );
     });
 
     test('renders tr with hover effects', () => {
       const TrComponent = ({ children }: any) => (
-        <tr className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30 black:hover:bg-zinc-800/30">
+        <tr className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30 black:hover:bg-zinc-800/30 cyberpunk:hover:bg-zinc-800/30">
           {children}
         </tr>
       );
@@ -464,13 +468,14 @@ describe('Markdown Custom Components', () => {
         'transition-colors',
         'hover:bg-zinc-50',
         'dark:hover:bg-zinc-800/30',
-        'black:hover:bg-zinc-800/30'
+        'black:hover:bg-zinc-800/30',
+        'cyberpunk:hover:bg-zinc-800/30'
       );
     });
 
     test('renders th with correct styling', () => {
       const ThComponent = ({ children }: any) => (
-        <th className="px-3 py-1.5 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 black:text-zinc-400 uppercase tracking-wider">
+        <th className="px-3 py-1.5 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 black:text-zinc-400 cyberpunk:text-zinc-400 uppercase tracking-wider">
           {children}
         </th>
       );
@@ -493,6 +498,7 @@ describe('Markdown Custom Components', () => {
         'text-zinc-500',
         'dark:text-zinc-400',
         'black:text-zinc-400',
+        'cyberpunk:text-zinc-400',
         'uppercase',
         'tracking-wider'
       );
@@ -500,7 +506,7 @@ describe('Markdown Custom Components', () => {
 
     test('renders td with correct styling', () => {
       const TdComponent = ({ children }: any) => (
-        <td className="px-3 py-1.5 text-sm">{children}</td>
+        <td className="px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100">{children}</td>
       );
 
       render(
@@ -512,7 +518,15 @@ describe('Markdown Custom Components', () => {
       );
       
       const tdElement = screen.getByRole('cell');
-      expect(tdElement).toHaveClass('px-3', 'py-1.5', 'text-sm');
+      expect(tdElement).toHaveClass(
+        'px-3',
+        'py-1.5',
+        'text-sm',
+        'text-zinc-900',
+        'dark:text-zinc-100',
+        'black:text-zinc-100',
+        'cyberpunk:text-zinc-100'
+      );
     });
   });
 

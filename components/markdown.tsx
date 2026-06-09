@@ -180,36 +180,36 @@ const components: Partial<Components> = {
   ),
   table: ({ node, children, ...props }) => (
     <div className="my-1.5 overflow-x-auto">
-      <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700" {...props}>
+      <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700 cyberpunk:divide-zinc-700" {...props}>
         {children}
       </table>
     </div>
   ),
   thead: ({ node, children, ...props }) => (
-    <thead className="bg-zinc-50 dark:bg-zinc-800/50 black:bg-zinc-800/50" {...props}>
+    <thead className="bg-zinc-50 dark:bg-zinc-800/50 black:bg-zinc-800/50 cyberpunk:bg-zinc-800/50" {...props}>
       {children}
     </thead>
   ),
   tbody: ({ node, children, ...props }) => (
-    <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700 bg-white dark:bg-transparent black:bg-transparent" {...props}>
+    <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700 black:divide-zinc-700 cyberpunk:divide-zinc-700 bg-white dark:bg-transparent black:bg-transparent cyberpunk:bg-transparent" {...props}>
       {children}
     </tbody>
   ),
   tr: ({ node, children, ...props }) => (
-    <tr className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30 black:hover:bg-zinc-800/30" {...props}>
+    <tr className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30 black:hover:bg-zinc-800/30 cyberpunk:hover:bg-zinc-800/30" {...props}>
       {children}
     </tr>
   ),
   th: ({ node, children, ...props }) => (
     <th
-      className="px-3 py-1.5 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 black:text-zinc-400 uppercase tracking-wider"
+      className="px-3 py-1.5 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 black:text-zinc-400 cyberpunk:text-zinc-400 uppercase tracking-wider"
       {...props}
     >
       {children}
     </th>
   ),
   td: ({ node, children, ...props }) => (
-    <td className="px-3 py-1.5 text-sm" {...props}>
+    <td className="px-3 py-1.5 text-sm text-zinc-900 dark:text-zinc-100 black:text-zinc-100 cyberpunk:text-zinc-100" {...props}>
       {children}
     </td>
   ),
