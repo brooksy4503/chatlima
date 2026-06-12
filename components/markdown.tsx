@@ -41,7 +41,7 @@ const components: Partial<Components> = {
 
     return (
       <div className="relative group/codeblock">
-        <pre className="overflow-x-auto max-w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 p-2.5 my-1.5 text-sm whitespace-pre-wrap break-words" {...props}>
+        <pre className="overflow-x-auto max-w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 cyberpunk:bg-zinc-800/50 text-zinc-800 dark:text-zinc-300 black:text-zinc-300 cyberpunk:text-zinc-300 p-2.5 my-1.5 text-sm whitespace-pre-wrap break-words" {...props}>
           {children}
         </pre>
         <CopyButton 
@@ -58,7 +58,7 @@ const components: Partial<Components> = {
     if (isInline) {
       return (
         <code
-          className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 text-[0.9em] font-mono"
+          className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 cyberpunk:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 cyberpunk:text-zinc-300 text-[0.9em] font-mono"
           {...props}
         >
           {children}

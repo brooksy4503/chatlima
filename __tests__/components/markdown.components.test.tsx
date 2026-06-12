@@ -23,7 +23,7 @@ describe('Markdown Custom Components', () => {
   describe('Code Components', () => {
     test('renders pre element with correct styling', () => {
       const PreComponent = ({ children }: any) => (
-        <pre className="overflow-x-auto max-w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 p-2.5 my-1.5 text-sm whitespace-pre-wrap break-words">
+        <pre className="overflow-x-auto max-w-full rounded-lg bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 cyberpunk:bg-zinc-800/50 text-zinc-800 dark:text-zinc-300 black:text-zinc-300 cyberpunk:text-zinc-300 p-2.5 my-1.5 text-sm whitespace-pre-wrap break-words">
           {children}
         </pre>
       );
@@ -38,6 +38,11 @@ describe('Markdown Custom Components', () => {
         'bg-zinc-100', 
         'dark:bg-zinc-800/50', 
         'black:bg-zinc-800/50',
+        'cyberpunk:bg-zinc-800/50',
+        'text-zinc-800',
+        'dark:text-zinc-300',
+        'black:text-zinc-300',
+        'cyberpunk:text-zinc-300',
         'p-2.5',
         'my-1.5',
         'text-sm',
@@ -54,7 +59,7 @@ describe('Markdown Custom Components', () => {
 
         if (isInline) {
           return (
-            <code className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 text-[0.9em] font-mono">
+            <code className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 cyberpunk:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 cyberpunk:text-zinc-300 text-[0.9em] font-mono">
               {children}
             </code>
           );
@@ -72,9 +77,11 @@ describe('Markdown Custom Components', () => {
         'bg-zinc-100',
         'dark:bg-zinc-800/50',
         'black:bg-zinc-800/50',
+        'cyberpunk:bg-zinc-800/50',
         'text-zinc-700',
         'dark:text-zinc-300',
         'black:text-zinc-300',
+        'cyberpunk:text-zinc-300',
         'text-[0.9em]',
         'font-mono'
       );
@@ -86,7 +93,7 @@ describe('Markdown Custom Components', () => {
         const isInline = !match && !className;
 
         if (isInline) {
-          return <code className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 text-[0.9em] font-mono">{children}</code>;
+          return <code className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 cyberpunk:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 cyberpunk:text-zinc-300 text-[0.9em] font-mono">{children}</code>;
         }
         return (
           <code className="block font-mono text-sm whitespace-pre-wrap break-words max-w-full">
@@ -569,7 +576,7 @@ describe('Markdown Custom Components', () => {
 
     test('code components support all theme variants', () => {
       const CodeComponent = ({ children }: any) => (
-        <code className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 text-[0.9em] font-mono">
+        <code className="px-1 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/50 black:bg-zinc-800/50 cyberpunk:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 black:text-zinc-300 cyberpunk:text-zinc-300 text-[0.9em] font-mono">
           {children}
         </code>
       );
@@ -582,9 +589,11 @@ describe('Markdown Custom Components', () => {
       expect(codeElement.className).toContain('bg-zinc-100');
       expect(codeElement.className).toContain('dark:bg-zinc-800/50');
       expect(codeElement.className).toContain('black:bg-zinc-800/50');
+      expect(codeElement.className).toContain('cyberpunk:bg-zinc-800/50');
       expect(codeElement.className).toContain('text-zinc-700');
       expect(codeElement.className).toContain('dark:text-zinc-300');
       expect(codeElement.className).toContain('black:text-zinc-300');
+      expect(codeElement.className).toContain('cyberpunk:text-zinc-300');
     });
   });
 });
