@@ -23,6 +23,7 @@ import { buildBaseChatTools, buildWebFetchPolicy } from '@/lib/chat/chatTools';
 import { buildDefaultSystemInstruction } from '@/lib/chat/systemInstruction';
 import { modelShouldDisableLogprobs } from '@/lib/chat/reasoningModels';
 import { prepareMessagesForModel } from '@/lib/chat/prepareMessagesForModel';
+import { isOpenRouterMetaRouterModel } from '@/lib/chat/openRouterMetaRouterModels';
 import { createErrorResponse } from '@/lib/chat/createErrorResponse';
 import type { ChatPreflightContext } from '@/lib/chat/chatPreflight';
 import type { ChatRequestBody } from '@/lib/chat/chatRequest';
@@ -43,6 +44,7 @@ export interface ChatStreamPlan {
   effectiveTemperature: number;
   effectiveMaxTokens: number;
   shouldForceImageGenerationTool: boolean;
+  useMultiStepStreaming: boolean;
   modelOptions: Record<string, unknown>;
   openrouterUserId: string;
   projectFileUrlByPath: Map<string, string>;
@@ -144,21 +146,27 @@ export async function buildChatStreamPlan(params: {
     modelOptions.logprobs = false;
   }
 
-  const baseTools = buildBaseChatTools({
-    mcpTools: mcpResult.tools as Record<string, unknown>,
-    messages,
-    projectFileUrlByPath,
-    accessPolicyFlags,
-  });
+  const isMetaRouterModel = isOpenRouterMetaRouterModel(selectedModel);
 
-  const allTools = {
-    ...baseTools,
-    ...webSearchSetup.openRouterServerTools,
-    ...ChatImageGenerationService.buildOpenRouterServerTools(
-      imageGenerationConfig,
-      apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
-    ),
-  };
+  const baseTools = isMetaRouterModel
+    ? {}
+    : buildBaseChatTools({
+        mcpTools: mcpResult.tools as Record<string, unknown>,
+        messages,
+        projectFileUrlByPath,
+        accessPolicyFlags,
+      });
+
+  const allTools = isMetaRouterModel
+    ? {}
+    : {
+        ...baseTools,
+        ...webSearchSetup.openRouterServerTools,
+        ...ChatImageGenerationService.buildOpenRouterServerTools(
+          imageGenerationConfig,
+          apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
+        ),
+      };
 
   const toolsToUse =
     isGoogleModel(selectedModel) && Object.keys(allTools).length > 0
@@ -166,6 +174,13 @@ export async function buildChatStreamPlan(params: {
           allTools as Parameters<typeof cleanToolsForGoogleModels>[0]
         )
       : allTools;
+
+  if (isMetaRouterModel) {
+    effectiveWebSearchEnabled = false;
+    console.log(
+      `[OpenRouter Meta-Router] Disabling client tools and web search for ${selectedModel} (model manages its own server tools)`
+    );
+  }
 
   const lastUserMessageText = (() => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -181,8 +196,11 @@ export async function buildChatStreamPlan(params: {
     userMessageRequestsImageCreation(lastUserMessageText);
 
   const shouldForceImageGenerationTool =
+    !isMetaRouterModel &&
     userRequestedImageCreation &&
     ChatImageGenerationService.modelSupportsForcedToolChoice(selectedModel);
+
+  const useMultiStepStreaming = Object.keys(toolsToUse).length > 0;
 
   const modelDefaults = getModelDefaults(selectedModelInfo);
   const effectiveTemperature =
@@ -232,6 +250,7 @@ export async function buildChatStreamPlan(params: {
       effectiveTemperature,
       effectiveMaxTokens,
       shouldForceImageGenerationTool,
+      useMultiStepStreaming,
       modelOptions,
       openrouterUserId,
       projectFileUrlByPath,

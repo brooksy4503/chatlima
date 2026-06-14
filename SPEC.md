@@ -442,6 +442,17 @@ Special middleware for models with thinking capabilities:
 - Grok 3 Mini with reasoning
 - MiniMax M2 series
 
+### 5.6 OpenRouter Meta-Router Models
+
+OpenRouter models whose API id is under the `openrouter/*` namespace (e.g. **Fusion**, **Auto Router**, **Free Router**) orchestrate their own server-side tools (`openrouter:web_search`, `openrouter:web_fetch`, multi-model deliberation). ChatLima catalog IDs therefore appear as `openrouter/openrouter/fusion` (ChatLima `openrouter/` prefix + OpenRouter API id `openrouter/fusion`).
+
+For these models, `buildChatStreamPlan` **disables**:
+- Client/MCP tools (`read_file`, `web_fetch`, MCP)
+- OpenRouter agentic web-search and image-generation server tools
+- Multi-step `streamText` (`stopWhen: stepCountIs(20)`)
+
+Fusion runs a panel of models in parallel, then a judge synthesizes the answer (30–90s typical). Streaming may emit only `OPENROUTER PROCESSING` keepalives until the final text deltas arrive.
+
 ---
 
 ## 6. Model Context Protocol (MCP)

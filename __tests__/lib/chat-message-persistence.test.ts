@@ -61,6 +61,26 @@ describe('chat-message-persistence', () => {
         { type: 'text', text: 'Answer', state: 'done' },
       ]);
     });
+
+    it('falls back to streamText when ui stream only has step-start', () => {
+      const uiResponseMessage: UIMessage = {
+        id: 'asst-1',
+        role: 'assistant',
+        parts: [{ type: 'step-start' } as UIMessage['parts'][number]],
+      };
+
+      const result = buildAssistantMessageForPersistence({
+        clientMessages: [userMessage],
+        uiResponseMessage,
+        streamText: 'Git LFS stores large files externally.',
+        reasoningText: undefined,
+      });
+
+      expect(result.parts).toEqual([
+        { type: 'step-start' },
+        { type: 'text', text: 'Git LFS stores large files externally.', state: 'done' },
+      ]);
+    });
   });
 
   describe('processMessagesForPersistence', () => {

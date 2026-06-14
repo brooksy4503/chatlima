@@ -35,6 +35,17 @@ export interface BuildAssistantMessageParams {
   responseAssistantId?: string;
 }
 
+/** True when UI stream parts contain displayable assistant text. */
+function uiPartsHaveDisplayableText(parts: UIMessage['parts'] | undefined): boolean {
+  if (!parts?.length) {
+    return false;
+  }
+
+  return parts.some(
+    (part) => part.type === 'text' && typeof part.text === 'string' && part.text.trim().length > 0
+  );
+}
+
 /** Build the assistant UIMessage to persist, preferring the completed UI stream message. */
 export function buildAssistantMessageForPersistence(
   params: BuildAssistantMessageParams
@@ -48,7 +59,7 @@ export function buildAssistantMessageForPersistence(
     (trailingAssistant?.role === 'assistant' ? trailingAssistant.id : undefined) ??
     nanoid();
 
-  if (uiResponseMessage?.parts?.length) {
+  if (uiResponseMessage?.parts?.length && uiPartsHaveDisplayableText(uiResponseMessage.parts)) {
     return {
       id: uiResponseMessage.id || fallbackId,
       role: 'assistant',
@@ -61,6 +72,20 @@ export function buildAssistantMessageForPersistence(
     assistantParts.push({ type: 'reasoning', text: reasoningText, state: 'done' });
   }
   assistantParts.push({ type: 'text', text: streamText || '', state: 'done' });
+
+  if (
+    uiResponseMessage?.parts?.length &&
+    !uiPartsHaveDisplayableText(uiResponseMessage.parts)
+  ) {
+    const nonTextParts = uiResponseMessage.parts.filter((part) => part.type !== 'text');
+    if (nonTextParts.length > 0) {
+      return {
+        id: uiResponseMessage.id || fallbackId,
+        role: 'assistant',
+        parts: markServerExecutedToolParts([...nonTextParts, ...assistantParts]),
+      };
+    }
+  }
 
   return {
     id: fallbackId,

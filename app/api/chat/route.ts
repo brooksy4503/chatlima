@@ -178,23 +178,27 @@ export async function POST(req: Request) {
       temperature: plan.effectiveTemperature,
       maxOutputTokens: plan.effectiveMaxTokens,
       messages: plan.formattedMessages,
-      tools: plan.toolsToUse as ToolSet,
-      ...(plan.shouldForceImageGenerationTool
+      ...(plan.useMultiStepStreaming
         ? {
-            prepareStep: async ({ stepNumber }: { stepNumber: number }) => {
-              if (stepNumber === 0) {
-                return {
-                  toolChoice: {
-                    type: 'tool' as const,
-                    toolName: 'image_generation' as const,
+            tools: plan.toolsToUse as ToolSet,
+            ...(plan.shouldForceImageGenerationTool
+              ? {
+                  prepareStep: async ({ stepNumber }: { stepNumber: number }) => {
+                    if (stepNumber === 0) {
+                      return {
+                        toolChoice: {
+                          type: 'tool' as const,
+                          toolName: 'image_generation' as const,
+                        },
+                      };
+                    }
+                    return {};
                   },
-                };
-              }
-              return {};
-            },
+                }
+              : {}),
+            stopWhen: stepCountIs(20),
           }
         : {}),
-      stopWhen: stepCountIs(20),
       user: openrouterUser,
       providerOptions: {
         google: {
