@@ -1384,7 +1384,7 @@ export default function Chat() {
               <p className="flex items-center text-muted-foreground">
                 <Check className="mr-2 h-4 w-4 text-green-500" />
                 <MessageSquare className="mr-1.5 h-4 w-4" />
-                1,000 messages monthly or 12,000 yearly
+                Monthly credits or yearly high-usage access. Message cost varies by model.
               </p>
               <p className="flex items-center text-muted-foreground">
                 <Check className="mr-2 h-4 w-4 text-green-500" />

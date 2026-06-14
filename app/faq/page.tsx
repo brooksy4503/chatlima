@@ -67,7 +67,7 @@ export default function FAQPage() {
                       Yearly Plan ($90/year)
                     </h3>
                     <ul className="space-y-2 text-card-foreground">
-                      <li>✓ About 12,000 messages worth of usage per year (high usage limits in the app)</li>
+                      <li>✓ High annual usage allowance; actual message count depends on selected models</li>
                       <li>✓ Same full catalog as monthly (per-message credit cost applies by model)</li>
                       <li>✓ Web search on eligible OpenRouter models</li>
                       <li>✓ MCP tools and presets</li>
