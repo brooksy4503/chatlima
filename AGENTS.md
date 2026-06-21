@@ -53,3 +53,17 @@ See `CLAUDE.md` and `package.json` scripts for the full list. Key commands:
 - `POLAR_PRODUCT_ID_YEARLY` is only a warning if missing (non-fatal).
 - Jest unit tests use `fakeTimers: { enableGlobally: true }` and `next/babel` transform. Some test suites have pre-existing timeout failures.
 - `pnpm install` may warn about ignored build scripts (esbuild, sharp, etc.). These are safe to ignore — esbuild works via platform-specific optional deps.
+
+### Package Source Lookup (opensrc)
+
+Before writing code that calls these packages, fetch the real source so you're working against the actual API, not stale memory:
+
+```bash
+opensrc path ai              # Vercel AI SDK (highest hallucination risk — fast-moving)
+opensrc path @ai-sdk/openai
+opensrc path @ai-sdk/anthropic
+opensrc path zod             # Schema validation
+opensrc path next            # Next.js App Router
+```
+
+Read the relevant files before writing imports, function calls, or tool definitions. Cached at `~/.opensrc/` after first fetch.
