@@ -614,7 +614,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 
 ### 8.4 Image & File Processing
 
-- **Images**: Drag-and-drop upload, client-side validation and compression, preview with full-screen modal, metadata (dimensions, size), detail level (low/high/auto).
+- **Images**: Drag-and-drop upload, clipboard image paste while the attach panel is open (composer-scoped), client-side validation and compression, preview with full-screen modal, metadata (dimensions, size), detail level (low/high/auto).
 - **Documents**: File preview component for images and document metadata; client-side validation for type and size before upload. Document content is fetched and parsed only when the AI calls the `read_file` tool.
 
 ### 8.5 PDF Export & Sharing

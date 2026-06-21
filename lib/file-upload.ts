@@ -52,6 +52,58 @@ export function getFileCategory(mimeType: string): 'image' | 'document' | 'code'
   return 'other';
 }
 
+const GENERIC_CLIPBOARD_IMAGE_NAMES = new Set([
+  'image.png',
+  'image.jpg',
+  'image.jpeg',
+  'image.webp',
+]);
+
+function extensionFromImageMimeType(mimeType: string): string {
+  const subtype = mimeType.split('/')[1]?.toLowerCase();
+  if (!subtype) return 'png';
+  if (subtype === 'jpeg') return 'jpg';
+  return subtype;
+}
+
+function needsClipboardFilenameNormalization(name: string): boolean {
+  const trimmed = name.trim();
+  if (!trimmed) return true;
+  return GENERIC_CLIPBOARD_IMAGE_NAMES.has(trimmed.toLowerCase());
+}
+
+function normalizeClipboardImageFile(file: File): File {
+  if (!needsClipboardFilenameNormalization(file.name)) {
+    return file;
+  }
+
+  const ext = extensionFromImageMimeType(file.type);
+  return new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
+}
+
+export function extractImageFilesFromClipboard(
+  clipboardData: DataTransfer | null,
+  allowedImageTypes: string[]
+): File[] {
+  if (!clipboardData?.items?.length) {
+    return [];
+  }
+
+  const files: File[] = [];
+
+  for (const item of clipboardData.items) {
+    if (item.kind !== 'file') continue;
+    if (!allowedImageTypes.includes(item.type)) continue;
+
+    const file = item.getAsFile();
+    if (!file) continue;
+
+    files.push(normalizeClipboardImageFile(file));
+  }
+
+  return files;
+}
+
 export function validateFile(
   file: File,
   maxSize: number = MAX_FILE_SIZE

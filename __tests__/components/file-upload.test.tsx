@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FileUpload, FileUploadStatus, getFileIcon } from '../../components/file-upload';
+import { extractImageFilesFromClipboard, SUPPORTED_FILE_TYPES } from '../../lib/file-upload';
 import type { FileAttachment } from '@/lib/types';
 
 jest.mock('../../lib/image-utils', () => ({
@@ -19,30 +20,137 @@ jest.mock('../../lib/image-utils', () => ({
   validateImageFile: jest.fn().mockReturnValue({ valid: true }),
 }));
 
-jest.mock('../../lib/file-upload', () => ({
-  getFileCategory: jest.fn((mimeType: string) => {
-    if (mimeType?.startsWith('image/')) return 'image';
-    if (mimeType?.includes('pdf') || mimeType?.includes('csv') || mimeType?.includes('excel')) return 'document';
-    if (mimeType?.includes('text/') || mimeType?.includes('json')) return 'code';
-    return 'other';
-  }),
-  ALL_SUPPORTED_TYPES: [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'application/pdf',
-    'text/csv',
-    'application/json',
-  ],
-  MAX_FILE_SIZE: 31457280,
-  formatFileSize: jest.fn((bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }),
-}));
+jest.mock('../../lib/file-upload', () => {
+  const actual = jest.requireActual('../../lib/file-upload');
+  return {
+    ...actual,
+    getFileCategory: jest.fn((mimeType: string) => {
+      if (mimeType?.startsWith('image/')) return 'image';
+      if (mimeType?.includes('pdf') || mimeType?.includes('csv') || mimeType?.includes('excel')) return 'document';
+      if (mimeType?.includes('text/') || mimeType?.includes('json')) return 'code';
+      return 'other';
+    }),
+    ALL_SUPPORTED_TYPES: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'application/pdf',
+      'text/csv',
+      'application/json',
+    ],
+    MAX_FILE_SIZE: 31457280,
+    formatFileSize: jest.fn((bytes: number) => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }),
+  };
+});
+
+function createClipboardItems(
+  entries: Array<{ kind: string; type: string; file?: File | null }>
+) {
+  return entries.map((entry) => ({
+    kind: entry.kind,
+    type: entry.type,
+    getAsFile: () => entry.file ?? null,
+  }));
+}
+
+describe('extractImageFilesFromClipboard', () => {
+  const allowedImageTypes = SUPPORTED_FILE_TYPES.images;
+
+  it('extracts supported image files from clipboard items', () => {
+    const png = new File(['img'], 'photo.png', { type: 'image/png' });
+    const jpeg = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+
+    const files = extractImageFilesFromClipboard(
+      { items: createClipboardItems([
+        { kind: 'file', type: 'image/png', file: png },
+        { kind: 'file', type: 'image/jpeg', file: jpeg },
+      ]) } as unknown as DataTransfer,
+      allowedImageTypes
+    );
+
+    expect(files).toHaveLength(2);
+    expect(files[0].name).toBe('photo.png');
+    expect(files[1].name).toBe('photo.jpg');
+  });
+
+  it('returns empty array for text-only clipboard', () => {
+    const files = extractImageFilesFromClipboard(
+      { items: createClipboardItems([
+        { kind: 'string', type: 'text/plain', file: null },
+      ]) } as unknown as DataTransfer,
+      allowedImageTypes
+    );
+
+    expect(files).toEqual([]);
+  });
+
+  it('returns empty array for null clipboard data', () => {
+    expect(extractImageFilesFromClipboard(null, allowedImageTypes)).toEqual([]);
+  });
+
+  it('normalizes empty-name clipboard files', () => {
+    const unnamed = new File(['img'], '', { type: 'image/png' });
+
+    const files = extractImageFilesFromClipboard(
+      { items: createClipboardItems([
+        { kind: 'file', type: 'image/png', file: unnamed },
+      ]) } as unknown as DataTransfer,
+      allowedImageTypes
+    );
+
+    expect(files).toHaveLength(1);
+    expect(files[0].name).toMatch(/^pasted-image-\d+\.png$/);
+  });
+
+  it('normalizes generic image.png clipboard names', () => {
+    const generic = new File(['img'], 'image.png', { type: 'image/png' });
+
+    const files = extractImageFilesFromClipboard(
+      { items: createClipboardItems([
+        { kind: 'file', type: 'image/png', file: generic },
+      ]) } as unknown as DataTransfer,
+      allowedImageTypes
+    );
+
+    expect(files).toHaveLength(1);
+    expect(files[0].name).toMatch(/^pasted-image-\d+\.png$/);
+  });
+
+  it('uses jpg extension for jpeg mime type', () => {
+    const generic = new File(['img'], '', { type: 'image/jpeg' });
+
+    const files = extractImageFilesFromClipboard(
+      { items: createClipboardItems([
+        { kind: 'file', type: 'image/jpeg', file: generic },
+      ]) } as unknown as DataTransfer,
+      allowedImageTypes
+    );
+
+    expect(files[0].name).toMatch(/^pasted-image-\d+\.jpg$/);
+  });
+
+  it('respects custom allowedImageTypes', () => {
+    const png = new File(['img'], 'photo.png', { type: 'image/png' });
+    const jpeg = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+
+    const files = extractImageFilesFromClipboard(
+      { items: createClipboardItems([
+        { kind: 'file', type: 'image/png', file: png },
+        { kind: 'file', type: 'image/jpeg', file: jpeg },
+      ]) } as unknown as DataTransfer,
+      ['image/png']
+    );
+
+    expect(files).toHaveLength(1);
+    expect(files[0].type).toBe('image/png');
+  });
+});
 
 describe('FileUpload Component', () => {
   const mockOnFileSelect = jest.fn();
@@ -57,7 +165,7 @@ describe('FileUpload Component', () => {
   describe('rendering', () => {
     it('should render upload area', () => {
       render(<FileUpload {...defaultProps} />);
-      expect(screen.getByText('Click or drag files to upload')).toBeInTheDocument();
+      expect(screen.getByText('Click or drag files to upload • Paste images from clipboard')).toBeInTheDocument();
     });
 
     it('should render choose files button', () => {
@@ -177,6 +285,100 @@ describe('FileUpload Component', () => {
       await waitFor(() => {
         expect(mockOnFileSelect).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('clipboard paste', () => {
+    function renderWithPasteScope(props: Partial<React.ComponentProps<typeof FileUpload>> = {}) {
+      const scopeEl = document.createElement('div');
+      document.body.appendChild(scopeEl);
+      const scopeRef = { current: scopeEl };
+
+      render(<FileUpload {...defaultProps} pasteScopeRef={scopeRef} {...props} />);
+
+      return scopeEl;
+    }
+
+    it('should process pasted image files on paste scope element', async () => {
+      const scopeEl = renderWithPasteScope();
+      const file = new File(['img'], 'test.png', { type: 'image/png' });
+
+      fireEvent.paste(scopeEl, {
+        clipboardData: {
+          items: createClipboardItems([
+            { kind: 'file', type: 'image/png', file },
+          ]),
+        },
+      });
+
+      await waitFor(() => {
+        expect(mockOnFileSelect).toHaveBeenCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({ type: 'image' }),
+          ])
+        );
+      });
+    });
+
+    it('should not process text-only clipboard paste', async () => {
+      const scopeEl = renderWithPasteScope();
+
+      fireEvent.paste(scopeEl, {
+        clipboardData: {
+          items: createClipboardItems([
+            { kind: 'string', type: 'text/plain', file: null },
+          ]),
+        },
+      });
+
+      await waitFor(() => {
+        expect(mockOnFileSelect).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should not process pasted images when disabled', async () => {
+      const scopeEl = renderWithPasteScope({ disabled: true });
+      const file = new File(['img'], 'test.png', { type: 'image/png' });
+
+      fireEvent.paste(scopeEl, {
+        clipboardData: {
+          items: createClipboardItems([
+            { kind: 'file', type: 'image/png', file },
+          ]),
+        },
+      });
+
+      await waitFor(() => {
+        expect(mockOnFileSelect).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should respect maxFiles when pasting images', async () => {
+      const scopeEl = renderWithPasteScope({ maxFiles: 2 });
+      const files = [
+        new File(['1'], 'one.png', { type: 'image/png' }),
+        new File(['2'], 'two.png', { type: 'image/png' }),
+        new File(['3'], 'three.png', { type: 'image/png' }),
+      ];
+
+      fireEvent.paste(scopeEl, {
+        clipboardData: {
+          items: createClipboardItems(
+            files.map((file) => ({ kind: 'file', type: 'image/png', file }))
+          ),
+        },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Maximum 2 files allowed/)).toBeInTheDocument();
+      });
+
+      expect(mockOnFileSelect).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ type: 'image' }),
+        ])
+      );
+      expect(mockOnFileSelect.mock.calls[0][0]).toHaveLength(2);
     });
   });
 

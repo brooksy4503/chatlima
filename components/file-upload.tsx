@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { ImageIcon, Upload, Loader2, FileText, FileSpreadsheet, FileCode, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import {
   ALL_SUPPORTED_TYPES, 
   MAX_FILE_SIZE,
   formatFileSize,
+  extractImageFilesFromClipboard,
 } from '@/lib/file-upload';
 
 interface FileUploadProps {
@@ -23,6 +24,7 @@ interface FileUploadProps {
   defaultDetail?: "low" | "high" | "auto";
   showDetailSelector?: boolean;
   className?: string;
+  pasteScopeRef?: React.RefObject<HTMLElement | null>;
 }
 
 export function FileUpload({
@@ -33,7 +35,8 @@ export function FileUpload({
   disabled = false,
   defaultDetail = "auto",
   showDetailSelector = true,
-  className = ""
+  className = "",
+  pasteScopeRef,
 }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
@@ -120,6 +123,29 @@ export function FileUpload({
     }
   }, [maxFiles, maxSizePerFile, acceptedTypes, selectedDetail, onFileSelect]);
 
+  const tryIntakeFiles = useCallback((files: File[]) => {
+    if (disabled || isUploading || files.length === 0) return;
+    void handleFiles(files);
+  }, [disabled, isUploading, handleFiles]);
+
+  useEffect(() => {
+    const el = pasteScopeRef?.current;
+    if (!el) return;
+
+    const allowedImageTypes = acceptedTypes.filter((type) => type.startsWith('image/'));
+
+    const onPaste = (e: ClipboardEvent) => {
+      const imageFiles = extractImageFilesFromClipboard(e.clipboardData, allowedImageTypes);
+      if (imageFiles.length === 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      tryIntakeFiles(imageFiles);
+    };
+
+    el.addEventListener('paste', onPaste, true);
+    return () => el.removeEventListener('paste', onPaste, true);
+  }, [pasteScopeRef, acceptedTypes, tryIntakeFiles]);
+
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -136,23 +162,21 @@ export function FileUpload({
     e.stopPropagation();
     setDragActive(false);
 
-    if (disabled || isUploading) return;
-
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      handleFiles(files);
+      tryIntakeFiles(Array.from(files));
     }
-  }, [disabled, isUploading, handleFiles]);
+  }, [tryIntakeFiles]);
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      handleFiles(files);
+      tryIntakeFiles(Array.from(files));
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [handleFiles]);
+  }, [tryIntakeFiles]);
 
   const handleButtonClick = useCallback(() => {
     if (disabled || isUploading) return;
@@ -217,7 +241,7 @@ export function FileUpload({
                 <Upload className="h-6 w-6" />
               </div>
               <div className="text-sm font-medium">
-                {dragActive ? 'Drop files here' : 'Click or drag files to upload'}
+                {dragActive ? 'Drop files here' : 'Click or drag files to upload • Paste images from clipboard'}
               </div>
               <div className="text-xs text-muted-foreground text-center space-y-1">
                 <div>Images (JPEG, PNG, WebP) • Documents (PDF, CSV, Excel) • Code files</div>

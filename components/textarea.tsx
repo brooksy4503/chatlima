@@ -60,6 +60,7 @@ export const Textarea = ({
   }, [handleInputChange]);
   const iconButtonRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
   
   // Code detection and enhancement state
@@ -625,11 +626,12 @@ export const Textarea = ({
 
 
   return (
-    <div className="w-full space-y-3">
+    <div ref={composerRef} className="w-full space-y-3">
       {/* File Upload Interface */}
       {showImageUpload && (
         <div className="bg-card border border-border rounded-xl p-4">
           <FileUpload
+            pasteScopeRef={composerRef}
             onFileSelect={handleFileSelect}
             maxFiles={5 - files.length}
             disabled={isLoading || !canUploadMore}
