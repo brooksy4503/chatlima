@@ -6,6 +6,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
+import { CompareTimeline } from "./compare/CompareTimeline";
+import { CompareModeBar } from "./compare/CompareModeBar";
 import { toast } from "sonner";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +16,9 @@ import { dbMessagesHaveRicherAssistantParts } from "@/lib/chat-message-persisten
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
+import { useCompare } from "@/lib/context/compare-context";
+import { getCompareSubmitState, shouldSubmitCompare } from "@/lib/compare/compareSubmitState";
+import { useCompareOrchestrator } from "@/hooks/useCompareOrchestrator";
 import { usePresets } from "@/lib/context/preset-context";
 import { useMCP } from "@/lib/context/mcp-context";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +51,11 @@ type ChatUIMessage = UIMessage & {
   createdAt?: Date | string;
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
+  modelId?: string | null;
+  modelProvider?: string | null;
+  modelDisplayName?: string | null;
+  comparisonTurnId?: string | null;
+  latencyMs?: number;
 };
 
 // Type for chat data from DB
@@ -85,6 +95,8 @@ export default function Chat() {
   const { mcpServersForApi } = useMCP();
   
   const { selectedModel, setSelectedModel } = useModel();
+  const { compareModeEnabled, compareModels } = useCompare();
+  const { canUseModelAtCreditCost } = useCredits(undefined, user?.id);
   const { activePreset } = usePresets();
   const [showWelcomeScreen, setShowWelcomeScreen] = useLocalStorage(STORAGE_KEYS.SHOW_WELCOME_SCREEN, true);
   const [showSuggestedPrompts] = useLocalStorage(STORAGE_KEYS.SHOW_SUGGESTED_PROMPTS, true);
@@ -246,6 +258,10 @@ export default function Chat() {
       createdAt: msg.createdAt,
       hasWebSearch: msg.hasWebSearch,
       webSearchContextSize: msg.webSearchContextSize,
+      modelId: msg.modelId,
+      modelProvider: msg.modelProvider,
+      modelDisplayName: msg.modelDisplayName,
+      comparisonTurnId: msg.comparisonTurnId,
     }));
   }, [chatData]);
 
@@ -410,6 +426,9 @@ export default function Chat() {
       messages: initialMessages,
       transport,
       sendAutomaticallyWhen: ({ messages: chatMessages }) => {
+        if (shouldSubmitCompare()) {
+          return false;
+        }
         // Server-executed tools must not trigger client follow-up requests (causes stuck "streaming").
         if (mcpServersForApi.length > 0 || imageGenerationEnabled) {
           return false;
@@ -630,6 +649,26 @@ export default function Chat() {
       },
     });
 
+  const compareOrchestrator = useCompareOrchestrator({
+    chatId: chatId || generatedChatId,
+    messages: messages as ChatUIMessage[],
+    setMessages: setMessages as React.Dispatch<React.SetStateAction<ChatUIMessage[]>>,
+    getApiKeys: getClientApiKeys,
+    canUseModelAtCreditCost,
+  });
+
+  const {
+    submit: submitCompare,
+    stop: stopCompare,
+    isCompareLoading,
+    promoteModel: promoteCompareModel,
+  } = compareOrchestrator;
+
+  const hasComparisonMessages = useMemo(
+    () => messages.some((m) => (m as ChatUIMessage).comparisonTurnId),
+    [messages]
+  );
+
   // Sync DB history into useChat when navigating to a chat, and re-sync when a refetch
   // returns richer assistant parts (tool/reasoning) after the server finishes persisting.
   const loadedChatIdRef = useRef<string | null>(null);
@@ -641,6 +680,7 @@ export default function Chat() {
   useEffect(() => {
     if (!chatId || isLoadingChat) return;
     if (status === "streaming" || status === "submitted") return;
+    if (isCompareLoading) return;
 
     const isNewChatNavigation = loadedChatIdRef.current !== chatId;
 
@@ -661,7 +701,7 @@ export default function Chat() {
     ) {
       setMessages(initialMessages);
     }
-  }, [chatId, isLoadingChat, initialMessages, status, setMessages, messages]);
+  }, [chatId, isLoadingChat, initialMessages, status, setMessages, messages, isCompareLoading]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -669,6 +709,11 @@ export default function Chat() {
 
   // Custom stop function that handles both stopping the stream and refreshing data
   const stop = useCallback(async () => {
+    if (isCompareLoading) {
+      await stopCompare();
+      return;
+    }
+
     console.log('Stopping stream and refreshing chat data...');
 
     const activeChatId = chatId || generatedChatId;
@@ -706,7 +751,7 @@ export default function Chat() {
         }
       }
     }, 100); // Small delay to ensure server-side processing completes
-  }, [originalStop, queryClient, chatId, generatedChatId, router]);
+  }, [originalStop, queryClient, chatId, generatedChatId, router, isCompareLoading, stopCompare]);
 
   // Error recovery mechanism - reset chat state when errors occur
   useEffect(() => {
@@ -839,6 +884,32 @@ export default function Chat() {
 
     // Don't submit if already uploading
     if (isUploadingFiles) {
+      return;
+    }
+
+    if (shouldSubmitCompare()) {
+      if (selectedFiles.length > 0) {
+        toast.error('File attachments are not supported in compare mode.');
+        return;
+      }
+      const draftInput = input.trim();
+      if (!draftInput) {
+        return;
+      }
+      const { models: activeCompareModels } = getCompareSubmitState();
+      lastSubmittedDraftRef.current = draftInput;
+      setInput('');
+      const ok = await submitCompare(draftInput, activeCompareModels);
+      if (ok) {
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+        queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
+        if (!chatId && generatedChatId && window.location.pathname !== `/chat/${generatedChatId}`) {
+          router.push(`/chat/${generatedChatId}`, { scroll: false });
+        }
+      } else if (lastSubmittedDraftRef.current !== null) {
+        setInput(lastSubmittedDraftRef.current);
+        lastSubmittedDraftRef.current = null;
+      }
       return;
     }
 
@@ -978,10 +1049,15 @@ export default function Chat() {
     user?.hasSubscription,
     billingEnforced,
     session?.user?.isAnonymous,
-    openAccessGateDialog
+    openAccessGateDialog,
+    submitCompare,
+    queryClient,
+    chatId,
+    generatedChatId,
+    router,
   ]);
 
-  const isLoading = (status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded || isLoadingChat || isUploadingFiles;
+  const isLoading = ((status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded) || isCompareLoading || isLoadingChat || isUploadingFiles;
 
   // Function to send a message from suggested prompts
   const sendSuggestedMessage = useCallback((message: string) => {
@@ -1259,8 +1335,31 @@ export default function Chat() {
       )}
 
       {/* Main content area: Either ProjectOverview, minimal empty state, or Messages */}
-      <div className="flex-1 min-h-0 pb-2 overflow-hidden">
-        {messages.length === 0 && !isLoadingChat ? (
+      <div className="flex-1 min-h-0 pb-2 overflow-hidden flex flex-col">
+        {messages.length === 0 && !isLoadingChat && compareModeEnabled ? (
+          <>
+            <CompareModeBar />
+            {showWelcomeScreen || showSuggestedPrompts ? (
+              <div className="min-h-0 flex-1 overflow-y-auto no-scrollbar">
+                <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
+                  <ProjectOverview
+                    sendMessage={sendSuggestedMessage}
+                    selectedModel={selectedModel}
+                    showWelcomeOnboarding={showWelcomeScreen}
+                    onShowWelcomeOnboardingChange={setShowWelcomeScreen}
+                    showSuggestedPrompts={showSuggestedPrompts}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center px-4">
+                <p className="text-sm text-muted-foreground text-center max-w-sm">
+                  Type a message below to get started.
+                </p>
+              </div>
+            )}
+          </>
+        ) : messages.length === 0 && !isLoadingChat ? (
           showWelcomeScreen || showSuggestedPrompts ? (
             <div className="h-full overflow-y-auto no-scrollbar">
               <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
@@ -1280,6 +1379,21 @@ export default function Chat() {
               </p>
             </div>
           )
+        ) : hasComparisonMessages || compareModeEnabled ? (
+          <CompareTimeline
+            messages={enhancedMessages as ChatUIMessage[]}
+            isLoading={isLoading}
+            status={status}
+            compareModeEnabled={compareModeEnabled}
+            compareModels={compareModels}
+            isCompareStreaming={isCompareLoading}
+            onPromoteModel={(modelId, comparisonTurnId) => {
+              promoteCompareModel(modelId, comparisonTurnId);
+              setSelectedModel(modelId as typeof selectedModel);
+            }}
+            webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
+            imageGenerationEnabled={imageGenerationEnabled && isOpenRouterModel}
+          />
         ) : (
           <Messages
             messages={enhancedMessages}

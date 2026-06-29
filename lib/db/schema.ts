@@ -24,8 +24,14 @@ export const messages = pgTable('messages', {
   parts: json('parts').notNull(), // Store parts as JSON in the database
   hasWebSearch: boolean('has_web_search').default(false),
   webSearchContextSize: text('web_search_context_size').default('medium'), // 'low', 'medium', 'high'
+  modelId: text('model_id'),
+  modelProvider: text('model_provider'),
+  modelDisplayName: text('model_display_name'),
+  comparisonTurnId: text('comparison_turn_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  comparisonTurnIdx: index('idx_messages_comparison_turn').on(table.chatId, table.comparisonTurnId),
+}));
 
 // Types for structured message content
 export type MessagePart = {
@@ -55,6 +61,12 @@ export type DBMessage = {
   chatId: string;
   role: string;
   parts: MessagePart[];
+  hasWebSearch?: boolean;
+  webSearchContextSize?: string;
+  modelId?: string | null;
+  modelProvider?: string | null;
+  modelDisplayName?: string | null;
+  comparisonTurnId?: string | null;
   createdAt: Date;
 };
 

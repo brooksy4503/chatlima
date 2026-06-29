@@ -2,6 +2,9 @@ import { modelID } from "@/ai/providers";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
 import { ArrowUp, Square, Globe, AlertCircle, Paperclip, Code2, Eye, EyeOff, ImagePlus } from "lucide-react";
 import { ModelPicker } from "./model-picker";
+import { CompareModelPicker } from "./compare/CompareModelPicker";
+import { CompareModeToggle } from "./compare/CompareModeBar";
+import { useCompare } from "@/lib/context/compare-context";
 import { PresetSelector } from "./preset-selector";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -46,7 +49,6 @@ export const Textarea = ({
 }: InputProps) => {
   // Guard against undefined input prop
   const safeInput = input ?? "";
-  const isStreaming = status === "streaming" || status === "submitted";
   
   // Memoize handleInputChange to ensure stable reference
   // This should always be provided from useChat hook
@@ -73,10 +75,14 @@ export const Textarea = ({
   const [autoDetectionEnabled, setAutoDetectionEnabled] = useState(true);
   const isMounted = useClientMount();
 
+  const { user } = useAuth();
   const { webSearchEnabled, setWebSearchEnabled } = useWebSearch();
   const { imageGenerationEnabled, setImageGenerationEnabled, imageGenerationModel } = useImageGeneration();
   const { activePreset } = usePresets();
-  const { user } = useAuth();
+  const { compareModeEnabled, compareModels, estimatedCreditCost } = useCompare();
+  const isStreaming =
+    isLoading &&
+    (status === "streaming" || status === "submitted" || compareModeEnabled);
   const isMobileScreen = useIsMobile();
   const { models } = useModels();
 
@@ -843,9 +849,11 @@ export const Textarea = ({
         <div className={`flex ${isMobileScreen ? 'flex-col gap-2' : 'items-center gap-2'}`}>
           {/* Left side controls - Stack on mobile */}
           <div className={`flex items-center gap-2 ${isMobileScreen ? 'w-full' : 'flex-1'}`}>
-            <PresetSelector className={isMobileScreen ? "flex-1 min-w-0" : ""} />
+            {!compareModeEnabled && (
+              <PresetSelector className={isMobileScreen ? "flex-1 min-w-0" : ""} />
+            )}
             {/* Only show model picker when no preset is active */}
-            {!activePreset && (
+            {!activePreset && !compareModeEnabled && (
               <div className={isMobileScreen ? "flex-1 min-w-0" : ""}>
                 <ModelPicker
                   setSelectedModel={setSelectedModel}
@@ -855,12 +863,30 @@ export const Textarea = ({
                 />
               </div>
             )}
+            {compareModeEnabled && (
+              <div className={isMobileScreen ? "flex-1 min-w-0" : ""}>
+                <CompareModelPicker disabled={isLoading} />
+              </div>
+            )}
           </div>
 
           {/* Right side controls - Second row on mobile */}
           <div className={`flex items-center ${isMobileScreen ? 'w-full gap-3' : 'gap-2'}`}>
             {/* Action buttons group */}
             <div className={`flex items-center shrink-0 ${isMobileScreen ? 'gap-2' : 'gap-1.5'}`}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <CompareModeToggle />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent sideOffset={8}>
+                  {compareModeEnabled ? 'Disable model comparison' : 'Compare multiple models'}
+                </TooltipContent>
+              </Tooltip>
+
+              {!compareModeEnabled && (
+              <>
               {/* File Upload Button */}
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -946,6 +972,8 @@ export const Textarea = ({
                     {getWebSearchTooltipMessage()}
                   </TooltipContent>
                 </Tooltip>
+              )}
+              </>
               )}
             </div>
 

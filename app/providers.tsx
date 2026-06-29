@@ -9,6 +9,7 @@ import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { MCPProvider } from "@/lib/context/mcp-context";
 import { ModelProvider } from "@/lib/context/model-context";
+import { CompareProvider } from "@/lib/context/compare-context";
 import { PresetProvider } from "@/lib/context/preset-context";
 import { AuthProvider } from "@/lib/context/auth-context";
 
@@ -43,6 +44,7 @@ export function Providers({ children }: { children: ReactNode }) {
         >
           <MCPProvider>
             <ModelProvider>
+              <CompareProvider>
               <PresetProvider>
                 <SidebarProvider 
                   defaultOpen={true} 
@@ -53,6 +55,7 @@ export function Providers({ children }: { children: ReactNode }) {
                   <Toaster position="top-center" richColors />
                 </SidebarProvider>
               </PresetProvider>
+              </CompareProvider>
             </ModelProvider>
           </MCPProvider>
         </ThemeProvider>

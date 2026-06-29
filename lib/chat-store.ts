@@ -12,6 +12,11 @@ type AIMessage = UIMessage & {
   createdAt?: Date | string;
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
+  modelId?: string | null;
+  modelProvider?: string | null;
+  modelDisplayName?: string | null;
+  comparisonTurnId?: string | null;
+  latencyMs?: number;
 };
 
 type UIMessageWithMeta = {
@@ -101,6 +106,10 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
         parts: msg.parts,
         hasWebSearch: msg.hasWebSearch || false,
         webSearchContextSize: msg.webSearchContextSize || 'medium',
+        modelId: msg.modelId ?? null,
+        modelProvider: msg.modelProvider ?? null,
+        modelDisplayName: msg.modelDisplayName ?? null,
+        comparisonTurnId: msg.comparisonTurnId ?? null,
         createdAt
       };
     }
@@ -117,6 +126,10 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
       parts,
       hasWebSearch: msg.hasWebSearch || false,
       webSearchContextSize: msg.webSearchContextSize || 'medium',
+      modelId: msg.modelId ?? null,
+      modelProvider: msg.modelProvider ?? null,
+      modelDisplayName: msg.modelDisplayName ?? null,
+      comparisonTurnId: msg.comparisonTurnId ?? null,
       createdAt
     };
   });
@@ -127,6 +140,10 @@ export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage
   createdAt?: Date;
   hasWebSearch?: boolean;
   webSearchContextSize?: 'low' | 'medium' | 'high';
+  modelId?: string | null;
+  modelProvider?: string | null;
+  modelDisplayName?: string | null;
+  comparisonTurnId?: string | null;
 }> {
   return dbMessages.map((message) => ({
     id: message.id,
@@ -134,11 +151,19 @@ export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage
     role: message.role as UIMessage['role'],
     createdAt: message.createdAt,
     hasWebSearch: message.hasWebSearch || false,
-    webSearchContextSize: (message.webSearchContextSize || 'medium') as 'low' | 'medium' | 'high'
+    webSearchContextSize: (message.webSearchContextSize || 'medium') as 'low' | 'medium' | 'high',
+    modelId: message.modelId ?? null,
+    modelProvider: message.modelProvider ?? null,
+    modelDisplayName: message.modelDisplayName ?? null,
+    comparisonTurnId: message.comparisonTurnId ?? null,
   })) as Array<UIMessage & {
     createdAt?: Date;
     hasWebSearch?: boolean;
     webSearchContextSize?: 'low' | 'medium' | 'high';
+    modelId?: string | null;
+    modelProvider?: string | null;
+    modelDisplayName?: string | null;
+    comparisonTurnId?: string | null;
   }>;
 }
 

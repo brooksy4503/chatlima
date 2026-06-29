@@ -11,6 +11,8 @@ export const STORAGE_KEYS = {
   IMAGE_GENERATION: "imageGeneration",
   SHOW_WELCOME_SCREEN: "showWelcomeScreen",
   SHOW_SUGGESTED_PROMPTS: "showSuggestedPrompts",
+  COMPARE_MODE: "compareMode",
+  COMPARE_MODELS: "compareModels",
 } as const;
 
 // Configurable model IDs

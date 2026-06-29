@@ -197,6 +197,10 @@ The application uses specialized services for maintainability:
   parts: json                 // MessagePart[]
   hasWebSearch: boolean?
   webSearchContextSize: string? // "low", "medium", "high"
+  modelId: string?              // model used for this message (assistant) or compare set
+  modelProvider: string?
+  modelDisplayName: string?
+  comparisonTurnId: string?     // groups user + N assistant rows from one compare send
   createdAt: timestamp
 }
 ```
@@ -649,6 +653,17 @@ POST /api/chat
 - Handles MCP tools, OpenRouter web search (agentic or legacy :online), Chatlima image_generation tool backed by OpenRouter image-output models, native web_fetch, images (base64), file references (Blob URLs)
 - Integrates read_file tool for uploaded documents and web_fetch tool for URL extraction
 - **Persistence**: Client history (excluding in-flight assistant placeholder) is saved before streaming starts; assistant messages are saved in awaited `uiOnFinish` after waiting up to 6s for `streamText` metadata (image URLs, tool steps). `saveMessages` uses a DB transaction (delete + insert). Stream-finish fallback persistence runs via Next.js `after()`.
+
+#### Compare API (Model Comparison — Stacked Turns, v1 text-only)
+```
+POST /api/compare
+- Compare one prompt across 2–3 models sequentially
+- Request: { chatId, messages, compareModels[], comparisonTurnId, userMessageId, apiKeys }
+- Response: application/x-ndjson stream with events:
+  model-start, text-delta, model-finish, model-error, turn-complete, error
+- Credits: validated per model; daily free-tier usage incremented once per compare turn
+- Disabled in compare mode: MCP, web search, image generation, presets, file attachments
+- Messages persist model_id, model_provider, model_display_name, comparison_turn_id on each row
 ```
 
 #### Upload API

@@ -65,4 +65,28 @@ describe('chat-store message conversion', () => {
       dbMessages[0].createdAt.getTime() + 1
     );
   });
+
+  it('round-trips comparison metadata fields', () => {
+    const messages = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'Compare this' }],
+        comparisonTurnId: 'turn-1',
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Response' }],
+        comparisonTurnId: 'turn-1',
+        modelId: 'openrouter/gpt-4o-mini',
+        modelProvider: 'openrouter',
+        modelDisplayName: 'GPT-4o mini',
+      },
+    ] as Array<UIMessage & { comparisonTurnId?: string; modelId?: string; modelProvider?: string; modelDisplayName?: string }>;
+
+    const db = convertToDBMessages(messages, 'chat-1');
+    expect(db[1].modelId).toBe('openrouter/gpt-4o-mini');
+    expect(db[1].comparisonTurnId).toBe('turn-1');
+  });
 });

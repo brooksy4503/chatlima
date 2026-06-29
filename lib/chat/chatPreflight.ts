@@ -52,9 +52,14 @@ function buildCreditContext(
   };
 }
 
+export interface ChatPreflightOptions {
+  skipDailyIncrement?: boolean;
+}
+
 export async function runChatPreflight(
   req: Request,
-  body: ChatRequestBody
+  body: ChatRequestBody,
+  options: ChatPreflightOptions = {}
 ): Promise<ChatPreflightResult> {
   const authenticatedUser = await ChatAuthenticationService.authenticateUser(req);
 
@@ -119,7 +124,11 @@ export async function runChatPreflight(
     buildCreditContext(body, authenticatedUser, isUsingOwnApiKeys)
   );
 
-  if (!accessPolicyFlags.billingEnforced && !creditValidation.hasCredits) {
+  if (
+    !options.skipDailyIncrement &&
+    !accessPolicyFlags.billingEnforced &&
+    !creditValidation.hasCredits
+  ) {
     const limitCheck = await DailyMessageUsageService.checkDailyLimit(
       authenticatedUser.userId
     );
