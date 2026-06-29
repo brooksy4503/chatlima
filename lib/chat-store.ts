@@ -131,7 +131,8 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
 export function convertToUIMessages(dbMessages: Array<Message>): CompareUIMessage[] {
   return dbMessages.map((message) => ({
     id: message.id,
-    parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
+    // DB stores legacy/custom part shapes (image_url, tool-invocation); cast for UIMessage compat
+    parts: message.parts as UIMessage['parts'],
     role: message.role as UIMessage['role'],
     createdAt: message.createdAt,
     hasWebSearch: message.hasWebSearch || false,
