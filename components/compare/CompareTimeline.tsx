@@ -38,28 +38,26 @@ export function CompareTimeline({
   const comparisonGroups = groups.filter((g) => g.turnId !== null);
   const latestComparisonTurnId = comparisonGroups[comparisonGroups.length - 1]?.turnId ?? null;
 
-  const nonCompareMessages = groups.filter((g) => g.turnId === null);
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       {compareModeEnabled && <CompareModeBar />}
       <div className="min-h-0 flex-1 overflow-y-auto no-scrollbar" ref={containerRef}>
         <div className="mx-auto max-w-lg py-4 sm:max-w-3xl">
-          {nonCompareMessages.map((group, gi) =>
-            group.messages.map((m, i) => (
-              <Message
-                key={m.id}
-                isLatestMessage={false}
-                isLoading={isLoading}
-                message={m}
-                status={status}
-                webSearchEnabled={webSearchEnabled}
-                imageGenerationEnabled={imageGenerationEnabled}
-              />
-            ))
-          )}
+          {groups.map((group, index) => {
+            if (group.turnId === null) {
+              return group.messages.map((m) => (
+                <Message
+                  key={m.id}
+                  isLatestMessage={false}
+                  isLoading={isLoading}
+                  message={m}
+                  status={status}
+                  webSearchEnabled={webSearchEnabled}
+                  imageGenerationEnabled={imageGenerationEnabled}
+                />
+              ));
+            }
 
-          {comparisonGroups.map((group, index) => {
             const isLatest = group.turnId === latestComparisonTurnId;
             const streamingModelIds =
               isLatest && isCompareStreaming ? new Set(compareModels) : undefined;

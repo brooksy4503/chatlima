@@ -27,6 +27,8 @@ describe('compareHistory', () => {
     const groups = groupMessagesByComparisonTurn(messages);
     expect(groups[0].turnId).not.toBeNull();
     expect(groups[0].messages).toHaveLength(2);
+    expect(groups[1].turnId).toBeNull();
+    expect(groups[1].messages).toHaveLength(1);
   });
 });
 

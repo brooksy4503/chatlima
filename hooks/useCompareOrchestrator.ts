@@ -238,7 +238,12 @@ export function useCompareOrchestrator({
             msg.role === "user" ||
             (msg.role === "assistant" && msg.modelId === modelId)
         );
-        return kept;
+        // Clear comparison metadata so continued chat uses the normal timeline.
+        return kept.map((msg) =>
+          msg.comparisonTurnId === comparisonTurnId
+            ? { ...msg, comparisonTurnId: null }
+            : msg
+        );
       });
     },
     [setCompareModeEnabled, setMessages]
