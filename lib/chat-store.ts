@@ -4,20 +4,12 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateTitle } from "@/app/actions";
 import type { UIMessage } from "ai";
-import { getUIMessageText } from "./message-utils";
+import { getUIMessageText } from "@/lib/message-utils";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation } from "./types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
+import type { CompareUIMessage } from "@/lib/chat/compareHistory";
 
-type AIMessage = UIMessage & {
-  createdAt?: Date | string;
-  hasWebSearch?: boolean;
-  webSearchContextSize?: 'low' | 'medium' | 'high';
-  modelId?: string | null;
-  modelProvider?: string | null;
-  modelDisplayName?: string | null;
-  comparisonTurnId?: string | null;
-  latencyMs?: number;
-};
+type AIMessage = CompareUIMessage;
 
 type UIMessageWithMeta = {
   id: string;
@@ -136,15 +128,7 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
 }
 
 // Convert DB messages to UI format
-export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage & {
-  createdAt?: Date;
-  hasWebSearch?: boolean;
-  webSearchContextSize?: 'low' | 'medium' | 'high';
-  modelId?: string | null;
-  modelProvider?: string | null;
-  modelDisplayName?: string | null;
-  comparisonTurnId?: string | null;
-}> {
+export function convertToUIMessages(dbMessages: Array<Message>): CompareUIMessage[] {
   return dbMessages.map((message) => ({
     id: message.id,
     parts: message.parts as Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart>,
@@ -156,15 +140,7 @@ export function convertToUIMessages(dbMessages: Array<Message>): Array<UIMessage
     modelProvider: message.modelProvider ?? null,
     modelDisplayName: message.modelDisplayName ?? null,
     comparisonTurnId: message.comparisonTurnId ?? null,
-  })) as Array<UIMessage & {
-    createdAt?: Date;
-    hasWebSearch?: boolean;
-    webSearchContextSize?: 'low' | 'medium' | 'high';
-    modelId?: string | null;
-    modelProvider?: string | null;
-    modelDisplayName?: string | null;
-    comparisonTurnId?: string | null;
-  }>;
+  }));
 }
 
 export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys, isAnonymous, titleGenerationPromise }: SaveChatParams) {

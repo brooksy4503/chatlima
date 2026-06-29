@@ -874,16 +874,7 @@ export const Textarea = ({
           <div className={`flex items-center ${isMobileScreen ? 'w-full gap-3' : 'gap-2'}`}>
             {/* Action buttons group */}
             <div className={`flex items-center shrink-0 ${isMobileScreen ? 'gap-2' : 'gap-1.5'}`}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <CompareModeToggle />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent sideOffset={8}>
-                  {compareModeEnabled ? 'Disable model comparison' : 'Compare multiple models'}
-                </TooltipContent>
-              </Tooltip>
+              <CompareModeToggle />
 
               {!compareModeEnabled && (
               <>

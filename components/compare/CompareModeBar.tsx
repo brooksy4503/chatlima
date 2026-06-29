@@ -3,6 +3,7 @@
 import { GitCompare, X } from "lucide-react";
 import { useCompare } from "@/lib/context/compare-context";
 import { useModel } from "@/lib/context/model-context";
+import { getModelDisplayName } from "@/lib/compare/modelDisplayName";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -15,8 +16,7 @@ export function CompareModeBar() {
     return null;
   }
 
-  const getName = (modelId: string) =>
-    availableModels.find((m) => m.id === modelId)?.name ?? modelId.split("/").pop() ?? modelId;
+  const getName = (modelId: string) => getModelDisplayName(modelId, availableModels);
 
   return (
     <div className="mx-auto max-w-lg sm:max-w-3xl px-2 pb-2">

@@ -1,5 +1,4 @@
 import type { UIMessage } from 'ai';
-import { getUIMessageText } from '@/lib/message-utils';
 
 export type CompareUIMessage = UIMessage & {
   modelId?: string | null;
@@ -8,6 +7,8 @@ export type CompareUIMessage = UIMessage & {
   comparisonTurnId?: string | null;
   latencyMs?: number;
   createdAt?: Date | string;
+  hasWebSearch?: boolean;
+  webSearchContextSize?: 'low' | 'medium' | 'high';
 };
 
 /**
@@ -60,19 +61,4 @@ export function groupMessagesByComparisonTurn(
   }
 
   return groups;
-}
-
-export function isComparisonTurn(turnId: string | null): boolean {
-  return turnId !== null;
-}
-
-export function getUserMessageText(msg: CompareUIMessage): string {
-  return getUIMessageText(msg);
-}
-
-export function extractComparisonTurns(messages: CompareUIMessage[]): CompareUIMessage[][] {
-  const groups = groupMessagesByComparisonTurn(messages);
-  return groups
-    .filter((g) => isComparisonTurn(g.turnId))
-    .map((g) => g.messages);
 }

@@ -13,21 +13,17 @@ import { getModelDetails } from '@/lib/models/fetch-models';
 import { saveMessages, convertToDBMessages, saveChat } from '@/lib/chat-store';
 import { runChatPreflight } from '@/lib/chat/chatPreflight';
 import { buildChatStreamPlan } from '@/lib/chat/buildChatStreamPlan';
-import { buildModelHistory } from '@/lib/chat/compareHistory';
+import { buildModelHistory, type CompareUIMessage } from '@/lib/chat/compareHistory';
 import {
   encodeCompareEvent,
   parseCompareRequestBody,
   type CompareStreamEvent,
 } from '@/lib/chat/compareRequest';
-import { parseChatRequestBody, type ChatRequestBody } from '@/lib/chat/chatRequest';
-import { buildComparisonTurnSnapshot } from '@/lib/chat/messageModelSnapshot';
+import { type ChatRequestBody } from '@/lib/chat/chatRequest';
+import { MIN_COMPARE_MODELS, MAX_COMPARE_MODELS } from '@/lib/compare/comparePolicy';
 import { registerChatAbortController } from '@/lib/chat-stop-registry';
 import { ChatMCPServerService } from '@/lib/services/chatMCPServerService';
 import { createErrorResponse } from '@/lib/chat/createErrorResponse';
-import type { CompareUIMessage } from '@/lib/chat/compareHistory';
-
-const MAX_COMPARE_MODELS = 3;
-const MIN_COMPARE_MODELS = 2;
 
 function buildCompareChatBody(
   base: ReturnType<typeof parseCompareRequestBody>,
@@ -43,6 +39,25 @@ function buildCompareChatBody(
     imageGeneration: { enabled: false },
     apiKeys: base.apiKeys,
     attachments: [],
+  };
+}
+
+function errorAssistant(
+  id: string,
+  modelId: string,
+  turnId: string,
+  text: string,
+  latencyMs?: number
+): CompareUIMessage {
+  return {
+    id,
+    role: 'assistant',
+    parts: [{ type: 'text', text }],
+    modelId,
+    modelProvider: modelId.split('/')[0] ?? null,
+    modelDisplayName: modelId,
+    comparisonTurnId: turnId,
+    ...(latencyMs != null ? { latencyMs } : {}),
   };
 }
 
@@ -175,7 +190,6 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
       };
 
       try {
-        const turnSnapshot = buildComparisonTurnSnapshot(body.comparisonTurnId);
         const historyMessages = body.messages.filter(
           (m) => (m as CompareUIMessage).comparisonTurnId !== body.comparisonTurnId
         );
@@ -226,15 +240,9 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
               messageId: assistantMessageId,
               error: 'Model validation failed',
             });
-            assistantResults.push({
-              id: assistantMessageId,
-              role: 'assistant',
-              parts: [{ type: 'text', text: 'Error: Model validation failed' }],
-              modelId,
-              modelProvider: modelId.split('/')[0] ?? null,
-              modelDisplayName: modelId,
-              comparisonTurnId: body.comparisonTurnId,
-            });
+            assistantResults.push(
+              errorAssistant(assistantMessageId, modelId, body.comparisonTurnId, 'Error: Model validation failed')
+            );
             continue;
           }
 
@@ -257,15 +265,9 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
               messageId: assistantMessageId,
               error: 'Failed to build model plan',
             });
-            assistantResults.push({
-              id: assistantMessageId,
-              role: 'assistant',
-              parts: [{ type: 'text', text: 'Error: Failed to build model plan' }],
-              modelId,
-              modelProvider: modelId.split('/')[0] ?? null,
-              modelDisplayName: modelId,
-              comparisonTurnId: body.comparisonTurnId,
-            });
+            assistantResults.push(
+              errorAssistant(assistantMessageId, modelId, body.comparisonTurnId, 'Error: Failed to build model plan')
+            );
             continue;
           }
 
@@ -299,7 +301,7 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
             const latencyMs = Date.now() - modelStart;
             const provider = modelId.split('/')[0] ?? null;
 
-            const assistantMsg: CompareUIMessage = {
+            assistantResults.push({
               id: assistantMessageId,
               role: 'assistant',
               parts: [{ type: 'text', text }],
@@ -308,8 +310,7 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
               modelDisplayName: modelId,
               comparisonTurnId: body.comparisonTurnId,
               latencyMs,
-            };
-            assistantResults.push(assistantMsg);
+            });
 
             emit({
               type: 'model-finish',
@@ -325,23 +326,21 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
             const message =
               streamError instanceof Error ? streamError.message : 'Stream failed';
             emit({ type: 'model-error', modelId, messageId: assistantMessageId, error: message });
-            assistantResults.push({
-              id: assistantMessageId,
-              role: 'assistant',
-              parts: [{ type: 'text', text: `Error: ${message}` }],
-              modelId,
-              modelProvider: modelId.split('/')[0] ?? null,
-              modelDisplayName: modelId,
-              comparisonTurnId: body.comparisonTurnId,
-              latencyMs: Date.now() - modelStart,
-            });
+            assistantResults.push(
+              errorAssistant(
+                assistantMessageId,
+                modelId,
+                body.comparisonTurnId,
+                `Error: ${message}`,
+                Date.now() - modelStart
+              )
+            );
           }
         }
 
         const userWithMeta: CompareUIMessage = {
           ...userMsg,
           comparisonTurnId: body.comparisonTurnId,
-          ...turnSnapshot,
         };
 
         const allMessages = [

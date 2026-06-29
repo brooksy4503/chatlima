@@ -1,5 +1,5 @@
-import { buildModelHistory, groupMessagesByComparisonTurn, isComparisonTurn } from '@/lib/chat/compareHistory';
-import { canSubmitCompare, getCompareRestrictions, MIN_COMPARE_MODELS, MAX_COMPARE_MODELS } from '@/lib/compare/comparePolicy';
+import { buildModelHistory, groupMessagesByComparisonTurn } from '@/lib/chat/compareHistory';
+import { canSubmitCompare, MIN_COMPARE_MODELS, MAX_COMPARE_MODELS } from '@/lib/compare/comparePolicy';
 
 describe('compareHistory', () => {
   it('excludes sibling assistant responses from the same comparison turn', () => {
@@ -25,7 +25,7 @@ describe('compareHistory', () => {
       { id: '3', role: 'user' as const, parts: [{ type: 'text', text: 'z' }] },
     ];
     const groups = groupMessagesByComparisonTurn(messages);
-    expect(isComparisonTurn(groups[0].turnId)).toBe(true);
+    expect(groups[0].turnId).not.toBeNull();
     expect(groups[0].messages).toHaveLength(2);
   });
 });
@@ -51,10 +51,7 @@ describe('comparePolicy', () => {
     ).toBe(true);
   });
 
-  it('disables advanced chat features in compare mode', () => {
-    const r = getCompareRestrictions();
-    expect(r.mcp).toBe(false);
-    expect(r.attachments).toBe(false);
+  it('exports compare model limits', () => {
     expect(MIN_COMPARE_MODELS).toBe(2);
     expect(MAX_COMPARE_MODELS).toBe(3);
   });

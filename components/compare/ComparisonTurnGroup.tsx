@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { CompareResponseCard } from "./CompareResponseCard";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
-import { getUserMessageText } from "@/lib/chat/compareHistory";
+import { getUIMessageText } from "@/lib/message-utils";
 import { cn } from "@/lib/utils";
 
 interface ComparisonTurnGroupProps {
@@ -28,7 +28,7 @@ export function ComparisonTurnGroup({
 
   const userMsg = messages.find((m) => m.role === "user");
   const assistants = messages.filter((m) => m.role === "assistant");
-  const userText = userMsg ? getUserMessageText(userMsg) : "";
+  const userText = userMsg ? getUIMessageText(userMsg) : "";
 
   if (!userMsg) {
     return null;

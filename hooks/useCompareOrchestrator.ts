@@ -2,13 +2,12 @@
 
 import { useCallback, useRef, useState } from "react";
 import { nanoid } from "nanoid";
-import type { UIMessage } from "ai";
 import { toast } from "sonner";
 import { useCompare } from "@/lib/context/compare-context";
 import { canSubmitCompare } from "@/lib/compare/comparePolicy";
 import type { CompareStreamEvent } from "@/lib/chat/compareRequest";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
-import { buildComparisonTurnSnapshot } from "@/lib/chat/messageModelSnapshot";
+import { getUIMessageText } from "@/lib/message-utils";
 
 type CompareStatus = "idle" | "streaming" | "error";
 
@@ -66,13 +65,12 @@ export function useCompareOrchestrator({
 
       const comparisonTurnId = nanoid();
       const userMessageId = nanoid();
-      const turnSnapshot = buildComparisonTurnSnapshot(comparisonTurnId);
 
       const userMessage: CompareUIMessage = {
         id: userMessageId,
         role: "user",
         parts: [{ type: "text", text }],
-        ...turnSnapshot,
+        comparisonTurnId,
       };
 
       const placeholders: CompareUIMessage[] = activeCompareModels.map((modelId) => ({
@@ -143,13 +141,9 @@ export function useCompareOrchestrator({
                 ) {
                   return msg;
                 }
-                const currentText =
-                  msg.parts?.find((p) => p.type === "text")?.type === "text"
-                    ? (msg.parts.find((p) => p.type === "text") as { type: "text"; text: string }).text
-                    : "";
                 return {
                   ...msg,
-                  parts: [{ type: "text", text: currentText + event.delta }],
+                  parts: [{ type: "text", text: getUIMessageText(msg) + event.delta }],
                 };
               })
             );
@@ -255,6 +249,5 @@ export function useCompareOrchestrator({
     stop,
     promoteModel,
     isCompareLoading,
-    compareStatus: status,
   };
 }

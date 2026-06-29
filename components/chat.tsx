@@ -17,7 +17,7 @@ import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
 import { useCompare } from "@/lib/context/compare-context";
-import { getCompareSubmitState, shouldSubmitCompare } from "@/lib/compare/compareSubmitState";
+import { MIN_COMPARE_MODELS } from "@/lib/compare/comparePolicy";
 import { useCompareOrchestrator } from "@/hooks/useCompareOrchestrator";
 import { usePresets } from "@/lib/context/preset-context";
 import { useMCP } from "@/lib/context/mcp-context";
@@ -46,17 +46,9 @@ import {
 } from "./ui/dialog";
 import { hasProviderByokForModel } from "@/lib/services/accessGateService";
 import { getUIMessageText } from "@/lib/message-utils";
+import type { CompareUIMessage } from "@/lib/chat/compareHistory";
 
-type ChatUIMessage = UIMessage & {
-  createdAt?: Date | string;
-  hasWebSearch?: boolean;
-  webSearchContextSize?: 'low' | 'medium' | 'high';
-  modelId?: string | null;
-  modelProvider?: string | null;
-  modelDisplayName?: string | null;
-  comparisonTurnId?: string | null;
-  latencyMs?: number;
-};
+type ChatUIMessage = CompareUIMessage;
 
 // Type for chat data from DB
 interface ChatData {
@@ -96,6 +88,11 @@ export default function Chat() {
   
   const { selectedModel, setSelectedModel } = useModel();
   const { compareModeEnabled, compareModels } = useCompare();
+  const compareSubmitRef = useRef({ compareModeEnabled: false, compareModels: [] as string[] });
+  compareSubmitRef.current = { compareModeEnabled, compareModels };
+  const shouldSubmitCompare = () =>
+    compareSubmitRef.current.compareModeEnabled &&
+    compareSubmitRef.current.compareModels.length >= MIN_COMPARE_MODELS;
   const { canUseModelAtCreditCost } = useCredits(undefined, user?.id);
   const { activePreset } = usePresets();
   const [showWelcomeScreen, setShowWelcomeScreen] = useLocalStorage(STORAGE_KEYS.SHOW_WELCOME_SCREEN, true);
@@ -896,7 +893,7 @@ export default function Chat() {
       if (!draftInput) {
         return;
       }
-      const { models: activeCompareModels } = getCompareSubmitState();
+      const { compareModels: activeCompareModels } = compareSubmitRef.current;
       lastSubmittedDraftRef.current = draftInput;
       setInput('');
       const ok = await submitCompare(draftInput, activeCompareModels);
@@ -1336,9 +1333,9 @@ export default function Chat() {
 
       {/* Main content area: Either ProjectOverview, minimal empty state, or Messages */}
       <div className="flex-1 min-h-0 pb-2 overflow-hidden flex flex-col">
-        {messages.length === 0 && !isLoadingChat && compareModeEnabled ? (
+        {messages.length === 0 && !isLoadingChat ? (
           <>
-            <CompareModeBar />
+            {compareModeEnabled && <CompareModeBar />}
             {showWelcomeScreen || showSuggestedPrompts ? (
               <div className="min-h-0 flex-1 overflow-y-auto no-scrollbar">
                 <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
@@ -1359,26 +1356,6 @@ export default function Chat() {
               </div>
             )}
           </>
-        ) : messages.length === 0 && !isLoadingChat ? (
-          showWelcomeScreen || showSuggestedPrompts ? (
-            <div className="h-full overflow-y-auto no-scrollbar">
-              <div className="max-w-3xl mx-auto w-full pt-4 sm:pt-8">
-                <ProjectOverview 
-                  sendMessage={sendSuggestedMessage}
-                  selectedModel={selectedModel}
-                  showWelcomeOnboarding={showWelcomeScreen}
-                  onShowWelcomeOnboardingChange={setShowWelcomeScreen}
-                  showSuggestedPrompts={showSuggestedPrompts}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center px-4">
-              <p className="text-sm text-muted-foreground text-center max-w-sm">
-                Type a message below to get started.
-              </p>
-            </div>
-          )
         ) : hasComparisonMessages || compareModeEnabled ? (
           <CompareTimeline
             messages={enhancedMessages as ChatUIMessage[]}

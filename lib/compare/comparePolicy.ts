@@ -1,24 +1,6 @@
 export const MAX_COMPARE_MODELS = 3;
 export const MIN_COMPARE_MODELS = 2;
 
-export interface CompareRestrictions {
-  mcp: boolean;
-  webSearch: boolean;
-  imageGen: boolean;
-  presets: boolean;
-  attachments: boolean;
-}
-
-export function getCompareRestrictions(): CompareRestrictions {
-  return {
-    mcp: false,
-    webSearch: false,
-    imageGen: false,
-    presets: false,
-    attachments: false,
-  };
-}
-
 export type SubmitGateResult =
   | { allowed: true }
   | { allowed: false; reason: string };
@@ -51,11 +33,4 @@ export function canSubmitCompare(params: {
   }
 
   return { allowed: true };
-}
-
-export function isCompareFeatureDisabled(
-  restrictions: CompareRestrictions,
-  feature: keyof CompareRestrictions
-): boolean {
-  return !restrictions[feature];
 }

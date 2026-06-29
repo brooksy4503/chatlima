@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCompare } from "@/lib/context/compare-context";
 import { useModel } from "@/lib/context/model-context";
+import { getModelDisplayName } from "@/lib/compare/modelDisplayName";
 import { ModelPicker } from "@/components/model-picker";
 import {
   Popover,
@@ -24,8 +25,7 @@ export function CompareModelPicker({ disabled = false }: CompareModelPickerProps
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const getName = (modelId: string) =>
-    availableModels.find((m) => m.id === modelId)?.name ?? modelId.split("/").pop() ?? modelId;
+  const getName = (modelId: string) => getModelDisplayName(modelId, availableModels);
 
   const filtered = availableModels.filter((m) =>
     m.name.toLowerCase().includes(search.toLowerCase()) ||

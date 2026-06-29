@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Message } from "@/components/message";
 import { ComparisonTurnGroup } from "./ComparisonTurnGroup";
 import { CompareModeBar } from "./CompareModeBar";
-import { groupMessagesByComparisonTurn, isComparisonTurn, type CompareUIMessage } from "@/lib/chat/compareHistory";
+import { groupMessagesByComparisonTurn, type CompareUIMessage } from "@/lib/chat/compareHistory";
 import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
 
 interface CompareTimelineProps {
@@ -35,10 +35,10 @@ export function CompareTimeline({
   const scrollTrigger = isCompareStreaming ? `${messages.length}:compare` : messages.length;
   const [containerRef, endRef] = useScrollToBottom(scrollTrigger);
 
-  const comparisonGroups = groups.filter((g) => isComparisonTurn(g.turnId));
+  const comparisonGroups = groups.filter((g) => g.turnId !== null);
   const latestComparisonTurnId = comparisonGroups[comparisonGroups.length - 1]?.turnId ?? null;
 
-  const nonCompareMessages = groups.filter((g) => !isComparisonTurn(g.turnId));
+  const nonCompareMessages = groups.filter((g) => g.turnId === null);
 
   return (
     <div className="flex h-full min-h-0 flex-col">

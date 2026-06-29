@@ -29,9 +29,7 @@ export const messages = pgTable('messages', {
   modelDisplayName: text('model_display_name'),
   comparisonTurnId: text('comparison_turn_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (table) => ({
-  comparisonTurnIdx: index('idx_messages_comparison_turn').on(table.chatId, table.comparisonTurnId),
-}));
+});
 
 // Types for structured message content
 export type MessagePart = {
