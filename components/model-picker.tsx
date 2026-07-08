@@ -20,10 +20,10 @@ import {
   formatCreditsPerMessage,
   getCreditTierInfo,
 } from "@/lib/utils/creditTierLabels";
-
-function getEstimatedCreditCost(model: ModelInfo, creditCosts: Record<string, number>): number {
-  return creditCosts[model.id] ?? (model.premium ? 2 : 1);
-}
+import {
+  calculateCreditCostPerMessage,
+  getEstimatedCreditCost,
+} from "@/lib/utils/creditCostCalculator";
 
 function isModelBlockedByCredits(
   model: ModelInfo,
@@ -286,10 +286,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         }
       } catch (error) {
         console.warn(`Failed to fetch credit cost for ${detailsPanelModel.id}:`, error);
-        // Fallback to default based on premium status
         setCreditCosts(prev => ({
           ...prev,
-          [detailsPanelModel.id]: detailsPanelModel.premium ? 2 : 1
+          [detailsPanelModel.id]: calculateCreditCostPerMessage(detailsPanelModel),
         }));
       }
     };

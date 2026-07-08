@@ -16,6 +16,19 @@ export function getModelCreditCostOverride(modelId: string | undefined | null): 
   return MODEL_CREDIT_COST_OVERRIDES[modelId];
 }
 
+/** OpenRouter :free-tier models are not billed against Polar credits. */
+export function isOpenRouterFreeModel(modelId: string | undefined | null): boolean {
+  return Boolean(modelId?.startsWith('openrouter/') && modelId.endsWith(':free'));
+}
+
+/** Cached API cost when available; otherwise canonical tier calculation from model metadata. */
+export function getEstimatedCreditCost(
+  model: ModelInfo,
+  creditCosts: Record<string, number>
+): number {
+  return creditCosts[model.id] ?? calculateCreditCostPerMessage(model);
+}
+
 /**
  * Calculates the credit cost per message for a given model
  * Based on tiered pricing structure to protect against expensive model abuse
@@ -31,6 +44,8 @@ export function getModelCreditCostOverride(modelId: string | undefined | null): 
  */
 export function calculateCreditCostPerMessage(modelInfo: ModelInfo | null): number {
   if (!modelInfo) return 1; // Default to 1 credit if model info unavailable
+
+  if (isOpenRouterFreeModel(modelInfo.id)) return 0;
 
   const override = getModelCreditCostOverride(modelInfo.id);
   if (override !== undefined) return override;

@@ -13,6 +13,7 @@ import { OpenRouterCostTracker } from './openrouterCostTracker';
 import { nanoid } from 'nanoid';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { ModelInfo } from '@/lib/types/models';
+import { isOpenRouterFreeModel } from '@/lib/utils/creditCostCalculator';
 
 interface DirectTokenTrackingParams {
     userId: string;
@@ -80,7 +81,7 @@ export class DirectTokenTrackingService {
 
             let actualCost: number | null = null;
             let estimatedCost = 0;
-            const isFreeOpenRouterModel = params.provider === 'openrouter' && params.modelId.endsWith(':free');
+            const isFreeOpenRouterModel = isOpenRouterFreeModel(params.modelId);
 
             // Extract actual cost from provider response (currently only OpenRouter supports this)
             const providerResponse = params.providerResponse || params.openRouterResponse;

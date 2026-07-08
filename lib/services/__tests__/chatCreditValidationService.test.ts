@@ -411,7 +411,7 @@ describe('ChatCreditValidationService', () => {
             mockCalculateCreditCostPerMessage.mockReset();
         });
 
-        it('should validate credits for free model (1 credit)', async () => {
+        it('should validate credits for economy model (1 credit)', async () => {
             const context = createMockContext({ isFreeModel: false });
             const mockCache = createMockCreditCache();
             const mockModelInfo = {

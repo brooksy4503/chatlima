@@ -28,6 +28,7 @@ import {
   estimateTimeToFirstTokenMs,
 } from '@/lib/chat/streamTokenUsage';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
+import { isOpenRouterFreeModel } from '@/lib/utils/creditCostCalculator';
 
 export interface OpenRouterStreamResponse extends LanguageModelResponseMetadata {
   readonly messages: Array<
@@ -306,7 +307,7 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
       }
     }
 
-    const isFreeModel = selectedModel.endsWith(':free');
+    const isFreeModel = isOpenRouterFreeModel(selectedModel);
     const shouldDeductCredits =
       !authenticatedUser.isAnonymous &&
       !isUsingOwnApiKeys &&

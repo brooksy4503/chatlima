@@ -8,7 +8,7 @@ import { ChatDatabaseService } from '@/lib/services/chatDatabaseService';
 import { hasProviderByokForModel } from '@/lib/services/accessGateService';
 import { DailyMessageUsageService } from '@/lib/services/dailyMessageUsageService';
 import { getAccessPolicyFlags } from '@/lib/config/access-policy';
-import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
+import { calculateCreditCostPerMessage, isOpenRouterFreeModel } from '@/lib/utils/creditCostCalculator';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { saveMessages, convertToDBMessages, saveChat } from '@/lib/chat-store';
 import { runChatPreflight } from '@/lib/chat/chatPreflight';
@@ -109,7 +109,7 @@ async function validateCompareCredits(
         polarCustomerId: authenticatedUser.polarCustomerId,
         selectedModel: modelId as ChatRequestBody['selectedModel'],
         isUsingOwnApiKeys: isUsingOwn,
-        isFreeModel: modelId.endsWith(':free'),
+        isFreeModel: isOpenRouterFreeModel(modelId),
         webSearchEnabled: false,
         estimatedTokens: 30,
       });

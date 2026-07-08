@@ -15,6 +15,7 @@ import type { AuthenticatedUser } from '@/lib/services/chatAuthenticationService
 import type { CreditValidationResult } from '@/lib/services/chatCreditValidationService';
 import type { WebSearchResult } from '@/lib/services/chatWebSearchService';
 import type { AccessPolicyFlags } from '@/lib/config/access-policy';
+import { isOpenRouterFreeModel } from '@/lib/utils/creditCostCalculator';
 
 export interface ChatPreflightContext {
   authenticatedUser: AuthenticatedUser;
@@ -45,7 +46,7 @@ function buildCreditContext(
     polarCustomerId: authenticatedUser.polarCustomerId,
     selectedModel: body.selectedModel,
     isUsingOwnApiKeys,
-    isFreeModel: body.selectedModel.endsWith(':free'),
+    isFreeModel: isOpenRouterFreeModel(body.selectedModel),
     webSearchEnabled: body.webSearch.enabled,
     estimatedTokens: 30,
     ...(hasCredits !== undefined ? { hasCredits } : {}),

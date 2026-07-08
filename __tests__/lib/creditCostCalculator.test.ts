@@ -1,6 +1,8 @@
 import {
   calculateCreditCostPerMessage,
+  getEstimatedCreditCost,
   getModelCreditCostOverride,
+  isOpenRouterFreeModel,
   MODEL_CREDIT_COST_OVERRIDES,
 } from '@/lib/utils/creditCostCalculator';
 import type { ModelInfo } from '@/lib/types/models';
@@ -22,6 +24,37 @@ function makeModelInfo(overrides: Partial<ModelInfo> = {}): ModelInfo {
 }
 
 describe('creditCostCalculator', () => {
+  describe('isOpenRouterFreeModel', () => {
+    it('returns true for openrouter models with :free suffix', () => {
+      expect(isOpenRouterFreeModel('openrouter/tencent/hy3:free')).toBe(true);
+    });
+
+    it('returns false for non-openrouter :free suffix', () => {
+      expect(isOpenRouterFreeModel('requesty/foo:free')).toBe(false);
+    });
+
+    it('returns false for openrouter models without :free suffix', () => {
+      expect(isOpenRouterFreeModel('openrouter/openai/gpt-4.1')).toBe(false);
+    });
+  });
+
+  describe('getEstimatedCreditCost', () => {
+    it('uses cached API cost when present', () => {
+      const model = makeModelInfo({ id: 'openrouter/openai/gpt-4.1', premium: true });
+      expect(getEstimatedCreditCost(model, { [model.id]: 15 })).toBe(15);
+    });
+
+    it('falls back to canonical calculator when cache misses', () => {
+      const freeModel = makeModelInfo({
+        id: 'openrouter/tencent/hy3:free',
+        premium: false,
+        pricing: { input: 0, output: 0, currency: 'USD' },
+      });
+
+      expect(getEstimatedCreditCost(freeModel, {})).toBe(0);
+    });
+  });
+
   describe('getModelCreditCostOverride', () => {
     it('returns Fusion override', () => {
       expect(getModelCreditCostOverride('openrouter/openrouter/fusion')).toBe(50);
@@ -62,6 +95,16 @@ describe('creditCostCalculator', () => {
       });
 
       expect(calculateCreditCostPerMessage(model)).toBe(1);
+    });
+
+    it('charges 0 credits for OpenRouter :free models', () => {
+      const model = makeModelInfo({
+        id: 'openrouter/tencent/hy3:free',
+        premium: false,
+        pricing: { input: 0, output: 0, currency: 'USD' },
+      });
+
+      expect(calculateCreditCostPerMessage(model)).toBe(0);
     });
   });
 });

@@ -515,7 +515,7 @@ interface MCPServerConfig {
 | Monthly | $9/month | ~1,000 credits/month on the Polar meter (usage-based, not a flat per-message counter) | Full catalog while credits remain |
 | Yearly | $90/year | High annual usage allowance (see daily limit bypass for yearly subscribers) | Full catalog (same as monthly) |
 
-**Product vocabulary:** User-facing copy uses **credit tiers** (Economy / Standard / Pro / Frontier / Ultra), not “free vs premium plans.” The internal `model.premium` flag and OpenRouter `:free` suffix inform tier calculation only.
+**Product vocabulary:** User-facing copy uses **credit tiers** (Free / Economy / Standard / Pro / Frontier / Ultra). The internal `model.premium` flag and OpenRouter `:free` suffix inform tier calculation. Canonical zero-cost detection: `isOpenRouterFreeModel()` (`openrouter/` prefix + `:free` suffix) in `lib/utils/creditCostCalculator.ts`.
 
 ### 7.2 Credit Cost Tiers
 
@@ -523,7 +523,8 @@ Based on model pricing ($/M tokens). Labels in `lib/utils/creditTierLabels.ts`:
 
 | Tier (user-facing) | Pricing range ($/M tokens) | Credits/message |
 |--------------------|----------------------------|-----------------|
-| Economy | &lt;$3/M input (incl. many `:free` models) | 1 |
+| Economy | &lt;$3/M input (paid low-cost models) | 1 |
+| Free (OpenRouter `:free`) | $0/M (OpenRouter free tier) | 0 |
 | Standard | ~$3–15/M | 2 |
 | Pro | ~$15–50/M | 5 |
 | Frontier | ~$50–100/M | 15 |
