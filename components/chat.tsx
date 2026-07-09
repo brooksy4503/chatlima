@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat-store";
+import { formatQuotedMessageContent } from "@/lib/quoted-text-utils";
 import { dbMessagesHaveRicherAssistantParts } from "@/lib/chat-message-persistence";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
@@ -263,6 +264,7 @@ export default function Chat() {
   }, [chatData]);
 
   const [input, setInput] = useState("");
+  const [quotedText, setQuotedText] = useState<string | null>(null);
   const lastSubmittedDraftRef = useRef<string | null>(null);
 
   const chatBodyRef = useRef({
@@ -875,7 +877,7 @@ export default function Chat() {
     e.preventDefault();
     
     // Don't submit if no content and no files
-    if (!input.trim() && selectedFiles.length === 0) {
+    if (!input.trim() && selectedFiles.length === 0 && !quotedText) {
       return;
     }
 
@@ -890,14 +892,18 @@ export default function Chat() {
         return;
       }
       const draftInput = input.trim();
-      if (!draftInput) {
+      if (!draftInput && !quotedText) {
         return;
       }
+      const messageContent = quotedText
+        ? formatQuotedMessageContent(quotedText, draftInput)
+        : draftInput;
       const { compareModels: activeCompareModels } = compareSubmitRef.current;
       lastSubmittedDraftRef.current = draftInput;
       setInput('');
-      const ok = await submitCompare(draftInput, activeCompareModels);
+      const ok = await submitCompare(messageContent, activeCompareModels);
       if (ok) {
+        setQuotedText(null);
         queryClient.invalidateQueries({ queryKey: ['chats'] });
         queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
         if (!chatId && generatedChatId && window.location.pathname !== `/chat/${generatedChatId}`) {
@@ -996,12 +1002,14 @@ export default function Chat() {
     }
 
     // Build enhanced message content with file context
-    let messageContent = draftInput;
+    let messageContent = quotedText
+      ? formatQuotedMessageContent(quotedText, draftInput)
+      : draftInput;
     if (uploadedFiles.length > 0) {
       const fileList = uploadedFiles
         .map(f => `- ${f.filename} | filepath: ${f.filepath} | url: ${f.url}`)
         .join('\n');
-      messageContent = `${draftInput}\n\n[Attached files:]\n${fileList}\n\n[Instruction: Use the read_file tool with filepath values before answering.]`;
+      messageContent = `${messageContent}\n\n[Attached files:]\n${fileList}\n\n[Instruction: Use the read_file tool with filepath values before answering.]`;
     }
 
     try {
@@ -1029,6 +1037,7 @@ export default function Chat() {
       } else {
         await sendMessage({ text: messageContent });
       }
+      setQuotedText(null);
     } catch (error) {
       restoreDraftAfterFailedSubmit();
       setHideImagesInUI(false);
@@ -1037,6 +1046,7 @@ export default function Chat() {
   }, [
     sendMessage,
     input,
+    quotedText,
     selectedFiles,
     isUploadingFiles,
     modelSupportsVision,
@@ -1370,6 +1380,7 @@ export default function Chat() {
             }}
             webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
             imageGenerationEnabled={imageGenerationEnabled && isOpenRouterModel}
+            onAddToChat={setQuotedText}
           />
         ) : (
           <Messages
@@ -1379,6 +1390,7 @@ export default function Chat() {
             chatTokenUsage={chatTokenUsage}
             webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
             imageGenerationEnabled={imageGenerationEnabled && isOpenRouterModel}
+            onAddToChat={setQuotedText}
           />
         )}
       </div>
@@ -1430,6 +1442,8 @@ export default function Chat() {
             stop={stop}
             files={hideImagesInUI ? [] : selectedFiles}
             onFilesChange={setSelectedFiles}
+            quotedText={quotedText}
+            onClearQuotedText={() => setQuotedText(null)}
           />
         </form>
       </div>

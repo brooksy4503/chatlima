@@ -591,6 +591,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
   - See §7.3 for billing; implementation in `chatImageGenerationService`, `openrouter-image-generation-tool`, `lib/chat/*` (buildChatStreamPlan, chatTools, chatStreamFinalizer), `app/api/chat/route.ts` (thin).
 - **Native Web Fetch**: First-party `web_fetch` tool for reading public URLs directly in chat with extraction + truncation controls
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
+- **Text selection quote (Add to chat)**: Highlight text in the message list to show an **Add to chat** toolbar. Selected text appears as a dismissible chip above the composer (same stack as file previews). On send, the quote is prepended to the user message as a markdown blockquote (`> line` per line), then the user's typed question; quote-only follow-ups are allowed. One quote at a time; works in normal and compare timelines. No API/schema change.
 - **Smart Title Generation**: Dynamic model selection for conversation titles. Default OpenRouter title model is `openrouter/openai/gpt-5-nano` (override via `TITLE_GENERATION_MODEL_ID` or `OPENROUTER_TITLE_MODEL`). Title generation starts in parallel when a new chat begins streaming and is persisted before the chat save completes.
 
 ### 8.2 Presets System

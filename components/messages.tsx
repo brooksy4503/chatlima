@@ -1,5 +1,7 @@
 import type { UIMessage } from "ai";
 import { Message } from "./message";
+import { SelectionAddToChatToolbar } from "./selection-add-to-chat-toolbar";
+import { useSelectionAddToChat } from "@/hooks/use-selection-add-to-chat";
 import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
 
 export const Messages = ({
@@ -9,10 +11,12 @@ export const Messages = ({
   chatTokenUsage,
   webSearchEnabled = false,
   imageGenerationEnabled = false,
+  onAddToChat,
 }: {
   messages: (UIMessage & { hasWebSearch?: boolean })[];
   isLoading: boolean;
   status: "error" | "submitted" | "streaming" | "ready";
+  onAddToChat?: (text: string) => void;
   chatTokenUsage?: {
     inputTokens?: number;
     outputTokens?: number;
@@ -37,8 +41,13 @@ export const Messages = ({
       : messages.length;
 
   const [containerRef, endRef] = useScrollToBottom(scrollTrigger);
+  const { toolbar, handleAddToChat } = useSelectionAddToChat(
+    containerRef,
+    Boolean(onAddToChat)
+  );
 
   return (
+    <>
     <div
       className="h-full min-h-0 overflow-y-auto no-scrollbar"
       ref={containerRef}
@@ -62,5 +71,12 @@ export const Messages = ({
         <div className="h-1" ref={endRef} />
       </div>
     </div>
+    {onAddToChat && toolbar ? (
+      <SelectionAddToChatToolbar
+        toolbar={toolbar}
+        onAdd={(text) => handleAddToChat(onAddToChat)}
+      />
+    ) : null}
+    </>
   );
 };

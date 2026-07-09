@@ -17,6 +17,7 @@ import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
 import { getImageGenerationCreditCost } from "@/lib/constants/image-generation-models";
 import { FileUpload } from "./file-upload";
 import { FilePreview } from "./file-preview";
+import { QuotedTextChip } from "./quoted-text-chip";
 import type { FileAttachment } from "@/lib/types";
 import { Button } from "./ui/button";
 import { useModels } from "@/hooks/use-models";
@@ -34,6 +35,8 @@ interface InputProps {
   setSelectedModel: (model: modelID) => void;
   files?: FileAttachment[];
   onFilesChange?: (files: FileAttachment[]) => void;
+  quotedText?: string | null;
+  onClearQuotedText?: () => void;
 }
 
 export const Textarea = ({
@@ -46,6 +49,8 @@ export const Textarea = ({
   setSelectedModel,
   files = [],
   onFilesChange,
+  quotedText = null,
+  onClearQuotedText,
 }: InputProps) => {
   // Guard against undefined input prop
   const safeInput = input ?? "";
@@ -461,7 +466,7 @@ export const Textarea = ({
     const key = e.key;
 
     // Handle Enter submission (preserve existing behavior)
-    if (key === "Enter" && !e.shiftKey && !isLoading && (safeInput.trim() || hasFiles)) {
+    if (key === "Enter" && !e.shiftKey && !isLoading && (safeInput.trim() || hasFiles || quotedText)) {
       e.preventDefault();
       e.currentTarget.form?.requestSubmit();
       return;
@@ -589,7 +594,7 @@ export const Textarea = ({
         }
       }
     }
-  }, [safeInput, isLoading, hasFiles, safeHandleInputChange, isCodeMode, detectedLanguage]);
+  }, [safeInput, isLoading, hasFiles, quotedText, safeHandleInputChange, isCodeMode, detectedLanguage]);
 
   // Determine tooltip message based on credit status
   const getWebSearchTooltipMessage = () => {
@@ -661,6 +666,10 @@ export const Textarea = ({
           </div>
         </div>
       )}
+
+      {quotedText && onClearQuotedText ? (
+        <QuotedTextChip text={quotedText} onClear={onClearQuotedText} />
+      ) : null}
 
       {/* Main Input Container */}
       <div className="relative w-full">
@@ -974,7 +983,7 @@ export const Textarea = ({
                 <button
                   type={isStreaming ? "button" : "submit"}
                   onClick={isStreaming ? stop : undefined}
-                  disabled={(!isStreaming && !(safeInput.trim() || hasFiles)) || (isStreaming && status === "submitted")}
+                  disabled={(!isStreaming && !(safeInput.trim() || hasFiles || quotedText)) || (isStreaming && status === "submitted")}
                   className={`${
                     isMobileScreen 
                       ? 'flex-1 min-w-0 h-8 px-3 text-sm' 
@@ -992,7 +1001,7 @@ export const Textarea = ({
                     <>
                       <ArrowUp className={`${
                         isMobileScreen ? 'h-3.5 w-3.5' : 'h-4 w-4'
-                      } ${(!isStreaming && !(safeInput.trim() || hasFiles)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
+                      } ${(!isStreaming && !(safeInput.trim() || hasFiles || quotedText)) ? 'text-muted-foreground' : 'text-primary-foreground'}`} />
                       <span className={isMobileScreen ? 'text-xs font-medium' : 'text-sm'}>
                         Send
                       </span>
