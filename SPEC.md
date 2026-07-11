@@ -614,7 +614,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 
 - Create and manage authenticated user projects from the sidebar.
 - Store project-level instructions and files.
-- Link a chat to one project at a time.
+- Link a chat to one project at a time via a composer toolbar control (folder icon in the input action bar).
 - Create new chats inside a project.
 - Inject linked project context into chat prompts.
 

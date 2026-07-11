@@ -6,7 +6,7 @@ import { CompareModelPicker } from "./compare/CompareModelPicker";
 import { CompareModeToggle } from "./compare/CompareModeBar";
 import { useCompare } from "@/lib/context/compare-context";
 import { PresetSelector } from "./preset-selector";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useWebSearch } from "@/lib/context/web-search-context";
 import { useImageGeneration } from "@/lib/context/image-generation-context";
@@ -37,6 +37,7 @@ interface InputProps {
   onFilesChange?: (files: FileAttachment[]) => void;
   quotedText?: string | null;
   onClearQuotedText?: () => void;
+  leadingActions?: ReactNode;
 }
 
 export const Textarea = ({
@@ -51,6 +52,7 @@ export const Textarea = ({
   onFilesChange,
   quotedText = null,
   onClearQuotedText,
+  leadingActions,
 }: InputProps) => {
   // Guard against undefined input prop
   const safeInput = input ?? "";
@@ -883,6 +885,7 @@ export const Textarea = ({
           <div className={`flex items-center ${isMobileScreen ? 'w-full gap-3' : 'gap-2'}`}>
             {/* Action buttons group */}
             <div className={`flex items-center shrink-0 ${isMobileScreen ? 'gap-2' : 'gap-1.5'}`}>
+              {leadingActions}
               <CompareModeToggle />
 
               {!compareModeEnabled && (

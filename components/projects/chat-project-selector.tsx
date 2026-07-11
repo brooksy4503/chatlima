@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FolderKanban, ChevronDown, X, Loader2 } from "lucide-react";
+import { FolderKanban, Loader2, Unlink } from "lucide-react";
 import { useProjectsList, projectsQueryKey, type ApiProject } from "@/lib/hooks/use-projects";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +31,7 @@ export function ChatProjectSelector({
   userId: string | null;
 }) {
   const queryClient = useQueryClient();
+  const isMobileScreen = useIsMobile();
   const { data: projects, isLoading: listLoading } = useProjectsList(!!userId && !!chatId);
 
   const { data: linked, isLoading: linkLoading } = useQuery({
@@ -96,94 +97,92 @@ export function ChatProjectSelector({
   };
 
   const loading = linkLoading || listLoading;
+  const isLinked = !!linked;
+  const switchableProjects = (projects || []).filter((p) => p.id !== linked?.projectId);
+  const tooltipLabel = loading
+    ? "Loading projects..."
+    : isLinked
+      ? `Linked to ${linked.name}`
+      : projects?.length
+        ? "Link a project"
+        : "Create a project in the sidebar first";
 
-  return (
-    <div
+  const iconSizeClass = isMobileScreen ? "h-3.5 w-3.5" : "h-4 w-4";
+  const buttonSizeClass = isMobileScreen ? "h-8 w-8" : "h-9 w-9";
+
+  const triggerButton = (
+    <button
+      type="button"
+      disabled={mutating || loading || (!isLinked && !projects?.length)}
+      aria-label={tooltipLabel}
       className={cn(
-        "flex flex-wrap items-center gap-2 mb-2 px-0",
-        "text-sm"
+        buttonSizeClass,
+        "flex items-center justify-center rounded-full border transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary/30",
+        mutating || loading || (!isLinked && !projects?.length)
+          ? "bg-muted border-muted text-muted-foreground cursor-not-allowed opacity-50"
+          : isLinked
+            ? "bg-primary text-primary-foreground border-primary shadow"
+            : "bg-background border-border text-muted-foreground hover:bg-accent"
       )}
     >
-      <span className="text-muted-foreground shrink-0">Project:</span>
-      {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-      ) : linked ? (
-        <div className="flex items-center gap-1 min-w-0 flex-wrap">
-          <Badge variant="secondary" className="font-normal max-w-[200px] truncate">
-            <FolderKanban className="h-3 w-3 mr-1 shrink-0" />
-            <span className="truncate">{linked.name}</span>
-          </Badge>
-          {(projects || []).filter((p) => p.id !== linked.projectId).length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2"
-                  disabled={mutating}
-                >
-                  Switch
-                  <ChevronDown className="ml-1 h-3.5 w-3.5 opacity-60" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[240px] max-h-[240px] overflow-y-auto">
+      {mutating || loading ? (
+        <Loader2 className={cn(iconSizeClass, "animate-spin")} />
+      ) : (
+        <FolderKanban className={iconSizeClass} />
+      )}
+    </button>
+  );
+
+  return (
+    <DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            {triggerButton}
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent sideOffset={8}>{tooltipLabel}</TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="end" className="w-[240px] max-h-[280px] overflow-y-auto">
+        {isLinked ? (
+          <>
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              <span className="flex items-center gap-2 min-w-0">
+                <FolderKanban className="h-4 w-4 shrink-0" />
+                <span className="truncate">{linked.name}</span>
+              </span>
+            </DropdownMenuLabel>
+            {switchableProjects.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
                   Switch to another project
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {(projects || [])
-                  .filter((p) => p.id !== linked.projectId)
-                  .map((p) => (
-                    <DropdownMenuItem
-                      key={p.id}
-                      onClick={() => linkTo(p)}
-                      className="cursor-pointer"
-                    >
-                      <FolderKanban className="h-4 w-4 mr-2 shrink-0 text-muted-foreground" />
-                      <span className="truncate">{p.name}</span>
-                    </DropdownMenuItem>
-                  ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground"
-            onClick={() => unlink()}
-            disabled={mutating}
-            aria-label="Unlink project"
-          >
-            {mutating ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <X className="h-3.5 w-3.5" />
+                {switchableProjects.map((p) => (
+                  <DropdownMenuItem
+                    key={p.id}
+                    onClick={() => linkTo(p)}
+                    disabled={mutating}
+                    className="cursor-pointer"
+                  >
+                    <FolderKanban className="h-4 w-4 mr-2 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{p.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </>
             )}
-          </Button>
-        </div>
-      ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8"
-              disabled={mutating || !projects?.length}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => unlink()}
+              disabled={mutating}
+              className="cursor-pointer text-destructive focus:text-destructive"
             >
-              {mutating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  Link a project
-                  <ChevronDown className="ml-1 h-4 w-4 opacity-60" />
-                </>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[240px] max-h-[280px] overflow-y-auto">
+              <Unlink className="h-4 w-4 mr-2 shrink-0" />
+              Unlink project
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
             <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
               {projects?.length
                 ? "Choose a project for this chat"
@@ -191,14 +190,19 @@ export function ChatProjectSelector({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {(projects || []).map((p) => (
-              <DropdownMenuItem key={p.id} onClick={() => linkTo(p)} className="cursor-pointer">
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => linkTo(p)}
+                disabled={mutating}
+                className="cursor-pointer"
+              >
                 <FolderKanban className="h-4 w-4 mr-2 shrink-0 text-muted-foreground" />
                 <span className="truncate">{p.name}</span>
               </DropdownMenuItem>
             ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
