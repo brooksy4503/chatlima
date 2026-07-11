@@ -156,11 +156,11 @@ pnpm pricing:analysis  # Analyze OpenRouter pricing with tsx
 ### Development Workflow
 
 #### Feature Development
-Follow `.cursor/rules/` workflow:
-1. Create feature branch using standardized naming
-2. Use `vercel deploy` for preview testing (never `--prod` on features)
-3. Follow conventional commit messages
-4. Test thoroughly before merging
+- Stay on the current branch unless the user asks to create or switch branches
+- Feature-branch naming and setup live in `.cursor/rules/feature-branch-creation-workflow.mdc` — use only when the user requests a new branch
+- Use `vercel deploy` for preview testing (never `--prod` on features)
+- Follow conventional commit messages when committing
+- Test thoroughly before merging
 
 #### Database Changes
 1. Modify schema in `lib/db/schema.ts`
