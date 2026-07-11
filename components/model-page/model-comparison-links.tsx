@@ -48,18 +48,18 @@ export function ModelComparisonLinks({ model, relatedModels }: ModelComparisonLi
             <Link
               key={comp.slug}
               href={`/compare/${comp.slug}`}
-              className="block bg-muted/40 rounded-lg p-4 hover:bg-muted/80 transition-colors"
+              className="block overflow-hidden bg-muted/40 rounded-lg p-4 hover:bg-muted/80 transition-colors"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-foreground mb-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold text-foreground mb-1 break-words">
                     {model.name} vs {otherModel.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
+                  <p className="text-xs text-muted-foreground line-clamp-2 break-words overflow-hidden">
                     Side-by-side comparison of features and capabilities
                   </p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
               </div>
             </Link>
           );

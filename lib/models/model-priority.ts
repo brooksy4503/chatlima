@@ -307,11 +307,6 @@ export const PREBUILT_COMPARISONS: Array<{
     reason: 'NVIDIA Nemotron Ultra vs GPT-OSS free tier'
   },
   {
-    model1Id: 'nvidia/nemotron-3-ultra-550b-a55b',
-    model2Id: 'nvidia/nemotron-3-ultra-550b-a55b:free',
-    reason: 'Nemotron Ultra paid vs free comparison'
-  },
-  {
     model1Id: 'qwen/qwen3.5-397b-a17b',
     model2Id: 'openai/gpt-oss-120b',
     reason: 'Qwen3.5 397B vs GPT-OSS 120B open models'

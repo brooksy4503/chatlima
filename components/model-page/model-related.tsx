@@ -8,6 +8,14 @@ interface ModelRelatedProps {
   models: ModelInfo[];
 }
 
+function previewDescription(description: string): string {
+  return description
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 export function ModelRelated({ models }: ModelRelatedProps) {
   if (models.length === 0) {
     return null;
@@ -30,25 +38,27 @@ export function ModelRelated({ models }: ModelRelatedProps) {
             <Link
               key={model.id}
               href={`/model/${encodeURIComponent(slug)}`}
-              className="block bg-muted/40 rounded-lg p-4 hover:bg-muted/80 transition-colors"
+              className="block overflow-hidden bg-muted/40 rounded-lg p-4 hover:bg-muted/80 transition-colors"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-base font-semibold text-foreground">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h3 className="text-base font-semibold text-foreground break-words">
                       {model.name}
                     </h3>
                     {isFree && (
-                      <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-2 py-0.5 rounded text-xs font-medium">
+                      <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-2 py-0.5 rounded text-xs font-medium shrink-0">
                         Free
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {model.description || model.capabilities.join(', ')}
+                  <p className="text-sm text-muted-foreground line-clamp-2 break-words overflow-hidden">
+                    {model.description
+                      ? previewDescription(model.description)
+                      : model.capabilities.join(', ')}
                   </p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground mt-1" />
+                <ArrowRight className="h-5 w-5 text-muted-foreground mt-1 shrink-0" />
               </div>
             </Link>
           );
