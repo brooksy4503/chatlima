@@ -1,4 +1,5 @@
 import { type AccessPolicyFlags } from '@/lib/config/access-policy';
+import { normalizeModelId } from '@/lib/models/normalize-model-id';
 
 const providerKeyMap: Record<string, string> = {
     openai: 'OPENAI_API_KEY',
@@ -10,7 +11,7 @@ const providerKeyMap: Record<string, string> = {
 };
 
 export const getProviderApiKeyName = (modelId: string): string | null => {
-    const provider = modelId.split('/')[0];
+    const provider = normalizeModelId(modelId).split('/')[0];
     return providerKeyMap[provider] || null;
 };
 

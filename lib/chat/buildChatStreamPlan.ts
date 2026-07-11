@@ -37,9 +37,7 @@ export interface ChatStreamPlan {
   webSearchConfig: ChatPreflightContext['webSearchConfig'];
   imageGenerationConfig: ChatPreflightContext['imageGenerationConfig'];
   modelMessagesFinal: UIMessage[];
-  formattedMessages: ReturnType<
-    typeof import('@/lib/openrouter-utils').convertToOpenRouterFormat
-  >;
+  formattedMessages: import('@/lib/openrouter-utils').StreamModelMessage[];
   toolsToUse: Record<string, unknown>;
   effectiveSystemInstruction: string;
   effectiveTemperature: number;

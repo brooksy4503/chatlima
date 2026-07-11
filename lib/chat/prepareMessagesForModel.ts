@@ -1,5 +1,5 @@
 import type { UIMessage } from 'ai';
-import { convertToOpenRouterFormat } from '@/lib/openrouter-utils';
+import { convertUIMessagesToModelMessages, type StreamModelMessage } from '@/lib/openrouter-utils';
 import { ChatMessageProcessingService } from '@/lib/services/chatMessageProcessingService';
 import type { ModelInfo } from '@/lib/types/models';
 
@@ -12,8 +12,8 @@ export interface PrepareMessagesParams {
 
 export interface PreparedModelMessages {
   modelMessagesFinal: UIMessage[];
-  /** OpenRouter/Requesty converted shape for streamText input. */
-  formattedMessages: ReturnType<typeof convertToOpenRouterFormat>;
+  /** UIMessage parts converted to streamText ModelMessage content. */
+  formattedMessages: StreamModelMessage[];
 }
 
 export async function prepareMessagesForModel(
@@ -32,16 +32,10 @@ export async function prepareMessagesForModel(
     selectedModel
   );
 
-  const isOpenRouterModel = selectedModel.startsWith('openrouter/');
-  const isRequestyModel = selectedModel.startsWith('requesty/');
-  const needsFormatConversion = isOpenRouterModel || isRequestyModel;
-
-  let formattedMessages: ReturnType<typeof convertToOpenRouterFormat> = needsFormatConversion
-    ? convertToOpenRouterFormat(modelMessagesFinal)
-    : (modelMessagesFinal as ReturnType<typeof convertToOpenRouterFormat>);
+  let formattedMessages = convertUIMessagesToModelMessages(modelMessagesFinal);
 
   formattedMessages = formattedMessages.filter(
-    (msg: { role?: string }) => msg.role !== 'tool'
+    (msg) => msg.role !== 'tool'
   );
 
   return { modelMessagesFinal, formattedMessages };

@@ -26,12 +26,12 @@ interface StandardTextContent {
 
 type StandardMessageContent = StandardTextContent | StandardImageContent;
 
-// Legacy type aliases for backward compatibility
-type OpenRouterImageContent = StandardImageContent;
-type OpenRouterTextContent = StandardTextContent;
-type OpenRouterMessageContent = StandardMessageContent;
+export type StreamModelMessage = {
+    role: string;
+    content: string | StandardMessageContent[];
+};
 
-export function convertToOpenRouterFormat(messages: UIMessage[]): any[] {
+export function convertUIMessagesToModelMessages(messages: UIMessage[]): StreamModelMessage[] {
     return messages
         .filter(message => {
             // Filter out tool messages - they should not be sent to AI SDK as input
@@ -215,4 +215,7 @@ export function convertMessagePartsToOpenRouter(parts: any[]): StandardMessageCo
     });
 
     return content;
-} 
+}
+
+/** @deprecated Use convertUIMessagesToModelMessages */
+export const convertToOpenRouterFormat = convertUIMessagesToModelMessages;

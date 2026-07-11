@@ -22,7 +22,7 @@ jest.mock('@requesty/ai-sdk', () => ({
     createRequesty: jest.fn(() => jest.fn((modelId: string) => ({ provider: 'requesty', modelId }))),
 }));
 
-import { getLanguageModelWithKeys } from '@/ai/providers';
+import { getLanguageModelWithKeys, getTitleGenerationModelId } from '@/ai/providers';
 
 describe('getLanguageModelWithKeys direct provider routing', () => {
     const apiKeys = {
@@ -66,5 +66,21 @@ describe('getLanguageModelWithKeys direct provider routing', () => {
         };
         expect(model.provider).toBe('xai');
         expect(model.modelId).toBe('grok-4');
+    });
+
+    it('routes legacy bare IDs through normalization', () => {
+        const model = getLanguageModelWithKeys('gpt-5-nano', apiKeys) as {
+            provider: string;
+            modelId: string;
+        };
+        expect(model.provider).toBe('openai');
+        expect(model.modelId).toBe('gpt-5-nano');
+    });
+
+    it('selects title model from normalized provider prefix', () => {
+        expect(getTitleGenerationModelId('gpt-5-nano')).toBe('openai/gpt-5-nano');
+        expect(getTitleGenerationModelId('openrouter/google/gemini-2.5-flash')).toBe(
+            'openrouter/openai/gpt-5-nano'
+        );
     });
 });

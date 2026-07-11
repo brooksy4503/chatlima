@@ -53,8 +53,19 @@ describe('accessGateService', () => {
             ).toBeNull();
         });
 
-        it('returns null for legacy bare IDs without provider prefix', () => {
-            expect(getMissingApiKeyForModel('gpt-5-nano', {})).toBeNull();
+        it('returns null for unknown provider prefixes', () => {
+            expect(getMissingApiKeyForModel('unknown/model', {})).toBeNull();
+        });
+
+        it('resolves legacy bare IDs to provider keys', () => {
+            const original = process.env.OPENAI_API_KEY;
+            delete process.env.OPENAI_API_KEY;
+
+            expect(getMissingApiKeyForModel('gpt-5-nano', {})).toBe('OPENAI_API_KEY');
+
+            if (original) {
+                process.env.OPENAI_API_KEY = original;
+            }
         });
     });
 

@@ -5,48 +5,19 @@ import { createXai } from "@ai-sdk/xai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createRequesty } from "@requesty/ai-sdk";
 
-import type { LanguageModelV3 } from "@ai-sdk/provider";
 import {
   customProvider,
-  wrapLanguageModel,
-  extractReasoningMiddleware,
   type LanguageModel,
 } from "ai";
 
 import { titleGenerationModelId } from '@/lib/constants';
 import { getLocalStorageItem, isLocalStorageAvailable } from '@/lib/browser-storage';
-
-const tagBasedReasoningMiddleware = extractReasoningMiddleware({
-  tagName: 'think',
-});
-
-/** Models that embed reasoning in think tags inside the text stream. */
-function usesTagBasedReasoningExtraction(modelId: string): boolean {
-  const id = modelId.toLowerCase();
-  return (
-    id.includes('deepseek-r1') ||
-    id.includes('deepseek-reasoner') ||
-    id.includes('qwq') ||
-    id.includes('grok-3-beta') ||
-    id.includes('grok-3-mini-beta') ||
-    id.includes('parasail-deepseek-r1')
-  );
-}
-
-/** Models that expose reasoning via OpenRouter's native reasoning field (no tag middleware). */
-function usesNativeReasoningField(modelId: string): boolean {
-  const id = modelId.toLowerCase();
-  return id.includes('minimax/m2') || id.includes('minimax-m2');
-}
-
-function wrapWithTagBasedReasoning(model: LanguageModel): LanguageModel;
-function wrapWithTagBasedReasoning(model: unknown): LanguageModel;
-function wrapWithTagBasedReasoning(model: unknown): LanguageModel {
-  return wrapLanguageModel({
-    model: model as LanguageModelV3,
-    middleware: tagBasedReasoningMiddleware,
-  }) as LanguageModel;
-}
+import { normalizeModelId } from '@/lib/models/normalize-model-id';
+import { resolveLanguageModel } from '@/lib/models/resolveLanguageModel';
+import {
+  usesTagBasedReasoningExtraction,
+  wrapWithTagBasedReasoning,
+} from '@/ai/reasoning-middleware';
 
 export { usesTagBasedReasoningExtraction, wrapWithTagBasedReasoning };
 
@@ -180,111 +151,14 @@ export const getLanguageModelWithKeys = (
   apiKeys?: Record<string, string>,
   userId?: string,
 ): LanguageModel => {
-  // Helper function to create clients on demand
-  const getOpenAIClient = () => createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']);
-  const getAnthropicClient = () => createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']);
-  const getGroqClient = () => createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']);
-  const getXaiClient = () => createXaiClientWithKey(apiKeys?.['XAI_API_KEY']);
-  const getOpenRouterClient = () => createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY'], userId);
-  const getRequestyClient = () => createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']);
-
-  // Check if the specific model exists and create only the needed client
-
-  // Handle dynamic Requesty models first (before static cases)
-  if (modelId.startsWith('requesty/')) {
-    const requestyModelId = modelId.replace('requesty/', '');
-    console.log(`[getLanguageModelWithKeys] Creating dynamic Requesty client for: ${requestyModelId}`);
-
-    if (usesTagBasedReasoningExtraction(modelId)) {
-      return wrapWithTagBasedReasoning(
-        getRequestyClient()(requestyModelId, { logprobs: false }),
-      );
-    }
-
-    return getRequestyClient()(requestyModelId) as unknown as LanguageModel;
-  }
-
-  // Handle dynamic OpenRouter models
-  if (modelId.startsWith('openrouter/')) {
-    const openrouterModelId = modelId.replace('openrouter/', '');
-    console.log(`[getLanguageModelWithKeys] Creating dynamic OpenRouter client for: ${openrouterModelId}`);
-
-    if (usesNativeReasoningField(modelId)) {
-      return getOpenRouterClient()(openrouterModelId) as LanguageModel;
-    }
-
-    if (openrouterModelId === 'x-ai/grok-3-mini-beta' && modelId.includes('reasoning-high')) {
-      return wrapWithTagBasedReasoning(
-        getOpenRouterClient()('x-ai/grok-3-mini-beta', { reasoning: { effort: "high" }, logprobs: false }),
-      );
-    }
-
-    if (usesTagBasedReasoningExtraction(modelId)) {
-      return wrapWithTagBasedReasoning(
-        getOpenRouterClient()(openrouterModelId, { logprobs: false }),
-      );
-    }
-
-    return getOpenRouterClient()(openrouterModelId) as LanguageModel;
-  }
-
-  // Handle dynamic direct-provider models (openai, anthropic, groq, xai)
-  if (modelId.startsWith('openai/')) {
-    const providerModelId = modelId.slice('openai/'.length);
-    console.log(`[getLanguageModelWithKeys] Creating dynamic openai/ client for: ${providerModelId}`);
-    return getOpenAIClient()(providerModelId) as LanguageModel;
-  }
-
-  if (modelId.startsWith('anthropic/')) {
-    const providerModelId = modelId.slice('anthropic/'.length);
-    console.log(`[getLanguageModelWithKeys] Creating dynamic anthropic/ client for: ${providerModelId}`);
-    return getAnthropicClient()(providerModelId) as LanguageModel;
-  }
-
-  if (modelId.startsWith('groq/')) {
-    const providerModelId = modelId.slice('groq/'.length);
-    console.log(`[getLanguageModelWithKeys] Creating dynamic groq/ client for: ${providerModelId}`);
-    if (usesTagBasedReasoningExtraction(modelId)) {
-      return wrapWithTagBasedReasoning(getGroqClient()(providerModelId));
-    }
-    return getGroqClient()(providerModelId) as LanguageModel;
-  }
-
-  if (modelId.startsWith('xai/')) {
-    const providerModelId = modelId.slice('xai/'.length);
-    console.log(`[getLanguageModelWithKeys] Creating dynamic xai/ client for: ${providerModelId}`);
-    return getXaiClient()(providerModelId) as LanguageModel;
-  }
-
-  switch (modelId) {
-    // Anthropic models
-    case "claude-3-7-sonnet":
-      return getAnthropicClient()('claude-3-7-sonnet-20250219');
-
-    // OpenAI models
-    case "gpt-5-nano":
-      return getOpenAIClient()("gpt-5-nano");
-
-    // Groq models
-    case "qwen-qwq":
-      return wrapWithTagBasedReasoning(getGroqClient()("qwen-qwq-32b"));
-
-    // XAI models
-    case "grok-3-mini":
-      return getXaiClient()("grok-3-mini-latest");
-
-    // Note: OpenRouter and Requesty models are now handled dynamically above this switch statement
-
-
-
-
-
-    default:
-      // Fallback to static models if not found (shouldn't happen in normal cases)
-      console.warn(`Model ${modelId} not found in dynamic models, falling back to static model`);
-      return languageModels[modelId as keyof typeof languageModels];
-  }
-
+  return resolveLanguageModel(modelId, {
+    getOpenAIClient: () => createOpenAIClientWithKey(apiKeys?.['OPENAI_API_KEY']),
+    getAnthropicClient: () => createAnthropicClientWithKey(apiKeys?.['ANTHROPIC_API_KEY']),
+    getGroqClient: () => createGroqClientWithKey(apiKeys?.['GROQ_API_KEY']),
+    getXaiClient: () => createXaiClientWithKey(apiKeys?.['XAI_API_KEY']),
+    getOpenRouterClient: () => createOpenRouterClientWithKey(apiKeys?.['OPENROUTER_API_KEY'], userId),
+    getRequestyClient: () => createRequestyClientWithKey(apiKeys?.['REQUESTY_API_KEY']),
+  }, languageModels);
 };
 
 // Update API keys when localStorage changes (for runtime updates)
@@ -306,41 +180,17 @@ export const titleGenerationModel = languageModels[titleGenerationModelId as key
 
 // Function to get the appropriate title generation model based on the provider of the selected model
 export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => {
-  // Define preferred title generation models for each provider with environment variable fallbacks
   const titleGenerationModels: Record<string, modelID> = {
-    'openrouter': process.env.OPENROUTER_TITLE_MODEL || 'openrouter/openai/gpt-5-nano',
-    'requesty': process.env.REQUESTY_TITLE_MODEL || 'requesty/openai/gpt-5-nano',
-    'openai': process.env.OPENAI_TITLE_MODEL || 'openai/gpt-5-nano',
-    'anthropic': process.env.ANTHROPIC_TITLE_MODEL || 'anthropic/claude-3-7-sonnet-20250219',
-    'groq': process.env.GROQ_TITLE_MODEL || 'groq/qwen-qwq-32b',
-    'xai': process.env.XAI_TITLE_MODEL || 'xai/grok-3-mini',
+    openrouter: process.env.OPENROUTER_TITLE_MODEL || 'openrouter/openai/gpt-5-nano',
+    requesty: process.env.REQUESTY_TITLE_MODEL || 'requesty/openai/gpt-5-nano',
+    openai: process.env.OPENAI_TITLE_MODEL || 'openai/gpt-5-nano',
+    anthropic: process.env.ANTHROPIC_TITLE_MODEL || 'anthropic/claude-3-7-sonnet-20250219',
+    groq: process.env.GROQ_TITLE_MODEL || 'groq/qwen-qwq-32b',
+    xai: process.env.XAI_TITLE_MODEL || 'xai/grok-3-mini',
   };
 
-  // Determine the provider from the selected model ID
-  if (selectedModelId.startsWith('openrouter/')) {
-    return titleGenerationModels['openrouter'];
-  } else if (selectedModelId.startsWith('requesty/')) {
-    return titleGenerationModels['requesty'];
-  } else if (selectedModelId.startsWith('openai/')) {
-    return titleGenerationModels['openai'];
-  } else if (selectedModelId.startsWith('anthropic/')) {
-    return titleGenerationModels['anthropic'];
-  } else if (selectedModelId.startsWith('groq/')) {
-    return titleGenerationModels['groq'];
-  } else if (selectedModelId.startsWith('xai/')) {
-    return titleGenerationModels['xai'];
-  } else if (selectedModelId.startsWith('gpt-') || selectedModelId === 'gpt-5-nano') {
-    return titleGenerationModels['openai'];
-  } else if (selectedModelId.startsWith('claude-') || selectedModelId === 'claude-3-7-sonnet') {
-    return titleGenerationModels['anthropic'];
-  } else if (selectedModelId.startsWith('qwen-') || selectedModelId === 'qwen-qwq') {
-    return titleGenerationModels['groq'];
-  } else if (selectedModelId.startsWith('grok-') || selectedModelId === 'grok-3-mini') {
-    return titleGenerationModels['xai'];
-  }
-
-  // Default fallback to OpenRouter if provider can't be determined
-  return titleGenerationModels['openrouter'];
+  const provider = normalizeModelId(selectedModelId).split('/')[0];
+  return titleGenerationModels[provider] ?? titleGenerationModels.openrouter;
 };
 
 // Get the title generation model instance based on the selected model
