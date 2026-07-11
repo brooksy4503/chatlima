@@ -229,29 +229,33 @@ export const getLanguageModelWithKeys = (
   }
 
   // Handle dynamic direct-provider models (openai, anthropic, groq, xai)
-  const directProviderRoutes: Array<{
-    prefix: string;
-    getClient: () => ReturnType<typeof createOpenAIClientWithKey>;
-  }> = [
-    { prefix: 'openai/', getClient: getOpenAIClient },
-    { prefix: 'anthropic/', getClient: getAnthropicClient },
-    { prefix: 'groq/', getClient: getGroqClient },
-    { prefix: 'xai/', getClient: getXaiClient },
-  ];
+  if (modelId.startsWith('openai/')) {
+    const providerModelId = modelId.slice('openai/'.length);
+    console.log(`[getLanguageModelWithKeys] Creating dynamic openai/ client for: ${providerModelId}`);
+    return getOpenAIClient()(providerModelId) as LanguageModel;
+  }
 
-  for (const route of directProviderRoutes) {
-    if (modelId.startsWith(route.prefix)) {
-      const providerModelId = modelId.slice(route.prefix.length);
-      console.log(`[getLanguageModelWithKeys] Creating dynamic ${route.prefix} client for: ${providerModelId}`);
+  if (modelId.startsWith('anthropic/')) {
+    const providerModelId = modelId.slice('anthropic/'.length);
+    console.log(`[getLanguageModelWithKeys] Creating dynamic anthropic/ client for: ${providerModelId}`);
+    return getAnthropicClient()(providerModelId) as LanguageModel;
+  }
 
-      if (usesTagBasedReasoningExtraction(modelId)) {
-        return wrapWithTagBasedReasoning(
-          route.getClient()(providerModelId, { logprobs: false }),
-        );
-      }
-
-      return route.getClient()(providerModelId) as LanguageModel;
+  if (modelId.startsWith('groq/')) {
+    const providerModelId = modelId.slice('groq/'.length);
+    console.log(`[getLanguageModelWithKeys] Creating dynamic groq/ client for: ${providerModelId}`);
+    if (usesTagBasedReasoningExtraction(modelId)) {
+      return wrapWithTagBasedReasoning(
+        getGroqClient()(providerModelId, { logprobs: false }),
+      );
     }
+    return getGroqClient()(providerModelId) as LanguageModel;
+  }
+
+  if (modelId.startsWith('xai/')) {
+    const providerModelId = modelId.slice('xai/'.length);
+    console.log(`[getLanguageModelWithKeys] Creating dynamic xai/ client for: ${providerModelId}`);
+    return getXaiClient()(providerModelId) as LanguageModel;
   }
 
   switch (modelId) {
