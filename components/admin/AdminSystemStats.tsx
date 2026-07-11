@@ -40,8 +40,8 @@ interface SystemStats {
   totalTokens: number;
   totalCost: number;
   avgTotalDuration: number;
-  systemUptime: number;
-  requestsToday: number;
+  requestSuccessRate: number;
+  requestsInRange: number;
   requestsThisMonth: number;
   trends: {
     tokenTrend: number;
@@ -419,8 +419,8 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
             <div className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Requests Today</p>
-                <p className="text-2xl font-bold">{formatNumber(systemStats.requestsToday)}</p>
+                <p className="text-sm font-medium text-muted-foreground">Requests in Range</p>
+                <p className="text-2xl font-bold">{formatNumber(systemStats.requestsInRange)}</p>
               </div>
             </div>
           </CardContent>
@@ -460,12 +460,12 @@ export function AdminSystemStats({ loading = false }: AdminSystemStatsProps) {
             <div className="flex items-center space-x-2">
               <Server className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-muted-foreground">System Uptime</p>
+                <p className="text-sm font-medium text-muted-foreground">Request Success Rate</p>
                 <div className="flex items-center space-x-1">
-                  <p className={`text-2xl font-bold ${getStatusColor(systemStats.systemUptime, "uptime")}`}>
-                    {formatPercentage(systemStats.systemUptime)}
+                  <p className={`text-2xl font-bold ${getStatusColor(systemStats.requestSuccessRate, "uptime")}`}>
+                    {formatPercentage(systemStats.requestSuccessRate)}
                   </p>
-                  {getStatusIcon(systemStats.systemUptime, "uptime")}
+                  {getStatusIcon(systemStats.requestSuccessRate, "uptime")}
                 </div>
               </div>
             </div>

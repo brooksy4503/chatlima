@@ -54,8 +54,8 @@ interface UserUsage {
   lastActive: string;
   isActive: boolean;
   createdAt: string;
-  plan: string;
-  usagePercentage: number;
+  role: string;
+  isAnonymous: boolean;
 }
 
 interface UsersResponse {
@@ -79,20 +79,18 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortColumn, setSortColumn] = React.useState<keyof UserUsage>("tokensUsed");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("desc");
-  const [planFilter, setPlanFilter] = React.useState<string>("all");
   const [activeFilter, setActiveFilter] = React.useState<string>("all");
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage] = React.useState(10);
 
   // Fetch users data from API
   const { data: usersData, isLoading, error, refetch } = useQuery<UsersResponse>({
-    queryKey: ['admin-users', currentPage, itemsPerPage, searchTerm, planFilter, activeFilter, sortColumn, sortDirection],
+    queryKey: ['admin-users', currentPage, itemsPerPage, searchTerm, activeFilter, sortColumn, sortDirection],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
         search: searchTerm,
-        plan: planFilter,
         active: activeFilter,
         sortBy: sortColumn,
         sortOrder: sortDirection,
@@ -130,21 +128,6 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
     });
   };
 
-  const getPlanColor = (plan: string) => {
-    const colors: Record<string, string> = {
-      premium: "bg-purple-100 text-purple-800",
-      standard: "bg-blue-100 text-blue-800",
-      basic: "bg-gray-100 text-gray-800",
-    };
-    return colors[plan] || "bg-gray-100 text-gray-800";
-  };
-
-  const getUsageColor = (percentage: number) => {
-    if (percentage >= 80) return "text-red-600";
-    if (percentage >= 60) return "text-yellow-600";
-    return "text-green-600";
-  };
-
   const handleSort = (column: keyof UserUsage) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -164,7 +147,7 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
   // Handle search and filter changes
   React.useEffect(() => {
     setCurrentPage(1); // Reset to first page when filters change
-  }, [searchTerm, planFilter, activeFilter]);
+  }, [searchTerm, activeFilter]);
 
   const currentItems = userUsage;
   const totalPages = pagination?.totalPages || 1;
@@ -177,9 +160,7 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-12" /></TableCell>
         <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
       </TableRow>
     ));
@@ -187,7 +168,7 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
 
   const exportData = () => {
     const csvContent = [
-      ["Name", "Email", "Tokens Used", "Cost", "Requests", "Last Active", "Plan", "Usage %"],
+      ["Name", "Email", "Tokens Used", "Cost", "Requests", "Last Active", "Role", "Status"],
       ...currentItems.map((user: UserUsage) => [
         user.name,
         user.email,
@@ -195,8 +176,8 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
         user.cost,
         user.requestCount,
         user.lastActive,
-        user.plan,
-        user.usagePercentage
+        user.role,
+        user.isActive ? 'active' : 'inactive'
       ])
     ].map(row => row.join(",")).join("\n");
     
@@ -248,18 +229,6 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
                 className="pl-10"
               />
             </div>
-            
-            <Select value={planFilter} onValueChange={setPlanFilter}>
-              <SelectTrigger className="w-full md:w-40">
-                <SelectValue placeholder="Plan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Plans</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
-                <SelectItem value="standard">Standard</SelectItem>
-                <SelectItem value="basic">Basic</SelectItem>
-              </SelectContent>
-            </Select>
             
             <Select value={activeFilter} onValueChange={setActiveFilter}>
               <SelectTrigger className="w-full md:w-40">
@@ -325,23 +294,13 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
                   <Button
                     variant="ghost"
                     className="h-auto p-0 font-medium"
-                    onClick={() => handleSort("usagePercentage")}
-                  >
-                    Usage
-                    {getSortIcon("usagePercentage")}
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    className="h-auto p-0 font-medium"
                     onClick={() => handleSort("lastActive")}
                   >
                     Last Active
                     {getSortIcon("lastActive")}
                   </Button>
                 </TableHead>
-                <TableHead>Plan</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -350,13 +309,13 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
                 renderLoadingRows()
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     Error loading users: {error.message}
                   </TableCell>
                 </TableRow>
               ) : currentItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No users found
                   </TableCell>
                 </TableRow>
@@ -396,28 +355,13 @@ export function AdminUserBreakdown({ loading = false }: AdminUserBreakdownProps)
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-16 bg-muted rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${getUsageColor(user.usagePercentage).replace("text-", "bg-")}`}
-                            style={{ width: `${user.usagePercentage}%` }}
-                          ></div>
-                        </div>
-                        <span className={`text-sm font-medium ${getUsageColor(user.usagePercentage)}`}>
-                          {user.usagePercentage}%
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">{formatDate(user.lastActive)}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getPlanColor(user.plan)}>
-                        {user.plan}
-                      </Badge>
+                      <Badge variant="outline">{user.role}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.isActive ? "default" : "secondary"}>

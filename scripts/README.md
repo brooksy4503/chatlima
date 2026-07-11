@@ -194,10 +194,8 @@ SQL queries to verify OpenRouter cost tracking implementation and check for disc
 **Vercel Cron integration testing** for Phase 3 cleanup system endpoints.
 
 **Tests:**
-- Schedule management endpoints (`/api/admin/cleanup-users/schedule`)
-- Execution logs endpoints (`/api/admin/cleanup-users/logs`) 
-- System health endpoints (`/api/admin/cleanup-users/health`)
-- Execute endpoints with cron simulation
+- Execution logs endpoints (`/api/admin/cleanup-users/logs`)
+- Manual execute and preview endpoints
 
 #### `test-cron-execution.ts` ⏰ Cron Simulation Test
 Simulates Vercel Cron execution locally to test cleanup endpoints before production deployment.
@@ -498,24 +496,13 @@ pnpm dev
 
 ---
 
-## 📊 Monitoring & Health
+## 📊 Monitoring
 
-### Vercel Cron Jobs
-- **Schedule**: Weekly on Sundays at 2 AM UTC (`0 2 * * 0`)
-- **Memory Limit**: 2048 MB (Hobby plan) 
-- **Timeout**: 5 minutes maximum
-- **Logs**: Available in Vercel dashboard
+### Execution Logs
+- **Logs API**: `/api/admin/cleanup-users/logs`
+- **Stats API**: `GET /api/admin/cleanup-users/execute`
 
-### Health Endpoints
-- **Health Check**: `/api/admin/cleanup-users/health`
-- **Current Config**: `/api/admin/cleanup-users/schedule`
-- **Execution Logs**: `/api/admin/cleanup-users/logs`
-
-### Performance Metrics
-- **Health Score**: 0-100 based on system performance
-- **Success Rate**: Percentage of successful executions
-- **Processing Rate**: Users processed per minute
-- **Alert Conditions**: Failures, high deletion counts, long execution times
+Cleanup is manual-only via the admin dashboard Ops tab or CLI scripts.
 
 ---
 

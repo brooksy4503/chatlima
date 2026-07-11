@@ -778,10 +778,6 @@ POST /api/cost-calculate
 ```
 GET /api/credits
 - Get user's remaining credits
-
-GET /api/limits/usage
-PUT /api/limits/usage
-- Get or update user usage limit configuration
 ```
 
 #### Admin API
@@ -792,26 +788,15 @@ POST /api/admin/set-admin
 GET /api/admin/models
 GET /api/admin/model-analytics
 POST /api/admin/sync-pricing
+GET /api/admin/sync-pricing
 GET /api/admin/logging-health
-GET /api/admin/usage-limits
-POST /api/admin/usage-limits
-PUT /api/admin/usage-limits/[id]
-DELETE /api/admin/usage-limits/[id]
 GET /api/admin/check-status
-GET /api/admin/test-pricing-sync
-POST /api/admin/test-pricing-sync
 
-# User Cleanup
+# User Cleanup (manual only)
 GET /api/admin/cleanup-users/preview
 POST /api/admin/cleanup-users/execute
 GET /api/admin/cleanup-users/execute
 GET /api/admin/cleanup-users/logs
-GET /api/admin/cleanup-users/count-only
-GET /api/admin/cleanup-users/health
-GET /api/admin/cleanup-users/schedule
-POST /api/admin/cleanup-users/schedule
-GET /api/admin/cleanup-users/emergency-disable
-POST /api/admin/cleanup-users/emergency-disable
 ```
 
 #### Configuration & System APIs
@@ -845,13 +830,15 @@ POST /api/auth/polar/webhooks
 
 ### 10.1 Features
 
-- User management
-- System statistics
-- Model analytics
-- Pricing synchronization
-- Logging health monitoring
-- Usage limits management
-- User cleanup controls
+Three-tab admin dashboard at `/admin`:
+
+1. **Overview** — system statistics and model analytics
+2. **Users** — user usage table (tokens, cost, requests, activity)
+3. **Ops** — pricing sync + read-only pricing table, manual anonymous user cleanup
+
+Admin bootstrap: `pnpm tsx scripts/set-admin.ts <email>`
+
+Logging health API remains available for on-call diagnostics (`GET /api/admin/logging-health`) but is not exposed in the dashboard UI.
 
 ### 10.2 User Cleanup System
 
@@ -860,12 +847,11 @@ POST /api/auth/polar/webhooks
 **Configuration:**
 - Threshold days (default: 45)
 - Batch size (default: 50)
-- Notification settings
 
 **Execution:**
-- Manual via admin dashboard
-- Scheduled via Vercel cron
-- Audit logs maintained
+- Manual via admin dashboard (preview → confirm → execute)
+- Audit logs maintained via `cleanup_execution_logs`
+- CLI scripts available in `scripts/` for terminal-based cleanup
 
 ---
 

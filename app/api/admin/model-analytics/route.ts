@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { AuthMiddleware } from '@/lib/middleware/auth';
 import { db } from '@/lib/db';
-import { users, tokenUsageMetrics, modelPricing } from '@/lib/db/schema';
-import { eq, sql, gte, desc, asc, and } from 'drizzle-orm';
+import { tokenUsageMetrics, modelPricing } from '@/lib/db/schema';
+import { sql, gte, desc, asc, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 interface ModelAnalytics {
@@ -41,38 +41,9 @@ export async function GET(req: NextRequest) {
     const requestId = nanoid();
 
     try {
-        // Check if user is authenticated and is an admin
-        const session = await auth.api.getSession({ headers: req.headers });
-
-        if (!session?.user?.id) {
-            return NextResponse.json(
-                { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
-                { status: 401 }
-            );
-        }
-
-        // Query the database to get the user's admin status
-        const userResult = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, session.user.id))
-            .limit(1);
-
-        if (userResult.length === 0) {
-            return NextResponse.json(
-                { error: { code: 'FORBIDDEN', message: 'User not found' } },
-                { status: 403 }
-            );
-        }
-
-        const user = userResult[0];
-        const isAdmin = user.role === "admin" || user.isAdmin === true;
-
-        if (!isAdmin) {
-            return NextResponse.json(
-                { error: { code: 'FORBIDDEN', message: 'Admin access required' } },
-                { status: 403 }
-            );
+        const adminResult = await AuthMiddleware.requireAdmin(req);
+        if (adminResult.response) {
+            return adminResult.response;
         }
 
         // Get query parameters

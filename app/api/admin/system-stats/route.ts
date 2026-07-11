@@ -1,54 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+import { AuthMiddleware } from '@/lib/middleware/auth';
 import { db } from '@/lib/db';
-import { users, chats, messages, tokenUsageMetrics, dailyTokenUsage, modelPricing } from '@/lib/db/schema';
+import { users, chats, tokenUsageMetrics, dailyTokenUsage } from '@/lib/db/schema';
 import { eq, and, gte, lte, sql, desc, asc } from 'drizzle-orm';
 import { ModelNameService } from '@/lib/services/model-names';
 
 export async function GET(req: NextRequest) {
     try {
-        // Get headers from the request
-        const headersList = await headers();
-
-        // Convert ReadonlyHeaders to Headers
-        const requestHeaders = new Headers();
-        headersList.forEach((value, key) => {
-            requestHeaders.set(key, value);
-        });
-
-        // Check authentication
-        const session = await auth.api.getSession({ headers: requestHeaders });
-
-        if (!session?.user?.id) {
-            return NextResponse.json(
-                { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
-                { status: 401 }
-            );
-        }
-
-        // Check if user is admin
-        const userResult = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, session.user.id))
-            .limit(1);
-
-        if (userResult.length === 0) {
-            return NextResponse.json(
-                { error: { code: 'USER_NOT_FOUND', message: 'User not found' } },
-                { status: 404 }
-            );
-        }
-
-        const user = userResult[0];
-        const isAdmin = user.role === "admin" || user.isAdmin === true;
-
-        if (!isAdmin) {
-            return NextResponse.json(
-                { error: { code: 'FORBIDDEN', message: 'Admin access required' } },
-                { status: 403 }
-            );
+        const adminResult = await AuthMiddleware.requireAdmin(req);
+        if (adminResult.response) {
+            return adminResult.response;
         }
 
         // Parse query parameters
@@ -103,7 +64,7 @@ export async function GET(req: NextRequest) {
             .select({
                 totalTokens: sql<number>`coalesce(sum(${tokenUsageMetrics.totalTokens}), 0)`,
                 totalCost: sql<number>`coalesce(sum(coalesce(${tokenUsageMetrics.actualCost}, ${tokenUsageMetrics.estimatedCost})), 0)`,
-                requestsToday: sql<number>`coalesce(count(*), 0)`,
+                requestsInRange: sql<number>`coalesce(count(*), 0)`,
                 avgTotalDuration: sql<number>`coalesce(avg(${tokenUsageMetrics.processingTimeMs}), 0) / 1000.0`
             })
             .from(tokenUsageMetrics)
@@ -111,7 +72,7 @@ export async function GET(req: NextRequest) {
 
         const totalTokens = Number(tokenStatsResult[0]?.totalTokens || 0);
         const totalCost = Number(tokenStatsResult[0]?.totalCost || 0);
-        const requestsToday = Number(tokenStatsResult[0]?.requestsToday || 0);
+        const requestsInRange = Number(tokenStatsResult[0]?.requestsInRange || 0);
         const avgTotalDuration = Number(tokenStatsResult[0]?.avgTotalDuration || 0);
 
         // Get requests this month
@@ -174,7 +135,7 @@ export async function GET(req: NextRequest) {
 
         const totalRequests = Number(uptimeResult[0]?.totalRequests || 0);
         const successfulRequests = Number(uptimeResult[0]?.successfulRequests || 0);
-        const systemUptime = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 99.9;
+        const requestSuccessRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0;
 
         // Calculate trend data for current vs previous period
         const previousPeriodStats = await db
@@ -214,8 +175,8 @@ export async function GET(req: NextRequest) {
             totalTokens,
             totalCost,
             avgTotalDuration,
-            systemUptime,
-            requestsToday,
+            requestSuccessRate,
+            requestsInRange,
             requestsThisMonth,
             trends: {
                 tokenTrend,

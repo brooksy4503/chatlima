@@ -212,14 +212,6 @@ jest.mock('@/lib/services/creditCache', () => ({
     hasEnoughCreditsWithCache: jest.fn(),
 }));
 
-jest.mock('@/lib/services/usageLimits', () => ({
-    UsageLimitsService: {},
-}));
-
-jest.mock('@/lib/services/optimizedUsageLimits', () => ({
-    OptimizedUsageLimitsService: {},
-}));
-
 jest.mock('@/lib/services/chatTokenTrackingService', () => ({
     ChatTokenTrackingService: {},
 }));
