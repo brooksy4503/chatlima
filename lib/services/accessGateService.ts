@@ -14,6 +14,20 @@ export const getProviderApiKeyName = (modelId: string): string | null => {
     return providerKeyMap[provider] || null;
 };
 
+export const getMissingApiKeyForModel = (
+    modelId: string,
+    apiKeys: Record<string, string> = {}
+): string | null => {
+    const keyName = getProviderApiKeyName(modelId);
+    if (!keyName) return null;
+
+    const bodyKey = apiKeys[keyName]?.trim();
+    const envKey = process.env[keyName]?.trim();
+    if (bodyKey || envKey) return null;
+
+    return keyName;
+};
+
 export const hasProviderByokForModel = (modelId: string, apiKeys: Record<string, string> = {}): boolean => {
     const keyName = getProviderApiKeyName(modelId);
     if (!keyName) return false;

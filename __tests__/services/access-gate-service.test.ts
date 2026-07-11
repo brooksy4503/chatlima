@@ -1,5 +1,9 @@
 import { type AccessPolicyFlags } from '@/lib/config/access-policy';
-import { canUserChat, hasProviderByokForModel } from '@/lib/services/accessGateService';
+import {
+    canUserChat,
+    getMissingApiKeyForModel,
+    hasProviderByokForModel,
+} from '@/lib/services/accessGateService';
 
 const baseAccessFlags: AccessPolicyFlags = {
     billingEnforced: false,
@@ -28,6 +32,29 @@ describe('accessGateService', () => {
 
         it('does not allow cross-provider BYOK', () => {
             expect(hasProviderByokForModel('openai/gpt-4.1', { OPENROUTER_API_KEY: 'sk-or-test' })).toBe(false);
+        });
+    });
+
+    describe('getMissingApiKeyForModel', () => {
+        it('returns missing key name when neither body nor env key exists', () => {
+            const original = process.env.OPENAI_API_KEY;
+            delete process.env.OPENAI_API_KEY;
+
+            expect(getMissingApiKeyForModel('openai/gpt-4.1', {})).toBe('OPENAI_API_KEY');
+
+            if (original) {
+                process.env.OPENAI_API_KEY = original;
+            }
+        });
+
+        it('returns null when body key is present', () => {
+            expect(
+                getMissingApiKeyForModel('openai/gpt-4.1', { OPENAI_API_KEY: 'sk-test' })
+            ).toBeNull();
+        });
+
+        it('returns null for legacy bare IDs without provider prefix', () => {
+            expect(getMissingApiKeyForModel('gpt-5-nano', {})).toBeNull();
         });
     });
 

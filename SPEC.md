@@ -407,9 +407,16 @@ The application uses specialized services for maintainability:
 
 ### 5.2 Dynamic Model Loading
 
-Models are fetched in real-time from:
-- **OpenRouter API**: `/api/v1/models`
-- **Requesty API**: `/v1/models`
+Models are fetched in real-time from provider model-list APIs when an API key is available (environment or user BYOK):
+
+- **OpenRouter API**: `https://openrouter.ai/api/v1/models`
+- **Requesty API**: `https://router.requesty.ai/v1/models`
+- **OpenAI API**: `https://api.openai.com/v1/models` (requires `OPENAI_API_KEY`)
+- **Anthropic API**: `https://api.anthropic.com/v1/models` (requires `ANTHROPIC_API_KEY`)
+- **Groq API**: `https://api.groq.com/openai/v1/models` (requires `GROQ_API_KEY`)
+- **xAI API**: `https://api.x.ai/v1/models` (requires `XAI_API_KEY`)
+
+Direct-provider catalogs are only fetched when the matching key is present. OpenRouter and Requesty remain the default shared catalogs for users without direct-provider keys.
 
 **Caching Strategy:**
 - Model list: 10-minute TTL
@@ -426,8 +433,12 @@ Examples:
 - openrouter/google/gemini-2.5-flash
 - requesty/anthropic/claude-3.7-sonnet
 - openai/gpt-4.1-mini
-- anthropic/claude-3-7-sonnet
+- anthropic/claude-3-7-sonnet-20250219
+- groq/llama-3.3-70b-versatile
+- xai/grok-4
 ```
+
+**Direct vs OpenRouter-hosted namespaces:** Model ID prefix determines billing, routing, and BYOK key matching. For example, `openai/gpt-4.1-mini` uses `OPENAI_API_KEY`, while `openrouter/openai/gpt-4.1-mini` uses `OPENROUTER_API_KEY`. ChatLima does not silently reroute OpenRouter-selected models to direct-provider endpoints when a direct key is present.
 
 ### 5.4 API Key Management
 
@@ -576,7 +587,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
   - **`components/chat.tsx`**: Main content wrapper uses `overflow-hidden` when messages are shown so only `Messages` handles vertical scrolling (avoids nested scroll containers that break auto-scroll).
 - **Dual-Path File Upload**: Up to 5 files per message, 30 MB max per file. Images (JPEG, PNG, WebP) sent as base64 for vision; documents (PDF, CSV, Excel) and text/code files uploaded to Vercel Blob and exposed to the AI via a `read_file` tool (content parsed on demand). Parser limits: Excel 1,000 rows/sheet, CSV 10,000 rows.
 - **Web Search** (OpenRouter models only; globe toggle in composer):
-  - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with `supportsWebSearch: true` in the catalog.
+  - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with `supportsWebSearch: true` in the catalog. Direct-provider BYOK keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.) do not unlock web search.
   - **Client**: `webSearch: { enabled, contextSize }` sent on every `POST /api/chat` from `WebSearchProvider` (localStorage) or active preset overrides.
   - **Agentic path (default, `OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=true`)**: OpenRouter `web_search` server tool merged into `streamText` tools; model may invoke search 0+ times (`stopWhen: stepCountIs(20)`). System prompt instructs cite-with-markdown-links. Citations from `url_citation` annotations; `hasWebSearch` set when invocations or citations detected.
   - **Legacy path (`OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=false`)**: Model ID rewritten to `:online` variant plus `web_search_options.search_context_size` from context size (`low` / `medium` / `high`).
@@ -584,7 +595,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
   - **UI**: Live “Searching the web” indicator during stream; tool cards and `Citations` component; optional follow-up suggestion to disable search to save credits.
   - See §7.3 for billing; implementation in `chatWebSearchService`, `openRouterWebSearchRouteSetup`, `lib/chat/*` (buildChatStreamPlan etc), `app/api/chat/route.ts` (thin orchestrator).
 - **Image Generation** (OpenRouter models only; ImagePlus toggle in composer):
-  - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with tool-calling support (`supportsToolCalling` or `Tools` capability in catalog).
+  - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with tool-calling support (`supportsToolCalling` or `Tools` capability in catalog). Direct-provider BYOK keys do not unlock image generation.
   - **Client**: `imageGeneration: { enabled, quality, aspectRatio, outputFormat, model }` sent on every `POST /api/chat` from `ImageGenerationProvider` (localStorage). Defaults configurable in Settings → Preferences.
   - **Image tool**: Chatlima merges an app-executed `image_generation` tool into `streamText` when the toggle is on; the chat model decides when to invoke. When the user message clearly requests image creation and the chat model supports explicit `tool_choice`, step 0 forces `image_generation`; Qwen3/QwQ thinking models skip forced `tool_choice` (Alibaba rejects it in thinking mode) and rely on system-prompt guidance instead. The tool calls the configured OpenRouter image-output model with `modalities: ["image", "text"]`, extracts `message.images[]`, uploads generated data URLs to Blob when configured, and returns `{ status, imageUrl }` for persistence/rendering.
   - **UI**: ImagePlus toggle between attach and web search; live “Generating image” tool card; generated images rendered inline with click-to-expand/download. Estimated cost shown when toggle is on.

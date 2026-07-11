@@ -60,6 +60,20 @@ function checkRateLimit(providerKey: string): boolean {
     return true;
 }
 
+function getProviderFetchHeaders(providerKey: string, apiKey: string): Record<string, string> {
+    const config = PROVIDERS[providerKey];
+    if (config.getHeaders) {
+        return config.getHeaders(apiKey);
+    }
+
+    return {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
+        'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
+    };
+}
+
 // Health check for a provider
 async function checkProviderHealth(
     providerKey: string,
@@ -72,10 +86,7 @@ async function checkProviderHealth(
     try {
         const response = await fetch(config.healthCheck, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-            },
+            headers: getProviderFetchHeaders(providerKey, apiKey),
             signal,
         });
 
@@ -155,12 +166,7 @@ async function fetchProviderModels(
         try {
             const response = await fetch(config.endpoint, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://www.chatlima.com/',
-                    'X-Title': process.env.NEXT_PUBLIC_APP_TITLE || 'ChatLima',
-                },
+                headers: getProviderFetchHeaders(providerKey, apiKey),
                 signal,
             });
 

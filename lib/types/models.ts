@@ -80,6 +80,8 @@ export interface ProviderConfig {
     envKey: string;
     endpoint: string;
     parse: (data: any) => ModelInfo[];
+    /** Custom auth headers for model-list and health-check requests. Defaults to Bearer. */
+    getHeaders?: (apiKey: string) => Record<string, string>;
     healthCheck?: string;           // Endpoint for provider health
     rateLimit?: {                  // Rate limiting config
         requestsPerMinute: number;

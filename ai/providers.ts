@@ -228,6 +228,32 @@ export const getLanguageModelWithKeys = (
     return getOpenRouterClient()(openrouterModelId) as LanguageModel;
   }
 
+  // Handle dynamic direct-provider models (openai, anthropic, groq, xai)
+  const directProviderRoutes: Array<{
+    prefix: string;
+    getClient: () => ReturnType<typeof createOpenAIClientWithKey>;
+  }> = [
+    { prefix: 'openai/', getClient: getOpenAIClient },
+    { prefix: 'anthropic/', getClient: getAnthropicClient },
+    { prefix: 'groq/', getClient: getGroqClient },
+    { prefix: 'xai/', getClient: getXaiClient },
+  ];
+
+  for (const route of directProviderRoutes) {
+    if (modelId.startsWith(route.prefix)) {
+      const providerModelId = modelId.slice(route.prefix.length);
+      console.log(`[getLanguageModelWithKeys] Creating dynamic ${route.prefix} client for: ${providerModelId}`);
+
+      if (usesTagBasedReasoningExtraction(modelId)) {
+        return wrapWithTagBasedReasoning(
+          route.getClient()(providerModelId, { logprobs: false }),
+        );
+      }
+
+      return route.getClient()(providerModelId) as LanguageModel;
+    }
+  }
+
   switch (modelId) {
     // Anthropic models
     case "claude-3-7-sonnet":
@@ -282,10 +308,10 @@ export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => 
   const titleGenerationModels: Record<string, modelID> = {
     'openrouter': process.env.OPENROUTER_TITLE_MODEL || 'openrouter/openai/gpt-5-nano',
     'requesty': process.env.REQUESTY_TITLE_MODEL || 'requesty/openai/gpt-5-nano',
-    'openai': process.env.OPENAI_TITLE_MODEL || 'gpt-5-nano',
-    'anthropic': process.env.ANTHROPIC_TITLE_MODEL || 'claude-3-7-sonnet',
-    'groq': process.env.GROQ_TITLE_MODEL || 'qwen-qwq',
-    'xai': process.env.XAI_TITLE_MODEL || 'grok-3-mini',
+    'openai': process.env.OPENAI_TITLE_MODEL || 'openai/gpt-5-nano',
+    'anthropic': process.env.ANTHROPIC_TITLE_MODEL || 'anthropic/claude-3-7-sonnet-20250219',
+    'groq': process.env.GROQ_TITLE_MODEL || 'groq/qwen-qwq-32b',
+    'xai': process.env.XAI_TITLE_MODEL || 'xai/grok-3-mini',
   };
 
   // Determine the provider from the selected model ID
@@ -293,6 +319,14 @@ export const getTitleGenerationModelId = (selectedModelId: modelID): modelID => 
     return titleGenerationModels['openrouter'];
   } else if (selectedModelId.startsWith('requesty/')) {
     return titleGenerationModels['requesty'];
+  } else if (selectedModelId.startsWith('openai/')) {
+    return titleGenerationModels['openai'];
+  } else if (selectedModelId.startsWith('anthropic/')) {
+    return titleGenerationModels['anthropic'];
+  } else if (selectedModelId.startsWith('groq/')) {
+    return titleGenerationModels['groq'];
+  } else if (selectedModelId.startsWith('xai/')) {
+    return titleGenerationModels['xai'];
   } else if (selectedModelId.startsWith('gpt-') || selectedModelId === 'gpt-5-nano') {
     return titleGenerationModels['openai'];
   } else if (selectedModelId.startsWith('claude-') || selectedModelId === 'claude-3-7-sonnet') {

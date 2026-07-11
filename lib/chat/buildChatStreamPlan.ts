@@ -25,6 +25,7 @@ import { modelShouldDisableLogprobs } from '@/lib/chat/reasoningModels';
 import { prepareMessagesForModel } from '@/lib/chat/prepareMessagesForModel';
 import { isOpenRouterMetaRouterModel } from '@/lib/chat/openRouterMetaRouterModels';
 import { createErrorResponse } from '@/lib/chat/createErrorResponse';
+import { getMissingApiKeyForModel } from '@/lib/services/accessGateService';
 import type { ChatPreflightContext } from '@/lib/chat/chatPreflight';
 import type { ChatRequestBody } from '@/lib/chat/chatRequest';
 import type { MCPServerResult } from '@/lib/services/chatMCPServerService';
@@ -106,25 +107,19 @@ export async function buildChatStreamPlan(params: {
     ? `chatlima_anon_${authenticatedUser.userId}`
     : `chatlima_user_${authenticatedUser.userId}`;
 
-  if (selectedModel.startsWith('openrouter/')) {
-    const openrouterApiKey =
-      apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
-    if (!openrouterApiKey) {
-      console.error(
-        `[Chat ${chatId}] OpenRouter API key is missing for model ${selectedModel}`
-      );
-      return {
-        ok: false,
-        response: createErrorResponse(
-          'MISSING_API_KEY',
-          'OpenRouter API key is required for this model. Please configure your API key.',
-          400
-        ),
-      };
-    }
-    console.log(
-      `[Chat ${chatId}] OpenRouter API key available: ${openrouterApiKey.substring(0, 8)}...`
+  const missingApiKey = getMissingApiKeyForModel(selectedModel, apiKeys);
+  if (missingApiKey) {
+    console.error(
+      `[Chat ${chatId}] ${missingApiKey} is missing for model ${selectedModel}`
     );
+    return {
+      ok: false,
+      response: createErrorResponse(
+        'MISSING_API_KEY',
+        `An API key is required for this model. Please configure ${missingApiKey} in Settings.`,
+        400
+      ),
+    };
   }
 
   const webSearchSetup = resolveOpenRouterWebSearchRouteSetup({

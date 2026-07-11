@@ -1,5 +1,9 @@
 import { ProviderConfig, ModelInfo, RawProviderModel } from '@/lib/types/models';
 import { CACHE_CONFIG } from './client-constants';
+import {
+    createOpenAiCompatibleParser,
+    parseAnthropicModels,
+} from './direct-provider-parsers';
 
 // Interface for blocked models data
 interface BlockedModelsList {
@@ -361,5 +365,50 @@ export const PROVIDERS: Record<string, ProviderConfig> = {
         rateLimit: { requestsPerMinute: 120, burstLimit: 20 },
         retryConfig: { maxRetries: 3, backoffMs: 500 },
     },
-    // Future providers can be added here
+    openai: {
+        name: 'OpenAI',
+        envKey: 'OPENAI_API_KEY',
+        endpoint: 'https://api.openai.com/v1/models',
+        parse: createOpenAiCompatibleParser({
+            providerName: 'OpenAI',
+            idPrefix: 'openai',
+        }),
+        rateLimit: { requestsPerMinute: 60, burstLimit: 10 },
+        retryConfig: { maxRetries: 3, backoffMs: 1000 },
+    },
+    anthropic: {
+        name: 'Anthropic',
+        envKey: 'ANTHROPIC_API_KEY',
+        endpoint: 'https://api.anthropic.com/v1/models',
+        getHeaders: (apiKey) => ({
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+        }),
+        parse: parseAnthropicModels,
+        rateLimit: { requestsPerMinute: 60, burstLimit: 10 },
+        retryConfig: { maxRetries: 3, backoffMs: 1000 },
+    },
+    groq: {
+        name: 'Groq',
+        envKey: 'GROQ_API_KEY',
+        endpoint: 'https://api.groq.com/openai/v1/models',
+        parse: createOpenAiCompatibleParser({
+            providerName: 'Groq',
+            idPrefix: 'groq',
+        }),
+        rateLimit: { requestsPerMinute: 60, burstLimit: 10 },
+        retryConfig: { maxRetries: 3, backoffMs: 1000 },
+    },
+    xai: {
+        name: 'XAI',
+        envKey: 'XAI_API_KEY',
+        endpoint: 'https://api.x.ai/v1/models',
+        parse: createOpenAiCompatibleParser({
+            providerName: 'XAI',
+            idPrefix: 'xai',
+        }),
+        rateLimit: { requestsPerMinute: 60, burstLimit: 10 },
+        retryConfig: { maxRetries: 3, backoffMs: 1000 },
+    },
 } satisfies Record<string, ProviderConfig>;
