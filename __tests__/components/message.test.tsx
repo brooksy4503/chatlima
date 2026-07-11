@@ -13,11 +13,12 @@ jest.mock('../../components/markdown', () => ({
 }));
 
 jest.mock('../../components/copy-button', () => ({
-  CopyButton: ({ text, className, ...props }: any) => (
+  CopyButton: ({ text, className, iconOnly, ...props }: any) => (
     <button 
       data-testid="copy-button" 
       className={className}
       data-text={text}
+      data-icon-only={iconOnly ? 'true' : undefined}
       {...props}
     >
       Copy

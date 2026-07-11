@@ -3,12 +3,14 @@ import { Message } from "./message";
 import { SelectionAddToChatToolbar } from "./selection-add-to-chat-toolbar";
 import { useSelectionAddToChat } from "@/hooks/use-selection-add-to-chat";
 import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
+import type { ChatUsageChipProps } from "./token-metrics/ChatUsageChip";
 
 export const Messages = ({
   messages,
   isLoading,
   status,
   chatTokenUsage,
+  chatUsage,
   webSearchEnabled = false,
   imageGenerationEnabled = false,
   onAddToChat,
@@ -26,6 +28,7 @@ export const Messages = ({
     tokensPerSecond?: number;
     totalDuration?: number;
   };
+  chatUsage?: ChatUsageChipProps | null;
   webSearchEnabled?: boolean;
   imageGenerationEnabled?: boolean;
 }) => {
@@ -45,6 +48,11 @@ export const Messages = ({
     Boolean(onAddToChat)
   );
 
+  const showChatUsage =
+    Boolean(chatUsage) &&
+    status === "ready" &&
+    lastMessage?.role === "assistant";
+
   return (
     <>
     <div
@@ -63,6 +71,9 @@ export const Messages = ({
             }}
             status={status}
             chatTokenUsage={chatTokenUsage}
+            chatUsage={
+              showChatUsage && i === messages.length - 1 ? chatUsage : null
+            }
             webSearchEnabled={webSearchEnabled}
             imageGenerationEnabled={imageGenerationEnabled}
           />

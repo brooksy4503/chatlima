@@ -31,7 +31,6 @@ import { useCredits } from "@/hooks/useCredits";
 import type { FileAttachment } from "@/lib/types";
 import { useModels } from "@/hooks/use-models";
 import { useChatTokenMetrics } from "@/hooks/useChatTokenMetrics";
-import { ChatUsageChip } from "@/components/token-metrics/ChatUsageChip";
 import { getLocalStorageItem, isLocalStorageAvailable } from "@/lib/browser-storage";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -1102,19 +1101,30 @@ export default function Chat() {
     totalDuration,
   });
 
-  const lastMessageRole = enhancedMessages[enhancedMessages.length - 1]?.role;
-  const chatUsageChip =
-    activeChatId && status === "ready" && lastMessageRole === "assistant" ? (
-      <ChatUsageChip
-        totalInputTokens={totalInputTokens}
-        totalOutputTokens={totalOutputTokens}
-        totalTokens={totalTokens}
-        totalCreditsConsumed={totalCreditsConsumed}
-        messageCount={chatMessageCount}
-        error={tokenDataError?.message || null}
-        onRefresh={refetchTokenData}
-      />
-    ) : null;
+  const chatUsage = useMemo(
+    () =>
+      activeChatId
+        ? {
+            totalInputTokens,
+            totalOutputTokens,
+            totalTokens,
+            totalCreditsConsumed,
+            messageCount: chatMessageCount,
+            error: tokenDataError?.message || null,
+            onRefresh: refetchTokenData,
+          }
+        : null,
+    [
+      activeChatId,
+      totalInputTokens,
+      totalOutputTokens,
+      totalTokens,
+      totalCreditsConsumed,
+      chatMessageCount,
+      tokenDataError?.message,
+      refetchTokenData,
+    ]
+  );
 
   // Manual recovery function
   const forceRecovery = useCallback(() => {
@@ -1309,6 +1319,7 @@ export default function Chat() {
             isLoading={isLoading}
             status={status}
             chatTokenUsage={chatTokenUsage}
+            chatUsage={chatUsage}
             webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
             imageGenerationEnabled={imageGenerationEnabled && isOpenRouterModel}
             onAddToChat={setQuotedText}
@@ -1340,7 +1351,6 @@ export default function Chat() {
             onFilesChange={setSelectedFiles}
             quotedText={quotedText}
             onClearQuotedText={() => setQuotedText(null)}
-            usageChip={chatUsageChip}
             leadingActions={
               chatId && session?.user ? (
                 <ChatProjectSelector

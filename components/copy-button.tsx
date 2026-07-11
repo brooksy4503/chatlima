@@ -8,35 +8,35 @@ import { Button } from "./ui/button";
 interface CopyButtonProps {
   text: string;
   className?: string;
+  /** Icon-only control for thin action bars (always visible). */
+  iconOnly?: boolean;
 }
 
-export function CopyButton({ text, className }: CopyButtonProps) {
+export function CopyButton({ text, className, iconOnly = false }: CopyButtonProps) {
   const { copied, copy } = useCopy();
 
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size={iconOnly ? "icon" : "sm"}
       className={cn(
-        "transition-opacity opacity-0 group-hover/message:opacity-100 gap-1.5",
-        // Always visible on touch devices (mobile) where hover doesn't work
-        "sm:opacity-0 sm:group-hover/message:opacity-100 opacity-100",
+        iconOnly
+          ? "h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          : "transition-opacity opacity-0 group-hover/message:opacity-100 gap-1.5 sm:opacity-0 sm:group-hover/message:opacity-100 opacity-100",
         className
       )}
       onClick={() => copy(text)}
-      title="Copy to clipboard"
+      title={copied ? "Copied" : "Copy to clipboard"}
+      aria-label={copied ? "Copied" : "Copy to clipboard"}
     >
       {copied ? (
-        <>
-          <CheckIcon className="h-4 w-4" />
-          <span className="text-xs">Copied!</span>
-        </>
+        <CheckIcon className="h-4 w-4" />
       ) : (
-        <>
-          <CopyIcon className="h-4 w-4" />
-          <span className="text-xs">Copy</span>
-        </>
+        <CopyIcon className="h-4 w-4" />
       )}
+      {!iconOnly ? (
+        <span className="text-xs">{copied ? "Copied!" : "Copy"}</span>
+      ) : null}
     </Button>
   );
 } 

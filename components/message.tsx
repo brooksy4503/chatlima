@@ -11,6 +11,7 @@ import { ChevronDownIcon, ChevronUpIcon, LightbulbIcon, BrainIcon } from "lucide
 import { SpinnerIcon } from "./icons";
 import { ToolInvocation } from "./tool-invocation";
 import { CopyButton } from "./copy-button";
+import { AssistantActionBar } from "./assistant-action-bar";
 import { Citations } from "./citation";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
@@ -20,6 +21,7 @@ import { WebSearchSuggestion } from "./web-search-suggestion";
 import { ImageModal } from "./image-modal";
 import { GeneratedImage } from "./generated-image";
 import { CompactMessageTokenMetrics, StreamingTokenMetrics } from "./token-metrics/MessageTokenMetrics";
+import type { ChatUsageChipProps } from "./token-metrics/ChatUsageChip";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -188,6 +190,8 @@ interface MessageProps {
     tokensPerSecond?: number;
     totalDuration?: number;
   };
+  /** Chat-level usage pill for the last idle assistant message. */
+  chatUsage?: ChatUsageChipProps | null;
   webSearchEnabled?: boolean;
   imageGenerationEnabled?: boolean;
 }
@@ -198,6 +202,7 @@ const PurePreviewMessage = ({
   status,
   isLoading,
   chatTokenUsage,
+  chatUsage,
   webSearchEnabled = false,
   imageGenerationEnabled = false,
 }: MessageProps) => {
@@ -537,11 +542,13 @@ const PurePreviewMessage = ({
               </div>
             )}
             
-            {message.role === 'assistant' && shouldShowCopyButton && (
-              <div className="flex justify-start mt-2">
-                <CopyButton text={getMessageText()} />
-              </div>
-            )}
+            {message.role === "assistant" &&
+              (shouldShowCopyButton || chatUsage) && (
+                <AssistantActionBar
+                  copyText={shouldShowCopyButton ? getMessageText() : undefined}
+                  chatUsage={chatUsage}
+                />
+              )}
           </div>
         </div>
       </motion.div>
@@ -565,6 +572,7 @@ export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.isLatestMessage !== nextProps.isLatestMessage) return false;
   if (prevProps.webSearchEnabled !== nextProps.webSearchEnabled) return false;
   if (prevProps.imageGenerationEnabled !== nextProps.imageGenerationEnabled) return false;
+  if (prevProps.chatUsage !== nextProps.chatUsage) return false;
   if (nextProps.status === "streaming" && nextProps.isLatestMessage) return false;
   if ((prevProps.message as { annotations?: unknown }).annotations !== (nextProps.message as { annotations?: unknown }).annotations)
     return false;

@@ -38,8 +38,6 @@ interface InputProps {
   quotedText?: string | null;
   onClearQuotedText?: () => void;
   leadingActions?: ReactNode;
-  /** Optional chrome after presets / before model picker (e.g. chat usage chip). */
-  usageChip?: ReactNode;
 }
 
 export const Textarea = ({
@@ -55,7 +53,6 @@ export const Textarea = ({
   quotedText = null,
   onClearQuotedText,
   leadingActions,
-  usageChip,
 }: InputProps) => {
   // Guard against undefined input prop
   const safeInput = input ?? "";
@@ -866,7 +863,6 @@ export const Textarea = ({
             {!compareModeEnabled && (
               <PresetSelector className={isMobileScreen ? "flex-1 min-w-0" : ""} />
             )}
-            {usageChip}
             {/* Only show model picker when no preset is active */}
             {!activePreset && !compareModeEnabled && (
               <div className={isMobileScreen ? "flex-1 min-w-0" : ""}>
