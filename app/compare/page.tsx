@@ -9,12 +9,15 @@ import { MarketingShell } from '@/components/marketing-shell';
 export const dynamic = 'auto';
 
 export async function generateMetadata() {
+  const title = 'Compare AI Models: Pricing, Specs & Context';
+  const description =
+    'Compare GPT, Claude, Gemini, GLM and more side by side — pricing, context window, and capabilities. Pick a pair and try both on ChatLima.';
   return {
-    title: 'Compare AI Models - ChatLima',
-    description: 'Compare AI models side-by-side to find the best model for your needs. Features, pricing, and capabilities comparison.',
+    title,
+    description,
     openGraph: {
-      title: 'Compare AI Models - ChatLima',
-      description: 'Compare AI models side-by-side to find the best model for your needs.',
+      title,
+      description,
       type: 'website',
       siteName: 'ChatLima',
     },

@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getModelDetails, fetchAllModels, getEnvironmentApiKeys } from '@/lib/models/fetch-models';
-import { parseComparisonSlug, slugToModelId, modelIdToSlug } from '@/lib/models/slug-utils';
+import { fetchAllModels, getEnvironmentApiKeys } from '@/lib/models/fetch-models';
+import { parseComparisonSlug, slugToModelId } from '@/lib/models/slug-utils';
+import { resolveModelFromSlug, seoModelLabel } from '@/lib/models/resolve-model';
+import { buildComparisonMetadata } from '@/lib/seo/page-metadata';
 import { ComparisonTable } from '@/components/comparison/comparison-table';
 import { ComparisonCards } from '@/components/comparison/comparison-cards';
 import { ArrowRight } from 'lucide-react';
@@ -25,19 +27,39 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!comparison) {
     return {
-      title: 'Comparison Not Found - ChatLima',
-      description: 'This model comparison could not be found. Browse our available comparisons.'
+      title: 'Comparison Not Found',
+      description: 'This model comparison could not be found. Browse our available comparisons.',
     };
   }
 
+  const model1Id = slugToModelId(comparison.model1Slug);
+  const model2Id = slugToModelId(comparison.model2Slug);
+
+  try {
+    const environmentKeys = getEnvironmentApiKeys();
+    const response = await fetchAllModels({ environment: environmentKeys });
+    const model1 = resolveModelFromSlug(response.models, model1Id, comparison.model1Slug);
+    const model2 = resolveModelFromSlug(response.models, model2Id, comparison.model2Slug);
+
+    if (model1 && model2) {
+      return {
+        ...buildComparisonMetadata(seoModelLabel(model1), seoModelLabel(model2)),
+        alternates: {
+          canonical: `/compare/${decodedSlug}`,
+        },
+      };
+    }
+  } catch (error) {
+    console.error('[Comparison Metadata] Failed to resolve models:', error);
+  }
+
+  // Fallback when catalog fetch fails — still include slug-derived names for CTR
+  const fallback1 = seoModelLabel({ id: model1Id, name: model1Id });
+  const fallback2 = seoModelLabel({ id: model2Id, name: model2Id });
   return {
-    title: `Compare AI Models - ChatLima`,
-    description: 'Side-by-side comparison of AI models. Compare features, pricing, and capabilities.',
-    openGraph: {
-      title: 'Compare AI Models - ChatLima',
-      description: 'Side-by-side comparison of AI models. Compare features, pricing, and capabilities.',
-      type: 'website',
-      siteName: 'ChatLima',
+    ...buildComparisonMetadata(fallback1, fallback2),
+    alternates: {
+      canonical: `/compare/${decodedSlug}`,
     },
   };
 }
@@ -65,55 +87,8 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
     notFound();
   }
 
-  // Helper to find model by ID or by matching the model name part
-  const findModel = (targetId: string, targetSlug: string): typeof response.models[0] | undefined => {
-    // Try exact ID match first
-    let model = response.models.find(m => m.id === targetId);
-    if (model) return model;
-
-    // Try matching by slug
-    const targetSlugLower = targetSlug.toLowerCase();
-    model = response.models.find(m => {
-      const modelSlug = modelIdToSlug(m.id);
-      return modelSlug === targetSlugLower;
-    });
-    if (model) return model;
-
-    // Extract model name part (e.g., "gpt-5-pro" from "openai/gpt-5-pro")
-    const modelNamePart = targetId.split('/').pop()?.replace(/:free$/, '') || '';
-    if (!modelNamePart) return undefined;
-
-    // Try finding models that end with the model name (handles openrouter/openai/gpt-5-pro when looking for openai/gpt-5-pro)
-    // Prefer openrouter models first, then others
-    const candidates = response.models.filter(m => {
-      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
-      const parts = normalizedId.split('/');
-      const lastPart = parts[parts.length - 1];
-      return lastPart === modelNamePart.toLowerCase() || normalizedId.endsWith(`/${modelNamePart.toLowerCase()}`);
-    });
-
-    if (candidates.length > 0) {
-      // Prefer openrouter models, then requesty, then others
-      const openrouterModel = candidates.find(m => m.id.startsWith('openrouter/'));
-      if (openrouterModel) return openrouterModel;
-      
-      const requestyModel = candidates.find(m => m.id.startsWith('requesty/'));
-      if (requestyModel) return requestyModel;
-      
-      // Return first match
-      return candidates[0];
-    }
-
-    // Last resort: try partial match
-    model = response.models.find(m => {
-      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
-      return normalizedId.includes(modelNamePart.toLowerCase());
-    });
-    return model;
-  };
-
-  const model1 = findModel(model1Id, comparison.model1Slug);
-  const model2 = findModel(model2Id, comparison.model2Slug);
+  const model1 = resolveModelFromSlug(response.models, model1Id, comparison.model1Slug);
+  const model2 = resolveModelFromSlug(response.models, model2Id, comparison.model2Slug);
 
   if (!model1 || !model2) {
     // Enhanced logging for debugging
@@ -129,17 +104,15 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
         model2Found: !!model2,
         totalModels: response.models.length,
         sampleModelIds: response.models.slice(0, 20).map(m => m.id),
-        // Check for similar model IDs
-        similarModel1: response.models.filter(m => 
-          m.id.includes(model1Id.split('/').pop() || '') || 
+        similarModel1: response.models.filter(m =>
+          m.id.includes(model1Id.split('/').pop() || '') ||
           model1Id.includes(m.id.split('/').pop() || '')
         ).slice(0, 3).map(m => m.id),
-        similarModel2: response.models.filter(m => 
-          m.id.includes(model2Id.split('/').pop() || '') || 
+        similarModel2: response.models.filter(m =>
+          m.id.includes(model2Id.split('/').pop() || '') ||
           model2Id.includes(m.id.split('/').pop() || '')
         ).slice(0, 3).map(m => m.id),
       };
-      // Use console.error with stringified object to ensure it's logged properly
       console.error('[Comparison Page] Models not found');
       console.error(JSON.stringify(debugInfo, null, 2));
     }
@@ -154,7 +127,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
             {model1.name} vs {model2.name}
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl">
-            Compare these two models side-by-side to help you make the best choice for your needs
+            Side-by-side pricing, context window, and capabilities — try both on ChatLima.
           </p>
         </div>
 

@@ -1,7 +1,11 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { getModelDetails, fetchAllModels, getEnvironmentApiKeys } from '@/lib/models/fetch-models';
+import { fetchAllModels, getEnvironmentApiKeys } from '@/lib/models/fetch-models';
 import { modelIdToSlug, slugToModelId } from '@/lib/models/slug-utils';
+import { resolveModelFromSlug, seoModelLabel } from '@/lib/models/resolve-model';
+import {
+  buildModelPageDescription,
+  buildModelPageTitle,
+} from '@/lib/seo/page-metadata';
 import { getRelatedModels } from '@/lib/models/model-priority';
 import { ModelHero } from '@/components/model-page/model-hero';
 import { ModelSpecs } from '@/components/model-page/model-specs';
@@ -60,99 +64,49 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const decodedSlug = decodeURIComponent(slug);
   const environmentKeys = getEnvironmentApiKeys();
   const response = await fetchAllModels({ environment: environmentKeys });
-  
-  // Helper to find model by ID or by matching the model name part
-  const findModel = (targetId: string, targetSlug: string): typeof response.models[0] | undefined => {
-    // Try exact ID match first
-    let model = response.models.find(m => m.id === targetId);
-    if (model) return model;
 
-    // Try matching by slug
-    const targetSlugLower = targetSlug.toLowerCase();
-    model = response.models.find(m => {
-      const modelSlug = modelIdToSlug(m.id);
-      return modelSlug === targetSlugLower;
-    });
-    if (model) return model;
-
-    // Extract model name part (e.g., "claude-3-5-sonnet" from "anthropic/claude-3-5-sonnet")
-    const modelNamePart = targetId.split('/').pop()?.replace(/:free$/, '') || '';
-    if (!modelNamePart) return undefined;
-
-    // Try finding models that end with the model name
-    // Prefer openrouter models first, then requesty, then others
-    const candidates = response.models.filter(m => {
-      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
-      const parts = normalizedId.split('/');
-      const lastPart = parts[parts.length - 1];
-      return lastPart === modelNamePart.toLowerCase() || normalizedId.endsWith(`/${modelNamePart.toLowerCase()}`);
-    });
-
-    if (candidates.length > 0) {
-      // Prefer openrouter models, then requesty, then others
-      const openrouterModel = candidates.find(m => m.id.startsWith('openrouter/'));
-      if (openrouterModel) return openrouterModel;
-      
-      const requestyModel = candidates.find(m => m.id.startsWith('requesty/'));
-      if (requestyModel) return requestyModel;
-      
-      // Return first match
-      return candidates[0];
-    }
-
-    // Last resort: try partial match
-    model = response.models.find(m => {
-      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
-      return normalizedId.includes(modelNamePart.toLowerCase());
-    });
-    return model;
-  };
-
-  // Try direct conversion first
   let modelId = slugToModelId(decodedSlug);
-  const model = findModel(modelId, decodedSlug);
-  
+  const model = resolveModelFromSlug(response.models, modelId, decodedSlug);
+
   if (!model) {
     if (process.env.NODE_ENV === 'development') {
       console.error(`[Model Page Metadata] Model not found for slug: ${decodedSlug}`);
       console.error(`Tried modelId: ${modelId}`);
     }
     return {
-      title: 'Model Not Found - ChatLima',
-      description: 'This AI model could not be found. Explore our available models.'
+      title: 'Model Not Found',
+      description: 'This AI model could not be found. Explore our available models.',
     };
   }
-  
-  // Update modelId to the actual found model's ID
-  modelId = model.id;
 
+  modelId = model.id;
   const isFree = model.id.endsWith(':free');
+  const label = seoModelLabel(model);
+  const title = buildModelPageTitle(label, isFree);
+  const description = buildModelPageDescription(
+    label,
+    isFree,
+    model.capabilities ?? [],
+    model.contextMax
+  );
 
   return {
-    title: isFree
-      ? `${model.name} (Free) - Chat on ChatLima`
-      : `${model.name} - Chat Free on ChatLima`,
-    description: isFree
-      ? `${model.name} is a ${model.capabilities.join(', ').toLowerCase()} model. Try ${model.name} for free on ChatLima - no signup required.`
-      : `${model.name} is a ${model.capabilities.join(', ').toLowerCase()} model with ${model.contextMax?.toLocaleString() || 'large'} context. Chat with ${model.name} free on ChatLima with premium access.`,
+    title,
+    description,
     openGraph: {
-      title: isFree
-        ? `${model.name} (Free) - Chat on ChatLima`
-        : `${model.name} - Chat Free on ChatLima`,
-      description: model.description || `Chat with ${model.name} on ChatLima - multi-model AI chat with advanced features.`,
+      title,
+      description: model.description || description,
       type: 'website',
       siteName: 'ChatLima',
     },
     twitter: {
       card: 'summary_large_image',
-      title: isFree
-        ? `${model.name} (Free) - Chat on ChatLima`
-        : `${model.name} - Chat Free on ChatLima`,
-      description: model.description,
+      title,
+      description: model.description || description,
     },
     alternates: {
-      canonical: `/model/${slug}`
-    }
+      canonical: `/model/${slug}`,
+    },
   };
 }
 
@@ -170,56 +124,8 @@ export default async function ModelPage({ params }: { params: Promise<{ slug: st
     notFound();
   }
   
-  // Helper to find model by ID or by matching the model name part
-  const findModel = (targetId: string, targetSlug: string): typeof response.models[0] | undefined => {
-    // Try exact ID match first
-    let model = response.models.find(m => m.id === targetId);
-    if (model) return model;
-
-    // Try matching by slug
-    const targetSlugLower = targetSlug.toLowerCase();
-    model = response.models.find(m => {
-      const modelSlug = modelIdToSlug(m.id);
-      return modelSlug === targetSlugLower;
-    });
-    if (model) return model;
-
-    // Extract model name part (e.g., "claude-3-5-sonnet" from "anthropic/claude-3-5-sonnet")
-    const modelNamePart = targetId.split('/').pop()?.replace(/:free$/, '') || '';
-    if (!modelNamePart) return undefined;
-
-    // Try finding models that end with the model name (handles openrouter/anthropic/claude-3-5-sonnet when looking for anthropic/claude-3-5-sonnet)
-    // Prefer openrouter models first, then requesty, then others
-    const candidates = response.models.filter(m => {
-      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
-      const parts = normalizedId.split('/');
-      const lastPart = parts[parts.length - 1];
-      return lastPart === modelNamePart.toLowerCase() || normalizedId.endsWith(`/${modelNamePart.toLowerCase()}`);
-    });
-
-    if (candidates.length > 0) {
-      // Prefer openrouter models, then requesty, then others
-      const openrouterModel = candidates.find(m => m.id.startsWith('openrouter/'));
-      if (openrouterModel) return openrouterModel;
-      
-      const requestyModel = candidates.find(m => m.id.startsWith('requesty/'));
-      if (requestyModel) return requestyModel;
-      
-      // Return first match
-      return candidates[0];
-    }
-
-    // Last resort: try partial match
-    model = response.models.find(m => {
-      const normalizedId = m.id.toLowerCase().replace(/:free$/, '');
-      return normalizedId.includes(modelNamePart.toLowerCase());
-    });
-    return model;
-  };
-
-  // Try direct conversion first
   let modelId = slugToModelId(decodedSlug);
-  const model = findModel(modelId, decodedSlug);
+  const model = resolveModelFromSlug(response.models, modelId, decodedSlug);
 
   if (!model) {
     if (process.env.NODE_ENV === 'development') {

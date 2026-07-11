@@ -1,8 +1,9 @@
 import { MarketingShell } from '@/components/marketing-shell';
 
 export const metadata = {
-  title: 'Frequently Asked Questions - ChatLima',
-  description: 'Frequently asked questions about ChatLima subscriptions, models, credits, BYOK, MCP, and web search',
+  title: 'FAQ — Credits, Models, Plans & BYOK',
+  description:
+    'ChatLima FAQ: how credits and plans work, which AI models you can use, BYOK, MCP tools, web search, and getting started free.',
 };
 
 export default function FAQPage() {

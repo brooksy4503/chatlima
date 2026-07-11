@@ -17,7 +17,8 @@ export const metadata: Metadata = {
     default: "ChatLima",
     template: "%s | ChatLima",
   },
-  description: "AI chat with 300+ models, web search, files, MCP tools, and transparent credit-based pricing.",
+  description:
+    "ChatLima is a multi-model AI chat app with GPT, Claude, Gemini and 300+ models — web search, files, MCP tools, and transparent credits.",
   icons: {
     icon: "/logo.png",
     apple: [
@@ -47,12 +48,14 @@ export const metadata: Metadata = {
         height: 630,
       },
     ],
-    description: "AI chat with 300+ models, web search, files, MCP tools, and transparent credit-based pricing.",
+    description:
+      "ChatLima is a multi-model AI chat app with GPT, Claude, Gemini and 300+ models — web search, files, MCP tools, and transparent credits.",
   },
   twitter: {
     card: "summary_large_image",
     title: "ChatLima",
-    description: "AI chat with 300+ models, web search, files, MCP tools, and transparent credit-based pricing.",
+    description:
+      "ChatLima is a multi-model AI chat app with GPT, Claude, Gemini and 300+ models — web search, files, MCP tools, and transparent credits.",
     images: ["https://www.chatlima.com/twitter-image.png"],
   },
   other: {

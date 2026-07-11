@@ -26,12 +26,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const title = "ChatLima - Use the Best AI Model for Every Task";
-const description =
-  "ChatLima is a multi-model AI workspace for GPT, Claude, Gemini, DeepSeek and 300+ models with web search, files, MCP tools, presets, BYOK where supported, and transparent credit tiers.";
+import { HOMEPAGE_SEO } from "@/lib/seo/page-metadata";
+
+const { title, description } = HOMEPAGE_SEO;
+const schemaDescription =
+  "ChatLima is a multi-model AI chat app for GPT, Claude, Gemini, DeepSeek and 300+ models with web search, files, MCP tools, and transparent credits.";
 
 export const metadata: Metadata = {
-  title,
+  title: { absolute: title },
   description,
   alternates: {
     canonical: "/",
@@ -63,7 +65,7 @@ const softwareApplicationJsonLd = {
   name: "ChatLima",
   applicationCategory: "ProductivityApplication",
   operatingSystem: "Web",
-  description,
+  description: schemaDescription,
   url: "https://www.chatlima.com/",
   offers: [
     {
@@ -248,10 +250,10 @@ export default function MarketingHomePage() {
               Multi-model AI chat for people who use AI every day
             </div>
             <h1 className="max-w-4xl text-5xl font-semibold leading-tight sm:text-6xl lg:text-7xl">
-              Use the best AI model for every task — in one chat.
+              ChatLima — use the best AI model for every task.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">
-              ChatLima brings GPT, Claude, Gemini, DeepSeek and hundreds more into one workspace with web search, MCP tools, files, image input, presets, BYOK where supported, and transparent credit tiers.
+              One multi-model AI chat for GPT, Claude, Gemini, DeepSeek and hundreds more — with web search, MCP tools, files, image input, presets, BYOK where supported, and transparent credit tiers.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg">

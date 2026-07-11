@@ -638,7 +638,9 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 - Public landing page at `/`; the chat app starts at `/chat`
 - Dynamic model pages at `/model/[slug]`
 - Model detail chat CTAs deep-link to `/chat?model=<modelId>`
-- Model comparison at `/compare/[slug]`
+- Model comparison at `/compare/[slug]` with **model-specific** titles/descriptions (`{Model A} vs {Model B}: Pricing, Specs & Context`)
+- Homepage brand-forward title/H1 (`ChatLima — …`) and meta that distinguish the product from geographic “Lima” queries
+- Shared helpers in `lib/seo/page-metadata.ts` and `lib/models/resolve-model.ts`
 - Auto-generated sitemap
 - Structured data for models
 - Homepage structured data for the software application and visible FAQ content
