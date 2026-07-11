@@ -17,7 +17,6 @@ import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types"
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import { formatFileSize } from "@/lib/image-utils";
 import { getReasoningPartText, getGeneratedImageUrlFromToolResult, isImageGenerationToolName, isWebSearchToolPart, mapV6ToolStateToLegacy, shouldShowLiveImageGenerationIndicator, shouldShowLiveWebSearchIndicator, shouldShowSyntheticCompletedWebSearch } from "@/lib/message-utils";
-import { WebSearchSuggestion } from "./web-search-suggestion";
 import { ImageModal } from "./image-modal";
 import { GeneratedImage } from "./generated-image";
 import { CompactMessageTokenMetrics, StreamingTokenMetrics } from "./token-metrics/MessageTokenMetrics";
@@ -498,14 +497,6 @@ const PurePreviewMessage = ({
               />
             )}
 
-            {/* Web Search Suggestion - only for assistant messages with web search results and when not streaming */}
-            {message.role === 'assistant' && hasWebSearchResults && status !== "streaming" && (
-              <WebSearchSuggestion
-                messageId={message.id}
-                hasWebSearchResults={hasWebSearchResults}
-              />
-            )}
-            
             {/* Token Usage Metrics - show for assistant messages */}
             {message.role === 'assistant' && (
               <div className="mt-2">

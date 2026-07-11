@@ -52,18 +52,6 @@ jest.mock('../../components/tool-invocation', () => ({
   ),
 }));
 
-jest.mock('../../components/web-search-suggestion', () => ({
-  WebSearchSuggestion: ({ messageId, hasWebSearchResults }: any) => (
-    <div 
-      data-testid="web-search-suggestion"
-      data-message-id={messageId}
-      data-has-results={hasWebSearchResults}
-    >
-      Web Search Suggestion
-    </div>
-  ),
-}));
-
 jest.mock('../../components/image-modal', () => ({
   ImageModal: ({ isOpen, onClose, imageUrl, metadata, detail }: any) => (
     <div 
@@ -497,103 +485,6 @@ describe('Message', () => {
   });
 
   describe('Web Search Integration', () => {
-    test('displays web search suggestion when message has web search results', () => {
-      const message = {
-        ...baseMessage,
-        hasWebSearch: true,
-        parts: [textPart],
-      };
-
-      render(
-        <Message 
-          message={message}
-          isLoading={false}
-          status="ready"
-          isLatestMessage={false}
-        />
-      );
-
-      const webSearchSuggestion = screen.getByTestId('web-search-suggestion');
-      expect(webSearchSuggestion).toBeInTheDocument();
-      expect(webSearchSuggestion).toHaveAttribute('data-message-id', 'test-message-1');
-      expect(webSearchSuggestion).toHaveAttribute('data-has-results', 'true');
-    });
-
-    test('detects web search results from tool invocation', () => {
-      const message = {
-        ...baseMessage,
-        parts: [toolInvocationPart],
-      };
-
-      render(
-        <Message 
-          message={message}
-          isLoading={false}
-          status="ready"
-          isLatestMessage={false}
-        />
-      );
-
-      expect(screen.getByTestId('web-search-suggestion')).toBeInTheDocument();
-    });
-
-    test('detects web search results from citations', () => {
-      const message = {
-        ...baseMessage,
-        parts: [textPartWithCitations],
-      };
-
-      render(
-        <Message 
-          message={message}
-          isLoading={false}
-          status="ready"
-          isLatestMessage={false}
-        />
-      );
-
-      expect(screen.getByTestId('web-search-suggestion')).toBeInTheDocument();
-    });
-
-    test('does not show web search suggestion when streaming', () => {
-      const message = {
-        ...baseMessage,
-        hasWebSearch: true,
-        parts: [textPart],
-      };
-
-      render(
-        <Message 
-          message={message}
-          isLoading={false}
-          status="streaming"
-          isLatestMessage={true}
-        />
-      );
-
-      expect(screen.queryByTestId('web-search-suggestion')).not.toBeInTheDocument();
-    });
-
-    test('does not show web search suggestion for user messages', () => {
-      const message = {
-        ...baseMessage,
-        role: 'user' as const,
-        hasWebSearch: true,
-        parts: [textPart],
-      };
-
-      render(
-        <Message 
-          message={message}
-          isLoading={false}
-          status="ready"
-          isLatestMessage={false}
-        />
-      );
-
-      expect(screen.queryByTestId('web-search-suggestion')).not.toBeInTheDocument();
-    });
-
     test('shows live web search indicator while streaming with globe enabled', () => {
       const message = {
         ...baseMessage,
@@ -947,9 +838,6 @@ describe('Message', () => {
       expect(screen.getByTestId('tool-invocation')).toBeInTheDocument();
       expect(screen.getByRole('img')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /reasoning/i })).toBeInTheDocument();
-
-      // Web search suggestion should be shown
-      expect(screen.getByTestId('web-search-suggestion')).toBeInTheDocument();
 
       // Copy button should be present
       expect(screen.getByTestId('copy-button')).toBeInTheDocument();
