@@ -1,6 +1,7 @@
 import {
   stepCountIs,
   type LanguageModel,
+  type ModelMessage,
   type UIMessage,
 } from 'ai';
 import {
@@ -37,7 +38,7 @@ export interface ChatStreamPlan {
   webSearchConfig: ChatPreflightContext['webSearchConfig'];
   imageGenerationConfig: ChatPreflightContext['imageGenerationConfig'];
   modelMessagesFinal: UIMessage[];
-  formattedMessages: import('@/lib/openrouter-utils').StreamModelMessage[];
+  formattedMessages: ModelMessage[];
   toolsToUse: Record<string, unknown>;
   effectiveSystemInstruction: string;
   effectiveTemperature: number;

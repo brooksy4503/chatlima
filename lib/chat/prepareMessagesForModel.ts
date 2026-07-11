@@ -1,5 +1,5 @@
-import type { UIMessage } from 'ai';
-import { convertUIMessagesToModelMessages, type StreamModelMessage } from '@/lib/openrouter-utils';
+import type { ModelMessage, UIMessage } from 'ai';
+import { convertUIMessagesToModelMessages } from '@/lib/openrouter-utils';
 import { ChatMessageProcessingService } from '@/lib/services/chatMessageProcessingService';
 import type { ModelInfo } from '@/lib/types/models';
 
@@ -13,7 +13,7 @@ export interface PrepareMessagesParams {
 export interface PreparedModelMessages {
   modelMessagesFinal: UIMessage[];
   /** UIMessage parts converted to streamText ModelMessage content. */
-  formattedMessages: StreamModelMessage[];
+  formattedMessages: ModelMessage[];
 }
 
 export async function prepareMessagesForModel(

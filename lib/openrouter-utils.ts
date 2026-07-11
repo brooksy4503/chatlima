@@ -1,4 +1,4 @@
-import type { UIMessage } from "ai";
+import type { ModelMessage, UIMessage } from "ai";
 import type { ImageUIPart, TextUIPart } from "./types";
 import { getUIMessageText } from "./message-utils";
 
@@ -26,12 +26,10 @@ interface StandardTextContent {
 
 type StandardMessageContent = StandardTextContent | StandardImageContent;
 
-export type StreamModelMessage = {
-    role: string;
-    content: string | StandardMessageContent[];
-};
+/** @deprecated Use ModelMessage from the AI SDK */
+export type StreamModelMessage = ModelMessage;
 
-export function convertUIMessagesToModelMessages(messages: UIMessage[]): StreamModelMessage[] {
+export function convertUIMessagesToModelMessages(messages: UIMessage[]): ModelMessage[] {
     return messages
         .filter(message => {
             // Filter out tool messages - they should not be sent to AI SDK as input
@@ -77,17 +75,17 @@ export function convertUIMessagesToModelMessages(messages: UIMessage[]): StreamM
                     }
                 });
 
-                return {
-                    role: message.role,
-                    content: content
-                };
-            }
+            return {
+                role: message.role,
+                content: content,
+            } as ModelMessage;
+        }
 
             // Handle non-multimodal messages (plain text)
             return {
                 role: message.role,
-                content: getUIMessageText(message)
-            };
+                content: getUIMessageText(message),
+            } as ModelMessage;
         });
 }
 

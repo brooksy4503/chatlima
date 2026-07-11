@@ -7,7 +7,6 @@ import {
 import { normalizeModelId } from '@/lib/models/normalize-model-id';
 
 // SDK provider clients are callable but don't share one strict function type.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CallableProviderClient = any;
 
 export interface ProviderClients {
