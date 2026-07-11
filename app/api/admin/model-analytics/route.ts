@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AuthMiddleware } from '@/lib/middleware/auth';
 import { db } from '@/lib/db';
 import { tokenUsageMetrics, modelPricing } from '@/lib/db/schema';
-import { sql, gte, desc, asc, and } from 'drizzle-orm';
+import { sql, gte, desc, asc, and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 interface ModelAnalytics {
