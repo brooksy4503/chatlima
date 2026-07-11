@@ -24,6 +24,14 @@ import {
   calculateCreditCostPerMessage,
   getEstimatedCreditCost,
 } from "@/lib/utils/creditCostCalculator";
+import {
+  filterPickerModels,
+  hasAnyUserApiKeys,
+  hasProviderApiKey,
+  listProvidersWithKeyStatus,
+  type ProviderFilter,
+} from "@/lib/models/filter-picker-models";
+import { ModelPickerProviderChips } from "./model-picker-provider-chips";
 
 function isModelBlockedByCredits(
   model: ModelInfo,
@@ -67,6 +75,8 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   const [isOpen, setIsOpen] = useState(false);
   const [keyboardFocusedIndex, setKeyboardFocusedIndex] = useState<number>(-1);
   const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
+  const [providerFilter, setProviderFilter] = useState<ProviderFilter>('all');
+  const [byokOnly, setByokOnly] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modelListRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -85,24 +95,27 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     userApiKeys = {}
   } = useModel();
   
-  // Helper function to check if user has API key for a model's provider
-  const hasApiKeyForProvider = useCallback((modelId: string): boolean => {
-    // Extract provider from model ID (e.g., "requesty/..." -> REQUESTY_API_KEY)
-    const provider = modelId.split('/')[0];
-    const keyMap: Record<string, string> = {
-      'openai': 'OPENAI_API_KEY',
-      'anthropic': 'ANTHROPIC_API_KEY',
-      'groq': 'GROQ_API_KEY',
-      'xai': 'XAI_API_KEY',
-      'openrouter': 'OPENROUTER_API_KEY',
-      'requesty': 'REQUESTY_API_KEY',
-    };
-    const requiredKey = keyMap[provider?.toLowerCase()];
-    if (!requiredKey) return false;
-    return (userApiKeys[requiredKey]?.trim().length ?? 0) > 0;
-  }, [userApiKeys]);
-  
-  // Function to get the appropriate icon for each provider
+  // Filter and sort models based on tab, provider chips, BYOK, and search
+  const filteredAndSortedModels = useMemo(
+    () =>
+      filterPickerModels({
+        models: availableModels,
+        activeTab,
+        favorites,
+        searchTerm,
+        providerFilter,
+        byokOnly,
+        userApiKeys,
+      }),
+    [availableModels, searchTerm, activeTab, favorites, providerFilter, byokOnly, userApiKeys]
+  );
+
+  const providersWithKeyStatus = useMemo(
+    () => listProvidersWithKeyStatus(availableModels, userApiKeys),
+    [availableModels, userApiKeys]
+  );
+
+  const showByokChip = hasAnyUserApiKeys(userApiKeys);
   const getProviderIcon = (provider: string) => {
     switch (provider.toLowerCase()) {
       case 'anthropic':
@@ -180,35 +193,10 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     }
   };
   
-  // Filter and sort models based on search term and active tab - memoized to prevent re-renders
-  const filteredAndSortedModels = useMemo(() => {
-    let modelsToFilter = [...availableModels];
-
-    // Filter by active tab
-    if (activeTab === 'favorites') {
-      modelsToFilter = modelsToFilter.filter((model) => favorites.includes(model.id));
-    }
-
-    // Filter by search term
-    modelsToFilter = modelsToFilter.filter((model) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        model.name.toLowerCase().includes(searchLower) ||
-        model.provider.toLowerCase().includes(searchLower) ||
-        model.capabilities.some(cap => cap.toLowerCase().includes(searchLower))
-      );
-    });
-
-    // Sort models
-    return modelsToFilter.sort((modelA, modelB) => {
-      return modelA.name.localeCompare(modelB.name);
-    });
-  }, [availableModels, searchTerm, activeTab, favorites]);
-
-  // Reset keyboard focus when search term or tab changes
+  // Reset keyboard focus when filters change
   useEffect(() => {
     setKeyboardFocusedIndex(-1);
-  }, [searchTerm, activeTab]);
+  }, [searchTerm, activeTab, providerFilter, byokOnly]);
 
   // Set initial keyboard focus when picker opens
   useEffect(() => {
@@ -254,7 +242,9 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
   
   // Main button always shows the selected model (no layout flipping)
   const selectedModelData = availableModels.find(m => m.id === selectedModel) || availableModels[0];
-  const selectedModelHasApiKey = selectedModelData ? hasApiKeyForProvider(selectedModelData.id) : false;
+  const selectedModelHasApiKey = selectedModelData
+    ? hasProviderApiKey(selectedModelData.id, userApiKeys)
+    : false;
   const isModelUnavailable =
     selectedModelData && !(creditsLoading || modelsRefreshing)
       ? isModelBlockedByCredits(
@@ -402,7 +392,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
                   selectedModelData,
                   creditCosts,
                   canUseModelAtCreditCost,
-                  hasApiKeyForProvider(selectedModelData.id)
+                  hasProviderApiKey(selectedModelData.id, userApiKeys)
                 );
           if (!isUnavailable) {
             handleModelChange(selectedModelData.id);
@@ -414,7 +404,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
         setIsOpen(false);
         break;
     }
-  }, [isOpen, filteredAndSortedModels, keyboardFocusedIndex, creditsLoading, canUseModelAtCreditCost, creditCosts, handleModelChange, hasApiKeyForProvider]);
+  }, [isOpen, filteredAndSortedModels, keyboardFocusedIndex, creditsLoading, canUseModelAtCreditCost, creditCosts, handleModelChange, userApiKeys]);
 
   // Loading state
   if (modelsLoading) {
@@ -568,6 +558,15 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
               </button>
             </div>
 
+            <ModelPickerProviderChips
+              providers={providersWithKeyStatus}
+              selectedProvider={providerFilter}
+              byokOnly={byokOnly}
+              showByokChip={showByokChip}
+              onProviderChange={setProviderFilter}
+              onByokChange={setByokOnly}
+            />
+
             <div className="flex gap-2">
               <Input
                 ref={searchInputRef}
@@ -611,7 +610,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
               <div ref={modelListRef} className="space-y-1 p-1">
                 {filteredAndSortedModels.length > 0 ? (
                   filteredAndSortedModels.map((model, index) => {
-                    const userHasApiKey = hasApiKeyForProvider(model.id);
+                    const userHasApiKey = hasProviderApiKey(model.id, userApiKeys);
                     const modelCreditCost = getEstimatedCreditCost(model, creditCosts);
                     const isUnavailable =
                       creditsLoading || modelsRefreshing

@@ -15,6 +15,7 @@ ChatLima is a feature-rich, MCP-powered AI chatbot application with multi-model 
 - **Flexible Authentication**: Google OAuth; optional anonymous access when `BILLING_ENFORCED=false` (10 msg/day)
 - **Dual Subscription Tiers**: Monthly ($9/mo, ~1,000 Polar credits/month) and Yearly ($90/yr, high usage allowance); full model catalog on both plans
 - **Credit-tier pricing**: Per-message cost 1–30 credits by model (Economy → Ultra), shown in model picker—not separate “free vs premium” product tiers
+- **Model picker filters**: All / Favorites tabs stack with a horizontal provider chip row and an optional BYOK chip. Provider chips narrow the list by `model.provider`; BYOK shows only models the user can run on their own API keys. Filters combine with search (name, provider, capability).
 - **Multi-Provider AI**: OpenAI, Anthropic, Groq, XAI, OpenRouter, Requesty
 
 ---

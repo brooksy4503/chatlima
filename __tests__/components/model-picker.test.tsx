@@ -1,5 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { ModelPicker } from '../../components/model-picker';
 import { ModelInfo } from '@/lib/types/models';
 
@@ -537,7 +537,7 @@ describe('ModelPicker', () => {
       fireEvent.click(screen.getByRole('combobox'));
       
       // Should start on All tab
-      expect(screen.getByText('All')).toBeInTheDocument();
+      expect(screen.getAllByText('All').length).toBeGreaterThan(0);
       expect(screen.getByText('Favorites')).toBeInTheDocument();
       
       // Click Favorites tab
@@ -575,6 +575,96 @@ describe('ModelPicker', () => {
       fireEvent.click(screen.getByText('Favorites'));
       
       expect(screen.getByText('No favorite models yet')).toBeInTheDocument();
+    });
+  });
+
+  describe('Provider filter chips', () => {
+    const providerFilterModels: ModelInfo[] = [
+      {
+        id: 'openai/gpt-4',
+        name: 'GPT-4',
+        provider: 'OpenAI',
+        capabilities: ['reasoning'],
+        premium: false,
+        vision: false,
+        contextMax: 8192,
+        pricing: { input: 0.00003, output: 0.00006 },
+        description: 'OpenAI model',
+        apiVersion: 'v1',
+        isFavorite: false,
+        status: 'available',
+        lastChecked: new Date(),
+      },
+      {
+        id: 'groq/qwen-3',
+        name: 'Qwen 3',
+        provider: 'Groq',
+        capabilities: ['fast'],
+        premium: false,
+        vision: false,
+        contextMax: 32768,
+        pricing: { input: 0.000002, output: 0.000010 },
+        description: 'Groq model',
+        apiVersion: 'v1',
+        isFavorite: false,
+        status: 'available',
+        lastChecked: new Date(),
+      },
+      {
+        id: 'openrouter/openai/gpt-4.1',
+        name: 'GPT-4.1',
+        provider: 'OpenRouter',
+        capabilities: ['reasoning'],
+        premium: true,
+        vision: false,
+        contextMax: 128000,
+        pricing: { input: 0.000003, output: 0.000012 },
+        description: 'OpenRouter model',
+        apiVersion: 'v1',
+        isFavorite: false,
+        status: 'available',
+        lastChecked: new Date(),
+      },
+    ];
+
+    beforeEach(() => {
+      require('@/lib/context/model-context').useModel.mockReturnValue({
+        ...mockUseModel,
+        availableModels: providerFilterModels,
+        favorites: [],
+        favoriteCount: 0,
+        userApiKeys: {
+          GROQ_API_KEY: 'gsk-test',
+        },
+      });
+    });
+
+    test('filters models when a provider chip is selected', async () => {
+      render(<ModelPicker {...defaultProps} selectedModel="openai/gpt-4" />);
+
+      fireEvent.click(screen.getByRole('combobox'));
+      const popover = screen.getByTestId('popover-content');
+
+      fireEvent.click(within(popover).getByRole('option', { name: /Groq/i }));
+
+      await waitFor(() => {
+        expect(within(popover).getByText('Qwen 3')).toBeInTheDocument();
+        expect(within(popover).queryByText('GPT-4.1')).not.toBeInTheDocument();
+      });
+    });
+
+    test('combines provider chip with BYOK filter', async () => {
+      render(<ModelPicker {...defaultProps} selectedModel="openai/gpt-4" />);
+
+      fireEvent.click(screen.getByRole('combobox'));
+      const popover = screen.getByTestId('popover-content');
+
+      fireEvent.click(within(popover).getByRole('option', { name: 'BYOK' }));
+
+      await waitFor(() => {
+        expect(within(popover).getByText('Qwen 3')).toBeInTheDocument();
+        expect(within(popover).queryByText('GPT-4.1')).not.toBeInTheDocument();
+      });
     });
   });
 
@@ -771,7 +861,7 @@ describe('ModelPicker', () => {
       
       // 3. Should show models and search
       expect(screen.getByTestId('input-search')).toBeInTheDocument();
-      expect(screen.getByText('All')).toBeInTheDocument();
+      expect(screen.getAllByText('All').length).toBeGreaterThan(0);
       expect(screen.getByText('Favorites')).toBeInTheDocument();
     });
 
@@ -799,7 +889,7 @@ describe('ModelPicker', () => {
       fireEvent.click(screen.getByRole('combobox'));
       
       // Should start on All tab
-      const allTab = screen.getByText('All');
+      const allTab = screen.getAllByText('All')[0];
       const favoritesTab = screen.getByText('Favorites');
       
       expect(allTab).toHaveClass('bg-background text-foreground shadow-sm');
