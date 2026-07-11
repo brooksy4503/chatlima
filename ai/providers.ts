@@ -245,9 +245,7 @@ export const getLanguageModelWithKeys = (
     const providerModelId = modelId.slice('groq/'.length);
     console.log(`[getLanguageModelWithKeys] Creating dynamic groq/ client for: ${providerModelId}`);
     if (usesTagBasedReasoningExtraction(modelId)) {
-      return wrapWithTagBasedReasoning(
-        getGroqClient()(providerModelId, { logprobs: false }),
-      );
+      return wrapWithTagBasedReasoning(getGroqClient()(providerModelId));
     }
     return getGroqClient()(providerModelId) as LanguageModel;
   }
