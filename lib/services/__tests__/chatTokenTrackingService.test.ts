@@ -1,6 +1,6 @@
 import { ChatTokenTrackingService, TokenTrackingContext } from '../chatTokenTrackingService';
+import type { TokenUsageSnapshot } from '@/lib/chat/streamTokenUsage';
 
-// Mock dependencies
 jest.mock('@/lib/services/directTokenTracking', () => ({
     DirectTokenTrackingService: {
         processTokenUsage: jest.fn()
@@ -39,6 +39,14 @@ describe('ChatTokenTrackingService', () => {
         ...overrides
     });
 
+    const createMockSnapshot = (overrides: Partial<TokenUsageSnapshot> = {}): TokenUsageSnapshot => ({
+        inputTokens: 100,
+        outputTokens: 50,
+        totalTokens: 150,
+        source: 'ai_sdk',
+        ...overrides,
+    });
+
     const createMockResponse = (overrides: any = {}) => ({
         messages: [],
         annotations: [],
@@ -59,7 +67,7 @@ describe('ChatTokenTrackingService', () => {
         it('should process token tracking successfully', async () => {
             const context = createMockContext();
             const response = createMockResponse();
-            const event = { usage: { promptTokens: 100, completionTokens: 50 } };
+            const tokenUsage = createMockSnapshot();
             const requestStartTime = Date.now() - 1000;
             const timeToFirstTokenMs = 500;
 
@@ -67,8 +75,8 @@ describe('ChatTokenTrackingService', () => {
 
             const result = await ChatTokenTrackingService.processTokenTracking(
                 context,
+                tokenUsage,
                 response,
-                event,
                 requestStartTime,
                 timeToFirstTokenMs
             );
@@ -93,6 +101,7 @@ describe('ChatTokenTrackingService', () => {
                 provider: 'openai',
                 inputTokens: 100,
                 outputTokens: 50,
+                usageSource: 'ai_sdk',
                 generationId: undefined,
                 openRouterResponse: response,
                 providerResponse: response,
@@ -114,7 +123,8 @@ describe('ChatTokenTrackingService', () => {
                 expect.objectContaining({
                     requestId: expect.any(String),
                     userId: 'user123',
-                    chatId: 'chat456'
+                    chatId: 'chat456',
+                    usageSource: 'ai_sdk',
                 })
             );
         });
@@ -125,15 +135,14 @@ describe('ChatTokenTrackingService', () => {
                 webSearchCost: 10
             });
             const response = createMockResponse();
-            const event = { usage: { promptTokens: 100, completionTokens: 50 } };
             const requestStartTime = Date.now() - 1000;
 
             mockProcessTokenUsage.mockResolvedValue(undefined);
 
             await ChatTokenTrackingService.processTokenTracking(
                 context,
+                createMockSnapshot(),
                 response,
-                event,
                 requestStartTime
             );
 
@@ -151,15 +160,14 @@ describe('ChatTokenTrackingService', () => {
                 webSearchCost: 10
             });
             const response = createMockResponse();
-            const event = { usage: { promptTokens: 100, completionTokens: 50 } };
             const requestStartTime = Date.now() - 1000;
 
             mockProcessTokenUsage.mockResolvedValue(undefined);
 
             await ChatTokenTrackingService.processTokenTracking(
                 context,
+                createMockSnapshot(),
                 response,
-                event,
                 requestStartTime
             );
 
@@ -170,39 +178,38 @@ describe('ChatTokenTrackingService', () => {
             );
         });
 
-        it('should handle missing usage data from event', async () => {
+        it('should persist usageSource from the snapshot', async () => {
             const context = createMockContext();
-            const response = createMockResponse({
-                usage: undefined
-            });
-            const event = {};
+            const response = createMockResponse();
             const requestStartTime = Date.now() - 1000;
 
             mockProcessTokenUsage.mockResolvedValue(undefined);
 
-            const result = await ChatTokenTrackingService.processTokenTracking(
+            await ChatTokenTrackingService.processTokenTracking(
                 context,
+                createMockSnapshot({ source: 'estimated' }),
                 response,
-                event,
                 requestStartTime
             );
 
-            expect(result.inputTokens).toBe(0);
-            expect(result.outputTokens).toBe(1); // Minimum fallback
+            expect(mockProcessTokenUsage).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    usageSource: 'estimated',
+                })
+            );
         });
 
-        it('should handle token extraction errors gracefully', async () => {
+        it('should handle token tracking errors gracefully', async () => {
             const context = createMockContext();
             const response = createMockResponse();
-            const event = { usage: { promptTokens: 100, completionTokens: 50 } };
             const requestStartTime = Date.now() - 1000;
 
             mockProcessTokenUsage.mockRejectedValue(new Error('Tracking failed'));
 
             await expect(ChatTokenTrackingService.processTokenTracking(
                 context,
+                createMockSnapshot(),
                 response,
-                event,
                 requestStartTime
             )).rejects.toThrow('Tracking failed');
 
@@ -220,36 +227,33 @@ describe('ChatTokenTrackingService', () => {
         it('should calculate tokens per second correctly', async () => {
             const context = createMockContext();
             const response = createMockResponse();
-            const event = { usage: { promptTokens: 100, completionTokens: 50 } };
-            const requestStartTime = Date.now() - 2000; // 2 seconds
+            const requestStartTime = Date.now() - 2000;
             const timeToFirstTokenMs = 500;
 
             mockProcessTokenUsage.mockResolvedValue(undefined);
 
             const result = await ChatTokenTrackingService.processTokenTracking(
                 context,
+                createMockSnapshot(),
                 response,
-                event,
                 requestStartTime,
                 timeToFirstTokenMs
             );
 
-            // 50 tokens over 1.5 seconds (2s - 0.5s) = ~33.33 tokens/second
             expect(result.tokensPerSecond).toBeCloseTo(50 / 1.5, 1);
         });
 
         it('should handle OpenRouter provider generation ID', async () => {
             const context = createMockContext({ provider: 'openrouter' });
             const response = createMockResponse({ id: 'gen123' });
-            const event = { usage: { promptTokens: 100, completionTokens: 50 } };
             const requestStartTime = Date.now() - 1000;
 
             mockProcessTokenUsage.mockResolvedValue(undefined);
 
             await ChatTokenTrackingService.processTokenTracking(
                 context,
+                createMockSnapshot(),
                 response,
-                event,
                 requestStartTime
             );
 
@@ -277,7 +281,6 @@ describe('ChatTokenTrackingService', () => {
                 timeToFirstTokenMs
             );
 
-            // ~4 characters per token estimation
             const expectedOutputTokens = Math.ceil(currentText.length / 4);
 
             expect(result).toEqual({
@@ -298,6 +301,7 @@ describe('ChatTokenTrackingService', () => {
                 provider: 'openai',
                 inputTokens: 0,
                 outputTokens: expectedOutputTokens,
+                usageSource: 'estimated',
                 providerResponse: null,
                 processingTimeMs: expect.any(Number),
                 timeToFirstTokenMs: 300,
@@ -324,7 +328,7 @@ describe('ChatTokenTrackingService', () => {
                 requestStartTime
             );
 
-            expect(result.outputTokens).toBe(0); // Empty text = 0 tokens
+            expect(result.outputTokens).toBe(0);
             expect(result.totalTokens).toBe(0);
         });
 
@@ -349,174 +353,6 @@ describe('ChatTokenTrackingService', () => {
                     additionalCost: 10
                 })
             );
-        });
-    });
-
-    describe('extractTokenUsage', () => {
-        it('should extract tokens from event usage', () => {
-            const response = createMockResponse();
-            const event = {
-                usage: {
-                    promptTokens: 100,
-                    completionTokens: 50
-                }
-            };
-
-            const result = (ChatTokenTrackingService as any).extractTokenUsage(response, event, 'test123');
-
-            expect(result).toEqual({
-                inputTokens: 100,
-                outputTokens: 50,
-                totalTokens: 150
-            });
-        });
-
-        it('should extract tokens from response usage when event missing', () => {
-            const response = createMockResponse();
-            const event = {};
-
-            const result = (ChatTokenTrackingService as any).extractTokenUsage(response, event, 'test123');
-
-            expect(result).toEqual({
-                inputTokens: 100,
-                outputTokens: 50,
-                totalTokens: 150
-            });
-        });
-
-        it('should handle snake_case token fields', () => {
-            const response = createMockResponse({
-                usage: {
-                    prompt_tokens: 200,
-                    completion_tokens: 75
-                }
-            });
-            const event = {};
-
-            const result = (ChatTokenTrackingService as any).extractTokenUsage(response, event, 'test123');
-
-            expect(result).toEqual({
-                inputTokens: 200,
-                outputTokens: 75,
-                totalTokens: 275
-            });
-        });
-
-        it('should estimate output tokens when not provided', () => {
-            const response = createMockResponse({
-                messages: [{
-                    role: 'assistant',
-                    content: 'This is a test response with 30 characters'
-                }],
-                usage: {
-                    promptTokens: 100,
-                    completionTokens: 0, // No output tokens provided
-                    totalTokens: 100,
-                    inputTokens: 100,
-                    outputTokens: 0,
-                    prompt_tokens: 100,
-                    completion_tokens: 0
-                }
-            });
-            const event = {};
-
-            const result = (ChatTokenTrackingService as any).extractTokenUsage(response, event, 'test123');
-
-            expect(result.inputTokens).toBe(100);
-            expect(result.outputTokens).toBe(11); // ~44/4 rounded up
-            expect(result.totalTokens).toBe(111);
-        });
-    });
-
-    describe('extractInputTokensFromEvent', () => {
-        it('should extract input tokens from event.usage', () => {
-            const event = {
-                usage: {
-                    promptTokens: 150
-                }
-            };
-
-            const result = (ChatTokenTrackingService as any).extractInputTokensFromEvent(event);
-
-            expect(result).toBe(150);
-        });
-
-        it('should try multiple token field variations', () => {
-            const testCases = [
-                { event: { usage: { inputTokens: 200 } }, expected: 200 },
-                { event: { usage: { prompt_tokens: 250 } }, expected: 250 },
-                { event: { usage: { input_tokens: 300 } }, expected: 300 },
-                { event: { promptTokens: 350 }, expected: 350 }
-            ];
-
-            testCases.forEach(({ event, expected }) => {
-                const result = (ChatTokenTrackingService as any).extractInputTokensFromEvent(event);
-                expect(result).toBe(expected);
-            });
-        });
-
-        it('should return 0 for invalid or missing values', () => {
-            const testCases = [
-                {},
-                { usage: {} },
-                { usage: { promptTokens: null } },
-                { usage: { promptTokens: 0 } },
-                { usage: { promptTokens: -1 } }
-            ];
-
-            testCases.forEach(event => {
-                const result = (ChatTokenTrackingService as any).extractInputTokensFromEvent(event);
-                expect(result).toBe(0);
-            });
-        });
-    });
-
-    describe('estimateOutputTokens', () => {
-        it('should estimate tokens from response messages', () => {
-            const response = {
-                messages: [{
-                    role: 'assistant',
-                    content: 'This is a 20 character response'
-                }]
-            };
-
-            const result = (ChatTokenTrackingService as any).estimateOutputTokens(response, {});
-
-            expect(result).toBe(8); // ~20/4 rounded up
-        });
-
-        it('should handle structured content arrays', () => {
-            const response = {
-                messages: [{
-                    role: 'assistant',
-                    content: [
-                        { type: 'text', text: 'First part' },
-                        { type: 'text', text: 'Second part' }
-                    ]
-                }]
-            };
-
-            const result = (ChatTokenTrackingService as any).estimateOutputTokens(response, {});
-
-            expect(result).toBe(6); // ~('First partSecond part'.length)/4 rounded up
-        });
-
-        it('should fall back to event text', () => {
-            const response = { messages: [] };
-            const event = { text: 'Fallback text content' };
-
-            const result = (ChatTokenTrackingService as any).estimateOutputTokens(response, event);
-
-            expect(result).toBe(6); // ~20/4 rounded up
-        });
-
-        it('should return minimum fallback for empty content', () => {
-            const response = { messages: [] };
-            const event = {};
-
-            const result = (ChatTokenTrackingService as any).estimateOutputTokens(response, event);
-
-            expect(result).toBe(1);
         });
     });
 

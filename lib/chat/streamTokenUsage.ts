@@ -2,107 +2,127 @@ import type { UIMessage } from 'ai';
 import { getUIMessageText } from '@/lib/message-utils';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 
+export type TokenUsageSource = 'ai_sdk' | 'steps' | 'estimated';
+
 export interface TokenUsageSnapshot {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  source: TokenUsageSource;
 }
 
-export interface ComputeStreamTokenUsageParams {
+export interface ResolveStreamTokenUsageParams {
   event: {
+    totalUsage?: Record<string, unknown>;
     usage?: Record<string, unknown>;
     steps?: Array<{ usage?: Record<string, unknown> }>;
     durationMs?: number;
+    text?: string;
   };
   response: {
     usage?: Record<string, unknown>;
-    messages?: Array<{ content?: unknown }>;
+    messages?: Array<{ content?: unknown; role?: string }>;
   };
   modelMessagesFinal: UIMessage[];
   effectiveSystemInstruction: string;
   requestId: string;
 }
 
-/** Aggregate usage from stream finish event/response with conversation-based fallbacks. */
-export function computeStreamTokenUsage(
-  params: ComputeStreamTokenUsageParams
-): TokenUsageSnapshot {
-  const { event, response, modelMessagesFinal, effectiveSystemInstruction, requestId } =
-    params;
+/** @deprecated Use ResolveStreamTokenUsageParams */
+export type ComputeStreamTokenUsageParams = ResolveStreamTokenUsageParams;
 
-  const typedResponse = response;
-  let tokenUsageData: Record<string, unknown> | null =
-    (event.usage as Record<string, unknown>) ||
-    (typedResponse.usage as Record<string, unknown>) ||
-    null;
-
-  if (event.steps && Array.isArray(event.steps)) {
-    let totalStepInputTokens = 0;
-    let totalStepOutputTokens = 0;
-    let hasStepTokens = false;
-
-    for (const step of event.steps) {
-      if (step?.usage) {
-        const stepUsage = step.usage;
-        const stepInputTokens =
-          Number(stepUsage.promptTokens) ||
-          Number(stepUsage.inputTokens) ||
-          Number(stepUsage.prompt_tokens) ||
-          Number(stepUsage.input_tokens) ||
-          0;
-        const stepOutputTokens =
-          Number(stepUsage.completionTokens) ||
-          Number(stepUsage.outputTokens) ||
-          Number(stepUsage.completion_tokens) ||
-          Number(stepUsage.output_tokens) ||
-          0;
-
-        if (stepInputTokens > 0 || stepOutputTokens > 0) {
-          totalStepInputTokens += stepInputTokens;
-          totalStepOutputTokens += stepOutputTokens;
-          hasStepTokens = true;
-        }
-      }
-    }
-
-    if (hasStepTokens) {
-      tokenUsageData = {
-        ...tokenUsageData,
-        inputTokens:
-          totalStepInputTokens ||
-          Number(tokenUsageData?.inputTokens) ||
-          Number(tokenUsageData?.prompt_tokens) ||
-          0,
-        outputTokens:
-          totalStepOutputTokens ||
-          Number(tokenUsageData?.outputTokens) ||
-          Number(tokenUsageData?.completion_tokens) ||
-          0,
-        totalTokens:
-          totalStepInputTokens + totalStepOutputTokens ||
-          Number(tokenUsageData?.totalTokens) ||
-          Number(tokenUsageData?.total_tokens) ||
-          0,
-      };
-    }
+function parseUsageRecord(
+  usage: Record<string, unknown> | undefined | null
+): { inputTokens: number; outputTokens: number; totalTokens: number } | null {
+  if (!usage) {
+    return null;
   }
 
-  const inputTokenCount =
-    Number(tokenUsageData?.inputTokens) || Number(tokenUsageData?.prompt_tokens) || 0;
-  const outputTokenCount =
-    Number(tokenUsageData?.outputTokens) ||
-    Number(tokenUsageData?.completion_tokens) ||
+  const inputTokens =
+    Number(usage.inputTokens) ||
+    Number(usage.promptTokens) ||
+    Number(usage.prompt_tokens) ||
+    Number(usage.input_tokens) ||
+    0;
+  const outputTokens =
+    Number(usage.outputTokens) ||
+    Number(usage.completionTokens) ||
+    Number(usage.completion_tokens) ||
+    Number(usage.output_tokens) ||
     0;
 
-  const needsInputEstimation = !tokenUsageData || inputTokenCount === 0;
-  const needsOutputEstimation = !tokenUsageData || outputTokenCount === 0;
+  if (inputTokens <= 0 && outputTokens <= 0) {
+    return null;
+  }
 
-  if (needsInputEstimation || needsOutputEstimation) {
-    const lastMessage = typedResponse.messages?.[typedResponse.messages.length - 1];
+  const totalTokens =
+    Number(usage.totalTokens) ||
+    Number(usage.total_tokens) ||
+    inputTokens + outputTokens;
+
+  return { inputTokens, outputTokens, totalTokens };
+}
+
+function sumStepUsage(
+  steps: Array<{ usage?: Record<string, unknown> }> | undefined
+): { inputTokens: number; outputTokens: number; totalTokens: number } | null {
+  if (!steps?.length) {
+    return null;
+  }
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let hasStepTokens = false;
+
+  for (const step of steps) {
+    const parsed = parseUsageRecord(step?.usage);
+    if (!parsed) {
+      continue;
+    }
+    inputTokens += parsed.inputTokens;
+    outputTokens += parsed.outputTokens;
+    hasStepTokens = true;
+  }
+
+  if (!hasStepTokens) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens: inputTokens + outputTokens,
+  };
+}
+
+function estimateTokenUsage(params: {
+  response: ResolveStreamTokenUsageParams['response'];
+  event: ResolveStreamTokenUsageParams['event'];
+  modelMessagesFinal: UIMessage[];
+  effectiveSystemInstruction: string;
+  inputTokenCount: number;
+  outputTokenCount: number;
+}): TokenUsageSnapshot {
+  const {
+    response,
+    event,
+    modelMessagesFinal,
+    effectiveSystemInstruction,
+    inputTokenCount,
+    outputTokenCount,
+  } = params;
+
+  const needsInputEstimation = inputTokenCount === 0;
+  const needsOutputEstimation = outputTokenCount === 0;
+
+  let estimatedInputTokens = inputTokenCount;
+  let estimatedOutputTokens = outputTokenCount;
+
+  if (needsOutputEstimation) {
+    const lastMessage = response.messages?.[response.messages.length - 1];
     let outputContentLength = 0;
-    let inputContentLength = 0;
 
-    if (needsOutputEstimation && lastMessage?.content) {
+    if (lastMessage?.content) {
       if (Array.isArray(lastMessage.content)) {
         outputContentLength = lastMessage.content
           .filter((part: { type?: string }) => part.type === 'text')
@@ -113,38 +133,100 @@ export function computeStreamTokenUsage(
       }
     }
 
-    if (needsInputEstimation) {
-      for (const message of modelMessagesFinal) {
-        inputContentLength += getUIMessageText(message).length;
-      }
-      if (effectiveSystemInstruction) {
-        inputContentLength += effectiveSystemInstruction.length;
-      }
+    if (!outputContentLength && event.text) {
+      outputContentLength = event.text.length;
     }
 
-    const estimatedOutputTokens = Math.ceil(outputContentLength / 4);
-    const estimatedInputTokens = Math.ceil(inputContentLength / 4);
+    estimatedOutputTokens = outputContentLength > 0 ? Math.ceil(outputContentLength / 4) : 1;
+  }
+
+  if (needsInputEstimation) {
+    let inputContentLength = 0;
+    for (const message of modelMessagesFinal) {
+      inputContentLength += getUIMessageText(message).length;
+    }
+    if (effectiveSystemInstruction) {
+      inputContentLength += effectiveSystemInstruction.length;
+    }
+    estimatedInputTokens = Math.ceil(inputContentLength / 4);
+  }
+
+  return {
+    inputTokens: estimatedInputTokens,
+    outputTokens: estimatedOutputTokens,
+    totalTokens: estimatedInputTokens + estimatedOutputTokens,
+    source: 'estimated',
+  };
+}
+
+/**
+ * Canonical token resolver for completed streamText turns.
+ * Prefers AI SDK combined usage (totalUsage / usage), then step sums, then char estimates.
+ */
+export function resolveStreamTokenUsage(
+  params: ResolveStreamTokenUsageParams
+): TokenUsageSnapshot {
+  const { event, response, modelMessagesFinal, effectiveSystemInstruction, requestId } =
+    params;
+
+  const sdkUsage =
+    parseUsageRecord(event.totalUsage) ||
+    parseUsageRecord(event.usage) ||
+    parseUsageRecord(response.usage);
+
+  if (sdkUsage) {
+    logDiagnostic('STREAM_TOKEN_USAGE', 'Using AI SDK combined token usage', {
+      requestId,
+      inputTokenCount: sdkUsage.inputTokens,
+      outputTokenCount: sdkUsage.outputTokens,
+      source: 'ai_sdk',
+    });
 
     return {
-      inputTokens: needsInputEstimation ? estimatedInputTokens : inputTokenCount,
-      outputTokens: needsOutputEstimation ? estimatedOutputTokens : outputTokenCount,
-      totalTokens:
-        (needsInputEstimation ? estimatedInputTokens : inputTokenCount) +
-        (needsOutputEstimation ? estimatedOutputTokens : outputTokenCount),
+      ...sdkUsage,
+      source: 'ai_sdk',
     };
   }
 
-  logDiagnostic('STREAM_TOKEN_USAGE', 'Using provider-reported token usage', {
-    requestId,
-    inputTokenCount,
-    outputTokenCount,
+  const stepUsage = sumStepUsage(event.steps);
+  if (stepUsage) {
+    logDiagnostic('STREAM_TOKEN_USAGE', 'Using summed step token usage', {
+      requestId,
+      inputTokenCount: stepUsage.inputTokens,
+      outputTokenCount: stepUsage.outputTokens,
+      source: 'steps',
+    });
+
+    return {
+      ...stepUsage,
+      source: 'steps',
+    };
+  }
+
+  const estimated = estimateTokenUsage({
+    response,
+    event,
+    modelMessagesFinal,
+    effectiveSystemInstruction,
+    inputTokenCount: 0,
+    outputTokenCount: 0,
   });
 
-  return {
-    inputTokens: inputTokenCount,
-    outputTokens: outputTokenCount,
-    totalTokens: inputTokenCount + outputTokenCount,
-  };
+  logDiagnostic('STREAM_TOKEN_USAGE', 'Using estimated token usage', {
+    requestId,
+    inputTokenCount: estimated.inputTokens,
+    outputTokenCount: estimated.outputTokens,
+    source: 'estimated',
+  });
+
+  return estimated;
+}
+
+/** @deprecated Use resolveStreamTokenUsage */
+export function computeStreamTokenUsage(
+  params: ComputeStreamTokenUsageParams
+): TokenUsageSnapshot {
+  return resolveStreamTokenUsage(params);
 }
 
 export function estimateTimeToFirstTokenMs(params: {

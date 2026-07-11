@@ -23,7 +23,8 @@ import type { ModelValidationResult } from '@/lib/services/chatModelValidationSe
 import type { WebSearchResult } from '@/lib/services/chatWebSearchService';
 import type { ChatStreamPlan } from '@/lib/chat/buildChatStreamPlan';
 import {
-  computeStreamTokenUsage,
+  resolveStreamTokenUsage,
+  type TokenUsageSnapshot,
   computeTokensPerSecond,
   estimateTimeToFirstTokenMs,
 } from '@/lib/chat/streamTokenUsage';
@@ -96,7 +97,7 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
   } = params;
 
   const state = {
-    tokenUsageData: null as { inputTokens: number; outputTokens: number } | null,
+    tokenUsageData: null as TokenUsageSnapshot | null,
     messagesSavedSuccessfully: false,
     savedAssistantPartCount: 0,
     finalAssistantMessageId: nanoid(),
@@ -343,9 +344,9 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
     }
 
     if (!state.tokenUsageData) {
-      state.tokenUsageData = computeStreamTokenUsage({
-        event: event as Parameters<typeof computeStreamTokenUsage>[0]['event'],
-        response: response as Parameters<typeof computeStreamTokenUsage>[0]['response'],
+      state.tokenUsageData = resolveStreamTokenUsage({
+        event: event as Parameters<typeof resolveStreamTokenUsage>[0]['event'],
+        response: response as Parameters<typeof resolveStreamTokenUsage>[0]['response'],
         modelMessagesFinal: plan.modelMessagesFinal,
         effectiveSystemInstruction: plan.effectiveSystemInstruction,
         requestId,
@@ -369,8 +370,8 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
         apiKeys,
         modelInfo: modelValidation.modelInfo ?? undefined,
       },
+      state.tokenUsageData,
       response,
-      event,
       requestStartTime,
       timeToFirstTokenMs ?? undefined,
       streamingStartTime ?? undefined
@@ -454,9 +455,9 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
         requestStartTime,
       });
 
-      state.tokenUsageData = computeStreamTokenUsage({
-        event: event as Parameters<typeof computeStreamTokenUsage>[0]['event'],
-        response: response as Parameters<typeof computeStreamTokenUsage>[0]['response'],
+      state.tokenUsageData = resolveStreamTokenUsage({
+        event: event as Parameters<typeof resolveStreamTokenUsage>[0]['event'],
+        response: response as Parameters<typeof resolveStreamTokenUsage>[0]['response'],
         modelMessagesFinal: plan.modelMessagesFinal,
         effectiveSystemInstruction: plan.effectiveSystemInstruction,
         requestId,

@@ -14,6 +14,7 @@ import { nanoid } from 'nanoid';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { ModelInfo } from '@/lib/types/models';
 import { isOpenRouterFreeModel, calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
+import type { TokenUsageSource } from '@/lib/chat/streamTokenUsage';
 
 interface DirectTokenTrackingParams {
     userId: string;
@@ -23,6 +24,7 @@ interface DirectTokenTrackingParams {
     provider: string;
     inputTokens: number;
     outputTokens: number;
+    usageSource?: TokenUsageSource;
     generationId?: string;
     openRouterResponse?: any; // Legacy name for backward compatibility
     providerResponse?: any; // New generic response parameter for all providers
@@ -174,6 +176,7 @@ export class DirectTokenTrackingService {
                     directProcessed: true,
                     processedAt: new Date().toISOString(),
                     creditsConsumed,
+                    ...(params.usageSource && { usageSource: params.usageSource }),
                     ...(params.generationId && { generationId: params.generationId })
                 },
                 createdAt: new Date(),

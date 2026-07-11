@@ -563,7 +563,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 4. Block on negative credits; block when `actualCredits < requiredCredits` for selected model tier
 5. Web search (if requested): require signed-in user, OpenRouter model with `supportsWebSearch`, and either ≥5 credits or BYOK OpenRouter key (`ChatWebSearchService` + `ChatCreditValidationService`)
 
-**Usage persistence:** Each completed turn writes `metadata.creditsConsumed` on `token_usage_metrics` (`lib/services/directTokenTracking.ts`). Per-chat aggregates expose `totalCreditsConsumed` via `TokenTrackingService.getChatTokenUsage`.
+**Usage persistence:** Each completed turn writes `metadata.creditsConsumed` on `token_usage_metrics` (`lib/services/directTokenTracking.ts`). Token counts for completed turns come from a single resolver in `lib/chat/streamTokenUsage.ts` (`resolveStreamTokenUsage`), which prefers Vercel AI SDK combined usage (`event.totalUsage` / `event.usage` across all tool/MCP steps). When provider usage is unavailable, char-based estimates are stored with `metadata.usageSource: 'estimated'`. Per-chat aggregates expose `totalCreditsConsumed` via `TokenTrackingService.getChatTokenUsage`.
 
 ---
 
