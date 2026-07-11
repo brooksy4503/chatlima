@@ -168,9 +168,7 @@ Synchronizes pricing data from provider APIs to the database.
 
 **Phase 3 Database Features:**
 - **`cleanup_execution_logs` table**: Complete audit trail of all cleanup operations
-- **`cleanup_config` table**: System configuration with admin change tracking  
-- **CleanupConfigService**: Type-safe database operations with error handling
-- Full CRUD operations with advanced querying and filtering
+- **CleanupConfigService**: Log write/read helpers for manual cleanup runs
 
 **Testing:**
 ```bash
@@ -365,9 +363,9 @@ Initial implementation with basic user identification and deletion capabilities.
 **Status:** Complete - All mock data replaced with database integration
 
 **Implementation:**
-- ✅ **Database Schema**: `cleanup_execution_logs` and `cleanup_config` tables
-- ✅ **Service Layer**: `CleanupConfigService` with type-safe operations
-- ✅ **API Integration**: All endpoints updated to use real database storage
+- ✅ **Database Schema**: `cleanup_execution_logs` table (audit only; `cleanup_config` removed)
+- ✅ **Service Layer**: `CleanupConfigService` with type-safe log operations
+- ✅ **API Integration**: Manual cleanup endpoints use real database storage
 - ✅ **Migration Applied**: `drizzle/0039_silent_barracuda.sql`
 
 **Features:**

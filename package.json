@@ -24,6 +24,7 @@
     "test:basic:debug": "playwright test --config=playwright.basic.config.ts --debug",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:prod": "NODE_ENV=production drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "pricing:analysis": "npx tsx scripts/dynamic-api-pricing-analysis.ts",

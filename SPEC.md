@@ -349,9 +349,7 @@ The application uses specialized services for maintainability:
 - `preset_usage` - Preset usage tracking
 - `model_pricing` - Model pricing data
 - `daily_token_usage` - Aggregated daily token usage
-- `usage_limits` - User/model usage limits
 - `cleanup_execution_logs` - User cleanup audit
-- `cleanup_config` - Cleanup system config
 - `verification` - Auth verification tokens
 
 ---
