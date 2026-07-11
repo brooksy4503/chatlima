@@ -15,5 +15,9 @@ export const STORAGE_KEYS = {
   COMPARE_MODELS: "compareModels",
 } as const;
 
+/** Polar meter grant sizes (product copy; balance comes from Polar API) */
+export const MONTHLY_CREDIT_ALLOWANCE = 1000;
+export const YEARLY_CREDIT_ALLOWANCE = 12000;
+
 // Configurable model IDs
 export const titleGenerationModelId = process.env.TITLE_GENERATION_MODEL_ID || 'openrouter/openai/gpt-5-nano'; 

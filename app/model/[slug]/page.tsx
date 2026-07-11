@@ -12,7 +12,7 @@ import { ModelPremiumBanner } from '@/components/model-page/model-premium-banner
 import { ModelComparisonLinks } from '@/components/model-page/model-comparison-links';
 import { ModelStructuredData } from '@/components/model-page/model-structured-data';
 import { auth } from '@/lib/auth';
-import { getRemainingCreditsByExternalId, hasUnlimitedFreeModels } from '@/lib/polar';
+import { getRemainingCreditsByExternalId } from '@/lib/polar';
 import { headers } from 'next/headers';
 
 // Helper to safely get headers, returning null during static generation
@@ -255,17 +255,8 @@ export default async function ModelPage({ params }: { params: Promise<{ slug: st
         if (isAnonymous) {
           canAccessPremium = false;
         } else if (userId) {
-          // Check for unlimited free models subscription (yearly plan)
-          const hasUnlimitedFreeModelsAccess = await hasUnlimitedFreeModels(userId);
-          
-          if (hasUnlimitedFreeModelsAccess) {
-            // Yearly subscribers can only access free models, not premium
-            canAccessPremium = false;
-          } else {
-            // Check if user has credits
-            const credits = await getRemainingCreditsByExternalId(userId);
-            canAccessPremium = typeof credits === 'number' && credits > 0;
-          }
+          const credits = await getRemainingCreditsByExternalId(userId);
+          canAccessPremium = typeof credits === 'number' && credits > 0;
         } else {
           canAccessPremium = false;
         }

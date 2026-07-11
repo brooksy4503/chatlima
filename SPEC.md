@@ -373,7 +373,7 @@ The application uses specialized services for maintainability:
 | Signed-in, no subscription (`BILLING_ENFORCED=false`) | 20/day | None | `:free` models; web search needs credits |
 | Signed-in, no subscription (`BILLING_ENFORCED=true`) | Blocked | None | Requires subscription or BYOK (`accessGateService`) |
 | Monthly subscriber ($9/mo) | High / credit-gated | ~1,000 credits/month (Polar meter) | Full catalog; cost 1–30 credits/msg by model tier |
-| Yearly subscriber ($90/yr) | Very high (effectively unlimited in-app) | Often null in API (`hasUnlimitedFreeModels`) | Full catalog; same credit tiers where enforced server-side |
+| Yearly subscriber ($90/yr) | Credit-gated (same as monthly) | ~12,000 credits/year (Polar meter) | Full catalog; cost 1–30 credits/msg by model tier |
 | BYOK (any enforced mode) | Bypasses subscription gate when `ALLOW_BYOK_BYPASS=true` | N/A | Provider-billed; ChatLima credits skipped for that provider |
 
 ### 4.3 Anonymous User Flow
@@ -513,7 +513,7 @@ interface MCPServerConfig {
 | Plan | Price | Polar allocation | Model Access |
 |------|-------|------------------|--------------|
 | Monthly | $9/month | ~1,000 credits/month on the Polar meter (usage-based, not a flat per-message counter) | Full catalog while credits remain |
-| Yearly | $90/year | High annual usage allowance (see daily limit bypass for yearly subscribers) | Full catalog (same as monthly) |
+| Yearly | $90/year | ~12,000 credits/year on the Polar meter (same credit rules as monthly) | Full catalog while credits remain |
 
 **Product vocabulary:** User-facing copy uses **credit tiers** (Free / Economy / Standard / Pro / Frontier / Ultra). The internal `model.premium` flag and OpenRouter `:free` suffix inform tier calculation. Canonical zero-cost detection: `isOpenRouterFreeModel()` (`openrouter/` prefix + `:free` suffix) in `lib/utils/creditCostCalculator.ts`.
 
@@ -558,10 +558,12 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 ### 7.5 Credit Validation Flow
 
 1. Access gate when `BILLING_ENFORCED=true`: active subscription (monthly or yearly) or BYOK for model provider (`accessGateService`)
-2. Check Polar credits for non-BYOK requests (yearly may bypass credit pool via `hasUnlimitedFreeModels`)
+2. Check Polar credits for non-BYOK requests (monthly and yearly use the same meter)
 3. When billing not enforced: fall back to daily message limit (10 anonymous / 20 authenticated) and `:free`-only without credits
 4. Block on negative credits; block when `actualCredits < requiredCredits` for selected model tier
 5. Web search (if requested): require signed-in user, OpenRouter model with `supportsWebSearch`, and either ≥5 credits or BYOK OpenRouter key (`ChatWebSearchService` + `ChatCreditValidationService`)
+
+**Usage persistence:** Each completed turn writes `metadata.creditsConsumed` on `token_usage_metrics` (`lib/services/directTokenTracking.ts`). Per-chat aggregates expose `totalCreditsConsumed` via `TokenTrackingService.getChatTokenUsage`.
 
 ---
 
@@ -593,6 +595,8 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 - **Code Detection**: Auto-wrap pasted code in markdown blocks
 - **Text selection quote (Add to chat)**: Highlight text in the message list to show an **Add to chat** toolbar. Selected text appears as a dismissible chip above the composer (same stack as file previews). On send, the quote is prepended to the user message as a markdown blockquote (`> line` per line), then the user's typed question; quote-only follow-ups are allowed. One quote at a time; works in normal and compare timelines. No API/schema change.
 - **Smart Title Generation**: Dynamic model selection for conversation titles. Default OpenRouter title model is `openrouter/openai/gpt-5-nano` (override via `TITLE_GENERATION_MODEL_ID` or `OPENROUTER_TITLE_MODEL`). Title generation starts in parallel when a new chat begins streaming and is persisted before the chat save completes.
+- **Per-chat usage chip (Chat A)**: When the chat is idle (`status === "ready"`) and the last message is from the assistant, an expandable chip renders under that message (`components/token-metrics/ChatUsageChip.tsx`). Collapsed: compact totals (tokens, credits this chat, message count; credits omitted when zero). Expanded: input/output token breakdown, credits consumed in this chat, message count. No dollar amounts. Data from `hooks/useChatTokenMetrics.ts` → `GET /api/token-usage/chat/:chatId`; credits summed from `token_usage_metrics.metadata.creditsConsumed` per turn (`lib/tokenTracking.ts` `totalCreditsConsumed`).
+- **Sidebar credit balance pill (Sidebar A)**: Expanded sidebar shows remaining allowance from Polar (`components/credit-balance-pill.tsx`). Monthly subscribers: `{remaining} / 1,000 credits`; yearly: `{remaining} / 12,000 credits` (allowance constants in `lib/constants.ts`; balance from `useAuth().usageData.credits`). Free/anonymous (no subscription credits): `{used}/{limit} msgs today`. Replaces the former lifetime token/$ summary strip in the sidebar.
 
 ### 8.2 Presets System
 

@@ -30,7 +30,7 @@ function CheckoutSuccessContent() {
     }
 
     // Check product slug
-    if (productSlug === 'free-models-unlimited') {
+    if (productSlug === 'ai-usage-yearly' || productSlug === 'free-models-unlimited') {
       setPurchaseType('yearly');
       setLoading(false);
       return;
@@ -73,7 +73,7 @@ function CheckoutSuccessContent() {
         return {
           title: 'Subscription Activated!',
           description: 'Your yearly subscription has been activated successfully.',
-          message: 'You now have a high annual usage allowance with access to the full model catalog. Actual message count depends on the models you select.',
+          message: 'You now have about 12,000 credits per year and access to the full model catalog. Each message costs 1–30 credits depending on the model.',
           subMessage: 'It may take a moment for your subscription to fully activate.',
         };
       case 'monthly':

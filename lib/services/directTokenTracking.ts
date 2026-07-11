@@ -13,7 +13,7 @@ import { OpenRouterCostTracker } from './openrouterCostTracker';
 import { nanoid } from 'nanoid';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { ModelInfo } from '@/lib/types/models';
-import { isOpenRouterFreeModel } from '@/lib/utils/creditCostCalculator';
+import { isOpenRouterFreeModel, calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
 
 interface DirectTokenTrackingParams {
     userId: string;
@@ -135,6 +135,22 @@ export class DirectTokenTrackingService {
                 actualCost = 0;
             }
 
+            // Resolve model info for credit cost (needed for metadata.creditsConsumed)
+            let modelInfo = params.modelInfo;
+            if (!modelInfo && params.modelId) {
+                try {
+                    modelInfo = (await getModelDetails(params.modelId)) ?? undefined;
+                } catch (error) {
+                    console.warn(`[DirectTokenTracking] Failed to fetch model info for ${params.modelId}:`, error);
+                }
+            }
+
+            const baseCreditCost = calculateCreditCostPerMessage(modelInfo ?? null);
+            const creditsConsumed =
+                params.shouldDeductCredits && !params.isAnonymous
+                    ? baseCreditCost + (params.additionalCost || 0)
+                    : 0;
+
             // Store the results in token usage metrics table
             await db.insert(tokenUsageMetrics).values({
                 id: nanoid(),
@@ -157,6 +173,7 @@ export class DirectTokenTrackingService {
                 metadata: {
                     directProcessed: true,
                     processedAt: new Date().toISOString(),
+                    creditsConsumed,
                     ...(params.generationId && { generationId: params.generationId })
                 },
                 createdAt: new Date(),
@@ -166,16 +183,6 @@ export class DirectTokenTrackingService {
             // Handle credit tracking if parameters are provided
             if (params.polarCustomerId !== undefined || params.completionTokens !== undefined) {
                 try {
-                    // Fetch modelInfo if not provided (needed for variable credit cost calculation)
-                    let modelInfo = params.modelInfo;
-                    if (!modelInfo && params.modelId) {
-                        try {
-                            modelInfo = (await getModelDetails(params.modelId)) ?? undefined;
-                        } catch (error) {
-                            console.warn(`[DirectTokenTracking] Failed to fetch model info for ${params.modelId}, using default credit cost:`, error);
-                        }
-                    }
-
                     await trackTokenUsage(
                         params.userId,
                         params.polarCustomerId,

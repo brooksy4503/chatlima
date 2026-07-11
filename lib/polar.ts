@@ -642,15 +642,3 @@ export async function getSubscriptionTypeByExternalId(userId: string, userEmail?
         return null;
     }
 }
-
-/**
- * Checks if a user has unlimited access to free models (yearly subscription)
- * 
- * @param userId The user's ID in our application
- * @returns A promise that resolves to true if user has yearly subscription, false otherwise
- */
-export async function hasUnlimitedFreeModels(userId: string): Promise<boolean> {
-    const subscriptionType = await getSubscriptionTypeByExternalId(userId);
-    return subscriptionType === 'yearly';
-}
-

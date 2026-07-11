@@ -318,5 +318,4 @@ export interface AuthContext {
     isAnonymous?: boolean;
     hasSubscription?: boolean;
     subscriptionType?: 'monthly' | 'yearly' | null;
-    hasUnlimitedFreeModels?: boolean;
 }

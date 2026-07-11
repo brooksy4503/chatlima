@@ -826,6 +826,7 @@ export class TokenTrackingService {
         totalTokens: number;
         totalEstimatedCost: number;
         totalActualCost: number;
+        totalCreditsConsumed: number;
         messageCount: number;
         // NEW: Enhanced timing metrics for Phase 2
         avgTimeToFirstToken?: number;
@@ -865,6 +866,11 @@ export class TokenTrackingService {
             const totalActualCost = records.reduce((sum, record) => {
                 const actualCost = record.actualCost ? parseFloat(record.actualCost.toString()) : 0;
                 return sum + actualCost;
+            }, 0);
+            const totalCreditsConsumed = records.reduce((sum, record) => {
+                const metadata = record.metadata as { creditsConsumed?: number } | null;
+                const consumed = metadata?.creditsConsumed;
+                return sum + (typeof consumed === 'number' && consumed > 0 ? consumed : 0);
             }, 0);
 
             // Create breakdown by message with enhanced timing metrics
@@ -918,6 +924,7 @@ export class TokenTrackingService {
                 totalTokens,
                 totalEstimatedCost,
                 totalActualCost,
+                totalCreditsConsumed,
                 messageCount: records.length,
                 // NEW: Enhanced timing metrics for Phase 2
                 avgTimeToFirstToken,
@@ -933,6 +940,7 @@ export class TokenTrackingService {
                 totalTokens: 0,
                 totalEstimatedCost: 0,
                 totalActualCost: 0,
+                totalCreditsConsumed: 0,
                 messageCount: 0,
                 // NEW: Enhanced timing metrics for Phase 2
                 avgTimeToFirstToken: undefined,

@@ -8,14 +8,12 @@ import { useState, useEffect } from 'react';
  */
 export function useCredits(polarCustomerId?: string, userId?: string) {
     const [credits, setCredits] = useState<number | null>(null);
-    const [hasUnlimitedFreeModels, setHasUnlimitedFreeModels] = useState(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
 
     const fetchCredits = async () => {
         if (!userId) {
             setCredits(null);
-            setHasUnlimitedFreeModels(false);
             return;
         }
 
@@ -36,12 +34,10 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
             }
 
             setCredits(data.credits);
-            setHasUnlimitedFreeModels(Boolean(data.hasUnlimitedFreeModels));
         } catch (err) {
             console.error('Error fetching credits:', err);
             setError(err instanceof Error ? err : new Error('Failed to fetch credits'));
             setCredits(null);
-            setHasUnlimitedFreeModels(false);
         } finally {
             setLoading(false);
         }
@@ -56,14 +52,12 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
         : 'Unknown';
 
     const hasSufficientCredits = (requiredAmount: number = 1): boolean => {
-        if (hasUnlimitedFreeModels) return true;
         if (credits === null) return true;
         return credits >= requiredAmount;
     };
 
     /** Whether the user can send a message with this model's credit cost */
     const canUseModelAtCreditCost = (requiredCredits: number = 1): boolean => {
-        if (hasUnlimitedFreeModels) return true;
         if (credits === null) return true;
         return credits >= requiredCredits;
     };
@@ -79,7 +73,6 @@ export function useCredits(polarCustomerId?: string, userId?: string) {
         loading,
         error,
         fetchCredits,
-        hasUnlimitedFreeModels,
         hasSufficientCredits,
         canUseModelAtCreditCost,
         canAccessPremiumModels,

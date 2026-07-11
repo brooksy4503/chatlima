@@ -69,7 +69,6 @@ export class AuthMiddleware {
                 isAnonymous,
                 hasSubscription,
                 subscriptionType,
-                hasUnlimitedFreeModels: false,
             };
         } catch (error) {
             console.error('[AuthMiddleware] Authentication error:', error);

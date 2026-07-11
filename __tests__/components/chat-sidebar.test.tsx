@@ -6,6 +6,7 @@ import { useSession } from '@/lib/auth-client';
 import { useChats } from '@/lib/hooks/use-chats';
 import { useMCP } from '@/lib/context/mcp-context';
 import { useWebSearch } from '@/lib/context/web-search-context';
+import { useImageGeneration } from '@/lib/context/image-generation-context';
 import { useClientMount } from '@/lib/hooks/use-client-mount';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useQueryClient, QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -32,6 +33,14 @@ jest.mock('@/lib/context/mcp-context', () => ({
 
 jest.mock('@/lib/context/web-search-context', () => ({
   useWebSearch: jest.fn(),
+}));
+
+jest.mock('@/lib/context/image-generation-context', () => ({
+  useImageGeneration: jest.fn(),
+}));
+
+jest.mock('@/lib/hooks/use-local-storage', () => ({
+  useLocalStorage: jest.fn((_key: string, defaultValue: unknown) => [defaultValue, jest.fn()]),
 }));
 
 jest.mock('@/lib/hooks/use-client-mount', () => ({
@@ -434,6 +443,7 @@ describe('ChatSidebar', () => {
         credits: 100,
         hasCredits: true,
         usedCredits: false,
+        subscriptionType: null,
         lastFetched: Date.now(),
       },
       error: null,
@@ -463,6 +473,17 @@ describe('ChatSidebar', () => {
       webSearchContextSize: 'medium',
       setWebSearchContextSize: jest.fn(),
       webSearchEnabled: true,
+    },
+    useImageGeneration: {
+      imageGenerationEnabled: false,
+      imageGenerationQuality: 'medium',
+      setImageGenerationQuality: jest.fn(),
+      imageGenerationAspectRatio: '1:1',
+      setImageGenerationAspectRatio: jest.fn(),
+      imageGenerationOutputFormat: 'png',
+      setImageGenerationOutputFormat: jest.fn(),
+      imageGenerationModel: 'openrouter/openai/gpt-5-image-mini',
+      setImageGenerationModel: jest.fn(),
     },
     useClientMount: true,
     useSidebar: {
@@ -519,6 +540,7 @@ describe('ChatSidebar', () => {
     (useChats as jest.Mock).mockReturnValue(defaultMocks.useChats);
     (useMCP as jest.Mock).mockReturnValue(defaultMocks.useMCP);
     (useWebSearch as jest.Mock).mockReturnValue(defaultMocks.useWebSearch);
+    (useImageGeneration as jest.Mock).mockReturnValue(defaultMocks.useImageGeneration);
     (useClientMount as jest.Mock).mockReturnValue(defaultMocks.useClientMount);
     (useSidebar as jest.Mock).mockReturnValue(defaultMocks.useSidebar);
     (useQueryClient as jest.Mock).mockReturnValue(defaultMocks.useQueryClient);

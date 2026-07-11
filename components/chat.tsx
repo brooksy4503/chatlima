@@ -30,7 +30,7 @@ import { ErrorBoundary } from "./error-boundary";
 import { useCredits } from "@/hooks/useCredits";
 import type { FileAttachment } from "@/lib/types";
 import { useModels } from "@/hooks/use-models";
-import { ChatTokenSummary } from "./token-metrics/ChatTokenSummary";
+import { useChatTokenMetrics } from "@/hooks/useChatTokenMetrics";
 import { getLocalStorageItem, isLocalStorageAvailable } from "@/lib/browser-storage";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -119,18 +119,6 @@ export default function Chat() {
   const [timeToFirstToken, setTimeToFirstToken] = useState<number | null>(null);
   const [tokensPerSecond, setTokensPerSecond] = useState<number | null>(null);
   const [totalDuration, setTotalDuration] = useState<number | null>(null);
-  
-  // Token usage state
-  const [chatTokenUsage, setChatTokenUsage] = useState<{
-    inputTokens?: number;
-    outputTokens?: number;
-    estimatedCost?: number;
-    currency?: string;
-    // NEW: Enhanced timing metrics for Phase 2
-    timeToFirstToken?: number;
-    tokensPerSecond?: number;
-    totalDuration?: number;
-  }>({});
 
   useEffect(() => {
     setIsMounted(true);
@@ -671,11 +659,6 @@ export default function Chat() {
   // Sync DB history into useChat when navigating to a chat, and re-sync when a refetch
   // returns richer assistant parts (tool/reasoning) after the server finishes persisting.
   const loadedChatIdRef = useRef<string | null>(null);
-  const tokenUsageRefetchKeyRef = useRef("");
-
-  useEffect(() => {
-    tokenUsageRefetchKeyRef.current = "";
-  }, [activeChatId]);
   useEffect(() => {
     if (!chatId || isLoadingChat) return;
     if (status === "streaming" || status === "submitted") return;
@@ -1099,101 +1082,24 @@ export default function Chat() {
     });
   }, [messages, webSearchEnabled, activePreset, isOpenRouterModel]);
 
-  // Fetch chat token usage data
-  const { data: chatTokenData, isLoading: isTokenDataLoading, error: tokenDataError, refetch: refetchTokenData } = useQuery({
-    queryKey: ['chat-token-usage', activeChatId],
-    queryFn: async ({ queryKey }) => {
-      const [_, chatIdFromKey] = queryKey;
-      if (!chatIdFromKey || !userId) return null;
-      
-      try {
-        const response = await fetch(`/api/token-usage?chatId=${chatIdFromKey}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to load token usage data');
-        }
-        
-        const data = await response.json();
-        return data.data;
-      } catch (error) {
-        console.error('Error loading chat token usage:', error);
-        throw error;
-      }
-    },
-    enabled: !!activeChatId && !!userId,
-    retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: false
+  const {
+    chatTokenUsage,
+    totalInputTokens,
+    totalOutputTokens,
+    totalTokens,
+    totalCreditsConsumed,
+    messageCount: chatMessageCount,
+    tokenDataError,
+    refetchTokenData,
+  } = useChatTokenMetrics({
+    activeChatId,
+    userId,
+    messages,
+    status,
+    timeToFirstToken,
+    tokensPerSecond,
+    totalDuration,
   });
-
-  // Update chat token usage when streaming
-  useEffect(() => {
-    if (status === "streaming" && messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === 'assistant') {
-        // Simulate real-time token updates during streaming
-        // In a real implementation, this would come from the streaming response
-        const outputContentLength = getUIMessageText(lastMessage).length;
-        let inputContentLength = 0;
-
-        if (messages.length > 1) {
-          inputContentLength = getUIMessageText(messages[messages.length - 2]).length;
-        }
-
-        const estimatedOutputTokens = Math.floor(outputContentLength / 4); // Rough estimate
-        const estimatedInputTokens = Math.floor(inputContentLength / 4);
-        
-        setChatTokenUsage({
-          inputTokens: estimatedInputTokens,
-          outputTokens: estimatedOutputTokens,
-          estimatedCost: (estimatedInputTokens + estimatedOutputTokens) * 0.000002, // Rough estimate
-          currency: 'USD',
-          // NEW: Enhanced timing metrics for Phase 2
-          timeToFirstToken: timeToFirstToken || undefined,
-          tokensPerSecond: tokensPerSecond || undefined,
-          totalDuration: totalDuration || undefined
-        });
-      }
-    } else if (status === "ready") {
-      if (chatTokenData) {
-        // When streaming is complete and we have actual data from the API
-        const inputTokens = chatTokenData.totalInputTokens || chatTokenData.inputTokens || 0;
-        const outputTokens = chatTokenData.totalOutputTokens || chatTokenData.outputTokens || 0;
-        const estimatedCost = chatTokenData.totalEstimatedCost || chatTokenData.estimatedCost || 0;
-        
-        setChatTokenUsage({
-          inputTokens,
-          outputTokens,
-          estimatedCost,
-          currency: chatTokenData.currency || 'USD',
-          timeToFirstToken: chatTokenData.avgTimeToFirstToken || timeToFirstToken || undefined,
-          tokensPerSecond: chatTokenData.avgTokensPerSecond || tokensPerSecond || undefined,
-          totalDuration: chatTokenData.avgTotalDuration || totalDuration || undefined
-        });
-      }
-
-      const totalTokens =
-        chatTokenData?.totalTokens ||
-        (chatTokenData?.totalInputTokens || 0) + (chatTokenData?.totalOutputTokens || 0);
-      const completedTurnKey = `${activeChatId ?? "new"}:${messages.length}`;
-
-      if (totalTokens > 0 || tokenUsageRefetchKeyRef.current === completedTurnKey) {
-        return;
-      }
-
-      tokenUsageRefetchKeyRef.current = completedTurnKey;
-      const refetchDelays = [300, 1200, 2500, 5000, 8000];
-      const refetchTimers = refetchDelays.map((refetchDelay) =>
-        window.setTimeout(() => {
-          refetchTokenData();
-          if (userId) {
-            queryClient.invalidateQueries({ queryKey: ['user-token-usage', userId] });
-          }
-        }, refetchDelay)
-      );
-      return () => refetchTimers.forEach((timer) => window.clearTimeout(timer));
-    }
-  }, [activeChatId, messages, status, chatTokenData, refetchTokenData, userId, queryClient, timeToFirstToken, tokensPerSecond, totalDuration, chatTokenData?.avgTimeToFirstToken, chatTokenData?.avgTokensPerSecond, chatTokenData?.avgTotalDuration]);
 
   // Manual recovery function
   const forceRecovery = useCallback(() => {
@@ -1391,28 +1297,23 @@ export default function Chat() {
             webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
             imageGenerationEnabled={imageGenerationEnabled && isOpenRouterModel}
             onAddToChat={setQuotedText}
+            activeChatId={activeChatId}
+            chatUsageSummary={
+              activeChatId && status === "ready"
+                ? {
+                    totalInputTokens,
+                    totalOutputTokens,
+                    totalTokens,
+                    totalCreditsConsumed,
+                    messageCount: chatMessageCount,
+                    error: tokenDataError?.message || null,
+                    onRefresh: refetchTokenData,
+                  }
+                : undefined
+            }
           />
         )}
       </div>
-
-      {/* Token Usage Summary - Only show when not streaming or submitted */}
-      {activeChatId && status === "ready" && (
-        <div className="mb-4">
-          <ChatTokenSummary
-            totalInputTokens={chatTokenData?.totalInputTokens || chatTokenUsage?.inputTokens || 0}
-            totalOutputTokens={chatTokenData?.totalOutputTokens || chatTokenUsage?.outputTokens || 0}
-            totalTokens={chatTokenData?.totalTokens || (chatTokenUsage?.inputTokens || 0) + (chatTokenUsage?.outputTokens || 0) || 0}
-            totalEstimatedCost={chatTokenData?.totalEstimatedCost || chatTokenUsage?.estimatedCost || 0}
-            totalActualCost={chatTokenData?.totalActualCost || 0}
-            messageCount={messages.length}
-            currency={chatTokenData?.currency || chatTokenUsage?.currency || 'USD'}
-            isLoading={false}
-            error={tokenDataError?.message || null}
-            onRefresh={refetchTokenData}
-            compact={true}
-          />
-        </div>
-      )}
 
       {/* Streaming Status */}
       <StreamingStatus />
@@ -1491,7 +1392,7 @@ export default function Chat() {
               <p className="flex items-center text-muted-foreground">
                 <Check className="mr-2 h-4 w-4 text-green-500" />
                 <MessageSquare className="mr-1.5 h-4 w-4" />
-                Monthly credits or yearly high-usage access. Message cost varies by model.
+                Monthly or yearly credits from Polar. Message cost varies by model.
               </p>
               <p className="flex items-center text-muted-foreground">
                 <Check className="mr-2 h-4 w-4 text-green-500" />

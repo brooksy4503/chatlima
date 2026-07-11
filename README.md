@@ -72,7 +72,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
   - Anonymous users: 10 messages/day
   - Free Google users: 20 messages/day
   - Monthly subscribers: ~1,000 credits/month; each message costs 1–30 credits depending on model
-  - Yearly subscribers: High annual usage allowance with full model catalog; actual message count depends on selected models
+  - Yearly subscribers: ~12,000 credits/year; each message costs 1–30 credits depending on model
 - **Enhanced Daily Message Tracking**: Tamper-proof daily message usage tracking that prevents limit bypass vulnerabilities
 - **Automated User Cleanup**: Intelligent system to remove inactive anonymous users for optimal database performance
 - **Admin Cleanup Dashboard**: Comprehensive interface with preview, configuration, and monitoring capabilities
@@ -84,7 +84,7 @@ This project is a fork of [scira-mcp-chat](https://github.com/zaidmukaddam/scira
 ### 💳 Billing & Payment System
 - **Flexible Subscription Plans**: Choose the plan that fits your usage pattern
   - **Monthly Plan ($9/month)**: ~1,000 credits per month with access to the full model catalog
-  - **Yearly Plan ($90/year)**: High annual usage allowance with the full model catalog; actual message count depends on selected models — save ~17% vs monthly
+  - **Yearly Plan ($90/year)**: ~12,000 credits per year with the full model catalog — save ~17% vs monthly
 - **Tiered Credit System**: Variable credit costs based on model pricing (shown as 1c–30c in the model picker)
   - **Economy (1 credit)**: Standard and OpenRouter `:free` models
   - **Standard (2 credits)**: Mid-tier frontier models

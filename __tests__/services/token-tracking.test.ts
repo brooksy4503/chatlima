@@ -907,6 +907,7 @@ describe('TokenTrackingService', () => {
                 totalTokens: 450,
                 totalEstimatedCost: 0.000375,
                 totalActualCost: 0.000375,
+                totalCreditsConsumed: 0,
                 messageCount: 2,
                 breakdownByMessage: expect.arrayContaining([
                     expect.objectContaining({
@@ -950,6 +951,7 @@ describe('TokenTrackingService', () => {
                 totalTokens: 0,
                 totalEstimatedCost: 0,
                 totalActualCost: 0,
+                totalCreditsConsumed: 0,
                 messageCount: 0,
                 breakdownByMessage: [],
             });
@@ -969,9 +971,53 @@ describe('TokenTrackingService', () => {
                 totalTokens: 0,
                 totalEstimatedCost: 0,
                 totalActualCost: 0,
+                totalCreditsConsumed: 0,
                 messageCount: 0,
                 breakdownByMessage: [],
             });
+        });
+
+        it('should sum creditsConsumed from metadata', async () => {
+            mockDb.query.tokenUsageMetrics.findMany.mockResolvedValue([
+                {
+                    id: 'record-1',
+                    userId: 'user123',
+                    chatId: 'chat456',
+                    messageId: 'msg789',
+                    modelId: 'gpt-4',
+                    provider: 'openai',
+                    inputTokens: 100,
+                    outputTokens: 50,
+                    totalTokens: 150,
+                    estimatedCost: '0.000125',
+                    actualCost: '0.000125',
+                    currency: 'USD',
+                    metadata: { creditsConsumed: 2 },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+                {
+                    id: 'record-2',
+                    userId: 'user123',
+                    chatId: 'chat456',
+                    messageId: 'msg790',
+                    modelId: 'gpt-4',
+                    provider: 'openai',
+                    inputTokens: 200,
+                    outputTokens: 100,
+                    totalTokens: 300,
+                    estimatedCost: '0.000250',
+                    actualCost: '0.000250',
+                    currency: 'USD',
+                    metadata: { creditsConsumed: 5 },
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ]);
+
+            const result = await TokenTrackingService.getChatTokenUsage('chat456', 'user123');
+
+            expect(result.totalCreditsConsumed).toBe(7);
         });
     });
 

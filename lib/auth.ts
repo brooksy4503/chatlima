@@ -6,7 +6,7 @@ import * as schema from './db/schema'; // Assuming your full Drizzle schema is e
 import { Polar } from '@polar-sh/sdk';
 import { polar as polarPlugin } from '@polar-sh/better-auth';
 import { count, eq, and, gte } from 'drizzle-orm';
-import { getRemainingCreditsByExternalId, hasUnlimitedFreeModels } from './polar';
+import { getRemainingCreditsByExternalId } from './polar';
 import { createRequestCreditCache } from './services/creditCache';
 
 // Dynamic Google OAuth configuration based on environment
@@ -271,7 +271,7 @@ export const auth = betterAuth({
                     },
                     ...(process.env.POLAR_PRODUCT_ID_YEARLY ? [{
                         productId: process.env.POLAR_PRODUCT_ID_YEARLY,
-                        slug: 'free-models-unlimited',
+                        slug: 'ai-usage-yearly',
                     }] : [])
                 ],
                 successUrl: process.env.SUCCESS_URL,
@@ -436,27 +436,7 @@ export async function checkMessageLimit(
     usedCredits?: boolean;
 }> {
     try {
-        // 1. Check for yearly subscription (unlimited free models) first
-        // Yearly subscribers don't need credits, so skip credit check for them
-        if (!isAnonymous) {
-            try {
-                const hasUnlimitedAccess = await hasUnlimitedFreeModels(userId);
-                if (hasUnlimitedAccess) {
-                    // Yearly subscribers get unlimited messages (very high limit for display)
-                    return {
-                        hasReachedLimit: false,
-                        limit: 999999, // Very high limit to indicate unlimited
-                        remaining: 999999,
-                        credits: null,
-                        usedCredits: false
-                    };
-                }
-            } catch (error) {
-                console.warn('Error checking unlimited free models access:', error);
-            }
-        }
-
-        // 2. Check Polar credits (for authenticated users only, and only if they don't have yearly subscription)
+        // 1. Check Polar credits (for authenticated users)
         if (!isAnonymous) {
             // Use cache if provided, otherwise fall back to original function
             const credits = creditCache

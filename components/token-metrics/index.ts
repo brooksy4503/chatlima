@@ -26,6 +26,8 @@ export {
     UsageLimitSummary
 } from "./UsageLimitIndicator";
 
+export { ChatUsageChip } from "./ChatUsageChip";
+
 // Types
 export type {
     UsageSummaryCardProps,

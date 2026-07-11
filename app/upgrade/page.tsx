@@ -202,7 +202,7 @@ function UpgradeContent() {
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start">
                   <MessageSquare className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <span className="text-card-foreground font-semibold">High annual usage allowance</span>
+                  <span className="text-card-foreground font-semibold">~12,000 credits per year</span>
                 </li>
                 <li className="flex items-start">
                   <Brain className="h-5 w-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" />
@@ -241,7 +241,7 @@ function UpgradeContent() {
                 </Button>
               ) : (
                 <Button
-                  onClick={() => handleCheckout('free-models-unlimited')}
+                  onClick={() => handleCheckout('ai-usage-yearly')}
                   className="w-full"
                   disabled={isLoading}
                 >

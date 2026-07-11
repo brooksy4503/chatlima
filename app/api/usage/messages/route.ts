@@ -70,7 +70,6 @@ export async function GET(req: Request) {
             // Check if user has a Polar subscription (from customer state)
             hasSubscription,
             subscriptionType,
-            hasUnlimitedFreeModels: false,
             // Include credit information
             credits,
             hasCredits,
