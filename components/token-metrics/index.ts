@@ -27,6 +27,7 @@ export {
 } from "./UsageLimitIndicator";
 
 export { ChatUsageChip } from "./ChatUsageChip";
+export type { ChatUsageChipProps } from "./ChatUsageChip";
 
 // Types
 export type {

@@ -3,17 +3,6 @@ import { Message } from "./message";
 import { SelectionAddToChatToolbar } from "./selection-add-to-chat-toolbar";
 import { useSelectionAddToChat } from "@/hooks/use-selection-add-to-chat";
 import { useScrollToBottom } from "@/lib/hooks/use-scroll-to-bottom";
-import { ChatUsageChip } from "./token-metrics/ChatUsageChip";
-
-export type ChatUsageSummaryProps = {
-  totalInputTokens: number;
-  totalOutputTokens: number;
-  totalTokens: number;
-  totalCreditsConsumed: number;
-  messageCount: number;
-  error?: string | null;
-  onRefresh?: () => void;
-};
 
 export const Messages = ({
   messages,
@@ -23,8 +12,6 @@ export const Messages = ({
   webSearchEnabled = false,
   imageGenerationEnabled = false,
   onAddToChat,
-  activeChatId,
-  chatUsageSummary,
 }: {
   messages: (UIMessage & { hasWebSearch?: boolean })[];
   isLoading: boolean;
@@ -41,8 +28,6 @@ export const Messages = ({
   };
   webSearchEnabled?: boolean;
   imageGenerationEnabled?: boolean;
-  activeChatId?: string | null;
-  chatUsageSummary?: ChatUsageSummaryProps;
 }) => {
   const lastMessage = messages[messages.length - 1];
   const lastMessageTextLength = lastMessage?.parts
@@ -59,9 +44,6 @@ export const Messages = ({
     containerRef,
     Boolean(onAddToChat)
   );
-
-  const showUsageChip =
-    Boolean(activeChatId && chatUsageSummary && status === "ready" && lastMessage?.role === "assistant");
 
   return (
     <>
@@ -85,9 +67,6 @@ export const Messages = ({
             imageGenerationEnabled={imageGenerationEnabled}
           />
         ))}
-        {showUsageChip && chatUsageSummary ? (
-          <ChatUsageChip {...chatUsageSummary} />
-        ) : null}
         <div className="h-1" ref={endRef} />
       </div>
     </div>

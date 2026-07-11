@@ -31,6 +31,7 @@ import { useCredits } from "@/hooks/useCredits";
 import type { FileAttachment } from "@/lib/types";
 import { useModels } from "@/hooks/use-models";
 import { useChatTokenMetrics } from "@/hooks/useChatTokenMetrics";
+import { ChatUsageChip } from "@/components/token-metrics/ChatUsageChip";
 import { getLocalStorageItem, isLocalStorageAvailable } from "@/lib/browser-storage";
 import { useLocalStorage } from "@/lib/hooks/use-local-storage";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -1101,6 +1102,20 @@ export default function Chat() {
     totalDuration,
   });
 
+  const lastMessageRole = enhancedMessages[enhancedMessages.length - 1]?.role;
+  const chatUsageChip =
+    activeChatId && status === "ready" && lastMessageRole === "assistant" ? (
+      <ChatUsageChip
+        totalInputTokens={totalInputTokens}
+        totalOutputTokens={totalOutputTokens}
+        totalTokens={totalTokens}
+        totalCreditsConsumed={totalCreditsConsumed}
+        messageCount={chatMessageCount}
+        error={tokenDataError?.message || null}
+        onRefresh={refetchTokenData}
+      />
+    ) : null;
+
   // Manual recovery function
   const forceRecovery = useCallback(() => {
     console.log('Manual recovery triggered by user');
@@ -1297,20 +1312,6 @@ export default function Chat() {
             webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
             imageGenerationEnabled={imageGenerationEnabled && isOpenRouterModel}
             onAddToChat={setQuotedText}
-            activeChatId={activeChatId}
-            chatUsageSummary={
-              activeChatId && status === "ready"
-                ? {
-                    totalInputTokens,
-                    totalOutputTokens,
-                    totalTokens,
-                    totalCreditsConsumed,
-                    messageCount: chatMessageCount,
-                    error: tokenDataError?.message || null,
-                    onRefresh: refetchTokenData,
-                  }
-                : undefined
-            }
           />
         )}
       </div>
@@ -1339,6 +1340,7 @@ export default function Chat() {
             onFilesChange={setSelectedFiles}
             quotedText={quotedText}
             onClearQuotedText={() => setQuotedText(null)}
+            usageChip={chatUsageChip}
             leadingActions={
               chatId && session?.user ? (
                 <ChatProjectSelector

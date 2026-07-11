@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { BarChart3, Coins, ChevronDown, ChevronUp } from "lucide-react";
 
-type ChatUsageChipProps = {
+export type ChatUsageChipProps = {
   totalInputTokens: number;
   totalOutputTokens: number;
   totalTokens: number;
@@ -39,7 +39,7 @@ export function ChatUsageChip({
 
   if (error) {
     return (
-      <div className={cn("text-xs text-red-500 px-1", className)}>
+      <div className={cn("text-xs text-red-500 px-1 shrink-0", className)}>
         Usage unavailable
         {onRefresh ? (
           <button
@@ -75,12 +75,13 @@ export function ChatUsageChip({
   );
 
   return (
-    <div className={cn("mt-2 ml-1", className)}>
+    <div className={cn("relative shrink-0", className)}>
       <button
         type="button"
         onClick={() => setExpanded((open) => !open)}
         className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted/70 transition-colors"
         aria-expanded={expanded}
+        aria-label="Chat usage"
       >
         <span className="inline-flex items-center gap-2">{collapsedParts}</span>
         {expanded ? (
@@ -91,8 +92,10 @@ export function ChatUsageChip({
       </button>
 
       {expanded ? (
-        <div className="mt-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground space-y-1">
-          <div>In {formatNumber(totalInputTokens)} → Out {formatNumber(totalOutputTokens)}</div>
+        <div className="absolute bottom-full left-0 mb-2 z-20 min-w-[11rem] rounded-lg border border-border/60 bg-popover px-3 py-2 text-xs text-muted-foreground space-y-1">
+          <div>
+            In {formatNumber(totalInputTokens)} → Out {formatNumber(totalOutputTokens)}
+          </div>
           {totalCreditsConsumed > 0 ? (
             <div>Credits this chat: {totalCreditsConsumed}</div>
           ) : null}
