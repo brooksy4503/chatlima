@@ -405,35 +405,6 @@ export const dailyTokenUsage = pgTable('daily_token_usage', {
   userDateProviderIdx: index('idx_daily_token_usage_user_date_provider').on(table.userId, table.date, table.provider),
 }));
 
-// --- Usage Limits Schema ---
-
-export const usageLimits = pgTable('usage_limits', {
-  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
-  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), // null for global limits
-  modelId: text('model_id'), // null for user-specific limits
-  provider: text('provider'), // null for user-specific limits
-  dailyTokenLimit: integer('daily_token_limit').notNull(),
-  monthlyTokenLimit: integer('monthly_token_limit').notNull(),
-  dailyCostLimit: numeric('daily_cost_limit', { precision: 10, scale: 2 }).notNull(),
-  monthlyCostLimit: numeric('monthly_cost_limit', { precision: 10, scale: 2 }).notNull(),
-  requestRateLimit: integer('request_rate_limit').default(60).notNull(), // requests per minute
-  currency: text('currency').default('USD').notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
-  description: text('description'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  // Constraints
-  checkLimitsPositive: check('check_usage_limits_positive', sql`${table.dailyTokenLimit} >= 0 AND ${table.monthlyTokenLimit} >= 0 AND ${table.dailyCostLimit} >= 0 AND ${table.monthlyCostLimit} >= 0 AND ${table.requestRateLimit} >= 1`),
-  checkUserOrModel: check('check_usage_limits_user_or_model', sql`(${table.userId} IS NOT NULL) OR (${table.modelId} IS NOT NULL AND ${table.provider} IS NOT NULL)`),
-  // Indexes
-  userIdIdx: index('idx_usage_limits_user_id').on(table.userId),
-  modelIdIdx: index('idx_usage_limits_model_id').on(table.modelId),
-  providerIdx: index('idx_usage_limits_provider').on(table.provider),
-  isActiveIdx: index('idx_usage_limits_is_active').on(table.isActive),
-  createdAtIdx: index('idx_usage_limits_created_at').on(table.createdAt),
-}));
-
 // Token usage metrics types
 export type TokenUsageMetrics = typeof tokenUsageMetrics.$inferSelect;
 export type TokenUsageMetricsInsert = typeof tokenUsageMetrics.$inferInsert;
@@ -441,8 +412,6 @@ export type ModelPricing = typeof modelPricing.$inferSelect;
 export type ModelPricingInsert = typeof modelPricing.$inferInsert;
 export type DailyTokenUsage = typeof dailyTokenUsage.$inferSelect;
 export type DailyTokenUsageInsert = typeof dailyTokenUsage.$inferInsert;
-export type UsageLimit = typeof usageLimits.$inferSelect;
-export type UsageLimitInsert = typeof usageLimits.$inferInsert;
 
 // --- Cleanup System Schema ---
 
@@ -479,35 +448,9 @@ export const cleanupExecutionLogs = pgTable('cleanup_execution_logs', {
   executedAtStatusIdx: index('idx_cleanup_execution_logs_executed_at_status').on(table.executedAt, table.status),
 }));
 
-export const cleanupConfig = pgTable('cleanup_config', {
-  id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
-  enabled: boolean('enabled').default(false).notNull(),
-  // Schedule is now controlled by vercel.json, not database
-  thresholdDays: integer('threshold_days').default(45).notNull(),
-  batchSize: integer('batch_size').default(50).notNull(),
-  notificationEnabled: boolean('notification_enabled').default(true).notNull(),
-  webhookUrl: text('webhook_url'),
-  emailEnabled: boolean('email_enabled').default(false).notNull(),
-  lastModified: timestamp('last_modified').defaultNow().notNull(),
-  modifiedBy: text('modified_by'),
-  modifiedByUserId: text('modified_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  // Constraints - ensure only one configuration record exists
-  singletonConfig: unique('cleanup_config_singleton').on(table.id),
-  checkThresholdDays: check('check_cleanup_config_threshold_days', sql`${table.thresholdDays} >= 7 AND ${table.thresholdDays} <= 365`),
-  checkBatchSize: check('check_cleanup_config_batch_size', sql`${table.batchSize} >= 1 AND ${table.batchSize} <= 100`),
-  // Indexes
-  enabledIdx: index('idx_cleanup_config_enabled').on(table.enabled),
-  lastModifiedIdx: index('idx_cleanup_config_last_modified').on(table.lastModified),
-}));
-
 // Cleanup system types
 export type CleanupExecutionLog = typeof cleanupExecutionLogs.$inferSelect;
 export type CleanupExecutionLogInsert = typeof cleanupExecutionLogs.$inferInsert;
-export type CleanupConfig = typeof cleanupConfig.$inferSelect;
-export type CleanupConfigInsert = typeof cleanupConfig.$inferInsert;
 
 // --- Daily Message Usage Tracking Schema ---
 
