@@ -269,16 +269,16 @@ describe('getRelatedModels', () => {
 describe('getPrebuiltComparisonSlug', () => {
   it('returns a slug for a known comparison pair', () => {
     const slug = getPrebuiltComparisonSlug(
-      'openai/gpt-5.2-pro',
-      'anthropic/claude-opus-4.6'
+      'anthropic/claude-fable-5',
+      'openai/gpt-5.6-sol-pro'
     );
     expect(slug).not.toBeNull();
     expect(slug).toContain('-vs-');
   });
 
   it('finds the comparison regardless of argument order', () => {
-    const slug1 = getPrebuiltComparisonSlug('openai/gpt-5.2-pro', 'anthropic/claude-opus-4.6');
-    const slug2 = getPrebuiltComparisonSlug('anthropic/claude-opus-4.6', 'openai/gpt-5.2-pro');
+    const slug1 = getPrebuiltComparisonSlug('anthropic/claude-fable-5', 'openai/gpt-5.6-sol-pro');
+    const slug2 = getPrebuiltComparisonSlug('openai/gpt-5.6-sol-pro', 'anthropic/claude-fable-5');
     expect(slug1).toBe(slug2);
   });
 

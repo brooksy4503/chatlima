@@ -639,6 +639,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 - Dynamic model pages at `/model/[slug]`
 - Model detail chat CTAs deep-link to `/chat?model=<modelId>`
 - Model comparison at `/compare/[slug]` with **model-specific** titles/descriptions (`{Model A} vs {Model B}: Pricing, Specs & Context`)
+- Prebuilt comparison pairs in `lib/models/model-priority.ts` (`PREBUILT_COMPARISONS`) are curated from Artificial Analysis intelligence rankings and OpenRouter availability (frontier + open-weight models); refreshed periodically; OpenRouter provider IDs only (`provider/model`, not Requesty)
 - Homepage brand-forward title/H1 (`ChatLima — …`) and meta that distinguish the product from geographic “Lima” queries
 - Shared helpers in `lib/seo/page-metadata.ts` and `lib/models/resolve-model.ts`
 - Auto-generated sitemap

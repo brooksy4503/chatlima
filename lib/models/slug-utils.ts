@@ -69,6 +69,8 @@ export function slugToModelId(slug: string): string {
     'meta-llama': 'meta-llama',
     'deepseek': 'deepseek',
     'bytedance-seed': 'bytedance-seed',
+    'moonshotai': 'moonshotai',
+    'qwen': 'qwen',
   };
 
   // Try multi-word providers first (e.g., x-ai, meta-llama)
