@@ -95,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const lastFetchedRef = useRef<number | null>(null);
   const lastUserIdRef = useRef<string | null>(null);
+  const usageRetryTimeoutRef = useRef<number | null>(null);
 
   // Centralized usage data fetching with proper caching
   const fetchUsageData = useCallback(async (userId: string) => {
@@ -211,11 +212,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Wrapper for refetchUsage that uses current userId
   const refetchUsage = useCallback(async () => {
-    if (session?.user?.id) {
-      // Force fetch by clearing the cache
-      lastFetchedRef.current = null;
-      await fetchUsageData(session.user.id);
+    if (!session?.user?.id) return;
+    const userId = session.user.id;
+
+    if (usageRetryTimeoutRef.current != null) {
+      window.clearTimeout(usageRetryTimeoutRef.current);
+      usageRetryTimeoutRef.current = null;
     }
+
+    lastFetchedRef.current = null;
+    await fetchUsageData(userId);
+
+    // ponytail: Polar meter lags event ingest; one delayed refetch covers stale first read
+    usageRetryTimeoutRef.current = window.setTimeout(() => {
+      usageRetryTimeoutRef.current = null;
+      if (lastUserIdRef.current !== userId) return;
+      lastFetchedRef.current = null;
+      void fetchUsageData(userId);
+    }, 2500);
   }, [session?.user?.id, fetchUsageData]);
 
   const value: AuthContextType = {
