@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { UIMessage } from "ai";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUIMessageText } from "@/lib/message-utils";
+import { USAGE_MESSAGES_QUERY_KEY } from "@/lib/context/auth-context";
 
 export type ChatTokenUsageState = {
   inputTokens?: number;
@@ -50,9 +51,11 @@ export function useChatTokenMetrics({
 }: UseChatTokenMetricsParams) {
   const queryClient = useQueryClient();
   const tokenUsageRefetchKeyRef = useRef("");
+  const prevChatCreditsConsumedRef = useRef<number | null>(null);
 
   useEffect(() => {
     tokenUsageRefetchKeyRef.current = "";
+    prevChatCreditsConsumedRef.current = null;
   }, [activeChatId]);
 
   const [chatTokenUsage, setChatTokenUsage] = useState<ChatTokenUsageState>({});
@@ -80,6 +83,58 @@ export function useChatTokenMetrics({
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
+
+  const turnBaselineQueryKey = activeChatId
+    ? (["chat-credits-turn-baseline", activeChatId] as const)
+    : null;
+
+  // Persist baseline in query cache so new-chat router.push remounts don't lose it.
+  useEffect(() => {
+    if (!turnBaselineQueryKey) return;
+    if (status !== "submitted" && status !== "streaming") return;
+    if (queryClient.getQueryData(turnBaselineQueryKey) !== undefined) return;
+
+    const baseline =
+      prevChatCreditsConsumedRef.current ??
+      chatTokenData?.totalCreditsConsumed ??
+      0;
+    queryClient.setQueryData(turnBaselineQueryKey, baseline);
+  }, [status, chatTokenData?.totalCreditsConsumed, activeChatId, userId, queryClient, turnBaselineQueryKey]);
+
+  // Polar meter lags local credit writes; decrement sidebar usage as soon as chat totals land.
+  useEffect(() => {
+    const next = chatTokenData?.totalCreditsConsumed;
+    if (typeof next !== "number" || !userId || !activeChatId) return;
+
+    const baseline = turnBaselineQueryKey
+      ? queryClient.getQueryData<number>(turnBaselineQueryKey)
+      : undefined;
+    const prev = prevChatCreditsConsumedRef.current;
+    const deltaFromBaseline =
+      typeof baseline === "number" ? next - baseline : null;
+    const deltaFromPrev = prev !== null ? next - prev : null;
+    const delta =
+      deltaFromBaseline !== null && deltaFromBaseline > 0
+        ? deltaFromBaseline
+        : deltaFromPrev !== null && deltaFromPrev > 0
+          ? deltaFromPrev
+          : 0;
+
+    if (delta > 0) {
+      queryClient.setQueryData(
+        [USAGE_MESSAGES_QUERY_KEY, userId],
+        (old: { credits?: number } | undefined) => {
+          if (!old || typeof old.credits !== "number") return old;
+          return { ...old, credits: Math.max(0, old.credits - delta) };
+        },
+      );
+      if (turnBaselineQueryKey) {
+        queryClient.removeQueries({ queryKey: [...turnBaselineQueryKey] });
+      }
+    }
+
+    prevChatCreditsConsumedRef.current = next;
+  }, [chatTokenData?.totalCreditsConsumed, userId, activeChatId, queryClient, turnBaselineQueryKey]);
 
   useEffect(() => {
     if (status === "streaming" && messages.length > 0) {

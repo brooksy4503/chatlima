@@ -107,7 +107,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to fetch usage data');
       }
-      return response.json();
+      const json = await response.json();
+      // Polar meter lags event ingest; keep optimistic lower remaining until Polar catches up.
+      // Large jumps upward (credit grant / period reset) still take the server value.
+      const existing = queryClient.getQueryData([USAGE_MESSAGES_QUERY_KEY, userId]) as
+        | { credits?: number }
+        | undefined;
+      const serverCredits = typeof json.credits === 'number' ? json.credits : 0;
+      const cachedCredits = existing?.credits;
+      const mergedCredits =
+        typeof cachedCredits === 'number' && !(serverCredits > cachedCredits + 10)
+          ? Math.min(serverCredits, cachedCredits)
+          : serverCredits;
+      return { ...json, credits: mergedCredits };
     },
     enabled: Boolean(userId) && !isPending,
     staleTime: 0,
