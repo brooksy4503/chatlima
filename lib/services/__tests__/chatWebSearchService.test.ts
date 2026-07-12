@@ -513,7 +513,13 @@ describe('ChatWebSearchService', () => {
             expect(ChatWebSearchService.countWebSearchInvocations(steps)).toBe(1);
         });
 
-        it('reads server_tool_use metadata when step tool calls are absent', () => {
+        it('reads server_tool_use_details from OpenRouter usage.raw', () => {
+            expect(ChatWebSearchService.getServerToolWebSearchRequests({
+                raw: { server_tool_use_details: { web_search_requests: 2 } },
+            })).toBe(2);
+        });
+
+        it('still accepts legacy server_tool_use shape', () => {
             expect(ChatWebSearchService.getServerToolWebSearchRequests({
                 raw: { server_tool_use: { web_search_requests: 2 } },
             })).toBe(2);
@@ -522,7 +528,7 @@ describe('ChatWebSearchService', () => {
         it('resolves invocation count from server metadata', () => {
             const count = ChatWebSearchService.resolveWebSearchInvocationCount({
                 steps: [],
-                usage: { raw: { server_tool_use: { web_search_requests: 3 } } },
+                usage: { raw: { server_tool_use_details: { web_search_requests: 3 } } },
             });
 
             expect(count).toBe(3);
@@ -543,7 +549,7 @@ describe('ChatWebSearchService', () => {
                 isUsingOwnApiKeys: false,
                 shouldDeductCredits: true,
                 steps: [],
-                usage: { raw: { server_tool_use: { web_search_requests: 2 } } },
+                usage: { raw: { server_tool_use_details: { web_search_requests: 2 } } },
             });
 
             expect(cost).toBe(WEB_SEARCH_COST * 2);

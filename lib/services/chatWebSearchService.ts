@@ -55,24 +55,26 @@ type StepLike = {
     usage?: UsageLike | null;
 };
 
+type ServerToolUseLike = {
+    web_search_requests?: number;
+};
+
 type UsageLike = {
     raw?: {
-        server_tool_use?: {
-            web_search_requests?: number;
-        };
+        // OpenRouter agentic streams use server_tool_use_details; keep server_tool_use for older shapes.
+        server_tool_use_details?: ServerToolUseLike;
+        server_tool_use?: ServerToolUseLike;
     };
-    server_tool_use?: {
-        web_search_requests?: number;
-    };
+    server_tool_use_details?: ServerToolUseLike;
+    server_tool_use?: ServerToolUseLike;
 };
 
 type OpenRouterGenerationLike = {
     usage_web?: number | null;
     num_search_results?: number | null;
     web_search_engine?: string | null;
-    server_tool_use?: {
-        web_search_requests?: number;
-    };
+    server_tool_use_details?: ServerToolUseLike;
+    server_tool_use?: ServerToolUseLike;
 };
 
 export type ResolveWebSearchInvocationCountParams = {
@@ -219,16 +221,18 @@ export class ChatWebSearchService {
      * OpenRouter native server search reports usage here when tool-call stream events are absent.
      */
     static getServerToolWebSearchRequests(usage: UsageLike | null | undefined): number {
-        const fromRaw = usage?.raw?.server_tool_use?.web_search_requests;
-        if (typeof fromRaw === 'number' && fromRaw > 0) {
-            return fromRaw;
+        // ponytail: OpenRouter agentic usage.raw.server_tool_use_details (not server_tool_use)
+        const candidates = [
+            usage?.raw?.server_tool_use_details?.web_search_requests,
+            usage?.raw?.server_tool_use?.web_search_requests,
+            usage?.server_tool_use_details?.web_search_requests,
+            usage?.server_tool_use?.web_search_requests,
+        ];
+        for (const value of candidates) {
+            if (typeof value === 'number' && value > 0) {
+                return value;
+            }
         }
-
-        const fromUsage = usage?.server_tool_use?.web_search_requests;
-        if (typeof fromUsage === 'number' && fromUsage > 0) {
-            return fromUsage;
-        }
-
         return 0;
     }
 
