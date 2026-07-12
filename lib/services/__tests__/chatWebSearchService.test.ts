@@ -13,9 +13,17 @@ jest.mock('@/lib/utils/performantLogging', () => ({
     logDiagnostic: jest.fn()
 }));
 
+jest.mock('@/lib/services/openrouterCostTracker', () => ({
+    OpenRouterCostTracker: {
+        fetchActualCost: jest.fn(),
+        extractGenerationId: jest.fn(),
+    },
+}));
+
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
+import { OpenRouterCostTracker } from '@/lib/services/openrouterCostTracker';
 
 describe('ChatWebSearchService', () => {
     const mockGetModelDetails = getModelDetails as jest.MockedFunction<typeof getModelDetails>;
@@ -539,6 +547,99 @@ describe('ChatWebSearchService', () => {
             });
 
             expect(cost).toBe(WEB_SEARCH_COST * 2);
+        });
+
+        it('counts tool calls that use name instead of toolName', () => {
+            expect(
+                ChatWebSearchService.countWebSearchToolCalls([
+                    { name: 'openrouter:web_search' },
+                    { function: { name: 'web_search' } },
+                ])
+            ).toBe(2);
+        });
+
+        it('counts UI message tool parts', () => {
+            expect(
+                ChatWebSearchService.countWebSearchMessageParts([
+                    { type: 'tool-web_search', toolCallId: '1', state: 'output-available', input: {}, output: {} },
+                    { type: 'text', text: 'hi' },
+                ] as never)
+            ).toBe(1);
+        });
+
+        it('detects billed OpenRouter generation web usage as at least one search', () => {
+            expect(
+                ChatWebSearchService.countWebSearchFromOpenRouterGeneration({
+                    usage_web: 0.01,
+                    num_search_results: 10,
+                    web_search_engine: 'exa',
+                })
+            ).toBe(1);
+        });
+
+        it('uses OpenRouter generation fallback when stream metadata is empty', () => {
+            const count = ChatWebSearchService.resolveWebSearchInvocationCount({
+                steps: [],
+                usage: null,
+                openRouterGenerations: [
+                    { usage_web: null, num_search_results: null },
+                    { usage_web: 0.01, num_search_results: 10, web_search_engine: 'exa' },
+                ],
+            });
+
+            expect(count).toBe(1);
+            expect(
+                ChatWebSearchService.computeWebSearchCreditCost({
+                    webSearchEnabled: true,
+                    useAgenticServerTools: true,
+                    isUsingOwnApiKeys: false,
+                    shouldDeductCredits: true,
+                    invocationCount: count,
+                })
+            ).toBe(WEB_SEARCH_COST);
+        });
+
+        it('fetches OpenRouter generations when sync detection is empty', async () => {
+            const fetchActualCost = OpenRouterCostTracker.fetchActualCost as jest.MockedFunction<
+                typeof OpenRouterCostTracker.fetchActualCost
+            >;
+            fetchActualCost.mockResolvedValue({
+                actualCost: 0.012,
+                nativeInputTokens: 100,
+                nativeOutputTokens: 50,
+                generationData: {
+                    usage_web: 0.01,
+                    num_search_results: 10,
+                    web_search_engine: 'exa',
+                },
+            });
+
+            const count = await ChatWebSearchService.resolveWebSearchInvocationCountWithFallback({
+                steps: [{ response: { id: 'gen-1783834083-H1TVZSu8E8FYuHpUWrEm' } }],
+                usage: null,
+                enableOpenRouterFallback: true,
+            });
+
+            expect(fetchActualCost).toHaveBeenCalledWith(
+                'gen-1783834083-H1TVZSu8E8FYuHpUWrEm',
+                undefined
+            );
+            expect(count).toBe(1);
+        });
+
+        it('collects generation ids from steps and response', () => {
+            expect(
+                ChatWebSearchService.collectOpenRouterGenerationIds({
+                    steps: [
+                        { response: { id: 'gen-1' } },
+                        { response: { id: 'gen-2' } },
+                    ],
+                    response: {
+                        id: 'not-a-gen-id',
+                        body: { id: 'gen-2', generation_id: 'gen-3' },
+                    },
+                })
+            ).toEqual(['gen-1', 'gen-2', 'gen-3']);
         });
     });
 });

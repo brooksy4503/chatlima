@@ -104,12 +104,52 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
     uiResponseMessage: null as UIMessage | null,
     streamFinishEvent: null as Record<string, unknown> | null,
     streamFinishResponse: null as OpenRouterStreamResponse | null,
+    /** Resolved once per stream for persist + billing (includes OR generation fallback). */
+    webSearchInvocationCount: null as number | null,
   };
 
   let persistInFlight: Promise<void> = Promise.resolve();
   let timeToFirstTokenMs: number | null = null;
   let streamingStartTime: Date | null = null;
   let tokensPerSecond: number | null = null;
+
+  const resolveWebSearchInvocationCount = async (opts?: {
+    enableOpenRouterFallback?: boolean;
+  }): Promise<number> => {
+    if (state.webSearchInvocationCount !== null) {
+      return state.webSearchInvocationCount;
+    }
+
+    const event = state.streamFinishEvent;
+    const response = state.streamFinishResponse;
+    if (!event) {
+      return 0;
+    }
+
+    const isUsingOwnApiKeys = hasProviderByokForModel(selectedModel, apiKeys);
+    const count = await ChatWebSearchService.resolveWebSearchInvocationCountWithFallback({
+      steps: event.steps as Parameters<
+        typeof ChatWebSearchService.resolveWebSearchInvocationCountWithFallback
+      >[0]['steps'],
+      toolCalls: event.toolCalls as Parameters<
+        typeof ChatWebSearchService.resolveWebSearchInvocationCountWithFallback
+      >[0]['toolCalls'],
+      parts: state.uiResponseMessage?.parts,
+      usage: event.usage as Parameters<
+        typeof ChatWebSearchService.resolveWebSearchInvocationCountWithFallback
+      >[0]['usage'],
+      response,
+      apiKeyOverride: apiKeys?.OPENROUTER_API_KEY,
+      enableOpenRouterFallback:
+        opts?.enableOpenRouterFallback === true &&
+        plan.webSearchConfig.enabled &&
+        plan.webSearchConfig.useAgenticServerTools &&
+        !isUsingOwnApiKeys,
+    });
+
+    state.webSearchInvocationCount = count;
+    return count;
+  };
 
   const persistAssistantMessages = async (
     source: 'ui' | 'stream',
@@ -164,23 +204,12 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
         }
 
         const webSearchInvocationCount = event
-          ? ChatWebSearchService.resolveWebSearchInvocationCount({
-              steps: event.steps as Parameters<
-                typeof ChatWebSearchService.resolveWebSearchInvocationCount
-              >[0]['steps'],
-              usage: event.usage as Parameters<
-                typeof ChatWebSearchService.resolveWebSearchInvocationCount
-              >[0]['usage'],
-            })
+          ? await resolveWebSearchInvocationCount({ enableOpenRouterFallback: true })
           : 0;
         const webSearchWasUsed = event
           ? ChatWebSearchService.messageUsedWebSearch({
-              steps: event.steps as Parameters<
-                typeof ChatWebSearchService.messageUsedWebSearch
-              >[0]['steps'],
-              usage: event.usage as Parameters<
-                typeof ChatWebSearchService.messageUsedWebSearch
-              >[0]['usage'],
+              invocationCount: webSearchInvocationCount,
+              parts: uiMsg?.parts ?? state.uiResponseMessage?.parts,
               hasCitationAnnotations: (response?.annotations?.length || 0) > 0,
             })
           : false;
@@ -318,19 +347,16 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
 
     let additionalCost = 0;
     if (shouldDeductCredits) {
+      const webSearchInvocationCount = await resolveWebSearchInvocationCount({
+        enableOpenRouterFallback: true,
+      });
       additionalCost =
         ChatWebSearchService.computeWebSearchCreditCost({
           webSearchEnabled: plan.webSearchConfig.enabled,
           useAgenticServerTools: plan.webSearchConfig.useAgenticServerTools,
           isUsingOwnApiKeys,
           shouldDeductCredits,
-          steps: event.steps as Parameters<
-            typeof ChatWebSearchService.computeWebSearchCreditCost
-          >[0]['steps'],
-          usage: event.usage as Parameters<
-            typeof ChatWebSearchService.computeWebSearchCreditCost
-          >[0]['usage'],
-          hasCitationAnnotations: (response.annotations?.length || 0) > 0,
+          invocationCount: webSearchInvocationCount,
         }) +
         ChatImageGenerationService.computeImageGenerationCreditCost({
           imageGenerationEnabled: plan.imageGenerationConfig.enabled,

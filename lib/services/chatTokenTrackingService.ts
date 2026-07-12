@@ -183,8 +183,23 @@ export class ChatTokenTrackingService {
      */
     private static extractGenerationId(response: LanguageModelResponseMetadata, provider: string): string | undefined {
         if (provider === 'openrouter') {
-            const typedResponse = response as any;
-            return typedResponse.id || typedResponse.generation_id || typedResponse.generationId;
+            const typedResponse = response as {
+                id?: string;
+                generation_id?: string;
+                generationId?: string;
+                body?: { id?: string; generation_id?: string; generationId?: string };
+            };
+            const candidates = [
+                typedResponse.body?.id,
+                typedResponse.body?.generation_id,
+                typedResponse.body?.generationId,
+                typedResponse.id,
+                typedResponse.generation_id,
+                typedResponse.generationId,
+            ].filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+            // Prefer canonical OpenRouter generation ids when present.
+            return candidates.find((id) => id.startsWith('gen-')) || candidates[0];
         }
         return undefined;
     }

@@ -46,7 +46,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { hasProviderByokForModel } from "@/lib/services/accessGateService";
-import { getUIMessageText } from "@/lib/message-utils";
+import { getUIMessageText, isWebSearchToolPart } from "@/lib/message-utils";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
 
 type ChatUIMessage = CompareUIMessage;
@@ -1056,31 +1056,21 @@ export default function Chat() {
 
   const isOpenRouterModel = effectiveModel.startsWith("openrouter/");
 
-  // Enhance messages with hasWebSearch property for assistant messages when web search was enabled
+  // Enhance messages with hasWebSearch only from server/tool evidence (not toggle alone).
+  // Client-side "toggle was on" used to force true and show a fake completed search card.
   const enhancedMessages = useMemo(() => {
-    const effectiveWebSearchEnabled = activePreset?.webSearchEnabled ?? webSearchEnabled;
-    
-    return messages.map((message, index) => {
-      let enhancedMessage = { ...message };
-      
-      // Check if this is an assistant message and if web search was enabled for the preceding user message
-      if (message.role === 'assistant' && index > 0) {
-        const previousMessage = messages[index - 1];
-        // If the previous message was from user and web search was enabled, mark this assistant message
-        if (previousMessage.role === 'user' && effectiveWebSearchEnabled && isOpenRouterModel) {
-          enhancedMessage = {
-            ...enhancedMessage,
-            hasWebSearch: true
-          } as any;
-        }
-      }
-      
+    return messages.map((message) => {
+      const hasWebSearchFromParts = message.parts?.some((part) =>
+        isWebSearchToolPart(part as UIMessage['parts'][number])
+      );
+
       return {
-        ...enhancedMessage,
-        hasWebSearch: (enhancedMessage as ChatUIMessage).hasWebSearch || false
+        ...message,
+        hasWebSearch:
+          (message as ChatUIMessage).hasWebSearch === true || hasWebSearchFromParts === true,
       } as ChatUIMessage;
     });
-  }, [messages, webSearchEnabled, activePreset, isOpenRouterModel]);
+  }, [messages]);
 
   const {
     chatTokenUsage,

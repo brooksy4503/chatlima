@@ -1,5 +1,8 @@
 import type { OpenRouterProvider } from '@openrouter/ai-sdk-provider';
+import type { UIMessage } from 'ai';
 import type { ModelInfo } from '@/lib/types/models';
+import { isWebSearchToolPart } from '@/lib/message-utils';
+import { OpenRouterCostTracker } from '@/lib/services/openrouterCostTracker';
 import { WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 
@@ -34,7 +37,23 @@ export interface OpenRouterServerToolsConfig {
     maxTotalResults?: number;
 }
 
-type ToolCallLike = { toolName?: string; toolCallId?: string };
+type ToolCallLike = {
+    toolName?: string;
+    name?: string;
+    tool?: string;
+    toolCallId?: string;
+    type?: string;
+    function?: { name?: string };
+};
+
+type StepLike = {
+    toolCalls?: ToolCallLike[];
+    staticToolCalls?: ToolCallLike[];
+    dynamicToolCalls?: ToolCallLike[];
+    content?: Array<{ type?: string; toolName?: string; name?: string }>;
+    response?: { id?: string };
+    usage?: UsageLike | null;
+};
 
 type UsageLike = {
     raw?: {
@@ -45,6 +64,23 @@ type UsageLike = {
     server_tool_use?: {
         web_search_requests?: number;
     };
+};
+
+type OpenRouterGenerationLike = {
+    usage_web?: number | null;
+    num_search_results?: number | null;
+    web_search_engine?: string | null;
+    server_tool_use?: {
+        web_search_requests?: number;
+    };
+};
+
+export type ResolveWebSearchInvocationCountParams = {
+    steps?: StepLike[];
+    toolCalls?: ToolCallLike[];
+    parts?: UIMessage['parts'];
+    usage?: UsageLike | null;
+    openRouterGenerations?: Array<OpenRouterGenerationLike | null | undefined>;
 };
 
 export class ChatWebSearchService {
@@ -156,10 +192,26 @@ export class ChatWebSearchService {
     static isWebSearchToolName(toolName: string): boolean {
         return (
             toolName === 'web_search' ||
+            toolName === 'web_search_exa' ||
             toolName === 'openrouter.web_search' ||
             toolName === 'openrouter:web_search' ||
             toolName.endsWith('.web_search') ||
             toolName.endsWith(':web_search')
+        );
+    }
+
+    /** Normalize tool-call name across AI SDK / provider shapes. */
+    static getToolCallName(call: ToolCallLike | null | undefined): string {
+        if (!call) {
+            return '';
+        }
+
+        return (
+            call.toolName ||
+            call.name ||
+            call.tool ||
+            call.function?.name ||
+            ''
         );
     }
 
@@ -180,45 +232,263 @@ export class ChatWebSearchService {
         return 0;
     }
 
+    static countWebSearchToolCalls(toolCalls: ToolCallLike[] | undefined): number {
+        if (!toolCalls?.length) {
+            return 0;
+        }
+
+        let count = 0;
+        for (const call of toolCalls) {
+            if (this.isWebSearchToolName(this.getToolCallName(call))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** Count unique web_search calls on a single step (avoids double-counting aliases). */
+    static countWebSearchInvocationsOnStep(step: StepLike): number {
+        const seen = new Set<string>();
+        let fromCalls = 0;
+
+        const consider = (calls: ToolCallLike[] | undefined) => {
+            for (const call of calls ?? []) {
+                const name = this.getToolCallName(call);
+                if (!this.isWebSearchToolName(name)) {
+                    continue;
+                }
+                const key = call.toolCallId || name;
+                if (seen.has(key)) {
+                    continue;
+                }
+                seen.add(key);
+                fromCalls++;
+            }
+        };
+
+        consider(step.toolCalls);
+        consider(step.staticToolCalls);
+        consider(step.dynamicToolCalls);
+
+        for (const part of step.content ?? []) {
+            if (part.type !== 'tool-call' && part.type !== 'tool-result') {
+                continue;
+            }
+            const name = this.getToolCallName(part);
+            if (!this.isWebSearchToolName(name)) {
+                continue;
+            }
+            const key = name;
+            if (seen.has(key)) {
+                continue;
+            }
+            seen.add(key);
+            fromCalls++;
+        }
+
+        return Math.max(fromCalls, this.getServerToolWebSearchRequests(step.usage));
+    }
+
     /**
      * Count web_search tool invocations across multi-step generations.
      */
-    static countWebSearchInvocations(steps: Array<{ toolCalls?: ToolCallLike[] }> | undefined): number {
+    static countWebSearchInvocations(steps: StepLike[] | undefined): number {
         if (!steps?.length) {
             return 0;
         }
 
         let count = 0;
         for (const step of steps) {
-            for (const call of step.toolCalls ?? []) {
-                const name = call.toolName ?? '';
-                if (this.isWebSearchToolName(name)) {
-                    count++;
-                }
-            }
+            count += this.countWebSearchInvocationsOnStep(step);
         }
         return count;
     }
 
+    /** Count web_search tool parts on a UI message (stream or persisted). */
+    static countWebSearchMessageParts(parts: UIMessage['parts'] | undefined): number {
+        if (!parts?.length) {
+            return 0;
+        }
+
+        return parts.filter((part) => isWebSearchToolPart(part)).length;
+    }
+
     /**
-     * Resolve how many web searches ran (stream tool calls and/or OR server_tool_use metadata).
+     * OpenRouter generation payload signals that web search was billed/used.
+     * When invocation count is unknown, treat any positive web usage as ≥1 search.
      */
-    static resolveWebSearchInvocationCount(params: {
-        steps?: Array<{ toolCalls?: ToolCallLike[] }>;
-        usage?: UsageLike | null;
-    }): number {
+    static countWebSearchFromOpenRouterGeneration(
+        generation: OpenRouterGenerationLike | null | undefined
+    ): number {
+        if (!generation) {
+            return 0;
+        }
+
+        const fromServer = this.getServerToolWebSearchRequests(generation);
+        if (fromServer > 0) {
+            return fromServer;
+        }
+
+        const usageWeb = generation.usage_web;
+        if (typeof usageWeb === 'number' && usageWeb > 0) {
+            return 1;
+        }
+
+        if (typeof generation.web_search_engine === 'string' && generation.web_search_engine.length > 0) {
+            return 1;
+        }
+
+        if (
+            typeof generation.num_search_results === 'number' &&
+            generation.num_search_results > 0
+        ) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    static collectOpenRouterGenerationIds(params: {
+        response?: {
+            id?: string;
+            generation_id?: string;
+            generationId?: string;
+            body?: { id?: string; generation_id?: string; generationId?: string } | null;
+        } | null;
+        steps?: StepLike[];
+    }): string[] {
+        const ids: string[] = [];
+        const add = (id: unknown) => {
+            if (typeof id === 'string' && id.length > 0 && !ids.includes(id)) {
+                // OpenRouter generation ids are `gen-...`; ignore unrelated ids.
+                if (id.startsWith('gen-') || id.startsWith('gen')) {
+                    ids.push(id);
+                }
+            }
+        };
+
+        for (const step of params.steps ?? []) {
+            add(step.response?.id);
+            const body = (step.response as { body?: { id?: string } } | undefined)?.body;
+            add(body?.id);
+        }
+
+        add(params.response?.id);
+        add(params.response?.generation_id);
+        add(params.response?.generationId);
+        add(params.response?.body?.id);
+        add(params.response?.body?.generation_id);
+        add(params.response?.body?.generationId);
+
+        return ids;
+    }
+
+    /**
+     * Resolve how many web searches ran from stream tool calls, UI parts,
+     * server_tool_use metadata, and/or OpenRouter generation payloads.
+     */
+    static resolveWebSearchInvocationCount(
+        params: ResolveWebSearchInvocationCountParams
+    ): number {
         const fromSteps = this.countWebSearchInvocations(params.steps);
+        const fromFlat = this.countWebSearchToolCalls(params.toolCalls);
+        const fromParts = this.countWebSearchMessageParts(params.parts);
         const fromServer = this.getServerToolWebSearchRequests(params.usage);
-        return Math.max(fromSteps, fromServer);
+        let fromGenerations = 0;
+        for (const generation of params.openRouterGenerations ?? []) {
+            fromGenerations = Math.max(
+                fromGenerations,
+                this.countWebSearchFromOpenRouterGeneration(generation)
+            );
+        }
+
+        return Math.max(fromSteps, fromFlat, fromParts, fromServer, fromGenerations);
+    }
+
+    /**
+     * When stream metadata misses provider-executed searches, fetch OpenRouter
+     * generation records (usage_web / num_search_results) as a billing backstop.
+     */
+    static async resolveWebSearchInvocationCountWithFallback(params: {
+        steps?: StepLike[];
+        toolCalls?: ToolCallLike[];
+        parts?: UIMessage['parts'];
+        usage?: UsageLike | null;
+        response?: { id?: string; generation_id?: string; generationId?: string } | null;
+        apiKeyOverride?: string;
+        enableOpenRouterFallback: boolean;
+    }): Promise<number> {
+        const syncCount = this.resolveWebSearchInvocationCount({
+            steps: params.steps,
+            toolCalls: params.toolCalls,
+            parts: params.parts,
+            usage: params.usage,
+        });
+
+        if (syncCount > 0 || !params.enableOpenRouterFallback) {
+            return syncCount;
+        }
+
+        const generationIds = this.collectOpenRouterGenerationIds({
+            response: params.response,
+            steps: params.steps,
+        });
+
+        if (generationIds.length === 0) {
+            return 0;
+        }
+
+        // Prefer the newest ids (final multi-step generation usually carries usage_web).
+        const idsToFetch = generationIds.slice(-3);
+        const generations: OpenRouterGenerationLike[] = [];
+
+        for (const generationId of idsToFetch) {
+            try {
+                const result = await OpenRouterCostTracker.fetchActualCost(
+                    generationId,
+                    params.apiKeyOverride
+                );
+                if (result.generationData && typeof result.generationData === 'object') {
+                    generations.push(result.generationData as OpenRouterGenerationLike);
+                }
+            } catch (error) {
+                logDiagnostic('WEB_SEARCH_OR_FALLBACK_ERROR', 'Failed fetching OR generation for web billing', {
+                    generationId,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+        }
+
+        return this.resolveWebSearchInvocationCount({
+            steps: params.steps,
+            toolCalls: params.toolCalls,
+            parts: params.parts,
+            usage: params.usage,
+            openRouterGenerations: generations,
+        });
     }
 
     /** Whether a response actually used web search (for hasWebSearch flag and synthetic tool UI). */
     static messageUsedWebSearch(params: {
-        steps?: Array<{ toolCalls?: ToolCallLike[] }>;
+        steps?: StepLike[];
+        toolCalls?: ToolCallLike[];
+        parts?: UIMessage['parts'];
         usage?: UsageLike | null;
+        openRouterGenerations?: Array<OpenRouterGenerationLike | null | undefined>;
         hasCitationAnnotations?: boolean;
+        invocationCount?: number;
     }): boolean {
-        if (this.resolveWebSearchInvocationCount(params) > 0) {
+        const invocations =
+            params.invocationCount ??
+            this.resolveWebSearchInvocationCount({
+                steps: params.steps,
+                toolCalls: params.toolCalls,
+                parts: params.parts,
+                usage: params.usage,
+                openRouterGenerations: params.openRouterGenerations,
+            });
+
+        if (invocations > 0) {
             return true;
         }
 
@@ -263,8 +533,12 @@ export class ChatWebSearchService {
         useAgenticServerTools: boolean;
         isUsingOwnApiKeys: boolean;
         shouldDeductCredits: boolean;
-        steps?: Array<{ toolCalls?: ToolCallLike[] }>;
+        steps?: StepLike[];
+        toolCalls?: ToolCallLike[];
+        parts?: UIMessage['parts'];
         usage?: UsageLike | null;
+        openRouterGenerations?: Array<OpenRouterGenerationLike | null | undefined>;
+        invocationCount?: number;
         hasCitationAnnotations?: boolean;
     }): number {
         const {
@@ -272,8 +546,6 @@ export class ChatWebSearchService {
             useAgenticServerTools,
             isUsingOwnApiKeys,
             shouldDeductCredits,
-            steps,
-            usage,
         } = params;
 
         if (!webSearchEnabled || isUsingOwnApiKeys || !shouldDeductCredits) {
@@ -281,7 +553,15 @@ export class ChatWebSearchService {
         }
 
         if (useAgenticServerTools) {
-            const invocations = this.resolveWebSearchInvocationCount({ steps, usage });
+            const invocations =
+                params.invocationCount ??
+                this.resolveWebSearchInvocationCount({
+                    steps: params.steps,
+                    toolCalls: params.toolCalls,
+                    parts: params.parts,
+                    usage: params.usage,
+                    openRouterGenerations: params.openRouterGenerations,
+                });
             return invocations * WEB_SEARCH_COST;
         }
 

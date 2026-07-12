@@ -941,7 +941,34 @@ describe('Chat Component', () => {
   });
 
   describe('Web Search Enhancement', () => {
-    test('enhances messages with web search indicators', () => {
+    test('preserves server hasWebSearch flag on assistant messages', () => {
+      const mockWebSearch = require('@/lib/context/web-search-context').useWebSearch;
+      mockWebSearch.mockReturnValue({
+        webSearchEnabled: true,
+        setWebSearchEnabled: jest.fn(),
+        webSearchContextSize: 5,
+        setWebSearchContextSize: jest.fn(),
+      });
+
+      mockUseModel.mockReturnValue({
+        selectedModel: 'openrouter/anthropic/claude-3-sonnet',
+        setSelectedModel: jest.fn(),
+      });
+
+      mockUseChat.mockReturnValue(createUseChatMock({
+        messages: [
+          { id: '1', role: 'user', content: 'What is the weather?' },
+          { id: '2', role: 'assistant', content: 'The weather is sunny.', hasWebSearch: true },
+        ],
+      }));
+
+      renderWithProviders(<Chat />);
+      
+      // Should preserve server-provided web search indicator
+      expect(screen.getByTestId('message-websearch-1')).toBeInTheDocument();
+    });
+
+    test('does not invent hasWebSearch from toggle alone', () => {
       const mockWebSearch = require('@/lib/context/web-search-context').useWebSearch;
       mockWebSearch.mockReturnValue({
         webSearchEnabled: true,
@@ -963,9 +990,8 @@ describe('Chat Component', () => {
       }));
 
       renderWithProviders(<Chat />);
-      
-      // Should enhance assistant message with web search indicator
-      expect(screen.getByTestId('message-websearch-1')).toBeInTheDocument();
+
+      expect(screen.queryByTestId('message-websearch-1')).not.toBeInTheDocument();
     });
 
     test('does not enhance messages for non-OpenRouter models', () => {
