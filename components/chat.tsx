@@ -437,13 +437,14 @@ export default function Chat() {
           queryClient.invalidateQueries({ queryKey: ['chat-token-usage', activeChatId] });
         });
 
-        // Server title generation finishes after stream end; refetch once more for new chats
-        if (activeChatId) {
-          window.setTimeout(() => {
+        // Title + Polar meter settle after stream end; refetch again like chats list
+        window.setTimeout(() => {
+          refreshMessageUsage();
+          if (activeChatId) {
             queryClient.invalidateQueries({ queryKey: ['chats'] });
             queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
-          }, 3000);
-        }
+          }
+        }, 3000);
 
         if (!chatId && generatedChatId) {
           if (window.location.pathname !== `/chat/${generatedChatId}`) {

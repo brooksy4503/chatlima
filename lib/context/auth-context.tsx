@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo, ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getSession as getSessionOriginal, signIn as signInOriginal, signOut as signOutOriginal } from '@/lib/auth-client';
 
 interface AuthUser {
@@ -44,9 +45,12 @@ interface AuthContextType {
   isAnonymous: boolean;
 }
 
+export const USAGE_MESSAGES_QUERY_KEY = 'usage-messages';
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<any>(null);
   const [isPending, setIsPending] = useState(true);
   
@@ -90,43 +94,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshSession]);
   
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [status, setStatus] = useState<AuthContextType['status']>('loading');
   const [error, setError] = useState<Error | null>(null);
-  const lastFetchedRef = useRef<number | null>(null);
-  const lastUserIdRef = useRef<string | null>(null);
-  const usageRetryTimeoutRef = useRef<number | null>(null);
 
-  // Centralized usage data fetching with proper caching
-  const fetchUsageData = useCallback(async (userId: string) => {
-    // Skip if data is fresh (< 5 minutes old) and same user
-    const now = Date.now();
-    if (lastFetchedRef.current && lastFetchedRef.current > now - 300000 && lastUserIdRef.current === userId) {
-      return;
-    }
+  const userId = session?.user?.id as string | undefined;
 
-    try {
-      const response = await fetch('/api/usage/messages');
-      if (response.ok) {
-        const data = await response.json();
-        const fetchedData = {
-          limit: data.limit,
-          used: data.limit - data.remaining,
-          remaining: data.remaining,
-          credits: data.credits || 0,
-          hasCredits: data.hasCredits || false,
-          usedCredits: data.usedCredits || false,
-          subscriptionType: data.subscriptionType || null,
-          lastFetched: now,
-        };
-        lastFetchedRef.current = now;
-        lastUserIdRef.current = userId;
-        setUsageData(fetchedData);
+  // Same pattern as chats list: TanStack Query + invalidate on chat finish
+  const { data: usageResponse } = useQuery({
+    queryKey: [USAGE_MESSAGES_QUERY_KEY, userId],
+    queryFn: async () => {
+      const response = await fetch('/api/usage/messages', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch usage data');
       }
-    } catch (error) {
-      console.error('Failed to fetch usage data:', error);
-    }
-  }, []);
+      return response.json();
+    },
+    enabled: Boolean(userId) && !isPending,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+
+  const usageData = useMemo<UsageData | null>(() => {
+    if (!usageResponse) return null;
+    return {
+      limit: usageResponse.limit,
+      used: usageResponse.limit - usageResponse.remaining,
+      remaining: usageResponse.remaining,
+      credits: usageResponse.credits || 0,
+      hasCredits: usageResponse.hasCredits || false,
+      usedCredits: usageResponse.usedCredits || false,
+      subscriptionType: usageResponse.subscriptionType || null,
+      lastFetched: Date.now(),
+    };
+  }, [usageResponse]);
 
   // Single effect to manage auth state - only runs when session changes
   useEffect(() => {
@@ -135,16 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const userId = session?.user?.id;
-    
     if (userId) {
       const isAnonymous = (session.user as any).isAnonymous === true;
-      
-      // Only fetch usage data if userId changed
-      if (lastUserIdRef.current !== userId) {
-        fetchUsageData(userId);
-      }
-      
+
       setUser({
         id: session.user.id,
         name: session.user.name || null,
@@ -163,17 +156,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
     } else {
       setUser(null);
-      setUsageData(null);
-      lastFetchedRef.current = null;
-      lastUserIdRef.current = null;
       setStatus('unauthenticated');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, isPending]); // Only depend on session and isPending, not fetchUsageData or usageData
+  }, [session, isPending]); // Only depend on session and isPending, not usageData
 
   // Separate effect to update user when usageData changes (without triggering fetch)
   useEffect(() => {
-    if (session?.user?.id && usageData) {
+    if (userId && usageData) {
       setUser((prevUser) => {
         if (!prevUser) return null;
         return {
@@ -185,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       });
     }
-  }, [usageData, session?.user?.id]);
+  }, [usageData, userId]);
 
   // Sign in with Google
   const handleSignIn = useCallback(async () => {
@@ -210,27 +200,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Wrapper for refetchUsage that uses current userId
   const refetchUsage = useCallback(async () => {
-    if (!session?.user?.id) return;
-    const userId = session.user.id;
-
-    if (usageRetryTimeoutRef.current != null) {
-      window.clearTimeout(usageRetryTimeoutRef.current);
-      usageRetryTimeoutRef.current = null;
-    }
-
-    lastFetchedRef.current = null;
-    await fetchUsageData(userId);
-
-    // ponytail: Polar meter lags event ingest; one delayed refetch covers stale first read
-    usageRetryTimeoutRef.current = window.setTimeout(() => {
-      usageRetryTimeoutRef.current = null;
-      if (lastUserIdRef.current !== userId) return;
-      lastFetchedRef.current = null;
-      void fetchUsageData(userId);
-    }, 2500);
-  }, [session?.user?.id, fetchUsageData]);
+    await queryClient.invalidateQueries({ queryKey: [USAGE_MESSAGES_QUERY_KEY] });
+  }, [queryClient]);
 
   const value: AuthContextType = {
     user,
