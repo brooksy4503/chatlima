@@ -223,20 +223,12 @@ export async function getChatById(id: string, userId: string): Promise<ChatWithM
 
   if (!chat) return null;
 
+  await ConversationPersistenceService.ensureParentChainBackfilled(id);
+
   const chatMessages = await db.query.messages.findMany({
     where: eq(messages.chatId, id),
     orderBy: [messages.createdAt]
   });
-
-  const needsBackfill = chatMessages.some((message) => !message.parentMessageId);
-  if (needsBackfill && chatMessages.length > 0) {
-    await ConversationPersistenceService.backfillParentChainForChat(id);
-    const refreshedMessages = await db.query.messages.findMany({
-      where: eq(messages.chatId, id),
-      orderBy: [messages.createdAt],
-    });
-    chatMessages.splice(0, chatMessages.length, ...refreshedMessages);
-  }
 
   const refreshedChat = await db.query.chats.findFirst({
     where: and(eq(chats.id, id), eq(chats.userId, userId)),

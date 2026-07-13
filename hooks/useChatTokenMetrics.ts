@@ -31,6 +31,7 @@ export type ChatTokenData = {
   breakdownByMessage?: Array<{
     messageId: string | null;
     modelId: string;
+    modelDisplayName?: string | null;
     provider: string;
     inputTokens: number;
     outputTokens: number;

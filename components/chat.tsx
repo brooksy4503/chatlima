@@ -13,7 +13,11 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat/messageConversion";
 import { formatQuotedMessageContent } from "@/lib/quoted-text-utils";
-import { dbActivePathIsDifferentBranch, dbMessagesHaveRicherAssistantParts } from "@/lib/chat-message-persistence";
+import {
+  dbActivePathIsDifferentBranch,
+  dbMessagesHaveRicherAssistantParts,
+} from "@/lib/chat-message-persistence";
+import { handleChatTransportError } from "@/lib/chat/chatTransportErrors";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
@@ -482,187 +486,23 @@ export default function Chat() {
         }
       },
       onError: (error) => {
-        let errorMessage = "An error occurred, please try again later."; // Default message
-        let errorCode = "UNKNOWN_ERROR";
-        let errorDetails: any = "No additional details available.";
-
-        try {
-          // The error.message from the Vercel AI SDK is now expected to be a JSON string.
-          const parsedBody = JSON.parse(error.message);
-
-          // Check for the structure from getErrorMessage (nested error object)
-          if (parsedBody.error && typeof parsedBody.error === 'object' && parsedBody.error.code) {
-            const apiErrorObject = parsedBody.error;
-            errorMessage = apiErrorObject.message || errorMessage;
-            errorCode = apiErrorObject.code || errorCode;
-            errorDetails = apiErrorObject.details || errorDetails;
-          } 
-          // Check for the flatter structure (e.g., from direct 429 response)
-          else if (typeof parsedBody.error === 'string' && parsedBody.message) {
-            errorMessage = parsedBody.message; // Use the detailed message from the API
-            if (parsedBody.error === "Message limit reached") {
-              errorCode = "MESSAGE_LIMIT_REACHED";
-              // Optionally, capture other details like limit and remaining
-              const details: any = {};
-              if (typeof parsedBody.limit !== 'undefined') details.limit = parsedBody.limit;
-              if (typeof parsedBody.remaining !== 'undefined') details.remaining = parsedBody.remaining;
-              if (Object.keys(details).length > 0) errorDetails = JSON.stringify(details);
-
-            } else {
-              // For other flat errors, we might not have a specific code yet
-              // but we have the detailed message.
-              // errorCode remains UNKNOWN_ERROR or could be set to a generic API_ERROR
-            }
-          }
-          // Fallback for other JSON structures or if parsing was incomplete
-          else if (parsedBody.message) {
-            errorMessage = parsedBody.message;
-          }
-           else {
-            // If parsing was successful but structure is unrecognized
-            // and errorMessage hasn't been updated from a recognized structure.
-             if (error.message && error.message.length > 0 && errorMessage === "An error occurred, please try again later.") {
-                 errorMessage = error.message; // use raw JSON string if no better message found
-            }
-            console.warn("Received JSON error message with unrecognized structure:", error.message);
-          }
-        } catch (e) {
-          // If parsing fails, it means error.message was not a JSON string.
-          // Use the raw error.message if available.
-          if (error.message && error.message.length > 0) {
-            errorMessage = error.message;
-          }
-          console.warn("Failed to parse error message as JSON:", e, "Raw error message:", error.message);
-        }
-
-        // Handle access-gate errors with conversion UI, not error recovery toasts.
-        const isPaywallError =
-          errorCode === "PAYWALL_SUBSCRIPTION_REQUIRED" ||
-          errorCode === "PAYWALL_BYOK_REQUIRED";
-        if (isPaywallError) {
-          const paywallReason: 'PAYWALL_SUBSCRIPTION_REQUIRED' | 'PAYWALL_BYOK_REQUIRED' =
-            errorCode === "PAYWALL_SUBSCRIPTION_REQUIRED"
-              ? "PAYWALL_SUBSCRIPTION_REQUIRED"
-              : "PAYWALL_BYOK_REQUIRED";
-          setHideImagesInUI(false);
-          if (lastSubmittedDraftRef.current !== null) {
-            setInput(lastSubmittedDraftRef.current);
-            lastSubmittedDraftRef.current = null;
-          }
-          openAccessGateDialog(
-            paywallReason,
-            activePreset?.modelId || selectedModel
-          );
-          return;
-        }
-
-        // Reset UI state on error so images reappear
-        setHideImagesInUI(false);
-        if (lastSubmittedDraftRef.current !== null) {
-          setInput(lastSubmittedDraftRef.current);
-          lastSubmittedDraftRef.current = null;
-        }
-
-        // Force reset the chat state to allow new messages
-        setIsErrorRecoveryNeeded(true);
-        setLastErrorTime(Date.now());
-
-        // Log the detailed error for debugging
-        console.error(`Chat Error [Code: ${errorCode}]: ${errorMessage}`, { 
-          details: errorDetails, 
-          originalError: error,
-          parsedError: (() => {
-            try {
-              return JSON.parse(error.message);
-            } catch {
-              return null;
-            }
-          })()
+        handleChatTransportError({
+          error,
+          activePresetModelId: activePreset?.modelId,
+          selectedModel,
+          lastSubmittedDraftRef,
+          setInput,
+          setHideImagesInUI,
+          setIsErrorRecoveryNeeded,
+          setLastErrorTime,
+          lastToastId,
+          setLastToastId,
+          lastErrorMessage,
+          setLastErrorMessage,
+          lastToastTimestamp,
+          setLastToastTimestamp,
+          openAccessGateDialog,
         });
-        console.log(`[Toast Debug] Error handler triggered with message: "${errorMessage}"`);
-        console.log(`[Toast Debug] Previous message: "${lastErrorMessage}", Time since last: ${Date.now() - lastToastTimestamp}ms`);
-
-        // Display user-friendly toast messages based on error code
-        let toastMessage = errorMessage;
-        switch (errorCode) {
-          case "AUTHENTICATION_REQUIRED":
-            toastMessage = "Authentication required. Please log in to continue.";
-            // Optionally, redirect to login or prompt user
-            // router.push('/login'); 
-            break;
-          case "MESSAGE_LIMIT_REACHED":
-            // The message from the backend (now correctly assigned to errorMessage) is descriptive.
-            // toastMessage will use this errorMessage.
-            break;
-          case "INSUFFICIENT_CREDITS":
-            toastMessage = "You have insufficient credits. Please top up your account.";
-            break;
-          case "RATE_LIMIT_EXCEEDED":
-            toastMessage = "Too many requests. Please wait a moment and try again.";
-            break;
-          case "LLM_PROVIDER_ERROR":
-            toastMessage = "The AI model provider is experiencing issues. Please try a different model or try again later.";
-            break;
-          case "MODEL_INIT_FAILED":
-            toastMessage = "Failed to initialize the selected AI model. Please try another model.";
-            break;
-          case "STREAM_ERROR": // Generic stream error from backend
-            // Try to provide more specific error message from details if available
-            if (typeof errorDetails === 'object' && errorDetails !== null && 
-                (errorDetails.rawMessage || errorDetails.cause)) {
-              const detailMsg = errorDetails.rawMessage || errorDetails.cause;
-              toastMessage = `Error: ${detailMsg}`;
-            } else if (errorMessage && errorMessage !== "An error occurred while processing your request.") {
-              toastMessage = errorMessage; // Use the specific error message from the API
-            } else {
-              toastMessage = "A problem occurred while getting the response. Please try again.";
-            }
-            break;
-          // Add more cases as new error codes are defined in the backend
-          default:
-            // Check for specific model compatibility errors
-            if (errorMessage.includes("does not currently support") && 
-                (errorMessage.includes("tool_choice") || errorMessage.includes("tools"))) {
-              toastMessage = "This model doesn't support the advanced features required for this request. Please try a different model.";
-            }
-            // For other UNKNOWN_ERROR or unhandled codes, use the errorMessage as is (or a generic one)
-            else if (!errorMessage || errorMessage === "An error occurred, please try again later.") {
-                toastMessage = "An unexpected issue occurred. Please try again.";
-            }
-            break;
-        }
-
-        // Debounce error toasts to prevent rapid-fire messages
-        const now = Date.now();
-        const timeSinceLastToast = now - lastToastTimestamp;
-        const isSameMessage = toastMessage === lastErrorMessage;
-        const tooSoon = timeSinceLastToast < (isSameMessage ? 5000 : 2000); // 5s for same message, 2s for different
-
-        if (tooSoon) {
-          console.log(`Suppressing duplicate error toast: "${toastMessage}" (${timeSinceLastToast}ms ago)`);
-          return;
-        }
-
-        // Dismiss any previous error toasts
-        if (lastToastId) {
-          toast.dismiss(lastToastId);
-        }
-
-        // Show the error toast
-        const toastId = toast.error(
-          toastMessage,
-          { 
-            position: "top-center", 
-            richColors: true,
-            description: errorCode !== "UNKNOWN_ERROR" && errorMessage !== toastMessage ? errorMessage : undefined,
-            duration: 8000 // Longer duration for errors
-          }
-        );
-        
-        // Update tracking state
-        setLastToastId(String(toastId));
-        setLastErrorMessage(toastMessage);
-        setLastToastTimestamp(now);
       },
     });
 

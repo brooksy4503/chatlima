@@ -32,6 +32,13 @@ export default defineConfig({
             },
             testMatch: /.*basic-ui.*\.spec\.ts/,
         },
+        {
+            name: 'branching-ui-chrome',
+            use: {
+                ...devices['Desktop Chrome'],
+            },
+            testMatch: /.*conversation-branching.*\.spec\.ts/,
+        },
     ],
 
     // Run dev server before tests

@@ -37,4 +37,31 @@ describe('branchOperations', () => {
     expect(rebuilt?.messages[1].id).toBe('asst-attempt-2');
     expect(rebuilt?.messages[0].parts?.[0]).toEqual({ type: 'text', text: 'Edited hello' });
   });
+
+  it('preserves non-text parts when editing a user message', () => {
+    const pathWithAttachment = [
+      {
+        id: 'u1',
+        role: 'user',
+        parts: [
+          { type: 'text', text: 'Hello' },
+          { type: 'file', url: 'https://example.com/doc.pdf', name: 'doc.pdf' },
+        ],
+        parentMessageId: null,
+      },
+      { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Hi' }], parentMessageId: 'u1' },
+    ];
+
+    const rebuilt = buildEditResubmitMessages({
+      activePath: pathWithAttachment,
+      userMessageId: 'u1',
+      content: 'Edited hello',
+      attemptId: 'attempt-3',
+    });
+
+    expect(rebuilt?.messages[0].parts).toEqual([
+      { type: 'file', url: 'https://example.com/doc.pdf', name: 'doc.pdf' },
+      { type: 'text', text: 'Edited hello' },
+    ]);
+  });
 });

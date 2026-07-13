@@ -36,7 +36,7 @@ export function useMessageMetrics(
         totalTokens: breakdown.totalTokens,
         estimatedCost: breakdown.estimatedCost,
         modelId: breakdown.modelId,
-        modelDisplayName: breakdown.modelId,
+        modelDisplayName: breakdown.modelDisplayName ?? breakdown.modelId,
       };
     }
 

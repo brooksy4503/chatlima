@@ -65,6 +65,16 @@ export function buildEditResubmitMessages(params: {
     userMessage.parentMessageId ??
     (userIndex > 0 ? params.activePath[userIndex - 1]?.id ?? null : null);
 
+  const existingParts = Array.isArray(userMessage.parts) ? userMessage.parts : [];
+  const nonTextParts = existingParts.filter(
+    (part) =>
+      typeof part === 'object' &&
+      part !== null &&
+      'type' in part &&
+      (part as { type: string }).type !== 'text'
+  );
+  const editedParts = [...nonTextParts, { type: 'text', text: params.content }];
+
   return {
     messages: [
       ...history,
@@ -72,7 +82,7 @@ export function buildEditResubmitMessages(params: {
         ...userMessage,
         id: newUserId,
         parentMessageId,
-        parts: [{ type: 'text', text: params.content }],
+        parts: editedParts,
       },
       {
         id: newAssistantId,

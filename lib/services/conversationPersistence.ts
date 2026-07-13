@@ -107,6 +107,21 @@ export class ConversationPersistenceService {
     return true;
   }
 
+  static async ensureParentChainBackfilled(chatId: string): Promise<void> {
+    const chatMessages = await db.query.messages.findMany({
+      where: eq(messages.chatId, chatId),
+      orderBy: [messages.createdAt],
+    });
+
+    const needsBackfill =
+      chatMessages.length > 1 &&
+      chatMessages.some((message, index) => index > 0 && !message.parentMessageId);
+
+    if (needsBackfill) {
+      await this.backfillParentChainForChat(chatId);
+    }
+  }
+
   static async loadChatGraph(chatId: string, userId: string): Promise<{
     chat: typeof chats.$inferSelect;
     allMessages: CompareUIMessage[];
@@ -118,6 +133,13 @@ export class ConversationPersistenceService {
     });
     if (!chat) return null;
 
+    await this.ensureParentChainBackfilled(chatId);
+
+    const refreshedChat = await db.query.chats.findFirst({
+      where: and(eq(chats.id, chatId), eq(chats.userId, userId)),
+    });
+    if (!refreshedChat) return null;
+
     const chatMessages = await db.query.messages.findMany({
       where: eq(messages.chatId, chatId),
       orderBy: [messages.createdAt],
@@ -125,10 +147,10 @@ export class ConversationPersistenceService {
 
     const allMessages = convertToUIMessages(chatMessages);
     const activeLeafMessageId =
-      chat.activeLeafMessageId ?? resolveDefaultLeafId(chatMessages);
+      refreshedChat.activeLeafMessageId ?? resolveDefaultLeafId(chatMessages);
     const activePathMessages = buildActivePathMessages(allMessages, activeLeafMessageId);
 
-    return { chat, allMessages, activeLeafMessageId, activePathMessages };
+    return { chat: refreshedChat, allMessages, activeLeafMessageId, activePathMessages };
   }
 
   static async forkChat(params: {
