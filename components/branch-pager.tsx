@@ -29,7 +29,7 @@ export function BranchPager({
         "inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/40 px-1 py-0.5 text-xs text-muted-foreground",
         className
       )}
-      aria-label={`Response version ${index} of ${total}`}
+      aria-label={`Version ${index} of ${total}`}
     >
       <Button
         type="button"

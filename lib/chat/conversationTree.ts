@@ -97,6 +97,33 @@ export function buildPathToLeaf<T extends TreeMessageNode>(
   return path;
 }
 
+/**
+ * Walk down from a node (e.g. a user sibling) to the deepest descendant.
+ * Prefers the latest child at each level so switching edited prompts lands on
+ * that branch's assistant reply, matching ChatGPT/Grok pager behavior.
+ */
+export function resolveDeepestLeafId(
+  nodeId: string | null | undefined,
+  graph: MessageGraph
+): string | null {
+  if (!nodeId) return null;
+  if (!graph.byId.has(nodeId)) return null;
+
+  let leafId = nodeId;
+  const visited = new Set<string>();
+
+  while (true) {
+    if (visited.has(leafId)) break;
+    visited.add(leafId);
+
+    const children = graph.childrenByParent.get(leafId) ?? [];
+    if (children.length === 0) break;
+    leafId = children[children.length - 1].id;
+  }
+
+  return leafId;
+}
+
 export function getMessageSiblings<T extends TreeMessageNode>(
   messageId: string,
   graph: MessageGraph

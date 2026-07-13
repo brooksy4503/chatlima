@@ -5,6 +5,7 @@ import {
   getSiblingVersionInfo,
   inferParentChainFromLinearOrder,
   remapForkPath,
+  resolveDeepestLeafId,
 } from '@/lib/chat/conversationTree';
 
 describe('conversationTree', () => {
@@ -54,6 +55,31 @@ describe('conversationTree', () => {
     expect(remapped.messages).toHaveLength(2);
     expect(remapped.messages[0].chatId).toBe('chat-2');
     expect(remapped.newActiveLeafId).toBe('new-id');
+  });
+
+  it('reports sibling versions for edited user branches', () => {
+    const branched = [
+      { id: 'u1', role: 'user', parentMessageId: null, createdAt: new Date(1) },
+      { id: 'a1', role: 'assistant', parentMessageId: 'u1', createdAt: new Date(2) },
+      { id: 'u1b', role: 'user', parentMessageId: null, createdAt: new Date(3) },
+      { id: 'a1b', role: 'assistant', parentMessageId: 'u1b', createdAt: new Date(4) },
+    ];
+    const graph = buildMessageGraph(branched);
+    const info = getSiblingVersionInfo('u1b', graph);
+    expect(info).toEqual({ index: 2, total: 2, siblings: expect.any(Array) });
+  });
+
+  it('resolves deepest leaf under a user sibling for pager navigation', () => {
+    const branched = [
+      { id: 'u1', role: 'user', parentMessageId: null, createdAt: new Date(1) },
+      { id: 'a1', role: 'assistant', parentMessageId: 'u1', createdAt: new Date(2) },
+      { id: 'u1b', role: 'user', parentMessageId: null, createdAt: new Date(3) },
+      { id: 'a1b', role: 'assistant', parentMessageId: 'u1b', createdAt: new Date(4) },
+    ];
+    const graph = buildMessageGraph(branched);
+    expect(resolveDeepestLeafId('u1', graph)).toBe('a1');
+    expect(resolveDeepestLeafId('u1b', graph)).toBe('a1b');
+    expect(resolveDeepestLeafId('a1b', graph)).toBe('a1b');
   });
 
   it('buildActivePathMessages follows active leaf', () => {

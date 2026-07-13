@@ -569,7 +569,16 @@ const PurePreviewMessage = ({
             )}
 
             {message.role === "user" ? (
-              <div className="mt-1 flex justify-end">
+              <div className="mt-1 flex items-center justify-end gap-2">
+                {branchVersion && onSelectBranch ? (
+                  <BranchPager
+                    index={branchVersion.index}
+                    total={branchVersion.total}
+                    onPrevious={() => onSelectBranch(-1)}
+                    onNext={() => onSelectBranch(1)}
+                    disabled={branchActionsDisabled}
+                  />
+                ) : null}
                 <MessageActions
                   role="user"
                   disabled={branchActionsDisabled}
@@ -611,6 +620,8 @@ export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.webSearchEnabled !== nextProps.webSearchEnabled) return false;
   if (prevProps.imageGenerationEnabled !== nextProps.imageGenerationEnabled) return false;
   if (prevProps.chatUsage !== nextProps.chatUsage) return false;
+  if (prevProps.branchActionsDisabled !== nextProps.branchActionsDisabled) return false;
+  if (!equal(prevProps.branchVersion, nextProps.branchVersion)) return false;
   if (nextProps.status === "streaming" && nextProps.isLatestMessage) return false;
   if ((prevProps.message as { annotations?: unknown }).annotations !== (nextProps.message as { annotations?: unknown }).annotations)
     return false;

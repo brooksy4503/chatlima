@@ -8,6 +8,7 @@ import {
   buildMessageGraph,
   buildPathToLeaf,
   getSiblingVersionInfo,
+  resolveDeepestLeafId,
 } from "@/lib/chat/conversationTree";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
 import {
@@ -36,7 +37,18 @@ export function useConversationBranches({
 }: UseConversationBranchesParams) {
   const queryClient = useQueryClient();
 
-  const graph = useMemo(() => buildMessageGraph(allMessages), [allMessages]);
+  const graph = useMemo(() => {
+    // Merge DB graph with the live active path so newly edited/regenerated
+    // siblings get a pager immediately, before chat query refetch completes.
+    const byId = new Map<string, CompareUIMessage>();
+    for (const message of allMessages) {
+      byId.set(message.id, message);
+    }
+    for (const message of messages) {
+      byId.set(message.id, message);
+    }
+    return buildMessageGraph([...byId.values()]);
+  }, [allMessages, messages]);
 
   const getVersionInfo = (messageId: string) =>
     getSiblingVersionInfo(messageId, graph);
@@ -49,8 +61,10 @@ export function useConversationBranches({
     if (nextIndex < 0 || nextIndex >= versionInfo.total) return;
 
     const targetSibling = versionInfo.siblings[nextIndex];
-    const pathFromSibling = buildPathToLeaf(targetSibling.id, graph);
-    const leafId = pathFromSibling[pathFromSibling.length - 1]?.id ?? targetSibling.id;
+    // User siblings are not leaves — descend to that branch's assistant reply.
+    const leafId =
+      resolveDeepestLeafId(targetSibling.id, graph) ?? targetSibling.id;
+    const pathFromLeaf = buildPathToLeaf(leafId, graph);
 
     try {
       const response = await fetch(`/api/chats/${chatId}/active-leaf`, {
@@ -64,11 +78,11 @@ export function useConversationBranches({
       }
 
       const data = await response.json();
-      setMessages(data.activePathMessages ?? pathFromSibling);
+      setMessages(data.activePathMessages ?? pathFromLeaf);
       queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
     } catch (error) {
       console.error("Branch switch failed:", error);
-      setMessages(pathFromSibling as CompareUIMessage[]);
+      setMessages(pathFromLeaf as CompareUIMessage[]);
     }
   };
 
