@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { chats, messages, chatProjects, type DBMessage } from '@/lib/db/schema';
+import { chats, messages, chatProjects, type DBMessage, type Message } from '@/lib/db/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {
@@ -124,6 +124,7 @@ export class ConversationPersistenceService {
 
   static async loadChatGraph(chatId: string, userId: string): Promise<{
     chat: typeof chats.$inferSelect;
+    dbMessages: Message[];
     allMessages: CompareUIMessage[];
     activeLeafMessageId: string | null;
     activePathMessages: CompareUIMessage[];
@@ -150,7 +151,13 @@ export class ConversationPersistenceService {
       refreshedChat.activeLeafMessageId ?? resolveDefaultLeafId(chatMessages);
     const activePathMessages = buildActivePathMessages(allMessages, activeLeafMessageId);
 
-    return { chat: refreshedChat, allMessages, activeLeafMessageId, activePathMessages };
+    return {
+      chat: refreshedChat,
+      dbMessages: chatMessages,
+      allMessages,
+      activeLeafMessageId,
+      activePathMessages,
+    };
   }
 
   static async forkChat(params: {

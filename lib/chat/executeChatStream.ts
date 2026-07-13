@@ -60,17 +60,6 @@ export async function executeChatStream(params: ExecuteChatStreamParams): Promis
     );
   }
 
-  if (resolvedOperation.kind === 'fork') {
-    return Response.json({ newChatId: resolvedOperation.newChatId });
-  }
-
-  if (resolvedOperation.kind === 'select-leaf') {
-    return Response.json({
-      activeLeafMessageId: resolvedOperation.activeLeafMessageId,
-      activePathMessages: resolvedOperation.messages,
-    });
-  }
-
   const effectiveBody: ChatRequestBody = {
     ...chatBody,
     messages: resolvedOperation.messages,

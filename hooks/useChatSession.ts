@@ -6,10 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObjec
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import {
-  dbActivePathIsDifferentBranch,
-  dbMessagesHaveRicherAssistantParts,
-} from "@/lib/chat-message-persistence";
+import { adoptDbMessages } from "@/lib/chat/adoptDbMessages";
 import type { ChatOperation } from "@/lib/chat/chatRequest";
 import { handleChatTransportError, type ChatAccessGateReason } from "@/lib/chat/chatTransportErrors";
 import { getUIMessageText } from "@/lib/message-utils";
@@ -250,34 +247,22 @@ export function useChatSession({
   });
 
   useEffect(() => {
-    if (!chatId || isLoadingChat) return;
-    if (status === "streaming" || status === "submitted") return;
-    if (isCompareLoadingRef.current) return;
+    const decision = adoptDbMessages({
+      chatId,
+      loadedChatId: loadedChatIdRef.current,
+      isLoadingChat,
+      status,
+      isCompareLoading: isCompareLoadingRef.current,
+      initialMessages,
+      currentMessages: messages,
+      activeLeafMessageId,
+    });
 
-    const isNewChatNavigation = loadedChatIdRef.current !== chatId;
-
-    if (isNewChatNavigation) {
-      if (initialMessages.length > 0 || messages.length === 0) {
-        setMessages(initialMessages);
+    if (decision.action === "replace") {
+      setMessages(decision.messages);
+      if (decision.loadedChatId) {
+        loadedChatIdRef.current = decision.loadedChatId;
       }
-      loadedChatIdRef.current = chatId;
-      return;
-    }
-
-    if (status !== "ready" || initialMessages.length === 0) return;
-
-    if (messages.length === 0) {
-      setMessages(initialMessages);
-      return;
-    }
-
-    if (dbMessagesHaveRicherAssistantParts(messages, initialMessages)) {
-      setMessages(initialMessages);
-      return;
-    }
-
-    if (dbActivePathIsDifferentBranch(messages, initialMessages, activeLeafMessageId)) {
-      setMessages(initialMessages);
     }
   }, [
     chatId,

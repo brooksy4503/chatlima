@@ -1,11 +1,3 @@
-import type { ChatOperation } from '@/lib/chat/chatRequest';
-
-export type BranchAction =
-  | { type: 'regenerate'; assistantMessageId: string; attemptId: string }
-  | { type: 'edit-resubmit'; userMessageId: string; content: string; attemptId: string }
-  | { type: 'select-leaf'; leafMessageId: string }
-  | { type: 'fork'; forkThroughMessageId: string };
-
 export function buildRegenerateMessages(params: {
   activePath: Array<{ id: string; role: string; parts?: unknown; parentMessageId?: string | null }>;
   assistantMessageId: string;
@@ -93,32 +85,4 @@ export function buildEditResubmitMessages(params: {
     ],
     parentMessageId,
   };
-}
-
-export function operationToBranchAction(
-  operation: ChatOperation | undefined
-): BranchAction | null {
-  if (!operation) return null;
-
-  switch (operation.type) {
-    case 'regenerate':
-      return {
-        type: 'regenerate',
-        assistantMessageId: operation.assistantMessageId,
-        attemptId: operation.attemptId,
-      };
-    case 'edit-resubmit':
-      return {
-        type: 'edit-resubmit',
-        userMessageId: operation.userMessageId,
-        content: operation.content,
-        attemptId: operation.attemptId,
-      };
-    case 'select-leaf':
-      return { type: 'select-leaf', leafMessageId: operation.leafMessageId };
-    case 'fork':
-      return { type: 'fork', forkThroughMessageId: operation.forkThroughMessageId };
-    default:
-      return null;
-  }
 }

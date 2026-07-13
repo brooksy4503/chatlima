@@ -5,8 +5,6 @@ import { ConversationPersistenceService } from '@/lib/services/conversationPersi
 jest.mock('@/lib/services/conversationPersistence', () => ({
   ConversationPersistenceService: {
     loadChatGraph: jest.fn(),
-    forkChat: jest.fn(),
-    setActiveLeaf: jest.fn(),
   },
 }));
 
@@ -71,6 +69,42 @@ describe('resolveChatOperation', () => {
       code: 'CHAT_NOT_FOUND',
       message: 'Chat not found',
       status: 404,
+    });
+  });
+
+  it('keeps the server active path when the client sends a divergent continue transcript', async () => {
+    loadChatGraph.mockResolvedValue({
+      chat: { id: 'chat-1' },
+      dbMessages: [],
+      allMessages: [
+        { id: 'u1', role: 'user', parentMessageId: null },
+        { id: 'a1', role: 'assistant', parentMessageId: 'u1' },
+        { id: 'a1b', role: 'assistant', parentMessageId: 'u1' },
+      ],
+      activeLeafMessageId: 'a1',
+      activePathMessages: [
+        { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Hi' }] },
+        { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
+      ],
+    });
+
+    const body = makeBody({
+      chatId: 'chat-1',
+      messages: [
+        { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Hi' }] },
+        { id: 'a1b', role: 'assistant', parts: [{ type: 'text', text: 'Other branch' }] },
+      ],
+    });
+
+    await expect(
+      resolveChatOperation({ body, userId: 'user-1' })
+    ).resolves.toEqual({
+      kind: 'stream',
+      messages: [
+        { id: 'u1', role: 'user', parentMessageId: null },
+        { id: 'a1', role: 'assistant', parentMessageId: 'u1' },
+      ],
+      activeLeafMessageId: 'a1',
     });
   });
 });

@@ -1,8 +1,7 @@
 "use client";
 
-import { useChat, type UIMessage } from "@ai-sdk/react";
-import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import type { UIMessage } from "ai";
 import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
@@ -12,18 +11,15 @@ import { toast } from "sonner";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat/messageConversion";
+import { normalizeChatMessages } from "@/lib/chat/normalizeChatMessages";
 import { formatQuotedMessageContent } from "@/lib/quoted-text-utils";
-import {
-  dbActivePathIsDifferentBranch,
-  dbMessagesHaveRicherAssistantParts,
-} from "@/lib/chat-message-persistence";
-import { handleChatTransportError } from "@/lib/chat/chatTransportErrors";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
 import { useCompare } from "@/lib/context/compare-context";
 import { MIN_COMPARE_MODELS } from "@/lib/compare/comparePolicy";
 import { useCompareOrchestrator } from "@/hooks/useCompareOrchestrator";
+import { useChatSession } from "@/hooks/useChatSession";
 import { useConversationBranches } from "@/hooks/useConversationBranches";
 import { useMessageMetrics } from "@/hooks/useMessageMetrics";
 import type { ChatOperation } from "@/lib/chat/chatRequest";
@@ -114,20 +110,10 @@ export default function Chat() {
   const [hideImagesInUI, setHideImagesInUI] = useState(false);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
-  const [isErrorRecoveryNeeded, setIsErrorRecoveryNeeded] = useState(false);
-  const [lastErrorTime, setLastErrorTime] = useState<number | null>(null);
-  const [lastStreamingActivity, setLastStreamingActivity] = useState<number | null>(null);
-  const [streamingStartTime, setStreamingStartTime] = useState<number | null>(null);
-  const [lastToastId, setLastToastId] = useState<string | null>(null);
-  const [lastErrorMessage, setLastErrorMessage] = useState<string>("");
-  const [lastToastTimestamp, setLastToastTimestamp] = useState<number>(0);
   const [accessGateDialogOpen, setAccessGateDialogOpen] = useState(false);
   const [accessGateReason, setAccessGateReason] = useState<'PAYWALL_SUBSCRIPTION_REQUIRED' | 'PAYWALL_BYOK_REQUIRED'>('PAYWALL_SUBSCRIPTION_REQUIRED');
   const [accessGateModelId, setAccessGateModelId] = useState<string>("");
-  // NEW: Enhanced timing tracking for Phase 2
-  const [timeToFirstToken, setTimeToFirstToken] = useState<number | null>(null);
-  const [tokensPerSecond, setTokensPerSecond] = useState<number | null>(null);
-  const [totalDuration, setTotalDuration] = useState<number | null>(null);
+  const compareLoadingRef = useRef(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -185,32 +171,14 @@ export default function Chat() {
 
   const activeChatId = chatId || generatedChatId;
 
-  // Reset error state when navigating to a new chat
+  // Reset UI state when navigating to a new chat
   useEffect(() => {
     if (!chatId) {
-      // Reset any error recovery state when starting fresh
-      setIsErrorRecoveryNeeded(false);
-      setLastErrorTime(null);
       setHideImagesInUI(false);
       setSelectedFiles([]);
-      
-      // Clear any lingering toast state
-      if (lastToastId) {
-        toast.dismiss(lastToastId);
-        setLastToastId(null);
-      }
-      setLastErrorMessage("");
-      setLastToastTimestamp(0);
-      
-      // Reset streaming state
-      setStreamingStartTime(null);
-      setLastStreamingActivity(null);
     }
-  }, [chatId, lastToastId]);
+  }, [chatId]);
 
-  // Error recovery mechanism - reset chat state when errors occur
-  // Note: This will be moved after the useChat hook is defined
-  
   const { data: chatData, isLoading: isLoadingChat } = useQuery({
     queryKey: ['chat', chatId],
     queryFn: async ({ queryKey }) => {
@@ -250,144 +218,40 @@ export default function Chat() {
         ? chatData.activePathMessages
         : convertToUIMessages(chatData.messages);
 
-    return sourceMessages.map((msg) => ({
-      id: msg.id,
-      role: msg.role as ChatUIMessage['role'],
-      parts: msg.parts,
-      createdAt: msg.createdAt,
-      hasWebSearch: msg.hasWebSearch,
-      webSearchContextSize: msg.webSearchContextSize,
-      modelId: msg.modelId,
-      modelProvider: msg.modelProvider,
-      modelDisplayName: msg.modelDisplayName,
-      comparisonTurnId: msg.comparisonTurnId,
-      parentMessageId: msg.parentMessageId,
-    }));
+    return normalizeChatMessages(sourceMessages);
   }, [chatData]);
 
   const allGraphMessages = useMemo((): ChatUIMessage[] => {
     if (!chatData?.messages?.length) return [];
-    return convertToUIMessages(chatData.messages).map((msg) => ({
-      id: msg.id,
-      role: msg.role as ChatUIMessage['role'],
-      parts: msg.parts,
-      createdAt: msg.createdAt,
-      hasWebSearch: msg.hasWebSearch,
-      webSearchContextSize: msg.webSearchContextSize,
-      modelId: msg.modelId,
-      modelProvider: msg.modelProvider,
-      modelDisplayName: msg.modelDisplayName,
-      comparisonTurnId: msg.comparisonTurnId,
-      parentMessageId: msg.parentMessageId,
-    }));
+    return normalizeChatMessages(convertToUIMessages(chatData.messages));
   }, [chatData]);
 
   const [input, setInput] = useState("");
   const [quotedText, setQuotedText] = useState<string | null>(null);
-  const lastSubmittedDraftRef = useRef<string | null>(null);
-  const pendingOperationRef = useRef<ChatOperation>({ type: "continue" });
 
-  const chatBodyRef = useRef({
-    selectedModel: selectedModel,
-    mcpServers: mcpServersForApi,
-    chatId: chatId || generatedChatId,
-    webSearch: {
-      enabled: webSearchEnabled,
-      contextSize: webSearchContextSize,
-    },
-    imageGeneration: {
-      enabled: imageGenerationEnabled,
-      quality: imageGenerationQuality,
-      aspectRatio: imageGenerationAspectRatio,
-      outputFormat: imageGenerationOutputFormat,
-      model: imageGenerationModel,
-    },
-    apiKeys: {} as Record<string, string>,
-    attachments: [] as unknown[],
-    temperature: undefined as number | undefined,
-    maxTokens: undefined as number | undefined,
-    systemInstruction: undefined as string | undefined,
-  });
-
-  useEffect(() => {
-    chatBodyRef.current = {
-      selectedModel: activePreset?.modelId || selectedModel,
-      mcpServers: mcpServersForApi,
-      chatId: chatId || generatedChatId,
-      webSearch: {
-        enabled: activePreset?.webSearchEnabled ?? webSearchEnabled,
-        contextSize: activePreset?.webSearchContextSize || webSearchContextSize,
-      },
-      imageGeneration: {
-        enabled: imageGenerationEnabled,
-        quality: imageGenerationQuality,
-        aspectRatio: imageGenerationAspectRatio,
-        outputFormat: imageGenerationOutputFormat,
-        model: imageGenerationModel,
-      },
-      apiKeys: getClientApiKeys(),
-      attachments: [],
-      temperature: activePreset?.temperature,
-      maxTokens: activePreset?.maxTokens,
-      systemInstruction: activePreset?.systemInstruction,
-    };
-  }, [
-    activePreset,
-    selectedModel,
-    mcpServersForApi,
-    chatId,
-    generatedChatId,
-    webSearchEnabled,
-    webSearchContextSize,
-    imageGenerationEnabled,
-    imageGenerationQuality,
-    imageGenerationAspectRatio,
-    imageGenerationOutputFormat,
-    imageGenerationModel,
-  ]);
-
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        api: "/api/chat",
-        prepareSendMessagesRequest: ({ messages, id, body }) => ({
-          body: {
-            ...body,
-            ...chatBodyRef.current,
-            messages,
-            id,
-            operation: pendingOperationRef.current,
-          },
-        }),
-      }),
-    []
-  );
-  
-  // Function to get API keys from localStorage (uses safe helper for SSR/broken Node env)
-  const getClientApiKeys = () => {
+  const getClientApiKeys = useCallback(() => {
     if (!isLocalStorageAvailable()) return {};
-    
+
     const apiKeys: Record<string, string> = {};
     const keyNames = [
       'OPENAI_API_KEY',
-      'ANTHROPIC_API_KEY', 
+      'ANTHROPIC_API_KEY',
       'GROQ_API_KEY',
       'XAI_API_KEY',
       'OPENROUTER_API_KEY',
       'REQUESTY_API_KEY'
     ];
-    
+
     keyNames.forEach(keyName => {
       const value = getLocalStorageItem(keyName);
       if (value) {
         apiKeys[keyName] = value;
       }
     });
-    
-    return apiKeys;
-  };
 
-  // Check if current model supports vision/images - use preset model if active
+    return apiKeys;
+  }, []);
+
   const effectiveModel = activePreset?.modelId || selectedModel;
   const { models } = useModels();
   const modelSupportsVision = useMemo(() => {
@@ -408,103 +272,56 @@ export default function Chat() {
     setAccessGateDialogOpen(true);
   }, []);
 
-  const handleFileSelect = useCallback((newFiles: FileAttachment[]) => {
-    console.log('[DEBUG] handleFileSelect called with:', newFiles.length, 'files');
-    console.log('[DEBUG] New files details:', newFiles.map(f => ({
-      filename: f.metadata.filename,
-      size: f.metadata.size,
-      mimeType: f.metadata.mimeType,
-      detail: f.detail,
-      type: f.type,
-      dataUrlLength: f.dataUrl?.length
-    })));
-    
-    setSelectedFiles((prev: FileAttachment[]) => {
-      const updated = [...prev, ...newFiles];
-      console.log('[DEBUG] Updated selectedFiles count:', updated.length);
-      return updated;
-    });
-  }, []);
-
-  const handleFileRemove = useCallback((index: number) => {
-    console.log('[DEBUG] handleFileRemove called for index:', index);
-    setSelectedFiles((prev: FileAttachment[]) => {
-      const updated = prev.filter((_: FileAttachment, i: number) => i !== index);
-      console.log('[DEBUG] After removal, selectedFiles count:', updated.length);
-      return updated;
-    });
-  }, []);
-
   const clearFiles = useCallback(() => {
-    console.log('[DEBUG] clearFiles called');
     setSelectedFiles([]);
     setUploadErrors([]);
   }, []);
 
-  const { messages, sendMessage, status, stop: originalStop, setMessages, regenerate: regenerateResponse } = useChat({
-      id: chatId || generatedChatId,
-      messages: initialMessages,
-      transport,
-      sendAutomaticallyWhen: ({ messages: chatMessages }) => {
-        if (shouldSubmitCompare()) {
-          return false;
-        }
-        // Server-executed tools must not trigger client follow-up requests (causes stuck "streaming").
-        if (mcpServersForApi.length > 0 || imageGenerationEnabled) {
-          return false;
-        }
-        return lastAssistantMessageIsCompleteWithToolCalls({ messages: chatMessages });
-      },
-      experimental_throttle: 100,
-      onFinish: () => {
-        lastSubmittedDraftRef.current = null;
-        // Clear images and reset UI state after successful submission
-        clearFiles();
-        setHideImagesInUI(false);
-        
-        // Defer refetches so the UI can finish the stream→ready transition first
-        requestAnimationFrame(() => {
-          refreshMessageUsage();
-          queryClient.invalidateQueries({ queryKey: ['chats'] });
-          queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
-          queryClient.invalidateQueries({ queryKey: ['chat-token-usage', activeChatId] });
-        });
-
-        // Title + Polar meter settle after stream end; refetch again like chats list
-        window.setTimeout(() => {
-          refreshMessageUsage();
-          if (activeChatId) {
-            queryClient.invalidateQueries({ queryKey: ['chats'] });
-            queryClient.invalidateQueries({ queryKey: ['chat', activeChatId] });
-          }
-        }, 3000);
-
-        if (!chatId && generatedChatId) {
-          if (window.location.pathname !== `/chat/${generatedChatId}`) {
-             router.push(`/chat/${generatedChatId}`, { scroll: false }); 
-          }
-        }
-      },
-      onError: (error) => {
-        handleChatTransportError({
-          error,
-          activePresetModelId: activePreset?.modelId,
-          selectedModel,
-          lastSubmittedDraftRef,
-          setInput,
-          setHideImagesInUI,
-          setIsErrorRecoveryNeeded,
-          setLastErrorTime,
-          lastToastId,
-          setLastToastId,
-          lastErrorMessage,
-          setLastErrorMessage,
-          lastToastTimestamp,
-          setLastToastTimestamp,
-          openAccessGateDialog,
-        });
-      },
-    });
+  const {
+    messages,
+    sendMessage,
+    status,
+    stopStreaming,
+    setMessages,
+    regenerateResponse,
+    pendingOperationRef,
+    lastSubmittedDraftRef,
+    timeToFirstToken,
+    tokensPerSecond,
+    totalDuration,
+    streamingStartTime,
+    isRecovering,
+    resetRecovery,
+    lastToastId,
+  } = useChatSession({
+    chatId,
+    generatedChatId,
+    initialMessages,
+    isLoadingChat,
+    isCompareLoadingRef: compareLoadingRef,
+    activeLeafMessageId: chatData?.activeLeafMessageId,
+    activePresetModelId: activePreset?.modelId,
+    selectedModel,
+    mcpServersForApi,
+    webSearchEnabled,
+    webSearchContextSize,
+    imageGenerationEnabled,
+    imageGenerationQuality,
+    imageGenerationAspectRatio,
+    imageGenerationOutputFormat,
+    imageGenerationModel,
+    getClientApiKeys,
+    activePreset,
+    shouldSubmitCompare,
+    refreshMessageUsage,
+    queryClient,
+    router,
+    clearFiles,
+    setHideImagesInUI,
+    setInput,
+    openAccessGateDialog,
+    regenerateSessionId: () => setGeneratedChatId(nanoid()),
+  });
 
   const compareOrchestrator = useCompareOrchestrator({
     chatId: chatId || generatedChatId,
@@ -526,232 +343,22 @@ export default function Chat() {
     [messages]
   );
 
-  // Sync DB history into useChat when navigating to a chat, and re-sync when a refetch
-  // returns richer assistant parts (tool/reasoning) after the server finishes persisting.
-  // Do not treat a different branch path as "richer" — that clobbers edit/regenerate UI.
-  const loadedChatIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!chatId || isLoadingChat) return;
-    if (status === "streaming" || status === "submitted") return;
-    if (isCompareLoading) return;
-
-    const isNewChatNavigation = loadedChatIdRef.current !== chatId;
-
-    if (isNewChatNavigation) {
-      // Avoid wiping streamed messages while DB persistence/refetch is still in flight.
-      if (initialMessages.length > 0 || messages.length === 0) {
-        setMessages(initialMessages);
-      }
-      loadedChatIdRef.current = chatId;
-      return;
-    }
-
-    if (status !== "ready" || initialMessages.length === 0) {
-      return;
-    }
-
-    if (messages.length === 0) {
-      setMessages(initialMessages);
-      return;
-    }
-
-    if (dbMessagesHaveRicherAssistantParts(messages, initialMessages)) {
-      setMessages(initialMessages);
-      return;
-    }
-
-    // Once the server confirms a new active leaf (edit/regenerate), adopt that path.
-    if (
-      dbActivePathIsDifferentBranch(
-        messages,
-        initialMessages,
-        chatData?.activeLeafMessageId
-      )
-    ) {
-      setMessages(initialMessages);
-    }
-  }, [
-    chatId,
-    isLoadingChat,
-    initialMessages,
-    status,
-    setMessages,
-    messages,
-    isCompareLoading,
-    chatData?.activeLeafMessageId,
-  ]);
+    compareLoadingRef.current = isCompareLoading;
+  }, [isCompareLoading]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
   }, []);
 
-  // Custom stop function that handles both stopping the stream and refreshing data
   const stop = useCallback(async () => {
     if (isCompareLoading) {
       await stopCompare();
       return;
     }
+    await stopStreaming();
+  }, [isCompareLoading, stopCompare, stopStreaming]);
 
-    console.log('Stopping stream and refreshing chat data...');
-
-    const activeChatId = chatId || generatedChatId;
-
-    if (activeChatId) {
-      try {
-        await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'stop',
-            chatId: activeChatId,
-          }),
-        });
-      } catch (stopError) {
-        console.warn('Failed to send explicit stop request to server:', stopError);
-      }
-    }
-
-    // Call the original stop function to abort the stream
-    originalStop();
-    
-    // Give the server a moment to process the onStop callback and save data
-    setTimeout(() => {
-      // Refresh the chat data since the server-side onStop handler saves the current state
-      queryClient.invalidateQueries({ queryKey: ['chats'] });
-      queryClient.invalidateQueries({ queryKey: ['chat', chatId || generatedChatId] });
-      
-      // If this is a new chat that was just created, navigate to it
-      if (!chatId && generatedChatId) {
-        if (window.location.pathname !== `/chat/${generatedChatId}`) {
-           router.push(`/chat/${generatedChatId}`, { scroll: false }); 
-        }
-      }
-    }, 100); // Small delay to ensure server-side processing completes
-  }, [originalStop, queryClient, chatId, generatedChatId, router, isCompareLoading, stopCompare]);
-
-  // Error recovery mechanism - reset chat state when errors occur
-  useEffect(() => {
-    if (isErrorRecoveryNeeded && lastErrorTime) {
-      const resetTimeout = setTimeout(() => {
-        // Force stop the current stream/request to reset useChat internal state
-        originalStop();
-        
-        // If we're in a new chat (no chatId), regenerate the chatId to force useChat to reset completely
-        if (!chatId) {
-          console.log('Regenerating chat ID to ensure fresh useChat state after error');
-          setGeneratedChatId(nanoid());
-        }
-        
-        // Reset error recovery state
-        setIsErrorRecoveryNeeded(false);
-        setLastErrorTime(null);
-        
-        // Clear any lingering toast IDs and tracking state
-        setLastToastId(null);
-        setLastErrorMessage("");
-        setLastToastTimestamp(0);
-        
-        console.log('Chat state reset after error - ready for new messages');
-      }, 500); // Short delay to allow error handling to complete
-
-      return () => clearTimeout(resetTimeout);
-    }
-  }, [isErrorRecoveryNeeded, lastErrorTime, originalStop, chatId]);
-
-  // Track streaming start/stop and activity with enhanced timing metrics
-  useEffect(() => {
-    if (status === "streaming") {
-      if (!streamingStartTime) {
-        setStreamingStartTime(Date.now());
-      }
-      
-      if (messages.length > 0) {
-        const lastMessage = messages[messages.length - 1];
-        const hasAssistantActivity =
-          lastMessage.role === 'assistant' &&
-          ((lastMessage.parts?.length ?? 0) > 0 || getUIMessageText(lastMessage).length > 0);
-
-        if (hasAssistantActivity) {
-          setLastStreamingActivity(Date.now());
-
-          // Track time to first visible output (text, tool, or reasoning parts)
-          if (timeToFirstToken === null && streamingStartTime) {
-            const ttft = Date.now() - streamingStartTime;
-            setTimeToFirstToken(ttft);
-            console.log(`[Chat] Time to first token: ${ttft}ms`);
-          }
-        }
-      }
-    } else {
-      // Reset timing metrics when streaming stops
-      if (streamingStartTime && status === "ready") {
-        const duration = Date.now() - streamingStartTime;
-        setTotalDuration(duration);
-        console.log(`[Chat] Total duration: ${duration}ms`);
-      }
-      setStreamingStartTime(null);
-      setTimeToFirstToken(null);
-      setTokensPerSecond(null);
-      setTotalDuration(null);
-    }
-  }, [status, messages, streamingStartTime, timeToFirstToken]);
-
-  // Intelligent stuck detection: only trigger if no streaming activity for extended period
-  useEffect(() => {
-    if (status === "streaming" || status === "submitted") {
-      // Set initial activity time when streaming starts
-      if (!lastStreamingActivity) {
-        setLastStreamingActivity(Date.now());
-      }
-
-      const stuckTimeout = setTimeout(() => {
-        const now = Date.now();
-        const timeSinceLastActivity = now - (lastStreamingActivity || now);
-        
-                 // Only consider stuck if no activity for 2 minutes AND status hasn't changed
-         if (timeSinceLastActivity > 120000 && (status === "streaming" || status === "submitted")) {
-           console.warn('Chat appears stuck - no streaming activity for 2 minutes');
-           
-           const stuckMessage = 'Chat appears to be stuck. Attempting to recover...';
-           const now = Date.now();
-           const timeSinceLastToast = now - lastToastTimestamp;
-           const isSameMessage = stuckMessage === lastErrorMessage;
-           const tooSoon = timeSinceLastToast < (isSameMessage ? 5000 : 2000);
-
-           if (tooSoon) {
-             console.log(`Suppressing duplicate stuck toast: "${stuckMessage}" (${timeSinceLastToast}ms ago)`);
-             return;
-           }
-           
-           setIsErrorRecoveryNeeded(true);
-           setLastErrorTime(Date.now());
-           
-           // Dismiss any previous error toasts
-           if (lastToastId) {
-             toast.dismiss(lastToastId);
-           }
-           
-           const toastId = toast.error(stuckMessage, {
-             description: 'No response activity detected for 2 minutes',
-             position: "top-center",
-             duration: 6000
-           });
-           
-           setLastToastId(String(toastId));
-           setLastErrorMessage(stuckMessage);
-           setLastToastTimestamp(now);
-         }
-      }, 120000); // Check every 2 minutes
-
-      return () => clearTimeout(stuckTimeout);
-    } else {
-      // Reset activity tracking when not streaming
-      setLastStreamingActivity(null);
-    }
-  }, [status, lastStreamingActivity, lastErrorMessage, lastToastId, lastToastTimestamp]);
-    
   const handleFormSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
@@ -943,7 +550,7 @@ export default function Chat() {
     router,
   ]);
 
-  const isLoading = ((status === "streaming" || status === "submitted") && !isErrorRecoveryNeeded) || isCompareLoading || isLoadingChat || isUploadingFiles;
+  const isLoading = ((status === "streaming" || status === "submitted") && !isRecovering) || isCompareLoading || isLoadingChat || isUploadingFiles;
 
   // Function to send a message from suggested prompts
   const sendSuggestedMessage = useCallback((message: string) => {
@@ -1078,34 +685,23 @@ export default function Chat() {
 
   // Manual recovery function
   const forceRecovery = useCallback(() => {
-    console.log('Manual recovery triggered by user');
-    originalStop();
-    
-    // If we're in a new chat (no chatId), regenerate the chatId to force useChat to reset completely
+    resetRecovery();
+
     if (!chatId) {
-      console.log('Regenerating chat ID to ensure fresh useChat state after manual recovery');
       setGeneratedChatId(nanoid());
     }
-    
-    setIsErrorRecoveryNeeded(false);
-    setLastErrorTime(null);
-    setStreamingStartTime(null);
-    setLastStreamingActivity(null);
+
     setHideImagesInUI(false);
-    
-    // Dismiss any previous error toasts and clear tracking state
+
     if (lastToastId) {
       toast.dismiss(lastToastId);
-      setLastToastId(null);
     }
-    setLastErrorMessage("");
-    setLastToastTimestamp(0);
-    
+
     toast.success('Chat reset successfully. You can now send new messages.', {
       position: "top-center",
       duration: 3000
     });
-  }, [originalStop, lastToastId, chatId]);
+  }, [resetRecovery, lastToastId, chatId]);
 
   // Streaming status component with enhanced timing metrics
   const StreamingStatus = () => {
@@ -1175,7 +771,7 @@ export default function Chat() {
   return (
     <div className="h-full min-w-0 flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
       {/* Error Recovery Banner - Only show if no recent error toast to avoid conflicts */}
-      {isErrorRecoveryNeeded && Date.now() - lastToastTimestamp > 1000 && (
+      {isRecovering && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">

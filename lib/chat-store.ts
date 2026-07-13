@@ -9,7 +9,6 @@ import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation }
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
 import { ConversationPersistenceService } from "@/lib/services/conversationPersistence";
-import { buildActivePathMessages, inferParentChainFromLinearOrder } from "@/lib/chat/conversationTree";
 import {
   convertToDBMessages,
   convertToDBMessagesWithParents,
@@ -214,53 +213,15 @@ export async function getChats(userId: string, limit = 50): Promise<ChatWithShar
 }
 
 export async function getChatById(id: string, userId: string): Promise<ChatWithMessages | null> {
-  const chat = await db.query.chats.findFirst({
-    where: and(
-      eq(chats.id, id),
-      eq(chats.userId, userId)
-    ),
-  });
-
-  if (!chat) return null;
-
-  await ConversationPersistenceService.ensureParentChainBackfilled(id);
-
-  const chatMessages = await db.query.messages.findMany({
-    where: eq(messages.chatId, id),
-    orderBy: [messages.createdAt]
-  });
-
-  const refreshedChat = await db.query.chats.findFirst({
-    where: and(eq(chats.id, id), eq(chats.userId, userId)),
-  });
-
-  const uiMessages = convertToUIMessages(chatMessages);
-  const activeLeafMessageId =
-    refreshedChat?.activeLeafMessageId ?? resolveDefaultLeafFromDb(chatMessages);
-  const activePathMessages = buildActivePathMessages(uiMessages, activeLeafMessageId);
+  const graph = await ConversationPersistenceService.loadChatGraph(id, userId);
+  if (!graph) return null;
 
   return {
-    ...chat,
-    ...refreshedChat,
-    messages: chatMessages,
-    activeLeafMessageId,
-    activePathMessages,
+    ...graph.chat,
+    messages: graph.dbMessages,
+    activeLeafMessageId: graph.activeLeafMessageId,
+    activePathMessages: graph.activePathMessages,
   };
-}
-
-function resolveDefaultLeafFromDb(
-  chatMessages: Array<{ id: string; parentMessageId?: string | null; createdAt: Date }>
-): string | null {
-  if (chatMessages.length === 0) return null;
-  const withParents = inferParentChainFromLinearOrder(
-    convertToUIMessages(chatMessages as Parameters<typeof convertToUIMessages>[0])
-  );
-  const sorted = [...withParents].sort((a, b) => {
-    const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(String(a.createdAt)).getTime();
-    const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(String(b.createdAt)).getTime();
-    return aTime - bTime || a.id.localeCompare(b.id);
-  });
-  return sorted[sorted.length - 1]?.id ?? null;
 }
 
 export async function deleteChat(id: string, userId: string) {

@@ -36,14 +36,12 @@ export interface ImageGenerationRequestOptions {
   model?: string;
 }
 
-export type ChatOperationType = 'continue' | 'regenerate' | 'edit-resubmit' | 'select-leaf' | 'fork';
+export type ChatOperationType = 'continue' | 'regenerate' | 'edit-resubmit';
 
 export type ChatOperation =
   | { type: 'continue' }
   | { type: 'regenerate'; assistantMessageId: string; attemptId: string }
-  | { type: 'edit-resubmit'; userMessageId: string; content: string; attemptId: string }
-  | { type: 'select-leaf'; leafMessageId: string }
-  | { type: 'fork'; forkThroughMessageId: string };
+  | { type: 'edit-resubmit'; userMessageId: string; content: string; attemptId: string };
 
 export interface ChatRequestBody {
   action?: string;
@@ -103,14 +101,6 @@ function parseChatOperation(raw: unknown): ChatOperation {
       content: op.content,
       attemptId: op.attemptId,
     };
-  }
-
-  if (type === 'select-leaf' && typeof op.leafMessageId === 'string') {
-    return { type: 'select-leaf', leafMessageId: op.leafMessageId };
-  }
-
-  if (type === 'fork' && typeof op.forkThroughMessageId === 'string') {
-    return { type: 'fork', forkThroughMessageId: op.forkThroughMessageId };
   }
 
   return DEFAULT_OPERATION;
