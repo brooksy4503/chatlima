@@ -11,7 +11,7 @@ import { CompareModeBar } from "./compare/CompareModeBar";
 import { toast } from "sonner";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { convertToUIMessages } from "@/lib/chat-store";
+import { convertToUIMessages } from "@/lib/chat/messageConversion";
 import { formatQuotedMessageContent } from "@/lib/quoted-text-utils";
 import { dbMessagesHaveRicherAssistantParts } from "@/lib/chat-message-persistence";
 import { type Message as DBMessage } from "@/lib/db/schema";

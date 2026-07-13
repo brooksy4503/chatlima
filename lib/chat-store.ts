@@ -4,14 +4,22 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { generateTitle } from "@/app/actions";
 import type { UIMessage } from "ai";
-import { getUIMessageText } from "@/lib/message-utils";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation } from "./types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
 import { ConversationPersistenceService } from "@/lib/services/conversationPersistence";
 import { buildActivePathMessages, inferParentChainFromLinearOrder } from "@/lib/chat/conversationTree";
+import {
+  convertToDBMessages,
+  convertToDBMessagesWithParents,
+  convertToUIMessages,
+} from "@/lib/chat/messageConversion";
 
-type AIMessage = CompareUIMessage;
+export {
+  convertToDBMessages,
+  convertToDBMessagesWithParents,
+  convertToUIMessages,
+};
 
 type UIMessageWithMeta = {
   id: string;
@@ -60,103 +68,6 @@ export async function saveMessages({
     console.error('Failed to save messages in database', error);
     throw error;
   }
-}
-
-function parseMessageCreatedAt(createdAt: AIMessage['createdAt']): Date | null {
-  if (createdAt instanceof Date && !Number.isNaN(createdAt.getTime())) {
-    return createdAt;
-  }
-
-  if (typeof createdAt === 'string') {
-    const parsed = new Date(createdAt);
-    if (!Number.isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-
-  return null;
-}
-
-// Function to convert AI messages to DB format
-export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DBMessage[] {
-  const baseTimestamp = Date.now();
-  let previousTimestamp = 0;
-
-  return aiMessages.map((msg, index) => {
-    // Use existing id or generate a new one
-    const messageId = msg.id || nanoid();
-    const parsedCreatedAt = parseMessageCreatedAt(msg.createdAt);
-    let createdAt = parsedCreatedAt ?? new Date(baseTimestamp + index);
-
-    if (createdAt.getTime() <= previousTimestamp) {
-      createdAt = new Date(previousTimestamp + 1);
-    }
-    previousTimestamp = createdAt.getTime();
-
-    // If msg has parts, use them directly
-    if (msg.parts?.length) {
-      return {
-        id: messageId,
-        chatId,
-        role: msg.role,
-        parts: msg.parts,
-        hasWebSearch: msg.hasWebSearch || false,
-        webSearchContextSize: msg.webSearchContextSize || 'medium',
-        modelId: msg.modelId ?? null,
-        modelProvider: msg.modelProvider ?? null,
-        modelDisplayName: msg.modelDisplayName ?? null,
-        comparisonTurnId: msg.comparisonTurnId ?? null,
-        parentMessageId: msg.parentMessageId ?? null,
-        createdAt
-      };
-    }
-
-    // Otherwise, create parts from text content
-    const parts: Array<TextUIPart | ToolInvocationUIPart | ImageUIPart | ReasoningUIPart | SourceUIPart | FileUIPart | StepStartUIPart> = [
-      { type: 'text', text: getUIMessageText(msg) } as TextUIPart,
-    ];
-
-    return {
-      id: messageId,
-      chatId,
-      role: msg.role,
-      parts,
-      hasWebSearch: msg.hasWebSearch || false,
-      webSearchContextSize: msg.webSearchContextSize || 'medium',
-      modelId: msg.modelId ?? null,
-      modelProvider: msg.modelProvider ?? null,
-      modelDisplayName: msg.modelDisplayName ?? null,
-      comparisonTurnId: msg.comparisonTurnId ?? null,
-      parentMessageId: msg.parentMessageId ?? null,
-      createdAt
-    };
-  });
-}
-
-export function convertToDBMessagesWithParents(
-  aiMessages: AIMessage[],
-  chatId: string
-): DBMessage[] {
-  const withParents = inferParentChainFromLinearOrder(aiMessages);
-  return convertToDBMessages(withParents, chatId);
-}
-
-// Convert DB messages to UI format
-export function convertToUIMessages(dbMessages: Array<Message>): CompareUIMessage[] {
-  return dbMessages.map((message) => ({
-    id: message.id,
-    // DB stores legacy/custom part shapes (image_url, tool-invocation); cast for UIMessage compat
-    parts: message.parts as UIMessage['parts'],
-    role: message.role as UIMessage['role'],
-    createdAt: message.createdAt,
-    hasWebSearch: message.hasWebSearch || false,
-    webSearchContextSize: (message.webSearchContextSize || 'medium') as 'low' | 'medium' | 'high',
-    modelId: message.modelId ?? null,
-    modelProvider: message.modelProvider ?? null,
-    modelDisplayName: message.modelDisplayName ?? null,
-    comparisonTurnId: message.comparisonTurnId ?? null,
-    parentMessageId: message.parentMessageId ?? null,
-  }));
 }
 
 export async function saveChat({ id, userId, messages: aiMessages, title, selectedModel, apiKeys, isAnonymous, titleGenerationPromise }: SaveChatParams) {

@@ -11,7 +11,10 @@ import {
   resolveDefaultLeafId,
   type TreeMessageNode,
 } from '@/lib/chat/conversationTree';
-import { convertToDBMessages, convertToUIMessages } from '@/lib/chat-store';
+import {
+  convertToDBMessages,
+  convertToUIMessages,
+} from '@/lib/chat/messageConversion';
 import type { CompareUIMessage } from '@/lib/chat/compareHistory';
 
 export type ConversationPersistResult = {
