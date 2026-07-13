@@ -15,6 +15,16 @@ describe('conversationTree', () => {
     { id: 'a2', role: 'assistant', createdAt: new Date('2026-01-01T00:03:00Z') },
   ];
 
+  it('preserves explicit regenerate sibling parents', () => {
+    const branched = [
+      { id: 'u1', role: 'user', parentMessageId: null, createdAt: new Date(1) },
+      { id: 'a1', role: 'assistant', parentMessageId: 'u1', createdAt: new Date(2) },
+      { id: 'a1b', role: 'assistant', parentMessageId: 'u1', createdAt: new Date(3) },
+    ];
+    const withParents = inferParentChainFromLinearOrder(branched);
+    expect(withParents.map((m) => m.parentMessageId)).toEqual([null, 'u1', 'u1']);
+  });
+
   it('infers parent chain from linear order', () => {
     const withParents = inferParentChainFromLinearOrder(linearMessages);
     expect(withParents.map((m) => m.parentMessageId)).toEqual([null, 'u1', 'a1', 'u2']);

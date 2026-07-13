@@ -224,6 +224,12 @@ export class ConversationPersistenceService {
 
     await db.transaction(async (tx) => {
       for (const message of withParents) {
+        // Never overwrite explicit branch edges — only fill legacy null parents.
+        const existing = chatMessages.find((row) => row.id === message.id);
+        if (existing?.parentMessageId != null) {
+          continue;
+        }
+
         await tx
           .update(messages)
           .set({ parentMessageId: message.parentMessageId ?? null })

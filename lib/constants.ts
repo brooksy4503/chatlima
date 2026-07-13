@@ -19,5 +19,8 @@ export const STORAGE_KEYS = {
 export const MONTHLY_CREDIT_ALLOWANCE = 1000;
 export const YEARLY_CREDIT_ALLOWANCE = 12000;
 
+/** Credit cost for enabling web search on a turn */
+export const WEB_SEARCH_COST = 5;
+
 // Configurable model IDs
 export const titleGenerationModelId = process.env.TITLE_GENERATION_MODEL_ID || 'openrouter/openai/gpt-5-nano'; 

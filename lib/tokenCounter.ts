@@ -6,11 +6,7 @@ import { nanoid } from 'nanoid';
 import { modelID } from '@/ai/providers';
 import { ModelInfo } from '@/lib/types/models';
 import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
-
-/**
- * Cost in credits for enabling Web Search feature
- */
-export const WEB_SEARCH_COST = 5;
+export { WEB_SEARCH_COST } from '@/lib/constants';
 
 /**
  * @deprecated Use getImageGenerationCreditCost() from lib/constants/image-generation-models.ts

@@ -209,9 +209,17 @@ export function inferParentChainFromLinearOrder<T extends CompareUIMessage>(
   const compareUserByTurn = new Map<string, string>();
 
   return messages.map((message) => {
-    let parentMessageId: string | null = previousId;
+    // Preserve explicit branch parents (regenerate/edit siblings). Only infer when unset.
+    let parentMessageId: string | null =
+      message.parentMessageId !== undefined
+        ? message.parentMessageId ?? null
+        : previousId;
 
-    if (message.comparisonTurnId && message.role === 'assistant') {
+    if (
+      message.parentMessageId === undefined &&
+      message.comparisonTurnId &&
+      message.role === 'assistant'
+    ) {
       const userParent = compareUserByTurn.get(message.comparisonTurnId);
       parentMessageId = userParent ?? previousId;
     }

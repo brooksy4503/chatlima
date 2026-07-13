@@ -13,7 +13,7 @@ import { useImageGeneration } from "@/lib/context/image-generation-context";
 import { usePresets } from "@/lib/context/preset-context";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { WEB_SEARCH_COST } from "@/lib/tokenCounter";
+import { WEB_SEARCH_COST } from "@/lib/constants";
 import { getImageGenerationCreditCost } from "@/lib/constants/image-generation-models";
 import { FileUpload } from "./file-upload";
 import { FilePreview } from "./file-preview";

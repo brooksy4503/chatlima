@@ -65,11 +65,23 @@ function generateChatPDF(chat: any): Buffer {
     // Messages (active branch path only when available)
     const exportMessages: Message[] =
       chat.activePathMessages && chat.activePathMessages.length > 0
-        ? chat.activePathMessages.map((message) => ({
+        ? chat.activePathMessages.map((message: {
+            id: string;
+            role: string;
+            parts?: Message['parts'];
+            hasWebSearch?: boolean;
+            webSearchContextSize?: string | null;
+            modelId?: string | null;
+            modelProvider?: string | null;
+            modelDisplayName?: string | null;
+            comparisonTurnId?: string | null;
+            parentMessageId?: string | null;
+            createdAt?: Date | string | null;
+          }) => ({
             id: message.id,
             chatId: chat.id,
             role: message.role,
-            parts: message.parts as Message['parts'],
+            parts: (message.parts ?? []) as Message['parts'],
             hasWebSearch: message.hasWebSearch ?? false,
             webSearchContextSize: message.webSearchContextSize ?? 'medium',
             modelId: message.modelId ?? null,

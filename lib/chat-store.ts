@@ -1,3 +1,4 @@
+import "server-only";
 import { db } from "./db";
 import { chats, messages, chatShares, type Chat, type ChatWithShareInfo, type Message, MessageRole, type MessagePart, type DBMessage } from "./db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";

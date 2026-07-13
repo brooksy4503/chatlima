@@ -55,16 +55,21 @@ export function buildAssistantMessageForPersistence(
 
   const trailingAssistant = clientMessages[clientMessages.length - 1];
   const fallbackId =
-    responseAssistantId ??
     (trailingAssistant?.role === 'assistant' ? trailingAssistant.id : undefined) ??
+    responseAssistantId ??
     nanoid();
+  const parentMessageId =
+    trailingAssistant?.role === 'assistant'
+      ? ((trailingAssistant as { parentMessageId?: string | null }).parentMessageId ?? null)
+      : undefined;
 
   if (uiResponseMessage?.parts?.length && uiPartsHaveDisplayableText(uiResponseMessage.parts)) {
     return {
       id: uiResponseMessage.id || fallbackId,
       role: 'assistant',
       parts: markServerExecutedToolParts(uiResponseMessage.parts),
-    };
+      ...(parentMessageId !== undefined ? { parentMessageId } : {}),
+    } as UIMessage;
   }
 
   const assistantParts: UIMessage['parts'] = [];
@@ -83,7 +88,8 @@ export function buildAssistantMessageForPersistence(
         id: uiResponseMessage.id || fallbackId,
         role: 'assistant',
         parts: markServerExecutedToolParts([...nonTextParts, ...assistantParts]),
-      };
+        ...(parentMessageId !== undefined ? { parentMessageId } : {}),
+      } as UIMessage;
     }
   }
 
@@ -91,7 +97,8 @@ export function buildAssistantMessageForPersistence(
     id: fallbackId,
     role: 'assistant',
     parts: assistantParts,
-  };
+    ...(parentMessageId !== undefined ? { parentMessageId } : {}),
+  } as UIMessage;
 }
 
 export interface ProcessMessagesForPersistenceParams {
