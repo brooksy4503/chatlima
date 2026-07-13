@@ -291,7 +291,7 @@ const PurePreviewMessage = ({
     <AnimatePresence key={message.id}>
       <motion.div
         className={cn(
-          "w-full mx-auto px-4 group/message",
+          "w-full min-w-0 mx-auto px-4 group/message",
           message.role === "assistant" ? "mb-8" : "mb-6"
         )}
         initial={{ y: 5, opacity: 0 }}
@@ -301,11 +301,11 @@ const PurePreviewMessage = ({
       >
         <div
           className={cn(
-            "flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl",
+            "flex gap-4 w-full min-w-0 group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl",
             "group-data-[role=user]/message:w-fit",
           )}
         >
-          <div className="flex flex-col w-full space-y-3">
+          <div className="flex flex-col w-full min-w-0 space-y-3">
             {showLiveWebSearch && (
               <ToolInvocation
                 key={`message-${message.id}-live-web-search`}
@@ -349,11 +349,11 @@ const PurePreviewMessage = ({
                       initial={{ y: 5, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       key={`message-${message.id}-part-${i}`}
-                      className="flex flex-row gap-2 items-start w-full"
+                      className="flex flex-row gap-2 items-start w-full min-w-0"
                       data-message-id={message.id}
                     >
                       <div
-                        className={cn("flex flex-col gap-3 w-full", {
+                        className={cn("flex flex-col gap-3 w-full min-w-0", {
                           "bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl flex items-center gap-2":
                             message.role === "user",
                         })}

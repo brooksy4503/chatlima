@@ -368,7 +368,7 @@ const NonMemoizedMarkdown = ({
    // Handle null, undefined, or non-string content
    if (children === null || children === undefined) {
       return (
-         <div className="overflow-x-auto max-w-full">
+         <div className="min-w-0 w-full max-w-full overflow-x-auto">
             <ReactMarkdown
                remarkPlugins={remarkPlugins}
                rehypePlugins={rehypePlugins}
@@ -384,7 +384,7 @@ const NonMemoizedMarkdown = ({
       console.warn('Markdown component received non-string children:', typeof children);
       const stringContent = String(children);
       return (
-         <div className="overflow-x-auto max-w-full">
+         <div className="min-w-0 w-full max-w-full overflow-x-auto">
             <ReactMarkdown
                remarkPlugins={remarkPlugins}
                rehypePlugins={rehypePlugins}
@@ -450,7 +450,7 @@ const NonMemoizedMarkdown = ({
       };
 
       return (
-         <div className="overflow-x-auto max-w-full">
+         <div className="min-w-0 w-full max-w-full overflow-x-auto">
             <ReactMarkdown
                remarkPlugins={remarkPlugins}
                rehypePlugins={rehypePlugins}
@@ -464,7 +464,7 @@ const NonMemoizedMarkdown = ({
       console.error('Error rendering markdown:', error);
       // Fallback: render as plain text if markdown processing fails
       return (
-         <div className="overflow-x-auto max-w-full">
+         <div className="min-w-0 w-full max-w-full overflow-x-auto">
             <pre className="whitespace-pre-wrap break-words text-sm">
                {children}
             </pre>

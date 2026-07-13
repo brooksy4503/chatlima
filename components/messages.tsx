@@ -81,10 +81,10 @@ export const Messages = ({
   return (
     <>
     <div
-      className="h-full min-h-0 overflow-y-auto no-scrollbar"
+      className="h-full min-h-0 min-w-0 overflow-y-auto overflow-x-hidden no-scrollbar"
       ref={containerRef}
     >
-      <div className="max-w-lg sm:max-w-3xl mx-auto py-4">
+      <div className="max-w-lg sm:max-w-3xl mx-auto min-w-0 w-full py-4">
         {messages.map((m, i) => (
           <Message
             key={m.id}

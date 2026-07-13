@@ -58,13 +58,13 @@ describe('Messages Component', () => {
   describe('Basic Rendering', () => {
     test('renders without crashing', () => {
       const { container } = render(<Messages {...defaultProps} />);
-      const scrollContainer = container.querySelector('.h-full.overflow-y-auto.no-scrollbar');
+      const scrollContainer = container.querySelector('.h-full.min-h-0.min-w-0.overflow-y-auto.overflow-x-hidden.no-scrollbar');
       expect(scrollContainer).toBeInTheDocument();
     });
 
     test('renders with empty messages array', () => {
       const { container } = render(<Messages {...defaultProps} messages={[]} />);
-      const scrollContainer = container.querySelector('.h-full.overflow-y-auto.no-scrollbar');
+      const scrollContainer = container.querySelector('.h-full.min-h-0.min-w-0.overflow-y-auto.overflow-x-hidden.no-scrollbar');
       expect(scrollContainer).toBeInTheDocument();
       expect(screen.queryByTestId('message-content')).not.toBeInTheDocument();
     });
@@ -72,13 +72,13 @@ describe('Messages Component', () => {
     test('applies correct CSS classes to container', () => {
       const { container } = render(<Messages {...defaultProps} />);
       const scrollContainer = container.firstChild as HTMLElement;
-      expect(scrollContainer).toHaveClass('h-full', 'overflow-y-auto', 'no-scrollbar');
+      expect(scrollContainer).toHaveClass('h-full', 'min-h-0', 'min-w-0', 'overflow-y-auto', 'overflow-x-hidden', 'no-scrollbar');
     });
 
     test('applies correct CSS classes to inner container', () => {
       const { container } = render(<Messages {...defaultProps} />);
       const innerContainer = container.querySelector('.max-w-lg');
-      expect(innerContainer).toHaveClass('max-w-lg', 'sm:max-w-3xl', 'mx-auto', 'py-4');
+      expect(innerContainer).toHaveClass('max-w-lg', 'sm:max-w-3xl', 'mx-auto', 'min-w-0', 'w-full', 'py-4');
     });
 
     test('renders scroll-to-bottom element', () => {
@@ -180,7 +180,7 @@ describe('Messages Component', () => {
     test('handles loading state with empty messages', () => {
       const { container } = render(<Messages {...defaultProps} messages={[]} isLoading={true} />);
       
-      const scrollContainer = container.querySelector('.h-full.overflow-y-auto.no-scrollbar');
+      const scrollContainer = container.querySelector('.h-full.min-h-0.min-w-0.overflow-y-auto.overflow-x-hidden.no-scrollbar');
       expect(scrollContainer).toBeInTheDocument();
       expect(screen.queryByTestId('message-content')).not.toBeInTheDocument();
     });

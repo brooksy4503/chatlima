@@ -90,7 +90,7 @@ console.log('code block');
       const { container } = render(<Markdown>Test content</Markdown>);
       
       const wrapper = container.firstChild as HTMLElement;
-      expect(wrapper).toHaveClass('overflow-x-auto', 'max-w-full');
+      expect(wrapper).toHaveClass('overflow-x-auto', 'max-w-full', 'min-w-0', 'w-full');
     });
   });
 
@@ -233,7 +233,7 @@ console.log('code block');
       // Should have proper div wrapper
       const wrapper = container.firstChild as HTMLElement;
       expect(wrapper.tagName).toBe('DIV');
-      expect(wrapper).toHaveClass('overflow-x-auto', 'max-w-full');
+      expect(wrapper).toHaveClass('overflow-x-auto', 'max-w-full', 'min-w-0', 'w-full');
     });
 
     test('allows custom components to maintain accessibility', () => {

@@ -17,9 +17,9 @@ export default function AppLayout({
         <AnonymousAuth />
         <div className="flex h-dvh w-full">
           <ChatSidebar />
-          <SidebarInset className="flex min-w-0 flex-col">
+          <SidebarInset className="flex min-h-0 min-w-0 flex-col overflow-hidden">
             <TopNav />
-            <div className="flex flex-1 justify-center overflow-auto">
+            <div className="flex min-h-0 min-w-0 flex-1 justify-center overflow-hidden">
               {children}
             </div>
           </SidebarInset>

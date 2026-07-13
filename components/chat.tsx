@@ -1333,7 +1333,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="h-full flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
+    <div className="h-full min-w-0 flex flex-col justify-between w-full max-w-3xl mx-auto px-4 sm:px-6 md:py-4">
       {/* Error Recovery Banner - Only show if no recent error toast to avoid conflicts */}
       {isErrorRecoveryNeeded && Date.now() - lastToastTimestamp > 1000 && (
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
@@ -1383,7 +1383,7 @@ export default function Chat() {
       )}
 
       {/* Main content area: Either ProjectOverview, minimal empty state, or Messages */}
-      <div className="flex-1 min-h-0 pb-2 overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 min-w-0 pb-2 overflow-hidden flex flex-col">
         {messages.length === 0 && !isLoadingChat ? (
           <>
             {compareModeEnabled && <CompareModeBar />}

@@ -606,13 +606,13 @@
     color: inherit;
   }
 
-  /* Handle KaTeX overflow to prevent layout breaking */
+  /* Keep KaTeX inside the message column — never expand the chat shell */
   .katex-display {
+    display: block;
     overflow-x: auto;
     overflow-y: hidden;
     max-width: 100%;
     padding: 0.5em 0;
-    /* Add subtle scrollbar styling */
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
   }
@@ -635,35 +635,41 @@
     background-color: rgba(255, 255, 255, 0.3);
   }
 
-  /* Handle inline math overflow */
+  /* Inline math: bound to parent width, not the viewport */
   .katex {
     max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
     display: inline-block;
+    vertical-align: middle;
     white-space: nowrap;
   }
 
-  /* Ensure the parent container respects the overflow */
-  .katex-html {
-    overflow: visible;
+  /* Clip radical/fraction SVG strokes that paint far outside their box */
+  .katex svg {
+    overflow: hidden;
+    max-width: none;
   }
 
-  /* Prevent math expressions from breaking container bounds */
+  .katex-html {
+    max-width: 100%;
+  }
+
+  /* Scroll wide display math inside the paragraph/message, not the page */
   p:has(.katex-display),
-  div:has(.katex-display) {
+  div:has(.katex-display),
+  li:has(.katex-display) {
     overflow-x: auto;
     max-width: 100%;
   }
 
-  /* Ensure message containers handle math overflow properly */
   .group\/message .katex-display {
     margin: 0.5em 0;
   }
 
-  /* Handle very wide inline math expressions */
-  .katex:not(.katex-display) {
-    max-width: calc(100vw - 8rem);
+  .group\/message {
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   /* iOS Homescreen Shortcut Enhancements */
