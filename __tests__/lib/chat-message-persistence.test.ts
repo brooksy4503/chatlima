@@ -3,6 +3,7 @@ import {
   buildAssistantMessageForPersistence,
   countPersistableDisplayParts,
   createStreamFinishGate,
+  dbActivePathIsDifferentBranch,
   dbMessagesHaveRicherAssistantParts,
   markServerExecutedToolParts,
   processMessagesForPersistence,
@@ -216,6 +217,62 @@ describe('chat-message-persistence', () => {
         dbMessagesHaveRicherAssistantParts(
           [userMessage, richAssistant],
           [userMessage, richAssistant]
+        )
+      ).toBe(false);
+    });
+
+    it('returns false when DB path is a different branch (unmatched ids)', () => {
+      const current: UIMessage[] = [
+        { id: 'user-new', role: 'user', parts: [{ type: 'text', text: 'edited', state: 'done' }] },
+        {
+          id: 'asst-new',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'EDIT_OK', state: 'done' }],
+        },
+      ];
+      const fromDb: UIMessage[] = [
+        userMessage,
+        {
+          id: 'asst-old',
+          role: 'assistant',
+          parts: [
+            { type: 'reasoning', text: 'Thinking', state: 'done' },
+            { type: 'text', text: 'OLD_OK', state: 'done' },
+          ],
+        },
+      ];
+
+      expect(dbMessagesHaveRicherAssistantParts(current, fromDb)).toBe(false);
+    });
+  });
+
+  describe('dbActivePathIsDifferentBranch', () => {
+    it('returns true when DB leaf differs and path ends at that leaf', () => {
+      expect(
+        dbActivePathIsDifferentBranch(
+          [{ id: 'u1' }, { id: 'a1' }],
+          [{ id: 'u2' }, { id: 'a2' }],
+          'a2'
+        )
+      ).toBe(true);
+    });
+
+    it('returns false when leaves match', () => {
+      expect(
+        dbActivePathIsDifferentBranch(
+          [{ id: 'u1' }, { id: 'a1' }],
+          [{ id: 'u1' }, { id: 'a1' }],
+          'a1'
+        )
+      ).toBe(false);
+    });
+
+    it('returns false when DB path does not end at claimed leaf', () => {
+      expect(
+        dbActivePathIsDifferentBranch(
+          [{ id: 'u1' }, { id: 'a1' }],
+          [{ id: 'u2' }, { id: 'a2' }],
+          'a-missing'
         )
       ).toBe(false);
     });

@@ -13,7 +13,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { convertToUIMessages } from "@/lib/chat/messageConversion";
 import { formatQuotedMessageContent } from "@/lib/quoted-text-utils";
-import { dbMessagesHaveRicherAssistantParts } from "@/lib/chat-message-persistence";
+import { dbActivePathIsDifferentBranch, dbMessagesHaveRicherAssistantParts } from "@/lib/chat-message-persistence";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
 import { useModel } from "@/lib/context/model-context";
@@ -688,6 +688,7 @@ export default function Chat() {
 
   // Sync DB history into useChat when navigating to a chat, and re-sync when a refetch
   // returns richer assistant parts (tool/reasoning) after the server finishes persisting.
+  // Do not treat a different branch path as "richer" — that clobbers edit/regenerate UI.
   const loadedChatIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!chatId || isLoadingChat) return;
@@ -705,15 +706,40 @@ export default function Chat() {
       return;
     }
 
+    if (status !== "ready" || initialMessages.length === 0) {
+      return;
+    }
+
+    if (messages.length === 0) {
+      setMessages(initialMessages);
+      return;
+    }
+
+    if (dbMessagesHaveRicherAssistantParts(messages, initialMessages)) {
+      setMessages(initialMessages);
+      return;
+    }
+
+    // Once the server confirms a new active leaf (edit/regenerate), adopt that path.
     if (
-      status === "ready" &&
-      initialMessages.length > 0 &&
-      (messages.length === 0 ||
-        dbMessagesHaveRicherAssistantParts(messages, initialMessages))
+      dbActivePathIsDifferentBranch(
+        messages,
+        initialMessages,
+        chatData?.activeLeafMessageId
+      )
     ) {
       setMessages(initialMessages);
     }
-  }, [chatId, isLoadingChat, initialMessages, status, setMessages, messages, isCompareLoading]);
+  }, [
+    chatId,
+    isLoadingChat,
+    initialMessages,
+    status,
+    setMessages,
+    messages,
+    isCompareLoading,
+    chatData?.activeLeafMessageId,
+  ]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);

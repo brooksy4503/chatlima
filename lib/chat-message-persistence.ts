@@ -253,8 +253,13 @@ export function dbMessagesHaveRicherAssistantParts(
     }
 
     const currentMsg = current.find((m) => m.id === dbMsg.id);
+    // Different branch / message set — not an enrichment of the in-memory turn.
+    if (!currentMsg) {
+      continue;
+    }
+
     const dbCount = countPersistableDisplayParts(dbMsg.parts);
-    const currentCount = countPersistableDisplayParts(currentMsg?.parts);
+    const currentCount = countPersistableDisplayParts(currentMsg.parts);
 
     if (dbCount > currentCount) {
       return true;
@@ -262,4 +267,26 @@ export function dbMessagesHaveRicherAssistantParts(
   }
 
   return false;
+}
+
+/** True when the DB active path is a different branch than the in-memory transcript. */
+export function dbActivePathIsDifferentBranch(
+  current: Array<{ id: string }>,
+  fromDb: Array<{ id: string }>,
+  activeLeafMessageId?: string | null
+): boolean {
+  if (fromDb.length === 0 || current.length === 0) {
+    return false;
+  }
+
+  const localLeafId = current[current.length - 1]?.id;
+  const dbLeafId =
+    activeLeafMessageId ?? fromDb[fromDb.length - 1]?.id ?? null;
+
+  if (!localLeafId || !dbLeafId || localLeafId === dbLeafId) {
+    return false;
+  }
+
+  // Only adopt the DB path once it actually ends at the reported active leaf.
+  return fromDb[fromDb.length - 1]?.id === dbLeafId;
 }
