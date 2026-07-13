@@ -42,9 +42,9 @@ See `CLAUDE.md` and `package.json` scripts for the full list. Key commands:
 - **Lint**: `pnpm lint`
 - **Build**: `pnpm build`
 - **Unit tests**: `pnpm test:unit` (Jest — some pre-existing timeout failures with fake timers)
-- **E2E basic UI**: `npx playwright test --project=basic-ui-chrome --config=playwright.basic.config.ts`
+- **E2E basic UI**: `pnpm test:basic -- --project=basic-ui-chrome`
 - **E2E anonymous**: `pnpm test:anonymous` (sends real AI requests, takes time)
-- **Playwright browsers**: must run `npx playwright install --with-deps chromium` before first test run
+- **Playwright browsers**: run `pnpm test:install-browsers` once before the first E2E run (uses the repo's Playwright version — do not use `npx playwright install`, which can fetch a mismatched browser build)
 
 ### Gotchas
 

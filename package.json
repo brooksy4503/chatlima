@@ -22,6 +22,7 @@
     "test:basic": "playwright test --config=playwright.basic.config.ts",
     "test:basic:ui": "playwright test --config=playwright.basic.config.ts --ui",
     "test:basic:debug": "playwright test --config=playwright.basic.config.ts --debug",
+    "test:install-browsers": "playwright install chromium",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:prod": "NODE_ENV=production drizzle-kit migrate",

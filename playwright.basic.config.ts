@@ -1,12 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
+import { playwrightReporters, playwrightWebServer } from './playwright.shared';
 
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
-    retries: 1, // Simple retry strategy
-    workers: process.env.CI ? 1 : 2, // Reduced parallelism for reliability
-    reporter: 'html',
+    retries: 1,
+    workers: process.env.CI ? 1 : 2,
+    reporter: playwrightReporters,
 
     use: {
         baseURL: 'http://localhost:3000', // Local development server
@@ -41,11 +42,5 @@ export default defineConfig({
         },
     ],
 
-    // Run dev server before tests
-    webServer: {
-        command: 'npm run dev',
-        port: 3000,
-        reuseExistingServer: !process.env.CI,
-        timeout: 120000, // 2 minutes to start dev server
-    },
-}); 
+    webServer: playwrightWebServer,
+});

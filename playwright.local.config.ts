@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { playwrightReporters, playwrightWebServer } from './playwright.shared';
 
 export default defineConfig({
     testDir: './tests',
@@ -6,7 +7,7 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
     workers: process.env.CI ? 1 : undefined,
-    reporter: 'html',
+    reporter: playwrightReporters,
 
     use: {
         baseURL: 'http://localhost:3000',
@@ -44,12 +45,5 @@ export default defineConfig({
         },
     ],
 
-    webServer: {
-        command: 'pnpm dev',
-        url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
-        stdout: 'ignore',
-        stderr: 'pipe',
-        timeout: 120 * 1000,
-    },
+    webServer: playwrightWebServer,
 }); 
