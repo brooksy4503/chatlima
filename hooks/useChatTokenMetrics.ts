@@ -28,6 +28,20 @@ export type ChatTokenData = {
   avgTimeToFirstToken?: number;
   avgTokensPerSecond?: number;
   avgTotalDuration?: number;
+  breakdownByMessage?: Array<{
+    messageId: string | null;
+    modelId: string;
+    provider: string;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    estimatedCost: number;
+    actualCost: number;
+    createdAt: string | Date;
+    timeToFirstTokenMs?: number;
+    tokensPerSecond?: number;
+    processingTimeMs?: number;
+  }>;
 };
 
 type UseChatTokenMetricsParams = {

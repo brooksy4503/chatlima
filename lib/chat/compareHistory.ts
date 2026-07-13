@@ -5,6 +5,7 @@ export type CompareUIMessage = UIMessage & {
   modelProvider?: string | null;
   modelDisplayName?: string | null;
   comparisonTurnId?: string | null;
+  parentMessageId?: string | null;
   latencyMs?: number;
   createdAt?: Date | string;
   hasWebSearch?: boolean;

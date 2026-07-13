@@ -184,6 +184,7 @@ The application uses specialized services for maintainability:
   id: string (nanoid)
   userId: string (FK → users)
   title: string (default: "New Chat")
+  activeLeafMessageId: string? // canonical selected branch leaf
   createdAt: timestamp
   updatedAt: timestamp
 }
@@ -198,10 +199,11 @@ The application uses specialized services for maintainability:
   parts: json                 // MessagePart[]
   hasWebSearch: boolean?
   webSearchContextSize: string? // "low", "medium", "high"
-  modelId: string?              // model used for this message (assistant) or compare set
+  modelId: string?              // immutable model snapshot for this turn
   modelProvider: string?
   modelDisplayName: string?
   comparisonTurnId: string?     // groups user + N assistant rows from one compare send
+  parentMessageId: string?      // tree edge to parent message (null for roots)
   createdAt: timestamp
 }
 ```
@@ -606,6 +608,8 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 - **Text selection quote (Add to chat)**: Highlight text in the message list to show an **Add to chat** toolbar. Selected text appears as a dismissible chip above the composer (same stack as file previews). On send, the quote is prepended to the user message as a markdown blockquote (`> line` per line), then the user's typed question; quote-only follow-ups are allowed. One quote at a time; works in normal and compare timelines. No API/schema change.
 - **Smart Title Generation**: Dynamic model selection for conversation titles. Default OpenRouter title model is `openrouter/openai/gpt-5-nano` (override via `TITLE_GENERATION_MODEL_ID` or `OPENROUTER_TITLE_MODEL`). Title generation starts in parallel when a new chat begins streaming and is persisted before the chat save completes.
 - **Per-chat usage chip (Chat A)**: When the chat is idle (`status === "ready"`) and the last message is from the assistant, a thin Grok-style action bar renders under that message (`components/assistant-action-bar.tsx`): icon-only copy on the left, expandable usage pill on the right (`components/token-metrics/ChatUsageChip.tsx`). Collapsed pill: compact totals (`tokens · credits · msgs`; credits omitted when zero). Expanded: popover with input/output token breakdown, credits consumed in this chat, message count. No dollar amounts. Data from `hooks/useChatTokenMetrics.ts` → `GET /api/token-usage?chatId=…`; credits summed from `token_usage_metrics.metadata.creditsConsumed` per turn (`lib/tokenTracking.ts` `totalCreditsConsumed`).
+- **Conversation branching**: Same-chat immutable branches via `messages.parentMessageId` and `chats.activeLeafMessageId`. **Regenerate** creates a new assistant sibling under the same user message; **Edit & resubmit** creates a new user sibling and streams a new assistant response; hidden branches remain in the graph. A compact `‹ n / m ›` pager switches versions and persists selection via `PATCH /api/chats/[id]/active-leaf`. **Fork to new chat** copies only the visible path through the selected message via `POST /api/chats/[id]/fork` and inherits the source project link. Branch operations route through `POST /api/chat` `operation` (`continue`, `regenerate`, `edit-resubmit`) and `lib/chat/resolveChatOperation.ts`. Persistence uses upsert-by-id (`ConversationPersistenceService`) rather than full chat replace so sibling branches are preserved.
+- **Per-message model attribution**: Every assistant response shows its immutable `modelDisplayName` beside per-message token metrics when available. Model snapshots are written at persist time (`lib/chat/modelSnapshot.ts`) on both user and assistant rows; `token_usage_metrics.messageId` links usage to the final assistant message. Older messages without snapshots omit the label.
 - **Sidebar credit balance pill (Sidebar A)**: Expanded sidebar shows a compact Usage meter from Polar (`components/credit-balance-pill.tsx`): label `Usage`, a left-to-right bar for **used** percentage (green → amber → red by threshold), and a short summary (`{percent}%` for subscribers, `{used}/{limit}` for free/anonymous). Full detail lives in a hover/focus tooltip — subscribers: `{remaining} remaining · {used} used of {allowance} credits`; free/anonymous: `{used} used · {remaining} remaining today`. Allowance constants in `lib/constants.ts`; balance from `useAuth().usageData.credits` (TanStack Query key `usage-messages`). On chat finish the query is invalidated, and when per-chat `totalCreditsConsumed` increases the sidebar cache is decremented immediately (Polar’s meter balance lags event ingest; refetches keep the lower optimistic remaining until Polar catches up or a credit grant resets it).
 
 ### 8.2 Presets System
@@ -668,10 +672,10 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 ```
 POST /api/chat
 - Main chat endpoint with streaming
-- Request body includes webSearch: { enabled: boolean, contextSize: "low" | "medium" | "high" } and imageGeneration: { enabled, quality, aspectRatio, outputFormat, model }
+- Request body includes `operation` (`continue` | `regenerate` | `edit-resubmit`), webSearch: { enabled: boolean, contextSize: "low" | "medium" | "high" }, and imageGeneration: { enabled, quality, aspectRatio, outputFormat, model }
 - Handles MCP tools, OpenRouter web search (agentic or legacy :online), Chatlima image_generation tool backed by OpenRouter image-output models, native web_fetch, images (base64), file references (Blob URLs)
 - Integrates read_file tool for uploaded documents and web_fetch tool for URL extraction
-- **Persistence**: Client history (excluding in-flight assistant placeholder) is saved before streaming starts; assistant messages are saved in awaited `uiOnFinish` after waiting up to 6s for `streamText` metadata (image URLs, tool steps). `saveMessages` uses a DB transaction (delete + insert). Stream-finish fallback persistence runs via Next.js `after()`.
+- **Persistence**: Upsert-by-id via `ConversationPersistenceService` (preserves branch siblings). Client history (excluding in-flight assistant placeholder) is saved before streaming starts; assistant messages are saved in awaited `uiOnFinish` after waiting up to 6s for `streamText` metadata (image URLs, tool steps). `activeLeafMessageId` updates atomically with each turn. Stream-finish fallback persistence runs via Next.js `after()`. Model snapshots and `token_usage_metrics.messageId` are written on assistant completion.
 
 #### Compare API (Model Comparison — Stacked Turns, v1 text-only)
 ```
@@ -710,10 +714,16 @@ GET /api/chats
 - List user's chats
 
 GET /api/chats/[id]
-- Get specific chat
+- Get specific chat (full message graph + `activeLeafMessageId` + `activePathMessages`)
 
 PATCH /api/chats/[id]
 - Update chat metadata
+
+PATCH /api/chats/[id]/active-leaf
+- Persist selected branch (`{ leafMessageId }`); returns `activePathMessages`
+
+POST /api/chats/[id]/fork
+- Fork visible path through `forkThroughMessageId` into a new chat; returns `{ newChatId }`
 
 DELETE /api/chats/[id]
 - Delete chat
@@ -1074,7 +1084,6 @@ pnpm test:anonymous  # Anonymous user tests
 
 - [ ] Additional OAuth providers (GitHub, Microsoft)
 - [ ] Voice input/output
-- [ ] Conversation branching
 - [ ] Team/organization support
 - [ ] Custom model fine-tuning integration
 - [ ] Advanced analytics dashboard

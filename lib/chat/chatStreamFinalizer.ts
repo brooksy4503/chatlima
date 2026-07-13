@@ -1,6 +1,6 @@
 import { after } from 'next/server';
 import type { UIMessage, LanguageModelResponseMetadata } from 'ai';
-import { saveChat, saveMessages, convertToDBMessages } from '@/lib/chat-store';
+import { saveChat, saveMessages, convertToDBMessagesWithParents } from '@/lib/chat-store';
 import { db } from '@/lib/db';
 import { messages as messagesTable } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -30,6 +30,7 @@ import {
 } from '@/lib/chat/streamTokenUsage';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import { isOpenRouterFreeModel } from '@/lib/utils/creditCostCalculator';
+import { buildModelSnapshot } from '@/lib/chat/modelSnapshot';
 
 export interface OpenRouterStreamResponse extends LanguageModelResponseMetadata {
   readonly messages: Array<
@@ -52,6 +53,7 @@ export interface ChatStreamFinalizerParams {
   modelValidation: ModelValidationResult;
   titleGenerationPromise?: Promise<string>;
   getRemainingCreditsByExternalId: (userId: string) => Promise<number | null>;
+  activeLeafMessageId?: string | null;
 }
 
 const UI_FINISH_WAIT_MS = 6000;
@@ -61,8 +63,10 @@ const UI_FINISH_POLL_MS = 200;
 export async function persistClientMessagesAtRequestStart(params: {
   chatId: string;
   clientMessages: UIMessage[];
+  selectedModel?: string;
+  modelDisplayName?: string | null;
 }): Promise<void> {
-  const { chatId, clientMessages } = params;
+  const { chatId, clientMessages, selectedModel, modelDisplayName } = params;
   const trailingAssistant = clientMessages[clientMessages.length - 1];
   const historyMessages =
     trailingAssistant?.role === 'assistant'
@@ -73,9 +77,31 @@ export async function persistClientMessagesAtRequestStart(params: {
     return;
   }
 
-  const dbMessages = convertToDBMessages(historyMessages, chatId);
+  const modelSnapshot = selectedModel
+    ? buildModelSnapshot({ selectedModel, modelDisplayName })
+    : null;
+
+  const stampedHistory = historyMessages.map((msg) => {
+    if (!modelSnapshot) return msg;
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      return {
+        ...msg,
+        modelId: modelSnapshot.modelId,
+        modelProvider: modelSnapshot.modelProvider,
+        modelDisplayName: modelSnapshot.modelDisplayName,
+      };
+    }
+    return msg;
+  });
+
+  const dbMessages = convertToDBMessagesWithParents(stampedHistory, chatId);
+  const activeLeafId =
+    trailingAssistant?.role === 'assistant'
+      ? trailingAssistant.id
+      : historyMessages[historyMessages.length - 1]?.id;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await saveMessages({ messages: dbMessages as any });
+  await saveMessages({ messages: dbMessages as any, activeLeafMessageId: activeLeafId });
   console.log(
     `[Chat ${chatId}][requestStart] Saved ${dbMessages.length} client message(s) before stream.`
   );
@@ -94,7 +120,13 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
     modelValidation,
     titleGenerationPromise,
     getRemainingCreditsByExternalId,
+    activeLeafMessageId,
   } = params;
+
+  const modelSnapshot = buildModelSnapshot({
+    selectedModel,
+    modelDisplayName: modelValidation.modelInfo?.name,
+  });
 
   const state = {
     tokenUsageData: null as TokenUsageSnapshot | null,
@@ -246,6 +278,16 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
                 imageUrls: imageUrlsFromStream,
               }
             : undefined,
+        }).map((msg) => {
+          if (msg.role === 'user' || msg.role === 'assistant') {
+            return {
+              ...msg,
+              modelId: modelSnapshot.modelId,
+              modelProvider: modelSnapshot.modelProvider,
+              modelDisplayName: modelSnapshot.modelDisplayName,
+            };
+          }
+          return msg;
         });
 
         const processedAssistant = processedMessages.find((m) => m.role === 'assistant');
@@ -265,7 +307,7 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
         });
 
         const dbMessages = (
-          convertToDBMessages(processedMessages as UIMessage[], chatId) as Array<{
+          convertToDBMessagesWithParents(processedMessages as UIMessage[], chatId) as Array<{
             id?: string;
             role: string;
             [key: string]: unknown;
@@ -292,7 +334,11 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
           state.finalAssistantMessageId;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await saveMessages({ messages: dbMessages as any });
+        await saveMessages({
+          messages: dbMessages as any,
+          activeLeafMessageId:
+            activeLeafMessageId ?? state.finalAssistantMessageId,
+        });
         state.messagesSavedSuccessfully = true;
         state.savedAssistantPartCount = countPersistableDisplayParts(
           processedAssistant?.parts ?? assistantMessage.parts
@@ -383,7 +429,7 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
       {
         userId: authenticatedUser.userId,
         chatId,
-        messageId: undefined,
+        messageId: state.finalAssistantMessageId,
         selectedModel,
         provider: selectedModel.split('/')[0],
         polarCustomerId: authenticatedUser.polarCustomerId,

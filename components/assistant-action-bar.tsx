@@ -10,20 +10,23 @@ import {
 export type AssistantActionBarProps = {
   copyText?: string;
   chatUsage?: ChatUsageChipProps | null;
+  modelDisplayName?: string | null;
   className?: string;
 };
 
 /**
  * Thin Grok-style row under an assistant message: copy on the left,
- * optional chat-usage pill on the right.
+ * optional model label + usage pill on the right.
  */
 export function AssistantActionBar({
   copyText,
   chatUsage,
+  modelDisplayName,
   className,
 }: AssistantActionBarProps) {
   const showCopy = copyText !== undefined;
-  if (!showCopy && !chatUsage) return null;
+  const showModel = Boolean(modelDisplayName);
+  if (!showCopy && !chatUsage && !showModel) return null;
 
   return (
     <div
@@ -35,11 +38,14 @@ export function AssistantActionBar({
       {showCopy ? (
         <CopyButton text={copyText} iconOnly className="opacity-100" />
       ) : null}
-      {chatUsage ? (
-        <div className="ml-auto shrink-0">
-          <ChatUsageChip {...chatUsage} />
-        </div>
-      ) : null}
+      <div className="ml-auto flex items-center gap-2 shrink-0">
+        {showModel ? (
+          <span className="text-[11px] text-muted-foreground truncate max-w-[10rem] sm:max-w-[14rem]">
+            {modelDisplayName}
+          </span>
+        ) : null}
+        {chatUsage ? <ChatUsageChip {...chatUsage} /> : null}
+      </div>
     </div>
   );
 }

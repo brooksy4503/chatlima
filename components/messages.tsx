@@ -14,6 +14,13 @@ export const Messages = ({
   webSearchEnabled = false,
   imageGenerationEnabled = false,
   onAddToChat,
+  messageMetricsById,
+  branchActionsDisabled = false,
+  getBranchVersion,
+  onSelectBranch,
+  onRegenerate,
+  onEditResubmit,
+  onFork,
 }: {
   messages: (UIMessage & { hasWebSearch?: boolean })[];
   isLoading: boolean;
@@ -31,6 +38,24 @@ export const Messages = ({
   chatUsage?: ChatUsageChipProps | null;
   webSearchEnabled?: boolean;
   imageGenerationEnabled?: boolean;
+  messageMetricsById?: Record<
+    string,
+    {
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      estimatedCost?: number;
+      currency?: string;
+      modelId?: string;
+      modelDisplayName?: string;
+    }
+  >;
+  branchActionsDisabled?: boolean;
+  getBranchVersion?: (messageId: string) => { index: number; total: number } | null;
+  onSelectBranch?: (messageId: string, direction: -1 | 1) => void;
+  onRegenerate?: (assistantMessageId: string) => void;
+  onEditResubmit?: (userMessageId: string, content: string) => void;
+  onFork?: (messageId: string) => void;
 }) => {
   const lastMessage = messages[messages.length - 1];
   const lastMessageTextLength = lastMessage?.parts
@@ -67,7 +92,11 @@ export const Messages = ({
             isLoading={isLoading}
             message={{
               ...m,
-              hasWebSearch: m.hasWebSearch
+              hasWebSearch: m.hasWebSearch,
+              modelDisplayName:
+                (m as { modelDisplayName?: string | null }).modelDisplayName ??
+                messageMetricsById?.[m.id]?.modelDisplayName,
+              tokenUsage: messageMetricsById?.[m.id],
             }}
             status={status}
             chatTokenUsage={chatTokenUsage}
@@ -76,6 +105,22 @@ export const Messages = ({
             }
             webSearchEnabled={webSearchEnabled}
             imageGenerationEnabled={imageGenerationEnabled}
+            branchVersion={getBranchVersion?.(m.id) ?? null}
+            branchActionsDisabled={branchActionsDisabled}
+            onSelectBranch={
+              onSelectBranch ? (direction) => onSelectBranch(m.id, direction) : undefined
+            }
+            onRegenerate={
+              m.role === "assistant" && onRegenerate
+                ? () => onRegenerate(m.id)
+                : undefined
+            }
+            onEditResubmit={
+              m.role === "user" && onEditResubmit
+                ? (content) => onEditResubmit(m.id, content)
+                : undefined
+            }
+            onFork={onFork ? () => onFork(m.id) : undefined}
           />
         ))}
         <div className="h-1" ref={endRef} />

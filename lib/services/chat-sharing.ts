@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { chats, messages, chatShares } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { MessageRole } from '@/lib/db/schema';
+import { buildActivePathMessages } from '@/lib/chat/conversationTree';
+import { convertToUIMessages } from '@/lib/chat-store';
 
 // Types for chat sharing
 export interface ChatSnapshot {
@@ -14,6 +16,7 @@ export interface ChatSnapshot {
     messages: SnapshotMessage[];
     metadata: {
         models: string[];
+        activeLeafMessageId?: string | null;
         redaction: {
             hideSystemPrompts: boolean;
             hideToolArgs: boolean;
@@ -29,6 +32,8 @@ export interface SnapshotMessage {
     content: string;
     createdAt: string;
     hasWebSearch?: boolean;
+    modelId?: string | null;
+    modelDisplayName?: string | null;
 }
 
 // Generate secure share ID
@@ -89,6 +94,8 @@ class RedactionService {
             content,
             createdAt: message.createdAt.toISOString(),
             hasWebSearch: message.hasWebSearch || false,
+            modelId: message.modelId ?? null,
+            modelDisplayName: message.modelDisplayName ?? null,
         };
     }
 }
@@ -110,16 +117,21 @@ export class ChatSharingService {
     }
 
     // Get and sanitize messages for a chat
-    private static async getSanitizedMessages(chatId: string): Promise<SnapshotMessage[]> {
+    private static async getSanitizedMessages(chatId: string, activeLeafMessageId?: string | null): Promise<SnapshotMessage[]> {
         const chatMessages = await db
             .select()
             .from(messages)
             .where(eq(messages.chatId, chatId))
             .orderBy(messages.createdAt);
 
+        const uiMessages = convertToUIMessages(chatMessages);
+        const activePath = buildActivePathMessages(uiMessages, activeLeafMessageId);
+
         const sanitizedMessages: SnapshotMessage[] = [];
-        for (const message of chatMessages) {
-            const sanitized = RedactionService.sanitizeMessage(message);
+        for (const message of activePath) {
+            const dbMessage = chatMessages.find((row) => row.id === message.id);
+            if (!dbMessage) continue;
+            const sanitized = RedactionService.sanitizeMessage(dbMessage);
             if (sanitized) {
                 sanitizedMessages.push(sanitized);
             }
@@ -130,17 +142,25 @@ export class ChatSharingService {
     // Create a sanitized snapshot of a chat
     static async createSnapshot(chatId: string, userId: string): Promise<ChatSnapshot> {
         const chat = await this.getChatWithOwnership(chatId, userId);
-        const sanitizedMessages = await this.getSanitizedMessages(chatId);
+        const sanitizedMessages = await this.getSanitizedMessages(chatId, chat.activeLeafMessageId);
+        const modelIds = Array.from(
+            new Set(
+                sanitizedMessages
+                    .map((message) => message.modelId)
+                    .filter((modelId): modelId is string => Boolean(modelId))
+            )
+        );
 
         return {
-            version: 1,
+            version: 2,
             chat: {
                 title: chat.title,
                 createdAt: chat.createdAt.toISOString(),
             },
             messages: sanitizedMessages,
             metadata: {
-                models: [],
+                models: modelIds,
+                activeLeafMessageId: chat.activeLeafMessageId ?? null,
                 redaction: {
                     hideSystemPrompts: true,
                     hideToolArgs: true,

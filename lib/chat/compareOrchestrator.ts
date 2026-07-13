@@ -10,7 +10,7 @@ import { DailyMessageUsageService } from '@/lib/services/dailyMessageUsageServic
 import { getAccessPolicyFlags } from '@/lib/config/access-policy';
 import { calculateCreditCostPerMessage, isOpenRouterFreeModel } from '@/lib/utils/creditCostCalculator';
 import { getModelDetails } from '@/lib/models/fetch-models';
-import { saveMessages, convertToDBMessages, saveChat } from '@/lib/chat-store';
+import { saveMessages, convertToDBMessagesWithParents, saveChat } from '@/lib/chat-store';
 import { runChatPreflight } from '@/lib/chat/chatPreflight';
 import { buildChatStreamPlan } from '@/lib/chat/buildChatStreamPlan';
 import { buildModelHistory, type CompareUIMessage } from '@/lib/chat/compareHistory';
@@ -349,8 +349,9 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
           ...assistantResults,
         ] as CompareUIMessage[];
 
-        const dbMessages = convertToDBMessages(allMessages, body.chatId);
-        await saveMessages({ messages: dbMessages });
+        const dbMessages = convertToDBMessagesWithParents(allMessages, body.chatId);
+        const activeLeafId = allMessages[allMessages.length - 1]?.id ?? null;
+        await saveMessages({ messages: dbMessages, activeLeafMessageId: activeLeafId });
 
         await saveChat({
           id: body.chatId,

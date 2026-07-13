@@ -20,6 +20,9 @@ import { useModel } from "@/lib/context/model-context";
 import { useCompare } from "@/lib/context/compare-context";
 import { MIN_COMPARE_MODELS } from "@/lib/compare/comparePolicy";
 import { useCompareOrchestrator } from "@/hooks/useCompareOrchestrator";
+import { useConversationBranches } from "@/hooks/useConversationBranches";
+import { useMessageMetrics } from "@/hooks/useMessageMetrics";
+import type { ChatOperation } from "@/lib/chat/chatRequest";
 import { usePresets } from "@/lib/context/preset-context";
 import { useMCP } from "@/lib/context/mcp-context";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,6 +58,8 @@ type ChatUIMessage = CompareUIMessage;
 interface ChatData {
   id: string;
   messages: DBMessage[];
+  activeLeafMessageId?: string | null;
+  activePathMessages?: ChatUIMessage[];
   createdAt: string;
   updatedAt: string;
 }
@@ -235,9 +240,13 @@ export default function Chat() {
     if (!chatData || !chatData.messages || chatData.messages.length === 0) {
       return [];
     }
-    
-    const uiMessages = convertToUIMessages(chatData.messages);
-    return uiMessages.map(msg => ({
+
+    const sourceMessages =
+      chatData.activePathMessages && chatData.activePathMessages.length > 0
+        ? chatData.activePathMessages
+        : convertToUIMessages(chatData.messages);
+
+    return sourceMessages.map((msg) => ({
       id: msg.id,
       role: msg.role as ChatUIMessage['role'],
       parts: msg.parts,
@@ -248,12 +257,31 @@ export default function Chat() {
       modelProvider: msg.modelProvider,
       modelDisplayName: msg.modelDisplayName,
       comparisonTurnId: msg.comparisonTurnId,
+      parentMessageId: msg.parentMessageId,
+    }));
+  }, [chatData]);
+
+  const allGraphMessages = useMemo((): ChatUIMessage[] => {
+    if (!chatData?.messages?.length) return [];
+    return convertToUIMessages(chatData.messages).map((msg) => ({
+      id: msg.id,
+      role: msg.role as ChatUIMessage['role'],
+      parts: msg.parts,
+      createdAt: msg.createdAt,
+      hasWebSearch: msg.hasWebSearch,
+      webSearchContextSize: msg.webSearchContextSize,
+      modelId: msg.modelId,
+      modelProvider: msg.modelProvider,
+      modelDisplayName: msg.modelDisplayName,
+      comparisonTurnId: msg.comparisonTurnId,
+      parentMessageId: msg.parentMessageId,
     }));
   }, [chatData]);
 
   const [input, setInput] = useState("");
   const [quotedText, setQuotedText] = useState<string | null>(null);
   const lastSubmittedDraftRef = useRef<string | null>(null);
+  const pendingOperationRef = useRef<ChatOperation>({ type: "continue" });
 
   const chatBodyRef = useRef({
     selectedModel: selectedModel,
@@ -324,6 +352,7 @@ export default function Chat() {
             ...chatBodyRef.current,
             messages,
             id,
+            operation: pendingOperationRef.current,
           },
         }),
       }),
@@ -408,7 +437,7 @@ export default function Chat() {
     setUploadErrors([]);
   }, []);
 
-  const { messages, sendMessage, status, stop: originalStop, setMessages } = useChat({
+  const { messages, sendMessage, status, stop: originalStop, setMessages, regenerate: regenerateResponse } = useChat({
       id: chatId || generatedChatId,
       messages: initialMessages,
       transport,
@@ -1073,6 +1102,67 @@ export default function Chat() {
     });
   }, [messages]);
 
+  const branchActionsDisabled =
+    status === "streaming" || status === "submitted" || isCompareLoading;
+
+  const {
+    getVersionInfo,
+    selectSibling,
+    regenerate,
+    editResubmit,
+    forkChat,
+  } = useConversationBranches({
+    chatId: activeChatId ?? undefined,
+    messages: enhancedMessages,
+    allMessages: allGraphMessages.length > 0 ? allGraphMessages : enhancedMessages,
+    activeLeafMessageId: chatData?.activeLeafMessageId ?? null,
+    setMessages: setMessages as (messages: ChatUIMessage[]) => void,
+    isStreaming: branchActionsDisabled,
+    onForkNavigate: (newChatId) => {
+      router.push(`/chat/${newChatId}`);
+    },
+  });
+
+  const sendWithOperation = useCallback(
+    async (operation: ChatOperation, nextMessages: ChatUIMessage[]) => {
+      pendingOperationRef.current = operation;
+      setMessages(nextMessages as Parameters<typeof setMessages>[0]);
+
+      const targetAssistantId = [...nextMessages]
+        .reverse()
+        .find((message) => message.role === "assistant")?.id;
+
+      try {
+        if (targetAssistantId) {
+          await regenerateResponse({ messageId: targetAssistantId });
+        } else {
+          await sendMessage();
+        }
+      } finally {
+        pendingOperationRef.current = { type: "continue" };
+      }
+    },
+    [regenerateResponse, sendMessage, setMessages]
+  );
+
+  const handleRegenerate = useCallback(
+    (assistantMessageId: string) => {
+      const result = regenerate(assistantMessageId);
+      if (!result) return;
+      void sendWithOperation(result.operation, result.messages as ChatUIMessage[]);
+    },
+    [regenerate, sendWithOperation]
+  );
+
+  const handleEditResubmit = useCallback(
+    (userMessageId: string, content: string) => {
+      const result = editResubmit(userMessageId, content);
+      if (!result) return;
+      void sendWithOperation(result.operation, result.messages as ChatUIMessage[]);
+    },
+    [editResubmit, sendWithOperation]
+  );
+
   const {
     chatTokenUsage,
     totalInputTokens,
@@ -1082,6 +1172,7 @@ export default function Chat() {
     messageCount: chatMessageCount,
     tokenDataError,
     refetchTokenData,
+    chatTokenData,
   } = useChatTokenMetrics({
     activeChatId,
     userId,
@@ -1091,6 +1182,8 @@ export default function Chat() {
     tokensPerSecond,
     totalDuration,
   });
+
+  const messageMetricsById = useMessageMetrics(chatTokenData, enhancedMessages);
 
   const chatUsage = useMemo(
     () =>
@@ -1314,6 +1407,20 @@ export default function Chat() {
             webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}
             imageGenerationEnabled={imageGenerationEnabled && isOpenRouterModel}
             onAddToChat={setQuotedText}
+            messageMetricsById={messageMetricsById}
+            branchActionsDisabled={branchActionsDisabled}
+            getBranchVersion={(messageId) => {
+              const info = getVersionInfo(messageId);
+              return info ? { index: info.index, total: info.total } : null;
+            }}
+            onSelectBranch={(messageId, direction) => {
+              void selectSibling(messageId, direction);
+            }}
+            onRegenerate={handleRegenerate}
+            onEditResubmit={handleEditResubmit}
+            onFork={(messageId) => {
+              void forkChat(messageId);
+            }}
           />
         )}
       </div>

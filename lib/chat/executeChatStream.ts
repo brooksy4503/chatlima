@@ -14,6 +14,8 @@ import {
   type OpenRouterStreamResponse,
 } from '@/lib/chat/chatStreamFinalizer';
 import { logChunk, logDiagnostic } from '@/lib/utils/performantLogging';
+import { resolveChatOperation } from '@/lib/chat/resolveChatOperation';
+import { createErrorResponse } from '@/lib/chat/createErrorResponse';
 
 export interface ExecuteChatStreamOptions {
   requestId: string;
@@ -45,13 +47,43 @@ export async function executeChatStream(params: ExecuteChatStreamParams): Promis
     selectedModel: chatBody.selectedModel,
   });
 
+  const resolvedOperation = await resolveChatOperation({
+    body: chatBody,
+    userId: preflight.authenticatedUser.userId,
+  });
+
+  if (resolvedOperation.kind === 'error') {
+    return createErrorResponse(
+      resolvedOperation.code,
+      resolvedOperation.message,
+      resolvedOperation.status
+    );
+  }
+
+  if (resolvedOperation.kind === 'fork') {
+    return Response.json({ newChatId: resolvedOperation.newChatId });
+  }
+
+  if (resolvedOperation.kind === 'select-leaf') {
+    return Response.json({
+      activeLeafMessageId: resolvedOperation.activeLeafMessageId,
+      activePathMessages: resolvedOperation.messages,
+    });
+  }
+
+  const effectiveBody: ChatRequestBody = {
+    ...chatBody,
+    messages: resolvedOperation.messages,
+  };
+  const activeLeafMessageId = resolvedOperation.activeLeafMessageId;
+
   if (mcpResult.cleanup) {
     req.signal.addEventListener('abort', async () => {
       await mcpResult.cleanup?.();
     });
   }
 
-  const chatId = chatBody.chatId || nanoid();
+  const chatId = effectiveBody.chatId || nanoid();
   const streamAbortController = new AbortController();
   registerChatAbortController(
     preflight.authenticatedUser.userId,
@@ -61,7 +93,7 @@ export async function executeChatStream(params: ExecuteChatStreamParams): Promis
   );
 
   const isNewChat =
-    !chatBody.chatId ||
+    !effectiveBody.chatId ||
     !(await ChatDatabaseService.checkChatExists({
       chatId,
       userId: preflight.authenticatedUser.userId,
@@ -71,26 +103,26 @@ export async function executeChatStream(params: ExecuteChatStreamParams): Promis
     await ChatDatabaseService.createChatIfNotExists({
       id: chatId,
       userId: preflight.authenticatedUser.userId,
-      selectedModel: chatBody.selectedModel,
-      apiKeys: chatBody.apiKeys,
+      selectedModel: effectiveBody.selectedModel,
+      apiKeys: effectiveBody.apiKeys,
       isAnonymous: preflight.authenticatedUser.isAnonymous,
       messages: [],
     });
   }
 
   const titleGenerationPromise =
-    isNewChat && chatBody.messages.some((m) => m.role === 'user')
+    isNewChat && effectiveBody.messages.some((m) => m.role === 'user')
       ? generateTitle(
-          chatBody.messages,
-          chatBody.selectedModel,
-          chatBody.apiKeys,
+          effectiveBody.messages,
+          effectiveBody.selectedModel,
+          effectiveBody.apiKeys,
           preflight.authenticatedUser.userId,
           preflight.authenticatedUser.isAnonymous
         ).then((title) => title ?? 'New Chat')
       : undefined;
 
   const planResult = await buildChatStreamPlan({
-    body: chatBody,
+    body: effectiveBody,
     preflight,
     chatId,
     mcpResult,
@@ -104,7 +136,9 @@ export async function executeChatStream(params: ExecuteChatStreamParams): Promis
     try {
       await persistClientMessagesAtRequestStart({
         chatId,
-        clientMessages: chatBody.messages,
+        clientMessages: effectiveBody.messages,
+        selectedModel: effectiveBody.selectedModel,
+        modelDisplayName: preflight.modelValidation.modelInfo?.name,
       });
     } catch (earlyPersistError) {
       console.error(
@@ -118,15 +152,16 @@ export async function executeChatStream(params: ExecuteChatStreamParams): Promis
     chatId,
     requestId,
     requestStartTime,
-    clientMessages: chatBody.messages,
+    clientMessages: effectiveBody.messages,
     authenticatedUser: preflight.authenticatedUser,
-    selectedModel: chatBody.selectedModel,
-    apiKeys: chatBody.apiKeys,
+    selectedModel: effectiveBody.selectedModel,
+    apiKeys: effectiveBody.apiKeys,
     isAnonymous: preflight.authenticatedUser.isAnonymous,
     plan,
     modelValidation: preflight.modelValidation,
     titleGenerationPromise,
     getRemainingCreditsByExternalId,
+    activeLeafMessageId,
   });
 
   const openrouterUser = plan.openrouterUserId;

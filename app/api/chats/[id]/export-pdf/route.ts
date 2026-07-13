@@ -62,16 +62,42 @@ function generateChatPDF(chat: any): Buffer {
     doc.text(`Created: ${formatDate(chat.createdAt)}`, margin, y);
     y += 20;
 
-    // Messages
-    if (chat.messages && chat.messages.length > 0) {
-        chat.messages.forEach((message: Message, index: number) => {
+    // Messages (active branch path only when available)
+    const exportMessages: Message[] =
+      chat.activePathMessages && chat.activePathMessages.length > 0
+        ? chat.activePathMessages.map((message) => ({
+            id: message.id,
+            chatId: chat.id,
+            role: message.role,
+            parts: message.parts as Message['parts'],
+            hasWebSearch: message.hasWebSearch ?? false,
+            webSearchContextSize: message.webSearchContextSize ?? 'medium',
+            modelId: message.modelId ?? null,
+            modelProvider: message.modelProvider ?? null,
+            modelDisplayName: message.modelDisplayName ?? null,
+            comparisonTurnId: message.comparisonTurnId ?? null,
+            parentMessageId: message.parentMessageId ?? null,
+            createdAt:
+              message.createdAt instanceof Date
+                ? message.createdAt
+                : new Date(String(message.createdAt ?? Date.now())),
+          }))
+        : chat.messages;
+
+    if (exportMessages.length > 0) {
+        exportMessages.forEach((message: Message) => {
             // Add page if needed before role label
             y = addPageIfNeeded(doc, y, 280);
 
             // Role label
-            const role = message.role === 'user' ? 'User:' : 'Assistant:';
+            const roleLabel =
+              message.role === 'user'
+                ? 'User:'
+                : message.modelDisplayName
+                  ? `Assistant (${message.modelDisplayName}):`
+                  : 'Assistant:';
             doc.setFont('helvetica', 'bold');
-            doc.text(role, margin, y);
+            doc.text(roleLabel, margin, y);
             y += 8;
 
             // Message content

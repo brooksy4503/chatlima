@@ -8,6 +8,8 @@ import { getUIMessageText } from "@/lib/message-utils";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart, WebSearchCitation } from "./types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
+import { ConversationPersistenceService } from "@/lib/services/conversationPersistence";
+import { buildActivePathMessages, inferParentChainFromLinearOrder } from "@/lib/chat/conversationTree";
 
 type AIMessage = CompareUIMessage;
 
@@ -34,24 +36,26 @@ type SaveChatParams = {
 
 type ChatWithMessages = Chat & {
   messages: Message[];
+  activeLeafMessageId?: string | null;
+  activePathMessages?: CompareUIMessage[];
 };
 
 export async function saveMessages({
   messages: dbMessages,
+  activeLeafMessageId,
 }: {
   messages: Array<DBMessage>;
+  activeLeafMessageId?: string | null;
 }) {
   try {
-    if (dbMessages.length > 0) {
-      const chatId = dbMessages[0].chatId;
-
-      // Replace chat messages atomically so a failed insert cannot leave an empty chat.
-      return await db.transaction(async (tx) => {
-        await tx.delete(messages).where(eq(messages.chatId, chatId));
-        return tx.insert(messages).values(dbMessages);
-      });
+    if (dbMessages.length === 0) {
+      return null;
     }
-    return null;
+
+    return await ConversationPersistenceService.upsertMessages(
+      dbMessages,
+      activeLeafMessageId
+    );
   } catch (error) {
     console.error('Failed to save messages in database', error);
     throw error;
@@ -102,6 +106,7 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
         modelProvider: msg.modelProvider ?? null,
         modelDisplayName: msg.modelDisplayName ?? null,
         comparisonTurnId: msg.comparisonTurnId ?? null,
+        parentMessageId: msg.parentMessageId ?? null,
         createdAt
       };
     }
@@ -122,9 +127,18 @@ export function convertToDBMessages(aiMessages: AIMessage[], chatId: string): DB
       modelProvider: msg.modelProvider ?? null,
       modelDisplayName: msg.modelDisplayName ?? null,
       comparisonTurnId: msg.comparisonTurnId ?? null,
+      parentMessageId: msg.parentMessageId ?? null,
       createdAt
     };
   });
+}
+
+export function convertToDBMessagesWithParents(
+  aiMessages: AIMessage[],
+  chatId: string
+): DBMessage[] {
+  const withParents = inferParentChainFromLinearOrder(aiMessages);
+  return convertToDBMessages(withParents, chatId);
 }
 
 // Convert DB messages to UI format
@@ -141,6 +155,7 @@ export function convertToUIMessages(dbMessages: Array<Message>): CompareUIMessag
     modelProvider: message.modelProvider ?? null,
     modelDisplayName: message.modelDisplayName ?? null,
     comparisonTurnId: message.comparisonTurnId ?? null,
+    parentMessageId: message.parentMessageId ?? null,
   }));
 }
 
@@ -262,6 +277,7 @@ export async function getChats(userId: string, limit = 50): Promise<ChatWithShar
       id: chats.id,
       userId: chats.userId,
       title: chats.title,
+      activeLeafMessageId: chats.activeLeafMessageId,
       createdAt: chats.createdAt,
       updatedAt: chats.updatedAt,
       shareId: chatShares.shareId,
@@ -300,10 +316,47 @@ export async function getChatById(id: string, userId: string): Promise<ChatWithM
     orderBy: [messages.createdAt]
   });
 
+  const needsBackfill = chatMessages.some((message) => !message.parentMessageId);
+  if (needsBackfill && chatMessages.length > 0) {
+    await ConversationPersistenceService.backfillParentChainForChat(id);
+    const refreshedMessages = await db.query.messages.findMany({
+      where: eq(messages.chatId, id),
+      orderBy: [messages.createdAt],
+    });
+    chatMessages.splice(0, chatMessages.length, ...refreshedMessages);
+  }
+
+  const refreshedChat = await db.query.chats.findFirst({
+    where: and(eq(chats.id, id), eq(chats.userId, userId)),
+  });
+
+  const uiMessages = convertToUIMessages(chatMessages);
+  const activeLeafMessageId =
+    refreshedChat?.activeLeafMessageId ?? resolveDefaultLeafFromDb(chatMessages);
+  const activePathMessages = buildActivePathMessages(uiMessages, activeLeafMessageId);
+
   return {
     ...chat,
-    messages: chatMessages
+    ...refreshedChat,
+    messages: chatMessages,
+    activeLeafMessageId,
+    activePathMessages,
   };
+}
+
+function resolveDefaultLeafFromDb(
+  chatMessages: Array<{ id: string; parentMessageId?: string | null; createdAt: Date }>
+): string | null {
+  if (chatMessages.length === 0) return null;
+  const withParents = inferParentChainFromLinearOrder(
+    convertToUIMessages(chatMessages as Parameters<typeof convertToUIMessages>[0])
+  );
+  const sorted = [...withParents].sort((a, b) => {
+    const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(String(a.createdAt)).getTime();
+    const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(String(b.createdAt)).getTime();
+    return aTime - bTime || a.id.localeCompare(b.id);
+  });
+  return sorted[sorted.length - 1]?.id ?? null;
 }
 
 export async function deleteChat(id: string, userId: string) {

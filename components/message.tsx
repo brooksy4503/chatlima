@@ -12,6 +12,8 @@ import { SpinnerIcon } from "./icons";
 import { ToolInvocation } from "./tool-invocation";
 import { CopyButton } from "./copy-button";
 import { AssistantActionBar } from "./assistant-action-bar";
+import { MessageActions } from "./message-actions";
+import { BranchPager } from "./branch-pager";
 import { Citations } from "./citation";
 import type { TextUIPart, ToolInvocationUIPart, ImageUIPart } from "@/lib/types";
 import type { ReasoningUIPart, SourceUIPart, FileUIPart, StepStartUIPart } from "@ai-sdk/ui-utils";
@@ -168,6 +170,8 @@ interface MessageProps {
   message: Omit<UIMessage, 'parts'> & {
     parts?: MessagePart[];
     hasWebSearch?: boolean;
+    modelId?: string | null;
+    modelDisplayName?: string | null;
     tokenUsage?: {
       inputTokens?: number;
       outputTokens?: number;
@@ -193,6 +197,12 @@ interface MessageProps {
   chatUsage?: ChatUsageChipProps | null;
   webSearchEnabled?: boolean;
   imageGenerationEnabled?: boolean;
+  branchVersion?: { index: number; total: number } | null;
+  branchActionsDisabled?: boolean;
+  onSelectBranch?: (direction: -1 | 1) => void;
+  onRegenerate?: () => void;
+  onEditResubmit?: (content: string) => void;
+  onFork?: () => void;
 }
 
 const PurePreviewMessage = ({
@@ -204,6 +214,12 @@ const PurePreviewMessage = ({
   chatUsage,
   webSearchEnabled = false,
   imageGenerationEnabled = false,
+  branchVersion,
+  branchActionsDisabled = false,
+  onSelectBranch,
+  onRegenerate,
+  onEditResubmit,
+  onFork,
 }: MessageProps) => {
   const deferredStatus = useDeferredValue(status);
   // Keep plain text until React finishes the streaming→ready transition (avoids blocking markdown parse).
@@ -497,24 +513,44 @@ const PurePreviewMessage = ({
               />
             )}
 
-            {/* Token Usage Metrics - show for assistant messages */}
             {message.role === 'assistant' && (
-              <div className="mt-2">
-                {status === "streaming" && isLatestMessage ? (
-                  <StreamingTokenMetrics
-                    inputTokens={chatTokenUsage?.inputTokens}
-                    outputTokens={chatTokenUsage?.outputTokens}
-                    estimatedCost={chatTokenUsage?.estimatedCost}
-                    currency={chatTokenUsage?.currency}
-                    isStreaming={status === "streaming"}
-                    // NEW: Enhanced timing metrics for Phase 2
-                    timeToFirstToken={chatTokenUsage?.timeToFirstToken}
-                    tokensPerSecond={chatTokenUsage?.tokensPerSecond}
-                    totalDuration={chatTokenUsage?.totalDuration}
-                    className="text-xs"
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {branchVersion && onSelectBranch ? (
+                    <BranchPager
+                      index={branchVersion.index}
+                      total={branchVersion.total}
+                      onPrevious={() => onSelectBranch(-1)}
+                      onNext={() => onSelectBranch(1)}
+                      disabled={branchActionsDisabled}
+                    />
+                  ) : null}
+                  <MessageActions
+                    role="assistant"
+                    disabled={branchActionsDisabled}
+                    onRegenerate={onRegenerate}
+                    onFork={onFork}
                   />
-                ) : (
-                  message.tokenUsage ? (
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                  {message.modelDisplayName ? (
+                    <span className="text-[11px] text-muted-foreground truncate max-w-[10rem] sm:max-w-[14rem]">
+                      {message.modelDisplayName}
+                    </span>
+                  ) : null}
+                  {status === "streaming" && isLatestMessage ? (
+                    <StreamingTokenMetrics
+                      inputTokens={chatTokenUsage?.inputTokens}
+                      outputTokens={chatTokenUsage?.outputTokens}
+                      estimatedCost={chatTokenUsage?.estimatedCost}
+                      currency={chatTokenUsage?.currency}
+                      isStreaming={status === "streaming"}
+                      timeToFirstToken={chatTokenUsage?.timeToFirstToken}
+                      tokensPerSecond={chatTokenUsage?.tokensPerSecond}
+                      totalDuration={chatTokenUsage?.totalDuration}
+                      className="text-xs"
+                    />
+                  ) : message.tokenUsage ? (
                     <CompactMessageTokenMetrics
                       inputTokens={message.tokenUsage.inputTokens}
                       outputTokens={message.tokenUsage.outputTokens}
@@ -522,16 +558,27 @@ const PurePreviewMessage = ({
                       estimatedCost={message.tokenUsage.estimatedCost}
                       currency={message.tokenUsage.currency}
                       isLoading={false}
-                      // NEW: Enhanced timing metrics for Phase 2
                       timeToFirstToken={chatTokenUsage?.timeToFirstToken}
                       tokensPerSecond={chatTokenUsage?.tokensPerSecond}
                       totalDuration={chatTokenUsage?.totalDuration}
                       className="text-xs"
                     />
-                  ) : null
-                )}
+                  ) : null}
+                </div>
               </div>
             )}
+
+            {message.role === "user" ? (
+              <div className="mt-1 flex justify-end">
+                <MessageActions
+                  role="user"
+                  disabled={branchActionsDisabled}
+                  onEditResubmit={onEditResubmit}
+                  onFork={onFork}
+                  initialEditContent={getMessageText()}
+                />
+              </div>
+            ) : null}
             
             {message.role === "assistant" &&
               (shouldShowCopyButton || chatUsage) && (

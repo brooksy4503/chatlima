@@ -13,9 +13,12 @@ export const chats = pgTable('chats', {
   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
   userId: text('user_id').notNull(),
   title: text('title').notNull().default('New Chat'),
+  activeLeafMessageId: text('active_leaf_message_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  activeLeafIdx: index('idx_chats_active_leaf').on(table.activeLeafMessageId),
+}));
 
 export const messages = pgTable('messages', {
   id: text('id').primaryKey().notNull().$defaultFn(() => nanoid()),
@@ -28,8 +31,13 @@ export const messages = pgTable('messages', {
   modelProvider: text('model_provider'),
   modelDisplayName: text('model_display_name'),
   comparisonTurnId: text('comparison_turn_id'),
+  parentMessageId: text('parent_message_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  chatParentIdx: index('idx_messages_chat_parent').on(table.chatId, table.parentMessageId),
+  chatCreatedIdx: index('idx_messages_chat_created').on(table.chatId, table.createdAt),
+  chatComparisonIdx: index('idx_messages_chat_comparison').on(table.chatId, table.comparisonTurnId),
+}));
 
 // Types for structured message content
 export type MessagePart = {
@@ -65,6 +73,7 @@ export type DBMessage = {
   modelProvider?: string | null;
   modelDisplayName?: string | null;
   comparisonTurnId?: string | null;
+  parentMessageId?: string | null;
   createdAt: Date;
 };
 
