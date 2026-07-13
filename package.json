@@ -29,6 +29,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:backfill-parents": "tsx scripts/backfill-conversation-parents.ts",
+    "db:backfill-parents:prod": "NODE_ENV=production tsx scripts/backfill-conversation-parents.ts",
     "pricing:analysis": "npx tsx scripts/dynamic-api-pricing-analysis.ts",
     "test:endpoints": "npx tsx scripts/test-model-endpoints.ts",
     "test:endpoints:openrouter": "npx tsx scripts/test-model-endpoints.ts --provider openrouter",
