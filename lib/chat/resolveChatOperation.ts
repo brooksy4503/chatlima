@@ -27,6 +27,12 @@ export async function resolveChatOperation(params: {
 
   const graph = await ConversationPersistenceService.loadChatGraph(body.chatId, userId);
   if (!graph) {
+    // New chats receive a client-generated chatId before the chat row exists.
+    // The stream executor creates that row after operation resolution.
+    if (operation.type === 'continue') {
+      return { kind: 'stream', messages: body.messages };
+    }
+
     return {
       kind: 'error',
       code: 'CHAT_NOT_FOUND',
