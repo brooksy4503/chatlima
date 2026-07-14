@@ -1,0 +1,157 @@
+---
+description: Enforce phased plan execution, verification gates, and honest todo completion
+alwaysApply: true
+---
+
+# Plan Execution and Verification Gates
+
+Use this rule whenever implementing work from `.cursor/plans/*.plan.md`, a multi-step feature brief, or a user request that references an attached plan.
+
+The plan is the contract. **Execution order and verification matter more than finishing every todo in one session.**
+
+## Core rules
+
+1. **One active plan step at a time.** Implement only the current step unless the user explicitly approves moving on.
+2. **Respect plan sequencing.** If step N is "extract/refactor first" or "add tests before UI," do not start step N+1 until step N is verified.
+3. **Never mark a plan todo `completed` without evidence.** A todo is incomplete if tests are missing, failing, unrun, or behavior is unverified.
+4. **Do not interpret "implement the full plan" or "don't stop until done" as permission to skip gates, batch every step, or falsely complete prerequisites.**
+5. **Stop and report** when a step is blocked, the plan conflicts with `SPEC.md`, or verification fails. Do not paper over failures by marking todos done.
+
+## When this rule applies
+
+Treat a task as **high-risk phased work** when it touches any of:
+
+- chat persistence, message streaming, or conversation state
+- database schema or migrations
+- authentication, billing, credits, or usage accounting
+- client/server sync (TanStack Query, optimistic UI, refetch vs in-memory state)
+- refactors of large files (especially `components/chat.tsx`)
+- API contract changes documented in `SPEC.md`
+
+For high-risk work, **default to phased execution even if the user asks for the whole plan at once.** Explain the gate you are stopping at and what verification is needed before continuing.
+
+## Phase gate workflow
+
+For each plan step, follow this loop:
+
+```
+READ step + SPEC.md section
+→ IMPLEMENT only this step
+→ ADD/UPDATE tests listed for this step (or the minimum seam tests below)
+→ RUN verification commands
+→ REPORT: what changed, test output, manual checks, remaining risk
+→ WAIT for user confirmation before the next step (unless user said "continue through gate N")
+```
+
+### Step completion checklist
+
+Do not mark a step complete unless all applicable items pass:
+
+- [ ] Code matches the plan step scope (no drive-by refactors)
+- [ ] Relevant `SPEC.md` section checked; updated if behavior/contracts changed
+- [ ] Tests added or updated for **new behavior and failure seams**, not only happy-path pure functions
+- [ ] Verification commands run; failures fixed or explicitly reported
+- [ ] No dead code shipped (unused hooks, unreachable branches, duplicate APIs for the same action)
+- [ ] Manual scenario checklist completed for user-visible or stateful changes (see below)
+
+### Commit sizing
+
+Prefer **one plan step per commit** for high-risk work.
+
+- Target **≤ ~500 lines changed** per commit when touching chat persistence, streaming, or `components/chat.tsx`
+- If a step exceeds that, split it into sub-steps and stop between them
+- Do not combine "schema + persistence + UI + secondary views" in one commit
+
+## Definition of done for plan todos
+
+A todo named "extract X before Y" is **not done** when the file exists. It is done only when:
+
+- the extraction is **wired in and used**
+- the old inline logic is **removed or clearly delegated**
+- tests cover preserved behavior
+- the app still works for existing flows
+
+A todo named "verification" or "tests" is **not done** when only pure helpers are tested. It requires the plan's listed integration/E2E coverage, or an explicit note of what was not run and why.
+
+## Required tests by layer
+
+Match test type to where bugs actually hide:
+
+| Layer | Required when | Examples |
+|-------|---------------|----------|
+| Pure logic | Always for new tree/persistence helpers | `conversationTree`, branch builders, leaf resolvers |
+| Service/integration | Persistence/API changes | ownership checks, atomic transactions, idempotent finalize |
+| Sync/seam | Client memory vs DB/refetch/stream | adopt/replace policy, stale refetch, streaming guard |
+| Component/hook | New hooks or UI controllers | `useChatSession`, `useConversationBranches` |
+| E2E | User-visible workflows | regenerate, edit/resubmit, pager, fork, reload |
+
+**Seam tests are mandatory** when both client state and server state can diverge (edit branch + refetch, streaming + save, active leaf + partial graph).
+
+Mocked E2E alone is insufficient for merge readiness when the feature changes persistence or API contracts. At least one scenario must exercise the real path or a faithful integration test of the handler/service.
+
+## Manual scenario checklist (chat/stateful features)
+
+Before marking a chat-related plan step complete, run or script these when applicable:
+
+- [ ] New chat → first message → reload
+- [ ] Continue conversation → reload preserves active path
+- [ ] Regenerate assistant → version pager → reload preserves selection
+- [ ] Edit earlier user message → new branch → original branch still reachable
+- [ ] Switch user sibling → correct descendant assistant shown
+- [ ] Fork from mid-conversation → hidden siblings not copied
+- [ ] Streaming/submitted state → refetch does not clobber in-memory branch
+- [ ] Compare, share, export, and billing paths still behave per `SPEC.md`
+
+Report which scenarios were run manually, via Playwright, or deferred.
+
+## Verification commands
+
+Run the most relevant commands after each gate:
+
+```bash
+# Stable CI suite (lib, services, API, seam tests)
+pnpm test:unit:ci
+
+# Focused area while developing
+pnpm test:unit:ci -- --testPathPatterns="<pattern>"
+
+# Lint / build when UI, API, or shared lib contracts changed
+pnpm lint
+pnpm build
+
+# Playwright for user-visible chat flows (when applicable)
+pnpm test:basic -- --project=basic-ui-chrome
+pnpm test:basic -- --project=branching-ui-chrome
+```
+
+See `docs/REGRESSION_TESTING.md` for CI, pre-push hooks, and manual chat scenarios.
+
+Summarize any commands not run and the regression risk.
+
+## Plan conflicts and honesty
+
+- If the plan says "decompose first" and the user asks to "just add the feature," **follow the plan's sequencing** unless the user explicitly overrides that specific step.
+- If implementation reveals the plan is wrong, **stop and propose a plan amendment** instead of silently diverging.
+- In the final summary for each gate, include:
+  - steps completed (with evidence)
+  - steps started but not verified
+  - known gaps / follow-ups
+  - tests and manual checks run
+
+## Anti-patterns (do not do these)
+
+- Marking all plan todos complete in one session without per-step verification
+- Creating a hook/module for a plan step but never importing it
+- Adding parallel APIs for the same user action (e.g. REST route + chat operation duplicate)
+- Testing only graph/path pure functions while skipping client↔server sync
+- Adding reactive "guard" patches (`adopt*`, `merge*`, `normalize*`) without tests at the seam they protect
+- Hand-writing Drizzle migrations instead of `pnpm db:generate` unless the user explicitly requests it
+- Using mocked E2E as the only proof that persistence works
+
+## Recommended user prompt for large features
+
+When starting multi-step plan work, prefer:
+
+> Implement **only the first plan todo**. Stop when tests pass and report manual verification steps. Do not start the next todo until I confirm.
+
+This pairs with the agent behavior required by this rule.

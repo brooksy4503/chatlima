@@ -19,6 +19,31 @@ Before implementing features, refactors, or architectural changes:
 
 High-risk areas require extra care: authentication, anonymous usage limits, subscriptions and credits, chat persistence, message streaming, model/provider routing, API key handling, MCP tools, file upload/readers, and admin flows.
 
+### Plan Execution (multi-step features)
+
+When implementing work from `.cursor/plans/*.plan.md` or other multi-step feature plans, follow `.cursor/rules/plan-execution.mdc`.
+
+Key requirements:
+- Implement **one plan step at a time**; do not batch the whole plan in one session unless the user explicitly approves each gate.
+- Respect plan sequencing (e.g. extract/refactor before feature UI; tests before marking a step done).
+- Do not mark plan todos `completed` without tests run, behavior verified, and no dead/unwired code left behind.
+- For chat persistence, streaming, schema, billing, or client/server sync: add **seam tests** (refetch vs in-memory state, stale DB, streaming guards), not only pure-function unit tests.
+- Stop and report after each gate with verification output; wait for user confirmation before the next step.
+
+Recommended prompt for large features:
+
+> Implement **only the first plan todo**. Stop when tests pass and report manual verification steps. Do not start the next todo until I confirm.
+
+### Regression testing and CI
+
+See [`docs/REGRESSION_TESTING.md`](docs/REGRESSION_TESTING.md) for the full guide.
+
+- **CI gate (PR + main)**: `.github/workflows/ci.yml` runs `pnpm lint`, `pnpm test:unit:ci`, `pnpm build`, and Playwright basic/branching specs.
+- **Stable unit suite**: `pnpm test:unit:ci` uses `jest.config.ci.js` (lib, services, API, chat seam tests). Full `pnpm test:unit` still includes component suites with pre-existing failures.
+- **Chat seam regressions**: extend `__tests__/lib/chatStateSeams.test.ts` when fixing client ↔ DB ↔ stream sync bugs.
+- **Local pre-push** (one-time setup): `git config core.hooksPath .githooks && chmod +x .githooks/pre-push scripts/pre-push-check.sh` — then `git push` runs `pnpm pre-push`, or run `pnpm pre-push` manually.
+- **PR checklist**: `.github/pull_request_template.md`
+
 ### Running the Dev Server
 
 ```bash
@@ -41,7 +66,9 @@ See `CLAUDE.md` and `package.json` scripts for the full list. Key commands:
 
 - **Lint**: `pnpm lint`
 - **Build**: `pnpm build`
-- **Unit tests**: `pnpm test:unit` (Jest — some pre-existing timeout failures with fake timers)
+- **Unit tests (CI/stable)**: `pnpm test:unit:ci`
+- **Unit tests (full)**: `pnpm test:unit` (Jest — some pre-existing component test failures)
+- **Pre-push gate**: `pnpm pre-push` (lint + test:unit:ci + build)
 - **E2E basic UI**: `pnpm test:basic -- --project=basic-ui-chrome`
 - **E2E anonymous**: `pnpm test:anonymous` (sends real AI requests, takes time)
 - **Playwright browsers**: run `pnpm test:install-browsers` once before the first E2E run (uses the repo's Playwright version — do not use `npx playwright install`, which can fetch a mismatched browser build)

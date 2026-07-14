@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Minimal placeholders so Next.js and auth modules load in CI.
+  # Replace with GitHub Actions secrets for full E2E against a real backend.
+  DATABASE_URL: postgresql://ci:ci@localhost:5432/chatlima_ci
+  AUTH_SECRET: ci-auth-secret-minimum-32-characters-long
+  POLAR_ACCESS_TOKEN: ci-polar-token
+  POLAR_PRODUCT_ID: ci-polar-product
+  SUCCESS_URL: http://localhost:3000/success
+  OPENROUTER_API_KEY: ci-openrouter-key
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID_DEV: ci-google-client-id
+  GOOGLE_CLIENT_SECRET_DEV: ci-google-client-secret
+  CI: true
+
+jobs:
+  lint-unit-build:
+    name: Lint, unit tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests (CI suite)
+        run: pnpm test:unit:ci
+
+      - name: Build
+        run: pnpm build
+
+  e2e-basic:
+    name: Playwright (basic UI + branching)
+    runs-on: ubuntu-latest
+    needs: lint-unit-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Run basic UI and branching specs
+        run: pnpm test:ci:e2e

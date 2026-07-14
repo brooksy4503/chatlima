@@ -1,5 +1,5 @@
 import type { UIMessage } from 'ai';
-import { convertToDBMessages } from '@/lib/chat-store';
+import { convertToDBMessages } from '@/lib/chat/messageConversion';
 
 jest.mock('@/lib/db', () => ({
   db: {},
