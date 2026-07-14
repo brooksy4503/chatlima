@@ -134,10 +134,10 @@ export class PricingSyncService {
                         // Update existing pricing entry
                         const existing = existingPricing[0];
 
-                        // Check if pricing has changed
+                        // Check if pricing has changed (DB numeric columns are strings)
                         if (
-                            existing.inputTokenPrice !== pricingData.inputTokenPrice ||
-                            existing.outputTokenPrice !== pricingData.outputTokenPrice
+                            Number(existing.inputTokenPrice) !== pricingData.inputTokenPrice ||
+                            Number(existing.outputTokenPrice) !== pricingData.outputTokenPrice
                         ) {
                             try {
                                 // IMPROVED: Use transaction for atomicity and better error handling
