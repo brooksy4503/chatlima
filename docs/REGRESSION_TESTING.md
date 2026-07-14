@@ -25,6 +25,8 @@ On every PR and push to `main`, [`.github/workflows/ci.yml`](../.github/workflow
 3. **Build** — `pnpm build`
 4. **Playwright** — basic UI + conversation branching specs (`pnpm test:ci:e2e`)
 
+The Playwright job starts **Postgres 16** plus a **Neon local HTTP/WebSocket proxy** sidecar so the app's `@neondatabase/serverless` driver can talk to CI Postgres. Migrations run via `pnpm db:migrate` before E2E. Browsers install with `pnpm exec playwright install chromium --with-deps` (the macOS-only custom installer is skipped on Linux/CI).
+
 The CI unit suite intentionally **excludes pre-existing flaky component tests**. Lib, service, API, and seam tests must pass for merge.
 
 ### Optional: real E2E against your backend
@@ -119,4 +121,4 @@ pnpm build
 
 - Full `pnpm test:unit` still has failing **component** suites (React 19 / ESM transform issues). CI uses the stable subset until those are fixed.
 - Playwright branching specs mock API responses — they validate UI wiring, not live persistence. Use seam tests + manual checklist + active-leaf API test for persistence regressions.
-- **Playwright browser install:** use `pnpm test:install-browsers`, not `npx playwright install`. The stock Playwright installer can hang during zip extraction on macOS; the repo script uses `fetch` + `unzip` instead.
+- **Playwright browser install:** on **macOS**, use `pnpm test:install-browsers` (repo script via `scripts/install-playwright-browsers.mjs`). Do **not** use `npx playwright install` on macOS — it can hang during zip extraction. On **Linux/CI**, use `pnpm exec playwright install chromium --with-deps`.

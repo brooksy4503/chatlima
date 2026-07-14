@@ -995,7 +995,7 @@ pnpm test:unit:ci           # Stable CI unit subset
 pnpm test:anonymous         # Anonymous user E2E (real AI requests)
 ```
 
-**Playwright browser install:** use `pnpm test:install-browsers` (repo script via `scripts/install-playwright-browsers.mjs`). Do **not** use `npx playwright install` on macOS — it can hang during zip extraction and leave a corrupted partial browser cache.
+**Playwright browser install:** on **macOS**, use `pnpm test:install-browsers` (repo script via `scripts/install-playwright-browsers.mjs`). Do **not** use `npx playwright install` on macOS — it can hang during zip extraction and leave a corrupted partial browser cache. On **Linux/CI**, use `pnpm exec playwright install chromium --with-deps`.
 
 See [`docs/REGRESSION_TESTING.md`](docs/REGRESSION_TESTING.md) for the full regression workflow.
 

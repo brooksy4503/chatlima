@@ -1,6 +1,9 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool } from "@neondatabase/serverless";
+import { configureLocalNeonProxy } from "./configure-local-neon-proxy";
 import * as schema from "./schema";
+
+configureLocalNeonProxy();
 
 // Initialize the connection pool with proper limits to prevent exhaustion
 const pool = new Pool({

@@ -40,9 +40,22 @@ if (!PLATFORM) {
   process.exit(1);
 }
 
-const cacheDir =
-  process.env.PLAYWRIGHT_BROWSERS_PATH ||
-  join(process.env.HOME || process.env.USERPROFILE || '', 'Library', 'Caches', 'ms-playwright');
+function defaultCacheDir() {
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
+    return process.env.PLAYWRIGHT_BROWSERS_PATH;
+  }
+
+  const home = process.env.HOME || process.env.USERPROFILE || '';
+  if (platform === 'darwin') {
+    return join(home, 'Library', 'Caches', 'ms-playwright');
+  }
+  if (platform === 'win32') {
+    return join(home, 'AppData', 'Local', 'ms-playwright');
+  }
+  return join(home, '.cache', 'ms-playwright');
+}
+
+const cacheDir = defaultCacheDir();
 
 const requested = process.argv.slice(2);
 const browserNames =
@@ -133,6 +146,13 @@ async function installBrowser(browserName) {
 }
 
 async function main() {
+  if (process.env.CI === 'true' || platform !== 'darwin') {
+    console.log(
+      'Custom Playwright installer is for macOS local dev only. Use: pnpm exec playwright install chromium'
+    );
+    process.exit(0);
+  }
+
   mkdirSync(cacheDir, { recursive: true });
 
   for (const browserName of browserNames) {

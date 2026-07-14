@@ -22,7 +22,6 @@ concurrency:
 
 env:
   # Minimal placeholders so Next.js and auth modules load in CI.
-  # Replace with GitHub Actions secrets for full E2E against a real backend.
   DATABASE_URL: postgresql://ci:ci@localhost:5432/chatlima_ci
   AUTH_SECRET: ci-auth-secret-minimum-32-characters-long
   POLAR_ACCESS_TOKEN: ci-polar-token
@@ -68,6 +67,28 @@ jobs:
     name: Playwright (basic UI + branching)
     runs-on: ubuntu-latest
     needs: lint-unit-build
+    env:
+      NEON_LOCAL_PROXY_PORT: "4444"
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: chatlima_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d chatlima_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      neon-proxy:
+        image: ghcr.io/timowilhelm/local-neon-http-proxy:main
+        env:
+          PG_CONNECTION_STRING: postgresql://ci:ci@postgres:5432/chatlima_ci
+        ports:
+          - 4444:4444
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -87,7 +108,23 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: pnpm test:install-browsers
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Wait for Neon local proxy
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -sf "http://127.0.0.1:4444/" >/dev/null; then
+              echo "Neon proxy is ready"
+              exit 0
+            fi
+            echo "Waiting for Neon proxy (attempt ${attempt}/30)..."
+            sleep 2
+          done
+          echo "Neon proxy did not become ready in time"
+          exit 1
+
+      - name: Run database migrations
+        run: pnpm db:migrate
 
       - name: Run basic UI and branching specs
         run: pnpm test:ci:e2e
