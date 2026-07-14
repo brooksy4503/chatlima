@@ -269,6 +269,18 @@ export function dbMessagesHaveRicherAssistantParts(
   return false;
 }
 
+/** True when local state has a completed assistant turn atop a stale DB active path. */
+export function localTranscriptAheadOfStaleDbPath(
+  current: Array<{ id: string; role?: string }>,
+  fromDb: Array<{ id: string }>
+): boolean {
+  return (
+    current.length > fromDb.length &&
+    current[current.length - 1]?.role === 'assistant' &&
+    fromDb.every((msg, index) => msg.id === current[index]?.id)
+  );
+}
+
 /** True when the DB active path is a different branch than the in-memory transcript. */
 export function dbActivePathIsDifferentBranch(
   current: Array<{ id: string }>,

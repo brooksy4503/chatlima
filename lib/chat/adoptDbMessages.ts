@@ -2,6 +2,7 @@ import type { UIMessage } from 'ai';
 import {
   dbActivePathIsDifferentBranch,
   dbMessagesHaveRicherAssistantParts,
+  localTranscriptAheadOfStaleDbPath,
 } from '@/lib/chat-message-persistence';
 
 export type AdoptDbMessagesParams = {
@@ -46,6 +47,10 @@ export function adoptDbMessages(params: AdoptDbMessagesParams): AdoptDbMessagesR
   }
 
   if (status !== 'ready' || initialMessages.length === 0) return { action: 'none' };
+
+  if (localTranscriptAheadOfStaleDbPath(currentMessages, initialMessages)) {
+    return { action: 'none' };
+  }
 
   if (currentMessages.length === 0) {
     return { action: 'replace', messages: initialMessages };

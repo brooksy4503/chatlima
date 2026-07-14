@@ -350,8 +350,7 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
         ] as CompareUIMessage[];
 
         const dbMessages = convertToDBMessagesWithParents(allMessages, body.chatId);
-        const activeLeafId = allMessages[allMessages.length - 1]?.id ?? null;
-        await saveMessages({ messages: dbMessages, activeLeafMessageId: activeLeafId });
+        await saveMessages({ messages: dbMessages });
 
         await saveChat({
           id: body.chatId,

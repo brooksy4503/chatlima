@@ -1,5 +1,6 @@
 import type { UIMessage } from 'ai';
 import type { CompareUIMessage } from '@/lib/chat/compareHistory';
+import { resolvePersistedActiveLeafId } from '@/lib/chat/conversationTree';
 
 /** Merge a client continue request onto the server-owned active path. */
 export function mergeContinuePath(
@@ -9,28 +10,31 @@ export function mergeContinuePath(
   if (serverPath.length === 0) {
     return {
       messages: clientPath,
-      activeLeafMessageId: clientPath[clientPath.length - 1]?.id ?? null,
+      activeLeafMessageId: resolvePersistedActiveLeafId(clientPath),
     };
   }
 
   const prefixMatches = serverPath.every((msg, index) => clientPath[index]?.id === msg.id);
 
   if (!prefixMatches) {
+    const messages = serverPath as UIMessage[];
     return {
-      messages: serverPath as UIMessage[],
-      activeLeafMessageId: serverPath[serverPath.length - 1]?.id ?? null,
+      messages,
+      activeLeafMessageId: resolvePersistedActiveLeafId(messages),
     };
   }
 
   if (clientPath.length > serverPath.length) {
+    const messages = [...(serverPath as UIMessage[]), ...clientPath.slice(serverPath.length)];
     return {
-      messages: [...(serverPath as UIMessage[]), ...clientPath.slice(serverPath.length)],
-      activeLeafMessageId: clientPath[clientPath.length - 1]?.id ?? null,
+      messages,
+      activeLeafMessageId: resolvePersistedActiveLeafId(messages),
     };
   }
 
+  const messages = serverPath as UIMessage[];
   return {
-    messages: serverPath as UIMessage[],
-    activeLeafMessageId: serverPath[serverPath.length - 1]?.id ?? null,
+    messages,
+    activeLeafMessageId: resolvePersistedActiveLeafId(messages),
   };
 }

@@ -107,6 +107,38 @@ describe('ConversationPersistenceService', () => {
       expect(mockTransaction).toHaveBeenCalledTimes(2);
       expect(mockOnConflictDoUpdate).toHaveBeenCalledTimes(2);
     });
+
+    it('keeps active leaf on prior assistant when batch ends with user', async () => {
+      const dbMessages = [
+        {
+          id: 'u1',
+          chatId: 'chat-1',
+          role: 'user' as const,
+          parts: [{ type: 'text', text: 'Hi' }],
+          createdAt: new Date('2026-01-01T00:00:00Z'),
+        },
+        {
+          id: 'a1',
+          chatId: 'chat-1',
+          role: 'assistant' as const,
+          parts: [{ type: 'text', text: 'Hello' }],
+          parentMessageId: 'u1',
+          createdAt: new Date('2026-01-01T00:00:01Z'),
+        },
+        {
+          id: 'u2',
+          chatId: 'chat-1',
+          role: 'user' as const,
+          parts: [{ type: 'text', text: 'Next' }],
+          parentMessageId: 'a1',
+          createdAt: new Date('2026-01-01T00:00:02Z'),
+        },
+      ];
+
+      const result = await ConversationPersistenceService.upsertMessages(dbMessages);
+
+      expect(result.activeLeafMessageId).toBe('a1');
+    });
   });
 
   describe('setActiveLeaf', () => {

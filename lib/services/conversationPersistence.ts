@@ -9,6 +9,7 @@ import {
   inferParentChainFromLinearOrder,
   remapForkPath,
   resolveDefaultLeafId,
+  resolvePersistedActiveLeafId,
   type TreeMessageNode,
 } from '@/lib/chat/conversationTree';
 import {
@@ -31,10 +32,7 @@ export class ConversationPersistenceService {
     }
 
     const chatId = dbMessages[0].chatId;
-    const leafId =
-      activeLeafMessageId ??
-      dbMessages[dbMessages.length - 1]?.id ??
-      null;
+    const leafId = resolvePersistedActiveLeafId(dbMessages, activeLeafMessageId);
 
     await db.transaction(async (tx) => {
       for (const message of dbMessages) {

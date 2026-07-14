@@ -53,7 +53,6 @@ export interface ChatStreamFinalizerParams {
   modelValidation: ModelValidationResult;
   titleGenerationPromise?: Promise<string>;
   getRemainingCreditsByExternalId: (userId: string) => Promise<number | null>;
-  activeLeafMessageId?: string | null;
 }
 
 const UI_FINISH_WAIT_MS = 6000;
@@ -95,13 +94,11 @@ export async function persistClientMessagesAtRequestStart(params: {
   });
 
   const dbMessages = convertToDBMessagesWithParents(stampedHistory, chatId);
-  const activeLeafId =
-    trailingAssistant?.role === 'assistant'
-      ? trailingAssistant.id
-      : historyMessages[historyMessages.length - 1]?.id;
+  const explicitLeafId =
+    trailingAssistant?.role === 'assistant' ? trailingAssistant.id : undefined;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await saveMessages({ messages: dbMessages as any, activeLeafMessageId: activeLeafId });
+  await saveMessages({ messages: dbMessages as any, activeLeafMessageId: explicitLeafId });
   console.log(
     `[Chat ${chatId}][requestStart] Saved ${dbMessages.length} client message(s) before stream.`
   );
@@ -120,7 +117,6 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
     modelValidation,
     titleGenerationPromise,
     getRemainingCreditsByExternalId,
-    activeLeafMessageId,
   } = params;
 
   const modelSnapshot = buildModelSnapshot({
@@ -336,8 +332,6 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await saveMessages({
           messages: dbMessages as any,
-          activeLeafMessageId:
-            activeLeafMessageId ?? state.finalAssistantMessageId,
         });
         state.messagesSavedSuccessfully = true;
         state.savedAssistantPartCount = countPersistableDisplayParts(

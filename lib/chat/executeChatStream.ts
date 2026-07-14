@@ -64,7 +64,6 @@ export async function executeChatStream(params: ExecuteChatStreamParams): Promis
     ...chatBody,
     messages: resolvedOperation.messages,
   };
-  const activeLeafMessageId = resolvedOperation.activeLeafMessageId;
 
   if (mcpResult.cleanup) {
     req.signal.addEventListener('abort', async () => {
@@ -150,7 +149,6 @@ export async function executeChatStream(params: ExecuteChatStreamParams): Promis
     modelValidation: preflight.modelValidation,
     titleGenerationPromise,
     getRemainingCreditsByExternalId,
-    activeLeafMessageId,
   });
 
   const openrouterUser = plan.openrouterUserId;

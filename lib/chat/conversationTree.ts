@@ -73,6 +73,38 @@ export function resolveDefaultLeafId<T extends TreeMessageNode>(messages: T[]): 
   return leaf.id;
 }
 
+type PersistLeafMessage = { id: string; role: string };
+
+/**
+ * Resolve activeLeafMessageId when persisting a message batch.
+ * Explicit ids win. Otherwise prefer the trailing assistant; if the batch ends
+ * with a user message (pre-stream continue), keep the leaf on the prior assistant.
+ */
+export function resolvePersistedActiveLeafId(
+  messages: PersistLeafMessage[],
+  explicitLeafId?: string | null
+): string | null {
+  if (typeof explicitLeafId === 'string' && explicitLeafId.length > 0) {
+    return explicitLeafId;
+  }
+  if (messages.length === 0) {
+    return null;
+  }
+
+  const last = messages[messages.length - 1];
+  if (last.role === 'assistant') {
+    return last.id;
+  }
+
+  for (let index = messages.length - 2; index >= 0; index -= 1) {
+    if (messages[index].role === 'assistant') {
+      return messages[index].id;
+    }
+  }
+
+  return last.id;
+}
+
 export function buildPathToLeaf<T extends TreeMessageNode>(
   leafId: string | null | undefined,
   graph: MessageGraph

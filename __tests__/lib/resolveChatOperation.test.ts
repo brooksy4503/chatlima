@@ -107,4 +107,36 @@ describe('resolveChatOperation', () => {
       activeLeafMessageId: 'a1',
     });
   });
+
+  it('keeps active leaf on prior assistant when continue adds a user message', async () => {
+    loadChatGraph.mockResolvedValue({
+      chat: { id: 'chat-1' },
+      dbMessages: [],
+      allMessages: [
+        { id: 'u1', role: 'user', parentMessageId: null },
+        { id: 'a1', role: 'assistant', parentMessageId: 'u1' },
+      ],
+      activeLeafMessageId: 'a1',
+      activePathMessages: [
+        { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Hi' }] },
+        { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
+      ],
+    });
+
+    const body = makeBody({
+      chatId: 'chat-1',
+      messages: [
+        { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Hi' }] },
+        { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Hello' }] },
+        { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'Next' }] },
+      ],
+    });
+
+    const result = await resolveChatOperation({ body, userId: 'user-1' });
+
+    expect(result.kind).toBe('stream');
+    if (result.kind !== 'stream') return;
+    expect(result.activeLeafMessageId).toBe('a1');
+    expect(result.messages.map((message) => message.id)).toEqual(['u1', 'a1', 'u2']);
+  });
 });

@@ -6,6 +6,7 @@ import {
   inferParentChainFromLinearOrder,
   remapForkPath,
   resolveDeepestLeafId,
+  resolvePersistedActiveLeafId,
 } from '@/lib/chat/conversationTree';
 
 describe('conversationTree', () => {
@@ -90,5 +91,29 @@ describe('conversationTree', () => {
     ];
     const path = buildActivePathMessages(branched, 'a1b');
     expect(path.map((m) => m.id)).toEqual(['u1', 'a1b']);
+  });
+
+  it('resolvePersistedActiveLeafId keeps leaf on prior assistant before stream', () => {
+    const batch = [
+      { id: 'u1', role: 'user' },
+      { id: 'a1', role: 'assistant' },
+      { id: 'u2', role: 'user' },
+    ];
+    expect(resolvePersistedActiveLeafId(batch)).toBe('a1');
+  });
+
+  it('resolvePersistedActiveLeafId uses trailing assistant after stream', () => {
+    const batch = [
+      { id: 'u1', role: 'user' },
+      { id: 'a1', role: 'assistant' },
+      { id: 'u2', role: 'user' },
+      { id: 'a2', role: 'assistant' },
+    ];
+    expect(resolvePersistedActiveLeafId(batch)).toBe('a2');
+  });
+
+  it('resolvePersistedActiveLeafId honors explicit leaf ids', () => {
+    const batch = [{ id: 'u1', role: 'user' }];
+    expect(resolvePersistedActiveLeafId(batch, 'placeholder-a1')).toBe('placeholder-a1');
   });
 });

@@ -42,4 +42,25 @@ describe('adoptDbMessages', () => {
       }).action
     ).toBe('none');
   });
+
+  it('keeps a completed local assistant turn when DB active path is stale', () => {
+    const initial = [baseMessage('u1'), baseMessage('a1', 'assistant'), baseMessage('u2')];
+    const current = [
+      ...initial,
+      baseMessage('a2', 'assistant'),
+    ];
+
+    expect(
+      adoptDbMessages({
+        chatId: 'chat-1',
+        loadedChatId: 'chat-1',
+        isLoadingChat: false,
+        status: 'ready',
+        isCompareLoading: false,
+        initialMessages: initial,
+        currentMessages: current,
+        activeLeafMessageId: 'u2',
+      })
+    ).toEqual({ action: 'none' });
+  });
 });

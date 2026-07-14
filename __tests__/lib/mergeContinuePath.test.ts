@@ -15,7 +15,7 @@ describe('mergeContinuePath', () => {
     const merged = mergeContinuePath(serverPath, clientPath);
 
     expect(merged.messages.map((message) => message.id)).toEqual(['u1', 'a1', 'u2']);
-    expect(merged.activeLeafMessageId).toBe('u2');
+    expect(merged.activeLeafMessageId).toBe('a1');
   });
 
   it('rejects a divergent client branch and keeps the server path', () => {
