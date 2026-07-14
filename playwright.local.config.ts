@@ -1,19 +1,24 @@
 import { defineConfig, devices } from '@playwright/test';
-import { playwrightReporters, playwrightWebServer } from './playwright.shared';
+import {
+  playwrightReporters,
+  playwrightSharedUse,
+  playwrightSharedWorkers,
+  playwrightTestTimeout,
+  playwrightWebServer,
+} from './playwright.shared';
 
 export default defineConfig({
     testDir: './tests',
-    fullyParallel: true,
+    fullyParallel: false,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 2 : 0,
-    workers: process.env.CI ? 1 : undefined,
+    workers: playwrightSharedWorkers,
+    timeout: playwrightTestTimeout,
     reporter: playwrightReporters,
 
     use: {
         baseURL: 'http://localhost:3000',
-        trace: 'on-first-retry',
-        screenshot: 'only-on-failure',
-        video: 'retain-on-failure',
+        ...playwrightSharedUse,
     },
 
     projects: [

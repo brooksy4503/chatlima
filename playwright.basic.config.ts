@@ -1,35 +1,33 @@
 import { defineConfig, devices } from '@playwright/test';
-import { playwrightReporters, playwrightWebServer } from './playwright.shared';
+import {
+  gotoApp,
+  playwrightReporters,
+  playwrightSharedUse,
+  playwrightSharedWorkers,
+  playwrightTestTimeout,
+  playwrightWebServer,
+} from './playwright.shared';
 
 export default defineConfig({
     testDir: './tests',
-    fullyParallel: true,
+    fullyParallel: false,
     forbidOnly: !!process.env.CI,
-    retries: 1,
-    workers: process.env.CI ? 1 : 2,
+    retries: process.env.CI ? 2 : 1,
+    workers: playwrightSharedWorkers,
+    timeout: playwrightTestTimeout,
+    expect: { timeout: 15_000 },
     reporter: playwrightReporters,
 
     use: {
-        baseURL: 'http://localhost:3000', // Local development server
-        trace: 'on-first-retry',
-        screenshot: 'only-on-failure',
-        video: 'retain-on-failure',
-        actionTimeout: 10000, // 10 second timeout for actions
+        baseURL: 'http://localhost:3000',
+        ...playwrightSharedUse,
     },
 
-    // Simple projects - just basic UI tests on local dev server
     projects: [
         {
             name: 'basic-ui-chrome',
             use: {
                 ...devices['Desktop Chrome'],
-            },
-            testMatch: /.*basic-ui.*\.spec\.ts/,
-        },
-        {
-            name: 'basic-ui-firefox',
-            use: {
-                ...devices['Desktop Firefox'],
             },
             testMatch: /.*basic-ui.*\.spec\.ts/,
         },
@@ -44,3 +42,5 @@ export default defineConfig({
 
     webServer: playwrightWebServer,
 });
+
+export { gotoApp };

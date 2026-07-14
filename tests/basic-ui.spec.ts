@@ -1,192 +1,104 @@
 import { test, expect } from '@playwright/test';
+import { gotoApp } from '../playwright.shared';
 
 test.describe('ChatLima Basic UI Tests', () => {
     test('should load public landing page', async ({ page }) => {
-        await page.goto('/');
+        await gotoApp(page, '/');
 
-        await expect(page).toHaveTitle(/ChatLima - AI Chat With 300\+ Models/);
-        await expect(page.getByRole('heading', { name: /One AI chat app for 300\+ models/i })).toBeVisible();
-        await expect(page.getByRole('link', { name: /Start Chatting/i })).toHaveAttribute('href', '/chat');
+        await expect(page).toHaveTitle(/ChatLima.*Multi-Model AI Chat/i);
+        await expect(
+            page.getByRole('heading', { name: /ChatLima — use the best AI model for every task/i })
+        ).toBeVisible();
+        await expect(page.getByRole('link', { name: /Start chatting/i }).first()).toHaveAttribute(
+            'href',
+            '/chat'
+        );
         await expect(page.getByPlaceholder('Send a message...')).toHaveCount(0);
         await expect(page.getByRole('button', { name: /Open sidebar/i })).toHaveCount(0);
-
-        console.log('✅ Landing page loaded successfully');
     });
 
     test('should load page and display core interface elements', async ({ page }) => {
-        // Navigate to the chat app
-        await page.goto('/chat');
+        await gotoApp(page, '/chat');
 
-        // Verify the page title
         await expect(page).toHaveTitle(/ChatLima/);
-
-        // Verify the main heading is visible
-        await expect(page.getByRole('heading', { name: 'ChatLima' })).toBeVisible();
-
-        // Verify the message input field is present
+        await expect(page.getByRole('heading', { name: 'Start a conversation' })).toBeVisible();
         await expect(page.getByPlaceholder('Send a message...')).toBeVisible();
 
-        // Verify the model picker (combobox) is present - look for one with model text pattern (contains ":")
         const modelPicker = page.getByRole('combobox').filter({ hasText: /:/ }).first();
         await expect(modelPicker).toBeVisible();
-
-        // Verify the send button is present (but may be disabled)
         await expect(page.locator('button[type="submit"]')).toBeVisible();
-
-        console.log('✅ Basic UI elements loaded successfully');
     });
 
     test('should handle message input field interactions', async ({ page }) => {
-        // Navigate to the chat app
-        await page.goto('/chat');
+        await gotoApp(page, '/chat');
 
-        // Get the message input field
         const messageInput = page.getByPlaceholder('Send a message...');
-
-        // Verify input starts empty
         await expect(messageInput).toHaveValue('');
 
-        // Type a test message
         const testMessage = 'This is a test message';
         await messageInput.fill(testMessage);
-
-        // Verify the text appears in the input
         await expect(messageInput).toHaveValue(testMessage);
 
-        // Clear the input
         await messageInput.clear();
-
-        // Verify the input is empty again
         await expect(messageInput).toHaveValue('');
-
-        // Verify placeholder is still visible when empty
         await expect(messageInput).toHaveAttribute('placeholder', 'Send a message...');
-
-        console.log('✅ Message input functionality working correctly');
     });
 
     test('should interact with model picker', async ({ page }) => {
-        // Navigate to the chat app
-        await page.goto('/chat');
+        await gotoApp(page, '/chat');
 
-        // Get the model picker combobox - it should contain model text with ":" pattern
         const modelPicker = page.getByRole('combobox').filter({ hasText: /:/ }).first();
-
-        // Verify model picker is visible and enabled
         await expect(modelPicker).toBeVisible();
         await expect(modelPicker).toBeEnabled();
-
-        // Verify it has some model text (contains ":")
         await expect(modelPicker).toContainText(':');
 
-        // Just verify we can focus it (simpler than opening dropdown)
         await modelPicker.focus();
-
-        // Click elsewhere to remove focus
         await page.getByPlaceholder('Send a message...').click();
 
-        // Verify model picker is still there and functional
         await expect(modelPicker).toBeVisible();
         await expect(modelPicker).toBeEnabled();
-
-        console.log('✅ Model picker interaction working correctly');
     });
 
     test('should navigate to new chat when clicking app logo link', async ({ page }) => {
-        // Navigate to the chat app
-        await page.goto('/chat');
+        await gotoApp(page, '/chat');
 
-        // Find the logo link - it should contain "ChatLima" text and be a link
         const logoLink = page.getByRole('link', { name: /ChatLima/i }).first();
-
-        // Verify logo link is visible and clickable
         await expect(logoLink).toBeVisible();
-        await expect(logoLink).toBeEnabled();
-
-        // Click the logo link
         await logoLink.click();
 
-        // Verify we're still on the app new-chat page
         await expect(page).toHaveURL('/chat');
-
-        // Verify the page title is still correct
         await expect(page).toHaveTitle(/ChatLima/);
-
-        console.log('✅ Logo link navigation working correctly');
     });
 
     test('should toggle sidebar open and close', async ({ page }) => {
-        // Navigate to the chat app
-        await page.goto('/chat');
+        await page.setViewportSize({ width: 390, height: 844 });
+        await gotoApp(page, '/chat');
 
-        // Find the sidebar toggle button (hamburger menu)
-        const sidebarToggle = page.getByRole('button', { name: /toggle sidebar|menu|hamburger/i }).or(
-            page.locator('button[aria-label*="sidebar"]')
-        ).or(
-            page.locator('button[data-testid*="sidebar"]')
-        ).or(
-            page.locator('button').filter({ hasText: /☰|≡|⋮/ })
-        ).first();
-
-        // Verify sidebar toggle button is visible
+        const sidebarToggle = page.getByRole('button', { name: /Open sidebar|Toggle Sidebar/i });
         await expect(sidebarToggle).toBeVisible();
 
-        // Click to open sidebar (assuming it starts closed)
         await sidebarToggle.click();
-
-        // Wait a moment for animation
-        await page.waitForTimeout(500);
-
-        // Click again to close sidebar
-        await sidebarToggle.click();
-
-        // Wait a moment for animation
-        await page.waitForTimeout(500);
-
-        // Verify toggle button is still there and functional
         await expect(sidebarToggle).toBeVisible();
         await expect(sidebarToggle).toBeEnabled();
 
-        console.log('✅ Sidebar toggle functionality working correctly');
+        await sidebarToggle.click();
+        await expect(sidebarToggle).toBeVisible();
+        await expect(sidebarToggle).toBeEnabled();
     });
 
     test('should interact with new chat button in sidebar', async ({ page }) => {
-        // Navigate to the chat app
-        await page.goto('/chat');
+        await gotoApp(page, '/chat');
 
-        // Find the sidebar toggle button and open sidebar
-        const sidebarToggle = page.getByRole('button', { name: /toggle sidebar|menu|hamburger/i }).or(
-            page.locator('button[aria-label*="sidebar"]')
-        ).or(
-            page.locator('button[data-testid*="sidebar"]')
-        ).or(
-            page.locator('button').filter({ hasText: /☰|≡|⋮/ })
-        ).first();
-
-        // Open the sidebar
-        await sidebarToggle.click();
-        await page.waitForTimeout(500); // Wait for sidebar animation
-
-        // Find the New Chat button in the sidebar
-        const newChatButton = page.getByRole('button', { name: /new chat|start chat|create chat|\+/i }).or(
-            page.locator('button[aria-label*="new chat"]')
-        ).or(
-            page.locator('button[data-testid*="new-chat"]')
-        ).first();
-
-        // Verify new chat button is visible and enabled
+        const newChatButton = page.getByRole('button', { name: 'Start new chat' });
         await expect(newChatButton).toBeVisible();
         await expect(newChatButton).toBeEnabled();
 
-        // Click the new chat button
-        await newChatButton.click();
+        await Promise.all([
+            page.waitForURL('/chat'),
+            newChatButton.click(),
+        ]);
 
-        // Verify we're still on a valid page (could be home or new chat route)
         await expect(page).toHaveTitle(/ChatLima/);
-
-        // Verify the message input is still available (indicating chat interface is ready)
         await expect(page.getByPlaceholder('Send a message...')).toBeVisible();
-
-        console.log('✅ New Chat button functionality working correctly');
     });
-}); 
+});

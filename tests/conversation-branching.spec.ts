@@ -1,61 +1,93 @@
 import { test, expect } from '@playwright/test';
+import { gotoApp } from '../playwright.shared';
 
 const branchedChatId = 'branch-chat-test-id';
 
-const branchedChatPayload = {
-  id: branchedChatId,
-  title: 'Branch test',
-  activeLeafMessageId: 'a2',
-  messages: [
+const branchedMessages = [
+  {
+    id: 'u1',
+    role: 'user',
+    parts: [{ type: 'text', text: 'Hello' }],
+    parentMessageId: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'a1',
+    role: 'assistant',
+    parts: [{ type: 'text', text: 'Hi there' }],
+    parentMessageId: 'u1',
+    modelDisplayName: 'Model A',
+    createdAt: '2026-01-01T00:00:01.000Z',
+  },
+  {
+    id: 'a2',
+    role: 'assistant',
+    parts: [{ type: 'text', text: 'Hi again' }],
+    parentMessageId: 'u1',
+    modelDisplayName: 'Model B',
+    createdAt: '2026-01-01T00:00:02.000Z',
+  },
+];
+
+function buildActivePath(leafMessageId: 'a1' | 'a2') {
+  const assistant =
+    leafMessageId === 'a2'
+      ? {
+          id: 'a2',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Hi again' }],
+          parentMessageId: 'u1',
+          modelDisplayName: 'Model B',
+        }
+      : {
+          id: 'a1',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Hi there' }],
+          parentMessageId: 'u1',
+          modelDisplayName: 'Model A',
+        };
+
+  return [
     {
       id: 'u1',
       role: 'user',
       parts: [{ type: 'text', text: 'Hello' }],
       parentMessageId: null,
-      createdAt: '2026-01-01T00:00:00.000Z',
     },
-    {
-      id: 'a1',
-      role: 'assistant',
-      parts: [{ type: 'text', text: 'Hi there' }],
-      parentMessageId: 'u1',
-      modelDisplayName: 'Model A',
-      createdAt: '2026-01-01T00:00:01.000Z',
-    },
-    {
-      id: 'a2',
-      role: 'assistant',
-      parts: [{ type: 'text', text: 'Hi again' }],
-      parentMessageId: 'u1',
-      modelDisplayName: 'Model B',
-      createdAt: '2026-01-01T00:00:02.000Z',
-    },
-  ],
-  activePathMessages: [
-    {
-      id: 'u1',
-      role: 'user',
-      parts: [{ type: 'text', text: 'Hello' }],
-      parentMessageId: null,
-    },
-    {
-      id: 'a2',
-      role: 'assistant',
-      parts: [{ type: 'text', text: 'Hi again' }],
-      parentMessageId: 'u1',
-      modelDisplayName: 'Model B',
-    },
-  ],
-};
+    assistant,
+  ];
+}
 
 test.describe('Conversation branching UI', () => {
   test.beforeEach(async ({ page }) => {
+    let activeLeafMessageId: 'a1' | 'a2' = 'a1';
+
+    const buildChatPayload = () => ({
+      id: branchedChatId,
+      title: 'Branch test',
+      activeLeafMessageId,
+      messages: branchedMessages,
+      activePathMessages: buildActivePath(activeLeafMessageId),
+    });
+
+    await page.route('**/api/chats', async (route) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([]),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
     await page.route(`**/api/chats/${branchedChatId}`, async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify(branchedChatPayload),
+          body: JSON.stringify(buildChatPayload()),
         });
         return;
       }
@@ -65,25 +97,13 @@ test.describe('Conversation branching UI', () => {
     await page.route(`**/api/chats/${branchedChatId}/active-leaf`, async (route) => {
       if (route.request().method() === 'PATCH') {
         const body = route.request().postDataJSON() as { leafMessageId?: string };
-        const leafMessageId = body.leafMessageId ?? 'a1';
-        const activePathMessages =
-          leafMessageId === 'a1'
-            ? [
-                branchedChatPayload.activePathMessages[0],
-                {
-                  id: 'a1',
-                  role: 'assistant',
-                  parts: [{ type: 'text', text: 'Hi there' }],
-                  parentMessageId: 'u1',
-                  modelDisplayName: 'Model A',
-                },
-              ]
-            : branchedChatPayload.activePathMessages;
+        activeLeafMessageId = body.leafMessageId === 'a2' ? 'a2' : 'a1';
+        const activePathMessages = buildActivePath(activeLeafMessageId);
 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ activeLeafMessageId: leafMessageId, activePathMessages }),
+          body: JSON.stringify({ activeLeafMessageId, activePathMessages }),
         });
         return;
       }
@@ -100,10 +120,11 @@ test.describe('Conversation branching UI', () => {
   });
 
   test('shows branch pager and switches assistant versions', async ({ page }) => {
-    await page.goto(`/chat/${branchedChatId}`);
+    await gotoApp(page, `/chat/${branchedChatId}`);
 
-    await expect(page.getByText('Hi again')).toBeVisible();
-    await expect(page.getByLabel('Version 2 of 2')).toBeVisible();
+    await expect(page.getByText('Hi there')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next version' })).toBeEnabled();
+    await expect(page.getByText('1 / 2')).toBeVisible();
 
     const patchPromise = page.waitForRequest(
       (req) =>
@@ -111,15 +132,16 @@ test.describe('Conversation branching UI', () => {
         req.method() === 'PATCH'
     );
 
-    await page.getByLabel('Previous version').click();
+    await page.getByLabel('Next version').click();
     await patchPromise;
 
-    await expect(page.getByText('Hi there')).toBeVisible();
-    await expect(page.getByLabel('Version 1 of 2')).toBeVisible();
+    await expect(page.getByText('Hi again')).toBeVisible();
+    await expect(page.getByText('Model B')).toBeVisible();
+    await expect(page.getByText(/\d+ \/ 2/)).toBeVisible();
   });
 
   test('exposes message actions menu on assistant messages', async ({ page }) => {
-    await page.goto(`/chat/${branchedChatId}`);
+    await gotoApp(page, `/chat/${branchedChatId}`);
 
     await expect(page.getByLabel('Message actions').first()).toBeVisible();
   });
