@@ -48,6 +48,8 @@ pnpm test:unit:ci
 pnpm build
 ```
 
+**Docs-only pushes are skipped automatically** when every changed file matches `*.md`, `docs/**`, `releases/**`, or `.cursor/**`. GitHub Actions uses the same path rules in `.github/workflows/ci.yml`. `pnpm pre-push` always runs the full suite when invoked manually.
+
 Run manually anytime:
 
 ```bash
