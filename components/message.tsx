@@ -253,6 +253,11 @@ const PurePreviewMessage = ({
     isWebSearchToolPart(part as UIMessage['parts'][number])
   );
 
+  const tokenUsage = message.tokenUsage;
+  const hasPersistedTokenMetrics =
+    tokenUsage != null &&
+    ((tokenUsage.totalTokens ?? 0) > 0 || (tokenUsage.estimatedCost ?? 0) > 0);
+
   const showLiveWebSearch = shouldShowLiveWebSearchIndicator({
     webSearchEnabled,
     status,
@@ -553,25 +558,24 @@ const PurePreviewMessage = ({
                       totalDuration={chatTokenUsage?.totalDuration}
                       className="text-xs"
                     />
-                  ) : (message.tokenUsage?.totalTokens ?? 0) > 0 ||
-                    (message.tokenUsage?.estimatedCost ?? 0) > 0 ? (
+                  ) : tokenUsage && hasPersistedTokenMetrics ? (
                     <CompactMessageTokenMetrics
-                      inputTokens={message.tokenUsage.inputTokens}
-                      outputTokens={message.tokenUsage.outputTokens}
-                      totalTokens={message.tokenUsage.totalTokens}
-                      estimatedCost={message.tokenUsage.estimatedCost}
-                      currency={message.tokenUsage.currency}
+                      inputTokens={tokenUsage.inputTokens}
+                      outputTokens={tokenUsage.outputTokens}
+                      totalTokens={tokenUsage.totalTokens}
+                      estimatedCost={tokenUsage.estimatedCost}
+                      currency={tokenUsage.currency}
                       isLoading={false}
                       timeToFirstToken={
-                        message.tokenUsage.timeToFirstToken ??
+                        tokenUsage.timeToFirstToken ??
                         chatTokenUsage?.timeToFirstToken
                       }
                       tokensPerSecond={
-                        message.tokenUsage.tokensPerSecond ??
+                        tokenUsage.tokensPerSecond ??
                         chatTokenUsage?.tokensPerSecond
                       }
                       totalDuration={
-                        message.tokenUsage.totalDuration ??
+                        tokenUsage.totalDuration ??
                         chatTokenUsage?.totalDuration
                       }
                       className="text-xs"
