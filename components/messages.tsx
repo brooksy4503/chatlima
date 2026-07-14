@@ -48,6 +48,9 @@ export const Messages = ({
       currency?: string;
       modelId?: string;
       modelDisplayName?: string;
+      timeToFirstToken?: number;
+      tokensPerSecond?: number;
+      totalDuration?: number;
     }
   >;
   branchActionsDisabled?: boolean;

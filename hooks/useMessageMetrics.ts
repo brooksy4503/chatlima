@@ -13,6 +13,9 @@ export type MessageMetricsMap = Record<
     currency?: string;
     modelId?: string;
     modelDisplayName?: string;
+    timeToFirstToken?: number;
+    tokensPerSecond?: number;
+    totalDuration?: number;
   }
 >;
 
@@ -37,6 +40,9 @@ export function useMessageMetrics(
         estimatedCost: breakdown.estimatedCost,
         modelId: breakdown.modelId,
         modelDisplayName: breakdown.modelDisplayName ?? breakdown.modelId,
+        timeToFirstToken: breakdown.timeToFirstTokenMs,
+        tokensPerSecond: breakdown.tokensPerSecond,
+        totalDuration: breakdown.processingTimeMs,
       };
     }
 

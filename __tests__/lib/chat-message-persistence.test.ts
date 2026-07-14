@@ -5,6 +5,7 @@ import {
   createStreamFinishGate,
   dbActivePathIsDifferentBranch,
   dbMessagesHaveRicherAssistantParts,
+  getLatestAssistantMessage,
   markServerExecutedToolParts,
   processMessagesForPersistence,
 } from '@/lib/chat-message-persistence';
@@ -15,6 +16,23 @@ describe('chat-message-persistence', () => {
     role: 'user',
     parts: [{ type: 'text', text: 'Latest news?' }],
   };
+
+  describe('getLatestAssistantMessage', () => {
+    it('returns the last assistant in a forked-chat follow-up transcript', () => {
+      const transcript = [
+        { id: 'u1', role: 'user' },
+        { id: 'a1', role: 'assistant' },
+        { id: 'u2', role: 'user' },
+        { id: 'a2', role: 'assistant' },
+      ];
+
+      expect(getLatestAssistantMessage(transcript)?.id).toBe('a2');
+    });
+
+    it('returns undefined when no assistant exists', () => {
+      expect(getLatestAssistantMessage([{ id: 'u1', role: 'user' }])).toBeUndefined();
+    });
+  });
 
   describe('buildAssistantMessageForPersistence', () => {
     it('prefers ui stream message parts over streamText fallback', () => {

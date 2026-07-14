@@ -178,6 +178,9 @@ interface MessageProps {
       totalTokens?: number;
       estimatedCost?: number;
       currency?: string;
+      timeToFirstToken?: number;
+      tokensPerSecond?: number;
+      totalDuration?: number;
     };
   };
   isLoading: boolean;
@@ -550,7 +553,8 @@ const PurePreviewMessage = ({
                       totalDuration={chatTokenUsage?.totalDuration}
                       className="text-xs"
                     />
-                  ) : message.tokenUsage ? (
+                  ) : (message.tokenUsage?.totalTokens ?? 0) > 0 ||
+                    (message.tokenUsage?.estimatedCost ?? 0) > 0 ? (
                     <CompactMessageTokenMetrics
                       inputTokens={message.tokenUsage.inputTokens}
                       outputTokens={message.tokenUsage.outputTokens}
@@ -558,9 +562,18 @@ const PurePreviewMessage = ({
                       estimatedCost={message.tokenUsage.estimatedCost}
                       currency={message.tokenUsage.currency}
                       isLoading={false}
-                      timeToFirstToken={chatTokenUsage?.timeToFirstToken}
-                      tokensPerSecond={chatTokenUsage?.tokensPerSecond}
-                      totalDuration={chatTokenUsage?.totalDuration}
+                      timeToFirstToken={
+                        message.tokenUsage.timeToFirstToken ??
+                        chatTokenUsage?.timeToFirstToken
+                      }
+                      tokensPerSecond={
+                        message.tokenUsage.tokensPerSecond ??
+                        chatTokenUsage?.tokensPerSecond
+                      }
+                      totalDuration={
+                        message.tokenUsage.totalDuration ??
+                        chatTokenUsage?.totalDuration
+                      }
                       className="text-xs"
                     />
                   ) : null}

@@ -8,6 +8,18 @@ import {
 } from '@/lib/message-utils';
 import { nanoid } from 'nanoid';
 
+/** Return the most recent assistant message (e.g. after a forked-chat follow-up). */
+export function getLatestAssistantMessage<T extends { role: string }>(
+  messages: T[]
+): T | undefined {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'assistant') {
+      return messages[i];
+    }
+  }
+  return undefined;
+}
+
 export interface UrlCitation {
   url: string;
   title: string;

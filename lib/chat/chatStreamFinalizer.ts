@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid';
 import {
   buildAssistantMessageForPersistence,
   countPersistableDisplayParts,
+  getLatestAssistantMessage,
   processMessagesForPersistence,
 } from '@/lib/chat-message-persistence';
 import {
@@ -286,7 +287,7 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
           return msg;
         });
 
-        const processedAssistant = processedMessages.find((m) => m.role === 'assistant');
+        const processedAssistant = getLatestAssistantMessage(processedMessages);
         if (processedAssistant && source === 'ui') {
           state.uiResponseMessage = processedAssistant;
         }
@@ -294,12 +295,8 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
         const logTag = source === 'ui' ? 'uiOnFinish' : 'onFinish';
 
         console.log(`[Chat ${chatId}][${logTag}] Persisting assistant parts:`, {
-          partTypes:
-            processedMessages
-              .find((m) => m.role === 'assistant')
-              ?.parts?.map((p) => p.type) ?? [],
-          partCount:
-            processedMessages.find((m) => m.role === 'assistant')?.parts?.length ?? 0,
+          partTypes: processedAssistant?.parts?.map((p) => p.type) ?? [],
+          partCount: processedAssistant?.parts?.length ?? 0,
         });
 
         const dbMessages = (
@@ -321,7 +318,7 @@ export function createChatStreamFinalizer(params: ChatStreamFinalizerParams) {
             : undefined,
         }));
 
-        const savedAssistant = dbMessages.find((msg) => msg.role === 'assistant');
+        const savedAssistant = getLatestAssistantMessage(dbMessages);
         state.finalAssistantMessageId =
           savedAssistant?.id ||
           (response?.messages
