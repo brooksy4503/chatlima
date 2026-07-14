@@ -25,7 +25,7 @@ On every PR and push to `main`, [`.github/workflows/ci.yml`](../.github/workflow
 3. **Build** — `pnpm build`
 4. **Playwright** — basic UI + conversation branching specs (`pnpm test:ci:e2e`)
 
-The Playwright job starts **Postgres 16** plus a **Neon local HTTP/WebSocket proxy** sidecar so the app's `@neondatabase/serverless` driver can talk to CI Postgres. Migrations run via `pnpm db:migrate` before E2E. Browsers install with `pnpm exec playwright install chromium --with-deps` (the macOS-only custom installer is skipped on Linux/CI).
+The Playwright job starts a **Postgres 16** service container. In CI, `lib/db/index.ts` uses the standard `pg` driver for `localhost` URLs (Neon serverless requires a WebSocket proxy that is unnecessary here). Migrations run via `pnpm db:migrate` before E2E. Browsers install with `pnpm exec playwright install chromium --with-deps` (the macOS-only custom installer is skipped on Linux/CI).
 
 The CI unit suite intentionally **excludes pre-existing flaky component tests**. Lib, service, API, and seam tests must pass for merge.
 

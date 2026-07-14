@@ -67,8 +67,6 @@ jobs:
     name: Playwright (basic UI + branching)
     runs-on: ubuntu-latest
     needs: lint-unit-build
-    env:
-      NEON_LOCAL_PROXY_PORT: "4444"
     services:
       postgres:
         image: postgres:16
@@ -83,12 +81,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      neon-proxy:
-        image: ghcr.io/timowilhelm/local-neon-http-proxy:main
-        env:
-          PG_CONNECTION_STRING: postgresql://ci:ci@postgres:5432/chatlima_ci
-        ports:
-          - 4444:4444
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -109,19 +101,6 @@ jobs:
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install chromium --with-deps
-
-      - name: Wait for Neon local proxy
-        run: |
-          for attempt in $(seq 1 30); do
-            if curl -sf "http://127.0.0.1:4444/" >/dev/null; then
-              echo "Neon proxy is ready"
-              exit 0
-            fi
-            echo "Waiting for Neon proxy (attempt ${attempt}/30)..."
-            sleep 2
-          done
-          echo "Neon proxy did not become ready in time"
-          exit 1
 
       - name: Run database migrations
         run: pnpm db:migrate

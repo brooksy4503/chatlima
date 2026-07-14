@@ -1,17 +1,47 @@
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
-import { configureLocalNeonProxy } from "./configure-local-neon-proxy";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
+import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
+import { Pool as NeonPool } from "@neondatabase/serverless";
+import { Pool as PgPool } from "pg";
 import * as schema from "./schema";
 
-configureLocalNeonProxy();
+function isCiPostgresUrl(): boolean {
+  if (process.env.CI !== "true") {
+    return false;
+  }
 
-// Initialize the connection pool with proper limits to prevent exhaustion
-const pool = new Pool({
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    return false;
+  }
+
+  try {
+    const { hostname } = new URL(url.replace(/^postgresql:/, "http:"));
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+function createDb() {
+  if (isCiPostgresUrl()) {
+    const pool = new PgPool({
+      connectionString: process.env.DATABASE_URL,
+      max: 20,
+      idleTimeoutMillis: 30_000,
+      connectionTimeoutMillis: 10_000,
+    });
+
+    return drizzlePg(pool, { schema });
+  }
+
+  const pool = new NeonPool({
     connectionString: process.env.DATABASE_URL,
-    max: 20, // Maximum number of connections in the pool
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
-});
+    max: 20,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+  });
 
-// Initialize Drizzle with the connection pool and schema
-export const db = drizzle(pool, { schema }); 
+  return drizzleNeon(pool, { schema });
+}
+
+export const db = createDb();
