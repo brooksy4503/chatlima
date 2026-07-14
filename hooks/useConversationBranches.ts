@@ -8,6 +8,8 @@ import {
   buildMessageGraph,
   buildPathToLeaf,
   getSiblingVersionInfo,
+  inferParentChainFromLinearOrder,
+  mergeGraphMessages,
   resolveDeepestLeafId,
 } from "@/lib/chat/conversationTree";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
@@ -38,20 +40,17 @@ export function useConversationBranches({
   const queryClient = useQueryClient();
 
   const graph = useMemo(() => {
-    // Merge DB graph with the live active path so newly edited/regenerated
-    // siblings get a pager immediately, before chat query refetch completes.
-    const byId = new Map<string, CompareUIMessage>();
-    for (const message of allMessages) {
-      byId.set(message.id, message);
-    }
-    for (const message of messages) {
-      byId.set(message.id, message);
-    }
-    return buildMessageGraph([...byId.values()]);
+    const merged =
+      allMessages.length > 0
+        ? mergeGraphMessages(allMessages, messages)
+        : inferParentChainFromLinearOrder(messages);
+    return buildMessageGraph(merged);
   }, [allMessages, messages]);
 
-  const getVersionInfo = (messageId: string) =>
-    getSiblingVersionInfo(messageId, graph);
+  const getVersionInfo = (messageId: string) => {
+    if (isStreaming) return null;
+    return getSiblingVersionInfo(messageId, graph);
+  };
 
   const selectSibling = async (messageId: string, direction: -1 | 1) => {
     const versionInfo = getSiblingVersionInfo(messageId, graph);

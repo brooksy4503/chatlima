@@ -4,6 +4,7 @@ import {
   buildPathToLeaf,
   getSiblingVersionInfo,
   inferParentChainFromLinearOrder,
+  mergeGraphMessages,
   remapForkPath,
   resolveDeepestLeafId,
   resolvePersistedActiveLeafId,
@@ -115,5 +116,52 @@ describe('conversationTree', () => {
   it('resolvePersistedActiveLeafId honors explicit leaf ids', () => {
     const batch = [{ id: 'u1', role: 'user' }];
     expect(resolvePersistedActiveLeafId(batch, 'placeholder-a1')).toBe('placeholder-a1');
+  });
+
+  it('preserves DB parent links when live path strips parentMessageId during streaming', () => {
+    const persisted = [
+      { id: 'u1', role: 'user', parentMessageId: null, createdAt: new Date(1) },
+      { id: 'a1', role: 'assistant', parentMessageId: 'u1', createdAt: new Date(2) },
+      { id: 'u2', role: 'user', parentMessageId: 'a1', createdAt: new Date(3) },
+      { id: 'a2', role: 'assistant', parentMessageId: 'u2', createdAt: new Date(4) },
+    ];
+    const livePath = [
+      { id: 'u1', role: 'user', createdAt: new Date(1) },
+      { id: 'a1', role: 'assistant', createdAt: new Date(2) },
+      { id: 'u2', role: 'user', createdAt: new Date(3) },
+      { id: 'a2', role: 'assistant', createdAt: new Date(4) },
+      { id: 'u3', role: 'user', createdAt: new Date(5) },
+      { id: 'a3', role: 'assistant', createdAt: new Date(6) },
+    ];
+
+    const merged = mergeGraphMessages(persisted, livePath);
+    const graph = buildMessageGraph(merged);
+
+    expect(getSiblingVersionInfo('u2', graph)).toBeNull();
+    expect(getSiblingVersionInfo('u3', graph)).toBeNull();
+  });
+
+  it('keeps explicit live parentMessageId for edit-resubmit siblings', () => {
+    const persisted = [
+      { id: 'u1', role: 'user', parentMessageId: null, createdAt: new Date(1) },
+      { id: 'a1', role: 'assistant', parentMessageId: 'u1', createdAt: new Date(2) },
+    ];
+    const livePath = [
+      { id: 'u1', role: 'user', createdAt: new Date(1) },
+      { id: 'a1', role: 'assistant', createdAt: new Date(2) },
+      { id: 'user-attempt', role: 'user', parentMessageId: null, createdAt: new Date(3) },
+      {
+        id: 'asst-attempt',
+        role: 'assistant',
+        parentMessageId: 'user-attempt',
+        createdAt: new Date(4),
+      },
+    ];
+
+    const merged = mergeGraphMessages(persisted, livePath);
+    const graph = buildMessageGraph(merged);
+    const info = getSiblingVersionInfo('user-attempt', graph);
+
+    expect(info).toEqual({ index: 2, total: 2, siblings: expect.any(Array) });
   });
 });

@@ -176,6 +176,45 @@ export function getMessageSiblings<T extends TreeMessageNode>(
   return siblings.filter((sibling) => sibling.role === node.role);
 }
 
+/**
+ * Merge persisted graph nodes with the live active path for branch pager resolution.
+ * Live content wins for display, but parentMessageId is only taken from live when the
+ * client explicitly set it (edit-resubmit / regenerate). Otherwise DB parents are kept
+ * so streaming messages without parentMessageId do not become false root siblings.
+ */
+export function mergeGraphMessages<T extends CompareUIMessage>(
+  persistedMessages: T[],
+  activePathMessages: T[]
+): T[] {
+  const byId = new Map<string, T>();
+
+  for (const message of persistedMessages) {
+    byId.set(message.id, message);
+  }
+
+  const inferredPath = inferParentChainFromLinearOrder(activePathMessages);
+
+  for (const inferred of inferredPath) {
+    const live = activePathMessages.find((message) => message.id === inferred.id);
+    if (!live) continue;
+
+    const persisted = byId.get(inferred.id);
+    const liveHasExplicitParent = live.parentMessageId !== undefined;
+
+    const merged = {
+      ...(persisted ?? {}),
+      ...live,
+      parentMessageId: liveHasExplicitParent
+        ? live.parentMessageId ?? null
+        : persisted?.parentMessageId ?? inferred.parentMessageId ?? null,
+    } as T;
+
+    byId.set(inferred.id, merged);
+  }
+
+  return [...byId.values()];
+}
+
 export function getSiblingVersionInfo(
   messageId: string,
   graph: MessageGraph
