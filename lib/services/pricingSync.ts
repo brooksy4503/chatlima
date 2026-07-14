@@ -111,11 +111,14 @@ export class PricingSyncService {
                         )
                         .limit(1);
 
+                    const inputTokenPrice = apiPerTokenToStoredPer1k(inputPrice);
+                    const outputTokenPrice = apiPerTokenToStoredPer1k(outputPrice);
+
                     const pricingData = {
                         modelId: model.id,
                         provider,
-                        inputTokenPrice: apiPerTokenToStoredPer1k(inputPrice),
-                        outputTokenPrice: apiPerTokenToStoredPer1k(outputPrice),
+                        inputTokenPrice: inputTokenPrice.toString(),
+                        outputTokenPrice: outputTokenPrice.toString(),
                         currency: model.pricing.currency || 'USD',
                         effectiveFrom: new Date(),
                         isActive: true,
@@ -136,8 +139,8 @@ export class PricingSyncService {
 
                         // Check if pricing has changed (DB numeric columns are strings)
                         if (
-                            Number(existing.inputTokenPrice) !== pricingData.inputTokenPrice ||
-                            Number(existing.outputTokenPrice) !== pricingData.outputTokenPrice
+                            inputTokenPrice !== Number(existing.inputTokenPrice) ||
+                            outputTokenPrice !== Number(existing.outputTokenPrice)
                         ) {
                             try {
                                 // IMPROVED: Use transaction for atomicity and better error handling
