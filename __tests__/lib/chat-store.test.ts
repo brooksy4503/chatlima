@@ -1,8 +1,25 @@
+jest.mock('server-only', () => ({}));
+
 import type { UIMessage } from 'ai';
 import { convertToDBMessages } from '@/lib/chat/messageConversion';
+import { saveChat } from '@/lib/chat-store';
+import { chats } from '@/lib/db/schema';
+
+const mockOnConflictDoUpdate = jest.fn();
+const mockInsertValues = jest.fn();
+const mockFindFirstChat = jest.fn();
 
 jest.mock('@/lib/db', () => ({
-  db: {},
+  db: {
+    insert: jest.fn(() => ({
+      values: mockInsertValues,
+    })),
+    query: {
+      chats: {
+        findFirst: (...args: unknown[]) => mockFindFirstChat(...args),
+      },
+    },
+  },
 }));
 
 jest.mock('@/app/actions', () => ({
@@ -10,6 +27,14 @@ jest.mock('@/app/actions', () => ({
 }));
 
 describe('chat-store message conversion', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockFindFirstChat.mockResolvedValue(undefined);
+    mockInsertValues.mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate.mockResolvedValue(undefined),
+    });
+  });
+
   it('assigns monotonically increasing createdAt values to preserve array order', () => {
     const messages: UIMessage[] = [
       {
@@ -88,5 +113,59 @@ describe('chat-store message conversion', () => {
     const db = convertToDBMessages(messages, 'chat-1');
     expect(db[1].modelId).toBe('openrouter/gpt-4o-mini');
     expect(db[1].comparisonTurnId).toBe('turn-1');
+  });
+});
+
+describe('saveChat', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockFindFirstChat.mockResolvedValue(undefined);
+    mockInsertValues.mockReturnValue({
+      onConflictDoUpdate: mockOnConflictDoUpdate.mockResolvedValue(undefined),
+    });
+  });
+
+  it('uses atomic upsert instead of separate insert/update paths', async () => {
+    const result = await saveChat({
+      id: 'chat-new',
+      userId: 'user-1',
+      title: 'My Chat',
+    });
+
+    expect(result).toEqual({ id: 'chat-new' });
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'chat-new',
+        userId: 'user-1',
+        title: 'My Chat',
+      })
+    );
+    expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: chats.id,
+        set: expect.objectContaining({
+          title: 'My Chat',
+        }),
+      })
+    );
+  });
+
+  it('preserves existing meaningful title when no override is provided', async () => {
+    mockFindFirstChat.mockResolvedValue({
+      id: 'chat-existing',
+      userId: 'user-1',
+      title: 'Existing Title',
+    });
+
+    await saveChat({
+      id: 'chat-existing',
+      userId: 'user-1',
+    });
+
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Existing Title',
+      })
+    );
   });
 });

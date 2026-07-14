@@ -159,6 +159,61 @@ describe('chat-message-persistence', () => {
       });
     });
 
+    it('does not overwrite citations on prior assistant messages in history', () => {
+      const priorAssistant: UIMessage = {
+        id: 'asst-old',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: 'Older answer',
+            state: 'done',
+            citations: [
+              {
+                url: 'https://old.example.com',
+                title: 'Old Source',
+              },
+            ],
+          } as UIMessage['parts'][number],
+        ],
+      };
+
+      const assistantMessage: UIMessage = {
+        id: 'asst-new',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'New cited answer', state: 'done' }],
+      };
+
+      const processed = processMessagesForPersistence({
+        historyMessages: [userMessage, priorAssistant],
+        assistantMessage,
+        annotations: [
+          {
+            type: 'url_citation',
+            url_citation: {
+              url: 'https://new.example.com',
+              title: 'New Source',
+              start_index: 0,
+              end_index: 10,
+            },
+          },
+        ],
+      });
+
+      const assistants = processed.filter((m) => m.role === 'assistant');
+      expect(assistants).toHaveLength(2);
+
+      const oldTextPart = assistants[0]?.parts?.find((p) => p.type === 'text') as {
+        citations?: Array<{ url: string }>;
+      };
+      const newTextPart = assistants[1]?.parts?.find((p) => p.type === 'text') as {
+        citations?: Array<{ url: string }>;
+      };
+
+      expect(oldTextPart.citations?.[0]?.url).toBe('https://old.example.com');
+      expect(newTextPart.citations?.[0]?.url).toBe('https://new.example.com');
+    });
+
     it('injects synthetic image generation tool parts when URLs exist without tool parts', () => {
       const assistantMessage: UIMessage = {
         id: 'asst-1',

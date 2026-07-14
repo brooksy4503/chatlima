@@ -40,10 +40,24 @@ describe('TokenTrackingService', () => {
     let mockDb: any;
     let mockCostCalculationService: any;
 
+    const setupInsertMock = () => {
+        mockDb.insert.mockImplementation((table: unknown) => ({
+            values: jest.fn().mockImplementation(() => {
+                if (table === dailyTokenUsage) {
+                    return {
+                        onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+                    };
+                }
+                return Promise.resolve(undefined);
+            }),
+        }));
+    };
+
     beforeEach(() => {
         mockDb = db as any;
         mockCostCalculationService = require('@/lib/services/costCalculation').CostCalculationService;
         jest.clearAllMocks();
+        setupInsertMock();
     });
 
     describe('trackTokenUsage', () => {
@@ -61,11 +75,6 @@ describe('TokenTrackingService', () => {
 
         it('should successfully track token usage with valid parameters', async () => {
             // Arrange
-            const mockValues = jest.fn().mockResolvedValue(undefined);
-            mockDb.insert.mockReturnValue({
-                values: mockValues,
-            });
-
             mockDb.query.modelPricing.findFirst.mockResolvedValue({
                 id: 'pricing-1',
                 modelId: 'gpt-4',
@@ -89,7 +98,11 @@ describe('TokenTrackingService', () => {
 
             // Assert
             expect(mockDb.insert).toHaveBeenCalledWith(tokenUsageMetrics);
-            expect(mockValues).toHaveBeenCalledWith(expect.objectContaining({
+            expect(mockDb.insert).toHaveBeenCalledWith(dailyTokenUsage);
+            const metricsInsert = mockDb.insert.mock.results.find(
+                (_: unknown, index: number) => mockDb.insert.mock.calls[index][0] === tokenUsageMetrics
+            );
+            expect(metricsInsert?.value.values).toHaveBeenCalledWith(expect.objectContaining({
                 userId: validParams.userId,
                 chatId: validParams.chatId,
                 messageId: validParams.messageId,
@@ -99,6 +112,52 @@ describe('TokenTrackingService', () => {
                 outputTokens: 50,
                 totalTokens: 150,
             }));
+        });
+
+        it('upserts daily token usage atomically on conflict', async () => {
+            const mockOnConflictDoUpdate = jest.fn().mockResolvedValue(undefined);
+            const mockDailyValues = jest.fn().mockReturnValue({
+                onConflictDoUpdate: mockOnConflictDoUpdate,
+            });
+
+            mockDb.insert.mockImplementation((table: unknown) => {
+                if (table === dailyTokenUsage) {
+                    return { values: mockDailyValues };
+                }
+                return {
+                    values: jest.fn().mockResolvedValue(undefined),
+                };
+            });
+
+            mockDb.query.modelPricing.findFirst.mockResolvedValue({
+                id: 'pricing-1',
+                modelId: 'gpt-4',
+                provider: 'openai',
+                inputTokenPrice: '0.0005',
+                outputTokenPrice: '0.0015',
+                currency: 'USD',
+                effectiveFrom: new Date(),
+                isActive: true,
+            });
+
+            mockCostCalculationService.calculateCost.mockResolvedValue({
+                subtotal: 0.000125,
+                totalCost: 0.000125,
+                currency: 'USD',
+                breakdown: [],
+            });
+
+            await TokenTrackingService.trackTokenUsage(validParams);
+
+            expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    target: [dailyTokenUsage.userId, dailyTokenUsage.date, dailyTokenUsage.provider],
+                    set: expect.objectContaining({
+                        requestCount: expect.anything(),
+                        updatedAt: expect.any(Date),
+                    }),
+                })
+            );
         });
 
         it('should handle database errors gracefully', async () => {

@@ -350,7 +350,7 @@ The application uses specialized services for maintainability:
 
 - `favorite_models` - User's favorited models
 - `preset_usage` - Preset usage tracking
-- `model_pricing` - Model pricing data
+- `model_pricing` - Model pricing data (`input_token_price` / `output_token_price` are USD per **1,000 tokens**; synced from OpenRouter/Requesty APIs via `pricingSync`, which converts API per-token values at insert time)
 - `daily_token_usage` - Aggregated daily token usage
 - `cleanup_execution_logs` - User cleanup audit
 - `verification` - Auth verification tokens
@@ -594,7 +594,7 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 - **Web Search** (OpenRouter models only; globe toggle in composer):
   - **Eligibility**: Signed-in users with ≥5 Polar credits, or BYOK `OPENROUTER_API_KEY`. Anonymous users are blocked. Model must be `openrouter/...` with `supportsWebSearch: true` in the catalog. Direct-provider BYOK keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.) do not unlock web search.
   - **Client**: `webSearch: { enabled, contextSize }` sent on every `POST /api/chat` from `WebSearchProvider` (localStorage) or active preset overrides.
-  - **Agentic path (default, `OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=true`)**: OpenRouter `web_search` server tool merged into `streamText` tools; model may invoke search 0+ times (`stopWhen: stepCountIs(20)`). System prompt instructs cite-with-markdown-links. Citations from `url_citation` annotations; `hasWebSearch` set when invocations or citations detected. Billing counts tool-call steps / UI tool parts / `usage.raw.server_tool_use_details.web_search_requests` (OpenRouter’s agentic field; stream `gen-*` ids often 404 on `/generation`). If those are empty, ChatLima fetches OpenRouter generation records and bills when `usage_web` / `num_search_results` / `web_search_engine` indicate search ran (at least 1 × 5 credits).
+  - **Agentic path (default, `OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=true`)**: OpenRouter `web_search` server tool merged into `streamText` tools; model may invoke search 0+ times (`stopWhen: stepCountIs(20)`). System prompt instructs cite-with-markdown-links. Citations from `url_citation` annotations; `hasWebSearch` set when invocations or citations detected. On persistence, citations attach only to the **current** assistant turn (`processMessagesForPersistence`), not prior assistant messages in history. Billing counts tool-call steps / UI tool parts / `usage.raw.server_tool_use_details.web_search_requests` (OpenRouter’s agentic field; stream `gen-*` ids often 404 on `/generation`). If those are empty, ChatLima fetches OpenRouter generation records and bills when `usage_web` / `num_search_results` / `web_search_engine` indicate search ran (at least 1 × 5 credits).
   - **Legacy path (`OPENROUTER_AGENTIC_WEB_TOOLS_ENABLED=false`)**: Model ID rewritten to `:online` variant plus `web_search_options.search_context_size` from context size (`low` / `medium` / `high`).
   - **No automatic fallback**: When agentic tools are enabled globally, unsupported or failed agentic setup disables web search for that request; legacy `:online` is not used unless the env flag is `false`.
   - **UI**: Live “Searching the web” indicator during stream; tool cards and `Citations` component; optional follow-up suggestion to disable search to save credits.

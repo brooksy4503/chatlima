@@ -141,28 +141,22 @@ export async function saveChat({ id, userId, messages: aiMessages, title, select
     }
   }
 
-  if (existingChat) {
-    // Update existing chat
-    await db
-      .update(chats)
-      .set({
-        title: chatTitle,
-        updatedAt: new Date()
-      })
-      .where(and(
-        eq(chats.id, chatId),
-        eq(chats.userId, userId)
-      ));
-  } else {
-    // Create new chat
-    await db.insert(chats).values({
+  await db
+    .insert(chats)
+    .values({
       id: chatId,
       userId,
       title: chatTitle,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: chats.id,
+      set: {
+        title: chatTitle,
+        updatedAt: new Date(),
+      },
     });
-  }
 
   return { id: chatId };
 }

@@ -178,27 +178,22 @@ export function processMessagesForPersistence(
         endIndex: c.url_citation.end_index,
       })) ?? [];
 
-  const withAssistant = [...historyMessages, assistantMessage];
-
   if (citations.length === 0) {
-    return withAssistant;
+    return [...historyMessages, assistantMessage];
   }
 
-  return withAssistant.map((msg) => {
-    if (msg.role !== 'assistant' || !msg.parts) {
-      return msg;
-    }
-
-    return {
-      ...msg,
-      parts: msg.parts.map((part) => {
+  const updatedAssistantMessage = {
+    ...assistantMessage,
+    parts:
+      assistantMessage.parts?.map((part) => {
         if (part.type === 'text') {
           return { ...part, citations };
         }
         return part;
-      }),
-    };
-  });
+      }) ?? [],
+  };
+
+  return [...historyMessages, updatedAssistantMessage];
 }
 
 /** Sync gate: UI stream onFinish can run before streamText onFinish without this. */

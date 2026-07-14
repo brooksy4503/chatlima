@@ -3,6 +3,7 @@ import { tokenUsageMetrics, modelPricing, dailyTokenUsage, users } from '@/lib/d
 import { eq, and, gte, lte, desc, sql, sum, count, avg } from 'drizzle-orm';
 import { modelID } from '@/ai/providers';
 import { nanoid } from 'nanoid';
+import { toPerTokenPrice } from '@/lib/services/pricingUnits';
 
 // Diagnostic logging helper
 const logDiagnostic = (category: string, message: string, data?: any) => {
@@ -225,6 +226,36 @@ export class CostCalculationService {
     ];
 
     /**
+     * Apply provider volume discount tiers to a subtotal and token count.
+     */
+    private static applyVolumeDiscount(
+        subtotal: number,
+        totalTokens: number,
+        provider: string
+    ): { discountAmount: number; discountPercentage: number; volumeDiscountApplied: boolean } {
+        const providerConfig = this.providerConfigs.find(c => c.provider === provider);
+        if (!providerConfig) {
+            return { discountAmount: 0, discountPercentage: 0, volumeDiscountApplied: false };
+        }
+
+        for (const tier of providerConfig.volumeDiscountTiers) {
+            if (totalTokens >= tier.minTokens && (!tier.maxTokens || totalTokens <= tier.maxTokens)) {
+                if (tier.discountPercentage === 0) {
+                    return { discountAmount: 0, discountPercentage: 0, volumeDiscountApplied: false };
+                }
+
+                return {
+                    discountAmount: subtotal * (tier.discountPercentage / 100),
+                    discountPercentage: tier.discountPercentage,
+                    volumeDiscountApplied: true,
+                };
+            }
+        }
+
+        return { discountAmount: 0, discountPercentage: 0, volumeDiscountApplied: false };
+    }
+
+    /**
      * Calculate cost for a single token usage record
      */
     static async calculateCostForRecord(
@@ -281,11 +312,9 @@ export class CostCalculationService {
                 exchangeRates = this.defaultExchangeRates,
             } = options;
 
-            // Convert prices to per-token values.
-            // All pricing sources (database/default/custom) are stored as cost per 1k tokens.
-            // Convert to per-token by dividing by 1000.
-            const inputPricePerToken = pricing.inputTokenPrice / 1000;
-            const outputPricePerToken = pricing.outputTokenPrice / 1000;
+            // Convert prices to per-token values (stored prices are per 1k tokens).
+            const inputPricePerToken = toPerTokenPrice(pricing.inputTokenPrice);
+            const outputPricePerToken = toPerTokenPrice(pricing.outputTokenPrice);
 
             // Calculate base costs
             const inputCost = inputTokens * inputPricePerToken;
@@ -298,19 +327,10 @@ export class CostCalculationService {
             let discountPercentage = 0;
 
             if (includeVolumeDiscounts) {
-                const totalTokens = inputTokens + outputTokens;
-                const providerConfig = this.providerConfigs.find(c => c.provider === provider);
-
-                if (providerConfig) {
-                    for (const tier of providerConfig.volumeDiscountTiers) {
-                        if (totalTokens >= tier.minTokens && (!tier.maxTokens || totalTokens <= tier.maxTokens)) {
-                            discountPercentage = tier.discountPercentage;
-                            discountAmount = subtotal * (discountPercentage / 100);
-                            volumeDiscountApplied = true;
-                            break;
-                        }
-                    }
-                }
+                const discount = this.applyVolumeDiscount(subtotal, inputTokens + outputTokens, provider);
+                discountAmount = discount.discountAmount;
+                volumeDiscountApplied = discount.volumeDiscountApplied;
+                discountPercentage = discount.discountPercentage;
             }
 
             const totalCost = subtotal - discountAmount;
@@ -500,15 +520,15 @@ export class CostCalculationService {
                 }
             }
 
-            // Convert prices to per-token values (all sources are per 1k tokens)
+            // Convert prices to per-token values (stored prices are per 1k tokens).
             logDiagnostic('PRICING_CONVERSION', `Converting prices (per 1k tokens)`, {
                 calculationId,
                 pricingSource,
                 inputTokenPrice,
                 outputTokenPrice
             });
-            const inputPricePerToken = inputTokenPrice / 1000;
-            const outputPricePerToken = outputTokenPrice / 1000;
+            const inputPricePerToken = toPerTokenPrice(inputTokenPrice);
+            const outputPricePerToken = toPerTokenPrice(outputTokenPrice);
 
             logDiagnostic('COST_CALCULATION', `Calculating base costs`, {
                 calculationId,
@@ -546,27 +566,17 @@ export class CostCalculationService {
                     hasProviderConfig: !!providerConfig
                 });
 
-                if (providerConfig) {
-                    for (const tier of providerConfig.volumeDiscountTiers) {
-                        if (totalTokens >= tier.minTokens && (!tier.maxTokens || totalTokens <= tier.maxTokens)) {
-                            discountAmount = subtotal * (tier.discountPercentage / 100);
-                            volumeDiscountApplied = true;
-                            discountPercentage = tier.discountPercentage;
+                const discount = this.applyVolumeDiscount(subtotal, totalTokens, provider);
+                discountAmount = discount.discountAmount;
+                volumeDiscountApplied = discount.volumeDiscountApplied;
+                discountPercentage = discount.discountPercentage;
 
-                            logDiagnostic('VOLUME_DISCOUNT_APPLIED', `Volume discount applied`, {
-                                calculationId,
-                                tier: {
-                                    minTokens: tier.minTokens,
-                                    maxTokens: tier.maxTokens,
-                                    discountPercentage: tier.discountPercentage
-                                },
-                                discountAmount,
-                                discountPercentage
-                            });
-
-                            break;
-                        }
-                    }
+                if (volumeDiscountApplied) {
+                    logDiagnostic('VOLUME_DISCOUNT_APPLIED', `Volume discount applied`, {
+                        calculationId,
+                        discountAmount,
+                        discountPercentage
+                    });
                 }
             }
 
@@ -746,7 +756,7 @@ export class CostCalculationService {
                     record.outputTokens,
                     record.modelId,
                     record.provider,
-                    { currency, includeVolumeDiscounts }
+                    { currency, includeVolumeDiscounts: false }
                 );
                 costBreakdowns.push(breakdown);
             }
@@ -774,18 +784,17 @@ export class CostCalculationService {
                 breakdownCount: costBreakdowns.length
             });
 
-            for (const breakdown of costBreakdowns) {
-                const record = records[costBreakdowns.indexOf(breakdown)];
+            for (let i = 0; i < costBreakdowns.length; i++) {
+                const breakdown = costBreakdowns[i];
+                const record = records[i];
                 if (!record) continue;
 
-                // Update totals
+                // Update totals (pre-discount; provider discounts applied below)
                 totalInputTokens += breakdown.inputTokens;
                 totalOutputTokens += breakdown.outputTokens;
                 totalInputCost += breakdown.inputCost;
                 totalOutputCost += breakdown.outputCost;
                 totalSubtotal += breakdown.subtotal;
-                totalDiscount += breakdown.discountAmount;
-                totalCost += breakdown.totalCost;
 
                 // Update provider breakdown
                 if (!breakdownByProvider[record.provider]) {
@@ -807,8 +816,6 @@ export class CostCalculationService {
                 breakdownByProvider[record.provider].inputCost += breakdown.inputCost;
                 breakdownByProvider[record.provider].outputCost += breakdown.outputCost;
                 breakdownByProvider[record.provider].subtotal += breakdown.subtotal;
-                breakdownByProvider[record.provider].discountAmount += breakdown.discountAmount;
-                breakdownByProvider[record.provider].totalCost += breakdown.totalCost;
 
                 // Update model breakdown
                 if (!breakdownByModel[record.modelId]) {
@@ -830,8 +837,7 @@ export class CostCalculationService {
                 breakdownByModel[record.modelId].inputCost += breakdown.inputCost;
                 breakdownByModel[record.modelId].outputCost += breakdown.outputCost;
                 breakdownByModel[record.modelId].subtotal += breakdown.subtotal;
-                breakdownByModel[record.modelId].discountAmount += breakdown.discountAmount;
-                breakdownByModel[record.modelId].totalCost += breakdown.totalCost;
+                breakdownByModel[record.modelId].totalCost += breakdown.subtotal;
 
                 // Update daily breakdown
                 const dateKey = record.createdAt.toISOString().split('T')[0];
@@ -854,8 +860,34 @@ export class CostCalculationService {
                 breakdownByDay[dateKey].inputCost += breakdown.inputCost;
                 breakdownByDay[dateKey].outputCost += breakdown.outputCost;
                 breakdownByDay[dateKey].subtotal += breakdown.subtotal;
-                breakdownByDay[dateKey].discountAmount += breakdown.discountAmount;
-                breakdownByDay[dateKey].totalCost += breakdown.totalCost;
+                breakdownByDay[dateKey].totalCost += breakdown.subtotal;
+            }
+
+            if (includeVolumeDiscounts) {
+                totalDiscount = 0;
+                totalCost = 0;
+                for (const [providerName, providerBreakdown] of Object.entries(breakdownByProvider)) {
+                    const discount = this.applyVolumeDiscount(
+                        providerBreakdown.subtotal,
+                        providerBreakdown.totalTokens,
+                        providerName
+                    );
+                    providerBreakdown.discountAmount = discount.discountAmount;
+                    providerBreakdown.discountPercentage = discount.discountPercentage;
+                    providerBreakdown.volumeDiscountApplied = discount.volumeDiscountApplied;
+                    providerBreakdown.totalCost = providerBreakdown.subtotal - discount.discountAmount;
+                    totalDiscount += providerBreakdown.discountAmount;
+                    totalCost += providerBreakdown.totalCost;
+                }
+            } else {
+                totalDiscount = 0;
+                totalCost = totalSubtotal;
+                for (const providerBreakdown of Object.values(breakdownByProvider)) {
+                    providerBreakdown.discountAmount = 0;
+                    providerBreakdown.discountPercentage = 0;
+                    providerBreakdown.volumeDiscountApplied = false;
+                    providerBreakdown.totalCost = providerBreakdown.subtotal;
+                }
             }
 
             const requestCount = records.length;

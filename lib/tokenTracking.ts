@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid';
 import { modelID } from '@/ai/providers';
 import { CostCalculationService } from './services/costCalculation';
 import { OpenRouterCostTracker } from './services/openrouterCostTracker';
+import { toPerTokenPrice } from './services/pricingUnits';
 
 // Diagnostic logging helper
 const logDiagnostic = (category: string, message: string, data?: any) => {
@@ -516,9 +517,9 @@ export class TokenTrackingService {
                 return noPricingResult;
             }
 
-            // Convert prices from per 1M tokens to per token
-            const inputPricePerToken = pricing.inputTokenPrice / 1000000;
-            const outputPricePerToken = pricing.outputTokenPrice / 1000000;
+            // Fallback: stored prices are per 1k tokens
+            const inputPricePerToken = toPerTokenPrice(pricing.inputTokenPrice);
+            const outputPricePerToken = toPerTokenPrice(pricing.outputTokenPrice);
 
             const inputCost = inputTokens * inputPricePerToken;
             const outputCost = outputTokens * outputPricePerToken;
@@ -566,81 +567,19 @@ export class TokenTrackingService {
         });
 
         try {
-            // Use UTC date to avoid timezone issues
-            const today = new Date();
-            const todayString = today.toISOString().split('T')[0];
+            const todayString = new Date().toISOString().split('T')[0];
 
-            logDiagnostic('DAILY_LOOKUP', `Checking for existing daily entry`, {
+            logDiagnostic('DAILY_UPSERT', `Upserting daily token usage entry`, {
                 updateId,
                 userId: params.userId,
                 date: todayString,
-                provider: params.provider
+                provider: params.provider,
             });
 
-            // Check if entry exists for today
-            const existing = await db.query.dailyTokenUsage.findFirst({
-                where: and(
-                    eq(dailyTokenUsage.userId, params.userId),
-                    eq(dailyTokenUsage.date, todayString),
-                    eq(dailyTokenUsage.provider, params.provider)
-                ),
-            });
-
-            logDiagnostic('DAILY_LOOKUP_RESULT', `Existing entry check result`, {
-                updateId,
-                hasExisting: !!existing,
-                existingId: existing?.id
-            });
-
-            if (existing) {
-                // Update existing entry
-                logDiagnostic('DAILY_UPDATE_EXISTING', `Updating existing daily entry`, {
-                    updateId,
-                    existingId: existing.id,
-                    currentTokens: {
-                        input: existing.totalInputTokens,
-                        output: existing.totalOutputTokens,
-                        total: existing.totalTokens
-                    },
-                    addingTokens: {
-                        input: params.inputTokens,
-                        output: params.outputTokens,
-                        total: params.totalTokens
-                    }
-                });
-
-                await db.update(dailyTokenUsage).set({
-                    totalInputTokens: sql`${dailyTokenUsage.totalInputTokens} + ${params.inputTokens}`,
-                    totalOutputTokens: sql`${dailyTokenUsage.totalOutputTokens} + ${params.outputTokens}`,
-                    totalTokens: sql`${dailyTokenUsage.totalTokens} + ${params.totalTokens}`,
-                    totalEstimatedCost: sql`${dailyTokenUsage.totalEstimatedCost} + ${params.estimatedCost}`,
-                    totalActualCost: sql`${dailyTokenUsage.totalActualCost} + ${params.actualCost}`,
-                    requestCount: sql`${dailyTokenUsage.requestCount} + 1`,
-                    updatedAt: new Date(),
-                }).where(
-                    and(
-                        eq(dailyTokenUsage.id, existing.id)
-                    )
-                );
-
-                logDiagnostic('DAILY_UPDATE_SUCCESS', `Successfully updated existing daily entry`, { updateId, existingId: existing.id });
-            } else {
-                // Create new entry
-                logDiagnostic('DAILY_CREATE_NEW', `Creating new daily entry`, {
-                    updateId,
-                    userId: params.userId,
-                    date: todayString,
-                    provider: params.provider,
-                    tokens: {
-                        input: params.inputTokens,
-                        output: params.outputTokens,
-                        total: params.totalTokens
-                    }
-                });
-
-                const newId = nanoid();
-                await db.insert(dailyTokenUsage).values({
-                    id: newId,
+            await db
+                .insert(dailyTokenUsage)
+                .values({
+                    id: nanoid(),
                     userId: params.userId,
                     date: todayString,
                     provider: params.provider,
@@ -652,10 +591,21 @@ export class TokenTrackingService {
                     requestCount: 1,
                     createdAt: new Date(),
                     updatedAt: new Date(),
+                })
+                .onConflictDoUpdate({
+                    target: [dailyTokenUsage.userId, dailyTokenUsage.date, dailyTokenUsage.provider],
+                    set: {
+                        totalInputTokens: sql`${dailyTokenUsage.totalInputTokens} + ${params.inputTokens}`,
+                        totalOutputTokens: sql`${dailyTokenUsage.totalOutputTokens} + ${params.outputTokens}`,
+                        totalTokens: sql`${dailyTokenUsage.totalTokens} + ${params.totalTokens}`,
+                        totalEstimatedCost: sql`${dailyTokenUsage.totalEstimatedCost} + ${params.estimatedCost}`,
+                        totalActualCost: sql`${dailyTokenUsage.totalActualCost} + ${params.actualCost}`,
+                        requestCount: sql`${dailyTokenUsage.requestCount} + 1`,
+                        updatedAt: new Date(),
+                    },
                 });
 
-                logDiagnostic('DAILY_CREATE_SUCCESS', `Successfully created new daily entry`, { updateId, newId });
-            }
+            logDiagnostic('DAILY_UPDATE_SUCCESS', `Successfully upserted daily token usage`, { updateId });
         } catch (error) {
             logDiagnostic('DAILY_UPDATE_ERROR', `Error updating daily token usage`, {
                 updateId,

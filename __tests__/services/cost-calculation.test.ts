@@ -182,7 +182,7 @@ describe('CostCalculationService', () => {
                 outputTokens: 500,
                 totalTokens: 1500,
                 currency: 'USD',
-                volumeDiscountApplied: true, // Service applies volume discounts by default
+                volumeDiscountApplied: false,
                 discountPercentage: 0,
             }));
 
@@ -254,6 +254,34 @@ describe('CostCalculationService', () => {
             expect(result.totalCost).toBeCloseTo(0.0014);
 
             // Verify database pricing was used (log verification removed for simplicity)
+        });
+
+        it('calculates realistic synced OpenRouter pricing stored as per-1k', async () => {
+            // Claude Sonnet: API $0.000003/token => stored $0.003 per 1k tokens
+            const mockPricing = {
+                id: 'pricing-claude',
+                modelId: 'anthropic/claude-3-5-sonnet-20241022',
+                provider: 'openrouter',
+                inputTokenPrice: '0.003',
+                outputTokenPrice: '0.015',
+                currency: 'USD',
+                effectiveFrom: new Date(),
+                isActive: true,
+            };
+
+            mockModelPricingFindFirst.mockResolvedValue(mockPricing);
+
+            const result = await CostCalculationService.calculateCost(
+                1000,
+                500,
+                'anthropic/claude-3-5-sonnet-20241022' as const,
+                'openrouter'
+            );
+
+            // 1000 input @ $3/1M = $0.003; 500 output @ $15/1M = $0.0075
+            expect(result.inputCost).toBeCloseTo(0.003, 6);
+            expect(result.outputCost).toBeCloseTo(0.0075, 6);
+            expect(result.subtotal).toBeCloseTo(0.0105, 6);
         });
 
         it('should apply volume discounts when enabled', async () => {
@@ -519,8 +547,66 @@ describe('CostCalculationService', () => {
 
             // Verify calculateCost was called for each record
             expect(mockCalculateCost).toHaveBeenCalledTimes(2);
+            expect(mockCalculateCost).toHaveBeenNthCalledWith(
+                1,
+                1000,
+                500,
+                'gpt-4',
+                'openai',
+                { currency: 'USD', includeVolumeDiscounts: false }
+            );
+            expect(mockCalculateCost).toHaveBeenNthCalledWith(
+                2,
+                2000,
+                1000,
+                'claude-3',
+                'anthropic',
+                { currency: 'USD', includeVolumeDiscounts: false }
+            );
 
             // Verify diagnostic logging (log verification removed for simplicity)
+        });
+
+        it('applies volume discounts to cumulative provider totals in aggregation', async () => {
+            const highVolumeRecords = [
+                {
+                    id: 'record-1',
+                    userId: 'user-123',
+                    chatId: 'chat-123',
+                    messageId: 'message-123',
+                    modelId: 'gpt-4' as const,
+                    provider: 'openai',
+                    inputTokens: 400000,
+                    outputTokens: 200000,
+                    totalTokens: 600000,
+                    createdAt: new Date('2023-01-01'),
+                },
+                {
+                    id: 'record-2',
+                    userId: 'user-123',
+                    chatId: 'chat-123',
+                    messageId: 'message-124',
+                    modelId: 'gpt-4' as const,
+                    provider: 'openai',
+                    inputTokens: 400000,
+                    outputTokens: 200000,
+                    totalTokens: 600000,
+                    createdAt: new Date('2023-01-02'),
+                },
+            ];
+
+            mockTokenUsageMetricsFindMany.mockResolvedValue(highVolumeRecords);
+            mockModelPricingFindFirst.mockResolvedValue(null);
+
+            const result = await CostCalculationService.getAggregatedCosts('user-123', {
+                includeVolumeDiscounts: true,
+            });
+
+            expect(result.totalTokens).toBe(1200000);
+            expect(result.breakdownByProvider.openai.volumeDiscountApplied).toBe(true);
+            expect(result.breakdownByProvider.openai.discountPercentage).toBe(5);
+            expect(result.totalDiscount).toBeCloseTo(result.totalSubtotal * 0.05, 6);
+            expect(result.totalCost).toBeCloseTo(result.totalSubtotal - result.totalDiscount, 6);
         });
 
         it('should filter by date range when provided', async () => {

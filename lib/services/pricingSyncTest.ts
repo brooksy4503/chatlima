@@ -3,6 +3,7 @@ import { modelPricing } from '@/lib/db/schema';
 import { eq, and, sql, count, avg, min, max } from 'drizzle-orm';
 import { fetchAllModels, getEnvironmentApiKeys } from '@/lib/models/fetch-models';
 import { nanoid } from 'nanoid';
+import { apiPerTokenToStoredPer1k } from '@/lib/services/pricingUnits';
 
 export interface PricingSyncResult {
     success: boolean;
@@ -143,8 +144,8 @@ export class PricingSyncTestService {
                     const pricingData = {
                         modelId: model.id,
                         provider,
-                        inputTokenPrice: inputPrice,
-                        outputTokenPrice: outputPrice,
+                        inputTokenPrice: apiPerTokenToStoredPer1k(inputPrice),
+                        outputTokenPrice: apiPerTokenToStoredPer1k(outputPrice),
                         currency: model.pricing.currency || 'USD',
                         effectiveFrom: new Date(),
                         isActive: true,
@@ -154,7 +155,9 @@ export class PricingSyncTestService {
                             premium: model.premium,
                             vision: model.vision,
                             contextMax: model.contextMax,
-                            testSync: true // Mark as test sync
+                            testSync: true,
+                            priceUnit: 'per_1k_tokens',
+                            syncedFrom: 'per_token_api',
                         }
                     };
 

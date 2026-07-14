@@ -361,10 +361,10 @@ export class ChatMCPServerService {
      * Installs Python package for python3 commands
      */
     private static async installPythonPackage(args: string[], requestId: string): Promise<void> {
-        const packageName = args[args.indexOf('-m') + 1];
+        const packageName = resolvePythonModulePackageName(args);
 
         if (!packageName) {
-            logDiagnostic('MCP_PYTHON_INSTALL_SKIP', 'No package name found in python args', { requestId });
+            logDiagnostic('MCP_PYTHON_INSTALL_SKIP', 'No package name found in python args (missing -m)', { requestId });
             return;
         }
 
@@ -402,4 +402,15 @@ export class ChatMCPServerService {
             });
         });
     }
+}
+
+/** Resolve `python3 -m <package>` module name; returns null for script-based invocations. */
+export function resolvePythonModulePackageName(args: string[]): string | null {
+    const mIndex = args.indexOf('-m');
+    if (mIndex === -1 || mIndex + 1 >= args.length) {
+        return null;
+    }
+
+    const packageName = args[mIndex + 1];
+    return packageName || null;
 }
