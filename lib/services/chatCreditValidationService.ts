@@ -1,4 +1,8 @@
-import { createRequestCreditCache, hasEnoughCreditsWithCache } from '@/lib/services/creditCache';
+import {
+    getCachedCredits,
+    getCachedCreditsByExternalId,
+    hasEnoughCreditsWithCache,
+} from '@/lib/services/creditCache';
 import { hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
@@ -64,7 +68,6 @@ export interface CreditValidationResult {
     hasCredits: boolean;
     actualCredits: number | null;
     canUseWebSearch: boolean;
-    creditCache: any;
 }
 
 export class ChatCreditValidationService {
@@ -86,7 +89,7 @@ export class ChatCreditValidationService {
         const requestId = `credit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         // Create request-scoped caches for performance optimization
-        const { getRemainingCreditsByExternalId: getCachedCreditsByExternal, getRemainingCredits: getCachedCredits, cache: creditCache } = createRequestCreditCache();
+        const getCachedCreditsByExternal = getCachedCreditsByExternalId;
 
         logDiagnostic('CREDIT_CHECK_START', 'Starting credit check', {
             requestId,
@@ -118,7 +121,7 @@ export class ChatCreditValidationService {
                 modelInfo = await getModelDetails(selectedModel);
 
                 // Check credits using both the external ID (userId) and legacy polarCustomerId
-                hasCredits = await hasEnoughCreditsWithCache(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined, creditCache);
+                hasCredits = await hasEnoughCreditsWithCache(polarCustomerId, userId, estimatedTokens, isAnonymous, modelInfo || undefined);
                 logDiagnostic('CREDIT_CHECK_RESULT', 'hasEnoughCredits result', {
                     requestId,
                     userId,
@@ -230,7 +233,6 @@ export class ChatCreditValidationService {
             hasCredits,
             actualCredits,
             canUseWebSearch,
-            creditCache
         };
     }
 

@@ -3,7 +3,6 @@ import { AuthMiddleware } from '@/lib/middleware/auth';
 import { ValidationMiddleware } from '@/lib/middleware/validation';
 import { RateLimitMiddleware } from '@/lib/middleware/rateLimit';
 import { TokenTrackingService } from '@/lib/tokenTracking';
-import { CostCalculationService } from '@/lib/services/costCalculation';
 import { ExportParams, ExportResponse, ApiResponse } from '@/lib/types/api';
 import { nanoid } from 'nanoid';
 

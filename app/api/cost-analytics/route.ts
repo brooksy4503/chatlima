@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { CostCalculationService } from '@/lib/services/costCalculation';
+import { UsageCostAggregationService } from '@/lib/services/usageCostAggregation';
 import { nanoid } from 'nanoid';
 
 // Diagnostic logging helper
@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Get aggregated cost data
-        result = await CostCalculationService.getAggregatedCosts(userId, {
+        result = await UsageCostAggregationService.getAggregatedCosts(userId, {
           startDate,
           endDate,
           provider,
@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Get projected costs
-        result = await CostCalculationService.calculateProjectedCosts(userId, {
+        result = await UsageCostAggregationService.calculateProjectedCosts(userId, {
           periodDays,
           provider,
           modelId,
@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Check usage limits
-        result = await CostCalculationService.checkUsageLimits(userId, {
+        result = await UsageCostAggregationService.checkUsageLimits(userId, {
           monthlyLimit,
           currency,
         });

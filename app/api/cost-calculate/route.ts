@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { CostCalculationService } from '@/lib/services/costCalculation';
+import { resolveMessageCost, authoritativeRowCost } from '@/lib/services/messageCostResolver';
+import type { CostBreakdown } from '@/lib/services/costCalculation';
+import { db } from '@/lib/db';
+import { tokenUsageMetrics } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 // Diagnostic logging helper
@@ -119,18 +123,27 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    const costBreakdown = await CostCalculationService.calculateCost(
+    const resolved = resolveMessageCost({
       inputTokens,
       outputTokens,
       modelId,
       provider,
-      {
-        currency,
-        includeVolumeDiscounts,
-        exchangeRates,
-        customPricing,
-      }
-    );
+    });
+
+    const rowCost = resolved.actualCost ?? resolved.estimatedCost;
+    const costBreakdown: CostBreakdown = {
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      inputCost: rowCost,
+      outputCost: 0,
+      subtotal: rowCost,
+      discountAmount: 0,
+      totalCost: rowCost,
+      currency,
+      volumeDiscountApplied: false,
+      discountPercentage: 0,
+    };
 
     logDiagnostic('CALCULATION_SUCCESS', `Cost calculation completed successfully`, {
       requestId,
@@ -220,13 +233,31 @@ export async function GET(req: NextRequest) {
       includeVolumeDiscounts
     });
 
-    const costBreakdown = await CostCalculationService.calculateCostForRecord(
-      recordId,
-      {
-        currency,
-        includeVolumeDiscounts,
-      }
-    );
+    const record = await db.query.tokenUsageMetrics.findFirst({
+      where: eq(tokenUsageMetrics.id, recordId),
+    });
+
+    if (!record) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: `Token usage record with ID ${recordId} not found` } },
+        { status: 404 }
+      );
+    }
+
+    const rowCost = authoritativeRowCost(record.actualCost, record.estimatedCost);
+    const costBreakdown: CostBreakdown = {
+      inputTokens: record.inputTokens,
+      outputTokens: record.outputTokens,
+      totalTokens: record.totalTokens,
+      inputCost: rowCost,
+      outputCost: 0,
+      subtotal: rowCost,
+      discountAmount: 0,
+      totalCost: rowCost,
+      currency,
+      volumeDiscountApplied: false,
+      discountPercentage: 0,
+    };
 
     logDiagnostic('CALCULATION_SUCCESS', `Cost calculation for record completed successfully`, {
       requestId,

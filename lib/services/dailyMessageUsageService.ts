@@ -62,30 +62,29 @@ export class DailyMessageUsageService {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD in UTC
 
         try {
-            // Get current usage for today
-            const currentUsage = await db
-                .select()
-                .from(dailyMessageUsage)
-                .where(and(
-                    eq(dailyMessageUsage.userId, userId),
-                    eq(dailyMessageUsage.date, today)
-                ))
-                .limit(1);
-
-            // Get user info to determine limit
-            const user = await db
+            const rows = await db
                 .select({
-                    isAnonymous: users.isAnonymous,
+                    messageCount: dailyMessageUsage.messageCount,
+                    usageIsAnonymous: dailyMessageUsage.isAnonymous,
+                    userIsAnonymous: users.isAnonymous,
                     metadata: users.metadata,
                 })
                 .from(users)
+                .leftJoin(
+                    dailyMessageUsage,
+                    and(
+                        eq(dailyMessageUsage.userId, users.id),
+                        eq(dailyMessageUsage.date, today)
+                    )
+                )
                 .where(eq(users.id, userId))
                 .limit(1);
 
-            const isAnonymous = currentUsage[0]?.isAnonymous ?? user[0]?.isAnonymous ?? false;
-            const messageCount = currentUsage[0]?.messageCount ?? 0;
+            const row = rows[0];
+            const isAnonymous = row?.usageIsAnonymous ?? row?.userIsAnonymous ?? false;
+            const messageCount = row?.messageCount ?? 0;
 
-            const limit = this.getDailyMessageLimit(isAnonymous, user[0]);
+            const limit = this.getDailyMessageLimit(isAnonymous, row ? { isAnonymous: row.userIsAnonymous, metadata: row.metadata } : undefined);
             const remaining = Math.max(0, limit - messageCount);
             const hasReachedLimit = messageCount >= limit;
 

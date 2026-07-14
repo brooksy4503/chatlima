@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { createRequestCreditCache } from '@/lib/services/creditCache';
+import { getCachedCreditsByExternalId } from '@/lib/services/creditCache';
 import {
   logDiagnostic as originalLogDiagnostic,
   logRequestBoundary,
@@ -22,8 +22,7 @@ export async function POST(req: Request) {
   const requestId = nanoid();
   const requestStartTime = Date.now();
 
-  const { getRemainingCreditsByExternalId: getCachedCreditsByExternal } =
-    createRequestCreditCache();
+  const getCachedCreditsByExternal = getCachedCreditsByExternalId;
 
   logRequestBoundary('START', requestId, {
     url: req.url,

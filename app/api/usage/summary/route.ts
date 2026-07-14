@@ -3,7 +3,7 @@ import { AuthMiddleware } from '@/lib/middleware/auth';
 import { ValidationMiddleware } from '@/lib/middleware/validation';
 import { RateLimitMiddleware } from '@/lib/middleware/rateLimit';
 import { TokenTrackingService } from '@/lib/tokenTracking';
-import { CostCalculationService } from '@/lib/services/costCalculation';
+import { UsageCostAggregationService } from '@/lib/services/usageCostAggregation';
 import { UsageSummaryStats, ApiResponse } from '@/lib/types/api';
 import { nanoid } from 'nanoid';
 
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Get cost analytics data
-        const costData = await CostCalculationService.getAggregatedCosts(userId, {
+        const costData = await UsageCostAggregationService.getAggregatedCosts(userId, {
             startDate: calculatedStartDate,
             endDate: calculatedEndDate,
             provider,
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
         const dailyTrends = dailyUsage.map(day => ({
             date: day.date.toISOString().split('T')[0],
             tokens: day.totalTokens,
-            cost: day.estimatedCost,
+            cost: day.actualCost > 0 ? day.actualCost : day.estimatedCost,
         })).sort((a, b) => a.date.localeCompare(b.date));
 
         // Calculate top providers
@@ -163,21 +163,17 @@ export async function GET(req: NextRequest) {
             .sort((a, b) => b.tokenCount - a.tokenCount)
             .slice(0, 10);
 
-        // Calculate top models (simplified - would need model breakdown from cost data)
-        const topModels = [
-            {
-                modelId: 'gpt-4' as any,
-                tokenCount: costData.totalTokens * 0.6, // Example calculation
-                cost: costData.totalCost * 0.6,
-                percentage: 60,
-            },
-            {
-                modelId: 'gpt-3.5-turbo' as any,
-                tokenCount: costData.totalTokens * 0.4, // Example calculation
-                cost: costData.totalCost * 0.4,
-                percentage: 40,
-            },
-        ];
+        const topModels = Object.entries(costData.breakdownByModel)
+            .map(([model, breakdown]) => ({
+                modelId: model as any,
+                tokenCount: breakdown.totalTokens,
+                cost: breakdown.totalCost,
+                percentage: costData.totalTokens > 0
+                    ? (breakdown.totalTokens / costData.totalTokens) * 100
+                    : 0,
+            }))
+            .sort((a, b) => b.tokenCount - a.tokenCount)
+            .slice(0, 10);
 
         // Calculate averages
         const averageTokensPerRequest = costData.requestCount > 0 ? costData.totalTokens / costData.requestCount : 0;

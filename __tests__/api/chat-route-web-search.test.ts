@@ -204,11 +204,8 @@ jest.mock('@/lib/services/directTokenTracking', () => ({
 }));
 
 jest.mock('@/lib/services/creditCache', () => ({
-    createRequestCreditCache: jest.fn(() => ({
-        getRemainingCreditsByExternalId: jest.fn(),
-        getRemainingCredits: jest.fn(),
-        cache: {},
-    })),
+    getCachedCreditsByExternalId: jest.fn(),
+    getCachedCredits: jest.fn(),
     hasEnoughCreditsWithCache: jest.fn(),
 }));
 

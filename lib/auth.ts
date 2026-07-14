@@ -7,7 +7,7 @@ import { Polar } from '@polar-sh/sdk';
 import { polar as polarPlugin } from '@polar-sh/better-auth';
 import { count, eq, and, gte } from 'drizzle-orm';
 import { getRemainingCreditsByExternalId } from './polar';
-import { createRequestCreditCache } from './services/creditCache';
+import { getCachedCreditsByExternalId } from './services/creditCache';
 
 // Dynamic Google OAuth configuration based on environment
 const getGoogleOAuthConfig = () => {
@@ -427,7 +427,7 @@ export const auth = betterAuth({
 export async function checkMessageLimit(
     userId: string,
     isAnonymous: boolean = false,
-    creditCache?: any // RequestCreditCache type - optional for backward compatibility
+    _creditCache?: unknown
 ): Promise<{
     hasReachedLimit: boolean;
     limit: number;
@@ -439,9 +439,7 @@ export async function checkMessageLimit(
         // 1. Check Polar credits (for authenticated users)
         if (!isAnonymous) {
             // Use cache if provided, otherwise fall back to original function
-            const credits = creditCache
-                ? await creditCache.getRemainingCreditsByExternalId(userId)
-                : await getRemainingCreditsByExternalId(userId);
+            const credits = await getCachedCreditsByExternalId(userId);
             if (typeof credits === 'number') {
                 // If user has negative credits, block them
                 if (credits < 0) {

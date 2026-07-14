@@ -97,21 +97,4 @@ export class SimpleCostEstimationService {
         const cacheKey = `${provider}:${modelId}`;
         PRICING_CACHE.set(cacheKey, { price: averagePrice, timestamp: Date.now() });
     }
-
-    /**
-     * Clear expired entries from cache
-     */
-    static cleanupCache(): void {
-        const now = Date.now();
-        for (const [key, value] of PRICING_CACHE.entries()) {
-            if (now - value.timestamp > CACHE_TTL) {
-                PRICING_CACHE.delete(key);
-            }
-        }
-    }
 }
-
-// Clean up cache every hour
-setInterval(() => {
-    SimpleCostEstimationService.cleanupCache();
-}, 60 * 60 * 1000);

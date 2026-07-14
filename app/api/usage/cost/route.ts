@@ -3,7 +3,7 @@ import { AuthMiddleware } from '@/lib/middleware/auth';
 import { ValidationMiddleware } from '@/lib/middleware/validation';
 import { RateLimitMiddleware } from '@/lib/middleware/rateLimit';
 import { PaginationUtil } from '@/lib/utils/pagination';
-import { CostCalculationService } from '@/lib/services/costCalculation';
+import { UsageCostAggregationService } from '@/lib/services/usageCostAggregation';
 import { AggregatedCostData, ApiResponse } from '@/lib/types/api';
 import { nanoid } from 'nanoid';
 
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
         switch (type) {
             case 'aggregated':
                 // Get aggregated cost data
-                result = await CostCalculationService.getAggregatedCosts(userId, {
+                result = await UsageCostAggregationService.getAggregatedCosts(userId, {
                     startDate,
                     endDate,
                     provider,
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
 
             case 'projected':
                 // Get projected costs
-                result = await CostCalculationService.calculateProjectedCosts(userId, {
+                result = await UsageCostAggregationService.calculateProjectedCosts(userId, {
                     periodDays,
                     provider,
                     modelId,
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
 
             case 'limits':
                 // Check usage limits
-                result = await CostCalculationService.checkUsageLimits(userId, {
+                result = await UsageCostAggregationService.checkUsageLimits(userId, {
                     monthlyLimit,
                     currency,
                 });

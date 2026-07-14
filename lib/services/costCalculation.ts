@@ -4,6 +4,8 @@ import { eq, and, gte, lte, desc, sql, sum, count, avg } from 'drizzle-orm';
 import { modelID } from '@/ai/providers';
 import { nanoid } from 'nanoid';
 import { toPerTokenPrice } from '@/lib/services/pricingUnits';
+import { UsageCostAggregationService } from '@/lib/services/usageCostAggregation';
+import { resolveMessageCost, authoritativeRowCost } from '@/lib/services/messageCostResolver';
 
 // Diagnostic logging helper
 const logDiagnostic = (category: string, message: string, data?: any) => {
@@ -262,6 +264,38 @@ export class CostCalculationService {
         recordId: string,
         options: CostCalculationOptions = {}
     ): Promise<CostBreakdown> {
+        const { currency = this.defaultCurrency } = options;
+
+        const record = await db.query.tokenUsageMetrics.findFirst({
+            where: eq(tokenUsageMetrics.id, recordId),
+        });
+
+        if (!record) {
+            throw new Error(`Token usage record with ID ${recordId} not found`);
+        }
+
+        const rowCost = authoritativeRowCost(record.actualCost, record.estimatedCost);
+
+        return {
+            inputTokens: record.inputTokens,
+            outputTokens: record.outputTokens,
+            totalTokens: record.totalTokens,
+            inputCost: rowCost,
+            outputCost: 0,
+            subtotal: rowCost,
+            discountAmount: 0,
+            totalCost: rowCost,
+            currency,
+            volumeDiscountApplied: false,
+            discountPercentage: 0,
+        };
+    }
+
+    /** @deprecated Legacy implementation — retained for reference. */
+    static async _calculateCostForRecordLegacy(
+        recordId: string,
+        options: CostCalculationOptions = {}
+    ): Promise<CostBreakdown> {
         try {
             const record = await db.query.tokenUsageMetrics.findFirst({
                 where: eq(tokenUsageMetrics.id, recordId),
@@ -383,6 +417,38 @@ export class CostCalculationService {
      * Calculate cost based on token usage
      */
     static async calculateCost(
+        inputTokens: number,
+        outputTokens: number,
+        modelId: modelID,
+        provider: string,
+        options: CostCalculationOptions = {}
+    ): Promise<CostBreakdown> {
+        const { currency = this.defaultCurrency } = options;
+        const resolved = resolveMessageCost({
+            inputTokens,
+            outputTokens,
+            modelId,
+            provider,
+        });
+        const rowCost = resolved.actualCost ?? resolved.estimatedCost;
+
+        return {
+            inputTokens,
+            outputTokens,
+            totalTokens: inputTokens + outputTokens,
+            inputCost: rowCost,
+            outputCost: 0,
+            subtotal: rowCost,
+            discountAmount: 0,
+            totalCost: rowCost,
+            currency,
+            volumeDiscountApplied: false,
+            discountPercentage: 0,
+        };
+    }
+
+    /** @deprecated Legacy DB-backed recalculation — retained for reference. */
+    static async _calculateCostLegacy(
         inputTokens: number,
         outputTokens: number,
         modelId: modelID,
@@ -650,6 +716,21 @@ export class CostCalculationService {
      * Get aggregated costs for a user over a time period
      */
     static async getAggregatedCosts(
+        userId: string,
+        options: {
+            startDate?: Date;
+            endDate?: Date;
+            provider?: string;
+            modelId?: modelID;
+            currency?: string;
+            includeVolumeDiscounts?: boolean;
+        } = {}
+    ): Promise<AggregatedCostData> {
+        return UsageCostAggregationService.getAggregatedCosts(userId, options);
+    }
+
+    /** @deprecated Legacy recalculation path — retained for tests only. Use UsageCostAggregationService. */
+    static async _getAggregatedCostsLegacy(
         userId: string,
         options: {
             startDate?: Date;
@@ -972,6 +1053,19 @@ export class CostCalculationService {
             currency?: string;
         } = {}
     ): Promise<ProjectedCost> {
+        return UsageCostAggregationService.calculateProjectedCosts(userId, options);
+    }
+
+    /** @deprecated Legacy implementation — retained for reference. */
+    static async _calculateProjectedCostsLegacy(
+        userId: string,
+        options: {
+            periodDays?: number;
+            provider?: string;
+            modelId?: modelID;
+            currency?: string;
+        } = {}
+    ): Promise<ProjectedCost> {
         try {
             const {
                 periodDays = 30,
@@ -1031,6 +1125,17 @@ export class CostCalculationService {
      * Check if user is approaching usage limits
      */
     static async checkUsageLimits(
+        userId: string,
+        options: {
+            monthlyLimit?: number;
+            currency?: string;
+        } = {}
+    ): Promise<UsageLimitWarning> {
+        return UsageCostAggregationService.checkUsageLimits(userId, options);
+    }
+
+    /** @deprecated Legacy implementation — retained for reference. */
+    static async _checkUsageLimitsLegacy(
         userId: string,
         options: {
             monthlyLimit?: number;

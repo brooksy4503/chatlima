@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import type { UIMessage } from 'ai';
 import { streamText, type LanguageModel } from 'ai';
-import { createRequestCreditCache } from '@/lib/services/creditCache';
+import { getCachedCreditsByExternalId } from '@/lib/services/creditCache';
 import { ChatAuthenticationService } from '@/lib/services/chatAuthenticationService';
 import { ChatCreditValidationService, CreditValidationError } from '@/lib/services/chatCreditValidationService';
 import { ChatDatabaseService } from '@/lib/services/chatDatabaseService';
@@ -164,7 +164,7 @@ export async function handleCompareRequest(req: Request): Promise<Response> {
   }
 
   const authenticatedUser = await ChatAuthenticationService.authenticateUser(req);
-  const { getRemainingCreditsByExternalId } = createRequestCreditCache();
+  const getRemainingCreditsByExternalId = getCachedCreditsByExternalId;
 
   const chatExists = await ChatDatabaseService.checkChatExists({
     chatId: body.chatId,

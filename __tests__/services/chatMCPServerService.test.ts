@@ -42,14 +42,14 @@ describe('resolvePythonModulePackageName', () => {
   });
 });
 
-describe('ChatMCPServerService python install', () => {
+describe('ChatMCPServerService python verify-only', () => {
   const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('installs package when args use python -m module', async () => {
+  it('verifies python module import when args use python -m module', async () => {
     const mockSubprocess = {
       on: jest.fn((event: string, handler: (value?: unknown) => void) => {
         if (event === 'close') {
@@ -70,10 +70,11 @@ describe('ChatMCPServerService python install', () => {
       args: ['-m', 'mcp_server'],
     }, 'req-1');
 
-    expect(mockSpawn).toHaveBeenCalledWith('uv', ['pip', 'install', 'mcp_server']);
+    expect(mockSpawn).toHaveBeenCalledWith('python3', ['-c', 'import mcp_server']);
+    expect(mockSpawn).not.toHaveBeenCalledWith('uv', expect.any(Array));
   });
 
-  it('skips install for script-based python args', async () => {
+  it('skips verify for script-based python args', async () => {
     const createStdioTransport = (ChatMCPServerService as unknown as {
       createTransport: (server: unknown, requestId: string) => Promise<unknown>;
     }).createTransport;
@@ -85,6 +86,6 @@ describe('ChatMCPServerService python install', () => {
       args: ['/path/to/server.py'],
     }, 'req-2');
 
-    expect(mockSpawn).not.toHaveBeenCalledWith('uv', expect.any(Array));
+    expect(mockSpawn).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { users, messages, chats } from '@/lib/db/schema';
 import { eq, and, gte, count } from 'drizzle-orm';
+import { getCachedCreditsByExternalId } from '@/lib/services/creditCache';
 
 /**
  * Request-scoped cache for message limit checks to avoid repeated database queries
@@ -23,7 +24,7 @@ export class MessageLimitCache {
     async checkMessageLimit(
         userId: string,
         isAnonymous: boolean = false,
-        creditCache?: any
+        creditCache?: unknown
     ): Promise<{
         hasReachedLimit: boolean;
         limit: number;
@@ -49,9 +50,7 @@ export class MessageLimitCache {
         try {
             // 1. Check Polar credits (for authenticated users only)
             if (!isAnonymous) {
-                const credits = creditCache
-                    ? await creditCache.getRemainingCreditsByExternalId(userId)
-                    : await (await import('@/lib/polar')).getRemainingCreditsByExternalId(userId);
+                const credits = await getCachedCreditsByExternalId(userId);
 
                 if (typeof credits === 'number') {
                     const result = this.handleCreditsResult(credits);

@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { users, chats, sessions, tokenUsageMetrics } from '@/lib/db/schema';
-import { eq, and, or, gte, sql, lt, isNull } from 'drizzle-orm';
+import { eq, and, or, gte, sql, lt, isNull, inArray } from 'drizzle-orm';
 
 export interface UserActivity {
     userId: string;
@@ -321,31 +321,45 @@ export class UserCleanupService {
                 );
             }
 
-            // Delete users in a transaction
-            for (const user of safeCandidates) {
+            // Delete users in chunked bulk transactions (fallback to per-user on chunk failure)
+            const DELETE_CHUNK_SIZE = 10;
+
+            for (let i = 0; i < safeCandidates.length; i += DELETE_CHUNK_SIZE) {
+                const chunk = safeCandidates.slice(i, i + DELETE_CHUNK_SIZE);
+                const userIds = chunk.map((user) => user.userId);
+
                 try {
                     await db.transaction(async (tx) => {
-                        // Delete in proper order due to foreign key constraints:
-                        // 1. Token usage metrics
-                        await tx.delete(tokenUsageMetrics).where(eq(tokenUsageMetrics.userId, user.userId));
-
-                        // 2. Sessions
-                        await tx.delete(sessions).where(eq(sessions.userId, user.userId));
-
-                        // 3. Messages (cascade delete will handle when chats are deleted)
-                        // 4. Chats
-                        await tx.delete(chats).where(eq(chats.userId, user.userId));
-
-                        // 5. Finally, the user
-                        await tx.delete(users).where(eq(users.id, user.userId));
+                        await tx.delete(tokenUsageMetrics).where(inArray(tokenUsageMetrics.userId, userIds));
+                        await tx.delete(sessions).where(inArray(sessions.userId, userIds));
+                        await tx.delete(chats).where(inArray(chats.userId, userIds));
+                        await tx.delete(users).where(inArray(users.id, userIds));
                     });
 
-                    result.deletedUserIds.push(user.userId);
-                    result.usersDeleted++;
-                } catch (error) {
-                    const errorMsg = `Failed to delete user ${user.userId}: ${error instanceof Error ? error.message : 'Unknown error'}`;
-                    result.errors.push(errorMsg);
-                    console.error(errorMsg, error);
+                    result.deletedUserIds.push(...userIds);
+                    result.usersDeleted += userIds.length;
+                } catch (chunkError) {
+                    for (const user of chunk) {
+                        try {
+                            await db.transaction(async (tx) => {
+                                await tx.delete(tokenUsageMetrics).where(eq(tokenUsageMetrics.userId, user.userId));
+                                await tx.delete(sessions).where(eq(sessions.userId, user.userId));
+                                await tx.delete(chats).where(eq(chats.userId, user.userId));
+                                await tx.delete(users).where(eq(users.id, user.userId));
+                            });
+
+                            result.deletedUserIds.push(user.userId);
+                            result.usersDeleted++;
+                        } catch (error) {
+                            const errorMsg = `Failed to delete user ${user.userId}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+                            result.errors.push(errorMsg);
+                            console.error(errorMsg, error);
+                        }
+                    }
+
+                    const chunkErrorMsg = `Bulk delete failed for chunk starting at ${userIds[0]}: ${chunkError instanceof Error ? chunkError.message : 'Unknown error'}`;
+                    result.errors.push(chunkErrorMsg);
+                    console.error(chunkErrorMsg, chunkError);
                 }
             }
 

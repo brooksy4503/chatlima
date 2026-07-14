@@ -516,6 +516,19 @@ interface MCPServerConfig {
 - **CogniMemo** - Memory management (requires OAuth)
 - Custom stdio servers via npx/python3
 
+### 6.5 Stdio Runtime Requirements
+
+Stdio MCP servers **do not** install dependencies at request time. Required tools and packages must be present in the deployment environment before a chat request:
+
+| Command pattern | Requirement |
+|-----------------|-------------|
+| `uvx` | `uv` must be on `PATH` (`which uv`) |
+| `python3 -m <module>` | The Python module must be importable (`python3 -c "import <module>"`) |
+| `python3 /path/to/script.py` | No module pre-check; the script path must exist in the runtime |
+| `npx` | Node.js and npm/npx available in the runtime |
+
+On Vercel/serverless, stdio MCP is constrained by ephemeral filesystem and missing system packages — prefer SSE or HTTP Streamable transports for production. Local/self-hosted deployments should install `uv` and Python MCP packages at build or container setup time.
+
 ---
 
 ## 7. Credit & Billing System
@@ -576,6 +589,8 @@ Web search billing is skipped when the user supplies their own OpenRouter API ke
 5. Web search (if requested): require signed-in user, OpenRouter model with `supportsWebSearch`, and either ≥5 credits or BYOK OpenRouter key (`ChatWebSearchService` + `ChatCreditValidationService`)
 
 **Usage persistence:** Each completed turn writes `metadata.creditsConsumed` on `token_usage_metrics` (`lib/services/directTokenTracking.ts`). Token counts for completed turns come from a single resolver in `lib/chat/streamTokenUsage.ts` (`resolveStreamTokenUsage`), which prefers Vercel AI SDK combined usage (`event.totalUsage` / `event.usage` across all tool/MCP steps). When provider usage is unavailable, char-based estimates are stored with `metadata.usageSource: 'estimated'`. Per-chat aggregates expose `totalCreditsConsumed` via `TokenTrackingService.getChatTokenUsage`.
+
+**Dollar cost analytics:** Write-time costs are resolved in `lib/services/messageCostResolver.ts` — OpenRouter `usage.total_cost` when present (`metadata.costSource: 'openrouter_response'`), else fast estimate (`estimated`). Missing actuals may be backfilled asynchronously via OpenRouter `/generation` (`metadata.costSource: 'openrouter_generation'`). Admin and usage cost APIs aggregate stored values with `COALESCE(actual_cost, estimated_cost)` via `UsageCostAggregationService` (not recalculated `model_pricing`). Backfill script: `pnpm db:backfill-actual-costs`.
 
 ---
 

@@ -235,7 +235,7 @@ export class ChatMCPServerService {
     }
 
     /**
-     * Creates Stdio transport with package installation if needed
+     * Creates Stdio transport after verifying runtime dependencies (no install-on-request).
      */
     private static async createStdioTransport(mcpServer: MCPServerConfig, requestId: string): Promise<Transport> {
         if (!mcpServer.command || !mcpServer.args || mcpServer.args.length === 0) {
@@ -251,11 +251,10 @@ export class ChatMCPServerService {
 
         // Handle uvx pattern
         if (mcpServer.command === 'uvx') {
-            await this.ensureUvInstalled(requestId);
+            await this.verifyUvAvailable(requestId);
         }
-        // Handle python package installation
         else if (mcpServer.command.includes('python3')) {
-            await this.installPythonPackage(mcpServer.args, requestId);
+            await this.verifyPythonModuleFromArgs(mcpServer.args, requestId);
         }
 
         logDiagnostic('MCP_STDIO_TRANSPORT', 'Creating Stdio transport', {
@@ -319,88 +318,52 @@ export class ChatMCPServerService {
         );
     }
 
-    /**
-     * Ensures uv is installed for uvx commands
-     */
-    private static async ensureUvInstalled(requestId: string): Promise<void> {
-        logDiagnostic('MCP_UV_INSTALL', 'Ensuring uv is installed', { requestId });
-
-        return new Promise<void>((resolve) => {
-            const installUvSubprocess = spawn('pip3', ['install', 'uv']);
-
-            let uvInstallStdout = '';
-            let uvInstallStderr = '';
-
-            installUvSubprocess.stdout.on('data', (data) => { uvInstallStdout += data.toString(); });
-            installUvSubprocess.stderr.on('data', (data) => { uvInstallStderr += data.toString(); });
-
-            installUvSubprocess.on('close', (code: number) => {
-                if (code !== 0) {
-                    logDiagnostic('MCP_UV_INSTALL_ERROR', 'Failed to install uv using pip3', {
-                        requestId,
-                        exitCode: code,
-                        stderr: uvInstallStderr
-                    });
-                } else {
-                    logDiagnostic('MCP_UV_INSTALL_SUCCESS', 'uv installed successfully', { requestId });
-                }
-                resolve();
-            });
-
-            installUvSubprocess.on('error', (err) => {
-                logDiagnostic('MCP_UV_INSTALL_ERROR', 'Error spawning pip3 to install uv', {
-                    requestId,
-                    error: err.message
-                });
-                resolve();
-            });
+    private static commandExists(command: string): Promise<boolean> {
+        return new Promise((resolve) => {
+            const check = spawn('which', [command]);
+            check.on('close', (code) => resolve(code === 0));
+            check.on('error', () => resolve(false));
         });
     }
 
-    /**
-     * Installs Python package for python3 commands
-     */
-    private static async installPythonPackage(args: string[], requestId: string): Promise<void> {
+    private static async verifyUvAvailable(requestId: string): Promise<void> {
+        logDiagnostic('MCP_UV_VERIFY', 'Verifying uv is available on PATH', { requestId });
+
+        const available = await this.commandExists('uv');
+        if (!available) {
+            throw new Error(
+                'MCP stdio server requires `uv` on PATH. Install uv at build/deploy time before using uvx-based MCP servers.'
+            );
+        }
+    }
+
+    private static verifyPythonModuleInstalled(moduleName: string): Promise<boolean> {
+        return new Promise((resolve) => {
+            const check = spawn('python3', ['-c', `import ${moduleName}`]);
+            check.on('close', (code) => resolve(code === 0));
+            check.on('error', () => resolve(false));
+        });
+    }
+
+    private static async verifyPythonModuleFromArgs(args: string[], requestId: string): Promise<void> {
         const packageName = resolvePythonModulePackageName(args);
 
         if (!packageName) {
-            logDiagnostic('MCP_PYTHON_INSTALL_SKIP', 'No package name found in python args (missing -m)', { requestId });
+            logDiagnostic('MCP_PYTHON_VERIFY_SKIP', 'No package name found in python args (missing -m)', { requestId });
             return;
         }
 
-        logDiagnostic('MCP_PYTHON_INSTALL', 'Installing Python package using uv', {
+        logDiagnostic('MCP_PYTHON_VERIFY', 'Verifying Python module is importable', {
             requestId,
-            packageName
+            packageName,
         });
 
-        return new Promise<void>((resolve) => {
-            const subprocess = spawn('uv', ['pip', 'install', packageName]);
-
-            subprocess.on('close', (code: number) => {
-                if (code !== 0) {
-                    logDiagnostic('MCP_PYTHON_INSTALL_ERROR', 'Failed to install Python package', {
-                        requestId,
-                        packageName,
-                        exitCode: code
-                    });
-                } else {
-                    logDiagnostic('MCP_PYTHON_INSTALL_SUCCESS', 'Python package installed successfully', {
-                        requestId,
-                        packageName
-                    });
-                }
-                resolve();
-            });
-
-            subprocess.on('error', (err) => {
-                logDiagnostic('MCP_PYTHON_INSTALL_ERROR', 'Error installing Python package', {
-                    requestId,
-                    packageName,
-                    error: err.message
-                });
-                resolve();
-            });
-        });
+        const available = await this.verifyPythonModuleInstalled(packageName);
+        if (!available) {
+            throw new Error(
+                `MCP stdio server requires Python module "${packageName}" to be pre-installed. Install it at build/deploy time.`
+            );
+        }
     }
 }
 

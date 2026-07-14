@@ -9,8 +9,9 @@ import {
 
 // Mock dependencies
 jest.mock('@/lib/services/creditCache', () => ({
-    createRequestCreditCache: jest.fn(),
-    hasEnoughCreditsWithCache: jest.fn()
+    getCachedCreditsByExternalId: jest.fn(),
+    getCachedCredits: jest.fn(),
+    hasEnoughCreditsWithCache: jest.fn(),
 }));
 
 jest.mock('@/lib/tokenCounter', () => ({
@@ -30,14 +31,19 @@ jest.mock('@/lib/utils/creditCostCalculator', () => ({
     calculateCreditCostPerMessage: jest.fn()
 }));
 
-import { createRequestCreditCache, hasEnoughCreditsWithCache } from '@/lib/services/creditCache';
+import {
+    getCachedCredits,
+    getCachedCreditsByExternalId,
+    hasEnoughCreditsWithCache,
+} from '@/lib/services/creditCache';
 import { hasEnoughCredits, WEB_SEARCH_COST } from '@/lib/tokenCounter';
 import { getModelDetails } from '@/lib/models/fetch-models';
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import { calculateCreditCostPerMessage } from '@/lib/utils/creditCostCalculator';
 
 describe('ChatCreditValidationService', () => {
-    const mockCreateRequestCreditCache = createRequestCreditCache as jest.MockedFunction<typeof createRequestCreditCache>;
+    const mockGetCachedCreditsByExternalId = getCachedCreditsByExternalId as jest.MockedFunction<typeof getCachedCreditsByExternalId>;
+    const mockGetCachedCredits = getCachedCredits as jest.MockedFunction<typeof getCachedCredits>;
     const mockHasEnoughCreditsWithCache = hasEnoughCreditsWithCache as jest.MockedFunction<typeof hasEnoughCreditsWithCache>;
     const mockHasEnoughCredits = hasEnoughCredits as jest.MockedFunction<typeof hasEnoughCredits>;
     const mockGetModelDetails = getModelDetails as jest.MockedFunction<typeof getModelDetails>;
@@ -47,24 +53,6 @@ describe('ChatCreditValidationService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
-
-    const createMockCreditCache = () => ({
-        getRemainingCreditsByExternalId: jest.fn(),
-        getRemainingCredits: jest.fn(),
-        cache: {
-            cache: new Map(),
-            getRemainingCreditsByExternalId: jest.fn(),
-            getRemainingCredits: jest.fn(),
-            clear: jest.fn(),
-            set: jest.fn(),
-            get: jest.fn(),
-            has: jest.fn(),
-            size: 0,
-            hasExternalId: jest.fn(),
-            hasPolarId: jest.fn(),
-            getStats: jest.fn()
-        }
-    } as any);
 
     const createMockContext = (overrides: Partial<CreditValidationContext> = {}): CreditValidationContext => ({
         userId: 'user123',
@@ -81,8 +69,6 @@ describe('ChatCreditValidationService', () => {
     describe('validateCredits', () => {
         it('should validate credits successfully for user with own API keys', async () => {
             const context = createMockContext({ isUsingOwnApiKeys: true });
-            const mockCache = createMockCreditCache();
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
 
             const result = await ChatCreditValidationService.validateCredits(context);
 
@@ -90,10 +76,8 @@ describe('ChatCreditValidationService', () => {
                 hasCredits: true,
                 actualCredits: null,
                 canUseWebSearch: false,
-                creditCache: mockCache.cache
             });
 
-            expect(mockCreateRequestCreditCache).toHaveBeenCalled();
             expect(mockLogDiagnostic).toHaveBeenCalledWith(
                 'CREDIT_CHECK_SKIP',
                 'User is using own API keys, skipping credit checks',
@@ -103,9 +87,6 @@ describe('ChatCreditValidationService', () => {
 
         it('should validate credits successfully for free model', async () => {
             const context = createMockContext({ isFreeModel: true });
-            const mockCache = createMockCreditCache();
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
-
             const result = await ChatCreditValidationService.validateCredits(context);
 
             expect(result.hasCredits).toBe(false); // Should not set to true for free model
@@ -114,7 +95,6 @@ describe('ChatCreditValidationService', () => {
 
         it('should validate credits for paid model with sufficient credits', async () => {
             const context = createMockContext();
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openai/gpt-4',
                 provider: 'openai',
@@ -126,10 +106,9 @@ describe('ChatCreditValidationService', () => {
                 lastChecked: new Date()
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(50);
+            mockGetCachedCreditsByExternalId.mockResolvedValue(50);
 
             const result = await ChatCreditValidationService.validateCredits(context);
 
@@ -137,7 +116,6 @@ describe('ChatCreditValidationService', () => {
                 hasCredits: true,
                 actualCredits: 50,
                 canUseWebSearch: false,
-                creditCache: mockCache.cache
             });
 
             expect(mockHasEnoughCreditsWithCache).toHaveBeenCalledWith(
@@ -145,14 +123,12 @@ describe('ChatCreditValidationService', () => {
                 'user123',
                 100,
                 false,
-                mockModelInfo,
-                mockCache.cache
+                mockModelInfo
             );
         });
 
         it('should handle credit check failure and fall back to legacy method', async () => {
             const context = createMockContext();
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openai/gpt-4',
                 provider: 'openai',
@@ -164,22 +140,20 @@ describe('ChatCreditValidationService', () => {
                 lastChecked: new Date()
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockHasEnoughCreditsWithCache.mockResolvedValue(false);
-            mockCache.getRemainingCreditsByExternalId.mockRejectedValue(new Error('Cache error'));
-            mockCache.getRemainingCredits.mockResolvedValue(25);
+            mockGetCachedCreditsByExternalId.mockRejectedValue(new Error('Cache error'));
+            mockGetCachedCredits.mockResolvedValue(25);
 
             const result = await ChatCreditValidationService.validateCredits(context);
 
             expect(result.hasCredits).toBe(false);
             expect(result.actualCredits).toBe(25);
-            expect(mockCache.getRemainingCredits).toHaveBeenCalledWith('polar456');
+            expect(mockGetCachedCredits).toHaveBeenCalledWith('polar456');
         });
 
         it('should block users with negative credits', async () => {
             const context = createMockContext();
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openai/gpt-4',
                 provider: 'openai',
@@ -191,10 +165,9 @@ describe('ChatCreditValidationService', () => {
                 lastChecked: new Date()
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(-5);
+            mockGetCachedCreditsByExternalId.mockResolvedValue(-5);
 
             await expect(ChatCreditValidationService.validateCredits(context)).rejects.toThrow(
                 InsufficientCreditsError
@@ -206,9 +179,6 @@ describe('ChatCreditValidationService', () => {
                 isUsingOwnApiKeys: true,
                 webSearchEnabled: true
             });
-            const mockCache = createMockCreditCache();
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
-
             const result = await ChatCreditValidationService.validateCredits(context);
 
             expect(result.canUseWebSearch).toBe(true);
@@ -218,7 +188,6 @@ describe('ChatCreditValidationService', () => {
             const context = createMockContext({
                 webSearchEnabled: true
             });
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openai/gpt-4',
                 provider: 'openai',
@@ -230,10 +199,9 @@ describe('ChatCreditValidationService', () => {
                 lastChecked: new Date()
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(15);
+            mockGetCachedCreditsByExternalId.mockResolvedValue(15);
 
             const result = await ChatCreditValidationService.validateCredits(context);
 
@@ -245,9 +213,6 @@ describe('ChatCreditValidationService', () => {
                 isAnonymous: true,
                 webSearchEnabled: true
             });
-            const mockCache = createMockCreditCache();
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
-
             await expect(ChatCreditValidationService.validateCredits(context)).rejects.toThrow(
                 FeatureRestrictedError
             );
@@ -257,7 +222,6 @@ describe('ChatCreditValidationService', () => {
             const context = createMockContext({
                 webSearchEnabled: true
             });
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openai/gpt-4',
                 provider: 'openai',
@@ -269,10 +233,9 @@ describe('ChatCreditValidationService', () => {
                 lastChecked: new Date()
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(5);
+            mockGetCachedCreditsByExternalId.mockResolvedValue(5);
 
             await expect(ChatCreditValidationService.validateCredits(context)).rejects.toThrow(
                 InsufficientCreditsError
@@ -281,9 +244,6 @@ describe('ChatCreditValidationService', () => {
 
         it('should handle model details fetch error', async () => {
             const context = createMockContext();
-            const mockCache = createMockCreditCache();
-
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockRejectedValue(new Error('Model not found'));
 
             const result = await ChatCreditValidationService.validateCredits(context);
@@ -413,7 +373,6 @@ describe('ChatCreditValidationService', () => {
 
         it('should validate credits for economy model (1 credit)', async () => {
             const context = createMockContext({ isFreeModel: false });
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openrouter/meta-llama/llama-3.2-3b-instruct:free',
                 provider: 'OpenRouter',
@@ -422,11 +381,10 @@ describe('ChatCreditValidationService', () => {
                 pricing: { input: 0, output: 0 }
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockCalculateCreditCostPerMessage.mockReturnValue(1);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(10);
+            mockGetCachedCreditsByExternalId.mockResolvedValue(10);
 
             const result = await ChatCreditValidationService.validateCredits(context);
 
@@ -436,15 +394,13 @@ describe('ChatCreditValidationService', () => {
                 expect.any(String),
                 expect.any(Number),
                 false,
-                mockModelInfo,
-                expect.any(Object)
+                mockModelInfo
             );
             expect(result.hasCredits).toBe(true);
         });
 
         it('should validate credits for standard premium model (2 credits)', async () => {
             const context = createMockContext();
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openrouter/anthropic/claude-3-haiku',
                 provider: 'OpenRouter',
@@ -453,11 +409,10 @@ describe('ChatCreditValidationService', () => {
                 pricing: { input: 0.0000025, output: 0.0000125 } // $2.50/$12.50 per million
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockCalculateCreditCostPerMessage.mockReturnValue(2);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(5);
+            mockGetCachedCreditsByExternalId.mockResolvedValue(5);
 
             const result = await ChatCreditValidationService.validateCredits(context);
 
@@ -467,7 +422,6 @@ describe('ChatCreditValidationService', () => {
 
         it('should validate credits for high premium model (5 credits)', async () => {
             const context = createMockContext();
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openrouter/anthropic/claude-3-opus',
                 provider: 'OpenRouter',
@@ -476,11 +430,10 @@ describe('ChatCreditValidationService', () => {
                 pricing: { input: 0.000015, output: 0.000075 } // $15/$75 per million
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockCalculateCreditCostPerMessage.mockReturnValue(5);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(10);
+            mockGetCachedCreditsByExternalId.mockResolvedValue(10);
 
             const result = await ChatCreditValidationService.validateCredits(context);
 
@@ -490,7 +443,6 @@ describe('ChatCreditValidationService', () => {
 
         it('should validate credits for ultra premium model (30 credits)', async () => {
             const context = createMockContext();
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openrouter/openai/o1-pro',
                 provider: 'OpenRouter',
@@ -499,11 +451,10 @@ describe('ChatCreditValidationService', () => {
                 pricing: { input: 0.00015, output: 0.0006 } // $150/$600 per million
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockCalculateCreditCostPerMessage.mockReturnValue(30);
             mockHasEnoughCreditsWithCache.mockResolvedValue(true);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(50);
+            mockGetCachedCreditsByExternalId.mockResolvedValue(50);
 
             const result = await ChatCreditValidationService.validateCredits(context);
 
@@ -513,7 +464,6 @@ describe('ChatCreditValidationService', () => {
 
         it('should block access when user has insufficient credits for premium model', async () => {
             const context = createMockContext();
-            const mockCache = createMockCreditCache();
             const mockModelInfo = {
                 id: 'openrouter/openai/o1-pro',
                 provider: 'OpenRouter',
@@ -522,11 +472,10 @@ describe('ChatCreditValidationService', () => {
                 pricing: { input: 0.00015, output: 0.0006 }
             } as any;
 
-            mockCreateRequestCreditCache.mockReturnValue(mockCache);
             mockGetModelDetails.mockResolvedValue(mockModelInfo);
             mockCalculateCreditCostPerMessage.mockReturnValue(30);
             mockHasEnoughCreditsWithCache.mockResolvedValue(false);
-            mockCache.getRemainingCreditsByExternalId.mockResolvedValue(10); // Only 10 credits, needs 30
+            mockGetCachedCreditsByExternalId.mockResolvedValue(10); // Only 10 credits, needs 30
 
             await expect(ChatCreditValidationService.validateCredits(context)).rejects.toThrow(
                 InsufficientCreditsError

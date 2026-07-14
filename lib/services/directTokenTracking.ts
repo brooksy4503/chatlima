@@ -7,8 +7,7 @@ import { db } from '@/lib/db';
 import { tokenUsageMetrics } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { trackTokenUsage } from '@/lib/tokenCounter';
-import { SimplifiedCostCalculationService } from './simplifiedCostCalculation';
-import { OpenRouterCostExtractor } from './openRouterCostExtractor';
+import { resolveMessageCost } from './messageCostResolver';
 import { OpenRouterCostTracker } from './openrouterCostTracker';
 import { nanoid } from 'nanoid';
 import { getModelDetails } from '@/lib/models/fetch-models';
@@ -81,61 +80,23 @@ export class DirectTokenTrackingService {
                 }
             }
 
-            let actualCost: number | null = null;
-            let estimatedCost = 0;
-            const isFreeOpenRouterModel = isOpenRouterFreeModel(params.modelId);
-
-            // Extract actual cost from provider response (currently only OpenRouter supports this)
             const providerResponse = params.providerResponse || params.openRouterResponse;
-            if (params.provider === 'openrouter' && providerResponse) {
-                const costData = OpenRouterCostExtractor.extractCostFromResponse(providerResponse);
-                if (costData.actualCost !== null && OpenRouterCostExtractor.validateCostData(costData)) {
-                    actualCost = costData.actualCost;
-                    console.log(`[DirectTokenTracking] Using actual cost from OpenRouter response: $${actualCost}`);
 
-                    // Update pricing cache for future estimations
-                    if (costData.inputTokens && costData.outputTokens) {
-                        OpenRouterCostExtractor.updatePricingCacheFromActualCost(
-                            params.modelId,
-                            costData.inputTokens,
-                            costData.outputTokens,
-                            actualCost
-                        );
-                    }
-                }
-            }
+            const generationId =
+                params.generationId ||
+                (params.provider === 'openrouter' && providerResponse
+                    ? OpenRouterCostTracker.extractGenerationId(providerResponse) ?? undefined
+                    : undefined);
 
-            // TODO: Add cost extraction for Requesty if they provide cost information in their responses
-            // Currently Requesty does not appear to provide cost data in API responses
+            const { actualCost: resolvedActual, estimatedCost, costSource } = resolveMessageCost({
+                inputTokens: extractedInputTokens,
+                outputTokens: params.outputTokens,
+                modelId: params.modelId,
+                provider: params.provider,
+                providerResponse,
+            });
 
-            // Calculate estimated cost using the simplified service (fast, no DB queries)
-            try {
-                const simpleCostBreakdown = SimplifiedCostCalculationService.calculateCost(
-                    extractedInputTokens,
-                    params.outputTokens,
-                    params.modelId,
-                    params.provider,
-                    {
-                        includeVolumeDiscounts: false,
-                        openRouterResponse: providerResponse // Use unified response parameter
-                    }
-                );
-                estimatedCost = simpleCostBreakdown.totalCost;
-
-                // If we don't have actual cost yet and the simplified service provided it, use it
-                if (!actualCost && simpleCostBreakdown.source === 'actual') {
-                    actualCost = estimatedCost;
-                }
-            } catch (error) {
-                console.warn('Failed to calculate simplified cost, using fallback estimation:', error);
-                // Fallback to very simple calculation
-                estimatedCost = OpenRouterCostExtractor.getEstimatedCost(params.modelId, extractedInputTokens, params.outputTokens);
-            }
-
-            // For free OpenRouter models, ensure actual cost is stored as 0
-            if (actualCost === null && isFreeOpenRouterModel) {
-                actualCost = 0;
-            }
+            const actualCost: number | null = resolvedActual;
 
             // Resolve model info for credit cost (needed for metadata.creditsConsumed)
             let modelInfo = params.modelInfo;
@@ -176,8 +137,9 @@ export class DirectTokenTrackingService {
                     directProcessed: true,
                     processedAt: new Date().toISOString(),
                     creditsConsumed,
+                    costSource,
                     ...(params.usageSource && { usageSource: params.usageSource }),
-                    ...(params.generationId && { generationId: params.generationId })
+                    ...(generationId && { generationId }),
                 },
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -207,13 +169,11 @@ export class DirectTokenTrackingService {
 
             // If we don't have actual cost, try to fetch it asynchronously (fire-and-forget)
             // Currently only supported for OpenRouter
-            if (!actualCost && params.provider === 'openrouter' && params.generationId) {
-                // Try with the same API key context the original request used (if present on response)
+            if (!actualCost && params.provider === 'openrouter' && generationId) {
                 const apiKeyOverride = params.apiKeyOverride || (providerResponse as any)?.apiKey || undefined;
-                // Only call fetchActualCostAsync if we have a messageId
                 if (params.messageId) {
-                    this.fetchActualCostAsync(params.generationId, params.userId, params.chatId, params.messageId, apiKeyOverride).catch(error => {
-                        console.warn(`[DirectTokenTracking] Failed to fetch actual cost asynchronously for generation ${params.generationId}:`, error);
+                    this.fetchActualCostAsync(generationId, params.userId, params.chatId, params.messageId, apiKeyOverride).catch(error => {
+                        console.warn(`[DirectTokenTracking] Failed to fetch actual cost asynchronously for generation ${generationId}:`, error);
                     });
                 }
             }
@@ -345,7 +305,8 @@ export class DirectTokenTrackingService {
                         actualCost: openRouterData.actualCost.toString(),
                         updatedAt: new Date(),
                         metadata: {
-                            ...existingMetadata, // Preserve existing metadata
+                            ...existingMetadata,
+                            costSource: 'openrouter_generation',
                             actualCostUpdatedAsync: true,
                             asyncUpdateProcessedAt: new Date().toISOString(),
                             asyncUpdateGenerationId: generationId
