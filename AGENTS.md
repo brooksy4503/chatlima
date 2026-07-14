@@ -70,8 +70,9 @@ See `CLAUDE.md` and `package.json` scripts for the full list. Key commands:
 - **Unit tests (full)**: `pnpm test:unit` (Jest — some pre-existing component test failures)
 - **Pre-push gate**: `pnpm pre-push` (lint + test:unit:ci + build)
 - **E2E basic UI**: `pnpm test:basic -- --project=basic-ui-chrome`
+- **E2E CI smoke**: `pnpm test:ci:e2e`
 - **E2E anonymous**: `pnpm test:anonymous` (sends real AI requests, takes time)
-- **Playwright browsers**: run `pnpm test:install-browsers` once before the first E2E run (uses the repo's Playwright version — do not use `npx playwright install`, which can fetch a mismatched browser build)
+- **Playwright browsers**: run `pnpm test:install-browsers` once before the first E2E run (uses the repo's Playwright version — do not use `npx playwright install`, which can hang on macOS or fetch a mismatched browser build)
 
 ### Gotchas
 
@@ -80,6 +81,7 @@ See `CLAUDE.md` and `package.json` scripts for the full list. Key commands:
 - `POLAR_PRODUCT_ID_YEARLY` is only a warning if missing (non-fatal).
 - Jest unit tests use `fakeTimers: { enableGlobally: true }` and `next/babel` transform. Some test suites have pre-existing timeout failures.
 - `pnpm install` may warn about ignored build scripts (esbuild, sharp, etc.). These are safe to ignore — esbuild works via platform-specific optional deps.
+- `playwright install` / `npx playwright install` can hang during browser zip extraction on macOS. Use `pnpm test:install-browsers` instead (`scripts/install-playwright-browsers.mjs`).
 
 ### Package Source Lookup (opensrc)
 

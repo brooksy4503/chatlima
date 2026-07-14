@@ -6,12 +6,14 @@ This repo uses automated gates plus manual scenarios to catch regressions before
 
 | When | Command |
 |------|---------|
+| First-time Playwright setup | `pnpm test:install-browsers` |
 | During feature work (fast) | `pnpm test:unit:ci` |
 | Chat / branching changes | `pnpm test:unit:ci -- --testPathPatterns=chatStateSeams` |
 | Before push (local gate) | `pnpm pre-push` |
 | Full local unit suite | `pnpm test:unit` (includes component tests; some suites are currently flaky) |
 | UI smoke | `pnpm test:basic -- --project=basic-ui-chrome` |
 | Branching UI (mocked API) | `pnpm test:basic -- --project=branching-ui-chrome` |
+| CI E2E gate (both projects) | `pnpm test:ci:e2e` |
 | Lint + build | `pnpm lint && pnpm build` |
 
 ## CI (GitHub Actions)
@@ -115,3 +117,4 @@ pnpm build
 
 - Full `pnpm test:unit` still has failing **component** suites (React 19 / ESM transform issues). CI uses the stable subset until those are fixed.
 - Playwright branching specs mock API responses — they validate UI wiring, not live persistence. Use seam tests + manual checklist + active-leaf API test for persistence regressions.
+- **Playwright browser install:** use `pnpm test:install-browsers`, not `npx playwright install`. The stock Playwright installer can hang during zip extraction on macOS; the repo script uses `fetch` + `unzip` instead.

@@ -985,11 +985,19 @@ pnpm db:studio    # Open Drizzle Studio
 ### 12.3 Testing Commands
 
 ```bash
-pnpm test         # Playwright tests (local)
-pnpm test:ui      # Tests with UI
-pnpm test:unit    # Jest unit tests
-pnpm test:anonymous  # Anonymous user tests
+pnpm test:install-browsers  # First-time Playwright browser setup (also runs on postinstall)
+pnpm test:basic             # E2E smoke: basic UI + branching (local dev server)
+pnpm test:ci:e2e            # CI subset: basic-ui-chrome + branching-ui-chrome
+pnpm test                   # Playwright tests (local config; auth + anonymous)
+pnpm test:ui                # Playwright interactive UI
+pnpm test:unit              # Jest unit tests
+pnpm test:unit:ci           # Stable CI unit subset
+pnpm test:anonymous         # Anonymous user E2E (real AI requests)
 ```
+
+**Playwright browser install:** use `pnpm test:install-browsers` (repo script via `scripts/install-playwright-browsers.mjs`). Do **not** use `npx playwright install` on macOS — it can hang during zip extraction and leave a corrupted partial browser cache.
+
+See [`docs/REGRESSION_TESTING.md`](docs/REGRESSION_TESTING.md) for the full regression workflow.
 
 ### 12.4 Deployment Platform
 
