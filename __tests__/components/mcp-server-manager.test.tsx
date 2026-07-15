@@ -1,7 +1,10 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MCPServerManager } from '../../components/mcp-server-manager';
 import { MCPServer } from '@/lib/context/mcp-context';
+import { MCPOAuthProvider } from '@/lib/services/mcpOAuthProvider';
+import { auth } from '@modelcontextprotocol/sdk/client/auth.js';
+import { installOAuthFetchInterceptor } from '@/lib/utils/mcpOAuthProxy';
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(() => ({
@@ -31,7 +34,20 @@ jest.mock('sonner', () => ({
   toast: {
     success: jest.fn(),
     error: jest.fn(),
+    info: jest.fn(),
   },
+}));
+
+jest.mock('@/lib/services/mcpOAuthProvider', () => ({
+  MCPOAuthProvider: jest.fn(),
+}));
+
+jest.mock('@modelcontextprotocol/sdk/client/auth.js', () => ({
+  auth: jest.fn(),
+}));
+
+jest.mock('@/lib/utils/mcpOAuthProxy', () => ({
+  installOAuthFetchInterceptor: jest.fn(),
 }));
 
 // Mock UI components
@@ -112,11 +128,22 @@ jest.mock('lucide-react', () => ({
   Check: ({ className }: any) => <div className={className} data-testid="check-icon" />,
   AlertCircle: ({ className }: any) => <div className={className} data-testid="alert-circle-icon" />,
   Wifi: ({ className }: any) => <div className={className} data-testid="wifi-icon" />,
+  LogOut: ({ className }: any) => <div className={className} data-testid="logout-icon" />,
 }));
 
 import { toast } from 'sonner';
 
 describe('MCPServerManager Component', () => {
+  const mockOAuthProvider = {
+    hasValidTokens: jest.fn(),
+    tokens: jest.fn(),
+    clientInformation: jest.fn(),
+    clearAuthData: jest.fn(),
+    redirectUrl: 'https://chatlima.test/oauth/callback',
+    clientMetadata: { client_name: 'ChatLima' },
+  };
+  const mockCleanupInterceptor = jest.fn();
+
   const mockServers: MCPServer[] = [
     {
       id: 'server-1',
@@ -154,6 +181,11 @@ describe('MCPServerManager Component', () => {
     jest.clearAllMocks();
     // Reset URL mock
     (global.URL as unknown as jest.Mock).mockClear();
+    (MCPOAuthProvider as unknown as jest.Mock).mockImplementation(() => mockOAuthProvider);
+    (installOAuthFetchInterceptor as jest.Mock).mockReturnValue(mockCleanupInterceptor);
+    mockOAuthProvider.hasValidTokens.mockResolvedValue(false);
+    mockOAuthProvider.tokens.mockResolvedValue(undefined);
+    mockOAuthProvider.clientInformation.mockResolvedValue(undefined);
   });
 
   // Tests for Basic Rendering and Props
@@ -653,8 +685,9 @@ describe('MCPServerManager Component', () => {
       const removeButton = xIcons.find(icon => {
         const button = icon.closest('button');
         return button && !button.textContent?.includes('Disable All');
-      })?.closest('button')!;
-      fireEvent.click(removeButton);
+      })?.closest('button');
+      expect(removeButton).toBeDefined();
+      fireEvent.click(removeButton as HTMLButtonElement);
       
       expect(screen.queryByText('Authorization')).not.toBeInTheDocument();
     });
@@ -713,6 +746,147 @@ describe('MCPServerManager Component', () => {
       
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalledWith('Configuration test passed for Test Stdio Server');
+      });
+    });
+  });
+
+  describe('OAuth Authentication', () => {
+    const oauthServer: MCPServer = {
+      id: 'oauth-server',
+      name: 'OAuth Server',
+      title: 'OAuth Server',
+      url: 'https://oauth.example.com/mcp',
+      type: 'streamable-http',
+      env: [],
+      headers: [],
+      useOAuth: true,
+    };
+
+    test('checks stored credentials and renders an authorized server', async () => {
+      mockOAuthProvider.hasValidTokens.mockResolvedValue(true);
+
+      render(<MCPServerManager {...mockProps} servers={[oauthServer]} />);
+
+      expect(screen.getByText('Not authorized')).toBeInTheDocument();
+
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+
+      await waitFor(() => {
+        expect(mockOAuthProvider.hasValidTokens).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('Authorized')).toBeInTheDocument();
+      });
+      expect(MCPOAuthProvider).toHaveBeenCalledWith(oauthServer.url, oauthServer.id);
+    });
+
+    test('persists the OAuth option when adding a server', () => {
+      const onServersChange = jest.fn();
+      render(<MCPServerManager {...mockProps} onServersChange={onServersChange} />);
+
+      fireEvent.click(screen.getByText('Add Server'));
+      fireEvent.change(screen.getByTestId('input-name'), { target: { value: 'New OAuth Server' } });
+      fireEvent.change(screen.getByTestId('input-url'), { target: { value: oauthServer.url } });
+      fireEvent.click(screen.getByLabelText('Use OAuth Authentication'));
+      fireEvent.click(screen.getByRole('button', { name: 'Add Server' }));
+
+      expect(onServersChange).toHaveBeenCalledWith([
+        expect.objectContaining({
+          name: 'New OAuth Server',
+          url: oauthServer.url,
+          useOAuth: true,
+        }),
+      ]);
+    });
+
+    test('reuses valid stored credentials without starting a new OAuth request', async () => {
+      mockOAuthProvider.tokens.mockResolvedValue({ access_token: 'stored-token' });
+      mockOAuthProvider.hasValidTokens.mockResolvedValue(true);
+
+      render(<MCPServerManager {...mockProps} servers={[oauthServer]} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Authorize' }));
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Already authorized');
+        expect(screen.getByText('Authorized')).toBeInTheDocument();
+      });
+      expect(auth).not.toHaveBeenCalled();
+      expect(installOAuthFetchInterceptor).not.toHaveBeenCalled();
+    });
+
+    test('completes an authorization that does not require a redirect', async () => {
+      (auth as jest.Mock).mockResolvedValue('AUTHORIZED');
+
+      render(<MCPServerManager {...mockProps} servers={[oauthServer]} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Authorize' }));
+
+      await waitFor(() => {
+        expect(auth).toHaveBeenCalledWith(
+          mockOAuthProvider,
+          expect.objectContaining({ serverUrl: expect.anything() })
+        );
+        expect(toast.success).toHaveBeenCalledWith('Authorization successful!');
+        expect(screen.getByText('Authorized')).toBeInTheDocument();
+      });
+
+      expect(installOAuthFetchInterceptor).toHaveBeenCalledTimes(1);
+      expect(mockCleanupInterceptor).toHaveBeenCalledTimes(1);
+      expect(sessionStorage.getItem('mcp_oauth_server_id')).toBeNull();
+      expect(sessionStorage.getItem('mcp_oauth_server_url')).toBeNull();
+      expect(sessionStorage.getItem('mcp_oauth_return_url')).toBeNull();
+    });
+
+    test('preserves callback state when authorization redirects', async () => {
+      (auth as jest.Mock).mockResolvedValue('REDIRECT');
+
+      render(<MCPServerManager {...mockProps} servers={[oauthServer]} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Authorize' }));
+
+      await waitFor(() => {
+        expect(toast.info).toHaveBeenCalledWith('Redirecting to authorization page...');
+      });
+
+      expect(sessionStorage.getItem('mcp_oauth_server_id')).toBe(oauthServer.id);
+      expect(sessionStorage.getItem('mcp_oauth_server_url')).toBe(oauthServer.url);
+      expect(sessionStorage.getItem('mcp_oauth_return_url')).toBe('/');
+      expect(mockCleanupInterceptor).toHaveBeenCalledTimes(1);
+    });
+
+    test('cleans callback state and reports authorization failures', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      (auth as jest.Mock).mockRejectedValue(new Error('Failed to fetch'));
+
+      render(<MCPServerManager {...mockProps} servers={[oauthServer]} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Authorize' }));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          `Failed to connect to ${oauthServer.url}. This might be a CORS issue or the server may be unreachable. Check the browser console for details.`
+        );
+      });
+
+      expect(sessionStorage.getItem('mcp_oauth_server_id')).toBeNull();
+      expect(sessionStorage.getItem('mcp_oauth_server_url')).toBeNull();
+      expect(sessionStorage.getItem('mcp_oauth_return_url')).toBeNull();
+      expect(mockCleanupInterceptor).toHaveBeenCalledTimes(1);
+      consoleError.mockRestore();
+    });
+
+    test('clears stored OAuth credentials', async () => {
+      mockOAuthProvider.hasValidTokens.mockResolvedValue(true);
+
+      render(<MCPServerManager {...mockProps} servers={[oauthServer]} />);
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+
+      const clearButton = await screen.findByRole('button', { name: /clear auth/i });
+      fireEvent.click(clearButton);
+
+      await waitFor(() => {
+        expect(mockOAuthProvider.clearAuthData).toHaveBeenCalledTimes(1);
+        expect(toast.success).toHaveBeenCalledWith('Authentication cleared for OAuth Server');
+        expect(screen.getByText('Not authorized')).toBeInTheDocument();
       });
     });
   });
