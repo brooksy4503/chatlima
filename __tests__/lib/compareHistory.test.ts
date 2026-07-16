@@ -1,4 +1,4 @@
-import { buildModelHistory, groupMessagesByComparisonTurn } from '@/lib/chat/compareHistory';
+import { buildModelHistory, expandComparisonTurnsInPath, groupMessagesByComparisonTurn } from '@/lib/chat/compareHistory';
 import { canSubmitCompare, MIN_COMPARE_MODELS, MAX_COMPARE_MODELS } from '@/lib/compare/comparePolicy';
 
 describe('compareHistory', () => {
@@ -29,6 +29,30 @@ describe('compareHistory', () => {
     expect(groups[0].messages).toHaveLength(2);
     expect(groups[1].turnId).toBeNull();
     expect(groups[1].messages).toHaveLength(1);
+  });
+
+  it('expands branch active path with all compare assistant siblings', () => {
+    const turnId = 'turn-1';
+    const all = [
+      { id: 'u1', role: 'user' as const, parts: [{ type: 'text', text: 'Hi' }], comparisonTurnId: turnId },
+      { id: 'a1', role: 'assistant' as const, parts: [{ type: 'text', text: 'A' }], comparisonTurnId: turnId, modelId: 'openrouter/model-a', parentMessageId: 'u1' },
+      { id: 'a2', role: 'assistant' as const, parts: [{ type: 'text', text: 'B' }], comparisonTurnId: turnId, modelId: 'openrouter/model-b', parentMessageId: 'u1' },
+      { id: 'a3', role: 'assistant' as const, parts: [{ type: 'text', text: 'C' }], comparisonTurnId: turnId, modelId: 'openrouter/model-c', parentMessageId: 'u1' },
+    ];
+
+    const activePath = [all[0], all[1]];
+    const expanded = expandComparisonTurnsInPath(activePath, all);
+
+    expect(expanded.map((message) => message.id)).toEqual(['u1', 'a1', 'a2', 'a3']);
+  });
+
+  it('does not expand promoted compare turns without comparison metadata', () => {
+    const all = [
+      { id: 'u1', role: 'user' as const, parts: [{ type: 'text', text: 'Hi' }] },
+      { id: 'a1', role: 'assistant' as const, parts: [{ type: 'text', text: 'A' }], modelId: 'openrouter/model-a' },
+    ];
+
+    expect(expandComparisonTurnsInPath(all, all)).toEqual(all);
   });
 });
 

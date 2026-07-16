@@ -110,6 +110,50 @@ describe('chat state seams', () => {
       expect(dbMessagesHaveRicherAssistantParts(local, db)).toBe(false);
     });
 
+    it('adopts expanded compare path after reload instead of collapsing to one assistant', () => {
+      const turnId = 'turn-1';
+      const compareUser = msg('u-compare', 'user', { comparisonTurnId: turnId });
+      const assistants = [
+        msg('a1', 'assistant', {
+          comparisonTurnId: turnId,
+          modelId: 'openrouter/model-a',
+          parentMessageId: 'u-compare',
+        }),
+        msg('a2', 'assistant', {
+          comparisonTurnId: turnId,
+          modelId: 'openrouter/model-b',
+          parentMessageId: 'u-compare',
+        }),
+        msg('a3', 'assistant', {
+          comparisonTurnId: turnId,
+          modelId: 'openrouter/model-c',
+          parentMessageId: 'u-compare',
+        }),
+      ];
+      const collapsedDbPath = [compareUser, assistants[2]];
+      const expandedDbPath = [compareUser, ...assistants];
+
+      expect(
+        adoptDbMessages({
+          chatId: 'chat-1',
+          loadedChatId: null,
+          isLoadingChat: false,
+          status: 'ready',
+          isCompareLoading: false,
+          initialMessages: expandedDbPath,
+          currentMessages: [],
+          activeLeafMessageId: 'a3',
+        })
+      ).toEqual({
+        action: 'replace',
+        messages: expandedDbPath,
+        loadedChatId: 'chat-1',
+      });
+
+      expect(collapsedDbPath).toHaveLength(2);
+      expect(expandedDbPath).toHaveLength(4);
+    });
+
     it('allows enrichment when the same assistant id gains tool/reasoning parts', () => {
       const local = [msg('u1', 'user'), msg('a1', 'assistant')];
       const db = [

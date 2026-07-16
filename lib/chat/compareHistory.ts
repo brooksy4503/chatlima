@@ -37,6 +37,72 @@ export function buildModelHistory(
     .map(({ id, role, parts }) => ({ id, role, parts }));
 }
 
+function compareAssistantSort(a: CompareUIMessage, b: CompareUIMessage): number {
+  const aTime =
+    a.createdAt instanceof Date
+      ? a.createdAt.getTime()
+      : typeof a.createdAt === 'string'
+        ? new Date(a.createdAt).getTime()
+        : 0;
+  const bTime =
+    b.createdAt instanceof Date
+      ? b.createdAt.getTime()
+      : typeof b.createdAt === 'string'
+        ? new Date(b.createdAt).getTime()
+        : 0;
+  if (aTime !== bTime) return aTime - bTime;
+  return (a.id ?? '').localeCompare(b.id ?? '');
+}
+
+/**
+ * Expand a branch active path so every comparison turn includes all assistant
+ * siblings from the full graph. Branching stores compare assistants as siblings
+ * under the compare user message, so buildActivePathMessages only returns one.
+ */
+export function expandComparisonTurnsInPath(
+  activePath: CompareUIMessage[],
+  allMessages: CompareUIMessage[]
+): CompareUIMessage[] {
+  if (activePath.length === 0) return activePath;
+
+  const assistantsByTurn = new Map<string, CompareUIMessage[]>();
+  for (const message of allMessages) {
+    if (message.role !== 'assistant' || !message.comparisonTurnId) continue;
+    const siblings = assistantsByTurn.get(message.comparisonTurnId) ?? [];
+    siblings.push(message);
+    assistantsByTurn.set(message.comparisonTurnId, siblings);
+  }
+
+  for (const siblings of assistantsByTurn.values()) {
+    siblings.sort(compareAssistantSort);
+  }
+
+  const expandedTurns = new Set<string>();
+  const result: CompareUIMessage[] = [];
+
+  for (const message of activePath) {
+    const turnId = message.comparisonTurnId;
+
+    if (message.role === 'assistant' && turnId && expandedTurns.has(turnId)) {
+      continue;
+    }
+
+    result.push(message);
+
+    if (message.role === 'user' && turnId && !expandedTurns.has(turnId)) {
+      expandedTurns.add(turnId);
+      const siblings = assistantsByTurn.get(turnId) ?? [];
+      for (const sibling of siblings) {
+        if (!result.some((existing) => existing.id === sibling.id)) {
+          result.push(sibling);
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 export function groupMessagesByComparisonTurn(
   messages: CompareUIMessage[]
 ): Array<{ turnId: string | null; messages: CompareUIMessage[] }> {

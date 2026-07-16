@@ -50,7 +50,10 @@ import {
 } from "./ui/dialog";
 import { hasProviderByokForModel } from "@/lib/services/accessGateService";
 import { getUIMessageText, isWebSearchToolPart } from "@/lib/message-utils";
-import type { CompareUIMessage } from "@/lib/chat/compareHistory";
+import {
+  expandComparisonTurnsInPath,
+  type CompareUIMessage,
+} from "@/lib/chat/compareHistory";
 
 type ChatUIMessage = CompareUIMessage;
 
@@ -213,12 +216,13 @@ export default function Chat() {
       return [];
     }
 
-    const sourceMessages =
+    const allMessages = normalizeChatMessages(convertToUIMessages(chatData.messages));
+    const activePath =
       chatData.activePathMessages && chatData.activePathMessages.length > 0
-        ? chatData.activePathMessages
-        : convertToUIMessages(chatData.messages);
+        ? normalizeChatMessages(chatData.activePathMessages)
+        : allMessages;
 
-    return normalizeChatMessages(sourceMessages);
+    return expandComparisonTurnsInPath(activePath, allMessages);
   }, [chatData]);
 
   const allGraphMessages = useMemo((): ChatUIMessage[] => {
