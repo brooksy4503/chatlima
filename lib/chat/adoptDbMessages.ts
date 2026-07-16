@@ -20,7 +20,8 @@ export type AdoptDbMessagesResult =
   | { action: 'none' }
   | { action: 'replace'; messages: UIMessage[]; loadedChatId?: string };
 
-/** Decide whether in-memory chat state should adopt a fresher DB active path. */
+/** Decide whether in-memory chat state should adopt a fresher DB active path.
+ *  `initialMessages` must come from `buildChatDisplayMessages` so compare turns stay expanded. */
 export function adoptDbMessages(params: AdoptDbMessagesParams): AdoptDbMessagesResult {
   const {
     chatId,

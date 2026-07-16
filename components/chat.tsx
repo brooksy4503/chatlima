@@ -10,8 +10,6 @@ import { CompareModeBar } from "./compare/CompareModeBar";
 import { toast } from "sonner";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { convertToUIMessages } from "@/lib/chat/messageConversion";
-import { normalizeChatMessages } from "@/lib/chat/normalizeChatMessages";
 import { formatQuotedMessageContent } from "@/lib/quoted-text-utils";
 import { type Message as DBMessage } from "@/lib/db/schema";
 import { nanoid } from "nanoid";
@@ -20,6 +18,7 @@ import { useCompare } from "@/lib/context/compare-context";
 import { MIN_COMPARE_MODELS } from "@/lib/compare/comparePolicy";
 import { useCompareOrchestrator } from "@/hooks/useCompareOrchestrator";
 import { useChatSession } from "@/hooks/useChatSession";
+import { useChatDisplayMessages } from "@/hooks/useChatDisplayMessages";
 import { useConversationBranches } from "@/hooks/useConversationBranches";
 import { useMessageMetrics } from "@/hooks/useMessageMetrics";
 import type { ChatOperation } from "@/lib/chat/chatRequest";
@@ -50,10 +49,7 @@ import {
 } from "./ui/dialog";
 import { hasProviderByokForModel } from "@/lib/services/accessGateService";
 import { getUIMessageText, isWebSearchToolPart } from "@/lib/message-utils";
-import {
-  expandComparisonTurnsInPath,
-  type CompareUIMessage,
-} from "@/lib/chat/compareHistory";
+import type { CompareUIMessage } from "@/lib/chat/compareHistory";
 
 type ChatUIMessage = CompareUIMessage;
 
@@ -211,24 +207,7 @@ export default function Chat() {
     refetchOnWindowFocus: false
   });
   
-  const initialMessages = useMemo((): ChatUIMessage[] => {
-    if (!chatData || !chatData.messages || chatData.messages.length === 0) {
-      return [];
-    }
-
-    const allMessages = normalizeChatMessages(convertToUIMessages(chatData.messages));
-    const activePath =
-      chatData.activePathMessages && chatData.activePathMessages.length > 0
-        ? normalizeChatMessages(chatData.activePathMessages)
-        : allMessages;
-
-    return expandComparisonTurnsInPath(activePath, allMessages);
-  }, [chatData]);
-
-  const allGraphMessages = useMemo((): ChatUIMessage[] => {
-    if (!chatData?.messages?.length) return [];
-    return normalizeChatMessages(convertToUIMessages(chatData.messages));
-  }, [chatData]);
+  const { allGraphMessages, initialMessages } = useChatDisplayMessages(chatData);
 
   const [input, setInput] = useState("");
   const [quotedText, setQuotedText] = useState<string | null>(null);

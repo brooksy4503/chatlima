@@ -13,6 +13,7 @@ import {
   resolveDeepestLeafId,
 } from "@/lib/chat/conversationTree";
 import type { CompareUIMessage } from "@/lib/chat/compareHistory";
+import { buildCompareDisplayPath } from "@/lib/chat/buildChatDisplayMessages";
 import {
   buildEditResubmitMessages,
   buildRegenerateMessages,
@@ -77,11 +78,12 @@ export function useConversationBranches({
       }
 
       const data = await response.json();
-      setMessages(data.activePathMessages ?? pathFromLeaf);
+      const activePath = (data.activePathMessages ?? pathFromLeaf) as CompareUIMessage[];
+      setMessages(buildCompareDisplayPath(activePath, allMessages));
       queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
     } catch (error) {
       console.error("Branch switch failed:", error);
-      setMessages(pathFromLeaf as CompareUIMessage[]);
+      setMessages(buildCompareDisplayPath(pathFromLeaf as CompareUIMessage[], allMessages));
     }
   };
 

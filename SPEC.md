@@ -704,7 +704,7 @@ POST /api/compare
 - Credits: validated per model; daily free-tier usage incremented once per compare turn
 - Disabled in compare mode: MCP, web search, image generation, presets, file attachments
 - Messages persist model_id, model_provider, model_display_name, comparison_turn_id on each row
-- **Display**: Compare assistants are graph siblings under the compare user message (same `parentMessageId` as branching). `buildActivePathMessages` returns only the active-leaf branch, so the chat UI expands each comparison turn from the full message graph via `expandComparisonTurnsInPath` (`lib/chat/compareHistory.ts`) before rendering the compare timeline or adopting DB state.
+- **Display**: Compare assistants are graph siblings under the compare user message (same `parentMessageId` as branching). `buildActivePathMessages` returns only the active-leaf branch, so client hydration uses `buildChatDisplayMessages` / `useChatDisplayMessages` (`lib/chat/buildChatDisplayMessages.ts`, `hooks/useChatDisplayMessages.ts`) to expand each comparison turn before rendering the compare timeline or adopting DB state. Branch switches apply the same expansion via `buildCompareDisplayPath`.
 ```
 
 #### Upload API
