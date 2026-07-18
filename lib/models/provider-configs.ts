@@ -107,6 +107,14 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
 
             const maxCompletionTokens = model.top_provider?.max_completion_tokens;
 
+            // Moonshot Kimi K3 / Kimi Latest: OpenRouter omits max_completion_tokens but the
+            // model supports up to 131072 output by default (configurable to 1M). Reasoning
+            // tokens count toward the output budget — the generic 4096 default causes
+            // finish_reason=length on long PDF / agentic workloads.
+            const isKimiK3Family =
+                model.id.includes('kimi-k3') ||
+                model.id.includes('kimi-latest');
+
             // Override max tokens for specific models that have incorrect API limits
             if (model.id.includes('deepseek')) {
                 // DeepSeek models support up to 8000 output tokens (override API reported value)
@@ -114,6 +122,12 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
                     min: 1,
                     max: 8000,
                     default: 4096
+                };
+            } else if (isKimiK3Family) {
+                maxTokensRange = {
+                    min: 1,
+                    max: 131072,
+                    default: 32768,
                 };
             } else if (maxCompletionTokens && maxCompletionTokens > 0) {
                 // Use the actual max completion tokens from the provider.
@@ -185,6 +199,17 @@ export function parseOpenRouterModels(data: any): ModelInfo[] {
                         min: 1,
                         max: 16384,
                         default: 4096
+                    };
+                } else if (
+                    model.id.includes('moonshotai/kimi') &&
+                    model.context_length &&
+                    model.context_length >= 200000
+                ) {
+                    // Other large-context Kimi models when OpenRouter omits max_completion_tokens
+                    maxTokensRange = {
+                        min: 1,
+                        max: 100352,
+                        default: 16384,
                     };
                 } else {
                     // Default fallback based on context length

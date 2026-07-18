@@ -427,6 +427,8 @@ Direct-provider catalogs are only fetched when the matching key is present. Open
 - Provider health: 30-second TTL
 - Smart filtering of blocked/deprecated models
 
+**Output token defaults (`lib/models/provider-configs.ts`):** When OpenRouter reports `max_completion_tokens`, ChatLima uses it for preset/UI limits. When it is missing, model-specific overrides apply — notably **Kimi K3 / Kimi Latest** (`moonshotai/kimi-k3`, `moonshotai/kimi-latest`): default **32,768** output tokens, max **131,072** (Moonshot API default; reasoning tokens count toward this budget). Other large-context Kimi models without API limits fall back to max **100,352** / default **16,384**.
+
 ### 5.3 Model ID Format
 
 ```

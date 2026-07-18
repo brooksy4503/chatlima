@@ -25,7 +25,12 @@ export function usesTagBasedReasoningExtraction(modelId: string): boolean {
 /** Models that expose reasoning via OpenRouter's native reasoning field (no tag middleware). */
 export function usesNativeReasoningField(modelId: string): boolean {
   const id = modelId.toLowerCase();
-  return id.includes('minimax/m2') || id.includes('minimax-m2');
+  return (
+    id.includes('minimax/m2') ||
+    id.includes('minimax-m2') ||
+    id.includes('kimi-k3') ||
+    id.includes('kimi-latest')
+  );
 }
 
 export function wrapWithTagBasedReasoning(model: LanguageModel): LanguageModel;
