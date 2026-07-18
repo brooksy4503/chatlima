@@ -9,8 +9,8 @@ import { parsePDF, pdfToSummary } from './pdf-parser';
 import { parseText, textToSummary, codeToSummary } from './text-parser';
 import { getMimeTypeFromExtension } from '../file-upload';
 
-// Global safety cap: ~100k-125k tokens (assuming ~4 chars per token)
-const MAX_FILE_CONTENT_CHARS = 500_000;
+// Global safety cap: ~200k-250k tokens (assuming ~4 chars per token)
+const MAX_FILE_CONTENT_CHARS = 1_000_000;
 
 function applyContentCap(content: string): string {
   if (content.length <= MAX_FILE_CONTENT_CHARS) {
