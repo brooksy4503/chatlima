@@ -374,7 +374,7 @@ export class WebFetchService {
     return [301, 302, 303, 307, 308].includes(status);
   }
 
-  private static validateAndNormalizeUrl(rawUrl: string): string {
+  static validateAndNormalizeUrl(rawUrl: string): string {
     const trimmed = (rawUrl ?? "").trim();
     if (!trimmed) {
       throw new WebFetchError("WEB_FETCH_INVALID_URL", "A URL is required.");
@@ -418,7 +418,7 @@ export class WebFetchService {
     return `https://${value}`;
   }
 
-  private static async assertPublicUrl(url: string): Promise<void> {
+  static async assertPublicUrl(url: string): Promise<void> {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
 
