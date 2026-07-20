@@ -21,7 +21,7 @@ jest.mock('@/lib/services/conversationPersistence', () => ({
   },
 }));
 
-const mockGetSession = auth.api.getSession as jest.Mock;
+const mockGetSession = auth.api.getSession as unknown as jest.Mock;
 const mockLoadChatGraph = ConversationPersistenceService.loadChatGraph as jest.Mock;
 const mockSetActiveLeaf = ConversationPersistenceService.setActiveLeaf as jest.Mock;
 

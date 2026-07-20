@@ -30,7 +30,7 @@ jest.mock('@/lib/services/webFetchService', () => {
   };
 });
 
-const mockGetSession = auth.api.getSession as jest.Mock;
+const mockGetSession = auth.api.getSession as unknown as jest.Mock;
 const mockValidate = WebFetchService.validateAndNormalizeUrl as jest.Mock;
 const mockAssertPublic = WebFetchService.assertPublicUrl as jest.Mock;
 
