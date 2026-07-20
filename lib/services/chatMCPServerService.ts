@@ -129,6 +129,14 @@ export class ChatMCPServerService {
                 // Add MCP tools to tools object
                 Object.assign(tools, toolsObject);
             } catch (error) {
+                // Security guards (e.g. MCP_STDIO_BLOCKED) must fail the entire
+                // request rather than silently skip the offending server.
+                if (
+                    error instanceof Error &&
+                    error.message.startsWith('MCP_STDIO_BLOCKED')
+                ) {
+                    throw error;
+                }
                 console.error(`[MCP_SERVER_ERROR] Failed to initialize MCP client:`, error);
                 logDiagnostic('MCP_SERVER_ERROR', `Failed to initialize MCP client`, {
                     requestId,
@@ -201,7 +209,12 @@ export class ChatMCPServerService {
             case 'sse':
                 return this.createSSETransport(mcpServer, requestId);
             case 'stdio':
-                return await this.createStdioTransport(mcpServer, requestId);
+                // Authoritative security guard: client-supplied stdio configs would
+                // spawn arbitrary server-side processes (RCE). This must fail the
+                // request, not silently skip the server. The parser also strips
+                // stdio entries; this guard protects any caller that bypasses it.
+                logDiagnostic('MCP_STDIO_BLOCKED', 'Rejected client-supplied stdio MCP config', { requestId });
+                throw new Error('MCP_STDIO_BLOCKED: stdio MCP servers are not permitted from client requests.');
             case 'streamable-http':
                 return this.createStreamableHTTPTransport(mcpServer, requestId);
             default:

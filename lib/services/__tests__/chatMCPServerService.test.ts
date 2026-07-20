@@ -106,19 +106,20 @@ describe('ChatMCPServerService', () => {
             expect(result).toMatchObject({ tools: {}, mcpClients: [] });
         });
 
-        it('logs MCP_SERVER_ERROR when stdio transport is misconfigured', async () => {
-            await ChatMCPServerService.initializeMCPServers(
-                createMockContext({
-                    mcpServers: [{ url: 'stdio://test', type: 'stdio', args: ['test'] }],
-                })
-            );
+        it('rejects client-supplied stdio configs with MCP_STDIO_BLOCKED', async () => {
+            await expect(
+                ChatMCPServerService.initializeMCPServers(
+                    createMockContext({
+                        mcpServers: [{ url: 'stdio://test', type: 'stdio', args: ['test'] }],
+                    })
+                )
+            ).rejects.toThrow(/MCP_STDIO_BLOCKED/);
 
+            // The security guard must be logged.
             expect(mockLogDiagnostic).toHaveBeenCalledWith(
-                'MCP_SERVER_ERROR',
-                'Failed to initialize MCP client',
-                expect.objectContaining({
-                    error: 'Missing command or args for stdio MCP server',
-                })
+                'MCP_STDIO_BLOCKED',
+                'Rejected client-supplied stdio MCP config',
+                expect.objectContaining({ requestId: expect.any(String) })
             );
         });
 

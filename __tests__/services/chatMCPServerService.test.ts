@@ -60,8 +60,8 @@ describe('ChatMCPServerService python verify-only', () => {
     mockSpawn.mockReturnValue(mockSubprocess as never);
 
     const createStdioTransport = (ChatMCPServerService as unknown as {
-      createTransport: (server: unknown, requestId: string) => Promise<unknown>;
-    }).createTransport;
+      createStdioTransport: (server: unknown, requestId: string) => Promise<unknown>;
+    }).createStdioTransport;
 
     await createStdioTransport.call(ChatMCPServerService, {
       type: 'stdio',
@@ -76,8 +76,8 @@ describe('ChatMCPServerService python verify-only', () => {
 
   it('skips verify for script-based python args', async () => {
     const createStdioTransport = (ChatMCPServerService as unknown as {
-      createTransport: (server: unknown, requestId: string) => Promise<unknown>;
-    }).createTransport;
+      createStdioTransport: (server: unknown, requestId: string) => Promise<unknown>;
+    }).createStdioTransport;
 
     await createStdioTransport.call(ChatMCPServerService, {
       type: 'stdio',
