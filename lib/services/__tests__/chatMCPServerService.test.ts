@@ -4,6 +4,27 @@ jest.mock('@/lib/utils/performantLogging', () => ({
     logDiagnostic: jest.fn(),
 }));
 
+// The SSE/HTTP transport builders now run mcpServer.url through the
+// WebFetchService SSRF guard (Plan 003). These plumbing tests use
+// `http://localhost:3000` as throwaway test data, which the guard (correctly)
+// blocks; mock the guard to pass so the tests exercise the init/cleanup
+// plumbing they were written for, not the URL validation.
+jest.mock('@/lib/services/webFetchService', () => ({
+    WebFetchService: {
+        validateAndNormalizeUrl: jest.fn((url: string) => url),
+        assertPublicUrl: jest.fn().mockResolvedValue(undefined),
+    },
+    WebFetchError: class WebFetchError extends Error {
+        code: string;
+        status: number;
+        constructor(code: string, message: string, status = 400) {
+            super(message);
+            this.code = code;
+            this.status = status;
+        }
+    },
+}));
+
 jest.mock('@modelcontextprotocol/sdk/client/index.js', () => ({
     Client: jest.fn(),
 }));
