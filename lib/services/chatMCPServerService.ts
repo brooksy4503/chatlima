@@ -7,6 +7,7 @@ import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.
 import { spawn } from "child_process";
 import { logDiagnostic } from '@/lib/utils/performantLogging';
 import { tool, jsonSchema } from 'ai';
+import { WebFetchService, WebFetchError } from '@/lib/services/webFetchService';
 
 interface KeyValuePair {
     key: string;
@@ -129,11 +130,13 @@ export class ChatMCPServerService {
                 // Add MCP tools to tools object
                 Object.assign(tools, toolsObject);
             } catch (error) {
-                // Security guards (e.g. MCP_STDIO_BLOCKED) must fail the entire
-                // request rather than silently skip the offending server.
+                // Security guards (e.g. MCP_STDIO_BLOCKED, MCP_URL_BLOCKED) must
+                // fail the entire request rather than silently skip the offending
+                // server.
                 if (
                     error instanceof Error &&
-                    error.message.startsWith('MCP_STDIO_BLOCKED')
+                    (error.message.startsWith('MCP_STDIO_BLOCKED') ||
+                        error.message.startsWith('MCP_URL_BLOCKED'))
                 ) {
                     throw error;
                 }
@@ -225,7 +228,7 @@ export class ChatMCPServerService {
     /**
      * Creates SSE transport
      */
-    private static createSSETransport(mcpServer: MCPServerConfig, requestId: string): Transport {
+    private static async createSSETransport(mcpServer: MCPServerConfig, requestId: string): Promise<Transport> {
         const headers: Record<string, string> = {};
         if (mcpServer.headers && mcpServer.headers.length > 0) {
             mcpServer.headers.forEach(header => {
@@ -233,18 +236,95 @@ export class ChatMCPServerService {
             });
         }
 
+        // SSRF guard: validate the URL (and resolve its DNS) before handing it
+        // to the transport. Throws MCP_URL_BLOCKED on a private/blocked host,
+        // which the dispatcher rethrows to fail the whole request.
+        const transportUrl = await this.assertSafeMcpUrl(mcpServer.url, requestId);
+
         logDiagnostic('MCP_SSE_TRANSPORT', 'Creating SSE transport', {
             requestId,
             url: mcpServer.url,
             headerCount: Object.keys(headers).length
         });
 
+        const guardedFetch = this.createGuardedFetch(requestId);
+
+        // Inject the guarded fetch into BOTH the EventSource (SSE GET stream)
+        // via eventSourceInit.fetch and the recurring POST requests via fetch.
+        // The SDK's SSEClientTransport reads eventSourceInit.fetch first, then
+        // the top-level fetch option, for the GET stream; the top-level fetch
+        // is used for POSTs.
         return new SSEClientTransport(
-            new URL(mcpServer.url),
-            Object.keys(headers).length > 0 ? {
-                requestInit: { headers }
-            } : undefined
+            transportUrl,
+            {
+                ...(Object.keys(headers).length > 0 ? { requestInit: { headers } } : {}),
+                fetch: guardedFetch,
+                eventSourceInit: { fetch: guardedFetch } as any,
+            },
         );
+    }
+
+    /**
+     * Validates an MCP server URL through the same WebFetchService SSRF guard
+     * used by web_fetch (localhost, private IPv4 ranges, cloud-metadata
+     * 169.254.0.0/16, CGN 100.64.0.0/10, IPv6 ULA/link-local, embedded
+     * credentials, DNS resolution). Throws a typed MCP_URL_BLOCKED error so
+     * the dispatcher can fail the request rather than silently skip the server.
+     *
+     * NOTE (residual DNS-rebind risk): this resolves DNS once at call time. A
+     * transport that opened its own connection later could be pivoted to a
+     * private IP if the attacker flipped their DNS between this resolution and
+     * the transport's. We close that gap by ALSO injecting a guarded fetch
+     * (createGuardedFetch) into the transports that re-runs assertPublicUrl on
+     * every outbound request, so a rebind is caught at connection time.
+     */
+    private static async assertSafeMcpUrl(rawUrl: string, requestId: string): Promise<URL> {
+        try {
+            const normalized = WebFetchService.validateAndNormalizeUrl(rawUrl);
+            await WebFetchService.assertPublicUrl(normalized);
+            return new URL(normalized);
+        } catch (error) {
+            if (error instanceof WebFetchError) {
+                logDiagnostic('MCP_URL_BLOCKED', 'Rejected MCP server URL (SSRF guard)', {
+                    requestId,
+                    url: rawUrl,
+                    code: error.code,
+                });
+                throw new Error(
+                    `MCP_URL_BLOCKED: MCP server URL is not allowed (${error.code}).`,
+                );
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Returns a fetch wrapper that re-runs the SSRF guard (validateAndNormalizeUrl
+     * + assertPublicUrl) on the request URL of every outbound call. This is
+     * injected into the SDK transports' `fetch` option so that a DNS rebind
+     * between assertSafeMcpUrl's pre-validation and the transport's actual
+     * connection is caught at request time. Non-numeric hosts are re-resolved
+     * by assertPublicUrl, so a record that flips to a private IP is rejected.
+     */
+    private static createGuardedFetch(requestId: string): (url: string | URL, init?: RequestInit) => Promise<Response> {
+        return async (url: string | URL, init?: RequestInit) => {
+            const urlString = typeof url === 'string' ? url : url.toString();
+            try {
+                const normalized = WebFetchService.validateAndNormalizeUrl(urlString);
+                await WebFetchService.assertPublicUrl(normalized);
+            } catch (error) {
+                const code = error instanceof WebFetchError ? error.code : 'UNKNOWN';
+                logDiagnostic('MCP_URL_BLOCKED', 'Rejected outbound MCP fetch (SSRF guard)', {
+                    requestId,
+                    url: urlString,
+                    code,
+                });
+                throw new Error(
+                    `MCP_URL_BLOCKED: outbound MCP request to a non-public host was rejected (${code}).`,
+                );
+            }
+            return fetch(urlString, init);
+        };
     }
 
     /**
@@ -292,7 +372,7 @@ export class ChatMCPServerService {
     /**
      * Creates StreamableHTTP transport
      */
-    private static createStreamableHTTPTransport(mcpServer: MCPServerConfig, requestId: string): Transport {
+    private static async createStreamableHTTPTransport(mcpServer: MCPServerConfig, requestId: string): Promise<Transport> {
         const headers: Record<string, string> = {};
         if (mcpServer.headers && mcpServer.headers.length > 0) {
             mcpServer.headers.forEach(header => {
@@ -310,6 +390,10 @@ export class ChatMCPServerService {
             });
         }
 
+        // SSRF guard: validate the URL before constructing the transport.
+        // Throws MCP_URL_BLOCKED on a private/blocked host.
+        const transportUrl = await this.assertSafeMcpUrl(mcpServer.url, requestId);
+
         logDiagnostic('MCP_HTTP_TRANSPORT', 'Creating StreamableHTTP transport', {
             requestId,
             url: mcpServer.url,
@@ -317,7 +401,10 @@ export class ChatMCPServerService {
             useOAuth: mcpServer.useOAuth || false
         });
 
-        const transportUrl = new URL(mcpServer.url);
+        // Inject a guarded fetch so every outbound request (including any the
+        // transport makes after connect) is re-validated against the SSRF
+        // blocklist, closing the DNS-rebind residual noted in assertSafeMcpUrl.
+        const guardedFetch = this.createGuardedFetch(requestId);
 
         // For OAuth, we use headers with Bearer token instead of authProvider
         // because authProvider requires browser redirects which don't work server-side
@@ -326,8 +413,9 @@ export class ChatMCPServerService {
             Object.keys(headers).length > 0 ? {
                 requestInit: {
                     headers: headers
-                }
-            } : undefined
+                },
+                fetch: guardedFetch,
+            } : { fetch: guardedFetch }
         );
     }
 
