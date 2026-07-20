@@ -106,6 +106,34 @@ function parseChatOperation(raw: unknown): ChatOperation {
   return DEFAULT_OPERATION;
 }
 
+/**
+ * Filters client-supplied MCP server configs, dropping any `stdio` entries.
+ *
+ * stdio transports spawn server-side processes from client input. A
+ * multi-tenant web app must never accept client-supplied command/args, so
+ * `stdio` configs are rejected at this trust boundary (the wire-to-app parse).
+ * This is defense in depth; `ChatMCPServerService` also refuses stdio.
+ */
+function filterOutStdioMcpServers(raw: unknown): MCPServerConfig[] {
+  if (!Array.isArray(raw)) return [];
+  const accepted: MCPServerConfig[] = [];
+  for (const entry of raw) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      (entry as MCPServerConfig).type === 'stdio'
+    ) {
+      // stdio spawns server-side processes from client input — never accept it.
+      console.warn(
+        '[chatRequest] Rejected client-supplied stdio MCP server config.'
+      );
+      continue;
+    }
+    accepted.push(entry as MCPServerConfig);
+  }
+  return accepted;
+}
+
 export function parseChatRequestBody(body: unknown): ChatRequestBody {
   const raw = (body ?? {}) as Record<string, unknown>;
 
@@ -115,7 +143,7 @@ export function parseChatRequestBody(body: unknown): ChatRequestBody {
     messages: (raw.messages as UIMessage[]) ?? [],
     chatId: typeof raw.chatId === 'string' ? raw.chatId : undefined,
     selectedModel: String(raw.selectedModel ?? ''),
-    mcpServers: (raw.mcpServers as MCPServerConfig[]) ?? [],
+    mcpServers: filterOutStdioMcpServers(raw.mcpServers),
     webSearch: (raw.webSearch as WebSearchOptions) ?? {
       enabled: false,
       contextSize: 'medium',
