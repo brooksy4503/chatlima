@@ -279,6 +279,52 @@ export class ConversationPersistenceService {
     });
   }
 
+  static async promoteCompareTurn(params: {
+    chatId: string;
+    userId: string;
+    comparisonTurnId: string;
+    modelId: string;
+  }): Promise<{ assistantMessageId: string } | null> {
+    const { chatId, userId, comparisonTurnId, modelId } = params;
+
+    const chat = await db.query.chats.findFirst({
+      where: and(eq(chats.id, chatId), eq(chats.userId, userId)),
+    });
+    if (!chat) return null;
+
+    const turnMessages = await db.query.messages.findMany({
+      where: and(eq(messages.chatId, chatId), eq(messages.comparisonTurnId, comparisonTurnId)),
+    });
+
+    const compareUser = turnMessages.find((message) => message.role === 'user');
+    const promotedAssistant = turnMessages.find(
+      (message) => message.role === 'assistant' && message.modelId === modelId
+    );
+
+    if (!compareUser || !promotedAssistant) {
+      return null;
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(messages)
+        .set({ comparisonTurnId: null })
+        .where(eq(messages.id, compareUser.id));
+
+      await tx
+        .update(messages)
+        .set({ comparisonTurnId: null })
+        .where(eq(messages.id, promotedAssistant.id));
+
+      await tx
+        .update(chats)
+        .set({ activeLeafMessageId: promotedAssistant.id, updatedAt: new Date() })
+        .where(eq(chats.id, chatId));
+    });
+
+    return { assistantMessageId: promotedAssistant.id };
+  }
+
   static async backfillAllChatsParentChains(): Promise<number> {
     const allChats = await db.query.chats.findMany({
       columns: { id: true },

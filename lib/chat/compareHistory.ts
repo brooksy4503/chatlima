@@ -103,6 +103,56 @@ export function expandComparisonTurnsInPath(
   return result;
 }
 
+/**
+ * True when in-memory state reflects a promoted compare turn that DB hydration
+ * would re-expand back to all model siblings.
+ */
+export function isLocalComparePromotionAheadOfDb(
+  current: CompareUIMessage[],
+  fromDb: CompareUIMessage[]
+): boolean {
+  for (let index = 0; index < current.length; index++) {
+    const message = current[index];
+    if (message.role !== 'user' || message.comparisonTurnId) {
+      continue;
+    }
+
+    const dbUser = fromDb.find((candidate) => candidate.id === message.id);
+    const dbTurnId = dbUser?.comparisonTurnId;
+    if (!dbTurnId) {
+      continue;
+    }
+
+    const dbAssistantsForTurn = fromDb.filter(
+      (candidate) =>
+        candidate.role === 'assistant' && candidate.comparisonTurnId === dbTurnId
+    );
+    const currentAssistantsForTurn: CompareUIMessage[] = [];
+
+    for (let cursor = index + 1; cursor < current.length; cursor++) {
+      const next = current[cursor];
+      if (next.role === 'user') {
+        break;
+      }
+      if (next.role === 'assistant') {
+        currentAssistantsForTurn.push(next);
+      }
+    }
+
+    if (
+      dbAssistantsForTurn.length > currentAssistantsForTurn.length &&
+      currentAssistantsForTurn.length >= 1 &&
+      currentAssistantsForTurn.every((assistant) =>
+        dbAssistantsForTurn.some((dbAssistant) => dbAssistant.id === assistant.id)
+      )
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function groupMessagesByComparisonTurn(
   messages: CompareUIMessage[]
 ): Array<{ turnId: string | null; messages: CompareUIMessage[] }> {

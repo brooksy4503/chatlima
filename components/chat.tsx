@@ -312,6 +312,7 @@ export default function Chat() {
     setMessages: setMessages as React.Dispatch<React.SetStateAction<ChatUIMessage[]>>,
     getApiKeys: getClientApiKeys,
     canUseModelAtCreditCost,
+    queryClient,
   });
 
   const {
@@ -835,7 +836,7 @@ export default function Chat() {
             compareModels={compareModels}
             isCompareStreaming={isCompareLoading}
             onPromoteModel={(modelId, comparisonTurnId) => {
-              promoteCompareModel(modelId, comparisonTurnId);
+              void promoteCompareModel(modelId, comparisonTurnId);
               setSelectedModel(modelId as typeof selectedModel);
             }}
             webSearchEnabled={(activePreset?.webSearchEnabled ?? webSearchEnabled) && isOpenRouterModel}

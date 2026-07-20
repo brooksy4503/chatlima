@@ -63,4 +63,59 @@ describe('adoptDbMessages', () => {
       })
     ).toEqual({ action: 'none' });
   });
+
+  it('does not clobber a promoted compare turn with expanded DB hydration', () => {
+    const turnId = 'turn-1';
+    const promoted = [
+      { id: 'u1', role: 'user' as const, parts: [{ type: 'text', text: 'Hi' }] },
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        parts: [{ type: 'text', text: 'A' }],
+        modelId: 'openrouter/model-a',
+      },
+    ];
+    const expandedDb = [
+      {
+        id: 'u1',
+        role: 'user' as const,
+        parts: [{ type: 'text', text: 'Hi' }],
+        comparisonTurnId: turnId,
+      },
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        parts: [{ type: 'text', text: 'A' }],
+        comparisonTurnId: turnId,
+        modelId: 'openrouter/model-a',
+      },
+      {
+        id: 'a2',
+        role: 'assistant' as const,
+        parts: [{ type: 'text', text: 'B' }],
+        comparisonTurnId: turnId,
+        modelId: 'openrouter/model-b',
+      },
+      {
+        id: 'a3',
+        role: 'assistant' as const,
+        parts: [{ type: 'text', text: 'C' }],
+        comparisonTurnId: turnId,
+        modelId: 'openrouter/model-c',
+      },
+    ];
+
+    expect(
+      adoptDbMessages({
+        chatId: 'chat-1',
+        loadedChatId: 'chat-1',
+        isLoadingChat: false,
+        status: 'ready',
+        isCompareLoading: false,
+        initialMessages: expandedDb,
+        currentMessages: promoted,
+        activeLeafMessageId: 'a3',
+      })
+    ).toEqual({ action: 'none' });
+  });
 });

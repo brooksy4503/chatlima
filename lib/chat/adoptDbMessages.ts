@@ -1,4 +1,5 @@
 import type { UIMessage } from 'ai';
+import { isLocalComparePromotionAheadOfDb } from '@/lib/chat/compareHistory';
 import {
   dbActivePathIsDifferentBranch,
   dbMessagesHaveRicherAssistantParts,
@@ -50,6 +51,10 @@ export function adoptDbMessages(params: AdoptDbMessagesParams): AdoptDbMessagesR
   if (status !== 'ready' || initialMessages.length === 0) return { action: 'none' };
 
   if (localTranscriptAheadOfStaleDbPath(currentMessages, initialMessages)) {
+    return { action: 'none' };
+  }
+
+  if (isLocalComparePromotionAheadOfDb(currentMessages, initialMessages)) {
     return { action: 'none' };
   }
 

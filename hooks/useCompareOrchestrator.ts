@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
+import type { QueryClient } from "@tanstack/react-query";
 import { useCompare } from "@/lib/context/compare-context";
 import { canSubmitCompare } from "@/lib/compare/comparePolicy";
 import type { CompareStreamEvent } from "@/lib/chat/compareRequest";
@@ -17,6 +18,7 @@ interface UseCompareOrchestratorParams {
   setMessages: React.Dispatch<React.SetStateAction<CompareUIMessage[]>>;
   getApiKeys: () => Record<string, string>;
   canUseModelAtCreditCost: (required: number) => boolean;
+  queryClient?: QueryClient;
 }
 
 export function useCompareOrchestrator({
@@ -25,6 +27,7 @@ export function useCompareOrchestrator({
   setMessages,
   getApiKeys,
   canUseModelAtCreditCost,
+  queryClient,
 }: UseCompareOrchestratorParams) {
   const { compareModels, estimatedCreditCost, setCompareModeEnabled } = useCompare();
   const [status, setStatus] = useState<CompareStatus>("idle");
@@ -229,24 +232,57 @@ export function useCompareOrchestrator({
   );
 
   const promoteModel = useCallback(
-    (modelId: string, comparisonTurnId: string) => {
+    async (modelId: string, comparisonTurnId: string) => {
       setCompareModeEnabled(false);
+
+      let promotedAssistantId: string | null = null;
       setMessages((prev) => {
+        const promotedAssistant = prev.find(
+          (msg) =>
+            msg.comparisonTurnId === comparisonTurnId &&
+            msg.role === "assistant" &&
+            msg.modelId === modelId
+        );
+        promotedAssistantId = promotedAssistant?.id ?? null;
+
         const kept = prev.filter(
           (msg) =>
             msg.comparisonTurnId !== comparisonTurnId ||
             msg.role === "user" ||
             (msg.role === "assistant" && msg.modelId === modelId)
         );
-        // Clear comparison metadata so continued chat uses the normal timeline.
         return kept.map((msg) =>
           msg.comparisonTurnId === comparisonTurnId
             ? { ...msg, comparisonTurnId: null }
             : msg
         );
       });
+
+      if (!chatId || !promotedAssistantId) {
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/compare/promote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chatId, comparisonTurnId, modelId }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err?.error ?? "Failed to save model selection");
+        }
+
+        await queryClient?.invalidateQueries({ queryKey: ["chat", chatId] });
+      } catch (error) {
+        console.error("[Compare] Promote error:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to save model selection"
+        );
+      }
     },
-    [setCompareModeEnabled, setMessages]
+    [setCompareModeEnabled, setMessages, chatId, queryClient]
   );
 
   return {
