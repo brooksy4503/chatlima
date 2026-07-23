@@ -17,6 +17,7 @@ import {
   dbMessagesHaveRicherAssistantParts,
   localTranscriptAheadOfStaleDbPath,
 } from '@/lib/chat-message-persistence';
+import { stripOrphanComparisonTurnIds } from '@/lib/chat/compareHistory';
 
 const msg = (
   id: string,
@@ -193,6 +194,70 @@ describe('chat state seams', () => {
         total: 2,
         siblings: expect.any(Array),
       });
+    });
+
+    it('keeps branch pager across both model responses after partial compare promote', () => {
+      const turnId = 'turn-partial';
+      // Simulate legacy promote: user + promoted cleared, non-promoted still tagged.
+      const persisted = [
+        {
+          id: 'u1',
+          role: 'user' as const,
+          parentMessageId: null,
+          comparisonTurnId: null,
+          createdAt: new Date(1),
+        },
+        {
+          id: 'a1',
+          role: 'assistant' as const,
+          parentMessageId: 'u1',
+          comparisonTurnId: null,
+          modelId: 'openrouter/model-a',
+          createdAt: new Date(2),
+        },
+        {
+          id: 'a2',
+          role: 'assistant' as const,
+          parentMessageId: 'u1',
+          comparisonTurnId: turnId,
+          modelId: 'openrouter/model-b',
+          createdAt: new Date(3),
+        },
+      ];
+      const livePathOnNonPromoted = [
+        {
+          id: 'u1',
+          role: 'user' as const,
+          parts: [{ type: 'text', text: 'Hi' }],
+        },
+        {
+          id: 'a2',
+          role: 'assistant' as const,
+          parts: [{ type: 'text', text: 'B' }],
+          comparisonTurnId: turnId,
+          modelId: 'openrouter/model-b',
+          parentMessageId: 'u1',
+        },
+      ];
+
+      const merged = stripOrphanComparisonTurnIds(
+        mergeGraphMessages(persisted, livePathOnNonPromoted)
+      );
+      const graph = buildMessageGraph(merged);
+
+      // Without orphan strip, a2 would only sibling with other still-tagged
+      // compare assistants (total 1) and the ‹ n / m › pager would disappear.
+      expect(getSiblingVersionInfo('a2', graph)).toEqual({
+        index: 2,
+        total: 2,
+        siblings: expect.any(Array),
+      });
+      expect(getSiblingVersionInfo('a1', graph)).toEqual({
+        index: 1,
+        total: 2,
+        siblings: expect.any(Array),
+      });
+      expect(merged.every((message) => !message.comparisonTurnId)).toBe(true);
     });
   });
 

@@ -3,6 +3,7 @@ import {
   expandComparisonTurnsInPath,
   groupMessagesByComparisonTurn,
   isLocalComparePromotionAheadOfDb,
+  stripOrphanComparisonTurnIds,
 } from '@/lib/chat/compareHistory';
 import { canSubmitCompare, MIN_COMPARE_MODELS, MAX_COMPARE_MODELS } from '@/lib/compare/comparePolicy';
 
@@ -58,6 +59,52 @@ describe('compareHistory', () => {
     ];
 
     expect(expandComparisonTurnsInPath(all, all)).toEqual(all);
+  });
+
+  it('strips orphan comparisonTurnIds left by partial promotes', () => {
+    const turnId = 'turn-1';
+    const messages = [
+      { id: 'u1', role: 'user' as const, parts: [{ type: 'text', text: 'Hi' }] },
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        parts: [{ type: 'text', text: 'A' }],
+        modelId: 'openrouter/model-a',
+      },
+      {
+        id: 'a2',
+        role: 'assistant' as const,
+        parts: [{ type: 'text', text: 'B' }],
+        comparisonTurnId: turnId,
+        modelId: 'openrouter/model-b',
+        parentMessageId: 'u1',
+      },
+    ];
+
+    const stripped = stripOrphanComparisonTurnIds(messages);
+    expect(stripped[2].comparisonTurnId).toBeNull();
+    expect(stripped[0].comparisonTurnId).toBeUndefined();
+  });
+
+  it('keeps comparisonTurnIds for complete compare turns', () => {
+    const turnId = 'turn-1';
+    const messages = [
+      {
+        id: 'u1',
+        role: 'user' as const,
+        parts: [{ type: 'text', text: 'Hi' }],
+        comparisonTurnId: turnId,
+      },
+      {
+        id: 'a1',
+        role: 'assistant' as const,
+        parts: [{ type: 'text', text: 'A' }],
+        comparisonTurnId: turnId,
+        modelId: 'openrouter/model-a',
+      },
+    ];
+
+    expect(stripOrphanComparisonTurnIds(messages)).toEqual(messages);
   });
 
   it('detects local compare promotion ahead of expanded DB hydration', () => {

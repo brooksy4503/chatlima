@@ -12,7 +12,10 @@ import {
   mergeGraphMessages,
   resolveDeepestLeafId,
 } from "@/lib/chat/conversationTree";
-import type { CompareUIMessage } from "@/lib/chat/compareHistory";
+import {
+  stripOrphanComparisonTurnIds,
+  type CompareUIMessage,
+} from "@/lib/chat/compareHistory";
 import { buildCompareDisplayPath } from "@/lib/chat/buildChatDisplayMessages";
 import {
   buildEditResubmitMessages,
@@ -45,7 +48,9 @@ export function useConversationBranches({
       allMessages.length > 0
         ? mergeGraphMessages(allMessages, messages)
         : inferParentChainFromLinearOrder(messages);
-    return buildMessageGraph(merged);
+    // Partial promotes can leave orphan comparisonTurnIds on non-promoted
+    // assistants; strip them so sibling paging treats them as normal branches.
+    return buildMessageGraph(stripOrphanComparisonTurnIds(merged));
   }, [allMessages, messages]);
 
   const getVersionInfo = (messageId: string) => {

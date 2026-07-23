@@ -322,8 +322,14 @@ export default function Chat() {
     promoteModel: promoteCompareModel,
   } = compareOrchestrator;
 
+  // Only treat a turn as live compare UI when the user message still has a
+  // comparisonTurnId. Orphan assistant-only comparison metadata (partial promote)
+  // must use the normal Messages UI so branch actions stay available.
   const hasComparisonMessages = useMemo(
-    () => messages.some((m) => (m as ChatUIMessage).comparisonTurnId),
+    () =>
+      messages.some(
+        (m) => m.role === "user" && Boolean((m as ChatUIMessage).comparisonTurnId)
+      ),
     [messages]
   );
 

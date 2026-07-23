@@ -306,15 +306,15 @@ export class ConversationPersistenceService {
     }
 
     await db.transaction(async (tx) => {
+      // Clear comparison metadata on the whole turn (user + every model response).
+      // Leaving non-promoted assistants with a comparisonTurnId re-enters compare UI
+      // when the branch pager selects them, which drops edit/resubmit/fork actions.
       await tx
         .update(messages)
         .set({ comparisonTurnId: null })
-        .where(eq(messages.id, compareUser.id));
-
-      await tx
-        .update(messages)
-        .set({ comparisonTurnId: null })
-        .where(eq(messages.id, promotedAssistant.id));
+        .where(
+          and(eq(messages.chatId, chatId), eq(messages.comparisonTurnId, comparisonTurnId))
+        );
 
       await tx
         .update(chats)

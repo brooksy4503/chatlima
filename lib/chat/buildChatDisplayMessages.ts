@@ -2,6 +2,7 @@ import { convertToUIMessages } from '@/lib/chat/messageConversion';
 import { normalizeChatMessages } from '@/lib/chat/normalizeChatMessages';
 import {
   expandComparisonTurnsInPath,
+  stripOrphanComparisonTurnIds,
   type CompareUIMessage,
 } from '@/lib/chat/compareHistory';
 import type { Message } from '@/lib/db/schema';
@@ -47,5 +48,7 @@ export function buildCompareDisplayPath(
   activePath: CompareUIMessage[],
   allGraphMessages: CompareUIMessage[]
 ): CompareUIMessage[] {
-  return expandComparisonTurnsInPath(activePath, allGraphMessages);
+  const normalizedPath = stripOrphanComparisonTurnIds(activePath);
+  const normalizedGraph = stripOrphanComparisonTurnIds(allGraphMessages);
+  return expandComparisonTurnsInPath(normalizedPath, normalizedGraph);
 }

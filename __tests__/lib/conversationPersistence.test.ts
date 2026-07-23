@@ -155,6 +155,89 @@ describe('ConversationPersistenceService', () => {
     });
   });
 
+  describe('promoteCompareTurn', () => {
+    it('clears comparisonTurnId on every message in the turn', async () => {
+      const turnId = 'turn-1';
+      mockFindFirstChat.mockResolvedValueOnce({
+        id: 'chat-1',
+        userId: 'user-1',
+        activeLeafMessageId: 'a1',
+      });
+      mockFindManyMessages.mockResolvedValueOnce([
+        {
+          id: 'u1',
+          role: 'user',
+          comparisonTurnId: turnId,
+          modelId: null,
+        },
+        {
+          id: 'a1',
+          role: 'assistant',
+          comparisonTurnId: turnId,
+          modelId: 'openrouter/model-a',
+        },
+        {
+          id: 'a2',
+          role: 'assistant',
+          comparisonTurnId: turnId,
+          modelId: 'openrouter/model-b',
+        },
+      ]);
+
+      const setMock = jest.fn().mockReturnValue({
+        where: jest.fn().mockResolvedValue(undefined),
+      });
+      mockUpdate.mockReturnValue({ set: setMock });
+
+      const result = await ConversationPersistenceService.promoteCompareTurn({
+        chatId: 'chat-1',
+        userId: 'user-1',
+        comparisonTurnId: turnId,
+        modelId: 'openrouter/model-a',
+      });
+
+      expect(result).toEqual({ assistantMessageId: 'a1' });
+      expect(mockTransaction).toHaveBeenCalledTimes(1);
+      // One update clears the whole turn; second updates active leaf.
+      expect(mockUpdate).toHaveBeenCalledTimes(2);
+      expect(setMock).toHaveBeenCalledWith({ comparisonTurnId: null });
+      expect(setMock).toHaveBeenCalledWith({
+        activeLeafMessageId: 'a1',
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    it('returns null when the promoted model is missing from the turn', async () => {
+      mockFindFirstChat.mockResolvedValueOnce({
+        id: 'chat-1',
+        userId: 'user-1',
+      });
+      mockFindManyMessages.mockResolvedValueOnce([
+        {
+          id: 'u1',
+          role: 'user',
+          comparisonTurnId: 'turn-1',
+        },
+        {
+          id: 'a1',
+          role: 'assistant',
+          comparisonTurnId: 'turn-1',
+          modelId: 'openrouter/model-a',
+        },
+      ]);
+
+      const result = await ConversationPersistenceService.promoteCompareTurn({
+        chatId: 'chat-1',
+        userId: 'user-1',
+        comparisonTurnId: 'turn-1',
+        modelId: 'openrouter/model-missing',
+      });
+
+      expect(result).toBeNull();
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+  });
+
   describe('ensureParentChainBackfilled', () => {
     it('skips backfill when all messages already have parents', async () => {
       mockFindManyMessages.mockResolvedValueOnce([

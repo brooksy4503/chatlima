@@ -99,6 +99,47 @@ describe('buildChatDisplayMessages', () => {
     expect(result.allGraphMessages).toHaveLength(2);
     expect(result.initialMessages.map((message) => message.id)).toEqual(['u1', 'a1']);
   });
+
+  it('strips orphan comparison metadata after a partial promote so reload stays on Messages UI', () => {
+    const turnId = 'turn-1';
+    // Legacy promote cleared user + promoted assistant only.
+    const messages = [
+      dbMessage('u1', 'user', { comparisonTurnId: null }),
+      dbMessage('a1', 'assistant', {
+        comparisonTurnId: null,
+        modelId: 'openrouter/model-a',
+        parentMessageId: 'u1',
+      }),
+      dbMessage('a2', 'assistant', {
+        comparisonTurnId: turnId,
+        modelId: 'openrouter/model-b',
+        parentMessageId: 'u1',
+      }),
+    ];
+
+    const result = buildChatDisplayMessages({
+      messages,
+      activePathMessages: [
+        {
+          id: 'u1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'u1' }],
+        },
+        {
+          id: 'a2',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'a2' }],
+          comparisonTurnId: turnId,
+          modelId: 'openrouter/model-b',
+          parentMessageId: 'u1',
+        },
+      ],
+    });
+
+    expect(result.initialMessages.every((message) => !message.comparisonTurnId)).toBe(true);
+    expect(result.allGraphMessages.every((message) => !message.comparisonTurnId)).toBe(true);
+    expect(result.initialMessages.map((message) => message.id)).toEqual(['u1', 'a2']);
+  });
 });
 
 describe('buildCompareDisplayPath', () => {

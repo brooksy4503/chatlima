@@ -104,6 +104,34 @@ export function expandComparisonTurnsInPath(
 }
 
 /**
+ * After a partial promote, non-promoted assistants can keep `comparisonTurnId`
+ * while the user/promoted pair had it cleared. Incomplete turns must behave as
+ * normal branch siblings (pager + message actions), not as live compare turns.
+ */
+export function stripOrphanComparisonTurnIds<T extends CompareUIMessage>(
+  messages: T[]
+): T[] {
+  if (messages.length === 0) return messages;
+
+  const completeTurnIds = new Set(
+    messages
+      .filter((message) => message.role === 'user' && Boolean(message.comparisonTurnId))
+      .map((message) => message.comparisonTurnId as string)
+  );
+
+  let changed = false;
+  const next = messages.map((message) => {
+    if (!message.comparisonTurnId || completeTurnIds.has(message.comparisonTurnId)) {
+      return message;
+    }
+    changed = true;
+    return { ...message, comparisonTurnId: null };
+  });
+
+  return changed ? next : messages;
+}
+
+/**
  * True when in-memory state reflects a promoted compare turn that DB hydration
  * would re-expand back to all model siblings.
  */
