@@ -45,6 +45,13 @@
       "breakpoints": true
     },
     {
+      "idx": 6,
+      "version": "7",
+      "when": 1714298016000,
+      "tag": "0006_auth_baseline",
+      "breakpoints": true
+    },
+    {
       "idx": 7,
       "version": "7",
       "when": 1714298017000,
