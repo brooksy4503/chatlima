@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, usePathname } from "next/navigation";
-import { PlusCircle, Menu, Share } from "lucide-react";
+import { PlusCircle, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ChatShareDialog } from "@/components/chat-share-dialog";
@@ -43,14 +43,11 @@ export function TopNav() {
       <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 px-4 py-4 h-[72px] flex items-center relative">
         {/* Mobile Hamburger Menu - Left side */}
         <div className="absolute left-4">
-          <SidebarTrigger>
-            <button 
-              className="flex items-center justify-center h-9 w-9 bg-muted hover:bg-accent rounded-md transition-colors"
-              aria-label="Open sidebar"
-            >
-              <Menu className="h-4 w-4" />
-            </button>
-          </SidebarTrigger>
+          <SidebarTrigger
+            className="flex h-9 w-9 items-center justify-center rounded-md bg-muted transition-colors hover:bg-accent"
+            aria-label="Open sidebar"
+            title="Open sidebar"
+          />
         </div>
         
         {/* Title or tagline - avoid duplicating "ChatLima" on welcome view */}

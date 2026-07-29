@@ -24,7 +24,8 @@ test.describe('ChatLima Basic UI Tests', () => {
         await expect(page.getByRole('heading', { name: 'Start a conversation' })).toBeVisible();
         await expect(page.getByPlaceholder('Send a message...')).toBeVisible();
 
-        const modelPicker = page.getByRole('combobox').filter({ hasText: /:/ }).first();
+        // Model picker shows the selected model name (no longer "provider:name")
+        const modelPicker = page.getByRole('combobox', { name: /select model/i });
         await expect(modelPicker).toBeVisible();
         await expect(page.locator('button[type="submit"]')).toBeVisible();
     });
@@ -47,10 +48,11 @@ test.describe('ChatLima Basic UI Tests', () => {
     test('should interact with model picker', async ({ page }) => {
         await gotoApp(page, '/chat');
 
-        const modelPicker = page.getByRole('combobox').filter({ hasText: /:/ }).first();
+        const modelPicker = page.getByRole('combobox', { name: /select model/i });
         await expect(modelPicker).toBeVisible();
         await expect(modelPicker).toBeEnabled();
-        await expect(modelPicker).toContainText(':');
+        // Selected model label is visible inside the combobox trigger
+        await expect(modelPicker.locator('span').first()).not.toBeEmpty();
 
         await modelPicker.focus();
         await page.getByPlaceholder('Send a message...').click();
@@ -74,7 +76,11 @@ test.describe('ChatLima Basic UI Tests', () => {
         await page.setViewportSize({ width: 390, height: 844 });
         await gotoApp(page, '/chat');
 
-        const sidebarToggle = page.getByRole('button', { name: /Open sidebar|Toggle Sidebar/i });
+        // Prefer data attribute (stable); fall back to accessible name
+        const sidebarToggle = page
+            .locator('[data-sidebar="trigger"]')
+            .or(page.getByRole('button', { name: /sidebar/i }))
+            .first();
         await expect(sidebarToggle).toBeVisible();
 
         await sidebarToggle.click();

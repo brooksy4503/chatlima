@@ -471,6 +471,7 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
               <Button
                 variant="outline"
                 role="combobox"
+                aria-label="Select model"
                 aria-expanded={isOpen}
                 disabled={disabled}
                 className={cn(
