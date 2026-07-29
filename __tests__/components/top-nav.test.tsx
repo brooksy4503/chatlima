@@ -60,9 +60,31 @@ jest.mock('../../components/ui/button', () => ({
 }));
 
 jest.mock('../../components/ui/sidebar', () => ({
-  SidebarTrigger: ({ children }: { children: React.ReactNode }) => (
+  SidebarTrigger: ({
+    children,
+    className,
+    title,
+    'aria-label': ariaLabel,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    className?: string;
+    title?: string;
+    'aria-label'?: string;
+    [key: string]: unknown;
+  }) => (
     <div data-testid="sidebar-trigger">
-      {children}
+      {children ?? (
+        <button
+          type="button"
+          className={className}
+          title={title}
+          aria-label={ariaLabel}
+          {...props}
+        >
+          <svg data-testid="menu-icon" className="h-4 w-4" />
+        </button>
+      )}
     </div>
   ),
 }));
