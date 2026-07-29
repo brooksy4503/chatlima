@@ -406,13 +406,16 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     }
   }, [isOpen, filteredAndSortedModels, keyboardFocusedIndex, creditsLoading, canUseModelAtCreditCost, creditCosts, handleModelChange, userApiKeys]);
 
-  // Loading state
+  // Loading state — keep role/name stable so e2e can target the control before models resolve
   if (modelsLoading) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
                           <Button
                 variant="outline"
+                role="combobox"
+                aria-label="Select model"
+                aria-busy="true"
                 disabled
                 className={cn(
                   "w-full sm:w-full md:max-w-fit md:w-56 px-2 sm:px-3 h-8 sm:h-9 rounded-full justify-between",
@@ -432,13 +435,15 @@ export const ModelPicker = ({ selectedModel, setSelectedModel, onModelSelected, 
     );
   }
 
-  // Error state
+  // Error state — same stable combobox name for tests / a11y
   if (hasModelLoadError) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
             <Button
               variant="outline"
+              role="combobox"
+              aria-label="Select model"
               onClick={handleRefreshModels}
               disabled={modelsRefreshing}
               className={cn(

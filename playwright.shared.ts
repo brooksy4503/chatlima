@@ -41,7 +41,8 @@ export async function gotoApp(
     await expect(page.getByPlaceholder('Send a message...')).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByRole('combobox').first()).toBeVisible({
+    // Prefer the model picker by accessible name (Preset is also a combobox)
+    await expect(page.getByRole('combobox', { name: /select model/i })).toBeVisible({
       timeout: 30_000,
     });
   }
