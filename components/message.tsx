@@ -64,9 +64,7 @@ export function ReasoningMessagePart({
             "bg-indigo-50/50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300",
             "border border-indigo-200/50 dark:border-indigo-700/20 w-fit"
           )}>
-            <div className="animate-spin h-3.5 w-3.5">
-              <SpinnerIcon />
-            </div>
+            <SpinnerIcon size={14} />
             <div className="text-xs font-medium tracking-tight">Thinking...</div>
           </div>
           {streamingReasoningText && (

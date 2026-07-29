@@ -106,6 +106,7 @@ describe('Icons Component', () => {
         const svg = screen.getByTitle('Spinner Icon').closest('svg');
         expect(svg).toHaveAttribute('viewBox', '0 0 16 16');
         expect(svg).toHaveAttribute('stroke-linejoin', 'round');
+        expect(svg).toHaveClass('animate-spin');
         // Color style is set via inline style attribute
         expect(svg).toHaveAttribute('style', expect.stringContaining('color: currentcolor'));
       });

@@ -24,6 +24,7 @@ export const VercelIcon = ({ size = 17 }) => {
 
 export const SpinnerIcon = ({ size = 16 }: { size?: number }) => (
   <svg
+    className="animate-spin"
     height={size}
     strokeLinejoin="round"
     viewBox="0 0 16 16"
