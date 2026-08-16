@@ -54,6 +54,9 @@ if (!process.env.POLAR_ACCESS_TOKEN) {
 if (!process.env.POLAR_PRODUCT_ID) {
     throw new Error('Missing POLAR_PRODUCT_ID environment variable');
 }
+if (!process.env.POLAR_WEBHOOK_SECRET) {
+    throw new Error('Missing POLAR_WEBHOOK_SECRET environment variable');
+}
 if (!process.env.SUCCESS_URL) {
     throw new Error('Missing SUCCESS_URL environment variable');
 }
@@ -279,7 +282,7 @@ export const auth = betterAuth({
                 }),
                 portal(),
                 webhooks({
-                    secret: process.env.POLAR_WEBHOOK_SECRET || '', // Use empty string if not set yet
+                    secret: process.env.POLAR_WEBHOOK_SECRET,
                     onPayload: async (payload) => {
                         console.log('Polar webhook received:', payload.type);
                     },
